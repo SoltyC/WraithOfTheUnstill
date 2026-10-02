@@ -50,7 +50,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let wrap = 0.45;
   let diff = clamp((dot(N, L) + wrap) / (1.0 + wrap), 0.0, 1.0);
   let key = atmoKeyColor();
-  let hemi = mix(atmoSkySide() * 0.6, atmoSkyUp(), N.y * 0.5 + 0.5) * uniforms.envMisc.w;
+  let hemi = shIrradiance(N) * uniforms.envMisc.w;
   let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
   var col = albedo * (key * diff * vis * (1.0 / PI) + hemi);
   // Cloth sheen: rim of light at grazing view angles, tinted by the key.

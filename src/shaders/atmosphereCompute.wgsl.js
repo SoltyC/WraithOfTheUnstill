@@ -205,10 +205,14 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
  *  [0] key light colour (sun or moon illuminance × transmittance at the camera)
  *  [1] sky irradiance on an up-facing surface / π  (hemispheric ambient top)
  *  [2] sky irradiance on a horizontal-facing surface / π (hemispheric ambient side)
- *  [3] sky colour at the horizon (for fog fallback / grading) */
+ *  [3] sky colour at the horizon (for fog fallback / grading), w = adapted exposure
+ *  [4..12] sky IBL: L2 spherical harmonics of the light arriving from every direction (sky above,
+ *          ground bounce below), pre-convolved with the cosine lobe and divided by π, so a
+ *          material evaluates shIrradiance(N) and multiplies by albedo (BRIEF §5.2 "IBL comes from
+ *          the live sky"). Eased over ~0.5 s so it never pops. */
 export const ambientCS = /* wgsl */ `
 ${HEAD}
-@group(0) @binding(1) var<storage, read_write> outLight: array<vec4f, 4>;
+@group(0) @binding(1) var<storage, read_write> outLight: array<vec4f, 13>;
 @group(0) @binding(2) var transmittanceLutSampler: sampler;
 @group(0) @binding(3) var transmittanceLut: texture_2d<f32>;
 @group(0) @binding(4) var skySunSampler: sampler;
@@ -256,6 +260,40 @@ fn main() {
   let floorC = vec3f(0.30, 0.45, 1.0) * P.misc.y;
   outLight[1] = vec4f(up / wUp + floorC, 0.0);
   outLight[2] = vec4f(side / max(wSide, 1e-4) + floorC * 0.8, 0.0);
+  // Sky IBL as L2 spherical harmonics: project the sky (upper hemisphere) and a ground bounce
+  // (lower hemisphere: ground lit by the key and the sky, albedo ~0.35, a little brighter on snow
+  // fields is left to the materials) onto 9 coefficients.
+  let keyUp = select(max(P.moonDir.y, 0.0), max(P.sunDir.y, 0.0), dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
+  let groundRad = 0.35 * (outLight[0].xyz * keyUp / PI_A + outLight[1].xyz);
+  var sh: array<vec3f, 9>;
+  for (var q = 0; q < 9; q++) { sh[q] = vec3f(0.0); }
+  let SA = 24; let SE = 12;
+  let dOmega = 4.0 * PI_A / f32(SA * SE);
+  for (var a = 0; a < SA; a++) {
+    let phi = (f32(a) + 0.5) / f32(SA) * 2.0 * PI_A;
+    for (var e = 0; e < SE; e++) {
+      let ct = 1.0 - 2.0 * (f32(e) + 0.5) / f32(SE);   // uniform in cos θ over the sphere
+      let st = sqrt(max(1.0 - ct * ct, 0.0));
+      let d = vec3f(st * cos(phi), ct, st * sin(phi));
+      var Lr = groundRad;
+      if (ct > 0.0) { Lr = skyRadiance(d, r) + floorC; }
+      sh[0] += Lr * 0.282095 * dOmega;
+      sh[1] += Lr * 0.488603 * d.y * dOmega;
+      sh[2] += Lr * 0.488603 * d.z * dOmega;
+      sh[3] += Lr * 0.488603 * d.x * dOmega;
+      sh[4] += Lr * 1.092548 * d.x * d.y * dOmega;
+      sh[5] += Lr * 1.092548 * d.y * d.z * dOmega;
+      sh[6] += Lr * 0.315392 * (3.0 * d.z * d.z - 1.0) * dOmega;
+      sh[7] += Lr * 1.092548 * d.x * d.z * dOmega;
+      sh[8] += Lr * 0.546274 * (d.x * d.x - d.y * d.y) * dOmega;
+    }
+  }
+  // Cosine-lobe convolution (Ramamoorthi & Hanrahan) and /π: A0 = π, A1 = 2π/3, A2 = π/4.
+  let kSh = select(1.0 - exp(-P.misc.z / 0.5), 1.0, outLight[4].w <= 0.0 || P.misc.w > 0.5);
+  for (var q = 0; q < 9; q++) {
+    let A = select(select(0.25, 2.0 / 3.0, q >= 1 && q <= 3), 1.0, q == 0);
+    outLight[4 + q] = vec4f(mix(outLight[4 + q].xyz, sh[q] * A, kSh), 1.0);
+  }
   let hz = vec3f(cos(0.3), 0.06, sin(0.3));
   // Eye adaptation (BRIEF §5.8: tight limits). Adapt to a blend of key-lit and sky-lit ground,
   // clamp to a narrow range, and ease over time (misc.z = dt; 0 in captures → hold).

@@ -28,6 +28,8 @@ export function applySpot(spot, game) {
   // the follow camera snaps to the player at that moment.
   if (spot.player) { teleport(spot.player[0], spot.player[1]); controller.yaw = c.yaw; }
   if (c.mode === 'free') arm.setPose(c.pos[0], c.pos[1], c.pos[2], c.yaw, c.pitch, c.fov);
+  // Gate shots of the land alone (Phase 2: "a static screenshot with no character").
+  if (game.setPlayerVisible) game.setPlayerVisible(!spot.hidePlayer);
 }
 
 /** Serialise the current view as a free-camera spot (copied from the overlay). */

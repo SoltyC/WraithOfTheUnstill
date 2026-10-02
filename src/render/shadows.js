@@ -15,6 +15,7 @@ import { Matrix, Vector3, Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { Color4 } from '@babylonjs/core/Maths/math.color.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { shadowDepthFragmentWGSL, CASCADES, SHADOW_SIZE } from '../shaders/shadows.wgsl.js';
+import { STATE_SAMPLE_BUFFERS } from '../shaders/terrainState.wgsl.js';
 import { env } from './environment.js';
 
 export const SHADOW_SPLITS = [24, 140, 800, 4500];
@@ -54,7 +55,7 @@ export function createShadows(scene, viewCamera, casters) {
     const cm = new ShaderMaterial('clipmapShadow' + c, scene, { vertex: 'clipmap', fragment: 'shadowDepth' }, {
       attributes: ['position'],
       uniforms: ['viewProjection', 'levels', 'camGrid', 'shadowLight', 'shadowOrigin'],
-      storageBuffers: ['levelData', 'biomeA', 'biomeB'],
+      storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...STATE_SAMPLE_BUFFERS],
       shaderLanguage: ShaderLanguage.WGSL,
     });
     cm.setArray4('levels', clip.levels);
@@ -62,8 +63,11 @@ export function createShadows(scene, viewCamera, casters) {
     cm.setStorageBuffer('levelData', clip.levelData);
     cm.setStorageBuffer('biomeA', clip.buffers.biomeA);
     cm.setStorageBuffer('biomeB', clip.buffers.biomeB);
+    cm.setStorageBuffer('windMap', clip.buffers.wind);
+    cm.setStorageBuffer('hydro', clip.buffers.hydro);
     cm.setVector4('shadowLight', light); cm.setVector4('shadowOrigin', origin);
     cm.backFaceCulling = false;
+    clip.stateBound.push(cm);
     const pm = new ShaderMaterial('capsuleShadow' + c, scene, { vertex: 'capsule', fragment: 'shadowDepth' }, {
       attributes: ['position', 'normal'],
       uniforms: ['world', 'viewProjection', 'shadowLight', 'shadowOrigin'],
@@ -93,6 +97,13 @@ export function createShadows(scene, viewCamera, casters) {
 
   return {
     maps, shadowData, cameras: cams,
+    /** Adds a caster to every cascade with its own depth material (makeMat(name, light, origin)). */
+    addCaster(mesh, makeMat) {
+      for (let c = 0; c < CASCADES; c++) {
+        maps[c].renderList.push(mesh);
+        maps[c].setMaterialForRendering(mesh, makeMat('casterShadow' + mesh.name + c, lights[c], origins[c]));
+      }
+    },
     /** 0 disables shadows (overlay toggle). */
     strength: 1,
     update() {

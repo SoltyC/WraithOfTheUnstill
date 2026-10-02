@@ -6,10 +6,10 @@
 import { FINE_N, RATIO, PAGE_N, PAGES, WORLD_HALF, COARSE_PER_M, FINE_PER_M, NO_SLOT } from '../terrain/state/layout.js';
 import { DECAY, MATERIAL_COUNT } from '../terrain/state/healing.js';
 
-export const MAX_BRUSHES = 8;
+export const MAX_BRUSHES = 16;
 // StateParams layout (u32 words; floats bitcast): see terrainState.js writeParams().
 export const MAX_IN = 4;
-export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 + MAX_BRUSHES * 4;
+export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 * 3;
 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
@@ -30,8 +30,10 @@ struct StateParams {
   healDt: vec4f,                    // x = fine band dt (s), y = coarse slot dt (s)
   healSlot: vec4i,                  // x = slot (−1 none), y/z = page origin (world coarse texels)
   counts: vec4u,                    // out rects, in rects, brushes
-  brushes: array<vec4f,${MAX_BRUSHES}>,     // x, z (m), radius (m), depth (m)
+  brushes: array<vec4f,${MAX_BRUSHES}>,     // centre x, z (m), half length (m), depth (m)
+  brushDirs: array<vec4f,${MAX_BRUSHES}>,   // direction x, z (unit), half width (m), compaction
   brushRects: array<vec4i,${MAX_BRUSHES}>,  // fine texel bbox
+  pageTable: array<u32>,            // slot per page key (NO_SLOT = none), after the fixed part
 };
 
 fn wrapN(v: i32) -> u32 { let n = i32(FINE_N); return u32(((v % n) + n) % n); }
@@ -72,7 +74,7 @@ fn materialAt(x: f32, z: f32) -> u32 {
 const BIND = {
   fine0: 'read_write', fine1: 'read_write', fine2: 'read_write',
   atlas0: 'read_write', atlas1: 'read_write', atlas2: 'read_write',
-  pageTable: 'read', surface: 'read', sp: 'read',
+  surface: 'read', sp: 'read',
 };
 const TYPE = { sp: 'StateParams' };
 const decl = (names, access = {}) => names.map((n, i) =>
@@ -84,13 +86,13 @@ fn coarseIdx(c: i32, d: i32) -> u32 {
   let gc = c + COARSE_OFF; let gd = d + COARSE_OFF;
   if (gc < 0 || gd < 0 || gc >= i32(PAGES * PAGE_N) || gd >= i32(PAGES * PAGE_N)) { return 0xffffffffu; }
   let key = (u32(gd) / PAGE_N) * PAGES + u32(gc) / PAGE_N;
-  let slot = pageTable[key];
+  let slot = sp.pageTable[key];
   if (slot == NO_SLOT) { return 0xffffffffu; }
   return (slot * PAGE_N + (u32(gd) % PAGE_N)) * PAGE_N + (u32(gc) % PAGE_N);
 }
 `;
 
-export const SCROLL_OUT_BINDINGS = ['fine0', 'fine1', 'fine2', 'atlas0', 'atlas1', 'atlas2', 'pageTable', 'sp'];
+export const SCROLL_OUT_BINDINGS = ['fine0', 'fine1', 'fine2', 'atlas0', 'atlas1', 'atlas2', 'sp'];
 export const SCROLL_IN_BINDINGS = SCROLL_OUT_BINDINGS;
 export const BRUSH_BINDINGS = ['fine0', 'fine1', 'fine2', 'sp'];
 export const HEAL_FINE_BINDINGS = ['fine0', 'fine1', 'fine2', 'surface', 'sp'];
@@ -162,7 +164,12 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
 }
 `;
 
-/** Debug writer (Phase 1): round stamps with a raised rim; Phase 2 replaces it with real brushes. */
+/**
+ * Brush writer: a swept capsule (segment ± half length along dir, radius = half width). Inside it
+ * the surface is pressed down with a near-flat floor; the displaced mass rises as a berm just
+ * outside the edge (≈45 % of the depth, so volume roughly balances), and any berm already where
+ * the new depression lands is flattened. Footprints are short capsules; Phase 4 grooves are long.
+ */
 export const stateBrushWGSL = /* wgsl */ `
 ${STATE_COMMON_WGSL}
 ${decl(BRUSH_BINDINGS)}
@@ -173,17 +180,23 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let r = sp.brushRects[job];
   let i = r.x + i32(g.x); let j = r.y + i32(g.y);
   if (i >= r.z || j >= r.w) { return; }
-  let br = sp.brushes[job];
+  let br = sp.brushes[job]; let bd = sp.brushDirs[job];
   let p = (vec2f(f32(i), f32(j)) + 0.5) / FINE_PER_M;
-  let d = length(p - br.xy) / br.z;
-  if (d >= 1.7) { return; }
+  // Distance to the segment, in half widths.
+  let rel = p - br.xy;
+  let along = clamp(dot(rel, bd.xy), -br.z, br.z);
+  let d = length(rel - bd.xy * along) / bd.z;
+  if (d >= 1.9) { return; }
   let k = fineIdx(i, j);
   var t = unpackTexel(fine0[k], fine1[k], fine2[k]);
   let inner = 1.0 - smoothstep(0.55, 1.0, d);
-  let rim = smoothstep(0.85, 1.15, d) * (1.0 - smoothstep(1.15, 1.7, d));
+  let rim = smoothstep(0.8, 1.12, d) * (1.0 - smoothstep(1.12, 1.9, d));
+  // Granular berm: the rim height breaks up with a hash of the texel cell (chunky, not a bevel).
+  let cell = vec2i(floor(p / 0.03));
+  let hsh = fract(sin(f32(cell.x) * 12.9898 + f32(cell.y) * 78.233) * 43758.5453);
   t.a.x = max(t.a.x, br.w * inner);
-  t.a.y = max(t.a.y, br.w * 0.45 * rim);
-  t.a.z = max(t.a.z, 0.6 * inner);
+  t.a.y = max(t.a.y * (1.0 - inner), br.w * 0.45 * rim * (0.75 + 0.5 * hsh));
+  t.a.z = max(t.a.z, bd.w * inner);
   t.b.z = max(t.b.z, inner);
   fine0[k] = pack2x16float(t.a.xy);
   fine1[k] = pack2x16float(t.a.zw);
@@ -232,29 +245,66 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
 }
 `;
 
-export const STATE_SAMPLE_BUFFERS = ['stateFine0', 'stateAtlas0', 'statePageTable', 'stateParams'];
+export const STATE_SAMPLE_BUFFERS = ['stateFine0', 'stateAtlas0', 'stateParams'];
 
-/** Material-side read (clipmap fragment): state at a world position, fine inside the window. */
+/**
+ * Material-side reads (clipmap vertex and fragment). stateParams is the state params buffer seen
+ * as words: [0], [1] = fine window origin (i, j); the page table follows the fixed part.
+ */
 export const STATE_SAMPLE_WGSL = /* wgsl */ `
 var<storage, read> stateFine0: array<u32>;
 var<storage, read> stateAtlas0: array<u32>;
-var<storage, read> statePageTable: array<u32>;
-var<storage, read> stateParams: array<vec4i>; // the state params buffer: [0] = fine window origin i, j
-// Depression and displaced mass (m) at world (x, z): nearest fine texel inside the window,
-// nearest coarse texel outside it (or rest).
-fn stateHeights(x: f32, z: f32) -> vec2f {
-  let i = i32(floor(x * ${f(FINE_PER_M)})); let j = i32(floor(z * ${f(FINE_PER_M)}));
-  let o = stateParams[0].xy;
-  if (i >= o.x + 1 && j >= o.y + 1 && i < o.x + ${FINE_N - 1} && j < o.y + ${FINE_N - 1}) {
+var<storage, read> stateParams: array<u32>;
+
+// Raw (depression, displaced mass) of fine texel (i, j), or of the coarse texel under it outside
+// the window (rest outside claimed pages and outside the bake).
+fn stateFineTexel(i: i32, j: i32) -> vec2f {
+  let ox = bitcast<i32>(stateParams[0]); let oz = bitcast<i32>(stateParams[1]);
+  if (i >= ox && j >= oz && i < ox + ${FINE_N} && j < oz + ${FINE_N}) {
     let n = ${FINE_N};
-    let k = u32(((j % n) + n) % n) * ${FINE_N}u + u32(((i % n) + n) % n);
-    return unpack2x16float(stateFine0[k]);
+    return unpack2x16float(stateFine0[u32(((j % n) + n) % n) * ${FINE_N}u + u32(((i % n) + n) % n)]);
   }
-  let gc = i32(floor(x * ${f(COARSE_PER_M)})) + ${WORLD_HALF * COARSE_PER_M};
-  let gd = i32(floor(z * ${f(COARSE_PER_M)})) + ${WORLD_HALF * COARSE_PER_M};
+  return stateCoarseTexel(i32(floor(f32(i) / ${RATIO}.0)), i32(floor(f32(j) / ${RATIO}.0)));
+}
+fn stateCoarseTexel(c: i32, d: i32) -> vec2f {
+  let gc = c + ${WORLD_HALF * COARSE_PER_M}; let gd = d + ${WORLD_HALF * COARSE_PER_M};
   if (gc < 0 || gd < 0 || gc >= ${PAGES * PAGE_N} || gd >= ${PAGES * PAGE_N}) { return vec2f(0.0); }
-  let slot = statePageTable[(u32(gd) / ${PAGE_N}u) * ${PAGES}u + u32(gc) / ${PAGE_N}u];
+  let slot = stateParams[${PARAM_WORDS}u + (u32(gd) / ${PAGE_N}u) * ${PAGES}u + u32(gc) / ${PAGE_N}u];
   if (slot == ${NO_SLOT}u) { return vec2f(0.0); }
   return unpack2x16float(stateAtlas0[(slot * ${PAGE_N}u + u32(gd) % ${PAGE_N}u) * ${PAGE_N}u + u32(gc) % ${PAGE_N}u]);
+}
+fn stateInWindow(x: f32, z: f32) -> bool {
+  let i = i32(floor(x * ${f(FINE_PER_M)})); let j = i32(floor(z * ${f(FINE_PER_M)}));
+  let ox = bitcast<i32>(stateParams[0]); let oz = bitcast<i32>(stateParams[1]);
+  return i >= ox + 1 && j >= oz + 1 && i < ox + ${FINE_N - 1} && j < oz + ${FINE_N - 1};
+}
+// Bilinear (depression, displaced) at world (x, z): fine texels in the window, coarse outside.
+fn stateHeights(x: f32, z: f32) -> vec2f {
+  if (stateInWindow(x, z)) {
+    let u = vec2f(x, z) * ${f(FINE_PER_M)} - 0.5;
+    let b = vec2i(floor(u)); let t = u - floor(u);
+    return mix(mix(stateFineTexel(b.x, b.y), stateFineTexel(b.x + 1, b.y), t.x),
+               mix(stateFineTexel(b.x, b.y + 1), stateFineTexel(b.x + 1, b.y + 1), t.x), t.y);
+  }
+  let u = vec2f(x, z) * ${f(COARSE_PER_M)} - 0.5;
+  let b = vec2i(floor(u)); let t = u - floor(u);
+  return mix(mix(stateCoarseTexel(b.x, b.y), stateCoarseTexel(b.x + 1, b.y), t.x),
+             mix(stateCoarseTexel(b.x, b.y + 1), stateCoarseTexel(b.x + 1, b.y + 1), t.x), t.y);
+}
+// Surface offset from the state: displaced mass up, depression down (metres).
+fn stateOffset(x: f32, z: f32) -> f32 { let h = stateHeights(x, z); return h.y - h.x; }
+// Texel size (m) of the state at (x, z): 1/48 m inside the fine window, 0.25 m outside.
+fn stateTexel(x: f32, z: f32) -> f32 { return select(${1 / COARSE_PER_M}, ${1 / FINE_PER_M}, stateInWindow(x, z)); }
+`;
+
+/** Fragment-only: compaction (and thermal) inside the fine window (word 1); 0 outside. */
+export const STATE_COMPACTION_BUFFERS = ['stateFine1'];
+export const STATE_COMPACTION_WGSL = /* wgsl */ `
+var<storage, read> stateFine1: array<u32>;
+fn stateCompaction(x: f32, z: f32) -> f32 {
+  if (!stateInWindow(x, z)) { return 0.0; }
+  let i = i32(floor(x * ${f(FINE_PER_M)})); let j = i32(floor(z * ${f(FINE_PER_M)}));
+  let n = ${FINE_N};
+  return unpack2x16float(stateFine1[u32(((j % n) + n) % n) * ${FINE_N}u + u32(((i % n) + n) % n)]).x;
 }
 `;

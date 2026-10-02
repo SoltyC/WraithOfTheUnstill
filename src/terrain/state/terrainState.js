@@ -31,7 +31,8 @@ const HEAL_BANDS = 16;
 
 // Params word offsets (StateParams in terrainState.wgsl.js).
 const P_ORIGIN = 0, P_OUT = 4, P_IN = 12, P_HEAL = P_IN + MAX_IN * 4, P_HEALDT = P_HEAL + 4, P_SLOT = P_HEALDT + 4, P_COUNTS = P_SLOT + 4;
-const P_BRUSH = P_COUNTS + 4, P_BRECT = P_BRUSH + MAX_BRUSHES * 4;
+const P_BRUSH = P_COUNTS + 4, P_BDIR = P_BRUSH + MAX_BRUSHES * 4, P_BRECT = P_BDIR + MAX_BRUSHES * 4;
+const QUEUE = 8192; // pending brushes (8 fields each), drained MAX_BRUSHES per frame
 
 /**
  * @param {import('@babylonjs/core').WebGPUEngine} engine
@@ -41,15 +42,16 @@ export function createTerrainState(engine, opts) {
   const sb = (bytes, label) => new StorageBuffer(engine, bytes, undefined, label);
   const fine = [0, 1, 2].map((w) => sb(FINE_N * FINE_N * 4, 'state-fine' + w));
   const atlas = [0, 1, 2].map((w) => sb(SLOTS * PLANE_BYTES, 'state-atlas' + w));
-  const tableData = new Uint32Array(PAGES * PAGES).fill(NO_SLOT);
-  const pageTable = sb(tableData.byteLength, 'state-pages');
-  pageTable.update(tableData);
-  // Params: one ArrayBuffer viewed as i32 and f32 (floats share the words).
-  const pBuf = new ArrayBuffer(PARAM_WORDS * 4);
-  const pi = new Int32Array(pBuf), pf = new Float32Array(pBuf), pu = new Uint32Array(pBuf);
+  // Params buffer: the per-frame job block (PARAM_WORDS words, viewed as i32/f32/u32), then the
+  // page table (one word per page). Materials bind it too: window origin + page table in one
+  // binding (WebGPU allows only 8 storage buffers per shader stage).
+  const pBuf = new ArrayBuffer((PARAM_WORDS + PAGES * PAGES) * 4);
+  const pi = new Int32Array(pBuf, 0, PARAM_WORDS), pf = new Float32Array(pBuf, 0, PARAM_WORDS), pu = new Uint32Array(pBuf, 0, PARAM_WORDS);
+  const tableData = new Uint32Array(pBuf, PARAM_WORDS * 4, PAGES * PAGES).fill(NO_SLOT);
   const params = sb(pBuf.byteLength, 'state-params');
+  params.update(new Uint32Array(pBuf));
 
-  const all = { fine0: fine[0], fine1: fine[1], fine2: fine[2], atlas0: atlas[0], atlas1: atlas[1], atlas2: atlas[2], pageTable, sp: params, surface: opts.surface };
+  const all = { fine0: fine[0], fine1: fine[1], fine2: fine[2], atlas0: atlas[0], atlas1: atlas[1], atlas2: atlas[2], sp: params, surface: opts.surface };
   // Binding i of each pass is names[i] (shaders/terrainState.wgsl.js generates the declarations).
   const mk = (name, code, names) => {
     const mapping = {};
@@ -84,8 +86,9 @@ export function createTerrainState(engine, opts) {
 
   const origin = [NaN, NaN], next = [0, 0];
   const rects = new Array(8).fill(0);
-  const brushQ = new Float64Array(MAX_BRUSHES * 4);
-  let brushN = 0;
+  // Brush queue (ring): x, z, dirX, dirZ, halfLen, halfWidth, depth, compaction.
+  const brushQ = new Float64Array(QUEUE * 8);
+  let qHead = 0, qCount = 0, brushN = 0;
   const og = [0, 0];
 
   function setSlot(key, slot) {
@@ -125,9 +128,11 @@ export function createTerrainState(engine, opts) {
   }
 
   const self = {
-    fine, atlas, pageTable, params,
+    fine, atlas, params,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
+    /** Healing speed multiplier (the 'Refill rate' art control). */
+    healScale: 1.5 - 0.5,
     /** Benchmarks: follow (followX, followZ) instead of the player. */
     followOverride: false, followX: 0.5, followZ: 0.5,
     /** Stats for the dev overlay. */
@@ -148,15 +153,22 @@ export function createTerrainState(engine, opts) {
       return ok;
     },
 
-    /** Debug writer: queue a round stamp (fields bx, bz, br, bd; no double arguments). */
-    bx: 0.5, bz: 0.5, br: 0.5, bd: 0.5,
+    /**
+     * Queue a brush (fields, no double arguments): centre (bx, bz), direction (bdx, bdz),
+     * half length bl, half width bw, depth bd (m), compaction bc. Round stamp: bl = 0.
+     */
+    bx: 0.5, bz: 0.5, bdx: 0.5, bdz: 0.5, bl: 0.5, bw: 0.5, bd: 0.5, bc: 0.5,
     stamp() {
-      if (brushN >= MAX_BRUSHES) return;
-      const r = this.br * 1.7;
+      if (qCount >= QUEUE) return;
+      const r = this.bl + this.bw * 1.9;
       this.claimRect(this.bx - r, this.bz - r, this.bx + r, this.bz + r);
-      brushQ[brushN * 4] = this.bx; brushQ[brushN * 4 + 1] = this.bz; brushQ[brushN * 4 + 2] = this.br; brushQ[brushN * 4 + 3] = this.bd;
-      brushN++;
+      const o = ((qHead + qCount) % QUEUE) * 8;
+      brushQ[o] = this.bx; brushQ[o + 1] = this.bz; brushQ[o + 2] = this.bdx; brushQ[o + 3] = this.bdz;
+      brushQ[o + 4] = this.bl; brushQ[o + 5] = this.bw; brushQ[o + 6] = this.bd; brushQ[o + 7] = this.bc;
+      qCount++;
     },
+    /** Brushes queued but not yet written to the GPU. */
+    get pendingBrushes() { return qCount; },
 
     /** Debug/test: evict every resident page farther than KEEP_RADIUS from the player now. */
     debugEvictFar() {
@@ -251,7 +263,7 @@ export function createTerrainState(engine, opts) {
       if (anySlot(wi / RATIO, wj / RATIO, (wi + FINE_N) / RATIO, (wj + FINE_N) / RATIO)) {
         const b = bandCursor, rows = Math.ceil(FINE_N / HEAL_BANDS);
         pi[P_HEAL] = wi; pi[P_HEAL + 1] = wj + b * rows; pi[P_HEAL + 2] = wi + FINE_N; pi[P_HEAL + 3] = Math.min(wj + FINE_N, wj + (b + 1) * rows);
-        pf[P_HEALDT] = bandHealed[b] > 0 ? Math.min(now - bandHealed[b], 5) : 0;
+        pf[P_HEALDT] = bandHealed[b] > 0 ? Math.min(now - bandHealed[b], 5) * this.healScale : 0;
         healFine = true;
       } else pf[P_HEALDT] = 0;
       let healSlot = -1;
@@ -263,13 +275,17 @@ export function createTerrainState(engine, opts) {
       if (healSlot >= 0) {
         pageOriginCoarse(slotKey[healSlot], og);
         pi[P_SLOT + 1] = og[0]; pi[P_SLOT + 2] = og[1];
-        pf[P_HEALDT + 1] = now - slotHealed[healSlot];
+        pf[P_HEALDT + 1] = (now - slotHealed[healSlot]) * this.healScale;
       }
 
-      // Brushes.
+      // Brushes: up to MAX_BRUSHES from the queue this frame (only after the window exists).
+      brushN = Number.isNaN(origin[0]) && !moved ? 0 : Math.min(qCount, MAX_BRUSHES);
       for (let b = 0; b < brushN; b++) {
-        const x = brushQ[b * 4], z = brushQ[b * 4 + 1], r = brushQ[b * 4 + 2] * 1.7;
-        pf[P_BRUSH + b * 4] = x; pf[P_BRUSH + b * 4 + 1] = z; pf[P_BRUSH + b * 4 + 2] = brushQ[b * 4 + 2]; pf[P_BRUSH + b * 4 + 3] = brushQ[b * 4 + 3];
+        const o = ((qHead + b) % QUEUE) * 8;
+        const x = brushQ[o], z = brushQ[o + 1], dx = brushQ[o + 2], dz = brushQ[o + 3], hl = brushQ[o + 4], hw = brushQ[o + 5];
+        const r = hl + hw * 1.9;
+        pf[P_BRUSH + b * 4] = x; pf[P_BRUSH + b * 4 + 1] = z; pf[P_BRUSH + b * 4 + 2] = hl; pf[P_BRUSH + b * 4 + 3] = brushQ[o + 6];
+        pf[P_BDIR + b * 4] = dx; pf[P_BDIR + b * 4 + 1] = dz; pf[P_BDIR + b * 4 + 2] = hw; pf[P_BDIR + b * 4 + 3] = brushQ[o + 7];
         pi[P_BRECT + b * 4] = Math.max(next[0], Math.floor((x - r) * FINE_PER_M)); pi[P_BRECT + b * 4 + 1] = Math.max(next[1], Math.floor((z - r) * FINE_PER_M));
         pi[P_BRECT + b * 4 + 2] = Math.min(next[0] + FINE_N, Math.ceil((x + r) * FINE_PER_M)); pi[P_BRECT + b * 4 + 3] = Math.min(next[1] + FINE_N, Math.ceil((z + r) * FINE_PER_M));
       }
@@ -278,14 +294,14 @@ export function createTerrainState(engine, opts) {
 
       const warming = warmed < 5;
       if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming) return;
-      if (tableDirty) { pageTable.update(tableData); tableDirty = false; }
-      params.update(pi);
+      if (tableDirty) { params.update(tableData, PARAM_WORDS * 4, tableData.byteLength); tableDirty = false; }
+      params.update(pu, 0, PARAM_WORDS * 4);
       // Dispatch order matters: out (reads the old window) before in (overwrites it).
       let ok = true;
       if (nOut > 0) { ok = csOut.dispatch(maxGroups(P_OUT, nOut), maxGroupsY(P_OUT, nOut), nOut) && ok; passRan[0] |= ok; }
       if (ok && nIn > 0) { ok = csIn.dispatch(maxGroups(P_IN, nIn), maxGroupsY(P_IN, nIn), nIn) && ok; passRan[1] |= ok; }
       if (!ok) return; // pipelines still compiling: retry the whole step next frame
-      if (brushN > 0 && csBrush.dispatch(maxGroups(P_BRECT, brushN), maxGroupsY(P_BRECT, brushN), brushN)) { brushN = 0; passRan[2] = 1; }
+      if (brushN > 0 && csBrush.dispatch(maxGroups(P_BRECT, brushN), maxGroupsY(P_BRECT, brushN), brushN)) { qHead = (qHead + brushN) % QUEUE; qCount -= brushN; passRan[2] = 1; }
       if (healFine && csHealFine.dispatch(Math.ceil(FINE_N / 8), Math.ceil(FINE_N / HEAL_BANDS / 8), 1)) {
         bandHealed[bandCursor] = now; bandCursor = (bandCursor + 1) % HEAL_BANDS; passRan[3] = 1;
       }

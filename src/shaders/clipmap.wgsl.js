@@ -14,7 +14,8 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
-import { STATE_SAMPLE_WGSL } from './terrainState.wgsl.js';
+import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
+import { SNOW_WGSL } from './snow.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
 export const CLIPMAP_N = 256;     // quads per level side
@@ -138,13 +139,28 @@ fn mesoLod(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, s: f32) -> f32 {
 }
 
 fn microH(x: f32, z: f32, wA: vec4f, wind: vec2f, s: f32) -> f32 {
-  let f = 1.0 - smoothstep(0.08, 0.4, s);
+  // Only grids that sample these features at ≥ 4 vertices per wavelength carry them (coarser
+  // levels would alias them into moiré); shading normals carry the detail further out.
+  let f = 1.0 - smoothstep(0.065, 0.14, s);
   if (f <= 0.0) { return 0.0; }
   let u = x * wind.x + z * wind.y;
   let v = -x * wind.y + z * wind.x;
   let ripples = 0.035 * tn_fbm(u / 0.55, v / 2.2, 2, 991u);
   let grain = 0.02 * tn_fbm(x / 0.35, z / 0.35, 2, 992u);
-  return f * ((wA.w + wA.x * 0.6) * ripples + grain);
+  // Frost sastrugi: sharp wind-carved ridges elongated along the wind (decimetres high, metres
+  // long), with a steep upwind prow: the ridge line is sampled slightly downwind for the profile.
+  var sast = 0.0;
+  if (wA.x > 0.01) {
+    let fs = f;
+    if (fs > 0.0) {
+      let n = tn_fbm(u / 2.6, v / 0.55, 3, 993u);
+      let r = 1.0 - abs(n);
+      let prow = 0.5 + 0.5 * tn_valueNoise(u / 0.9 + 0.35, v / 0.55, 994u);
+      let field = smoothstep(-0.2, 0.5, tn_fbm(u / 14.0, v / 6.0, 2, 995u)); // sastrugi come in fields
+      sast = fs * 0.11 * r * r * r * (0.6 + 0.4 * prow) * field;
+    }
+  }
+  return f * ((wA.w + wA.x * 0.6) * ripples + grain) + wA.x * sast;
 }
 
 // Beyond the baked 8 km the clamped edge texels would extend as flat shelves: fall away below
@@ -176,14 +192,46 @@ uniform camGrid: vec4f;
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> biomeB: array<u32>;
+var<storage, read> windMap: array<u32>;
+var<storage, read> hydro: array<u32>;
+${STATE_SAMPLE_WGSL}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vLevel: f32;
 varying vBiomeA: vec4f;
 varying vBiomeB: vec2f;
+varying vWind: vec2f;
+varying vLake: f32;
+varying vNormalC: vec3f;
 
 const W_HALF: f32 = 4096.0;
 const N8: i32 = 1024; const C8: f32 = 8.0;
+const NW: i32 = 256;   const CW: f32 = 32.0;
+const N4: i32 = 2048;  const C4: f32 = 4.0;
+
+// Prevailing wind (unit, blowing toward), bilinear over the 32 m climatology.
+fn windAtV(x: f32, z: f32) -> vec2f {
+  let u = (x + W_HALF) / CW - 0.5;
+  let v = (W_HALF - z) / CW - 0.5;
+  let i0 = clamp(i32(floor(u)), 0, NW - 1); let j0 = clamp(i32(floor(v)), 0, NW - 1);
+  let i1 = clamp(i0 + 1, 0, NW - 1); let j1 = clamp(j0 + 1, 0, NW - 1);
+  let fu = clamp(u - floor(u), 0.0, 1.0); let fv = clamp(v - floor(v), 0.0, 1.0);
+  let w = mix(mix(unpack4x8unorm(windMap[j0 * NW + i0]).xy, unpack4x8unorm(windMap[j0 * NW + i1]).xy, fu),
+              mix(unpack4x8unorm(windMap[j1 * NW + i0]).xy, unpack4x8unorm(windMap[j1 * NW + i1]).xy, fu), fv);
+  let d = (w * 255.0 - 128.0) / 127.0;
+  let l = length(d);
+  return select(vec2f(1.0, 0.0), d / l, l > 1e-4);
+}
+// Lake mask (hydro channel 1), bilinear over 4 m texels.
+fn lakeAt(x: f32, z: f32) -> f32 {
+  let u = (x + W_HALF) / C4 - 0.5;
+  let v = (W_HALF - z) / C4 - 0.5;
+  let i0 = clamp(i32(floor(u)), 0, N4 - 1); let j0 = clamp(i32(floor(v)), 0, N4 - 1);
+  let i1 = clamp(i0 + 1, 0, N4 - 1); let j1 = clamp(j0 + 1, 0, N4 - 1);
+  let fu = clamp(u - floor(u), 0.0, 1.0); let fv = clamp(v - floor(v), 0.0, 1.0);
+  return mix(mix(unpack4x8unorm(hydro[j0 * N4 + i0]).y, unpack4x8unorm(hydro[j0 * N4 + i1]).y, fu),
+             mix(unpack4x8unorm(hydro[j1 * N4 + i0]).y, unpack4x8unorm(hydro[j1 * N4 + i1]).y, fu), fv);
+}
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
 
@@ -242,11 +290,28 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let ext = F.z * HALF - F.z * 0.5;
     if (abs(p.x - F.x) < ext && abs(p.y - F.y) < ext) { h -= 200.0; }
   }
+  // Terrain-state deformation (BRIEF §4.3): displaced mass raises, depression lowers. Fine levels
+  // only — a coarse grid would alias the 2 cm / 25 cm state; distant marks shade via the fragment.
+  let defFade = 1.0 - smoothstep(0.5, 2.0, s);
+  if (defFade > 0.0) { h += stateOffset(p.x, p.y) * defFade; }
   let wp = vec3f(p.x, h, p.y);
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   vertexOutputs.vWorldPos = wp;
   vertexOutputs.vNormal = n;
   vertexOutputs.vLevel = f32(level);
+  vertexOutputs.vWind = windAtV(p.x, p.y);
+  // Large-scale normal (three levels coarser, bilinear): free of the micro layer, so the
+  // material's rock/ice masks follow landforms, not individual sastrugi.
+  let lc = min(level + 3u, ${CLIPMAP_LEVELS - 1}u);
+  let Pc = uniforms.levels[lc];
+  let gc = (p - Pc.xy) / Pc.z + HALF;
+  let gi = clamp(floor(gc), vec2f(0.0), vec2f(2.0 * HALF - 1.0));
+  let gf = clamp(gc - gi, vec2f(0.0), vec2f(1.0));
+  let c00 = levelSample(lc, u32(gi.x), u32(gi.y)).yz; let c10 = levelSample(lc, u32(gi.x) + 1u, u32(gi.y)).yz;
+  let c01 = levelSample(lc, u32(gi.x), u32(gi.y) + 1u).yz; let c11 = levelSample(lc, u32(gi.x) + 1u, u32(gi.y) + 1u).yz;
+  let nc = mix(mix(c00, c10, gf.x), mix(c01, c11, gf.x), gf.y);
+  vertexOutputs.vNormalC = vec3f(nc.x, sqrt(max(1.0 - dot(nc, nc), 0.0)), nc.y);
+  vertexOutputs.vLake = lakeAt(p.x, p.y);
   var wB = vec2f(0.0);
   vertexOutputs.vBiomeA = biomeAt(p.x, p.y, &wB);
   vertexOutputs.vBiomeB = wB;
@@ -262,16 +327,23 @@ varying vNormal: vec3f;
 varying vLevel: f32;
 varying vBiomeA: vec4f;
 varying vBiomeB: vec2f;
+varying vWind: vec2f;
+varying vLake: f32;
+varying vNormalC: vec3f;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${STATE_SAMPLE_WGSL}
+${STATE_COMPACTION_WGSL}
+${SNOW_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let level = i32(fragmentInputs.vLevel + 0.5);
   let wp = fragmentInputs.vWorldPos;
   let camPos = uniforms.cameraPosition;
+  // Pixel footprint in metres (detail fades by it): computed before any branch.
+  let fp = length(fwidth(wp)) * 0.7;
   let V = normalize(camPos - wp);
   var N = normalize(fragmentInputs.vNormal);
   let dist = length(camPos - wp);
@@ -288,9 +360,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let sea = smoothstep(0.5, -1.5, wp.y);
   albedo = mix(albedo, vec3f(0.035, 0.065, 0.085), sea);
   N = normalize(mix(N, vec3f(0.0, 1.0, 0.0), sea));
-  // Terrain state, Phase 1 debug read: marks darken, rims lighten (Phase 2 displaces and shades).
+  // Terrain state: normals from the deformation heightfield at its own resolution (2 cm in the
+  // fine window, 25 cm in coarse pages), so marks light correctly even where geometry is coarse.
   let st = stateHeights(wp.x, wp.z);
-  albedo = albedo * (1.0 - clamp(st.x * 5.0, 0.0, 0.6)) + vec3f(clamp(st.y * 2.0, 0.0, 0.2));
+  var stateGrad = vec2f(0.0);
+  if (st.x + st.y > 1e-4) {
+    let e = stateTexel(wp.x, wp.z);
+    stateGrad = vec2f(stateOffset(wp.x + e, wp.z) - stateOffset(wp.x - e, wp.z),
+                      stateOffset(wp.x, wp.z + e) - stateOffset(wp.x, wp.z - e)) / (2.0 * e);
+    N = normalize(vec3f(N.x - stateGrad.x * N.y, N.y, N.z - stateGrad.y * N.y));
+  }
 
   let L = uniforms.keyDir;
   let wrap = 0.25;
@@ -301,11 +380,22 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Light from the atmosphere: key colour and sky irradiance computed on the GPU from the LUTs.
   let key = atmoKeyColor();
   let skyUp = atmoSkyUp() * uniforms.envMisc.w; let skySide = atmoSkySide() * uniforms.envMisc.w;
-  let sky = mix(skySide, skyUp, clamp(N.y, 0.0, 1.0));
+  let sky = shIrradiance(N) * uniforms.envMisc.w;
   let bounce = (key * max(L.y, 0.0) * (0.12 / PI) + skyUp * 0.25) * mix(0.0, 1.0, clamp(-N.y * 0.5 + 0.5, 0.0, 1.0));
   // Lambert: albedo/π · E · cosθ for the key; sky terms are already radiance (E/π).
   let vis = shadowVisibility(wp, normalize(fragmentInputs.vNormal), camPos, fragmentInputs.position.xy);
-  var col = albedo * (key * diff * cs * vis * (1.0 / PI) + (sky + bounce) * mix(1.0, cs, 0.5));
+  var col = albedo * (key * diff * cs * vis * (1.0 / PI) + sky * mix(1.0, cs, 0.5));
+  // Frost Steppe material (Phase 2) over the clay view, by frost weight.
+  let wSum = wA.x + wA.y + wA.z + wA.w + wB.x + wB.y;
+  let wFrost = smoothstep(0.3, 0.7, wA.x / max(wSum, 0.001)) * (1.0 - sea);
+  if (wFrost > 0.001) {
+    let Ng = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
+                             fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
+    var fs = frostSurface(wp, Ng, normalize(fragmentInputs.vNormalC), normalize(fragmentInputs.vWind), fragmentInputs.vLake, fp);
+    frostApplyState(&fs, wp, st, stateCompaction(wp.x, wp.z), fp);
+    let fcol = frostLight(fs, wp, Ng, V, L, key, vis * cs, uniforms.envMisc.w, fp);
+    col = mix(col, fcol, wFrost);
+  }
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());

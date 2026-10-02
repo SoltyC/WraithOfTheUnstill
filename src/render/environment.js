@@ -23,6 +23,8 @@ export const env = {
   sunHalo: new Vector3(),
   fogParams: new Vector4(),
   envMisc: new Vector4(),
+  /** Art controls read by materials: x = glint intensity. */
+  artParams: new Vector4(1, 0, 0, 0),
   /** (render width, height, 1/width, 1/height), set by the owner each frame. */
   screenInfo: new Vector4(1, 1, 1, 1),
   /** 0 = day, 1 = full night. */
@@ -110,6 +112,7 @@ export function updateEnvironment() {
   fp.x = p.fogDensity; fp.y = p.fogHeightFalloff; fp.z = p.exposure;
   const em = env.envMisc;
   em.x = night; em.y = day; em.z = twilight; em.w = p.skylight;
+  env.artParams.x = p.glintIntensity;
 }
 
 /** Bind the shared env vectors to a ShaderMaterial once. */
@@ -123,5 +126,6 @@ export function bindEnvironment(mat) {
   mat.setVector3('sunHalo', env.sunHalo);
   mat.setVector4('fogParams', env.fogParams);
   mat.setVector4('envMisc', env.envMisc);
+  mat.setVector4('artParams', env.artParams);
   mat.setVector4('screenInfo', env.screenInfo);
 }

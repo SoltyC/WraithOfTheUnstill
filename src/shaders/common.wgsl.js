@@ -5,7 +5,7 @@
 // Hillaire LUT atmosphere, and Phase 6 moves tonemapping into the post chain.
 
 /** Uniforms every lit material declares (names must match render/environment.js). */
-export const ENV_UNIFORMS = ['keyDir', 'keyColor', 'skyZenith', 'skyHorizon', 'groundBounce', 'sunDir', 'sunHalo', 'fogParams', 'cameraPosition', 'envMisc', 'screenInfo'];
+export const ENV_UNIFORMS = ['keyDir', 'keyColor', 'skyZenith', 'skyHorizon', 'groundBounce', 'sunDir', 'sunHalo', 'fogParams', 'cameraPosition', 'envMisc', 'screenInfo', 'artParams'];
 
 export const ENV_DECL = /* wgsl */ `
 uniform keyDir: vec3f;
@@ -19,6 +19,7 @@ uniform fogParams: vec4f;
 uniform cameraPosition: vec3f;
 uniform envMisc: vec4f;
 uniform screenInfo: vec4f;
+uniform artParams: vec4f; // x = glint intensity
 `;
 
 export const COMMON_WGSL = /* wgsl */ `

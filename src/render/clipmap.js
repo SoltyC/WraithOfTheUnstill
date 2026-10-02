@@ -23,7 +23,7 @@ import { bindEnvironment } from './environment.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
-import { STATE_SAMPLE_BUFFERS } from '../shaders/terrainState.wgsl.js';
+import { STATE_SAMPLE_BUFFERS, STATE_COMPACTION_BUFFERS } from '../shaders/terrainState.wgsl.js';
 
 export const CLIPMAP_S0 = 0.0625; // finest spacing (m): BRIEF wants < 10 cm near the player
 const DETAIL_MAX_SPACING = 8;     // levels below this read 2 m tiles (see terrainH)
@@ -93,7 +93,7 @@ export function createClipmap(scene, buffers, atmo) {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
     uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
-    storageBuffers: ['levelData', 'biomeA', 'biomeB', ...ATMO_MATERIAL_BUFFERS, 'shadowData', ...STATE_SAMPLE_BUFFERS],
+    storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat);
@@ -104,6 +104,8 @@ export function createClipmap(scene, buffers, atmo) {
   mat.setStorageBuffer('levelData', levelData);
   mat.setStorageBuffer('biomeA', buffers.biomeA);
   mat.setStorageBuffer('biomeB', buffers.biomeB);
+  mat.setStorageBuffer('windMap', buffers.wind);
+  mat.setStorageBuffer('hydro', buffers.hydro);
   mesh.material = mat;
 
   // Last computed origin per level (NaN = never) and the residency version levels were built at.
@@ -113,11 +115,17 @@ export function createClipmap(scene, buffers, atmo) {
   return {
     mesh, material: mat, playerPos, levelData, levels, camGrid, buffers,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
+    /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
+    stateBound: [],
     bindState(ts) {
       mat.setStorageBuffer('stateFine0', ts.fine[0]);
       mat.setStorageBuffer('stateAtlas0', ts.atlas[0]);
-      mat.setStorageBuffer('statePageTable', ts.pageTable);
       mat.setStorageBuffer('stateParams', ts.params);
+      mat.setStorageBuffer('stateFine1', ts.fine[1]);
+      // The shadow casters share the vertex shader: they displace too (trails self-shadow).
+      for (const m of this.stateBound) {
+        m.setStorageBuffer('stateFine0', ts.fine[0]); m.setStorageBuffer('stateAtlas0', ts.atlas[0]); m.setStorageBuffer('stateParams', ts.params);
+      }
     },
     /** Fields set by the owner before update() (no double arguments). */
     camX: 0.5, camZ: 0.5, residencyVersion: 0,

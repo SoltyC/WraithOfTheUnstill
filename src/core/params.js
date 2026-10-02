@@ -14,9 +14,9 @@ export const paramDefs = [
   { key: 'exposure', label: 'Exposure bias', group: 'Art', min: 0.2, max: 3, step: 0.01, value: 1 },
   { key: 'skylight', label: 'Skylight (ambient ×)', group: 'Art', min: 0.5, max: 3, step: 0.05, value: 1.5 },
   { key: 'windStrength', label: 'Wind strength', group: 'Art', min: 0, max: 2, step: 0.01, value: 0.6 },
-  { key: 'glintIntensity', label: 'Glint intensity (Phase 2)', group: 'Art', min: 0, max: 2, step: 0.01, value: 1 },
-  { key: 'deformDepth', label: 'Deformation depth (Phase 2)', group: 'Art', min: 0, max: 2, step: 0.01, value: 1 },
-  { key: 'refillRate', label: 'Refill rate (Phase 2)', group: 'Art', min: 0, max: 4, step: 0.01, value: 1 },
+  { key: 'glintIntensity', label: 'Glint intensity', group: 'Art', min: 0, max: 2, step: 0.01, value: 1 },
+  { key: 'deformDepth', label: 'Deformation depth', group: 'Art', min: 0, max: 2, step: 0.01, value: 1 },
+  { key: 'refillRate', label: 'Refill (healing) rate', group: 'Art', min: 0, max: 4, step: 0.01, value: 1 },
   { key: 'gradeStrength', label: 'Grading strength', group: 'Art', min: 0, max: 1, step: 0.01, value: 1 },
   { key: 'renderScale', label: 'Render scale', group: 'Quality', min: 0.5, max: 1, step: 0.05, value: 1 },
 ];

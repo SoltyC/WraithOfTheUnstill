@@ -18,13 +18,23 @@ var skyViewMoonSampler: sampler;
 var aerialLut: texture_2d<f32>;
 var aerialLutSampler: sampler;
 var<storage, read> atmoParams: AtmoParams;
-var<storage, read> atmoLight: array<vec4f,4>;
+var<storage, read> atmoLight: array<vec4f,13>;
 ${ATMO_COMMON_WGSL}
 
 fn atmoCamR() -> f32 { return R_GROUND + max(atmoParams.camPos.w, 0.01); }
 fn atmoKeyColor() -> vec3f { return atmoLight[0].xyz; }
 fn atmoSkyUp() -> vec3f { return atmoLight[1].xyz; }
 fn atmoSkySide() -> vec3f { return atmoLight[2].xyz; }
+/** Sky IBL: irradiance/π arriving at a surface with normal n (L2 SH from the ambient pass). */
+fn shIrradiance(n: vec3f) -> vec3f {
+  let x = n.x; let y = n.y; let z = n.z;
+  let e = atmoLight[4].xyz * 0.282095
+        + atmoLight[5].xyz * 0.488603 * y + atmoLight[6].xyz * 0.488603 * z + atmoLight[7].xyz * 0.488603 * x
+        + atmoLight[8].xyz * 1.092548 * x * y + atmoLight[9].xyz * 1.092548 * y * z
+        + atmoLight[10].xyz * 0.315392 * (3.0 * z * z - 1.0) + atmoLight[11].xyz * 1.092548 * x * z
+        + atmoLight[12].xyz * 0.546274 * (x * x - y * y);
+  return max(e / PI_A, vec3f(0.0));
+}
 /** Eye-adaptation exposure computed by the ambient pass (multiply with the user exposure bias). */
 fn atmoExposure() -> f32 { return atmoLight[3].w; }
 

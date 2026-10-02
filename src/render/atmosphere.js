@@ -50,7 +50,7 @@ export function createAtmosphere(scene, camera) {
 
   const paramsData = new Float32Array(32);
   const atmoParams = new StorageBuffer(engine, paramsData.byteLength, undefined, 'atmo-params');
-  const atmoLight = new StorageBuffer(engine, 4 * 16, undefined, 'atmo-light');
+  const atmoLight = new StorageBuffer(engine, 13 * 16, undefined, 'atmo-light'); // key, sky up/side, horizon+exposure, 9 SH
 
   /** Bind list entries: [name, kind, value]; kinds: buffer | storageTex | tex | sampler (paired with the tex after it). */
   const cs = (name, code, bind) => {

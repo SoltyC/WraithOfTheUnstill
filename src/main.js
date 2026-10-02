@@ -118,6 +118,16 @@ async function boot() {
   bindShadows(content.clipmap.material, shadows);
   bindShadows(content.capsuleMat, shadows);
   const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
+  // Ground blow (spindrift): created after the opaque meshes, drawn in the transparent pass.
+  const { createSpindrift } = await import('./render/spindrift.js');
+  const spindrift = createSpindrift(scene, content.clipmap, atmosphere);
+  bindShadows(spindrift.material, shadows);
+  // Rock outcrops with accumulation (frost): cast and receive shadows.
+  const { createRocks } = await import('./render/rocks.js');
+  const rocks = createRocks(scene, content.clipmap, atmosphere);
+  bindShadows(rocks.material, shadows);
+  shadows.addCaster(rocks.mesh, rocks.makeShadowMaterial);
+  rocks.freeze();
   // Terrain state (BRIEF §4.3): fine window + coarse pages; the clipmap reads it.
   const { createTerrainState } = await import('./terrain/state/terrainState.js');
   const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
@@ -179,21 +189,28 @@ async function boot() {
     content.clipmap.update();
   } });
   loop.add({ name: 'shadows', update: () => shadows.update() });
-  // Debug writer (Phase 1 only): stamps a trail behind the player while the toggle is on.
-  let lastStampX = 1e9, lastStampZ = 1e9;
+  loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
+  loop.add({ name: 'spindrift', update: () => {
+    const w = paramsMod.params.v.windStrength;
+    spindrift.time = clock.simTime;
+    spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5));
+    spindrift.drift.z = 0.4 + w;
+    spindrift.update();
+  } });
+  // Writers: the player's footprints; scripted trails from photo spots once the world is settled.
+  const { createFootprints } = await import('./terrain/state/footprints.js');
+  const footprints = createFootprints(terrainState, { get v() { return paramsMod.params.v.deformDepth; } });
   loop.add({ name: 'terrainState', update: () => {
     const tsFollow = terrainState.followOverride;
     terrainState.px = tsFollow ? terrainState.followX : controller.pos.x;
     terrainState.pz = tsFollow ? terrainState.followZ : controller.pos.z;
     terrainState.time = clock.simTime;
-    if (systemsMod.toggles.on.stampTrail) {
-      const dx = controller.pos.x - lastStampX, dz = controller.pos.z - lastStampZ;
-      if (dx * dx + dz * dz > 0.09) {
-        terrainState.bx = controller.pos.x; terrainState.bz = controller.pos.z; terrainState.br = 0.45; terrainState.bd = 0.12;
-        terrainState.stamp();
-        lastStampX = controller.pos.x; lastStampZ = controller.pos.z;
-      }
-    }
+    terrainState.healScale = paramsMod.params.v.refillRate;
+    footprints.enabled = systemsMod.toggles.on.footprints !== false;
+    footprints.px = controller.pos.x; footprints.pz = controller.pos.z;
+    footprints.grounded = controller.grounded && !arm.free && content.capsule.isEnabled();
+    footprints.update();
+    if (game.pendingTrail !== null && game.worldSettled()) { footprints.stampTrail(game.pendingTrail); game.pendingTrail = null; }
     terrainState.update();
   } });
 
@@ -213,10 +230,12 @@ async function boot() {
   reg({ key: 'sky', label: 'sky', group: 'System', on: true, onChange: meshToggle(content.sky) });
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
+  reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
+  reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: meshToggle(rocks.mesh) });
   reg({ key: 'player', label: 'player', group: 'System', on: true, onChange: meshToggle(content.capsule) });
   reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadows.strength = on ? 1 : 0; } });
   reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });
-  reg({ key: 'stampTrail', label: 'stamp trail (debug writer)', group: 'Terrain', on: false });
+  reg({ key: 'footprints', label: 'player footprints', group: 'Terrain', on: true });
 
   // Saves (lazy: the worker and IndexedDB open only when first used, so idle frames stay clean).
   const saves = await createSaves({ controller, arm, paramsMod, clock });
@@ -231,7 +250,18 @@ async function boot() {
       if (streamer.pendingNear(controller.pos.x, controller.pos.z) !== 0) return false;
       return !arm.free || streamer.pendingNear(camera.position.x, camera.position.z) === 0;
     },
-    applySpot(spot) { spots.applySpot(spot, { controller, arm, teleport: requestTeleport }); },
+    /** Photo-spot trail waiting for the world to settle (then stamped as footprints). */
+    pendingTrail: null,
+    applySpot(spot) {
+      spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
+      this.pendingTrail = spot.trail || null;
+    },
+    /** True when nothing a capture shows is still being written (spot trails, brush queue). */
+    stateSettled() { return this.pendingTrail === null && terrainState.pendingBrushes === 0; },
+    setPlayerVisible(on) {
+      if (content.capsule.isEnabled() === on) return;
+      content.capsule.setEnabled(on); engine.snapshotRenderingReset();
+    },
     setFreeCam(on) { arm.setFree(on); },
     setGod(on) { controller.god = on; if (!on) controller.teleport(controller.pos.x, controller.pos.z); },
   };
@@ -286,13 +316,13 @@ async function boot() {
     async prepareSpot(id, frames = 6) {
       game.applySpot(spots.findSpot(id));
       env.updateEnvironment();
-      await waitUntil(engine, () => game.worldSettled());
+      await waitUntil(engine, () => game.worldSettled() && game.stateSettled());
       await waitFrames(engine, frames);
       return true;
     },
   });
   if (capture) {
-    await waitUntil(engine, () => game.worldSettled());
+    await waitUntil(engine, () => game.worldSettled() && game.stateSettled());
     await waitFrames(engine, 6);
     window.__wraith.captureReady = true;
   }

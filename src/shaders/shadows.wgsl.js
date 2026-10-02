@@ -1,6 +1,7 @@
 // Cascaded shadow maps (BRIEF §5.3). Each cascade stores light-space linear depth (metres along
-// the light direction from the cascade camera) in an R32F target; materials sample it with a
-// Poisson PCF and pick the cascade by view distance, blending across cascade borders.
+// the light direction from the cascade camera) in an R32F target; materials sample it with
+// PCSS (blocker search, then a Poisson PCF sized by the penumbra) and pick the cascade by view
+// distance, blending across cascade borders.
 
 export const CASCADES = 4;
 export const SHADOW_SIZE = 2048;
@@ -52,6 +53,11 @@ const POISSON16 = array<vec2f, 16>(
   vec2f(0.44323325, -0.97511554), vec2f(0.53742981, -0.47373420), vec2f(-0.26496911, -0.41893023), vec2f(0.79197514, 0.19090188),
   vec2f(-0.24188840, 0.99706507), vec2f(-0.81409955, 0.91437590), vec2f(0.19984126, 0.78641367), vec2f(0.14383161, -0.14100790));
 
+// Angular radius used for penumbrae (tan). The real sun is 0.0047; a little wider reads better
+// at game scale and hides cascade texels. Contact shadows stay sharp because the penumbra grows
+// with the receiver–blocker distance (PCSS, BRIEF §5.3).
+const SHADOW_LIGHT_TAN: f32 = 0.010;
+
 // Visibility (1 = lit) of world point wp with geometric normal n, in cascade c.
 fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   let texel = shadowData.origins[c].w;
@@ -66,13 +72,29 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   if (uv.x <= 0.0 || uv.x >= 1.0 || uv.y <= 0.0 || uv.y >= 1.0) { return 1.0; }
   let d = dot(offsetP - shadowData.origins[c].xyz, -L) - bias;
   let px = uv * ${SHADOW_SIZE}.0;
+  // Receiver-plane bias: a tap r texels away on a surface tilted from the light sits up to
+  // r·texel·tanθ closer to the light; without this, wide filters self-shadow lit slopes (acne).
+  let tanT = min(sqrt(1.0 - ndl * ndl) / ndl, 6.0) * texel;
+  // 1. Blocker search: mean depth of occluders within the widest penumbra we allow.
+  let searchR = clamp(SHADOW_LIGHT_TAN * 60.0 / texel, 2.0, 14.0); // texels: blockers up to ~60 m away
+  var blockSum = 0.0; var blockN = 0.0;
+  for (var i = 0; i < 16; i++) {
+    let o = POISSON16[i];
+    let r = vec2f(o.x * rot.x - o.y * rot.y, o.x * rot.y + o.y * rot.x) * searchR;
+    let occ = shadowLoad(c, vec2i(floor(px + r)));
+    if (occ < d - tanT * length(r)) { blockSum += occ; blockN += 1.0; }
+  }
+  if (blockN < 0.5) { return 1.0; }
+  // 2. Penumbra from the receiver–blocker distance (metres → texels), never below ~1.4 texels.
+  let dBlock = blockSum / blockN;
+  let radius = clamp((d - dBlock) * SHADOW_LIGHT_TAN / texel, 1.4, 14.0);
+  // 3. PCF over that radius.
   var lit = 0.0;
-  let radius = 1.6; // texels
   for (var i = 0; i < 16; i++) {
     let o = POISSON16[i];
     let r = vec2f(o.x * rot.x - o.y * rot.y, o.x * rot.y + o.y * rot.x) * radius;
     let occ = shadowLoad(c, vec2i(floor(px + r)));
-    lit += select(0.0, 1.0, d <= occ);
+    lit += select(0.0, 1.0, d - tanT * length(r) <= occ);
   }
   return lit / 16.0;
 }

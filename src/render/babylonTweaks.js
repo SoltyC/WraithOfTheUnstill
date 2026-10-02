@@ -43,6 +43,12 @@ export function renderOpaqueUnsorted(scene, groupIds) {
       const data = subMeshes.data, n = subMeshes.length;
       for (let i = 0; i < n; i++) data[i].render(false);
     };
+    // Transparent meshes (spindrift) blend order-independently enough to skip the distance
+    // sort, which allocates; draw them in creation order after the opaque pass.
+    group._renderTransparent = function (subMeshes) {
+      const data = subMeshes.data, n = subMeshes.length;
+      for (let i = 0; i < n; i++) data[i].render(true);
+    };
   }
 }
 
