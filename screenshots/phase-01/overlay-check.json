@@ -1,0 +1,47 @@
+[
+  {
+    "name": "overlay hidden by default",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "F1 opens overlay",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "` closes overlay",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "stats populated",
+    "ok": true,
+    "detail": "{\"fps\":\"0.3\",\"1% low\":\"0.1\",\"avg ms\":\"3964.37\",\"median\":\"3951.90\",\"p99 ms\":\"9112.50\",\"max ms\":\"9112.5\",\"hitches\":\"17\",\"draws\":\"12\",\"tris\":\"2110k\",\"GPU MB\":\"678\",\"heap MB\":\"27.6/2057\",\"stream q\":\"0\",\"pipelines\":\"20\",\"res\":\"2560×1440\"}"
+  },
+  {
+    "name": "late-pipeline log clean after loading",
+    "ok": true,
+    "detail": "none — clean"
+  },
+  {
+    "name": "late pipeline detected and flagged red",
+    "ok": true,
+    "detail": "{\"shown\":true,\"text\":\"LATE PIPELINES: 1\",\"n\":1}"
+  },
+  {
+    "name": "system toggle disables terrain",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "time-of-day slider drives the world",
+    "ok": true,
+    "detail": "21"
+  },
+  {
+    "name": "slider change reaches the GPU (frame changes)",
+    "ok": true,
+    "detail": ""
+  }
+]

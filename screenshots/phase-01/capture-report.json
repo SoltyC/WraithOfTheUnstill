@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-02T14:52:51.029Z",
+  "width": 2560,
+  "height": 1440,
+  "repeat": 2,
+  "spots": [
+    {
+      "id": "p1-monastery-golden",
+      "file": "screenshots/phase-01/p1-monastery-golden.png",
+      "ms": 173733,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 112.3,
+        "maxChannel": 221
+      }
+    },
+    {
+      "id": "p1-meadow-noon",
+      "file": "screenshots/phase-01/p1-meadow-noon.png",
+      "ms": 292938,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 127.9,
+        "maxChannel": 218
+      }
+    },
+    {
+      "id": "p1-dunes-golden",
+      "file": "screenshots/phase-01/p1-dunes-golden.png",
+      "ms": 270817,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 84.7,
+        "maxChannel": 229
+      }
+    },
+    {
+      "id": "p1-volcano-dusk",
+      "file": "screenshots/phase-01/p1-volcano-dusk.png",
+      "ms": 235582,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 25.4,
+        "maxChannel": 230
+      }
+    },
+    {
+      "id": "p1-mire-dawn",
+      "file": "screenshots/phase-01/p1-mire-dawn.png",
+      "ms": 319264,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 25.7,
+        "maxChannel": 141
+      }
+    },
+    {
+      "id": "p1-coast-noon",
+      "file": "screenshots/phase-01/p1-coast-noon.png",
+      "ms": 251652,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 158.7,
+        "maxChannel": 194
+      }
+    },
+    {
+      "id": "p1-frost-night",
+      "file": "screenshots/phase-01/p1-frost-night.png",
+      "ms": 329356,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 119.1,
+        "maxChannel": 255
+      }
+    },
+    {
+      "id": "p1-vista-continent",
+      "file": "screenshots/phase-01/p1-vista-continent.png",
+      "ms": 240420,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 85.3,
+        "maxChannel": 216
+      }
+    }
+  ],
+  "machine": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "adapter": "google / swiftshader"
+  },
+  "reproducible": true
+}

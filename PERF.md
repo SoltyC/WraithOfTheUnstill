@@ -1,8 +1,8 @@
 # Performance
 
 Measured cost per system, per biome (BRIEF §14). Every number states the machine it came from.
-Only numbers from the target machine (Windows 11, RTX 5070 Ti, Chrome stable, 2560×1440) count
-toward gates.
+Only numbers from the target machine T (Windows 11, RTX 3060, Chrome stable, 2560×1440; see
+DECISIONS.md) count toward gates.
 
 ## Machines
 
@@ -16,16 +16,16 @@ toward gates.
 
 BRIEF §14's allocation scaled ×1.5. Refine per biome as systems land.
 
-| System | Budget | Phase 0 measured (T) |
-|---|---|---|
-| Terrain (clipmap, state passes) | 2.25 ms | see "Target runs" |
-| Vegetation | 2.25 ms | — |
-| Sky, atmosphere, clouds | 1.5 ms | (in main pass) |
-| Shadows | 2.7 ms | — (none yet) |
-| Water and spell VFX | 2.25 ms | — |
-| Characters, Shaped, cloth | 1.5 ms | (in main pass) |
-| Post-processing | 3.0 ms | — (none yet) |
-| Reserve (streaming, weather spikes) | 1.2 ms | — |
+| System | Budget | Phase 0 measured (T) | Phase 1 measured (T) |
+|---|---|---|---|
+| Terrain (clipmap, state passes) | 2.25 ms | see "Target runs" | **pending** the flight bench (`gpu.compute` + share of `gpu.main`) |
+| Vegetation | 2.25 ms | — | — |
+| Sky, atmosphere, clouds | 1.5 ms | (in main pass) | **pending** (atmosphere LUTs are in `gpu.compute`) |
+| Shadows | 2.7 ms | — (none yet) | **pending** (`gpu.shadow`: 4 cascade passes) |
+| Water and spell VFX | 2.25 ms | — | — |
+| Characters, Shaped, cloth | 1.5 ms | (in main pass) | — |
+| Post-processing | 3.0 ms | — (none yet) | — |
+| Reserve (streaming, weather spikes) | 1.2 ms | — | — |
 
 Rules: 60 FPS sustained, 1% lows ≥ 45 FPS, no frame above median + 4 ms.
 
@@ -36,7 +36,7 @@ How: `npm run build && npm run preview` in WSL, then open
 are saved to `perf/runs/<date>.json`.
 
 - **Presented** time is the rAF interval. It's capped at the display refresh rate, so it shows smoothness and hitches but not headroom.
-- **GPU** time is the main render pass measured with timestamp queries. That's the real cost; Chrome quantises it to 0.1 ms.
+- **GPU** time comes from timestamp queries on every pass of the frame (since Phase 1): `gpu.frame` is the span from the first pass's start to the last pass's end, broken down into `gpu.main`, `gpu.shadow` (render-target passes) and `gpu.compute`. Phase 0 runs recorded the main pass only, as `gpuMainPass`. Chrome quantises to 0.1 ms.
 
 ### Phase 0 test field, 2026-10-02 (production build, 3 draws, 832k triangles, render locked to 2560×1440)
 
@@ -75,6 +75,45 @@ Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp que
   - Walk: **3 real drops**, at 11.4, 17.2 and 12.1 ms, with normal ~5.8 ms frames on both sides.
   - Fly: clean. The GPU stayed ≤ 2.3 ms throughout.
   - Verdict: real CPU/compositor-side drops while walking, about 1 frame in 570, worst 17.2 ms. **Carried into Phase 1 as an open defect.** Take a DevTools Performance trace of the walk phase once Phase 1's per-frame systems exist.
+
+### Phase 1 gate flight: **not yet run** (user remote, 2026-10-02/03)
+
+`http://localhost:4173/?bench=flight&res=2560x1440` in Windows Chrome (fullscreen). It flies the continent at surf speed (20 m/s, 12 m up) and at glide speed (40 m/s, 45 m up) and records presented frames, the GPU breakdown, stream-queue depth, tile uploads and late pipelines. **Gate: no frame above median + 4 ms in either phase.**
+
+## Phase 1 measurements (machine W, 2026-10-03)
+
+### Scene cost (structure, any machine)
+
+From `screenshots/phase-01/overlay-check.json` at 2560×1440 (spot p1-monastery-golden):
+- Draw calls per frame: **12**:
+  - sky;
+  - clipmap (one thin-instanced draw for 12 levels);
+  - capsule;
+  - mountain ring;
+  - 4 cascades × (clipmap + capsule).
+- Triangles: **2.11M** across the main and shadow passes. The clipmap is 12 × 131k triangles; the ring is 520k.
+- GPU memory (live buffers and textures): **678 MB**. Mostly:
+  - terrain-state fine window, 3 × 67 MB;
+  - coarse page atlas, 3 × 50 MB;
+  - shadow cascades, 4 × 2048² R32F plus depth;
+  - the clipmap level data;
+  - world storage buffers;
+  - MSAA targets.
+- Pipelines: **20**, all created during loading. **Late pipelines: 0** (the terrain-state passes warm up as no-ops).
+- Passes per frame: about 3 compute passes (atmosphere, plus clipmap and terrain state when they have work), 4 shadow passes, 1 main pass. Before the fix each cascade took 2 passes; see DECISIONS.md.
+
+### GPU timing on software (indicative only)
+
+A SwiftShader frame at 320×180 spans ~3.0 s: main 1.34 s, shadows 1.56 s, compute 0.07 s. That's CPU rasterisation, so it says nothing about T beyond the fact that the shadow passes are the largest vertex load: 4 × the full clipmap. If `gpu.shadow` is high on T, cull clipmap levels per cascade.
+
+### Allocation
+
+**Not re-measured this session.** With four 2048² cascades, a 786k-vertex clipmap and the mountain ring, a SwiftShader frame takes ~3 s even at 640×360. The heap profiler's 3000-frame warm-up would take hours, and a short warm-up isn't a valid V8 steady state. The new per-frame CPU code follows the Phase 0 rules:
+- no doubles as arguments: the shadow, terrain-state and clipmap updates read fields;
+- pre-allocated typed arrays;
+- integer change detection.
+
+What it adds to the API floor is one `writeBuffer` each for shadow data, atmosphere params, terrain-state params (only while it has work) and clipmap params (only when a level moves): about 30 B each (DECISIONS.md). `npm run alloc` passes 9/9.
 
 ## Phase 0 measurements (machine W, 2026-10-02)
 

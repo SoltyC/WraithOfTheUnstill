@@ -4,39 +4,42 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 0 (Foundation and tooling): **gate met, closed.** Phase 1 (World skeleton) starts next; the user approved moving on (2026-10-02).
-- **Gate status (Phase 0):**
-  - ✅ The overlay works: 9/9 automated checks in `tools/capture/overlay-check.mjs`, including a live uniform change reaching the GPU.
-  - ✅ Captures are reproducible: all 5 photo spots are byte-identical across two fresh loads at 2560×1440, and unchanged by all the engine work.
-  - ✅ Zero allocations per frame, measured with the real rAF loop after a 20k-frame warm-up:
-    - **game code 0 B/frame**;
-    - **avoidable engine code 0 B/frame**;
-    - the WebGPU API floor (~225 B of wrapper objects, plus ~31 B per `writeBuffer`) is reported separately, as **ruled by the user on 2026-10-02** (DECISIONS.md).
-  - **Target changed (user, 2026-10-02):** this PC (RTX 3060) is now the target, at 2560×1440 / 60 FPS / 1% lows ≥ 45 (DECISIONS.md).
-  - First real-GPU numbers: the GPU main pass takes 1.2–1.8 ms median and ≤ 2.5 ms max at 2560×1440, against a 16.7 ms budget. There were 0 late pipelines (PERF.md "Target runs").
-  - **Open defect (carried into Phase 1):** while walking, about 1 frame in 570 drops 1–2 refreshes (worst 17.2 ms) on the CPU/compositor side; the GPU stays ≤ 2.3 ms. Idle-phase outliers are late callbacks that the next frame absorbs. Diagnose with a DevTools trace (PERF.md).
+- **Phase:** 1 (World skeleton). **All Phase 1 systems are built.** Phase 0 is closed (gate met, 2026-10-02).
+- **Gate status (Phase 1): NOT YET MET. The flight benchmark hasn't been run on the target.** The gate is a scripted flight across the whole continent, at surf speed and again at glide speed, with no frame above median + 4 ms. It must run in Windows Chrome on T, and the user was remote and couldn't run it this session. Everything else for the gate is in place:
+  - the benchmark (`?bench=flight`) flies the continent at 20 m/s (surf, 12 m up) and 40 m/s (glide, 45 m up);
+  - it records presented frames, GPU frame time per pass category, stream queue depth, tile uploads and late pipelines.
+- **Built in Phase 1** (BRIEF §17), with details in the session log and DECISIONS.md:
+  - **world:** deterministic bake; worker streaming; 12-level clipmap with geomorphing; CPU/GPU height parity (max 0.58 mm);
+  - **lighting:** Hillaire atmosphere with day/night, aerial perspective and GPU eye adaptation; 4-cascade CSM;
+  - **horizon:** a distant mountain ring;
+  - **terrain state:** the two-level architecture (fine window, coarse pages, eviction with closed-form healing on reload).
+- **Captures:** clay view, 8 Phase 1 photo spots in `screenshots/phase-01/`.
 - **Machines:**
-  - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark (`?bench=1`); the results are in `perf/runs/`.
+  - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 1 (see "Next step").
+- **Exact next step:** run the flight benchmark on T (see "Next step").
 
 ## How to run
 
 ```
 npm install
 npm run dev                 # http://127.0.0.1:5173  (F1 or ` = dev overlay)
-npm test                    # Vitest logic tests (34)
+npm test                    # Vitest logic tests (52)
 npm run alloc               # zero-allocation check of hot CPU paths in Node's V8
-npm run capture             # build + 1440p photo-spot captures ×2, reproducibility + clipping report
+npm run capture             # build + 1440p photo-spot captures ×2 → screenshots/phase-01/, reproducibility + clipping report
+npm run bake                # rebuild data/world/ from the seed (≈25 s); npm run bake:verify checks it is byte-identical
 npm run heap                # build + idle-loop heap profile (game vs engine split)
 npm run overlay-check       # dev overlay functional check + screenshots
+npm run parity              # CPU/GPU height parity over 4096 points (gate: < 1 cm)
 npm run build && npm run preview            # then, in Windows Chrome on the target:
-#   http://localhost:4173/?bench=1&res=2560x1440   → results in perf/runs/ (add &gpuTimer=0 to skip GPU timing)
+#   http://localhost:4173/?bench=1&res=2560x1440        → idle/walk/fly bench, results in perf/runs/
+#   http://localhost:4173/?bench=flight&res=2560x1440   → Phase 1 gate flight (surf + glide across the continent)
+#   (add &gpuTimer=0 to skip GPU timing)
 ```
 
 URL options: `?spot=<id>` applies a photo spot. `&capture=1` freezes the clock and skips the
-loading fade. `&overlay=1` opens the overlay. `&snapshot=0` disables snapshot rendering. `&grid=N`
-uses a coarser test terrain (dev only).
+loading fade. `&overlay=1` opens the overlay. `&snapshot=0` disables snapshot rendering. `&res=WxH`
+locks the render resolution.
 
 **WSL/Linux without a GPU:** the harness adds the SwiftShader flags automatically (DECISIONS.md).
 The bundled Chromium needs libgbm, libasound and libwayland-server. On this box they were unpacked
@@ -44,6 +47,89 @@ without root into `~/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`, and the 
 up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwright install-deps chromium`.
 
 ## Session log
+
+### Session 4 — 2026-10-02 → 03 — Phase 1 (World skeleton)
+
+**Context:** the user approved Phase 1 after reviewing milestone 1 (the bake). They were remote late in the session, so the target flight benchmark couldn't run.
+
+**Built** (commits a719f0a, 650350c, cfef900, f01554f; rationale in DECISIONS.md "Phase 1")
+- **Bake** (`tools/bake-world/`, `npm run bake`, `bake:verify`): a deterministic 8 × 8 km continent, byte-identical, about 25 s.
+  - Coastline, regions, eroded ranges and the volcano.
+  - Hydrology: priority-flood, D8 accumulation, region-aware lakes and rivers.
+  - Soft biome weights, surface materials, wind climatology and POIs.
+  - Heights: 2 m in 256 tiles, plus an 8 m overview.
+- **Streaming and collision** (`src/world/`):
+  - the world worker fetches and decodes the bake, streams tiles (velocity-predicted, one upload per frame) and computes collision patches;
+  - residency versioning keeps CPU and GPU on identical texels;
+  - teleports wait for up-to-date collision.
+- **Clipmap** (`src/render/clipmap.js`, `shaders/clipmap*.wgsl.js`):
+  - 12 levels × 256², 6.25 cm to 128 m, one thin-instanced draw;
+  - compute writes heights and normals only for dirty levels;
+  - geomorphing, and covered interiors sink instead of being discarded.
+- **Height parity:** macro (Catmull-Rom over 2 m) plus shared per-biome directional meso layers (`terrain/meso.js` ↔ `terrainNoise.wgsl.js`). `npm run parity` measures max 0.577 mm.
+- **Atmosphere** (`render/atmosphere.js`, `shaders/atmosphere*.wgsl.js`):
+  - Hillaire 2020 LUTs in compute, with sky-view for both sun and moon;
+  - aerial-perspective froxels, plus GPU key/ambient and eye adaptation;
+  - day and night, with a stylised blue moonlit night.
+- **CSM** (`render/shadows.js`, `shaders/shadows.wgsl.js`):
+  - 4 cascades, 2048² R32F, texel-snapped, 16-tap PCF, cascade blends;
+  - fixed the Y-flipped render-target convention, which caused mirrored false shadows at high sun;
+  - one cleared pass per cascade (snapshot rendering had made it two).
+- **Distant mountain ring** (`terrain/mountainRing.js`, `render/mountainRing.js`, `world/ring.worker.js`): an impostor range 12–28 km out, built on a worker; far plane 40 km.
+- **Terrain state** (`src/terrain/state/`, `shaders/terrainState.wgsl.js`):
+  - **fine window:** 4092² at ~2 cm, toroidal and snapped;
+  - **coarse pages:** 128 m at 25 cm, 48 slots;
+  - **streaming:** strip downsample and refill, decay healing, LRU eviction with GPU readback, serialisation on `state.worker.js`, and closed-form healing on reload;
+  - **debug writer:** "stamp trail" toggle (overlay → Terrain); the clay view shows marks;
+  - **verified in the browser:** stamp 0.120 m → coarse page 0.119 m → evicted → reloaded after 300 s at 0.041 m (decay plus diffusion as expected);
+  - **tests:** 17 in `tests/terrainState.test.js`.
+- **Tooling:**
+  - the flight benchmark (`?bench=flight`, `src/core/benchFlight.js`);
+  - the GPU timer now times every pass (frame, main, shadow, compute);
+  - the overlay shows state pages;
+  - captures fail on GPU validation errors and wait without timeout;
+  - tool outputs default to `screenshots/phase-01/`.
+
+**Verified** (machine W)
+- Tests: 52/52. `npm run alloc`: 9/9. `bake:verify`: byte-identical.
+- Overlay check: 9/9, no late pipelines. Parity: PASS (0.577 mm).
+- Captures: 8 spots, byte-identical across two loads, 0 % clipped.
+
+**Measured performance**
+- **Target T:** nothing yet. **The Phase 1 gate (the flight benchmark) has not been run.**
+- **Structure:** 12 draws, 2.11M triangles, 678 MB GPU, 20 pipelines, 0 late (PERF.md).
+- **The allocation profile was not re-run.** SwiftShader now takes ~3 s per frame, so a valid warm-up isn't feasible on W (PERF.md).
+
+**Screenshots** (`screenshots/phase-01/`, 2560×1440, clay view, machine W): see the table below.
+
+| File | Shot | Mean luma | Clipped |
+|---|---|---|---|
+| `p1-monastery-golden.png` | Monastery ridge at golden hour: long capsule shadow, ring on the horizon | 112.3 | 0% |
+| `p1-meadow-noon.png` | Hub uplands at noon, toward the northern ranges | 127.9 | 0% |
+| `p1-dunes-golden.png` | Dune basin at golden hour: dune shadows across the basin | 84.7 | 0% |
+| `p1-volcano-dusk.png` | Ash plain toward the volcano at dusk (dark: see defects) | 25.4 | 0% |
+| `p1-mire-dawn.png` | Mire lowlands at dawn (dark: see defects) | 25.7 | 0% |
+| `p1-coast-noon.png` | South coast dunes at midday: short noon shadow | 158.7 | 0% |
+| `p1-frost-night.png` | Frost plateau by moonlight | 119.1 | 0% |
+| `p1-vista-continent.png` | Free camera over the continent with the mountain ring | 85.3 | 0% |
+
+Also in the folder: `capture-report.json`, `overlay-open.png`, `overlay-late-pipeline.png`, `overlay-check.json`, `parity-check.json` and `bake-preview.png`. All 8 shots are byte-identical across two fresh loads.
+
+**Unfinished**
+- **The Phase 1 gate run on T (flight benchmark).** Until it runs, the gate is not met.
+- The allocation profile with the Phase 1 frame. It needs either the real GPU or a lighter profiling mode.
+- **Terrain state:**
+  - live diffusion; for now resident pages only decay (Phase 2, with real writers);
+  - persisting evicted pages into save slots (Phase 2);
+  - real writers (Phase 2).
+- **Shadows:** PCF only (PCSS/contact hardening comes in Phase 2 with berms); no per-cascade level culling.
+
+**Known defects (clay view)**
+- Dusk on dark ash (p1-volcano-dusk, luma ~25) and dawn in the mire (p1-mire-dawn, luma ~26) read very dark. Low key light on dark albedo, and there's no sky IBL yet (Phase 2 look-dev).
+- Beyond the bake, the continent's east and north edges fall to the sea as sheer walls (edge falloff); the vista shows them. The ring hides most of this from the ground.
+- The sea is a flat dark clay colour until Phase 12.
+- The debug stamp writer leaves scalloped grooves (overlapping round stamps). Phase 2 replaces it with swept brushes.
+- Carried over from Phase 0: about 1 frame in 570 drops while walking (CPU or compositor side). Re-check it in the flight benchmark.
 
 ### Session 3 — 2026-10-02 — Phase 0 (target change and real-GPU measurement)
 
@@ -196,10 +282,14 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-Start **Phase 1 — World skeleton** (BRIEF §17), carrying over these rules:
-- no doubles as call arguments in hot code (`npm run alloc`);
-- one `writeBuffer` per frame for per-frame uniforms;
-- re-verify `babylonTweaks.js` on Babylon upgrades;
-- re-run `npm run heap -- --settle-frames=20000` after new per-frame systems;
-- run the benchmark on T after each major system and record it in PERF.md (extend `gpuTimer` to one query pair per pass once passes multiply);
-- trace the walk-phase frame drops (open defect) with DevTools once the Phase 1 frame exists.
+1. **Run the Phase 1 gate on T.** On the target, from WSL: `npm run build && npm run preview`. Then, in Windows Chrome (fullscreen, tab focused), open `http://localhost:4173/?bench=flight&res=2560x1440`. The result lands in `perf/runs/`.
+   - **Gate:** no frame above median + 4 ms in the surf or the glide phase.
+   - Record the GPU breakdown (`gpu.frame/main/shadow/compute`) in PERF.md's budget table.
+   - If shadows exceed 2.7 ms, cull clipmap levels per cascade.
+   - If hitches correlate with tile uploads or terrain-state strips, spread the work.
+2. If the gate passes, Phase 1 is closed. Ask the user before starting **Phase 2 — Frost Steppe look-dev (hard gate)**.
+3. Carry these rules forward:
+   - no doubles as call arguments in hot code;
+   - one params write per system per frame;
+   - warm every pipeline during loading;
+   - re-verify `babylonTweaks.js` and the `_startRenderTargetRenderPass` override in `render/shadows.js` on Babylon upgrades.
