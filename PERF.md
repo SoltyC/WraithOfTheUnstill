@@ -107,6 +107,21 @@ Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp que
 - the flight samples GPU time every frame and matches it to each hitch (`gpuPrevMs`, plus the base rate of frames over one refresh);
 - the terrain-state window follows the flight.
 
+### Phase 1 gate flight, run 3 (2026-10-03, `perf/runs/2026-10-02T20-34-52-649Z.json`, GPU timed every frame)
+
+| Phase | Over median + 4 ms | Worst | GPU frame median / p99 / max | GPU of the frame before the hitches (min / median / max) | Hitches with GPU > one refresh | All frames with GPU > one refresh | Scroll before the hitch (vs base rate) |
+|---|---|---|---|---|---|---|---|
+| surf | 145 / 86,383 | 23.4 ms | 4.19 / 5.37 / 7.67 ms | 3.54 / 4.19 / 5.24 ms | **0 / 145** | 11 / 86,382 | 53 % (53 %) |
+| glide | 80 / 43,193 | 29.3 ms | 3.93 / 5.24 / 5.77 ms | 3.54 / 4.00 / 5.18 ms | **0 / 80** | 0 / 43,193 | 92.5 % (91.5 %) |
+
+**Reading:** this refutes the GPU-spike hypothesis.
+- The GPU time before each hitch is an ordinary frame, the same distribution as every other frame.
+- No hitch follows a GPU frame longer than a refresh.
+- Terrain-state scrolling (now exercised) appears before hitches exactly at its base rate.
+- CPU is 0.3 ms median, under 1.2 ms on every hitch frame.
+
+Neither the game's CPU work nor its GPU work explains the missed refreshes. They are presentation stalls outside the frame: compositor, browser GPU process or OS scheduling, about 1 frame in 500–600. The render is locked to 2560×1440 in a 1920×1080 CSS window, so the compositor also scales every frame. **Gate status: NOT MET on the strict rule. The cause is outside the game; see PROGRESS.md for the decision this needs.**
+
 ## Phase 1 measurements (machine W, 2026-10-03)
 
 ### Scene cost (structure, any machine)
