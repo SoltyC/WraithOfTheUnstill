@@ -83,10 +83,9 @@ async function phase(name, seconds, settle, setup) {
   await sleep(seconds * 1000);
   recording = false;
   const wall = (performance.now() - t0) / 1000;
-  const gpuN = Math.min(gpuTimer.count, gpuTimer.ms.length);
   const presented = summarize(rec, recCount);
   return {
-    name, seconds: +wall.toFixed(2), presented, gpuMainPass: summarize(gpuTimer.ms, gpuN), drawCalls: gpuStats.drawCallsLastFrame,
+    name, seconds: +wall.toFixed(2), presented, gpu: gpuTimer.summaries(summarize), drawCalls: gpuStats.drawCallsLastFrame,
     hitches: presented ? hitchTimeline(rec, recCount, presented.medianMs) : [],
     jsHeapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
   };
@@ -189,8 +188,8 @@ async function runFlightBench(game, qs) {
     const r = await fetch('/__wraith/perf', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(result) });
     saved = r.ok ? 'saved to ' + (await r.json()).file : 'server did not save (HTTP ' + r.status + ')';
   } catch (e) { saved = 'could not reach server: ' + e.message; }
-  const row = (p) => `<tr><td>${p.name} ${p.speedMps} m/s</td><td>${p.presented?.fps ?? '–'}</td><td>${p.presented?.low1Fps ?? '–'}</td><td>${p.presented?.medianMs ?? '–'}</td><td>${p.presented?.maxMs ?? '–'}</td><td>${p.presented?.framesOverMedianPlus4 ?? '–'}</td><td>${p.gpuMainPass?.medianMs ?? 'n/a'}</td><td>${p.gpuMainPass?.p99Ms ?? 'n/a'}</td><td>${p.tilesUploaded}</td></tr>`;
-  panel.innerHTML = `<h3>Flight benchmark — ${result.machine.render} — ${result.machine.adapter || ''}</h3><table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>max ms</th><th>&gt; median+4</th><th>GPU median</th><th>GPU p99</th><th>tiles</th></tr></thead><tbody>${phases.map(row).join('')}</tbody></table><p>${saved}. Gate: no frame above median + 4 ms.</p>`;
+  const row = (p) => `<tr><td>${p.name} ${p.speedMps} m/s</td><td>${p.presented?.fps ?? '–'}</td><td>${p.presented?.low1Fps ?? '–'}</td><td>${p.presented?.medianMs ?? '–'}</td><td>${p.presented?.maxMs ?? '–'}</td><td>${p.presented?.framesOverMedianPlus4 ?? '–'}</td><td>${p.gpu?.frame?.medianMs ?? 'n/a'}</td><td>${p.gpu?.frame?.p99Ms ?? 'n/a'}</td><td>${p.gpu?.shadow?.medianMs ?? 'n/a'}</td><td>${p.gpu?.compute?.medianMs ?? 'n/a'}</td><td>${p.tilesUploaded}</td></tr>`;
+  panel.innerHTML = `<h3>Flight benchmark — ${result.machine.render} — ${result.machine.adapter || ''}</h3><table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>max ms</th><th>&gt; median+4</th><th>GPU frame median</th><th>GPU frame p99</th><th>shadows</th><th>compute</th><th>tiles</th></tr></thead><tbody>${phases.map(row).join('')}</tbody></table><p>${saved}. Gate: no frame above median + 4 ms.</p>`;
   return result;
 }
 
@@ -204,11 +203,11 @@ function showPanel(text) {
 
 function renderPanel(r, saved) {
   const row = (p) => {
-    const pr = p.presented, g = p.gpuMainPass;
+    const pr = p.presented, g = p.gpu?.frame;
     return `<tr><td>${p.name}</td><td>${pr ? pr.fps : '–'}</td><td>${pr ? pr.low1Fps : '–'}</td><td>${pr ? pr.medianMs : '–'}</td><td>${pr ? pr.p99Ms : '–'}</td><td>${pr ? pr.hitchesOverMedianPlus4 : '–'}</td><td>${g ? g.medianMs : 'n/a'}</td><td>${g ? g.p99Ms : 'n/a'}</td></tr>`;
   };
   return `<h3>Benchmark — ${r.machine.render} — ${r.machine.adapter || 'adapter n/a'}</h3>
-  <table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>p99 ms</th><th>hitches</th><th>GPU median ms</th><th>GPU p99 ms</th></tr></thead>
+  <table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>p99 ms</th><th>hitches</th><th>GPU frame median ms</th><th>GPU frame p99 ms</th></tr></thead>
   <tbody>${r.phases.map(row).join('')}</tbody></table>
   <p>${saved}. Presented fps is capped by the display refresh rate; GPU ms is the real cost (budget 16.7 ms at 60 fps).</p>`;
 }

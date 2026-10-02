@@ -21,7 +21,9 @@ import { clipmapVertexWGSL, clipmapFragmentWGSL, CLIPMAP_N, CLIPMAP_LEVELS } fro
 import { clipmapHeightsWGSL, clipmapNormalsWGSL, CLIPMAP_V } from '../shaders/clipmapCompute.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
+import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
+import { STATE_SAMPLE_BUFFERS } from '../shaders/terrainState.wgsl.js';
 
 export const CLIPMAP_S0 = 0.0625; // finest spacing (m): BRIEF wants < 10 cm near the player
 const DETAIL_MAX_SPACING = 8;     // levels below this read 2 m tiles (see terrainH)
@@ -90,8 +92,8 @@ export function createClipmap(scene, buffers, atmo) {
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
     uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', ...ENV_UNIFORMS],
-    samplers: ATMO_MATERIAL_TEXTURES,
-    storageBuffers: ['levelData', 'biomeA', 'biomeB', ...ATMO_MATERIAL_BUFFERS],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
+    storageBuffers: ['levelData', 'biomeA', 'biomeB', ...ATMO_MATERIAL_BUFFERS, 'shadowData', ...STATE_SAMPLE_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat);
@@ -109,7 +111,14 @@ export function createClipmap(scene, buffers, atmo) {
   let builtResidency = -1;
 
   return {
-    mesh, material: mat, playerPos, levelData,
+    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers,
+    /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
+    bindState(ts) {
+      mat.setStorageBuffer('stateFine0', ts.fine[0]);
+      mat.setStorageBuffer('stateAtlas0', ts.atlas[0]);
+      mat.setStorageBuffer('statePageTable', ts.pageTable);
+      mat.setStorageBuffer('stateParams', ts.params);
+    },
     /** Fields set by the owner before update() (no double arguments). */
     camX: 0.5, camZ: 0.5, residencyVersion: 0,
     /** Levels recomputed by the last update (dev overlay / profiling). */

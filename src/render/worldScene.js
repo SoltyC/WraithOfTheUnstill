@@ -18,18 +18,19 @@ import { createClipmap } from './clipmap.js';
 import { renderOpaqueUnsorted, fastFrozenIsReady } from './babylonTweaks.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
+import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 
 function register(name, vs, fs) {
   ShaderStore.ShadersStoreWGSL[name + 'VertexShader'] = vs;
   ShaderStore.ShadersStoreWGSL[name + 'FragmentShader'] = fs;
 }
 
-function wgslMaterial(scene, name, attributes, extraUniforms, atmo) {
+export function wgslMaterial(scene, name, attributes, extraUniforms, atmo, receivesShadows = false) {
   const mat = new ShaderMaterial(name, scene, { vertex: name, fragment: name }, {
     attributes,
     uniforms: ['world', 'viewProjection', ...ENV_UNIFORMS, ...extraUniforms],
-    samplers: ATMO_MATERIAL_TEXTURES,
-    storageBuffers: ATMO_MATERIAL_BUFFERS,
+    samplers: receivesShadows ? [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES] : ATMO_MATERIAL_TEXTURES,
+    storageBuffers: receivesShadows ? [...ATMO_MATERIAL_BUFFERS, 'shadowData'] : ATMO_MATERIAL_BUFFERS,
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat);
@@ -61,7 +62,7 @@ export function createWorldScene(scene, worldBuffers, atmo) {
   const capsuleHalfHeight = 0.9;
   const capsule = CreateCapsule('player', { height: capsuleHalfHeight * 2, radius: 0.32, tessellation: 48, subdivisions: 8, capSubdivisions: 12 }, scene);
   const bodyParams = new Vector4(capsuleHalfHeight, 1, 0, 0);
-  const capsuleMat = wgslMaterial(scene, 'capsule', ['position', 'normal'], ['bodyParams'], atmo);
+  const capsuleMat = wgslMaterial(scene, 'capsule', ['position', 'normal'], ['bodyParams'], atmo, true);
   capsuleMat.setVector4('bodyParams', bodyParams);
   capsule.material = capsuleMat;
 

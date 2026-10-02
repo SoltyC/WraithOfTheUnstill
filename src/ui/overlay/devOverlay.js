@@ -77,6 +77,7 @@ export class DevOverlay {
     this._stat(grid, 'gpu', 'GPU MB');
     this._stat(grid, 'heap', 'heap MB');
     this._stat(grid, 'stream', 'stream q');
+    this._stat(grid, 'pages', 'state pages');
     this._stat(grid, 'pipes', 'pipelines');
     this._stat(grid, 'res', 'res');
     this.adapter = el('div', { class: 'note' }, '');
@@ -185,6 +186,8 @@ export class DevOverlay {
     const mem = performance.memory;
     v.heap.textContent = mem ? (mem.usedJSHeapSize * MB).toFixed(1) + '/' + (mem.jsHeapSizeLimit * MB).toFixed(0) : 'n/a';
     v.stream.textContent = String(g.streaming.queueDepth);
+    // Terrain-state coarse pages: resident on the GPU / serialised on the worker.
+    v.pages.textContent = g.terrainState ? g.terrainState.stats.resident + ' / ' + g.terrainState.stats.stored : '–';
     v.pipes.textContent = String(gpuStats.pipelinesTotal);
     v.res.textContent = g.engine.getRenderWidth() + '×' + g.engine.getRenderHeight();
     this.adapter.textContent = gpuStats.adapterInfo;

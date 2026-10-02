@@ -13,6 +13,8 @@
 
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
+import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { STATE_SAMPLE_WGSL } from './terrainState.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
 export const CLIPMAP_N = 256;     // quads per level side
@@ -262,6 +264,8 @@ varying vBiomeA: vec4f;
 varying vBiomeB: vec2f;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
+${SHADOW_RECEIVE_WGSL}
+${STATE_SAMPLE_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -284,6 +288,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let sea = smoothstep(0.5, -1.5, wp.y);
   albedo = mix(albedo, vec3f(0.035, 0.065, 0.085), sea);
   N = normalize(mix(N, vec3f(0.0, 1.0, 0.0), sea));
+  // Terrain state, Phase 1 debug read: marks darken, rims lighten (Phase 2 displaces and shades).
+  let st = stateHeights(wp.x, wp.z);
+  albedo = albedo * (1.0 - clamp(st.x * 5.0, 0.0, 0.6)) + vec3f(clamp(st.y * 2.0, 0.0, 0.2));
 
   let L = uniforms.keyDir;
   let wrap = 0.25;
@@ -297,7 +304,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let sky = mix(skySide, skyUp, clamp(N.y, 0.0, 1.0));
   let bounce = (key * max(L.y, 0.0) * (0.12 / PI) + skyUp * 0.25) * mix(0.0, 1.0, clamp(-N.y * 0.5 + 0.5, 0.0, 1.0));
   // Lambert: albedo/π · E · cosθ for the key; sky terms are already radiance (E/π).
-  var col = albedo * (key * diff * cs * (1.0 / PI) + (sky + bounce) * mix(1.0, cs, 0.5));
+  let vis = shadowVisibility(wp, normalize(fragmentInputs.vNormal), camPos, fragmentInputs.position.xy);
+  var col = albedo * (key * diff * cs * vis * (1.0 / PI) + (sky + bounce) * mix(1.0, cs, 0.5));
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());

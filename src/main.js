@@ -82,7 +82,7 @@ async function boot() {
   scene.autoClearDepthAndStencil = true;
   const camera = new TargetCamera('camera', new Vector3(0, 10, -10), scene);
   camera.minZ = 0.1;
-  camera.maxZ = 30000;
+  camera.maxZ = 40000; // the mountain ring reaches 28 km from the centre
 
   const [{ createWorldScene }, { WorldStreamer }, { PatchGround }, worldPois, env, ctl, armMod, playerMod, loopMod, inputMod, paramsMod, systemsMod, spots, overlayMod, streamingMod] = await Promise.all([
     import('./render/worldScene.js'),
@@ -108,9 +108,20 @@ async function boot() {
   const ground = new PatchGround();
   const streamer = new WorldStreamer(engine, ground);
   await streamer.init(import.meta.env.BASE_URL + 'world/');
+  const ringMod = await import('./render/mountainRing.js');
+  const ringData = ringMod.requestRing(streamer.manifest.seed); // builds on its own worker meanwhile
   const { createAtmosphere } = await import('./render/atmosphere.js');
   const atmosphere = createAtmosphere(scene, camera);
   const content = createWorldScene(scene, streamer.buffers, atmosphere);
+  const [{ createShadows }, { bindShadows }] = await Promise.all([import('./render/shadows.js'), import('./render/shadowBindings.js')]);
+  const shadows = createShadows(scene, camera, { clipmap: content.clipmap, capsule: content.capsule });
+  bindShadows(content.clipmap.material, shadows);
+  bindShadows(content.capsuleMat, shadows);
+  const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
+  // Terrain state (BRIEF §4.3): fine window + coarse pages; the clipmap reads it.
+  const { createTerrainState } = await import('./terrain/state/terrainState.js');
+  const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
+  content.clipmap.bindState(terrainState);
   progress(0.4);
 
   const controller = new ctl.CapsuleController(ground);
@@ -167,6 +178,21 @@ async function boot() {
     content.clipmap.residencyVersion = streamer.residencyVersion;
     content.clipmap.update();
   } });
+  loop.add({ name: 'shadows', update: () => shadows.update() });
+  // Debug writer (Phase 1 only): stamps a trail behind the player while the toggle is on.
+  let lastStampX = 1e9, lastStampZ = 1e9;
+  loop.add({ name: 'terrainState', update: () => {
+    terrainState.px = controller.pos.x; terrainState.pz = controller.pos.z; terrainState.time = clock.simTime;
+    if (systemsMod.toggles.on.stampTrail) {
+      const dx = controller.pos.x - lastStampX, dz = controller.pos.z - lastStampZ;
+      if (dx * dx + dz * dz > 0.09) {
+        terrainState.bx = controller.pos.x; terrainState.bz = controller.pos.z; terrainState.br = 0.45; terrainState.bd = 0.12;
+        terrainState.stamp();
+        lastStampX = controller.pos.x; lastStampZ = controller.pos.z;
+      }
+    }
+    terrainState.update();
+  } });
 
   // Render scale follows the Quality slider (checked via the integer params version).
   let lastParamsVersion = -1;
@@ -183,15 +209,18 @@ async function boot() {
   const meshToggle = (mesh) => (on) => { mesh.setEnabled(on); engine.snapshotRenderingReset(); };
   reg({ key: 'sky', label: 'sky', group: 'System', on: true, onChange: meshToggle(content.sky) });
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
+  reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'player', label: 'player', group: 'System', on: true, onChange: meshToggle(content.capsule) });
+  reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadows.strength = on ? 1 : 0; } });
   reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });
+  reg({ key: 'stampTrail', label: 'stamp trail (debug writer)', group: 'Terrain', on: false });
 
   // Saves (lazy: the worker and IndexedDB open only when first used, so idle frames stay clean).
   const saves = await createSaves({ controller, arm, paramsMod, clock });
 
   const game = {
     engine, scene, camera, loop, controller, arm, saves, streaming: streamingMod.streaming,
-    streamer, ground, pois: worldPois.default.pois,
+    streamer, ground, terrainState, pois: worldPois.default.pois,
     teleport(x, z) { requestTeleport(x, z); },
     /** True once the player stands on streamed ground with every nearby tile resident. */
     worldSettled() {
@@ -249,7 +278,7 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, env: env.env, gpuStats, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
+    ready: true, game, shadows, terrainState, env: env.env, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */
     async prepareSpot(id, frames = 6) {
       game.applySpot(spots.findSpot(id));

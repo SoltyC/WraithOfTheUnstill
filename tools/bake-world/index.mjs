@@ -16,7 +16,7 @@ import { macroHeight, coastDistance, regions, HALF, WORLD_SIZE } from './geograp
 import { hydrology } from './hydrology.mjs';
 import { biomeWeights, material, wind, BIOMES, MATERIALS } from './climate.mjs';
 import { placePOIs } from './placement.mjs';
-import { gfbm } from './gnoise.mjs';
+import { gfbm } from '../../src/terrain/gnoise.js';
 import { encodePng } from './png.mjs';
 
 export const BAKE_VERSION = 1;

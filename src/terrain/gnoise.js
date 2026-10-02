@@ -1,9 +1,9 @@
-// Deterministic 2D gradient noise for the bake (not the runtime meso layers, which use
-// src/terrain/noise.js so JS and WGSL can share them). Gradient noise avoids the blocky lattice
+// Deterministic 2D gradient noise for the bake and the distant mountain ring (not the runtime
+// meso layers, which use src/terrain/noise.js so JS and WGSL can share them). Gradient noise avoids the blocky lattice
 // look value noise shows at macro scales. Only exact IEEE ops: the 16 unit gradients are built
 // from sqrt, never sin/cos.
 
-import { hashU32 } from '../../src/terrain/noise.js';
+import { hashU32 } from './noise.js';
 
 const GX = new Float64Array(16), GZ = new Float64Array(16);
 {

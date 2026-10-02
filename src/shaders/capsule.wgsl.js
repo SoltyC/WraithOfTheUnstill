@@ -3,6 +3,7 @@
 
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
+import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
 export const capsuleVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
@@ -31,6 +32,7 @@ varying vNormal: vec3f;
 varying vLocalY: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
+${SHADOW_RECEIVE_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -49,7 +51,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let diff = clamp((dot(N, L) + wrap) / (1.0 + wrap), 0.0, 1.0);
   let key = atmoKeyColor();
   let hemi = mix(atmoSkySide() * 0.6, atmoSkyUp(), N.y * 0.5 + 0.5) * uniforms.envMisc.w;
-  var col = albedo * (key * diff * (1.0 / PI) + hemi);
+  let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
+  var col = albedo * (key * diff * vis * (1.0 / PI) + hemi);
   // Cloth sheen: rim of light at grazing view angles, tinted by the key.
   let sheen = pow(1.0 - NdotV, 4.0) * (0.35 + 0.65 * diff);
   col += (key * (0.06 / PI) + atmoLight[3].xyz * 0.05) * sheen;

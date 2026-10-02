@@ -1,5 +1,5 @@
 // Photo-spot capture (BRIEF §12.1, §17 gates).
-//   node tools/capture/capture.mjs [--spots=a,b] [--out=screenshots/phase-00] [--repeat=2]
+//   node tools/capture/capture.mjs [--spots=a,b] [--out=screenshots/phase-01] [--repeat=2]
 //                                  [--width=2560 --height=1440] [--channel=chrome] [--headed] [--skip-build]
 // Each spot loads in a fresh context with ?spot=<id>&capture=1 (frozen clock, no overlay).
 // With --repeat=2 (default) every spot is captured twice and compared; the run fails if any
@@ -12,7 +12,7 @@ import { ROOT, parseArgs, startServer, launchBrowser, openGame, machineInfo } fr
 const args = parseArgs();
 const spotsFile = JSON.parse(await fs.readFile(path.join(ROOT, 'data/photo-spots.json'), 'utf8'));
 const ids = args.spots ? String(args.spots).split(',') : spotsFile.spots.map((s) => s.id);
-const out = path.resolve(ROOT, args.out || 'screenshots/phase-00');
+const out = path.resolve(ROOT, args.out || 'screenshots/phase-01');
 const repeat = Number(args.repeat ?? 2);
 const width = Number(args.width ?? 2560), height = Number(args.height ?? 1440);
 await fs.mkdir(out, { recursive: true });
@@ -68,7 +68,7 @@ try {
       const { page, context, logs } = await openGame(browser, server.url, 'spot=' + encodeURIComponent(id) + '&capture=1', { width, height });
       if (!report.machine) report.machine = await machineInfo(page);
       const late = await page.evaluate(() => window.__wraith.gpuStats.late.length);
-      const buf = await page.screenshot({ type: 'png' });
+      const buf = await page.screenshot({ type: 'png', timeout: 0 }); // software GPU frames can take > 30 s at 1440p
       shots.push(buf);
       timing = Date.now() - t0;
       const errors = logs.filter((l) => l.startsWith('error') || l.startsWith('pageerror'));

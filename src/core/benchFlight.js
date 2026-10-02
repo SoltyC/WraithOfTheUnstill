@@ -86,10 +86,9 @@ export async function runFlight(game, scale = 1) {
     flight.active = true;
     const t0 = performance.now();
     await new Promise((r) => { const iv = setInterval(() => { if (!flight.active) { clearInterval(iv); r(); } }, 100); });
-    const gpuN = Math.min(gpuTimer.count, gpuTimer.ms.length);
     results.push({
       name: ph.name, speedMps: ph.speed, heightM: ph.height, distanceM: Math.round(total * scale), seconds: +((performance.now() - t0) / 1000).toFixed(1),
-      presented: summarize(rec, flight.count), gpuMainPass: summarize(gpuTimer.ms, gpuN),
+      presented: summarize(rec, flight.count), gpu: gpuTimer.summaries(summarize),
       maxStreamQueue: flight.maxQueue, tilesUploaded: game.streamer.residentCount - flight.startResident,
       latePipelines: gpuStats.late.length - lateBefore,
     });

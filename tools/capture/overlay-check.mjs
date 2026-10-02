@@ -10,7 +10,7 @@ import path from 'node:path';
 import { ROOT, parseArgs, startServer, launchBrowser, openGame } from './harness.mjs';
 
 const args = parseArgs();
-const out = path.join(ROOT, 'screenshots/phase-00');
+const out = path.join(ROOT, 'screenshots/phase-01');
 await fs.mkdir(out, { recursive: true });
 const server = await startServer({ skipBuild: !!args['skip-build'] });
 const browser = await launchBrowser(args);

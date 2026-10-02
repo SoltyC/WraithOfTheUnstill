@@ -2,7 +2,7 @@
 // Deterministic (no transcendental functions).
 
 import { regions, coastDistance, smooth, VOLCANO_X, VOLCANO_Z } from './geography.mjs';
-import { gfbm } from './gnoise.mjs';
+import { gfbm } from '../../src/terrain/gnoise.js';
 
 /** Biome channel order used everywhere (bake, runtime, shaders). */
 export const BIOMES = ['frost', 'meadow', 'mire', 'dunes', 'ember', 'coast'];

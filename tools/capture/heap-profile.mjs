@@ -41,7 +41,7 @@ try {
   // not wall time, so slow software-GPU runs warm up as much as fast ones.
   const settleFrames = Number(args['settle-frames'] ?? 3000);
   await page.waitForTimeout(2000);
-  await page.waitForFunction((n) => window.__wraith.clock.frame >= n, settleFrames, { timeout: 900000, polling: 500 });
+  await page.waitForFunction((n) => window.__wraith.clock.frame >= n, settleFrames, { timeout: 0, polling: 500 });
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('HeapProfiler.enable');
   await cdp.send('HeapProfiler.collectGarbage');
@@ -109,7 +109,7 @@ try {
   await browser.close();
   await server.close();
 }
-const outFile = path.join(ROOT, 'screenshots/phase-00', args.out || (args.overlay ? 'heap-profile-overlay.json' : 'heap-profile.json'));
+const outFile = path.resolve(ROOT, 'screenshots/phase-01', args.out || (args.overlay ? 'heap-profile-overlay.json' : 'heap-profile.json'));
 await fs.mkdir(path.dirname(outFile), { recursive: true });
 await fs.writeFile(outFile, JSON.stringify(result, null, 2));
 console.log(`frames ${result.frames}  total ${result.bytesPerFrame} B/frame  frame-loop ${result.frameLoopBytesPerFrame} B/frame  (game src/: ${result.gameBytesPerFrame}, engine: ${result.engineBytesPerFrame})`);

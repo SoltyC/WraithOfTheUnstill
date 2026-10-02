@@ -14,7 +14,7 @@
 //   Ring           — ranges along the north and east edges so land horizons never read flat
 
 import { hash2 } from '../../src/terrain/noise.js';
-import { gfbm, gridged, geroded } from './gnoise.mjs';
+import { gfbm, gridged, geroded } from '../../src/terrain/gnoise.js';
 
 export const WORLD_SIZE = 8192;
 export const HALF = WORLD_SIZE / 2;
