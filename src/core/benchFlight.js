@@ -18,19 +18,38 @@ export const FLIGHT_PHASES = [
 ];
 
 const MAX = 1 << 17;
-const rec = new Float32Array(MAX);
+const rec = new Float32Array(MAX);       // presented interval ending at this frame (ms)
+const cpuSys = new Float32Array(MAX);    // this frame's systems CPU ms
+const cpuRender = new Float32Array(MAX); // this frame's scene.render CPU ms
+const flags = new Uint8Array(MAX);       // this frame's work: 1 tile upload, 2 state scroll, 4 clipmap rebuild, 8 patch
+const dirty = new Uint8Array(MAX);       // clipmap levels rebuilt this frame
+const F_TILE = 1, F_SCROLL = 2, F_CLIP = 4, F_PATCH = 8;
 
 export const flight = {
   name: 'benchFlight',
   enabled: false,
-  arm: null, ground: null,
+  arm: null, ground: null, loop: null, streamer: null, clipmap: null, terrainState: null,
+  lastRes: 0, lastScroll: 0, lastPatch: 0,
   // Current phase state (fields: no allocation on the frame path).
   active: false, speed: 20, height: 12, s: 0, total: 0, alt: 0, scale: 1,
   count: 0, maxQueue: 0, startResident: 0,
   segLen: new Float64Array(PATH.length),
   update() {
     if (!this.active) return;
-    if (this.count < MAX) rec[this.count++] = frameStats.ago(0);
+    if (this.count < MAX) {
+      const i = this.count++;
+      rec[i] = frameStats.ago(0);
+      cpuSys[i] = this.loop.sysMs; cpuRender[i] = this.loop.renderMs;
+      let f = 0;
+      const rv = this.streamer.residencyVersion, sc = this.terrainState.stats.scrolled, pv = this.ground.installs;
+      if (rv !== this.lastRes) f |= F_TILE;
+      if (sc !== this.lastScroll) f |= F_SCROLL;
+      if (pv !== this.lastPatch) f |= F_PATCH;
+      const dl = this.clipmap.dirtyLevels;
+      if (dl > 0) f |= F_CLIP;
+      flags[i] = f; dirty[i] = dl;
+      this.lastRes = rv; this.lastScroll = sc; this.lastPatch = pv;
+    }
     if (streaming.queueDepth > this.maxQueue) this.maxQueue = streaming.queueDepth;
     this.s += this.speed * clock.realDt;
     if (this.s >= this.total) { this.active = false; return; }
@@ -63,9 +82,47 @@ function summarize(values, n) {
     fps: +(1000 / (sum / n)).toFixed(1), low1Fps: +(1000 / pick(0.99)).toFixed(1), framesOverMedianPlus4: a.filter((v) => v > median + 4).length };
 }
 
+/**
+ * Each presented interval above median + 4 ms, with the work of the frame before it (the frame
+ * whose CPU work or submission the interval waited on) and whether the next interval was short
+ * (a late callback the next frame absorbed) or normal (a real dropped refresh).
+ */
+function analyseHitches(n) {
+  if (n < 3) return null;
+  const sorted = Array.from(rec.subarray(0, n)).sort((a, b) => a - b);
+  const median = sorted[n >> 1], limit = median + 4;
+  const list = [];
+  const by = { count: 0, absorbed: 0, cpuOver8: 0, tile: 0, scroll: 0, clip: 0, patch: 0, none: 0 };
+  // Base rate of each flag over all frames, to tell correlation from coincidence.
+  const base = { tile: 0, scroll: 0, clip: 0, patch: 0 };
+  for (let i = 0; i < n; i++) {
+    const f = flags[i];
+    if (f & F_TILE) base.tile++; if (f & F_SCROLL) base.scroll++; if (f & F_CLIP) base.clip++; if (f & F_PATCH) base.patch++;
+  }
+  for (const k in base) base[k] = +(base[k] / n).toFixed(4);
+  for (let i = 1; i < n - 1; i++) {
+    if (rec[i] <= limit) continue;
+    const p = i - 1, f = flags[p];
+    const absorbed = rec[i] + rec[i + 1] < 2 * median + 2;
+    const cpu = cpuSys[p] + cpuRender[p];
+    by.count++;
+    if (absorbed) by.absorbed++;
+    if (cpu > 8) by.cpuOver8++;
+    if (f & F_TILE) by.tile++; if (f & F_SCROLL) by.scroll++; if (f & F_CLIP) by.clip++; if (f & F_PATCH) by.patch++;
+    if (f === 0) by.none++;
+    if (list.length < 400) list.push({
+      frame: i, ms: +rec[i].toFixed(2), prevMs: +rec[i - 1].toFixed(2), nextMs: +rec[i + 1].toFixed(2), absorbed,
+      cpuSysMs: +cpuSys[p].toFixed(2), cpuRenderMs: +cpuRender[p].toFixed(2), cpuSysSelfMs: +cpuSys[i].toFixed(2),
+      tile: !!(f & F_TILE), scroll: !!(f & F_SCROLL), clipLevels: dirty[p], patch: !!(f & F_PATCH),
+    });
+  }
+  return { limitMs: +limit.toFixed(2), summary: by, baseRate: base, list };
+}
+
 /** Run both phases; resolves with per-phase results. */
 export async function runFlight(game, scale = 1) {
   flight.arm = game.arm; flight.ground = game.ground; flight.scale = scale; flight.enabled = true;
+  flight.loop = game.loop; flight.streamer = game.streamer; flight.clipmap = game.clipmap; flight.terrainState = game.terrainState;
   let total = 0;
   flight.segLen[0] = 0;
   for (let k = 1; k < PATH.length; k++) {
@@ -91,6 +148,8 @@ export async function runFlight(game, scale = 1) {
       presented: summarize(rec, flight.count), gpu: gpuTimer.summaries(summarize),
       maxStreamQueue: flight.maxQueue, tilesUploaded: game.streamer.residentCount - flight.startResident,
       latePipelines: gpuStats.late.length - lateBefore,
+      cpu: { systems: summarize(cpuSys, flight.count), render: summarize(cpuRender, flight.count) },
+      hitches: analyseHitches(flight.count),
     });
   }
   flight.enabled = false;

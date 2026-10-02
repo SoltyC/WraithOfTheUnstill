@@ -27,6 +27,9 @@ export class Loop {
     this.late = [];
     this.last = 0;
     this.scratchLeaks = 0;
+    /** CPU ms of this frame's systems and of scene.render + GPU bookkeeping (set before late systems). */
+    this.sysMs = 0.5;
+    this.renderMs = 0.5;
     this._frame = this._frame.bind(this);
   }
 
@@ -52,8 +55,12 @@ export class Loop {
     advanceClock();
     const sys = this.systems;
     for (let i = 0; i < sys.length; i++) if (sys[i].enabled !== false) sys[i].update();
+    const tSys = performance.now();
     this.scene.render();
     endGpuFrame();
+    const tRender = performance.now();
+    this.sysMs = tSys - now;
+    this.renderMs = tRender - tSys;
     const late = this.late;
     for (let i = 0; i < late.length; i++) if (late[i].enabled !== false) late[i].update();
     this.scratchLeaks += scratchFrameReset();

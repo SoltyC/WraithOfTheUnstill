@@ -189,8 +189,18 @@ async function runFlightBench(game, qs) {
     saved = r.ok ? 'saved to ' + (await r.json()).file : 'server did not save (HTTP ' + r.status + ')';
   } catch (e) { saved = 'could not reach server: ' + e.message; }
   const row = (p) => `<tr><td>${p.name} ${p.speedMps} m/s</td><td>${p.presented?.fps ?? '–'}</td><td>${p.presented?.low1Fps ?? '–'}</td><td>${p.presented?.medianMs ?? '–'}</td><td>${p.presented?.maxMs ?? '–'}</td><td>${p.presented?.framesOverMedianPlus4 ?? '–'}</td><td>${p.gpu?.frame?.medianMs ?? 'n/a'}</td><td>${p.gpu?.frame?.p99Ms ?? 'n/a'}</td><td>${p.gpu?.shadow?.medianMs ?? 'n/a'}</td><td>${p.gpu?.compute?.medianMs ?? 'n/a'}</td><td>${p.tilesUploaded}</td></tr>`;
-  panel.innerHTML = `<h3>Flight benchmark — ${result.machine.render} — ${result.machine.adapter || ''}</h3><table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>max ms</th><th>&gt; median+4</th><th>GPU frame median</th><th>GPU frame p99</th><th>shadows</th><th>compute</th><th>tiles</th></tr></thead><tbody>${phases.map(row).join('')}</tbody></table><p>${saved}. Gate: no frame above median + 4 ms.</p>`;
+  panel.innerHTML = `<h3>Flight benchmark — ${result.machine.render} — ${result.machine.adapter || ''}</h3><table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>max ms</th><th>&gt; median+4</th><th>GPU frame median</th><th>GPU frame p99</th><th>shadows</th><th>compute</th><th>tiles</th></tr></thead><tbody>${phases.map(row).join('')}</tbody></table><p>${saved}. Gate: no frame above median + 4 ms.</p>${phases.map(hitchLine).join('')}`;
   return result;
+}
+
+/** One line per phase: what the frames before each hitch were doing, vs the base rate. */
+function hitchLine(p) {
+  const h = p.hitches;
+  if (!h) return '';
+  const s = h.summary, b = h.baseRate, pct = (v) => (100 * v).toFixed(1) + '%';
+  const share = (k) => (s.count ? pct(s[k] / s.count) : '–') + ' (base ' + pct(b[k]) + ')';
+  return `<p>${p.name}: ${s.count} hitches &gt; ${h.limitMs} ms — ${s.absorbed} absorbed by the next frame, ${s.cpuOver8} with CPU &gt; 8 ms;
+    tile upload ${share('tile')}, state scroll ${share('scroll')}, clipmap rebuild ${share('clip')}, patch ${share('patch')}, none ${s.none}.</p>`;
 }
 
 function showPanel(text) {

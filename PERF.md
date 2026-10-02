@@ -18,10 +18,10 @@ BRIEF §14's allocation scaled ×1.5. Refine per biome as systems land.
 
 | System | Budget | Phase 0 measured (T) | Phase 1 measured (T) |
 |---|---|---|---|
-| Terrain (clipmap, state passes) | 2.25 ms | see "Target runs" | **pending** the flight bench (`gpu.compute` + share of `gpu.main`) |
+| Terrain (clipmap, state passes) | 2.25 ms | see "Target runs" | compute 0.26 ms (incl. atmosphere) + share of main 1.8–2.0 ms (flight run 1) |
 | Vegetation | 2.25 ms | — | — |
-| Sky, atmosphere, clouds | 1.5 ms | (in main pass) | **pending** (atmosphere LUTs are in `gpu.compute`) |
-| Shadows | 2.7 ms | — (none yet) | **pending** (`gpu.shadow`: 4 cascade passes) |
+| Sky, atmosphere, clouds | 1.5 ms | (in main pass) | in compute 0.26 ms + main pass |
+| Shadows | 2.7 ms | — (none yet) | **1.44–1.64 ms** median (4 cascades) |
 | Water and spell VFX | 2.25 ms | — | — |
 | Characters, Shaped, cloth | 1.5 ms | (in main pass) | — |
 | Post-processing | 3.0 ms | — (none yet) | — |
@@ -76,9 +76,20 @@ Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp que
   - Fly: clean. The GPU stayed ≤ 2.3 ms throughout.
   - Verdict: real CPU/compositor-side drops while walking, about 1 frame in 570, worst 17.2 ms. **Carried into Phase 1 as an open defect.** Take a DevTools Performance trace of the walk phase once Phase 1's per-frame systems exist.
 
-### Phase 1 gate flight: **not yet run** (user remote, 2026-10-02/03)
+### Phase 1 gate flight, run 1 (2026-10-03, `perf/runs/2026-10-02T19-57-36-036Z.json`)
 
-`http://localhost:4173/?bench=flight&res=2560x1440` in Windows Chrome (fullscreen). It flies the continent at surf speed (20 m/s, 12 m up) and at glide speed (40 m/s, 45 m up) and records presented frames, the GPU breakdown, stream-queue depth, tile uploads and late pipelines. **Gate: no frame above median + 4 ms in either phase.**
+`http://localhost:4173/?bench=flight&res=2560x1440` in Windows Chrome: window 1920×1080, render locked to 2560×1440, ~170 Hz display, adapter "nvidia / ampere". The flight crosses the continent (10.2 km) at surf speed (20 m/s, 12 m up), then at glide speed (40 m/s, 45 m up).
+
+| Phase | Frames | Presented median / p99 / max | Over median + 4 ms | GPU frame median / p99 / max | main / shadow / compute (median) | Tiles | Late pipelines |
+|---|---|---|---|---|---|---|---|
+| surf | 86,337 | 5.9 / 6.7 / **29.1 ms** | **198** (0.23 %) | 4.13 / 4.72 / 5.77 ms | 1.97 / 1.64 / 0.26 ms | 99 | 0 |
+| glide | 43,223 | 5.9 / 6.8 / **17.7 ms** | **55** (0.13 %) | 3.87 / 4.33 / 4.65 ms | 1.84 / 1.44 / 0.26 ms | 0 (already resident) | 0 |
+
+**Gate: NOT MET.** The rule is no frame above median + 4 ms (9.9 ms at 170 Hz), and 253 frames exceed it.
+- **GPU:** never above 5.8 ms, a quarter of the 16.7 ms budget. Shadows cost 1.4–1.6 ms against their 2.7 ms budget; compute (atmosphere, clipmap, terrain state) costs 0.26 ms. None of this is the cause.
+- **Hitches:** on the CPU, compositor or presentation side. This is the Phase 0 walk defect (about 0.07 % of frames) at roughly 3× the rate in surf, which streams 99 tiles and patches; glide sees fewer.
+- **Run 1 couldn't attribute them:** the flight bench recorded only presented intervals.
+- **Instrumented since:** each frame now records systems and `scene.render` CPU time plus tile-upload, state-scroll, clipmap-rebuild and patch flags. Each hitch is classified as absorbed (a late callback) or a real drop, against the base rate of each flag. Run 2 attributes them.
 
 ## Phase 1 measurements (machine W, 2026-10-03)
 

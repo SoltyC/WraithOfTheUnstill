@@ -15,12 +15,15 @@ export class PatchGround {
     this.c = { x0: 0.5, z0: 0.5, step: 2.5, n: 0, data: null, version: -1 };
     /** True once at least the coarse patch exists. */
     this.ready = false;
+    /** Patches installed so far (diagnostics). */
+    this.installs = 0;
   }
 
   /** Install a patch from the worker. */
   install(p, fine) {
     const t = fine ? this.f : this.c;
     t.x0 = p.x0; t.z0 = p.z0; t.step = p.step; t.n = p.n; t.data = p.heights; t.version = p.version;
+    this.installs++;
     if (!fine) this.ready = true;
   }
 

@@ -220,7 +220,7 @@ async function boot() {
 
   const game = {
     engine, scene, camera, loop, controller, arm, saves, streaming: streamingMod.streaming,
-    streamer, ground, terrainState, pois: worldPois.default.pois,
+    streamer, ground, terrainState, clipmap: content.clipmap, pois: worldPois.default.pois,
     teleport(x, z) { requestTeleport(x, z); },
     /** True once the player stands on streamed ground with every nearby tile resident. */
     worldSettled() {

@@ -5,9 +5,10 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 ## Current state
 
 - **Phase:** 1 (World skeleton). **All Phase 1 systems are built.** Phase 0 is closed (gate met, 2026-10-02).
-- **Gate status (Phase 1): NOT YET MET. The flight benchmark hasn't been run on the target.** The gate is a scripted flight across the whole continent, at surf speed and again at glide speed, with no frame above median + 4 ms. It must run in Windows Chrome on T, and the user was remote and couldn't run it this session. Everything else for the gate is in place:
-  - the benchmark (`?bench=flight`) flies the continent at 20 m/s (surf, 12 m up) and 40 m/s (glide, 45 m up);
-  - it records presented frames, GPU frame time per pass category, stream queue depth, tile uploads and late pipelines.
+- **Gate status (Phase 1): NOT MET (flight run 1, 2026-10-03).** Surf had 198 of 86k frames above median + 4 ms (worst 29.1 ms) and glide had 55 of 43k (worst 17.7 ms).
+  - The GPU frame stays at 3.9–4.1 ms median and ≤ 5.8 ms max, so the hitches are on the CPU or presentation side.
+  - The flight bench now attributes each hitch: CPU time per frame, plus tile, scroll, clipmap and patch flags (PERF.md).
+- **Phase 1 gate work in place:** the benchmark (`?bench=flight`) flies the continent at 20 m/s (surf, 12 m up) and 40 m/s (glide, 45 m up), recording presented frames, GPU time per pass category, stream queue depth, tile uploads, late pipelines and the hitch attribution.
 - **Built in Phase 1** (BRIEF §17), with details in the session log and DECISIONS.md:
   - **world:** deterministic bake; worker streaming; 12-level clipmap with geomorphing; CPU/GPU height parity (max 0.58 mm);
   - **lighting:** Hillaire atmosphere with day/night, aerial perspective and GPU eye adaptation; 4-cascade CSM;
@@ -17,7 +18,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** run the flight benchmark on T (see "Next step").
+- **Exact next step:** run the instrumented flight benchmark again on T, then fix whatever the hitch attribution points at (see "Next step").
 
 ## How to run
 
@@ -282,13 +283,13 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-1. **Run the Phase 1 gate on T.** On the target, from WSL: `npm run build && npm run preview`. Then, in Windows Chrome (fullscreen, tab focused), open `http://localhost:4173/?bench=flight&res=2560x1440`. The result lands in `perf/runs/`.
-   - **Gate:** no frame above median + 4 ms in the surf or the glide phase.
-   - Record the GPU breakdown (`gpu.frame/main/shadow/compute`) in PERF.md's budget table.
-   - If shadows exceed 2.7 ms, cull clipmap levels per cascade.
-   - If hitches correlate with tile uploads or terrain-state strips, spread the work.
-2. If the gate passes, Phase 1 is closed. Ask the user before starting **Phase 2 — Frost Steppe look-dev (hard gate)**.
-3. Carry these rules forward:
+1. **Re-run the instrumented flight on T:** `npm run build && npm run preview`, then `http://localhost:4173/?bench=flight&res=2560x1440` in Windows Chrome, fullscreen with the tab focused. The panel prints one hitch line per phase; the JSON in `perf/runs/` lists each hitch.
+2. **Fix by attribution:**
+   - **CPU > 8 ms before a hitch with a tile or patch flag:** move the work off the main thread or slice it (tile upload size per frame, patch install, clipmap level rebuilds per frame).
+   - **Scroll flag:** split terrain-state strips across frames.
+   - **Low CPU, no flags, and the next frame normal:** a compositor or presentation drop. Take a DevTools Performance trace of the surf phase (`&flightScale=0.3` for a shorter run).
+3. Once the gate passes, record it in PERF.md and PROGRESS.md, then ask the user before starting **Phase 2 — Frost Steppe look-dev**.
+4. Carry these rules forward:
    - no doubles as call arguments in hot code;
    - one params write per system per frame;
    - warm every pipeline during loading;
