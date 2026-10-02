@@ -91,6 +91,22 @@ Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp que
 - **Run 1 couldn't attribute them:** the flight bench recorded only presented intervals.
 - **Instrumented since:** each frame now records systems and `scene.render` CPU time plus tile-upload, state-scroll, clipmap-rebuild and patch flags. Each hitch is classified as absorbed (a late callback) or a real drop, against the base rate of each flag. Run 2 attributes them.
 
+### Phase 1 gate flight, run 2 (2026-10-03, `perf/runs/2026-10-02T20-16-42-646Z.json`, instrumented)
+
+| Phase | Over median + 4 ms | Worst | Typical hitch | CPU of the frame before (systems + render) | Tile / patch / scroll before | Absorbed by next frame |
+|---|---|---|---|---|---|---|
+| surf | 118 / 86,416 | 29.4 ms | 11.7 ms (one missed 170 Hz refresh) | 0.2–1.2 ms | 0 / 0 / – | 13 |
+| glide | 80 / 43,212 | 17.9 ms | 10.5–11.8 ms | 0.2–1.1 ms | 0 / 1 / – | 28 |
+
+**Reading:**
+- **Not our CPU work.** The game's CPU work is tiny: systems 0.1 ms and `scene.render` 0.2 ms median, both under 1.2 ms on every hitch frame. Hitches have nothing to do with tile uploads or collision patches.
+- **The gate test is harsh at 170 Hz:** they are refreshes missed between submission and presentation. At 170 Hz a refresh is 5.88 ms, so one missed vsync already exceeds median + 4 ms. The GPU frame is 4.1 ms median, but its sampled max (5.6–6.0 ms) reaches a whole refresh. The working hypothesis is that GPU spikes over 5.88 ms, ours or the compositor's, miss vsync.
+- **The terrain-state window never scrolled in runs 1–2:** it follows the player, who stands still during the flight.
+
+**Instrumented since:**
+- the flight samples GPU time every frame and matches it to each hitch (`gpuPrevMs`, plus the base rate of frames over one refresh);
+- the terrain-state window follows the flight.
+
 ## Phase 1 measurements (machine W, 2026-10-03)
 
 ### Scene cost (structure, any machine)

@@ -128,6 +128,8 @@ export function createTerrainState(engine, opts) {
     fine, atlas, pageTable, params,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
+    /** Benchmarks: follow (followX, followZ) instead of the player. */
+    followOverride: false, followX: 0.5, followZ: 0.5,
     /** Stats for the dev overlay. */
     stats: { resident: 0, stored: 0, scrolled: 0 },  // pages on the GPU / on the worker; window moves
 

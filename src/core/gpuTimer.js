@@ -15,8 +15,8 @@
 // pass), and its flushFramebuffer calls `gpuTimer.resolve(encoder)` before finish and
 // `gpuTimer.afterSubmit()` after submit.
 
-const RING = 4;
-const HISTORY = 8192;
+const RING = 8;
+const HISTORY = 1 << 17; // a whole flight phase at 170 Hz when sampling every frame
 const MAX_PASSES = 48;
 const KIND_MAIN = 0, KIND_RTT = 1, KIND_COMPUTE = 2;
 
@@ -28,6 +28,8 @@ export const gpuTimer = {
   msMain: new Float32Array(HISTORY),
   msShadow: new Float32Array(HISTORY),
   msCompute: new Float32Array(HISTORY),
+  /** Frame number (count of resolves when that frame was built) of each sample. */
+  frameOf: new Uint32Array(HISTORY),
   /** Passes timed in the last sample. */
   lastPasses: 0,
   count: 0,
@@ -54,7 +56,7 @@ export const gpuTimer = {
     this._querySet = device.createQuerySet({ type: 'timestamp', count: 2 * MAX_PASSES, label: 'wraith-gpu-timer' });
     this._resolveBuf = device.createBuffer({ size: 16 * MAX_PASSES, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC, label: 'wraith-gpu-timer-resolve' });
     for (let i = 0; i < RING; i++) {
-      this._ring.push({ buf: device.createBuffer({ size: 16 * MAX_PASSES, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST, label: 'wraith-gpu-timer-read' + i }), busy: false, passes: 0, kinds: new Uint8Array(MAX_PASSES) });
+      this._ring.push({ buf: device.createBuffer({ size: 16 * MAX_PASSES, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST, label: 'wraith-gpu-timer-read' + i }), busy: false, passes: 0, frameNo: 0, kinds: new Uint8Array(MAX_PASSES) });
     }
     for (let k = 0; k < MAX_PASSES; k++) this._writes.push({ querySet: this._querySet, beginningOfPassWriteIndex: 2 * k, endOfPassWriteIndex: 2 * k + 1 });
     const timer = this;
@@ -98,7 +100,7 @@ export const gpuTimer = {
     const r = this._ring[slot];
     encoder.resolveQuerySet(this._querySet, 0, 2 * n, this._resolveBuf, 0);
     encoder.copyBufferToBuffer(this._resolveBuf, 0, r.buf, 0, 16 * n);
-    r.busy = true; r.passes = n; r.kinds.set(this._kinds);
+    r.busy = true; r.passes = n; r.kinds.set(this._kinds); r.frameNo = this._frame - 1;
     this._pendingSlot = slot;
   },
 
@@ -124,13 +126,16 @@ export const gpuTimer = {
       r.busy = false;
       if (ok && span > 0 && span < 60000) { // software GPUs take seconds per frame
         const i = this.count % HISTORY;
-        this.ms[i] = span; this.msMain[i] = main; this.msShadow[i] = shadow; this.msCompute[i] = compute;
+        this.ms[i] = span; this.frameOf[i] = r.frameNo; this.msMain[i] = main; this.msShadow[i] = shadow; this.msCompute[i] = compute;
         this.count++;
         this.lastMs = span;
         this.lastPasses = r.passes;
       }
     }, () => { r.busy = false; });
   },
+
+  /** Frame number of the frame being built now (matches frameOf of its sample). */
+  get frameNo() { return this._frame; },
 
   /** Clear recorded samples (start of a measured phase). */
   reset() { this.count = 0; },

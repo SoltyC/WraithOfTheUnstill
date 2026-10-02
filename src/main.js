@@ -182,7 +182,10 @@ async function boot() {
   // Debug writer (Phase 1 only): stamps a trail behind the player while the toggle is on.
   let lastStampX = 1e9, lastStampZ = 1e9;
   loop.add({ name: 'terrainState', update: () => {
-    terrainState.px = controller.pos.x; terrainState.pz = controller.pos.z; terrainState.time = clock.simTime;
+    const tsFollow = terrainState.followOverride;
+    terrainState.px = tsFollow ? terrainState.followX : controller.pos.x;
+    terrainState.pz = tsFollow ? terrainState.followZ : controller.pos.z;
+    terrainState.time = clock.simTime;
     if (systemsMod.toggles.on.stampTrail) {
       const dx = controller.pos.x - lastStampX, dz = controller.pos.z - lastStampZ;
       if (dx * dx + dz * dz > 0.09) {

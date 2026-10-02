@@ -200,7 +200,8 @@ function hitchLine(p) {
   const s = h.summary, b = h.baseRate, pct = (v) => (100 * v).toFixed(1) + '%';
   const share = (k) => (s.count ? pct(s[k] / s.count) : '–') + ' (base ' + pct(b[k]) + ')';
   return `<p>${p.name}: ${s.count} hitches &gt; ${h.limitMs} ms — ${s.absorbed} absorbed by the next frame, ${s.cpuOver8} with CPU &gt; 8 ms;
-    tile upload ${share('tile')}, state scroll ${share('scroll')}, clipmap rebuild ${share('clip')}, patch ${share('patch')}, none ${s.none}.</p>`;
+    tile upload ${share('tile')}, state scroll ${share('scroll')}, clipmap rebuild ${share('clip')}, patch ${share('patch')}, none ${s.none};
+    GPU over one refresh (${h.refreshMs} ms) just before: ${s.gpuOverRefresh}/${s.gpuSampled} sampled hitches vs ${h.gpuOverRefreshAllFrames.over}/${h.gpuOverRefreshAllFrames.sampled} of all frames.</p>`;
 }
 
 function showPanel(text) {
