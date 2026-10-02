@@ -122,6 +122,26 @@ Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp que
 
 Neither the game's CPU work nor its GPU work explains the missed refreshes. They are presentation stalls outside the frame: compositor, browser GPU process or OS scheduling, about 1 frame in 500–600. The render is locked to 2560×1440 in a 1920×1080 CSS window, so the compositor also scales every frame. **Gate status: NOT MET on the strict rule. The cause is outside the game; see PROGRESS.md for the decision this needs.**
 
+### Phase 1 gate flight, run 4 at 60 Hz (2026-10-03, `perf/runs/2026-10-02T20-51-18-667Z.json`)
+
+The display was set to 60 Hz (the target refresh). Same flight, same build as run 3.
+
+| Phase | Frames | Presented median / p99 / max | Over median + 4 ms (20.7 ms) | Of those, absorbed by the next frame | Real drops | GPU frame median / p99 / max | main / shadow / compute | Hitches with GPU > refresh | CPU before the hitches |
+|---|---|---|---|---|---|---|---|---|---|
+| surf | 30,530 | 16.7 / 17.8 / 35.9 ms | 30 (0.10 %) | 19 | **11** | 6.03 / 7.08 / 7.93 ms | 2.62 / 2.10 / 1.18 ms | 0 / 30 | ≤ 0.9 ms |
+| glide | 15,267 | 16.7 / 17.5 / 48.8 ms | 13 (0.09 %) | 10 | **3** | 6.03 / 6.88 / 8.19 ms | 2.56 / 1.90 / 1.44 ms | 0 / 13 | ≤ 0.6 ms |
+
+**Reading:**
+- **Real drops are rarer at 60 Hz:** 14 in 45.8k frames (1 in 3,300), against 1 in 550 at 170 Hz. Most over-limit intervals at 60 Hz are late callbacks that the next frame absorbs.
+- **The signature is the same as at 170 Hz:**
+  - every hitch follows an ordinary frame (CPU ≤ 0.9 ms, GPU ≤ 8.2 ms against a 16.7 ms refresh);
+  - no GPU frame in the whole run exceeded a refresh;
+  - nothing correlates. Scroll is 100 % because the window scrolls every frame at flight speed, and no tiles or patches appear before any hitch.
+- **Some drops come in pairs** (frames 851–852 and 10056–10057, each ~33 ms twice), as an external ~50 ms stall would.
+- **The GPU frame grows from ~4.2 to ~6.0 ms at 60 Hz:** with more idle time per refresh the GPU clocks down. That's power management, not extra work. It is still 36 % of the 16.7 ms budget.
+
+**Verdict:** the game causes none of the hitches. Under the strict rule the gate is still not met (43 intervals over the limit, 14 real drops), all of them stalls outside the frame. **Awaiting the user's ruling** on whether the gate counts game-attributable hitches only (as the Phase 0 allocation floor did).
+
 ## Phase 1 measurements (machine W, 2026-10-03)
 
 ### Scene cost (structure, any machine)
