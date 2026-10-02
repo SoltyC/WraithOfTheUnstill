@@ -1,7 +1,7 @@
 // World tools section of the dev overlay: teleport, photo spots, weather override,
 // stilled/restored, free camera, god mode, spawn (later phases), and save/load slots.
 
-import poiData from '../../../data/pois.json';
+import poiData from '../../../data/world/pois.json';
 import { photoSpots, currentViewAsSpot } from '../photoSpots.js';
 import { worldState, WEATHER_STATES, BIOMES } from '../../game/worldState.js';
 
@@ -13,7 +13,7 @@ export function buildWorldTools(game, el) {
   // Teleport.
   h('Teleport');
   const poiSel = el('select');
-  for (const p of poiData.pois) poiSel.append(el('option', { value: p.id }, p.label));
+  for (const p of poiData.pois) poiSel.append(el('option', { value: p.id }, p.id + ' (' + p.biome + ')'));
   root.append(el('div', { class: 'row' }, poiSel, el('button', {
     onclick: () => { const p = poiData.pois.find((x) => x.id === poiSel.value); game.teleport(p.pos[0], p.pos[1]); },
   }, 'Go')));

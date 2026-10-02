@@ -1,9 +1,0 @@
-{
-  "version": 1,
-  "pois": [
-    { "id": "origin", "biome": "test", "label": "Test field: origin", "pos": [0, 0] },
-    { "id": "ridge", "biome": "test", "label": "Test field: ridge", "pos": [180, -140] },
-    { "id": "basin", "biome": "test", "label": "Test field: basin", "pos": [-220, 160] },
-    { "id": "mountain-foot", "biome": "test", "label": "Test field: mountain foot", "pos": [700, 600] }
-  ]
-}

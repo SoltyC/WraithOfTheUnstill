@@ -60,7 +60,7 @@ export async function launchBrowser(args = {}) {
 }
 
 /** Open the game and wait until it reports ready (or captureReady in capture mode). */
-export async function openGame(browser, baseUrl, query, { width = 2560, height = 1440, timeout = 300000 } = {}) {
+export async function openGame(browser, baseUrl, query, { width = 2560, height = 1440, timeout = 1200000 } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   const logs = [];

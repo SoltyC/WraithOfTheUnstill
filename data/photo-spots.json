@@ -1,15 +1,21 @@
 {
-  "version": 1,
+  "version": 2,
   "spots": [
-    { "id": "p0-start-golden", "biome": "test", "label": "Start, over the shoulder, golden hour", "time": 17.4, "weather": "clear",
-      "player": [0, 0], "camera": { "mode": "follow", "yaw": 0.35, "pitch": 0.22, "dist": 5.2 } },
-    { "id": "p0-ridge-noon", "biome": "test", "label": "Ridge line, noon", "time": 12.0, "weather": "clear",
-      "player": [0, 0], "camera": { "mode": "follow", "yaw": 2.4, "pitch": 0.12, "dist": 7 } },
-    { "id": "p0-vista-dusk", "biome": "test", "label": "High vista toward the mountain ring, dusk", "time": 18.6, "weather": "clear",
-      "player": [0, 0], "camera": { "mode": "free", "pos": [-40, 45, -60], "yaw": 0.6, "pitch": 0.08, "fov": 0.96 } },
-    { "id": "p0-dawn", "biome": "test", "label": "Low dawn light across the field", "time": 6.4, "weather": "clear",
-      "player": [0, 0], "camera": { "mode": "follow", "yaw": -1.2, "pitch": 0.1, "dist": 6 } },
-    { "id": "p0-night", "biome": "test", "label": "Moonlit night", "time": 23.5, "weather": "clear",
-      "player": [0, 0], "camera": { "mode": "follow", "yaw": 0.9, "pitch": 0.16, "dist": 6 } }
+    { "id": "p1-monastery-golden", "biome": "frost", "label": "Monastery ledge looking south over the frost plateau, golden hour", "time": 17.4, "weather": "clear",
+      "player": [-508, 3204], "camera": { "mode": "follow", "yaw": 3.0, "pitch": 0.14, "dist": 6 } },
+    { "id": "p1-meadow-noon", "biome": "meadow", "label": "Hub uplands, noon", "time": 12.0, "weather": "clear",
+      "player": [-220, 580], "camera": { "mode": "follow", "yaw": 0.8, "pitch": 0.12, "dist": 6 } },
+    { "id": "p1-dunes-golden", "biome": "dunes", "label": "Dune basin across the wind, golden hour", "time": 17.8, "weather": "clear",
+      "player": [2436, 1124], "camera": { "mode": "follow", "yaw": 2.4, "pitch": 0.1, "dist": 7 } },
+    { "id": "p1-volcano-dusk", "biome": "ember", "label": "Toward the volcano from the ash plain, dusk", "time": 18.8, "weather": "clear",
+      "player": [2948, -540], "camera": { "mode": "follow", "yaw": -2.79, "pitch": 0.06, "dist": 6 } },
+    { "id": "p1-mire-dawn", "biome": "mire", "label": "Mire lowlands, dawn", "time": 6.5, "weather": "clear",
+      "player": [-1212, -668], "camera": { "mode": "follow", "yaw": 1.2, "pitch": 0.1, "dist": 6 } },
+    { "id": "p1-coast-noon", "biome": "coast", "label": "South coast toward the sea, midday", "time": 13.0, "weather": "clear",
+      "player": [-956, -2908], "camera": { "mode": "follow", "yaw": -2.4, "pitch": 0.12, "dist": 6 } },
+    { "id": "p1-frost-night", "biome": "frost", "label": "Plateau toward the northern ranges, moonlit night", "time": 23.5, "weather": "clear",
+      "player": [-508, 2212], "camera": { "mode": "follow", "yaw": 0.0, "pitch": 0.08, "dist": 6 } },
+    { "id": "p1-vista-continent", "biome": "coast", "label": "High vista over the continent from the south-west sea, afternoon", "time": 16.8, "weather": "clear",
+      "player": [-956, -2908], "camera": { "mode": "free", "pos": [-3700, 650, -3700], "yaw": 0.785, "pitch": 0.13, "fov": 0.96 } }
   ]
 }

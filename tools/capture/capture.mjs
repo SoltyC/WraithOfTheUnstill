@@ -20,6 +20,7 @@ await fs.mkdir(out, { recursive: true });
 const server = await startServer({ skipBuild: !!args['skip-build'] });
 const browser = await launchBrowser(args);
 const report = { date: new Date().toISOString(), width, height, repeat, spots: [], machine: null, reproducible: true };
+const gpuErrors = [];
 
 /** Compare two PNGs pixel by pixel inside the browser (no image deps in Node). */
 async function diffPngs(page, a, b) {
@@ -71,7 +72,9 @@ try {
       shots.push(buf);
       timing = Date.now() - t0;
       const errors = logs.filter((l) => l.startsWith('error') || l.startsWith('pageerror'));
-      if (errors.length) console.warn(`[${id}] console errors:\n  ` + errors.join('\n  '));
+      if (errors.length) console.warn(`[${id}] console errors:\n  ` + errors.slice(0, 3).join('\n  '));
+      // GPU validation errors mean the frame is wrong even if it looks plausible: fail the run.
+      if (logs.some((l) => l.includes('[gpu] uncaptured error') || l.includes('[gpu] device lost'))) { gpuErrors.push(id); report.reproducible = false; }
       if (late) console.warn(`[${id}] ${late} late pipeline(s) during capture`);
       await context.close();
     }
@@ -96,5 +99,7 @@ try {
   await server.close();
 }
 await fs.writeFile(path.join(out, 'capture-report.json'), JSON.stringify(report, null, 2));
-console.log(report.reproducible ? 'ALL CAPTURES REPRODUCIBLE' : 'CAPTURES NOT REPRODUCIBLE');
+report.gpuErrors = gpuErrors;
+if (gpuErrors.length) console.log('GPU VALIDATION ERRORS in: ' + gpuErrors.join(', '));
+console.log(report.reproducible ? 'ALL CAPTURES REPRODUCIBLE' : 'CAPTURES NOT REPRODUCIBLE (or GPU errors)');
 process.exit(report.reproducible ? 0 : 1);

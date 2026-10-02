@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import spots from '../data/photo-spots.json';
-import pois from '../data/pois.json';
+import pois from '../data/world/pois.json';
 
 describe('photo spots and POIs', () => {
   it('have unique ids and complete, valid fields', () => {

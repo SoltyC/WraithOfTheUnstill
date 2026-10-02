@@ -17,7 +17,7 @@ const browser = await launchBrowser(args);
 const results = [];
 const check = (name, ok, detail = '') => { results.push({ name, ok, detail }); console.log(`${ok ? 'ok  ' : 'FAIL'} ${name} ${detail}`); };
 try {
-  const { page } = await openGame(browser, server.url, 'spot=p0-start-golden', { width: 2560, height: 1440 });
+  const { page } = await openGame(browser, server.url, 'spot=p1-monastery-golden', { width: 2560, height: 1440 });
   await page.waitForTimeout(2500); // loading fade
   const isOpen = () => page.evaluate(() => document.getElementById('dev-overlay').classList.contains('open'));
   // Wait on state, not wall time: software-GPU frames can take a second at 1440p.
@@ -51,7 +51,7 @@ try {
 
   // UI controls drive state.
   await page.evaluate(() => { const l = [...document.querySelectorAll('#dev-overlay label.toggle')].find((x) => x.textContent.trim() === 'terrain'); l.querySelector('input').click(); });
-  const terrainOff = await page.evaluate(() => !window.__wraith.game.scene.getMeshByName('testTerrain').isEnabled());
+  const terrainOff = await page.evaluate(() => !window.__wraith.game.scene.getMeshByName('clipmap').isEnabled());
   check('system toggle disables terrain', terrainOff);
   await page.evaluate(() => { const l = [...document.querySelectorAll('#dev-overlay label.toggle')].find((x) => x.textContent.trim() === 'terrain'); l.querySelector('input').click(); });
   // Live uniform updates must reach the GPU mid-session (not just at load).

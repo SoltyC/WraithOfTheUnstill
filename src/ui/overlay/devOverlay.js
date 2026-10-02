@@ -176,7 +176,10 @@ export class DevOverlay {
     // Babylon's perf counters are disabled (babylonTweaks): sum enabled meshes' index counts.
     let idx = 0;
     const meshes = g.scene.meshes;
-    for (let i = 0; i < meshes.length; i++) if (meshes[i].isEnabled() && meshes[i].isVisible) idx += meshes[i].getTotalIndices();
+    for (let i = 0; i < meshes.length; i++) {
+      const m = meshes[i];
+      if (m.isEnabled() && m.isVisible) idx += m.getTotalIndices() * (m.hasThinInstances ? m.thinInstanceCount : 1);
+    }
     v.tris.textContent = (idx / 3 / 1000).toFixed(0) + 'k';
     v.gpu.textContent = ((gpuStats.bufferBytes + gpuStats.textureBytes) * MB).toFixed(0);
     const mem = performance.memory;

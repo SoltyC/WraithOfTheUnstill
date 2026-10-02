@@ -13,8 +13,8 @@ varying vDir: vec3f;
 fn main(input: VertexInputs) -> FragmentInputs {
   let wp = uniforms.world * vec4f(vertexInputs.position, 1.0);
   let clip = uniforms.viewProjection * wp;
-  // Pin to the far plane so the dome never clips terrain.
-  vertexOutputs.position = vec4f(clip.xy, clip.w * 0.99999, clip.w);
+  // Pin to the far plane so the dome never clips terrain. Reverse-Z: far = depth 0.
+  vertexOutputs.position = vec4f(clip.xy, clip.w * 0.000001, clip.w);
   vertexOutputs.vDir = vertexInputs.position;
 }
 `;

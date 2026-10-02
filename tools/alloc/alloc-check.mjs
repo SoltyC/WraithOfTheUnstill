@@ -6,8 +6,7 @@
 
 import v8 from 'node:v8';
 import { PerformanceObserver } from 'node:perf_hooks';
-import { buildTestTerrain } from '../../src/terrain/testTerrainBuild.js';
-import { GridGround } from '../../src/terrain/testGround.js';
+import { PatchGround } from '../../src/world/patchGround.js';
 import { CapsuleController } from '../../src/character/capsuleController.js';
 import { SpringArmCamera } from '../../src/camera/springArm.js';
 import { FrameStats } from '../../src/core/frameStats.js';
@@ -22,8 +21,15 @@ new PerformanceObserver((list) => { gcs += list.getEntries().length; }).observe(
 const vec = () => ({ x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; } });
 const camera = { position: vec(), rotation: vec(), fov: 1 };
 
-const t = buildTestTerrain(160);
-const ground = new GridGround(t.positions, t.normals, 160);
+// Synthetic rolling patches standing in for worker-computed collision patches.
+const ground = new PatchGround();
+const mk = (x0, z0, n, step) => {
+  const h = new Float32Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const x = x0 + i * step, z = z0 + j * step; h[j * n + i] = 3 * Math.sin(x * 0.05) + 2 * Math.cos(z * 0.07); }
+  return { x0, z0, n, step, heights: h, version: 1 };
+};
+ground.install(mk(-128, -128, 129, 2), false);
+ground.install(mk(-24, -24, 193, 0.25), true);
 const ctl = new CapsuleController(ground);
 ctl.teleport(0, 0);
 const arm = new SpringArmCamera(camera, ground);
@@ -34,9 +40,11 @@ const pool = new Pool(() => ({ a: 0 }), 64);
 // Results go into a typed array: returning a double from the case lambda would itself box.
 const sink = new Float64Array(1);
 const cases = {
-  'ground.sample': (i) => { ground.qx = (i % 1000) * 0.37 - 180; ground.qz = (i % 777) * 0.29 - 110; ground.sample(); sink[0] = ground.h; },
+  'ground.sample': (i) => { ground.qx = (i % 1000) * 0.2 - 100; ground.qz = (i % 777) * 0.2 - 70; ground.sample(); sink[0] = ground.h; },
   // dt comes from a mutable field, as in the game (a literal constant would hide boxing).
-  'controller.update (walking)': (i) => { ctl.wishZ = 1; ctl.wishX = (i & 64) ? 0.5 : -0.5; ctl.cameraYaw = i * 0.001; ctl.dt = clock.dt; ctl.update(); },
+  // Walk in a wide loop that stays on the fine patch, as a real player does (leaving every
+  // patch only happens in this synthetic test and would exercise fallback branches).
+  'controller.update (walking)': (i) => { ctl.wishZ = 1; ctl.wishX = (i & 64) ? 0.5 : -0.5; ctl.cameraYaw = i * 0.004; ctl.dt = clock.dt; ctl.update(); if (ctl.pos.x * ctl.pos.x + ctl.pos.z * ctl.pos.z > 300) { ctl.pos.x = 0; ctl.pos.z = 0; } },
   'controller.update (idle)': () => { ctl.wishZ = 0; ctl.wishX = 0; ctl.dt = clock.dt; ctl.update(); },
   'springArm.update': (i) => { arm.look(1, 0.2, 0); arm.dt = clock.dt; arm.update(ctl.pos, ctl.vel, 0, 0, 0, false); },
   'updateEnvironment (time flowing)': (i) => { params.v.timeOfDay = (i % 2400) / 100; params.version++; updateEnvironment(); },

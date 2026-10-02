@@ -5,7 +5,7 @@
 // `pos` is the capsule's foot point (bottom of the capsule, on the ground when grounded).
 
 /**
- * Ground query interface (see terrain/testGround.js for why it uses fields, not arguments):
+ * Ground query interface (see world/patchGround.js and DECISIONS.md for why it uses fields, not arguments):
  * set qx/qz, call sample() → h, or sampleNormal() → nx/ny/nz.
  * @typedef {{ qx: number, qz: number, h: number, nx: number, ny: number, nz: number, sample: () => void, sampleNormal: () => void }} Ground
  */
@@ -36,6 +36,8 @@ export class CapsuleController {
     this.grounded = false;
     /** God mode: no gravity or collision, flies along the wish direction. */
     this.god = false;
+    /** While true the controller does nothing (e.g. waiting for collision data after a teleport). */
+    this.hold = false;
     // Inputs set each frame by the owner.
     this.wishX = 0; // camera-relative strafe [-1, 1]
     this.wishZ = 0; // camera-relative forward [-1, 1]
@@ -60,6 +62,7 @@ export class CapsuleController {
 
   /** Advance by `this.dt` (set by the caller; a field, not an argument, so no boxing). */
   update() {
+    if (this.hold) { this._acc = 0; return; }
     this._acc += this.dt;
     const h = controllerTuning.substep;
     let steps = 0;

@@ -21,22 +21,13 @@ export function findSpot(id) { return photoSpots.find((s) => s.id === id) || nul
 export function applySpot(spot, game) {
   setParam('timeOfDay', spot.time);
   worldState.weather = spot.weather;
-  const { controller, arm } = game;
-  if (spot.player) {
-    controller.god = false;
-    controller.teleport(spot.player[0], spot.player[1]);
-    controller.yaw = spot.camera.yaw;
-  }
+  const { controller, arm, teleport } = game;
   const c = spot.camera;
-  if (c.mode === 'free') {
-    arm.setPose(c.pos[0], c.pos[1], c.pos[2], c.yaw, c.pitch, c.fov);
-  } else {
-    arm.setFree(false);
-    arm.yaw = c.yaw;
-    arm.pitch = c.pitch;
-    arm.zoomTarget = c.dist;
-    arm.snap(controller.pos);
-  }
+  if (c.mode !== 'free') { arm.yaw = c.yaw; arm.pitch = c.pitch; arm.zoomTarget = c.dist; }
+  // Deferred: the player drops onto the ground once collision for the target is streamed;
+  // the follow camera snaps to the player at that moment.
+  if (spot.player) { teleport(spot.player[0], spot.player[1]); controller.yaw = c.yaw; }
+  if (c.mode === 'free') arm.setPose(c.pos[0], c.pos[1], c.pos[2], c.yaw, c.pitch, c.fov);
 }
 
 /** Serialise the current view as a free-camera spot (copied from the overlay). */

@@ -8,14 +8,6 @@ exports[`noise (shared JS/WGSL definitions; golden values pin cross-platform det
 ]
 `;
 
-exports[`noise (shared JS/WGSL definitions; golden values pin cross-platform determinism) > test heightfield is reproducible 1`] = `
-[
-  2.168334027,
-  8.118921279,
-  49.630919789,
-]
-`;
-
 exports[`noise (shared JS/WGSL definitions; golden values pin cross-platform determinism) > value noise and fbm are deterministic and bounded 1`] = `
 [
   -0.196342535326,

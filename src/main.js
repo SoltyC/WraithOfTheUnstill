@@ -49,7 +49,9 @@ async function boot() {
     deviceDescriptor: { requiredFeatures: ['timestamp-query'] },
   });
   await engine.initAsync({ jsPath: '', wasmPath: '' }, { jsPath: '', wasmPath: '' });
-  progress(0.3);
+  // Reverse-Z: a 30 km far plane with a 10 cm near plane needs it to avoid z-fighting at range.
+  engine.useReverseDepthBuffer = true;
+  progress(0.2);
 
   const { installFastStages, disableBabylonInstrumentation, installConstantLabelFramePath } = await import('./render/babylonTweaks.js');
   const { AbstractEngine } = await import('@babylonjs/core/Engines/abstractEngine.js');
@@ -80,12 +82,14 @@ async function boot() {
   scene.autoClearDepthAndStencil = true;
   const camera = new TargetCamera('camera', new Vector3(0, 10, -10), scene);
   camera.minZ = 0.1;
-  camera.maxZ = 9000;
+  camera.maxZ = 30000;
 
-  const [{ createTestScene }, env, groundMod, ctl, armMod, playerMod, loopMod, inputMod, paramsMod, systemsMod, spots, overlayMod, streamingMod] = await Promise.all([
-    import('./render/testScene.js'),
+  const [{ createWorldScene }, { WorldStreamer }, { PatchGround }, worldPois, env, ctl, armMod, playerMod, loopMod, inputMod, paramsMod, systemsMod, spots, overlayMod, streamingMod] = await Promise.all([
+    import('./render/worldScene.js'),
+    import('./world/streamer.js'),
+    import('./world/patchGround.js'),
+    import('../data/world/pois.json'),
     import('./render/environment.js'),
-    import('./terrain/testGround.js'),
     import('./character/capsuleController.js'),
     import('./camera/springArm.js'),
     import('./character/playerSystem.js'),
@@ -100,24 +104,62 @@ async function boot() {
   const { clock } = await import('./core/clock.js');
   progress(0.45);
 
-  // ?grid=N: dev-only coarser test terrain (used by the heap profiler to reach steady state
-  // quickly on software GPUs). Never set in captures.
-  const content = await createTestScene(scene, { gridCells: qs.get('grid') ? Number(qs.get('grid')) : undefined });
-  progress(0.65);
+  // World: the worker loads the bake; collision comes from worker-computed patches.
+  const ground = new PatchGround();
+  const streamer = new WorldStreamer(engine, ground);
+  await streamer.init(import.meta.env.BASE_URL + 'world/');
+  const content = createWorldScene(scene, streamer.buffers);
+  progress(0.4);
 
-  // Collision samples the built mesh grid so feet sit exactly on the drawn surface.
-  const ground = new groundMod.GridGround(content.terrainData.positions, content.terrainData.normals);
   const controller = new ctl.CapsuleController(ground);
-  controller.teleport(0, 0);
   const arm = new armMod.SpringArmCamera(camera, ground);
-  arm.snap(controller.pos);
+  const monastery = worldPois.default.pois.find((p) => p.id === 'monastery');
+
+  // Deferred teleport: hold the player until a fine collision patch covers the target.
+  const pendingTp = { active: false, x: 0.5, z: 0.5 };
+  const requestTeleport = (x, z) => {
+    controller.god = false;
+    controller.hold = true;
+    controller.pos.x = x; controller.pos.z = z;
+    controller.vel.x = 0; controller.vel.y = 0; controller.vel.z = 0;
+    pendingTp.active = true; pendingTp.x = x; pendingTp.z = z;
+    arm.setFree(false);
+  };
+  requestTeleport(monastery.pos[0], monastery.pos[1]);
 
   const loop = new loopMod.Loop(engine, scene);
   inputMod.attachInput(canvas);
 
-  // Environment first, then player/camera.
+  // Environment, then world streaming and pending teleports, then player/camera, then clipmap.
   loop.add({ name: 'environment', update: () => env.updateEnvironment() });
+  loop.add({ name: 'world', update: () => {
+    // Stream around a pending teleport target first, else the free camera, else the player.
+    const focusFree = arm.free && !pendingTp.active;
+    streamer.px = pendingTp.active ? pendingTp.x : focusFree ? camera.position.x : controller.pos.x;
+    streamer.pz = pendingTp.active ? pendingTp.z : focusFree ? camera.position.z : controller.pos.z;
+    streamer.vx = focusFree || pendingTp.active ? 0 : controller.vel.x;
+    streamer.vz = focusFree || pendingTp.active ? 0 : controller.vel.z;
+    streamer.update();
+    if (pendingTp.active) {
+      // Complete only on a fine patch computed after the last tile upload, with every nearby tile
+      // resident, so the drop height matches the final collision surface (and the GPU terrain).
+      ground.qx = pendingTp.x; ground.qz = pendingTp.z;
+      if (ground.coversFine() && ground.f.version === streamer.residencyVersion && streamer.arrived.length === 0
+          && streamer.pendingNear(pendingTp.x, pendingTp.z) === 0) {
+        controller.teleport(pendingTp.x, pendingTp.z);
+        controller.hold = false;
+        pendingTp.active = false;
+        arm.snap(controller.pos);
+      }
+    }
+  } });
   loop.add(playerMod.createPlayerSystem({ controller, arm, ...content }));
+  loop.add({ name: 'clipmap', update: () => {
+    content.clipmap.camX = camera.position.x;
+    content.clipmap.camZ = camera.position.z;
+    content.clipmap.residencyVersion = streamer.residencyVersion;
+    content.clipmap.update();
+  } });
 
   // Render scale follows the Quality slider (checked via the integer params version).
   let lastParamsVersion = -1;
@@ -142,8 +184,15 @@ async function boot() {
 
   const game = {
     engine, scene, loop, controller, arm, saves, streaming: streamingMod.streaming,
-    teleport(x, z) { controller.god = false; controller.teleport(x, z); arm.setFree(false); arm.snap(controller.pos); },
-    applySpot(spot) { spots.applySpot(spot, { controller, arm }); },
+    streamer, ground, pois: worldPois.default.pois,
+    teleport(x, z) { requestTeleport(x, z); },
+    /** True once the player stands on streamed ground with every nearby tile resident. */
+    worldSettled() {
+      if (pendingTp.active || streamer.arrived.length > 0) return false;
+      if (streamer.pendingNear(controller.pos.x, controller.pos.z) !== 0) return false;
+      return !arm.free || streamer.pendingNear(camera.position.x, camera.position.z) === 0;
+    },
+    applySpot(spot) { spots.applySpot(spot, { controller, arm, teleport: requestTeleport }); },
     setFreeCam(on) { arm.setFree(on); },
     setGod(on) { controller.god = on; if (!on) controller.teleport(controller.pos.x, controller.pos.z); },
   };
@@ -166,11 +215,17 @@ async function boot() {
   env.updateEnvironment();
 
   // Warm-up (BRIEF §15): make every material ready, then render frames behind the loading
-  // screen so all pipelines exist before the late-pipeline detector arms.
+  // screen so all pipelines exist before the late-pipeline detector arms. The world streams
+  // meanwhile; loading ends once the player stands on ground with every nearby tile resident.
   await scene.whenReadyAsync();
-  progress(0.85);
+  progress(0.5);
   loop.start();
   await waitFrames(engine, 4);
+  await waitUntil(engine, () => {
+    const need = streamer.pendingNear(controller.pos.x, controller.pos.z);
+    progress(0.5 + 0.5 * (1 - Math.min(1, need / 36)));
+    return game.worldSettled();
+  });
   progress(1);
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,
@@ -192,12 +247,26 @@ async function boot() {
     async prepareSpot(id, frames = 6) {
       game.applySpot(spots.findSpot(id));
       env.updateEnvironment();
+      await waitUntil(engine, () => game.worldSettled());
       await waitFrames(engine, frames);
       return true;
     },
   });
-  if (capture) { await waitFrames(engine, 6); window.__wraith.captureReady = true; }
+  if (capture) {
+    await waitUntil(engine, () => game.worldSettled());
+    await waitFrames(engine, 6);
+    window.__wraith.captureReady = true;
+  }
   if (bench) bench.runBench(game, qs);
+}
+
+/** Resolve on the first end-of-frame where test() is true. */
+function waitUntil(engine, test) {
+  return new Promise((resolve) => {
+    const obs = engine.onEndFrameObservable.add(() => {
+      if (test()) { engine.onEndFrameObservable.remove(obs); resolve(); }
+    });
+  });
 }
 
 function waitFrames(engine, n) {
