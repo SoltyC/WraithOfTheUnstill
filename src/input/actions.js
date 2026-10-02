@@ -1,0 +1,111 @@
+// Action-mapping layer (BRIEF §7). Game code reads actions, never raw keys, so a gamepad
+// device can be added later by writing into the same arrays.
+//
+// Per-action state lives in typed arrays: `down` (held), `pressed` (went down this frame),
+// `released` (went up this frame). `endFrame()` clears the edges after all systems ran.
+
+export const Action = Object.freeze({
+  MoveForward: 0, MoveBack: 1, MoveLeft: 2, MoveRight: 3,
+  Jump: 4, Traverse: 5, Primary: 6, Heavy: 7, Dodge: 8, LockOn: 9, Interact: 10,
+  Map: 11, Journal: 12, Pause: 13,
+  Element1: 14, Element2: 15, Element3: 16, Element4: 17, Element5: 18,
+  DevOverlay: 19, FreeCamUp: 20, FreeCamDown: 21, FreeCamFast: 22,
+});
+const COUNT = 23;
+
+/** Default keyboard/mouse bindings: KeyboardEvent.code or 'Mouse0'/'Mouse2' → action. */
+export const defaultBindings = {
+  KeyW: Action.MoveForward, KeyS: Action.MoveBack, KeyA: Action.MoveLeft, KeyD: Action.MoveRight,
+  Space: Action.Jump, Mouse2: Action.Traverse, Mouse0: Action.Primary, KeyF: Action.Heavy,
+  ControlLeft: Action.Dodge, ControlRight: Action.Dodge, Tab: Action.LockOn, KeyE: Action.Interact,
+  KeyM: Action.Map, KeyJ: Action.Journal, Escape: Action.Pause,
+  Digit1: Action.Element1, Digit2: Action.Element2, Digit3: Action.Element3, Digit4: Action.Element4, Digit5: Action.Element5,
+  F1: Action.DevOverlay, Backquote: Action.DevOverlay,
+  KeyQ: Action.FreeCamDown, KeyR: Action.FreeCamUp, ShiftLeft: Action.FreeCamFast,
+};
+
+export const input = {
+  down: new Uint8Array(COUNT),
+  pressed: new Uint8Array(COUNT),
+  released: new Uint8Array(COUNT),
+  /** Mouse motion accumulated since last endFrame (pixels). */
+  mouseDX: 0,
+  mouseDY: 0,
+  /** Wheel accumulated since last endFrame (normalised notches, + = zoom out). */
+  wheel: 0,
+  /** False while a UI panel (dev overlay) wants the keyboard. */
+  gameHasFocus: true,
+  pointerLocked: false,
+  /** @type {Record<string, number>} */
+  bindings: { ...defaultBindings },
+};
+
+function setAction(a, isDown) {
+  if (isDown) {
+    if (!input.down[a]) input.pressed[a] = 1;
+    input.down[a] = 1;
+  } else {
+    if (input.down[a]) input.released[a] = 1;
+    input.down[a] = 0;
+  }
+}
+
+/** True when the browser should not see this key (we own it). */
+const CAPTURED = new Set(['Tab', 'F1', 'Space', 'Backquote']);
+
+/** @param {HTMLElement} canvas */
+export function attachInput(canvas) {
+  const onKey = (e, isDown) => {
+    const a = input.bindings[e.code];
+    if (a === undefined) return;
+    // The dev overlay toggle always works; everything else only when the game has focus.
+    if (a !== Action.DevOverlay && !input.gameHasFocus) return;
+    if (CAPTURED.has(e.code)) e.preventDefault();
+    if (e.repeat) return;
+    setAction(a, isDown);
+  };
+  window.addEventListener('keydown', (e) => onKey(e, true));
+  window.addEventListener('keyup', (e) => onKey(e, false));
+  window.addEventListener('blur', () => { for (let i = 0; i < COUNT; i++) setAction(i, false); });
+
+  canvas.addEventListener('mousedown', (e) => {
+    canvas.focus();
+    if (!input.pointerLocked && input.gameHasFocus) canvas.requestPointerLock?.();
+    const a = input.bindings['Mouse' + e.button];
+    if (a !== undefined) setAction(a, true);
+  });
+  window.addEventListener('mouseup', (e) => {
+    const a = input.bindings['Mouse' + e.button];
+    if (a !== undefined) setAction(a, false);
+  });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  window.addEventListener('mousemove', (e) => {
+    if (!input.pointerLocked) return;
+    input.mouseDX += e.movementX;
+    input.mouseDY += e.movementY;
+  });
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    // Normalise across line/pixel modes to roughly one unit per notch.
+    input.wheel += e.deltaMode === 1 ? e.deltaY / 3 : e.deltaY / 100;
+  }, { passive: false });
+  document.addEventListener('pointerlockchange', () => {
+    input.pointerLocked = document.pointerLockElement === canvas;
+  });
+}
+
+export function releasePointer() {
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+
+/** Clear per-frame edges and deltas. Runs after all systems. */
+export function endInputFrame() {
+  input.pressed.fill(0);
+  input.released.fill(0);
+  input.mouseDX = 0;
+  input.mouseDY = 0;
+  input.wheel = 0;
+}
+
+/** Test/automation hook: drive an action directly. */
+export function injectAction(a, isDown) { setAction(a, isDown); }

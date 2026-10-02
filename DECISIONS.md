@@ -13,4 +13,22 @@ Every deviation from BRIEF.md, one line each, with rationale.
 
 ## Build-time deviations
 
-_None yet._
+### Phase 0 (2026-10-02)
+
+- **Machine:** this session ran on an RTX 3060 under WSL2, not the 5070 Ti target. All timings are indicative only; see PERF.md.
+- **Capture browser:** Playwright's bundled Chromium headless shell, with WebGPU on SwiftShader (CPU Vulkan). It needs `--enable-features=Vulkan --use-vulkan=swiftshader --use-webgpu-adapter=swiftshader --disable-vulkan-surface --use-angle=swiftshader`. Without them, `getCurrentTexture()` destroys the device ("no SharedImageBackingFactory … Webgpu"). Images are valid for look review; timings are not. Pass `--channel=chrome --headed` on the target.
+- **No GLSL, no CDN:** every shader is WGSL. The glslang/twgsl paths are set empty, so an accidental GLSL compile fails loudly instead of fetching a compiler.
+- **Collision samples the rendered grid:** the Phase 0 controller interpolates the built mesh grid inside the same triangles the GPU draws, so feet sit exactly on the drawn surface. Phase 1 replaces this with the shared JS/WGSL macro+meso definition (BRIEF §4.2).
+- **Test terrain:** a single 640² grid whose spacing grows with distance (0.35 m at centre → ~45 m at 3.2 km), built on a worker. It's a stand-in for the Phase 1 clipmap and has no geomorphing.
+- **Hot-path calling convention (zero-GC):** hot code never passes doubles as call arguments, because V8 boxes them (16 B each) whenever the call isn't inlined, and TurboFan's inlining budget runs out in large functions. Ground queries use a query object (`qx/qz` in; `h`, `nx/ny/nz` out). Systems take no arguments and read `clock.dt`. The controller and camera get `dt` through a field. Param changes bump an integer `params.version`, so idle change-detection never loads a double. `tools/alloc/alloc-check.mjs` enforces this.
+- **Babylon tweaks (src/render/babylonTweaks.js and testScene.js):** all materials are frozen, which skips the per-frame `isReady` defines-string build. There is a single rendering group drawn unsorted, by overriding the private `_renderOpaque` to call `_RenderSorted` with a null comparator. Snapshot rendering is on in standard mode after warm-up. All three remove per-frame engine allocations.
+- **Display transform in-material:** each WGSL material applies exposure → ACES (Narkowicz fit) → sRGB itself until the Phase 6 post chain exists. A night exposure lift stands in for eye adaptation.
+- **Analytic sky and fog:** a gradient sky plus exponential height fog with sun inscatter. It's a stand-in for the Phase 1 Hillaire LUT atmosphere. Stars are jittered ~1 px Gaussian points shown only in deep night.
+- **No shadows yet:** cascaded shadow maps are Phase 1. Phase 0 has a soft contact blob under the player and a mesh cavity term.
+- **GPU memory figure:** WebGPU has no memory query, so the overlay tallies the sizes of live `GPUBuffer`s and `GPUTexture`s by wrapping `createBuffer/createTexture/destroy`. It's an estimate.
+- **Draw-call counter:** wraps the pass and bundle-encoder draw methods. Bundle draws are counted when `executeBundles` runs, because snapshot rendering replays bundles.
+- **Late-pipeline detector:** wraps `GPUDevice.create{Render,Compute}Pipeline[Async]` before the engine requests its device, and arms after warm-up (4 rendered frames behind the loading screen).
+- **Photo-spot reproducibility check:** strict, requiring byte-identical PNGs across two fresh page loads (`capture.mjs --repeat=2`). The capture report also records the percentage of clipped pixels and mean luma per shot, to watch highlight roll-off (BRIEF §5.8).
+- **Saves:** a binary container (JSON metadata plus raw page blobs), deflate-raw via `CompressionStream`, encoded and decoded on a worker. IndexedDB holds one record per slot (`auto`, `slot1–3`) plus a summary for menus. Migrations are a version-step table.
+- **Dev overlay scope:** weather and stilled/restored are world state only, since nothing renders them until Phases 5–6. Spawn is disabled until the Shaped exist (Phase 5). Post-process toggles appear when the post chain exists (Phase 6).
+- **`?grid=N` URL option:** a dev-only coarser test terrain, so the heap profiler reaches steady state on software GPUs. Captures never set it.

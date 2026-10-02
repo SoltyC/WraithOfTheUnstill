@@ -1,0 +1,42 @@
+[
+  {
+    "name": "overlay hidden by default",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "F1 opens overlay",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "` closes overlay",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "stats populated",
+    "ok": true,
+    "detail": "{\"fps\":\"1.7\",\"1% low\":\"0.4\",\"avg ms\":\"601.40\",\"median\":\"623.50\",\"p99 ms\":\"2538.10\",\"max ms\":\"2538.1\",\"hitches\":\"12\",\"draws\":\"3\",\"tris\":\"832k\",\"GPU MB\":\"133\",\"heap MB\":\"28.1/2057\",\"stream q\":\"0\",\"pipelines\":\"5\",\"res\":\"2560×1440\"}"
+  },
+  {
+    "name": "late-pipeline log clean after loading",
+    "ok": true,
+    "detail": "none — clean"
+  },
+  {
+    "name": "late pipeline detected and flagged red",
+    "ok": true,
+    "detail": "{\"shown\":true,\"text\":\"LATE PIPELINES: 1\",\"n\":1}"
+  },
+  {
+    "name": "system toggle disables terrain",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "time-of-day slider drives the world",
+    "ok": true,
+    "detail": "21"
+  }
+]

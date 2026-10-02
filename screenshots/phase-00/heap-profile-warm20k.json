@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-02T07:01:50.799Z",
+  "seconds": 20,
+  "frames": 635,
+  "overlayOpen": false,
+  "machine": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "adapter": "google / swiftshader"
+  },
+  "samplingIntervalBytes": 16,
+  "totalBytes": 812304,
+  "bytesPerFrame": 1279.2,
+  "frameLoopBytes": 678244,
+  "frameLoopBytesPerFrame": 1068.1,
+  "gameBytesPerFrame": 0,
+  "engineBytesPerFrame": 1068.1,
+  "topSites": [
+    {
+      "site": "next :0",
+      "bytes": 209600,
+      "bytesPerFrame": 330.1
+    },
+    {
+      "site": "_startMainRenderPass @babylonjs/core/Engines/webgpuEngine.pure.js:2555",
+      "bytes": 126492,
+      "bytesPerFrame": 199.2
+    },
+    {
+      "site": "flushFramebuffer @babylonjs/core/Engines/webgpuEngine.pure.js:2377",
+      "bytes": 112476,
+      "bytesPerFrame": 177.1
+    },
+    {
+      "site": "render @babylonjs/core/Meshes/mesh.pure.js:2108",
+      "bytes": 71712,
+      "bytesPerFrame": 112.9
+    },
+    {
+      "site": "_renderFrame @babylonjs/core/scene.pure.js:4533",
+      "bytes": 48216,
+      "bytesPerFrame": 75.9
+    },
+    {
+      "site": "_evaluateActiveMeshes @babylonjs/core/scene.pure.js:3873",
+      "bytes": 47520,
+      "bytesPerFrame": 74.8
+    },
+    {
+      "site": "_renderForCamera @babylonjs/core/scene.pure.js:4096",
+      "bytes": 46560,
+      "bytesPerFrame": 73.3
+    },
+    {
+      "site": "_activeMesh @babylonjs/core/scene.pure.js:4017",
+      "bytes": 35568,
+      "bytesPerFrame": 56
+    },
+    {
+      "site": "isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516",
+      "bytes": 27360,
+      "bytesPerFrame": 43.1
+    },
+    {
+      "site": "render @babylonjs/core/Rendering/renderingManager.js:111",
+      "bytes": 23664,
+      "bytesPerFrame": 37.3
+    },
+    {
+      "site": "slice :0",
+      "bytes": 22584,
+      "bytesPerFrame": 35.6
+    },
+    {
+      "site": "_updateOwnerKeyed @babylonjs/core/Materials/uniformBuffer.js:462",
+      "bytes": 18968,
+      "bytesPerFrame": 29.9
+    },
+    {
+      "site": "get instantaneousFrameTime @babylonjs/core/Misc/performanceMonitor.js:43",
+      "bytes": 7680,
+      "bytesPerFrame": 12.1
+    },
+    {
+      "site": "(IDLE_EXTERNAL) :0",
+      "bytes": 7304,
+      "bytesPerFrame": 11.5
+    },
+    {
+      "site": "get Now @babylonjs/core/Misc/precisionDate.js:9",
+      "bytes": 6600,
+      "bytesPerFrame": 10.4
+    }
+  ],
+  "topFrameLoopStacks": [
+    {
+      "site": "_startMainRenderPass @babylonjs/core/Engines/webgpuEngine.pure.js:2555 <- _clearFrameBuffer @babylonjs/core/scene.pure.js:4066 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083",
+      "bytes": 126492,
+      "bytesPerFrame": 199.2
+    },
+    {
+      "site": "render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240",
+      "bytes": 71712,
+      "bytesPerFrame": 112.9
+    },
+    {
+      "site": "next :0 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096",
+      "bytes": 54800,
+      "bytesPerFrame": 86.3
+    },
+    {
+      "site": "_renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+      "bytes": 48216,
+      "bytesPerFrame": 75.9
+    },
+    {
+      "site": "_evaluateActiveMeshes @babylonjs/core/scene.pure.js:3873 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454",
+      "bytes": 47520,
+      "bytesPerFrame": 74.8
+    },
+    {
+      "site": "_renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083",
+      "bytes": 46560,
+      "bytesPerFrame": 73.3
+    },
+    {
+      "site": "next :0 <- _evaluateActiveMeshes @babylonjs/core/scene.pure.js:3873 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43",
+      "bytes": 36960,
+      "bytesPerFrame": 58.2
+    },
+    {
+      "site": "next :0 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+      "bytes": 36460,
+      "bytesPerFrame": 57.4
+    },
+    {
+      "site": "next :0 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454",
+      "bytes": 36360,
+      "bytesPerFrame": 57.3
+    },
+    {
+      "site": "_activeMesh @babylonjs/core/scene.pure.js:4017 <- _evaluateActiveMeshes @babylonjs/core/scene.pure.js:3873 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43",
+      "bytes": 35568,
+      "bytesPerFrame": 56
+    },
+    {
+      "site": "next :0 <- _activeMesh @babylonjs/core/scene.pure.js:4017 <- _evaluateActiveMeshes @babylonjs/core/scene.pure.js:3873 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533",
+      "bytes": 27500,
+      "bytesPerFrame": 43.3
+    },
+    {
+      "site": "isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096",
+      "bytes": 27360,
+      "bytesPerFrame": 43.1
+    },
+    {
+      "site": "render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:43 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454",
+      "bytes": 23664,
+      "bytesPerFrame": 37.3
+    },
+    {
+      "site": "slice :0 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240",
+      "bytes": 22584,
+      "bytesPerFrame": 35.6
+    },
+    {
+      "site": "_updateOwnerKeyed @babylonjs/core/Materials/uniformBuffer.js:462 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89",
+      "bytes": 18968,
+      "bytesPerFrame": 29.9
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,27 @@
+{
+  "name": "wraith-of-the-unstill",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "capture": "node tools/capture/capture.mjs",
+    "heap": "node tools/capture/heap-profile.mjs",
+    "alloc": "node --expose-gc tools/alloc/alloc-check.mjs",
+    "perf": "node tools/capture/perf-run.mjs",
+    "overlay-check": "node tools/capture/overlay-check.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^9.29.0"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "playwright": "^1.63.0",
+    "source-map-js": "^1.2.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

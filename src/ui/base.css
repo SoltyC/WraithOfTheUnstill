@@ -1,0 +1,87 @@
+:root {
+  --ink: #e9e4d8;
+  --ink-dim: #9a968c;
+  --night: #07090d;
+  --frost: #9fc4e8;
+  --warn: #ff5a4f;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --mono: "JetBrains Mono", "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--serif);
+}
+
+#view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+/* Loading screen: quiet, centred, on-tone. Fades out once warm-up completes. */
+.loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: radial-gradient(ellipse at 50% 42%, #18202b 0%, #0b0e14 55%, #050608 100%);
+  transition: opacity 1.4s ease;
+  z-index: 10;
+}
+.loading.done { opacity: 0; pointer-events: none; }
+.loading-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cfe4ff;
+  box-shadow: 0 0 18px 6px rgba(160, 200, 255, 0.35), 0 0 60px 20px rgba(120, 160, 230, 0.12);
+  animation: breathe 4.5s ease-in-out infinite;
+}
+.loading-title {
+  font-size: 15px;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.82;
+}
+.loading-bar {
+  width: 180px;
+  height: 1px;
+  background: rgba(233, 228, 216, 0.12);
+}
+.loading-fill {
+  height: 100%;
+  width: 0%;
+  background: rgba(233, 228, 216, 0.6);
+  transition: width 0.35s ease;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.45; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+/* Shown only when navigator.gpu is missing. One line, then stop. */
+.nogpu {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+}

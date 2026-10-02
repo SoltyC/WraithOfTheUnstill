@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-02T07:03:35.649Z",
+  "width": 2560,
+  "height": 1440,
+  "repeat": 2,
+  "spots": [
+    {
+      "id": "p0-start-golden",
+      "file": "screenshots/phase-00/p0-start-golden.png",
+      "ms": 9647,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 161.9,
+        "maxChannel": 213
+      }
+    },
+    {
+      "id": "p0-ridge-noon",
+      "file": "screenshots/phase-00/p0-ridge-noon.png",
+      "ms": 9763,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 206.4,
+        "maxChannel": 230
+      }
+    },
+    {
+      "id": "p0-vista-dusk",
+      "file": "screenshots/phase-00/p0-vista-dusk.png",
+      "ms": 9716,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 108.7,
+        "maxChannel": 173
+      }
+    },
+    {
+      "id": "p0-dawn",
+      "file": "screenshots/phase-00/p0-dawn.png",
+      "ms": 9749,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 147.9,
+        "maxChannel": 205
+      }
+    },
+    {
+      "id": "p0-night",
+      "file": "screenshots/phase-00/p0-night.png",
+      "ms": 10124,
+      "identical": true,
+      "exposure": {
+        "clippedPct": 0,
+        "meanLuma": 127,
+        "maxChannel": 252
+      }
+    }
+  ],
+  "machine": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "adapter": "google / swiftshader"
+  },
+  "reproducible": true
+}
