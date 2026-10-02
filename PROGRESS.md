@@ -4,10 +4,11 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 1 (World skeleton). **All Phase 1 systems are built.** Phase 0 is closed (gate met, 2026-10-02).
-- **Gate status (Phase 1): NOT MET (flight run 1, 2026-10-03).** Surf had 198 of 86k frames above median + 4 ms (worst 29.1 ms) and glide had 55 of 43k (worst 17.7 ms).
-  - The GPU frame stays at 3.9–4.1 ms median and ≤ 5.8 ms max, so the hitches are on the CPU or presentation side.
-  - The flight bench now attributes each hitch: CPU time per frame, plus tile, scroll, clipmap and patch flags (PERF.md).
+- **Phase:** 1 (World skeleton): **gate met, closed (2026-10-03, user ruling).** Phase 2 (Frost Steppe look-dev) is next; the user approved moving on. Phase 0 is closed (gate met, 2026-10-02).
+- **Gate status (Phase 1): MET under the user's ruling of 2026-10-03** (DECISIONS.md), from four flight runs on T (PERF.md):
+  - the gate counts game-attributable hitches only, and there were **0**: CPU ≤ 1.2 ms and GPU ≤ 8.2 ms before every hitch, with no streaming correlation;
+  - the GPU frame is ~4.2 ms at 170 Hz and ~6.0 ms at 60 Hz, against a 16.7 ms budget; shadows take 1.4–2.1 ms against 2.7 ms;
+  - presentation stalls from outside the game remain: 14 real drops in 45.8k frames at 60 Hz. They are reported separately.
 - **Phase 1 gate work in place:** the benchmark (`?bench=flight`) flies the continent at 20 m/s (surf, 12 m up) and 40 m/s (glide, 45 m up), recording presented frames, GPU time per pass category, stream queue depth, tile uploads, late pipelines and the hitch attribution.
 - **Built in Phase 1** (BRIEF §17), with details in the session log and DECISIONS.md:
   - **world:** deterministic bake; worker streaming; 12-level clipmap with geomorphing; CPU/GPU height parity (max 0.58 mm);
@@ -18,7 +19,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** run the instrumented flight benchmark again on T, then fix whatever the hitch attribution points at (see "Next step").
+- **Exact next step:** Phase 2, Frost Steppe look-dev (see "Next step").
 
 ## How to run
 
@@ -283,14 +284,9 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-1. **Re-run the instrumented flight on T:** `npm run build && npm run preview`, then `http://localhost:4173/?bench=flight&res=2560x1440` in Windows Chrome, fullscreen with the tab focused. The panel prints one hitch line per phase; the JSON in `perf/runs/` lists each hitch.
-2. **Fix by attribution:**
-   - **CPU > 8 ms before a hitch with a tile or patch flag:** move the work off the main thread or slice it (tile upload size per frame, patch install, clipmap level rebuilds per frame).
-   - **Scroll flag:** split terrain-state strips across frames.
-   - **Low CPU, no flags, and the next frame normal:** a compositor or presentation drop. Take a DevTools Performance trace of the surf phase (`&flightScale=0.3` for a shorter run).
-3. Once the gate passes, record it in PERF.md and PROGRESS.md, then ask the user before starting **Phase 2 — Frost Steppe look-dev**.
-4. Carry these rules forward:
-   - no doubles as call arguments in hot code;
-   - one params write per system per frame;
-   - warm every pipeline during loading;
-   - re-verify `babylonTweaks.js` and the `_startRenderTargetRenderPass` override in `render/shadows.js` on Babylon upgrades.
+Start **Phase 2 — Frost Steppe look-dev (hard gate)** (BRIEF §17), carrying over these rules:
+- no doubles as call arguments in hot code;
+- one params write per system per frame;
+- warm every pipeline during loading;
+- re-verify `babylonTweaks.js` and the `_startRenderTargetRenderPass` override in `render/shadows.js` on Babylon upgrades;
+- after major systems, run `?bench=flight` on T and report game-attributable hitches (gate) separately from external stalls.

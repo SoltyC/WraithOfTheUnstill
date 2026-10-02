@@ -140,7 +140,7 @@ The display was set to 60 Hz (the target refresh). Same flight, same build as ru
 - **Some drops come in pairs** (frames 851–852 and 10056–10057, each ~33 ms twice), as an external ~50 ms stall would.
 - **The GPU frame grows from ~4.2 to ~6.0 ms at 60 Hz:** with more idle time per refresh the GPU clocks down. That's power management, not extra work. It is still 36 % of the 16.7 ms budget.
 
-**Verdict:** the game causes none of the hitches. Under the strict rule the gate is still not met (43 intervals over the limit, 14 real drops), all of them stalls outside the frame. **Awaiting the user's ruling** on whether the gate counts game-attributable hitches only (as the Phase 0 allocation floor did).
+**Verdict:** the game causes none of the hitches. **Gate met under the user's ruling of 2026-10-03:** only game-attributable hitches count (DECISIONS.md), and there are 0. Stalls from outside the game (14 real drops in 45.8k frames at 60 Hz, 1 in ~550 frames at 170 Hz) are reported separately and re-checked in every later phase's benchmark.
 
 ## Phase 1 measurements (machine W, 2026-10-03)
 
