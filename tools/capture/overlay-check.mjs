@@ -54,9 +54,17 @@ try {
   const terrainOff = await page.evaluate(() => !window.__wraith.game.scene.getMeshByName('testTerrain').isEnabled());
   check('system toggle disables terrain', terrainOff);
   await page.evaluate(() => { const l = [...document.querySelectorAll('#dev-overlay label.toggle')].find((x) => x.textContent.trim() === 'terrain'); l.querySelector('input').click(); });
+  // Live uniform updates must reach the GPU mid-session (not just at load).
+  const frameAt = () => page.evaluate(() => window.__wraith.clock.frame);
+  const settle = async () => { const f = await frameAt(); await page.waitForFunction((x) => window.__wraith.clock.frame >= x + 3, f, { timeout: 120000 }); };
+  await settle();
+  const before = await page.screenshot({ clip: { x: 1200, y: 200, width: 400, height: 300 } });
   await page.evaluate(() => { const r = [...document.querySelectorAll('#dev-overlay .row')].find((x) => x.textContent.includes('Time of day')).querySelector('input'); r.value = '21'; r.dispatchEvent(new Event('input')); });
   const tod = await page.evaluate(() => window.__wraith.params.v.timeOfDay);
   check('time-of-day slider drives the world', tod === 21, String(tod));
+  await settle();
+  const after = await page.screenshot({ clip: { x: 1200, y: 200, width: 400, height: 300 } });
+  check('slider change reaches the GPU (frame changes)', !before.equals(after));
 } finally {
   await browser.close();
   await server.close();

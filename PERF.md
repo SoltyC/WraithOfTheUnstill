@@ -53,12 +53,14 @@ attributes every sample to the frame loop and to game vs engine code via sourcem
 | Run | Warm-up | Game code (`src/`) | Avoidable engine code | WebGPU API floor | Browser idle | Total | Report |
 |---|---|---|---|---|---|---|---|
 | Session 1 baseline | 20k frames | 0 | 1068 (Babylon traversal, labels, iterators) | (included) | — | 1279 B/frame | `heap-profile-baseline-warm20k.json` |
-| Final, clock running | 20k frames | **0** | 29 (Babylon UBO slot path when uniforms change) | 224 | 12 | **265 B/frame** | `heap-profile.json` |
+| Final, clock running | 20k frames | **0** | **0** | 253 (incl. 31 for one `writeBuffer`) | 12 | **265 B/frame** | `heap-profile.json` |
 | Final, clock frozen (`capture=1`) | 20k frames | **0** | **0** | 225 | 11 | **236 B/frame** | `heap-profile-frozen.json` |
 
 **What the floor is:** each frame Chrome creates JS wrappers for the swap-chain GPUTexture, its GPUTextureView and the GPURenderPassEncoder (~142 B, all inside `_startMainRenderPass`), plus 2 × GPUCommandEncoder and 2 × GPUCommandBuffer (~82 B, inside `endFrame`). These were measured in isolation: `createCommandEncoder()` + `finish()` costs 42 B per pair. No WebGPU program can avoid them. "Browser idle" is `(IDLE_EXTERNAL)`, outside JS.
 
-**The remaining 29 B:** it appears only when a uniform buffer's contents change in the frame. Here that's the capsule's breathing light, driven by sim time; in gameplay, camera motion will do the same. It doesn't reproduce when `UniformBuffer._updateOwnerKeyed` + `updateFloat4` are driven in isolation (<1 B/call), so the exact site is still open.
+**`writeBuffer`:** each upload to a buffer that in-flight GPU work references costs ~31 B. With the clock running, only the capsule's uniform buffer changes, so there is one upload per frame. I tried three JS call shapes (Babylon's `setSubData`, an overridden `setSubData`, an overridden `updateUniformBuffer`), and the bytes always sat at the `writeBuffer` call site. A warm `writeBuffer` to an unused buffer costs nothing. That makes it part of the API floor, and it's why the design rule in DECISIONS.md is to batch per-frame uniforms into one upload.
+
+**Gate verdict (user ruling, 2026-10-02):** game code 0 and avoidable engine code 0, so the Phase 0 allocation gate is **met**. The WebGPU API floor is reported above and is accepted.
 
 Steady state needs V8 to optimise Babylon's large frame functions. Before that (the first few thousand frames) the engine allocates ~1 KB/frame. `tools/capture/frame-alloc-probe.mjs` gives fast site-level diagnosis.
 

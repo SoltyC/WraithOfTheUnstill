@@ -4,18 +4,17 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 0 (Foundation and tooling). Built and verified except one gate item; see "Gate status".
-- **Gate status (Phase 0):** **met on game code; one engine item and one user decision open.**
-  - ✅ The overlay works: 8/8 automated checks in `tools/capture/overlay-check.mjs`.
-  - ✅ Captures are reproducible: all 5 photo spots are byte-identical across two fresh loads at 2560×1440, and unchanged by the session 2 engine work.
-  - ◐ Zero allocations per frame. After a 20k-frame warm-up:
-    - **Game code: 0 B/frame.**
-    - **Avoidable engine code: 0 B/frame** with the clock frozen; 29 B/frame when a uniform buffer changes. That's Babylon's UBO slot path, site not yet pinned.
-    - **Unavoidable WebGPU API wrappers: ~225 B/frame**, 7 objects every WebGPU renderer must create.
-    - Was 1.1 KB/frame of Babylon overhead at the end of session 1.
-  - **Decision needed from the user:** accept the WebGPU wrapper floor as outside the "zero allocations" gate (recorded as pending in DECISIONS.md). Strict zero is impossible for any WebGPU program.
+- **Phase:** 0 (Foundation and tooling). **Gate met.** Phase 1 has not been started.
+- **Gate status (Phase 0):**
+  - ✅ The overlay works: 9/9 automated checks in `tools/capture/overlay-check.mjs`, including a live uniform change reaching the GPU.
+  - ✅ Captures are reproducible: all 5 photo spots are byte-identical across two fresh loads at 2560×1440, and unchanged by all the engine work.
+  - ✅ Zero allocations per frame, measured with the real rAF loop after a 20k-frame warm-up:
+    - **game code 0 B/frame**;
+    - **avoidable engine code 0 B/frame**;
+    - the WebGPU API floor (~225 B of wrapper objects, plus ~31 B per `writeBuffer`) is reported separately, as **ruled by the user on 2026-10-02** (DECISIONS.md).
+  - Still to do: target-machine performance numbers (not part of the Phase 0 gate wording, but required by BRIEF §3 and PERF.md).
 - **Machine used this session:** Windows + WSL2, RTX 3060 (**not** the target). Captures and profiles ran in Playwright's bundled Chromium with WebGPU on SwiftShader (CPU). Images are valid; timings are not. No target-machine performance numbers exist yet.
-- **Exact next step:** see "Next step" at the bottom. In short: get the user's ruling on the WebGPU floor, pin the 29 B uniform-upload site, then take target-machine numbers.
+- **Exact next step:** run the target-machine numbers (see "Next step" at the bottom), then start Phase 1.
 
 ## How to run
 
@@ -62,13 +61,18 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 
 | Run | Total | Game | Avoidable engine | WebGPU floor | Browser idle |
 |---|---|---|---|---|---|
-| Clock running | 265 B/frame | 0 | 29 | 224 | 12 |
+| Clock running | 265 B/frame | 0 | 0 (29 B later shown to be `writeBuffer`, i.e. API floor) | 224 + 29 | 12 |
 | Clock frozen | 236 B/frame | 0 | 0 | 225 | 11 |
 
 Captures are still byte-identical. Tests 34/34, alloc check 9/9, overlay check 8/8.
 
+**Then (same session, after the user accepted the WebGPU floor):**
+- Chased the 29 B/frame seen when uniforms change. Profiling a stepped copy of `UniformBuffer._updateOwnerKeyed` and two upload-path overrides showed the bytes always sit at the `queue.writeBuffer` call site. A warm `writeBuffer` to a buffer no pass uses costs nothing; to a buffer in use by bundles it costs ~31 B. Classified as API floor. The experimental overrides were removed.
+- Added the design rule "one `writeBuffer` per frame for all per-frame uniforms" (DECISIONS.md).
+- `overlay-check.mjs` now also verifies that a live slider change alters the rendered frame (9 checks).
+- Final: 265.5 B/frame with the clock running and 236 B/frame frozen, all API floor. **Gate met.**
+
 **Unfinished**
-- The 29 B/frame when uniforms change. It's attributed to `UniformBuffer._updateOwnerKeyed` but doesn't reproduce in isolation. Next probe: run the real loop with only the capsule's `bodyParams` changing and the others static, then bisect `_updateOwnerKeyed`'s change branch (`_takeFreeSlot`, `bindUniformBuffer`, `updateUniformBuffer`) by temporarily overriding each on the instance.
 - Target-machine numbers (unchanged from session 1).
 
 ### Session 1 — 2026-10-02 — Phase 0
@@ -162,10 +166,12 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-1. Ask the user to rule on the WebGPU wrapper floor (DECISIONS.md, "Allocation floor"). If accepted, the allocation gate is met except for item 2.
-2. Pin and remove the 29 B/frame uniform-upload allocation (method in session 2 "Unfinished"). Verify with `npm run heap -- --settle-frames=20000`, and with `--query=capture=1 --out=heap-profile-frozen.json`.
-3. On the target machine:
+1. On the target machine (Windows 11, RTX 5070 Ti):
    - `npm run perf -- --channel=chrome --headed`;
    - `npm run capture -- --channel=chrome --headed --out=screenshots/phase-00-target`;
-   - record the results in PERF.md.
-4. Then Phase 1.
+   - record frame times and the per-system budget in PERF.md, and confirm the target captures look the same and are still reproducible.
+2. Start **Phase 1 — World skeleton** (BRIEF §17). Carry over these Phase 0 rules:
+   - no doubles as call arguments in hot code (`npm run alloc`);
+   - one `writeBuffer` per frame for per-frame uniforms;
+   - re-verify `src/render/babylonTweaks.js` on any Babylon upgrade (the label overrides are version-guarded);
+   - re-run `npm run heap -- --settle-frames=20000` after new per-frame systems land.

@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-02T08:15:39.364Z",
+  "date": "2026-10-02T09:10:59.505Z",
   "width": 2560,
   "height": 1440,
   "repeat": 2,
@@ -7,7 +7,7 @@
     {
       "id": "p0-start-golden",
       "file": "screenshots/phase-00/p0-start-golden.png",
-      "ms": 9664,
+      "ms": 9815,
       "identical": true,
       "exposure": {
         "clippedPct": 0,
@@ -18,7 +18,7 @@
     {
       "id": "p0-ridge-noon",
       "file": "screenshots/phase-00/p0-ridge-noon.png",
-      "ms": 10461,
+      "ms": 10185,
       "identical": true,
       "exposure": {
         "clippedPct": 0,
@@ -29,7 +29,7 @@
     {
       "id": "p0-vista-dusk",
       "file": "screenshots/phase-00/p0-vista-dusk.png",
-      "ms": 9793,
+      "ms": 9738,
       "identical": true,
       "exposure": {
         "clippedPct": 0,
@@ -40,7 +40,7 @@
     {
       "id": "p0-dawn",
       "file": "screenshots/phase-00/p0-dawn.png",
-      "ms": 9520,
+      "ms": 9821,
       "identical": true,
       "exposure": {
         "clippedPct": 0,
@@ -51,7 +51,7 @@
     {
       "id": "p0-night",
       "file": "screenshots/phase-00/p0-night.png",
-      "ms": 9834,
+      "ms": 10022,
       "identical": true,
       "exposure": {
         "clippedPct": 0,

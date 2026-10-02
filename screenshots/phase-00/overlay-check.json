@@ -17,7 +17,7 @@
   {
     "name": "stats populated",
     "ok": true,
-    "detail": "{\"fps\":\"0.9\",\"1% low\":\"0.3\",\"avg ms\":\"1123.65\",\"median\":\"1209.60\",\"p99 ms\":\"3813.70\",\"max ms\":\"3813.7\",\"hitches\":\"14\",\"draws\":\"3\",\"tris\":\"832k\",\"GPU MB\":\"133\",\"heap MB\":\"27.0/2057\",\"stream q\":\"0\",\"pipelines\":\"5\",\"res\":\"2560×1440\"}"
+    "detail": "{\"fps\":\"1.7\",\"1% low\":\"0.7\",\"avg ms\":\"579.91\",\"median\":\"628.80\",\"p99 ms\":\"1380.10\",\"max ms\":\"1380.1\",\"hitches\":\"15\",\"draws\":\"3\",\"tris\":\"832k\",\"GPU MB\":\"133\",\"heap MB\":\"27.8/2057\",\"stream q\":\"0\",\"pipelines\":\"5\",\"res\":\"2560×1440\"}"
   },
   {
     "name": "late-pipeline log clean after loading",
@@ -38,5 +38,10 @@
     "name": "time-of-day slider drives the world",
     "ok": true,
     "detail": "21"
+  },
+  {
+    "name": "slider change reaches the GPU (frame changes)",
+    "ok": true,
+    "detail": ""
   }
 ]
