@@ -16,27 +16,33 @@ import { capsuleVertexWGSL, capsuleFragmentWGSL } from '../shaders/capsule.wgsl.
 import { bindEnvironment, env } from './environment.js';
 import { createClipmap } from './clipmap.js';
 import { renderOpaqueUnsorted, fastFrozenIsReady } from './babylonTweaks.js';
+import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
+import { bindAtmosphere } from './atmosphereBindings.js';
 
 function register(name, vs, fs) {
   ShaderStore.ShadersStoreWGSL[name + 'VertexShader'] = vs;
   ShaderStore.ShadersStoreWGSL[name + 'FragmentShader'] = fs;
 }
 
-function wgslMaterial(scene, name, attributes, extraUniforms) {
+function wgslMaterial(scene, name, attributes, extraUniforms, atmo) {
   const mat = new ShaderMaterial(name, scene, { vertex: name, fragment: name }, {
     attributes,
     uniforms: ['world', 'viewProjection', ...ENV_UNIFORMS, ...extraUniforms],
+    samplers: ATMO_MATERIAL_TEXTURES,
+    storageBuffers: ATMO_MATERIAL_BUFFERS,
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat);
+  bindAtmosphere(mat, atmo);
   return mat;
 }
 
 /**
  * @param {import('@babylonjs/core').Scene} scene
  * @param {Record<string, any>} worldBuffers  WorldStreamer storage buffers
+ * @param {ReturnType<typeof import('./atmosphere.js').createAtmosphere>} atmo
  */
-export function createWorldScene(scene, worldBuffers) {
+export function createWorldScene(scene, worldBuffers, atmo) {
   register('sky', skyVertexWGSL, skyFragmentWGSL);
   register('capsule', capsuleVertexWGSL, capsuleFragmentWGSL);
 
@@ -44,18 +50,18 @@ export function createWorldScene(scene, worldBuffers) {
   const sky = CreateSphere('sky', { diameter: 2, segments: 48, sideOrientation: Mesh.BACKSIDE }, scene);
   sky.scaling.setAll(1000);
   sky.infiniteDistance = true;
-  const skyMat = wgslMaterial(scene, 'sky', ['position'], ['moonDir']);
+  const skyMat = wgslMaterial(scene, 'sky', ['position'], ['moonDir'], atmo);
   skyMat.setVector3('moonDir', env.moonDir);
   skyMat.disableDepthWrite = true;
   skyMat.backFaceCulling = false;
   sky.material = skyMat;
 
-  const clipmap = createClipmap(scene, worldBuffers);
+  const clipmap = createClipmap(scene, worldBuffers, atmo);
 
   const capsuleHalfHeight = 0.9;
   const capsule = CreateCapsule('player', { height: capsuleHalfHeight * 2, radius: 0.32, tessellation: 48, subdivisions: 8, capSubdivisions: 12 }, scene);
   const bodyParams = new Vector4(capsuleHalfHeight, 1, 0, 0);
-  const capsuleMat = wgslMaterial(scene, 'capsule', ['position', 'normal'], ['bodyParams']);
+  const capsuleMat = wgslMaterial(scene, 'capsule', ['position', 'normal'], ['bodyParams'], atmo);
   capsuleMat.setVector4('bodyParams', bodyParams);
   capsule.material = capsuleMat;
 

@@ -2,6 +2,7 @@
 // the top (where the cowl will be). A stand-in for the Wraith (Phase 3), not a shipped look.
 
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 
 export const capsuleVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
@@ -29,6 +30,7 @@ varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vLocalY: f32;
 ${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -45,18 +47,19 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   let wrap = 0.45;
   let diff = clamp((dot(N, L) + wrap) / (1.0 + wrap), 0.0, 1.0);
-  let hemi = mix(uniforms.groundBounce, uniforms.skyZenith * 1.2, N.y * 0.5 + 0.5);
-  var col = albedo * (uniforms.keyColor * diff + hemi);
+  let key = atmoKeyColor();
+  let hemi = mix(atmoSkySide() * 0.6, atmoSkyUp(), N.y * 0.5 + 0.5) * uniforms.envMisc.w;
+  var col = albedo * (key * diff * (1.0 / PI) + hemi);
   // Cloth sheen: rim of light at grazing view angles, tinted by the key.
   let sheen = pow(1.0 - NdotV, 4.0) * (0.35 + 0.65 * diff);
-  col += (uniforms.keyColor * 0.06 + uniforms.skyHorizon * 0.05) * sheen;
+  col += (key * (0.06 / PI) + atmoLight[3].xyz * 0.05) * sheen;
 
   // Faint, slowly breathing cold light high on the body.
   let breathe = 0.82 + 0.18 * sin(uniforms.bodyParams.z * 1.3);
   let cowl = smoothstep(0.35, 0.8, hy) * pow(NdotV, 2.0) * uniforms.bodyParams.y * breathe;
   col += vec3f(0.55, 0.75, 1.0) * cowl * 0.15;
 
-  col = applyFog(col, wp, camPos, uniforms.sunDir, uniforms.skyZenith, uniforms.skyHorizon, uniforms.sunHalo, uniforms.fogParams);
-  fragmentOutputs.color = vec4f(displayTransform(col, uniforms.fogParams.z), 1.0);
+  col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
+  fragmentOutputs.color = vec4f(displayTransform(col, uniforms.fogParams.z * atmoExposure()), 1.0);
 }
 `;

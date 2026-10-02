@@ -7,7 +7,7 @@
       "player": [-220, 580], "camera": { "mode": "follow", "yaw": 0.8, "pitch": 0.12, "dist": 6 } },
     { "id": "p1-dunes-golden", "biome": "dunes", "label": "Dune basin across the wind, golden hour", "time": 17.8, "weather": "clear",
       "player": [2436, 1124], "camera": { "mode": "follow", "yaw": 2.4, "pitch": 0.1, "dist": 7 } },
-    { "id": "p1-volcano-dusk", "biome": "ember", "label": "Toward the volcano from the ash plain, dusk", "time": 18.8, "weather": "clear",
+    { "id": "p1-volcano-dusk", "biome": "ember", "label": "Toward the volcano from the ash plain, dusk", "time": 18.25, "weather": "clear",
       "player": [2948, -540], "camera": { "mode": "follow", "yaw": -2.79, "pitch": 0.06, "dist": 6 } },
     { "id": "p1-mire-dawn", "biome": "mire", "label": "Mire lowlands, dawn", "time": 6.5, "weather": "clear",
       "player": [-1212, -668], "camera": { "mode": "follow", "yaw": 1.2, "pitch": 0.1, "dist": 6 } },

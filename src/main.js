@@ -108,7 +108,9 @@ async function boot() {
   const ground = new PatchGround();
   const streamer = new WorldStreamer(engine, ground);
   await streamer.init(import.meta.env.BASE_URL + 'world/');
-  const content = createWorldScene(scene, streamer.buffers);
+  const { createAtmosphere } = await import('./render/atmosphere.js');
+  const atmosphere = createAtmosphere(scene, camera);
+  const content = createWorldScene(scene, streamer.buffers, atmosphere);
   progress(0.4);
 
   const controller = new ctl.CapsuleController(ground);
@@ -154,6 +156,11 @@ async function boot() {
     }
   } });
   loop.add(playerMod.createPlayerSystem({ controller, arm, ...content }));
+  loop.add({ name: 'atmosphere', update: () => {
+    env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();
+    env.env.screenInfo.z = 1 / env.env.screenInfo.x; env.env.screenInfo.w = 1 / env.env.screenInfo.y;
+    atmosphere.update();
+  } });
   loop.add({ name: 'clipmap', update: () => {
     content.clipmap.camX = camera.position.x;
     content.clipmap.camZ = camera.position.z;
@@ -183,7 +190,7 @@ async function boot() {
   const saves = await createSaves({ controller, arm, paramsMod, clock });
 
   const game = {
-    engine, scene, loop, controller, arm, saves, streaming: streamingMod.streaming,
+    engine, scene, camera, loop, controller, arm, saves, streaming: streamingMod.streaming,
     streamer, ground, pois: worldPois.default.pois,
     teleport(x, z) { requestTeleport(x, z); },
     /** True once the player stands on streamed ground with every nearby tile resident. */
@@ -201,7 +208,7 @@ async function boot() {
   overlay.refreshToggles();
   loop.addLate(overlay);
   loop.addLate({ name: 'saves', update: () => { if (systemsMod.toggles.on.autosave && !capture) saves.tick(); } });
-  const bench = qs.get('bench') === '1' ? await import('./core/bench.js') : null;
+  const bench = qs.get('bench') ? await import('./core/bench.js') : null;
   if (bench) loop.addLate(bench.benchSystem);
   loop.addLate({ name: 'inputEnd', update: inputMod.endInputFrame });
 

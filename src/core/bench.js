@@ -94,9 +94,10 @@ async function phase(name, seconds, settle, setup) {
 
 /** @param {any} game  @param {URLSearchParams} qs */
 export async function runBench(game, qs) {
+  if (qs.get('bench') === 'flight') return runFlightBench(game, qs);
   const seconds = Number(qs.get('benchSeconds') || 10);
   const settle = Number(qs.get('settle') || 3);
-  const spot = findSpot(qs.get('spot') || 'p0-start-golden');
+  const spot = findSpot(qs.get('spot') || 'p1-monastery-golden');
   benchSystem.arm = game.arm;
   benchSystem.enabled = true;
   const timeGpu = qs.get('gpuTimer') !== '0';
@@ -123,7 +124,7 @@ export async function runBench(game, qs) {
   phaseStarts.push(Math.round(performance.now() - t0));
   phases.push(await phase('fly', seconds, settle, () => {
     release(); yawRate = 0.08;
-    game.arm.setPose(0, 60, 0, 0.6, 0.12, 0.96);
+    game.arm.setPose(game.controller.pos.x, game.controller.pos.y + 80, game.controller.pos.z, 0.6, 0.12, 0.96);
     game.arm.hold = false;
     injectAction(Action.MoveForward, true);
     injectAction(Action.FreeCamFast, true);
@@ -161,6 +162,35 @@ export async function runBench(game, qs) {
     saved = 'could not reach server: ' + e.message;
   }
   panel.innerHTML = renderPanel(result, saved);
+  return result;
+}
+
+/** Phase 1 gate: flight across the continent at surf then glide speed. */
+async function runFlightBench(game, qs) {
+  const { runFlight, flight } = await import('./benchFlight.js');
+  game.loop.addLate(flight);
+  const timeGpu = qs.get('gpuTimer') !== '0';
+  gpuTimer.setActive(timeGpu);
+  const panel = showPanel('Flight benchmark running (~13 min at full length)… keep this tab focused and visible.');
+  await sleep(2000);
+  const phases = await runFlight(game, Number(qs.get('flightScale') || 1));
+  gpuTimer.setActive(false);
+  const eng = game.engine;
+  const result = {
+    date: new Date().toISOString(), kind: 'flight', build: import.meta.env.MODE,
+    machine: { adapter: gpuStats.adapterInfo, userAgent: navigator.userAgent, devicePixelRatio: window.devicePixelRatio, screen: screen.width + 'x' + screen.height, window: innerWidth + 'x' + innerHeight, render: eng.getRenderWidth() + 'x' + eng.getRenderHeight(), timestampQuery: gpuTimer.supported },
+    settings: { url: location.search, gpuTimer: timeGpu },
+    scene: { drawCalls: gpuStats.drawCallsLastFrame, pipelines: gpuStats.pipelinesTotal, latePipelines: gpuStats.late.length, gpuMB: Math.round((gpuStats.bufferBytes + gpuStats.textureBytes) / 1048576) },
+    phases,
+  };
+  window.__wraith.benchResult = result;
+  let saved = '';
+  try {
+    const r = await fetch('/__wraith/perf', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(result) });
+    saved = r.ok ? 'saved to ' + (await r.json()).file : 'server did not save (HTTP ' + r.status + ')';
+  } catch (e) { saved = 'could not reach server: ' + e.message; }
+  const row = (p) => `<tr><td>${p.name} ${p.speedMps} m/s</td><td>${p.presented?.fps ?? '–'}</td><td>${p.presented?.low1Fps ?? '–'}</td><td>${p.presented?.medianMs ?? '–'}</td><td>${p.presented?.maxMs ?? '–'}</td><td>${p.presented?.framesOverMedianPlus4 ?? '–'}</td><td>${p.gpuMainPass?.medianMs ?? 'n/a'}</td><td>${p.gpuMainPass?.p99Ms ?? 'n/a'}</td><td>${p.tilesUploaded}</td></tr>`;
+  panel.innerHTML = `<h3>Flight benchmark — ${result.machine.render} — ${result.machine.adapter || ''}</h3><table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>max ms</th><th>&gt; median+4</th><th>GPU median</th><th>GPU p99</th><th>tiles</th></tr></thead><tbody>${phases.map(row).join('')}</tbody></table><p>${saved}. Gate: no frame above median + 4 ms.</p>`;
   return result;
 }
 

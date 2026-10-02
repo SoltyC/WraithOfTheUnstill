@@ -2,6 +2,7 @@
 // Phase 1 replaces the gradient with Hillaire sky-view LUT sampling.
 
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 
 export const skyVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
@@ -24,17 +25,21 @@ ${ENV_DECL}
 uniform moonDir: vec3f;
 varying vDir: vec3f;
 ${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let dir = normalize(fragmentInputs.vDir);
-  let sun = uniforms.sunDir;
-  var col = skyColor(dir, sun, uniforms.skyZenith, uniforms.skyHorizon, uniforms.sunHalo);
-
-  // Sun disc with a soft limb, only above the horizon.
-  let mu = dot(dir, sun);
-  let disc = smoothstep(0.99955, 0.99975, mu) * smoothstep(-0.02, 0.01, dir.y);
-  col += uniforms.sunHalo * disc * 40.0;
+  // Physically based sky (Hillaire LUTs, lit by sun and moon) and the attenuated sun disc.
+  // Below the geometric horizon the LUT holds rays that hit the (albedo-less) planet; where no
+  // terrain covers the dome, show the hazy horizon instead by mirroring the elevation.
+  let r = atmoCamR();
+  let horizonY = -sqrt(max(1.0 - (R_GROUND / r) * (R_GROUND / r), 0.0));
+  var sdir = dir;
+  if (dir.y < horizonY + 0.002) { sdir = normalize(vec3f(dir.x, 2.0 * (horizonY + 0.002) - dir.y, dir.z)); }
+  var col = atmoSky(sdir) + atmoSunDisc(dir);
+  // Faint floor so the night sky reads deep blue, never black.
+  col += vec3f(0.30, 0.45, 1.0) * 0.005 * uniforms.envMisc.x; // same floor as the ambient (atmosphere.js NIGHT_FLOOR)
 
   // Night: stars and moon, faded in by envMisc.x (night factor).
   let night = uniforms.envMisc.x;
@@ -59,7 +64,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col += vec3f(0.80, 0.86, 1.0) * core * bright * 1.6 * starNight * smoothstep(0.02, 0.25, up);
   }
 
-  var outc = displayTransform(col, uniforms.fogParams.z);
+  var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
   outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
   fragmentOutputs.color = vec4f(outc, 1.0);
 }

@@ -20,6 +20,8 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { clipmapVertexWGSL, clipmapFragmentWGSL, CLIPMAP_N, CLIPMAP_LEVELS } from '../shaders/clipmap.wgsl.js';
 import { clipmapHeightsWGSL, clipmapNormalsWGSL, CLIPMAP_V } from '../shaders/clipmapCompute.wgsl.js';
 import { bindEnvironment } from './environment.js';
+import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
+import { bindAtmosphere } from './atmosphereBindings.js';
 
 export const CLIPMAP_S0 = 0.0625; // finest spacing (m): BRIEF wants < 10 cm near the player
 const DETAIL_MAX_SPACING = 8;     // levels below this read 2 m tiles (see terrainH)
@@ -30,7 +32,7 @@ const BINDINGS = ['heights', 'overviewH', 'biomeA', 'biomeB', 'windMap', 'reside
  * @param {import('@babylonjs/core').Scene} scene
  * @param {Record<string, any>} buffers  storage buffers from WorldStreamer
  */
-export function createClipmap(scene, buffers) {
+export function createClipmap(scene, buffers, atmo) {
   const engine = scene.getEngine();
   ShaderStore.ShadersStoreWGSL.clipmapVertexShader = clipmapVertexWGSL;
   ShaderStore.ShadersStoreWGSL.clipmapFragmentShader = clipmapFragmentWGSL;
@@ -88,10 +90,12 @@ export function createClipmap(scene, buffers) {
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
     uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', ...ENV_UNIFORMS],
-    storageBuffers: ['levelData', 'biomeA', 'biomeB'],
+    samplers: ATMO_MATERIAL_TEXTURES,
+    storageBuffers: ['levelData', 'biomeA', 'biomeB', ...ATMO_MATERIAL_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat);
+  bindAtmosphere(mat, atmo);
   mat.setArray4('levels', levels);
   mat.setVector4('camGrid', camGrid);
   mat.setVector4('playerPos', playerPos);

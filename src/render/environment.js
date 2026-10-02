@@ -23,6 +23,8 @@ export const env = {
   sunHalo: new Vector3(),
   fogParams: new Vector4(),
   envMisc: new Vector4(),
+  /** (render width, height, 1/width, 1/height), set by the owner each frame. */
+  screenInfo: new Vector4(1, 1, 1, 1),
   /** 0 = day, 1 = full night. */
   night: 0.5,
   sunElevation: 0.5,
@@ -104,10 +106,10 @@ export function updateEnvironment() {
   gb.y = 0.16 * kc.y * up + z.y * 0.35;
   gb.z = 0.13 * kc.z * up + z.z * 0.35;
 
-  // Eye-adaptation stand-in: night exposure lift keeps night blue and readable, never black.
-  fp.x = p.fogDensity; fp.y = p.fogHeightFalloff; fp.z = p.exposure * (1 + 3.2 * night);
+  // Exposure here is the user bias; eye adaptation is computed on the GPU (atmosphere ambient pass).
+  fp.x = p.fogDensity; fp.y = p.fogHeightFalloff; fp.z = p.exposure;
   const em = env.envMisc;
-  em.x = night; em.y = day; em.z = twilight; em.w = 0;
+  em.x = night; em.y = day; em.z = twilight; em.w = p.skylight;
 }
 
 /** Bind the shared env vectors to a ShaderMaterial once. */
@@ -121,4 +123,5 @@ export function bindEnvironment(mat) {
   mat.setVector3('sunHalo', env.sunHalo);
   mat.setVector4('fogParams', env.fogParams);
   mat.setVector4('envMisc', env.envMisc);
+  mat.setVector4('screenInfo', env.screenInfo);
 }

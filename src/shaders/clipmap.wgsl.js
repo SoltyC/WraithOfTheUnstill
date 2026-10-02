@@ -1,6 +1,6 @@
 // Clipmap terrain (BRIEF §4.2). One static N×N grid drawn as LEVELS thin instances (level index in
 // the instance matrix translation x). Each level is a full square around its snapped origin; the
-// fragment shader discards what the next finer level covers, so no trim strips are needed.
+// vertex shader sinks the part the next finer level covers below it, so no trim strips are needed.
 // Geomorphing: within the outer band of each level, odd vertices slide onto the coarser grid and
 // heights blend to the coarser level's function, so seams are watertight and nothing pops.
 //
@@ -12,6 +12,7 @@
 // Phase 1 "clay" shading: wrapped diffuse + sky ambient + aerial perspective, tinted by biome.
 
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
 export const CLIPMAP_N = 256;     // quads per level side
@@ -231,6 +232,14 @@ fn main(input: VertexInputs) -> FragmentInputs {
     nxz = mix(nxz, dp.yz, alpha);
   }
   let n = normalize(vec3f(nxz.x, sqrt(max(1.0 - dot(nxz, nxz), 0.0)), nxz.y));
+  // Hide this level where the finer level draws: vertices strictly inside the finer square sink
+  // far below it (depth hides them). Boundary vertices stay, so the two surfaces meet exactly —
+  // no fragment discard, no precision-dependent cracks, and early-z keeps working.
+  if (level > 0u) {
+    let F = uniforms.levels[level - 1u];
+    let ext = F.z * HALF - F.z * 0.5;
+    if (abs(p.x - F.x) < ext && abs(p.y - F.y) < ext) { h -= 200.0; }
+  }
   let wp = vec3f(p.x, h, p.y);
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   vertexOutputs.vWorldPos = wp;
@@ -252,18 +261,12 @@ varying vLevel: f32;
 varying vBiomeA: vec4f;
 varying vBiomeB: vec2f;
 ${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let level = i32(fragmentInputs.vLevel + 0.5);
   let wp = fragmentInputs.vWorldPos;
-  // Discard what the next finer level draws (its square is exactly on our grid lines).
-  if (level > 0) {
-    let F = uniforms.levels[level - 1];
-    // Shrunk by half a fine cell: pixels on the shared edge must be covered by at least one level.
-    let ext = F.z * ${CLIPMAP_N / 2}.0 - F.z * 0.5;
-    if (abs(wp.x - F.x) < ext && abs(wp.z - F.y) < ext) { discard; }
-  }
   let camPos = uniforms.cameraPosition;
   let V = normalize(camPos - wp);
   var N = normalize(fragmentInputs.vNormal);
@@ -271,12 +274,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // Clay albedo tinted by biome (debug-readable, not final materials).
   let wA = fragmentInputs.vBiomeA; let wB = fragmentInputs.vBiomeB;
-  var albedo = vec3f(0.80, 0.81, 0.84) * wA.x + vec3f(0.55, 0.60, 0.48) * wA.y + vec3f(0.45, 0.48, 0.42) * wA.z
-             + vec3f(0.78, 0.68, 0.52) * wA.w + vec3f(0.36, 0.34, 0.34) * wB.x + vec3f(0.74, 0.70, 0.60) * wB.y;
+  // Roughly physical albedos per biome (clay view): snow, grass, mire, sand, ash, beach.
+  var albedo = vec3f(0.78, 0.80, 0.84) * wA.x + vec3f(0.17, 0.24, 0.11) * wA.y + vec3f(0.12, 0.14, 0.10) * wA.z
+             + vec3f(0.52, 0.42, 0.28) * wA.w + vec3f(0.10, 0.095, 0.09) * wB.x + vec3f(0.50, 0.46, 0.38) * wB.y;
   albedo = albedo / max(wA.x + wA.y + wA.z + wA.w + wB.x + wB.y, 0.001);
   let slope = 1.0 - N.y;
-  albedo = mix(albedo, vec3f(0.40, 0.38, 0.37), smoothstep(0.35, 0.6, slope));
-  if (wp.y < 0.0) { albedo *= vec3f(0.55, 0.62, 0.68); }
+  albedo = mix(albedo, vec3f(0.30, 0.29, 0.28), smoothstep(0.35, 0.6, slope));
+  // Clay-view sea: below sea level reads as dark water until the Phase 12 ocean exists.
+  let sea = smoothstep(0.5, -1.5, wp.y);
+  albedo = mix(albedo, vec3f(0.035, 0.065, 0.085), sea);
+  N = normalize(mix(N, vec3f(0.0, 1.0, 0.0), sea));
 
   let L = uniforms.keyDir;
   let wrap = 0.25;
@@ -284,10 +291,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let pp = uniforms.playerPos;
   let toP = wp.xz - (pp.xz - L.xz * 0.35);
   let cs = 1.0 - 0.55 * exp(-dot(toP, toP) / (pp.w * pp.w)) * smoothstep(1.5, 0.0, abs(wp.y - pp.y));
-  let hemi = mix(uniforms.groundBounce, uniforms.skyZenith * 1.15 + uniforms.skyHorizon * 0.25, N.y * 0.5 + 0.5);
-  var col = albedo * (uniforms.keyColor * diff * cs + hemi * mix(1.0, cs, 0.5));
-  col = applyFog(col, wp, camPos, uniforms.sunDir, uniforms.skyZenith, uniforms.skyHorizon, uniforms.sunHalo, uniforms.fogParams);
-  var outc = displayTransform(col, uniforms.fogParams.z);
+  // Light from the atmosphere: key colour and sky irradiance computed on the GPU from the LUTs.
+  let key = atmoKeyColor();
+  let skyUp = atmoSkyUp() * uniforms.envMisc.w; let skySide = atmoSkySide() * uniforms.envMisc.w;
+  let sky = mix(skySide, skyUp, clamp(N.y, 0.0, 1.0));
+  let bounce = (key * max(L.y, 0.0) * (0.12 / PI) + skyUp * 0.25) * mix(0.0, 1.0, clamp(-N.y * 0.5 + 0.5, 0.0, 1.0));
+  // Lambert: albedo/π · E · cosθ for the key; sky terms are already radiance (E/π).
+  var col = albedo * (key * diff * cs * (1.0 / PI) + (sky + bounce) * mix(1.0, cs, 0.5));
+  // Aerial perspective.
+  col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
+  var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
   outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
   fragmentOutputs.color = vec4f(outc, 1.0);
 }

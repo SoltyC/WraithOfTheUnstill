@@ -17,7 +17,7 @@
   {
     "name": "stats populated",
     "ok": true,
-    "detail": "{\"fps\":\"1.0\",\"1% low\":\"0.3\",\"avg ms\":\"1022.77\",\"median\":\"1210.00\",\"p99 ms\":\"3433.90\",\"max ms\":\"3433.9\",\"hitches\":\"18\",\"draws\":\"3\",\"tris\":\"144k\",\"GPU MB\":\"201\",\"heap MB\":\"14.9/2057\",\"stream q\":\"0\",\"pipelines\":\"7\",\"res\":\"2560×1440\"}"
+    "detail": "{\"fps\":\"0.7\",\"1% low\":\"0.2\",\"avg ms\":\"1345.03\",\"median\":\"1441.60\",\"p99 ms\":\"4390.80\",\"max ms\":\"4390.8\",\"hitches\":\"12\",\"draws\":\"3\",\"tris\":\"1586k\",\"GPU MB\":\"202\",\"heap MB\":\"17.4/2057\",\"stream q\":\"0\",\"pipelines\":\"12\",\"res\":\"2560×1440\"}"
   },
   {
     "name": "late-pipeline log clean after loading",
