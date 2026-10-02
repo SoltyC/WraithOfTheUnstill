@@ -4,6 +4,7 @@
 
 import { Stage } from '@babylonjs/core/sceneComponent.js';
 import { PerfCounter } from '@babylonjs/core/Misc/perfCounter.js';
+import { gpuTimer } from '../core/gpuTimer.js';
 
 /**
  * Make Babylon's scene "stages" real arrays.
@@ -88,6 +89,7 @@ const viewDescSwapChain = { label: 'TextureView_SwapChain', dimension: '2d', for
 
 /**
  * Replace two WebGPUEngine frame-path methods with copies that use constant debug labels.
+ * They also host the GPU timer hooks (core/gpuTimer.js).
  * Babylon builds three template-string labels per frame (`[frameId|counter] - …`) for the main
  * render pass and the two command encoders — pure per-frame string garbage. Bodies are verbatim
  * copies of Babylon 9.29.0 `_startMainRenderPass` and `flushFramebuffer` except the labels.
@@ -129,6 +131,7 @@ export function installConstantLabelFramePath(engine, version) {
       desc.colorAttachments[0].view = swapChainTexture.createView(viewDescSwapChain);
     }
     this._timestampQuery.startPass(desc, this._timestampIndex);
+    gpuTimer.beginPass(desc); // our own GPU timing (no-op unless active)
     this._currentRenderPass = this._renderEncoder.beginRenderPass(desc);
     this._debugPushAfterStartOfEncoder();
     this._setDepthTextureFormat(this._mainRenderPassWrapper);
@@ -140,9 +143,11 @@ export function installConstantLabelFramePath(engine, version) {
   engine.flushFramebuffer = function (_fromEndFrame = false) {
     this._endCurrentRenderPass();
     this._debugPopBeforeEndOfEncoder();
+    gpuTimer.resolve(this._renderEncoder);
     this._commandBuffers[0] = this._uploadEncoder.finish();
     this._commandBuffers[1] = this._renderEncoder.finish();
     this._device.queue.submit(this._commandBuffers);
+    gpuTimer.afterSubmit();
     this._internalFrameCounter++;
     this._uploadEncoder = this._device.createCommandEncoder(this._uploadEncoderDescriptor);
     this._renderEncoder = this._device.createCommandEncoder(this._renderEncoderDescriptor);

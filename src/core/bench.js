@@ -1,0 +1,184 @@
+// Benchmark mode (?bench=1). Runs on the player's own browser and GPU, so it works on the target
+// machine without remote automation. Scripted phases (each preceded by an unmeasured settle):
+//   idle — standing at the start spot
+//   walk — walking forward while the camera orbits
+//   fly  — fast free-camera flight toward the mountain ring
+// Records presented frame time (rAF interval; capped by the display's refresh rate) and GPU
+// main-pass time (timestamp queries; the real cost). Shows a results panel and POSTs the JSON to
+// the dev/preview server (`/__wraith/perf`), which writes it to perf/runs/.
+//
+// Options: &benchSeconds=10 (per phase), &settle=3, &spot=<id> (default p0-start-golden),
+//          &gpuTimer=0 (no GPU timing: isolates the measurement's own readback garbage).
+
+import { frameStats } from './loop.js';
+import { gpuStats } from './gpuInstrument.js';
+import { gpuTimer } from './gpuTimer.js';
+import { clock } from './clock.js';
+import { input, injectAction, Action } from '../input/actions.js';
+import { findSpot } from '../ui/photoSpots.js';
+
+const MAX_FRAMES = 1 << 14;
+const rec = new Float32Array(MAX_FRAMES);
+let recCount = 0;
+let recording = false;
+let yawRate = 0;
+
+/** Late system: records the last frame time while a phase is measured; drives camera orbit. */
+export const benchSystem = {
+  name: 'bench',
+  enabled: false,
+  arm: null,
+  update() {
+    if (recording && recCount < MAX_FRAMES) rec[recCount++] = frameStats.ago(0);
+    if (yawRate !== 0 && this.arm) this.arm.yaw += yawRate * clock.realDt;
+  },
+};
+
+function summarize(values, n) {
+  if (n === 0) return null;
+  const a = Array.from(values.subarray(0, n)).sort((x, y) => x - y);
+  const pick = (q) => a[Math.min(n - 1, Math.floor(n * q))];
+  let sum = 0;
+  for (const v of a) sum += v;
+  const median = pick(0.5);
+  return {
+    frames: n,
+    meanMs: +(sum / n).toFixed(3),
+    medianMs: +median.toFixed(3),
+    p95Ms: +pick(0.95).toFixed(3),
+    p99Ms: +pick(0.99).toFixed(3),
+    maxMs: +a[n - 1].toFixed(3),
+    minMs: +a[0].toFixed(3),
+    fps: +(1000 / (sum / n)).toFixed(1),
+    low1Fps: +(1000 / pick(0.99)).toFixed(1),
+    hitchesOverMedianPlus4: a.filter((v) => v > median + 4).length,
+  };
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const release = () => { for (let i = 0; i < input.down.length; i++) injectAction(i, false); };
+
+/** Frames over median + 4 ms, in order, with their time offset into the phase. */
+function hitchTimeline(values, n, medianMs) {
+  const out = [];
+  let t = 0;
+  for (let i = 0; i < n; i++) {
+    t += values[i];
+    // Neighbours distinguish a real dropped frame (…5.9, 11.8, 5.9…) from a late callback that
+    // the next frame catches up (…5.9, 11.8, 0.1…), which is presentation-neutral.
+    if (values[i] > medianMs + 4 && out.length < 40) {
+      out.push({ frame: i, atMs: Math.round(t), ms: +values[i].toFixed(1), prev: i > 0 ? +values[i - 1].toFixed(1) : null, next: i + 1 < n ? +values[i + 1].toFixed(1) : null });
+    }
+  }
+  return out;
+}
+
+async function phase(name, seconds, settle, setup) {
+  setup();
+  await sleep(settle * 1000);
+  recCount = 0;
+  gpuTimer.reset();
+  recording = true;
+  const t0 = performance.now();
+  await sleep(seconds * 1000);
+  recording = false;
+  const wall = (performance.now() - t0) / 1000;
+  const gpuN = Math.min(gpuTimer.count, gpuTimer.ms.length);
+  const presented = summarize(rec, recCount);
+  return {
+    name, seconds: +wall.toFixed(2), presented, gpuMainPass: summarize(gpuTimer.ms, gpuN), drawCalls: gpuStats.drawCallsLastFrame,
+    hitches: presented ? hitchTimeline(rec, recCount, presented.medianMs) : [],
+    jsHeapMB: performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null,
+  };
+}
+
+/** @param {any} game  @param {URLSearchParams} qs */
+export async function runBench(game, qs) {
+  const seconds = Number(qs.get('benchSeconds') || 10);
+  const settle = Number(qs.get('settle') || 3);
+  const spot = findSpot(qs.get('spot') || 'p0-start-golden');
+  benchSystem.arm = game.arm;
+  benchSystem.enabled = true;
+  const timeGpu = qs.get('gpuTimer') !== '0';
+  gpuTimer.setActive(timeGpu);
+  const panel = showPanel('Benchmark running… keep this tab focused and visible.');
+  const events = [];
+  const t0 = performance.now();
+  const note = (what) => events.push({ atMs: Math.round(performance.now() - t0), what });
+  document.addEventListener('visibilitychange', () => note('visibility:' + document.visibilityState));
+  window.addEventListener('blur', () => note('blur'));
+  window.addEventListener('focus', () => note('focus'));
+  window.addEventListener('resize', () => note('resize ' + innerWidth + 'x' + innerHeight));
+  const phaseStarts = [];
+  await sleep(2000); // loading fade
+
+  const phases = [];
+  phaseStarts.push(Math.round(performance.now() - t0));
+  phases.push(await phase('idle', seconds, settle, () => { release(); yawRate = 0; game.applySpot(spot); }));
+  phaseStarts.push(Math.round(performance.now() - t0));
+  phases.push(await phase('walk', seconds, settle, () => {
+    release(); game.applySpot(spot); yawRate = 0.35;
+    injectAction(Action.MoveForward, true);
+  }));
+  phaseStarts.push(Math.round(performance.now() - t0));
+  phases.push(await phase('fly', seconds, settle, () => {
+    release(); yawRate = 0.08;
+    game.arm.setPose(0, 60, 0, 0.6, 0.12, 0.96);
+    game.arm.hold = false;
+    injectAction(Action.MoveForward, true);
+    injectAction(Action.FreeCamFast, true);
+  }));
+  release(); yawRate = 0;
+  gpuTimer.setActive(false);
+  benchSystem.enabled = false;
+
+  const eng = game.engine;
+  const result = {
+    date: new Date().toISOString(),
+    build: import.meta.env.MODE,
+    machine: {
+      adapter: gpuStats.adapterInfo,
+      userAgent: navigator.userAgent,
+      devicePixelRatio: window.devicePixelRatio,
+      screen: screen.width + 'x' + screen.height,
+      window: innerWidth + 'x' + innerHeight,
+      render: eng.getRenderWidth() + 'x' + eng.getRenderHeight(),
+      timestampQuery: gpuTimer.supported,
+    },
+    settings: { secondsPerPhase: seconds, settle, spot: spot.id, url: location.search, gpuTimer: timeGpu, gpuSampleEvery: gpuTimer.sampleEvery },
+    scene: { drawCalls: gpuStats.drawCallsLastFrame, pipelines: gpuStats.pipelinesTotal, latePipelines: gpuStats.late.length, gpuMB: Math.round((gpuStats.bufferBytes + gpuStats.textureBytes) / 1048576) },
+    phases,
+    // Page events during the run (ms since bench start) and when each phase's setup began
+    // (measurement starts `settle` seconds later). Used to explain hitches.
+    events, phaseSetupAtMs: phaseStarts,
+  };
+  window.__wraith.benchResult = result;
+  let saved = '';
+  try {
+    const r = await fetch('/__wraith/perf', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(result) });
+    saved = r.ok ? 'saved to ' + (await r.json()).file : 'server did not save (HTTP ' + r.status + ')';
+  } catch (e) {
+    saved = 'could not reach server: ' + e.message;
+  }
+  panel.innerHTML = renderPanel(result, saved);
+  return result;
+}
+
+function showPanel(text) {
+  const el = document.createElement('div');
+  el.className = 'bench-panel';
+  el.textContent = text;
+  document.body.append(el);
+  return el;
+}
+
+function renderPanel(r, saved) {
+  const row = (p) => {
+    const pr = p.presented, g = p.gpuMainPass;
+    return `<tr><td>${p.name}</td><td>${pr ? pr.fps : '–'}</td><td>${pr ? pr.low1Fps : '–'}</td><td>${pr ? pr.medianMs : '–'}</td><td>${pr ? pr.p99Ms : '–'}</td><td>${pr ? pr.hitchesOverMedianPlus4 : '–'}</td><td>${g ? g.medianMs : 'n/a'}</td><td>${g ? g.p99Ms : 'n/a'}</td></tr>`;
+  };
+  return `<h3>Benchmark — ${r.machine.render} — ${r.machine.adapter || 'adapter n/a'}</h3>
+  <table><thead><tr><th>phase</th><th>fps</th><th>1% low</th><th>median ms</th><th>p99 ms</th><th>hitches</th><th>GPU median ms</th><th>GPU p99 ms</th></tr></thead>
+  <tbody>${r.phases.map(row).join('')}</tbody></table>
+  <p>${saved}. Presented fps is capped by the display refresh rate; GPU ms is the real cost (budget 16.7 ms at 60 fps).</p>`;
+}

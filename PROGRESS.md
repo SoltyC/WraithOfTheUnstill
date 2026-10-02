@@ -12,9 +12,13 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
     - **game code 0 B/frame**;
     - **avoidable engine code 0 B/frame**;
     - the WebGPU API floor (~225 B of wrapper objects, plus ~31 B per `writeBuffer`) is reported separately, as **ruled by the user on 2026-10-02** (DECISIONS.md).
-  - Still to do: target-machine performance numbers (not part of the Phase 0 gate wording, but required by BRIEF §3 and PERF.md).
-- **Machine used this session:** Windows + WSL2, RTX 3060 (**not** the target). Captures and profiles ran in Playwright's bundled Chromium with WebGPU on SwiftShader (CPU). Images are valid; timings are not. No target-machine performance numbers exist yet.
-- **Exact next step:** run the target-machine numbers (see "Next step" at the bottom), then start Phase 1.
+  - **Target changed (user, 2026-10-02):** this PC (RTX 3060) is now the target, at 2560×1440 / 60 FPS / 1% lows ≥ 45 (DECISIONS.md).
+  - First real-GPU numbers: the GPU main pass takes 1.2–1.8 ms median and ≤ 2.5 ms max at 2560×1440, against a 16.7 ms budget. There were 0 late pipelines (PERF.md "Target runs").
+  - **Open defect:** about 0.07% of frames land one 170 Hz refresh late (~11.8 ms), mostly while moving; the cause isn't identified yet (PERF.md).
+- **Machines:**
+  - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark (`?bench=1`); the results are in `perf/runs/`.
+  - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
+- **Exact next step:** one more benchmark run to classify the late frames (see "Next step"), then Phase 1.
 
 ## How to run
 
@@ -26,7 +30,8 @@ npm run alloc               # zero-allocation check of hot CPU paths in Node's V
 npm run capture             # build + 1440p photo-spot captures ×2, reproducibility + clipping report
 npm run heap                # build + idle-loop heap profile (game vs engine split)
 npm run overlay-check       # dev overlay functional check + screenshots
-npm run perf -- --channel=chrome --headed   # frame-time run on the target machine
+npm run build && npm run preview            # then, in Windows Chrome on the target:
+#   http://localhost:4173/?bench=1&res=2560x1440   → results in perf/runs/ (add &gpuTimer=0 to skip GPU timing)
 ```
 
 URL options: `?spot=<id>` applies a photo spot. `&capture=1` freezes the clock and skips the
@@ -39,6 +44,31 @@ without root into `~/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`, and the 
 up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwright install-deps chromium`.
 
 ## Session log
+
+### Session 3 — 2026-10-02 — Phase 0 (target change and real-GPU measurement)
+
+**Context:** the user retired the 5070 Ti target. This PC (RTX 3060) is now the target, at 1440p / 60 FPS.
+
+**Built**
+- `src/core/gpuTimer.js`: GPU main-pass timing through WebGPU timestamp queries.
+  - Hooked into the frame-path overrides in `babylonTweaks.js`.
+  - It samples every 4th frame and costs nothing when off.
+  - The engine requests the `timestamp-query` feature.
+- `src/core/bench.js` (`?bench=1`): an in-page benchmark run in the player's own Chrome.
+  - Phases: idle, walk with camera orbit, and a fast fly-over.
+  - Reports presented and GPU statistics, hitch timelines with neighbouring frames, page events and heap.
+  - Shows a styled results panel and POSTs the JSON to the local server.
+- `vite.config.js`: dev/preview middleware `POST /__wraith/perf` → `perf/runs/<date>.json`.
+- **Fixed:** the game never handled window resizes. `?res=WxH` now locks the render resolution, and render scale applies on top of either mode in one sizing function.
+
+**Measured** (target T, production build, render 2560×1440, 4 runs in `perf/runs/`):
+- GPU main pass: idle 1.6, walk 1.8, fly 1.2 ms median; p99 ≤ 2.8 ms.
+- Presented FPS is ~170 (display refresh), with 1% lows of ~159.
+- The SwiftShader allocation re-verification still shows 264 B/frame, all WebGPU floor (game 0).
+
+**Defects**
+- About 0.07% of frames land one refresh late (11.1–11.9 ms at 170 Hz), mostly while moving. It's not caused by the GPU timer, GC or page events. The benchmark now logs neighbouring frames to tell a real drop from a late callback.
+- Run 1, windowed, had 15 idle-phase stalls up to 52.6 ms. They didn't reproduce in three fullscreen runs and can't be attributed.
 
 ### Session 2 — 2026-10-02 (same day, continuation) — Phase 0
 
@@ -166,12 +196,12 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-1. On the target machine (Windows 11, RTX 5070 Ti):
-   - `npm run perf -- --channel=chrome --headed`;
-   - `npm run capture -- --channel=chrome --headed --out=screenshots/phase-00-target`;
-   - record frame times and the per-system budget in PERF.md, and confirm the target captures look the same and are still reproducible.
-2. Start **Phase 1 — World skeleton** (BRIEF §17). Carry over these Phase 0 rules:
+1. Run the benchmark once more: `npm run build && npm run preview`, then open `http://localhost:4173/?bench=1&res=2560x1440` in Windows Chrome, fullscreen and hands-off. Read the `hitches[].prev/next` values.
+   - Pairs like `11.8, 0.x` are late callbacks: presentation-neutral, so note them and move on.
+   - Steady `…5.9, 11.8, 5.9…` frames are real drops: take a Chrome DevTools Performance trace during the walk phase and find the long task or compositor stall.
+2. Start **Phase 1 — World skeleton** (BRIEF §17), carrying over these rules:
    - no doubles as call arguments in hot code (`npm run alloc`);
    - one `writeBuffer` per frame for per-frame uniforms;
-   - re-verify `src/render/babylonTweaks.js` on any Babylon upgrade (the label overrides are version-guarded);
-   - re-run `npm run heap -- --settle-frames=20000` after new per-frame systems land.
+   - re-verify `babylonTweaks.js` on Babylon upgrades;
+   - re-run `npm run heap -- --settle-frames=20000` after new per-frame systems;
+   - run the benchmark on T after each major system and record it in PERF.md, extending `gpuTimer` to one query pair per pass when passes multiply.

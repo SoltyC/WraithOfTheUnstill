@@ -8,21 +8,69 @@ toward gates.
 
 | Id | Machine | Browser / GPU path | Valid for |
 |---|---|---|---|
-| **T** | Target: Windows 11, RTX 5070 Ti, Chrome stable | real GPU | everything |
-| **W** | Dev box used in session 1: Windows + WSL2 (Ubuntu 22.04, 4 GB / 4 cores to WSL), RTX 3060 | Playwright Chromium 153 headless shell, WebGPU on **SwiftShader (CPU)** | allocation profiles, image captures; **not** timings |
+| **T** | **Target (since 2026-10-02):** Windows 11, NVIDIA RTX 3060 12 GB, 3840×2160 monitor, Chrome stable | real GPU, via the in-page benchmark (`?bench=1`) | everything |
+| **W** | Same PC, inside WSL2 (Ubuntu 22.04, 4 GB / 4 cores): Playwright Chromium 153 headless shell, WebGPU on **SwiftShader (CPU)** | software | allocation profiles, image captures; **not** timings |
+| ~~5070 Ti~~ | Original BRIEF target, no longer available (DECISIONS.md) | — | — |
 
-## Frame budget (BRIEF §14 starting allocation, 90 FPS = 11.1 ms)
+## Frame budget (re-based for target T: 2560×1440 at 60 FPS = 16.7 ms)
+
+BRIEF §14's allocation scaled ×1.5. Refine per biome as systems land.
 
 | System | Budget | Phase 0 measured (T) |
 |---|---|---|
-| Terrain | 1.5 ms | not measured (no T session yet) |
-| Vegetation | 1.5 ms | — |
-| Sky, atmosphere, clouds | 1.0 ms | not measured |
-| Shadows | 1.8 ms | — (none yet) |
-| Water and spell VFX | 1.5 ms | — |
-| Characters, Shaped, cloth | 1.0 ms | not measured |
-| Post-processing | 2.0 ms | — (none yet) |
-| Reserve | 0.8 ms | — |
+| Terrain (clipmap, state passes) | 2.25 ms | see "Target runs" |
+| Vegetation | 2.25 ms | — |
+| Sky, atmosphere, clouds | 1.5 ms | (in main pass) |
+| Shadows | 2.7 ms | — (none yet) |
+| Water and spell VFX | 2.25 ms | — |
+| Characters, Shaped, cloth | 1.5 ms | (in main pass) |
+| Post-processing | 3.0 ms | — (none yet) |
+| Reserve (streaming, weather spikes) | 1.2 ms | — |
+
+Rules: 60 FPS sustained, 1% lows ≥ 45 FPS, no frame above median + 4 ms.
+
+## Target runs (machine T)
+
+How: `npm run build && npm run preview` in WSL, then open
+`http://localhost:4173/?bench=1&res=2560x1440` in Windows Chrome (fullscreen, tab focused). Results
+are saved to `perf/runs/<date>.json`.
+
+- **Presented** time is the rAF interval. It's capped at the display refresh rate, so it shows smoothness and hitches but not headroom.
+- **GPU** time is the main render pass measured with timestamp queries. That's the real cost; Chrome quantises it to 0.1 ms.
+
+### Phase 0 test field, 2026-10-02 (production build, 3 draws, 832k triangles, render locked to 2560×1440)
+
+Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp queries available. The display refresh is ~170 Hz (5.9 ms presented frames), so presented FPS is capped near 170.
+
+**Run 2** (`perf/runs/2026-10-02T09-47-14-077Z.json`, fullscreen 1920×1080 window, no focus or resize events):
+
+| Phase | GPU main pass median / p99 / max | Presented FPS | 1% low | Max frame | Hitches > median+4 |
+|---|---|---|---|---|---|
+| idle | 1.64 / 1.97 / 2.03 ms | 170.0 | 158.7 | 8.1 ms | 0 |
+| walk | 1.77 / 1.97 / 2.49 ms | 169.8 | 158.7 | 11.9 ms | 2 (single missed refresh each) |
+| fly | 1.18 / 1.77 / 1.97 ms | 170.0 | 161.3 | 7.0 ms | 0 |
+
+**Run 1** (`perf/runs/2026-10-02T09-43-59-513Z.json`, windowed 1920×945, before event logging existed):
+- GPU numbers match run 2: idle 1.57 / 2.75 / 6.0, walk 1.90 / 2.43 / 2.6, fly 1.05 / 1.70 / 2.0 ms.
+- The idle phase had 15 hitches, max 52.6 ms. They didn't reproduce in run 2 and can't be attributed (no event log in run 1).
+
+**Reading:**
+- The Phase 0 frame costs ~2 ms of GPU against the 16.7 ms budget.
+- All late-pipeline counts are 0.
+- The walk phase's two 11.9 ms frames are one missed 170 Hz refresh each, with a GPU max of 2.5 ms.
+
+**Runs 3–4** (`…09-50-21-380Z.json` with `gpuTimer=0`, `…09-52-27-509Z.json` timing every 4th frame), both fullscreen 1920×1080 with no page events:
+
+| Run | Idle | Walk | Fly | GPU median / p99 / max |
+|---|---|---|---|---|
+| timer off | 0 hitches (max 7.6) | 3 (11.5–11.9 ms) | 1 (11.1 ms) | — |
+| timer 1/4 | 0 (max 8.0) | 1 (11.9 ms) | 0 (max 7.0) | idle 1.64/2.03/2.43, walk 1.77/2.03/2.16, fly 1.18/1.51/1.97 ms |
+
+**Open defect:** about one frame in 1,500 (~0.07%) lands one 170 Hz refresh late (~11.8 ms), mostly while moving.
+- It happens with the GPU timer off and with a flat JS heap, so neither the measurement nor GC explains it.
+- The GPU never exceeds 2.5 ms.
+- Not yet determined: a real dropped frame vs a late rAF callback that the next frame absorbs. The benchmark now records each hitch's neighbouring frames and the minimum frame time to settle that.
+- Next: one more benchmark run. If the frames really drop, take a Chrome performance trace (DevTools → Performance) during the walk phase.
 
 ## Phase 0 measurements (machine W, 2026-10-02)
 
@@ -33,9 +81,7 @@ toward gates.
 | p0-start-golden, full test terrain (819k tris), 3 draws | 2560×1440 | ~1.6 | SwiftShader rasterisation bound; meaningless for the target |
 | same, `?grid=96` | 640×360 | ~29 | used only to warm V8 for heap profiling |
 
-**To measure on T:** `npm run perf -- --channel=chrome --headed --spot=p0-start-golden --seconds=20`
-(prints median, p99, 1% low, hitches > median+4 ms, draws, late pipelines). Or open the dev overlay
-(F1) in `npm run dev`.
+**To measure on T:** see "Target runs" above. (`npm run perf -- --channel=chrome` drives an installed Chrome with Playwright; it isn't usable here, because WSL can't automate Windows Chrome.)
 
 ### Scene cost (structure, any machine)
 

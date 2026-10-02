@@ -13,6 +13,13 @@ Every deviation from BRIEF.md, one line each, with rationale.
 
 ## Build-time deviations
 
+### Target machine change (user decision, 2026-10-02)
+
+- **The target is now the dev PC:** Windows 11 + WSL2, NVIDIA RTX 3060 12 GB, Chrome stable, 3840×2160 monitor. The RTX 5070 Ti is no longer available. This supersedes BRIEF §3's target and measurement-machine rows.
+- **Frame target re-based for the 3060:** **2560×1440 output, 60 FPS sustained, 1% lows ≥ 45 FPS.** That's a 16.7 ms budget, and the hitch rule (no frame above median + 4 ms) is unchanged. This replaces 90 FPS sustained / 60 floor. The per-system budget table in PERF.md is scaled ×1.5 from BRIEF §14.
+- **Gate captures stay 2560×1440.** On the 4K monitor at Windows' 150% scaling that's also the browser's CSS viewport.
+- **How target numbers are taken:** the real GPU is reachable only through Windows Chrome, and remote-debugging automation from WSL isn't permitted here. So perf runs use the in-page benchmark: open `http://localhost:4173/?bench=1&res=2560x1440` in Windows Chrome while `npm run preview` runs. Results are POSTed to the local server and written to `perf/runs/`. Headless SwiftShader stays the tool for captures and allocation profiles.
+
 ### Phase 0 (2026-10-02)
 
 - **Machine:** this session ran on an RTX 3060 under WSL2, not the 5070 Ti target. All timings are indicative only; see PERF.md.

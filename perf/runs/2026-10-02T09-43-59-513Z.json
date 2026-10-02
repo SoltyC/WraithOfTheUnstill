@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-02T09:43:59.513Z",
+  "build": "production",
+  "machine": {
+    "adapter": "nvidia / ampere",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+    "devicePixelRatio": 1,
+    "screen": "1920x1080",
+    "window": "1920x945",
+    "render": "2560x1440",
+    "timestampQuery": true
+  },
+  "settings": {
+    "secondsPerPhase": 10,
+    "settle": 3,
+    "spot": "p0-start-golden",
+    "url": "?bench=1&res=2560x1440"
+  },
+  "scene": {
+    "drawCalls": 3,
+    "pipelines": 5,
+    "latePipelines": 0,
+    "gpuMB": 133
+  },
+  "phases": [
+    {
+      "name": "idle",
+      "seconds": 10,
+      "presented": {
+        "frames": 1677,
+        "meanMs": 5.963,
+        "medianMs": 5.9,
+        "p95Ms": 6.1,
+        "p99Ms": 6.8,
+        "maxMs": 52.6,
+        "fps": 167.7,
+        "low1Fps": 147.1,
+        "hitchesOverMedianPlus4": 15
+      },
+      "gpuMainPass": {
+        "frames": 1677,
+        "meanMs": 1.607,
+        "medianMs": 1.573,
+        "p95Ms": 2.163,
+        "p99Ms": 2.753,
+        "maxMs": 6.029,
+        "fps": 622.1,
+        "low1Fps": 363.3,
+        "hitchesOverMedianPlus4": 1
+      },
+      "drawCalls": 3
+    },
+    {
+      "name": "walk",
+      "seconds": 10,
+      "presented": {
+        "frames": 1700,
+        "meanMs": 5.882,
+        "medianMs": 5.9,
+        "p95Ms": 6.1,
+        "p99Ms": 6.3,
+        "maxMs": 8.9,
+        "fps": 170,
+        "low1Fps": 158.7,
+        "hitchesOverMedianPlus4": 0
+      },
+      "gpuMainPass": {
+        "frames": 1700,
+        "meanMs": 1.922,
+        "medianMs": 1.901,
+        "p95Ms": 2.294,
+        "p99Ms": 2.425,
+        "maxMs": 2.556,
+        "fps": 520.3,
+        "low1Fps": 412.4,
+        "hitchesOverMedianPlus4": 0
+      },
+      "drawCalls": 3
+    },
+    {
+      "name": "fly",
+      "seconds": 10,
+      "presented": {
+        "frames": 1700,
+        "meanMs": 5.882,
+        "medianMs": 5.9,
+        "p95Ms": 6,
+        "p99Ms": 6.1,
+        "maxMs": 6.6,
+        "fps": 170,
+        "low1Fps": 163.9,
+        "hitchesOverMedianPlus4": 0
+      },
+      "gpuMainPass": {
+        "frames": 1700,
+        "meanMs": 1.117,
+        "medianMs": 1.049,
+        "p95Ms": 1.507,
+        "p99Ms": 1.704,
+        "maxMs": 1.966,
+        "fps": 895.3,
+        "low1Fps": 586.9,
+        "hitchesOverMedianPlus4": 0
+      },
+      "drawCalls": 3
+    }
+  ]
+}

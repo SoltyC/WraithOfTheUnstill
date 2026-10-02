@@ -45,6 +45,8 @@ async function boot() {
     adaptToDeviceRatio: false,
     glslangOptions: { jsPath: '', wasmPath: '' },
     twgslOptions: { jsPath: '', wasmPath: '' },
+    // Babylon keeps only features the adapter supports.
+    deviceDescriptor: { requiredFeatures: ['timestamp-query'] },
   });
   await engine.initAsync({ jsPath: '', wasmPath: '' }, { jsPath: '', wasmPath: '' });
   progress(0.3);
@@ -54,6 +56,22 @@ async function boot() {
   installFastStages(); // before the Scene exists: its stages are created in the constructor
   disableBabylonInstrumentation(engine);
   installConstantLabelFramePath(engine, AbstractEngine.Version);
+  const { gpuTimer } = await import('./core/gpuTimer.js');
+  gpuTimer.init(gpuStats.device);
+
+  // Render resolution: follow the window, or lock it with ?res=WxH (bench and captures on a
+  // high-DPI monitor). The canvas is CSS-stretched to the window either way.
+  // Render scale (Quality slider) applies on top of either mode. This is the only place that
+  // sizes the backbuffer: setHardwareScalingLevel() would itself resize to the window.
+  const resMatch = /^(\d+)x(\d+)$/.exec(qs.get('res') || '');
+  let renderScale = 1;
+  const applySize = () => {
+    if (resMatch) engine.setSize(Math.round(Number(resMatch[1]) * renderScale), Math.round(Number(resMatch[2]) * renderScale));
+    else engine.setHardwareScalingLevel(1 / renderScale); // resizes to window × scale
+  };
+  applySize();
+  window.addEventListener('resize', applySize);
+
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.02, 0.03, 0.05, 1);
   scene.skipPointerMovePicking = true;
@@ -101,11 +119,13 @@ async function boot() {
   loop.add({ name: 'environment', update: () => env.updateEnvironment() });
   loop.add(playerMod.createPlayerSystem({ controller, arm, ...content }));
 
-  // Render scale follows the Quality slider.
-  let lastScale = -1;
+  // Render scale follows the Quality slider (checked via the integer params version).
+  let lastParamsVersion = -1;
   loop.add({ name: 'renderScale', update: () => {
+    if (paramsMod.params.version === lastParamsVersion) return;
+    lastParamsVersion = paramsMod.params.version;
     const s = paramsMod.params.v.renderScale;
-    if (s !== lastScale) { lastScale = s; engine.setHardwareScalingLevel(1 / s); }
+    if (s !== renderScale) { renderScale = s; applySize(); }
   } });
 
   // System toggles.
@@ -132,6 +152,8 @@ async function boot() {
   overlay.refreshToggles();
   loop.addLate(overlay);
   loop.addLate({ name: 'saves', update: () => { if (systemsMod.toggles.on.autosave && !capture) saves.tick(); } });
+  const bench = qs.get('bench') === '1' ? await import('./core/bench.js') : null;
+  if (bench) loop.addLate(bench.benchSystem);
   loop.addLate({ name: 'inputEnd', update: inputMod.endInputFrame });
 
   const spotId = qs.get('spot');
@@ -175,6 +197,7 @@ async function boot() {
     },
   });
   if (capture) { await waitFrames(engine, 6); window.__wraith.captureReady = true; }
+  if (bench) bench.runBench(game, qs);
 }
 
 function waitFrames(engine, n) {
