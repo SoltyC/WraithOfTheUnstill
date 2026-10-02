@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "bake": "node tools/bake-world/index.mjs --preview=screenshots/phase-01/bake-preview.png",
+    "bake:verify": "node tools/bake-world/index.mjs --verify",
     "capture": "node tools/capture/capture.mjs",
     "heap": "node tools/capture/heap-profile.mjs",
     "alloc": "node --expose-gc tools/alloc/alloc-check.mjs",

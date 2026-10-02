@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "pois": [
+    {
+      "id": "monastery",
+      "kind": "monastery",
+      "biome": "frost",
+      "pos": [
+        -508,
+        3204
+      ],
+      "h": 1538.7
+    },
+    {
+      "id": "hub",
+      "kind": "settlement",
+      "biome": "meadow",
+      "pos": [
+        -220,
+        580
+      ],
+      "h": 228.2
+    },
+    {
+      "id": "warden-frost",
+      "kind": "warden-arena",
+      "biome": "frost",
+      "pos": [
+        1092,
+        2276
+      ],
+      "h": 613.4
+    },
+    {
+      "id": "warden-meadow",
+      "kind": "warden-arena",
+      "biome": "meadow",
+      "pos": [
+        -540,
+        484
+      ],
+      "h": 203.3
+    },
+    {
+      "id": "warden-mire",
+      "kind": "warden-arena",
+      "biome": "mire",
+      "pos": [
+        -1212,
+        -668
+      ],
+      "h": 19.6
+    },
+    {
+      "id": "warden-dunes",
+      "kind": "warden-arena",
+      "biome": "dunes",
+      "pos": [
+        2436,
+        1124
+      ],
+      "h": 148.9
+    },
+    {
+      "id": "warden-ember",
+      "kind": "warden-arena",
+      "biome": "ember",
+      "pos": [
+        3492,
+        -2332
+      ],
+      "h": 564.5
+    },
+    {
+      "id": "warden-coast",
+      "kind": "warden-arena",
+      "biome": "coast",
+      "pos": [
+        -956,
+        -2908
+      ],
+      "h": 2
+    },
+    {
+      "id": "shrine-frost-1",
+      "kind": "shrine",
+      "biome": "frost",
+      "pos": [
+        1988,
+        2820
+      ],
+      "h": 1109.7
+    },
+    {
+      "id": "shrine-frost-2",
+      "kind": "shrine",
+      "biome": "frost",
+      "pos": [
+        -508,
+        2212
+      ],
+      "h": 620
+    },
+    {
+      "id": "shrine-frost-3",
+      "kind": "shrine",
+      "biome": "frost",
+      "pos": [
+        -2876,
+        1092
+      ],
+      "h": 105.8
+    },
+    {
+      "id": "shrine-frost-4",
+      "kind": "shrine",
+      "biome": "frost",
+      "pos": [
+        -2556,
+        3332
+      ],
+      "h": 115.2
+    },
+    {
+      "id": "shrine-frost-5",
+      "kind": "shrine",
+      "biome": "frost",
+      "pos": [
+        3748,
+        1860
+      ],
+      "h": 1322.6
+    },
+    {
+      "id": "shrine-meadow-1",
+      "kind": "shrine",
+      "biome": "meadow",
+      "pos": [
+        1316,
+        -156
+      ],
+      "h": 271.4
+    },
+    {
+      "id": "shrine-meadow-2",
+      "kind": "shrine",
+      "biome": "meadow",
+      "pos": [
+        -988,
+        1028
+      ],
+      "h": 207.5
+    },
+    {
+      "id": "shrine-meadow-3",
+      "kind": "shrine",
+      "biome": "meadow",
+      "pos": [
+        -1436,
+        -2204
+      ],
+      "h": 262.8
+    },
+    {
+      "id": "shrine-meadow-4",
+      "kind": "shrine",
+      "biome": "meadow",
+      "pos": [
+        164,
+        -1436
+      ],
+      "h": 253.8
+    },
+    {
+      "id": "shrine-meadow-5",
+      "kind": "shrine",
+      "biome": "meadow",
+      "pos": [
+        -380,
+        -188
+      ],
+      "h": 292.4
+    },
+    {
+      "id": "shrine-mire-1",
+      "kind": "shrine",
+      "biome": "mire",
+      "pos": [
+        -1596,
+        964
+      ],
+      "h": 20
+    },
+    {
+      "id": "shrine-mire-2",
+      "kind": "shrine",
+      "biome": "mire",
+      "pos": [
+        -2204,
+        -1468
+      ],
+      "h": 5.7
+    },
+    {
+      "id": "shrine-mire-3",
+      "kind": "shrine",
+      "biome": "mire",
+      "pos": [
+        -1372,
+        -380
+      ],
+      "h": 21.8
+    },
+    {
+      "id": "shrine-mire-4",
+      "kind": "shrine",
+      "biome": "mire",
+      "pos": [
+        -2428,
+        292
+      ],
+      "h": 2.3
+    },
+    {
+      "id": "shrine-mire-5",
+      "kind": "shrine",
+      "biome": "mire",
+      "pos": [
+        -2236,
+        -572
+      ],
+      "h": 4.3
+    },
+    {
+      "id": "shrine-dunes-1",
+      "kind": "shrine",
+      "biome": "dunes",
+      "pos": [
+        2820,
+        1028
+      ],
+      "h": 147.3
+    },
+    {
+      "id": "shrine-dunes-2",
+      "kind": "shrine",
+      "biome": "dunes",
+      "pos": [
+        1572,
+        356
+      ],
+      "h": 154.8
+    },
+    {
+      "id": "shrine-dunes-3",
+      "kind": "shrine",
+      "biome": "dunes",
+      "pos": [
+        3812,
+        420
+      ],
+      "h": 389.4
+    },
+    {
+      "id": "shrine-dunes-4",
+      "kind": "shrine",
+      "biome": "dunes",
+      "pos": [
+        1604,
+        1508
+      ],
+      "h": 222
+    },
+    {
+      "id": "shrine-dunes-5",
+      "kind": "shrine",
+      "biome": "dunes",
+      "pos": [
+        3044,
+        260
+      ],
+      "h": 153.1
+    },
+    {
+      "id": "shrine-ember-1",
+      "kind": "shrine",
+      "biome": "ember",
+      "pos": [
+        1892,
+        -2364
+      ],
+      "h": 587.3
+    },
+    {
+      "id": "shrine-ember-2",
+      "kind": "shrine",
+      "biome": "ember",
+      "pos": [
+        1956,
+        132
+      ],
+      "h": 159.5
+    },
+    {
+      "id": "shrine-ember-3",
+      "kind": "shrine",
+      "biome": "ember",
+      "pos": [
+        3652,
+        -1916
+      ],
+      "h": 465.5
+    },
+    {
+      "id": "shrine-ember-4",
+      "kind": "shrine",
+      "biome": "ember",
+      "pos": [
+        996,
+        -1308
+      ],
+      "h": 191.3
+    },
+    {
+      "id": "shrine-ember-5",
+      "kind": "shrine",
+      "biome": "ember",
+      "pos": [
+        2948,
+        -540
+      ],
+      "h": 164.1
+    },
+    {
+      "id": "shrine-coast-1",
+      "kind": "shrine",
+      "biome": "coast",
+      "pos": [
+        -2012,
+        -2812
+      ],
+      "h": 3
+    },
+    {
+      "id": "shrine-coast-2",
+      "kind": "shrine",
+      "biome": "coast",
+      "pos": [
+        -3100,
+        1508
+      ],
+      "h": 2.7
+    }
+  ]
+}

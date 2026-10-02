@@ -38,6 +38,8 @@ function perfSink() {
 
 export default defineConfig({
   plugins: [perfSink()],
+  // data/ is served at the site root (baked world at /world/…) and copied into builds.
+  publicDir: 'data',
   server: { host: '127.0.0.1', port: 5173, strictPort: true },
   preview: { host: '127.0.0.1', port: 4173, strictPort: true },
   build: { target: 'es2023', sourcemap: true, chunkSizeWarningLimit: 4096 },
