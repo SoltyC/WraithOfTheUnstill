@@ -70,7 +70,11 @@ Chrome 153 on Windows. The adapter reports "nvidia / ampere", with timestamp que
 - It happens with the GPU timer off and with a flat JS heap, so neither the measurement nor GC explains it.
 - The GPU never exceeds 2.5 ms.
 - Not yet determined: a real dropped frame vs a late rAF callback that the next frame absorbs. The benchmark now records each hitch's neighbouring frames and the minimum frame time to settle that.
-- Next: one more benchmark run. If the frames really drop, take a Chrome performance trace (DevTools → Performance) during the walk phase.
+- **Run 5** (`…10-00-52-258Z.json`), with neighbouring frames recorded:
+  - Idle: 2 late callbacks (10.5 ms then 1.3 ms; 14.9 ms then 0.6 ms). The next frame catches up, so nothing presents late.
+  - Walk: **3 real drops**, at 11.4, 17.2 and 12.1 ms, with normal ~5.8 ms frames on both sides.
+  - Fly: clean. The GPU stayed ≤ 2.3 ms throughout.
+  - Verdict: real CPU/compositor-side drops while walking, about 1 frame in 570, worst 17.2 ms. **Carried into Phase 1 as an open defect.** Take a DevTools Performance trace of the walk phase once Phase 1's per-frame systems exist.
 
 ## Phase 0 measurements (machine W, 2026-10-02)
 

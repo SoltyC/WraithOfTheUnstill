@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 0 (Foundation and tooling). **Gate met.** Phase 1 has not been started.
+- **Phase:** 0 (Foundation and tooling): **gate met, closed.** Phase 1 (World skeleton) starts next; the user approved moving on (2026-10-02).
 - **Gate status (Phase 0):**
   - ✅ The overlay works: 9/9 automated checks in `tools/capture/overlay-check.mjs`, including a live uniform change reaching the GPU.
   - ✅ Captures are reproducible: all 5 photo spots are byte-identical across two fresh loads at 2560×1440, and unchanged by all the engine work.
@@ -14,11 +14,11 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
     - the WebGPU API floor (~225 B of wrapper objects, plus ~31 B per `writeBuffer`) is reported separately, as **ruled by the user on 2026-10-02** (DECISIONS.md).
   - **Target changed (user, 2026-10-02):** this PC (RTX 3060) is now the target, at 2560×1440 / 60 FPS / 1% lows ≥ 45 (DECISIONS.md).
   - First real-GPU numbers: the GPU main pass takes 1.2–1.8 ms median and ≤ 2.5 ms max at 2560×1440, against a 16.7 ms budget. There were 0 late pipelines (PERF.md "Target runs").
-  - **Open defect:** about 0.07% of frames land one 170 Hz refresh late (~11.8 ms), mostly while moving; the cause isn't identified yet (PERF.md).
+  - **Open defect (carried into Phase 1):** while walking, about 1 frame in 570 drops 1–2 refreshes (worst 17.2 ms) on the CPU/compositor side; the GPU stays ≤ 2.3 ms. Idle-phase outliers are late callbacks that the next frame absorbs. Diagnose with a DevTools trace (PERF.md).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark (`?bench=1`); the results are in `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** one more benchmark run to classify the late frames (see "Next step"), then Phase 1.
+- **Exact next step:** Phase 1 (see "Next step").
 
 ## How to run
 
@@ -196,12 +196,10 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-1. Run the benchmark once more: `npm run build && npm run preview`, then open `http://localhost:4173/?bench=1&res=2560x1440` in Windows Chrome, fullscreen and hands-off. Read the `hitches[].prev/next` values.
-   - Pairs like `11.8, 0.x` are late callbacks: presentation-neutral, so note them and move on.
-   - Steady `…5.9, 11.8, 5.9…` frames are real drops: take a Chrome DevTools Performance trace during the walk phase and find the long task or compositor stall.
-2. Start **Phase 1 — World skeleton** (BRIEF §17), carrying over these rules:
-   - no doubles as call arguments in hot code (`npm run alloc`);
-   - one `writeBuffer` per frame for per-frame uniforms;
-   - re-verify `babylonTweaks.js` on Babylon upgrades;
-   - re-run `npm run heap -- --settle-frames=20000` after new per-frame systems;
-   - run the benchmark on T after each major system and record it in PERF.md, extending `gpuTimer` to one query pair per pass when passes multiply.
+Start **Phase 1 — World skeleton** (BRIEF §17), carrying over these rules:
+- no doubles as call arguments in hot code (`npm run alloc`);
+- one `writeBuffer` per frame for per-frame uniforms;
+- re-verify `babylonTweaks.js` on Babylon upgrades;
+- re-run `npm run heap -- --settle-frames=20000` after new per-frame systems;
+- run the benchmark on T after each major system and record it in PERF.md (extend `gpuTimer` to one query pair per pass once passes multiply);
+- trace the walk-phase frame drops (open defect) with DevTools once the Phase 1 frame exists.
