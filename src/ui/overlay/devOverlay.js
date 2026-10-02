@@ -173,7 +173,11 @@ export class DevOverlay {
     v.hitch.textContent = String(s.hitches);
     v.hitch.className = 'v ' + (s.hitches === 0 ? 'good' : 'bad');
     v.draws.textContent = String(gpuStats.drawCallsLastFrame);
-    v.tris.textContent = (g.scene.getActiveIndices() / 3 / 1000).toFixed(0) + 'k';
+    // Babylon's perf counters are disabled (babylonTweaks): sum enabled meshes' index counts.
+    let idx = 0;
+    const meshes = g.scene.meshes;
+    for (let i = 0; i < meshes.length; i++) if (meshes[i].isEnabled() && meshes[i].isVisible) idx += meshes[i].getTotalIndices();
+    v.tris.textContent = (idx / 3 / 1000).toFixed(0) + 'k';
     v.gpu.textContent = ((gpuStats.bufferBytes + gpuStats.textureBytes) * MB).toFixed(0);
     const mem = performance.memory;
     v.heap.textContent = mem ? (mem.usedJSHeapSize * MB).toFixed(1) + '/' + (mem.jsHeapSizeLimit * MB).toFixed(0) : 'n/a';

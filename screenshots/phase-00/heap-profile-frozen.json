@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-02T08:14:50.821Z",
+  "seconds": 20,
+  "frames": 648,
+  "overlayOpen": false,
+  "machine": {
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+    "adapter": "google / swiftshader"
+  },
+  "samplingIntervalBytes": 16,
+  "totalBytes": 152868,
+  "bytesPerFrame": 235.9,
+  "frameLoopBytes": 145632,
+  "frameLoopBytesPerFrame": 224.7,
+  "gameBytesPerFrame": 0,
+  "engineBytesPerFrame": 224.7,
+  "topSites": [
+    {
+      "site": "e._startMainRenderPass src/render/babylonTweaks.js:107",
+      "bytes": 93152,
+      "bytesPerFrame": 143.8
+    },
+    {
+      "site": "endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348",
+      "bytes": 52480,
+      "bytesPerFrame": 81
+    },
+    {
+      "site": "(IDLE_EXTERNAL) :0",
+      "bytes": 7236,
+      "bytesPerFrame": 11.2
+    }
+  ],
+  "topFrameLoopStacks": [
+    {
+      "site": "e._startMainRenderPass src/render/babylonTweaks.js:107 <- _clearFrameBuffer @babylonjs/core/scene.pure.js:4066 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+      "bytes": 93152,
+      "bytesPerFrame": 143.8
+    },
+    {
+      "site": "endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+      "bytes": 52480,
+      "bytesPerFrame": 81
+    }
+  ],
+  "topStacks": [
+    {
+      "site": "e._startMainRenderPass src/render/babylonTweaks.js:107 <- _clearFrameBuffer @babylonjs/core/scene.pure.js:4066 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+      "bytes": 93152,
+      "bytesPerFrame": 143.8
+    },
+    {
+      "site": "endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+      "bytes": 52480,
+      "bytesPerFrame": 81
+    },
+    {
+      "site": "(IDLE_EXTERNAL) :0 <- (root) :0",
+      "bytes": 7236,
+      "bytesPerFrame": 11.2
+    }
+  ],
+  "errors": []
+}

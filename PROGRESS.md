@@ -5,12 +5,17 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 ## Current state
 
 - **Phase:** 0 (Foundation and tooling). Built and verified except one gate item; see "Gate status".
-- **Gate status (Phase 0):** **NOT fully met.**
+- **Gate status (Phase 0):** **met on game code; one engine item and one user decision open.**
   - ✅ The overlay works: 8/8 automated checks in `tools/capture/overlay-check.mjs`.
-  - ✅ Captures are reproducible: all 5 photo spots are byte-identical across two fresh loads at 2560×1440.
-  - ❌ "Heap profile of the idle loop shows zero allocations per frame": **game code is 0 B/frame**, but **Babylon's render path still allocates ~1.1 KB/frame** (details below). It must reach zero, or the user must accept a documented WebGPU-API floor, before Phase 1 starts.
+  - ✅ Captures are reproducible: all 5 photo spots are byte-identical across two fresh loads at 2560×1440, and unchanged by the session 2 engine work.
+  - ◐ Zero allocations per frame. After a 20k-frame warm-up:
+    - **Game code: 0 B/frame.**
+    - **Avoidable engine code: 0 B/frame** with the clock frozen; 29 B/frame when a uniform buffer changes. That's Babylon's UBO slot path, site not yet pinned.
+    - **Unavoidable WebGPU API wrappers: ~225 B/frame**, 7 objects every WebGPU renderer must create.
+    - Was 1.1 KB/frame of Babylon overhead at the end of session 1.
+  - **Decision needed from the user:** accept the WebGPU wrapper floor as outside the "zero allocations" gate (recorded as pending in DECISIONS.md). Strict zero is impossible for any WebGPU program.
 - **Machine used this session:** Windows + WSL2, RTX 3060 (**not** the target). Captures and profiles ran in Playwright's bundled Chromium with WebGPU on SwiftShader (CPU). Images are valid; timings are not. No target-machine performance numbers exist yet.
-- **Exact next step:** finish the zero-allocation gate (see "Next step" at the bottom), then run `npm run perf -- --channel=chrome --headed` on the target and record the numbers in PERF.md.
+- **Exact next step:** see "Next step" at the bottom. In short: get the user's ruling on the WebGPU floor, pin the 29 B uniform-upload site, then take target-machine numbers.
 
 ## How to run
 
@@ -35,6 +40,36 @@ without root into `~/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`, and the 
 up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwright install-deps chromium`.
 
 ## Session log
+
+### Session 2 — 2026-10-02 (same day, continuation) — Phase 0
+
+**Built / changed**
+- Pushed session 1 to GitHub. The remote is now SSH: `git@github.com:SoltyC/WraithOfTheUnstill.git`. HTTPS had no credentials in WSL.
+- `src/render/babylonTweaks.js`, which removed ~850 B/frame of Babylon allocation (rationale in DECISIONS.md):
+  - `installFastStages()`: scene stages become real arrays. `for…of` over Babylon's `Object.create(Stage.prototype)` stages allocated 88–168 B per loop (measured in Node).
+  - `renderOpaqueUnsorted()` walks the SmartArray directly, with no `slice`.
+  - `disableBabylonInstrumentation()`: PerfCounters, PerformanceMonitor and `_measureFps` are off. The overlay computes triangles itself.
+  - `installConstantLabelFramePath()`: copies of `_startMainRenderPass` and `flushFramebuffer` with constant labels, version-guarded to 9.29.0.
+  - `fastFrozenIsReady()`: avoids the closure-context allocation in `ShaderMaterial.isReady`.
+- `tools/capture/heap-profile.mjs`:
+  - frame-loop detection survives `_frame` being inlined;
+  - `babylonTweaks.js` is counted as engine;
+  - full-stack `topStacks`;
+  - `--query` and `--out` options.
+- `tools/capture/frame-alloc-probe.mjs`: synchronous-warm-up diagnosis of allocation sites (not for gate numbers).
+
+**Measured** (machine W, 20k-frame warm-up; see PERF.md):
+
+| Run | Total | Game | Avoidable engine | WebGPU floor | Browser idle |
+|---|---|---|---|---|---|
+| Clock running | 265 B/frame | 0 | 29 | 224 | 12 |
+| Clock frozen | 236 B/frame | 0 | 0 | 225 | 11 |
+
+Captures are still byte-identical. Tests 34/34, alloc check 9/9, overlay check 8/8.
+
+**Unfinished**
+- The 29 B/frame when uniforms change. It's attributed to `UniformBuffer._updateOwnerKeyed` but doesn't reproduce in isolation. Next probe: run the real loop with only the capsule's `bodyParams` changing and the others static, then bisect `_updateOwnerKeyed`'s change branch (`_takeFreeSlot`, `bindUniformBuffer`, `updateUniformBuffer`) by temporarily overriding each on the instance.
+- Target-machine numbers (unchanged from session 1).
 
 ### Session 1 — 2026-10-02 — Phase 0
 
@@ -123,15 +158,14 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 - The player is a placeholder capsule (the Wraith is Phase 3). Its contact blob is subtle.
 - Golden hour isn't very golden yet; warmth shows mostly in the sky halo and on the capsule.
 
-**Next step (do this first next session, still Phase 0)**
-1. Remove Babylon's per-frame allocations. In order of preference:
-   - (a) Snapshot FAST mode, plus manual per-frame bind and UBO flush for the 3 materials. This needs care with WebGPU owner-keyed uniform slots: see `webgpuEngine.pure.js` `_draw` around line 2881, and `scene.pure.js` around lines 3874 and 4216.
-   - (b) Patch Babylon via `patch-package`: `for…of` → indexed loops in `scene._renderFrame`, `_renderForCamera`, `_evaluateActiveMeshes`, `_activeMesh` and `mesh.render`; drop the per-pass label template string; avoid `slice` in `RenderingGroup._RenderSorted`.
-   - (c) Accept a WebGPU-API wrapper floor (~5 objects/frame). That decision belongs to the user; record it in DECISIONS.md.
+**Next step:** superseded; see session 2 above and the final "Next step" section below.
 
-   Re-run `npm run heap -- --settle-frames=20000` to verify.
-2. On the target machine:
+## Next step (current)
+
+1. Ask the user to rule on the WebGPU wrapper floor (DECISIONS.md, "Allocation floor"). If accepted, the allocation gate is met except for item 2.
+2. Pin and remove the 29 B/frame uniform-upload allocation (method in session 2 "Unfinished"). Verify with `npm run heap -- --settle-frames=20000`, and with `--query=capture=1 --out=heap-profile-frozen.json`.
+3. On the target machine:
    - `npm run perf -- --channel=chrome --headed`;
-   - `npm run capture -- --channel=chrome --headed --out=screenshots/phase-00-target` to confirm the captures look the same on real hardware and are still reproducible there;
+   - `npm run capture -- --channel=chrome --headed --out=screenshots/phase-00-target`;
    - record the results in PERF.md.
-3. Then Phase 1.
+4. Then Phase 1.

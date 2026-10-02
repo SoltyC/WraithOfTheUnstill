@@ -49,6 +49,11 @@ async function boot() {
   await engine.initAsync({ jsPath: '', wasmPath: '' }, { jsPath: '', wasmPath: '' });
   progress(0.3);
 
+  const { installFastStages, disableBabylonInstrumentation, installConstantLabelFramePath } = await import('./render/babylonTweaks.js');
+  const { AbstractEngine } = await import('@babylonjs/core/Engines/abstractEngine.js');
+  installFastStages(); // before the Scene exists: its stages are created in the constructor
+  disableBabylonInstrumentation(engine);
+  installConstantLabelFramePath(engine, AbstractEngine.Version);
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.02, 0.03, 0.05, 1);
   scene.skipPointerMovePicking = true;

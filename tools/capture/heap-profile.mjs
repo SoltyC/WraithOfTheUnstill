@@ -29,7 +29,7 @@ async function resolveFrame(url, line, col) {
 
 const args = parseArgs();
 const seconds = Number(args.seconds ?? 10);
-const query = ['grid=' + (args.grid ?? 96), args.overlay ? 'overlay=1' : ''].filter(Boolean).join('&');
+const query = ['grid=' + (args.grid ?? 96), args.overlay ? 'overlay=1' : '', args.query || ''].filter(Boolean).join('&');
 const width = Number(args.width ?? 640), height = Number(args.height ?? 360);
 
 const server = await startServer({ skipBuild: !!args['skip-build'] });
@@ -66,11 +66,20 @@ try {
   const owner = new Map(); // site -> 'game' | 'engine' | 'other'
   const sites = new Map();
   const loopSites = new Map();
+  const allStacks = new Map();
   for (const s of profile.samples) {
     const n = byId.get(s.nodeId);
     total += s.size;
     let p = n, loop = false, stack = [];
-    while (p) { if (p.callFrame.functionName === '_frame') loop = true; if (stack.length < 6 && p.callFrame.functionName) stack.push(site(p)); p = parent.get(p.id); }
+    // In fully optimised code our Loop._frame may be inlined into Babylon's render loop and vanish
+    // from sampled stacks, so any frame of the rAF render loop counts as "in the frame loop".
+    while (p) {
+      const fn = p.callFrame.functionName;
+      if (fn === '_frame' || fn === '_renderLoop' || fn === '_boundRenderFunction' || fn === '_renderFrame' && /abstractEngine/.test(resolved.get(p.id) || '')) loop = true;
+      if (stack.length < 8 && fn) stack.push(site(p));
+      p = parent.get(p.id);
+    }
+    allStacks.set(stack.join(' <- '), (allStacks.get(stack.join(' <- ')) || 0) + s.size);
     const k = site(n);
     sites.set(k, (sites.get(k) || 0) + s.size);
     if (loop) {
@@ -81,7 +90,8 @@ try {
       let q = n;
       while (q && !/^(src\/|@babylonjs)/.test(resolved.get(q.id) || '')) q = parent.get(q.id);
       const src = q ? resolved.get(q.id) : '';
-      if (src.startsWith('src/')) game += s.size; else engine += s.size;
+      // babylonTweaks.js holds copies of Babylon methods: count it as engine.
+      if (src.startsWith('src/') && !src.startsWith('src/render/babylonTweaks.js')) game += s.size; else engine += s.size;
     }
   }
   const top = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 15).map(([k, v]) => ({ site: k, bytes: v, bytesPerFrame: +(v / frames).toFixed(1) }));
@@ -92,14 +102,14 @@ try {
     totalBytes: total, bytesPerFrame: +(total / frames).toFixed(1),
     frameLoopBytes: inLoop, frameLoopBytesPerFrame: +(inLoop / frames).toFixed(1),
     gameBytesPerFrame: +(game / frames).toFixed(1), engineBytesPerFrame: +(engine / frames).toFixed(1),
-    topSites: top(sites), topFrameLoopStacks: top(loopSites),
+    topSites: top(sites), topFrameLoopStacks: top(loopSites), topStacks: top(allStacks),
     errors: logs.filter((l) => l.startsWith('error') || l.startsWith('pageerror')),
   };
 } finally {
   await browser.close();
   await server.close();
 }
-const outFile = path.join(ROOT, 'screenshots/phase-00', args.overlay ? 'heap-profile-overlay.json' : 'heap-profile.json');
+const outFile = path.join(ROOT, 'screenshots/phase-00', args.out || (args.overlay ? 'heap-profile-overlay.json' : 'heap-profile.json'));
 await fs.mkdir(path.dirname(outFile), { recursive: true });
 await fs.writeFile(outFile, JSON.stringify(result, null, 2));
 console.log(`frames ${result.frames}  total ${result.bytesPerFrame} B/frame  frame-loop ${result.frameLoopBytesPerFrame} B/frame  (game src/: ${result.gameBytesPerFrame}, engine: ${result.engineBytesPerFrame})`);

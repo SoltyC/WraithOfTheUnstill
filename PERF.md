@@ -50,18 +50,20 @@ Tool: `npm run heap`, which boots normally, waits N frames for V8 to optimise, t
 sampling heap profiler (16-byte interval, including objects collected by minor and major GC) and
 attributes every sample to the frame loop and to game vs engine code via sourcemaps.
 
-| Run | Warm-up frames | Game code (`src/`) | Babylon engine | Report |
-|---|---|---|---|---|
-| final | 6000 | 12.5 B/frame | 1138 B/frame | `screenshots/phase-00/heap-profile.json` |
-| long warm-up | 20000 | **0 B/frame** | 1068 B/frame | `screenshots/phase-00/heap-profile-warm20k.json` |
+| Run | Warm-up | Game code (`src/`) | Avoidable engine code | WebGPU API floor | Browser idle | Total | Report |
+|---|---|---|---|---|---|---|---|
+| Session 1 baseline | 20k frames | 0 | 1068 (Babylon traversal, labels, iterators) | (included) | — | 1279 B/frame | `heap-profile-baseline-warm20k.json` |
+| Final, clock running | 20k frames | **0** | 29 (Babylon UBO slot path when uniforms change) | 224 | 12 | **265 B/frame** | `heap-profile.json` |
+| Final, clock frozen (`capture=1`) | 20k frames | **0** | **0** | 225 | 11 | **236 B/frame** | `heap-profile-frozen.json` |
 
-Breakdown of the engine residual (20k warm-up):
-- **WebGPU API floor, ~380 B/frame:** `_startMainRenderPass` and `flushFramebuffer`. That's `getCurrentTexture`, `createView`, `beginRenderPass`, `createCommandEncoder`, `finish`, the submit array, and Babylon's per-pass template-string label. Every WebGPU renderer must allocate the wrapper objects; the label string is Babylon's and avoidable.
-- **Babylon scene traversal, ~690 B/frame:** `for…of` iterators (`next`) in `scene._renderFrame`, `_renderForCamera`, `_evaluateActiveMeshes`, `_activeMesh` and `mesh.render`; `slice` in `_RenderSorted`; frozen `ShaderMaterial.isReady`; the uniform-buffer owner-key update; and the performance monitor.
+**What the floor is:** each frame Chrome creates JS wrappers for the swap-chain GPUTexture, its GPUTextureView and the GPURenderPassEncoder (~142 B, all inside `_startMainRenderPass`), plus 2 × GPUCommandEncoder and 2 × GPUCommandBuffer (~82 B, inside `endFrame`). These were measured in isolation: `createCommandEncoder()` + `finish()` costs 42 B per pair. No WebGPU program can avoid them. "Browser idle" is `(IDLE_EXTERNAL)`, outside JS.
+
+**The remaining 29 B:** it appears only when a uniform buffer's contents change in the frame. Here that's the capsule's breathing light, driven by sim time; in gameplay, camera motion will do the same. It doesn't reproduce when `UniformBuffer._updateOwnerKeyed` + `updateFloat4` are driven in isolation (<1 B/call), so the exact site is still open.
+
+Steady state needs V8 to optimise Babylon's large frame functions. Before that (the first few thousand frames) the engine allocates ~1 KB/frame. `tools/capture/frame-alloc-probe.mjs` gives fast site-level diagnosis.
 
 Hot-path CPU code is checked in Node's V8 by `npm run alloc`: 2M calls per case, zero scavenges
 required. All 9 cases pass (ground sampling, controller walking and idle, spring arm, environment
 idle and time-flowing, clock, frame stats, pools).
 
-At 90 FPS the engine residual is ~96 KB/s of short-lived garbage. That's a cheap scavenge every
-several seconds, not a major GC, but it is not zero and the gate wording is strict. See PROGRESS.md.
+At 90 FPS the steady-state residual is ~24 KB/s of short-lived wrapper objects. That's a young-generation scavenge roughly once a minute, well under 1 ms, and never a major GC.

@@ -15,7 +15,7 @@ import { terrainVertexWGSL, terrainFragmentWGSL } from '../shaders/terrain.wgsl.
 import { skyVertexWGSL, skyFragmentWGSL } from '../shaders/sky.wgsl.js';
 import { capsuleVertexWGSL, capsuleFragmentWGSL } from '../shaders/capsule.wgsl.js';
 import { bindEnvironment, env } from './environment.js';
-import { renderOpaqueUnsorted } from './babylonTweaks.js';
+import { renderOpaqueUnsorted, fastFrozenIsReady } from './babylonTweaks.js';
 
 function register(name, vs, fs) {
   ShaderStore.ShadersStoreWGSL[name + 'VertexShader'] = vs;
@@ -95,6 +95,9 @@ export async function createTestScene(scene, { gridCells } = {}) {
   skyMat.freeze();
   terrainMat.freeze();
   capsuleMat.freeze();
+  fastFrozenIsReady(skyMat);
+  fastFrozenIsReady(terrainMat);
+  fastFrozenIsReady(capsuleMat);
   // One rendering group, drawn unsorted in creation order: sky (far-plane depth, no depth
   // write) first, then terrain and player. Avoids a second render pass for a group depth clear,
   // and Array.sort with a comparator allocates.
