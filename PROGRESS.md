@@ -15,12 +15,17 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - hem thrown over the waist on stopping (pelvis offset stepped);
   - pelvis rose during the running flight phase;
   - hem kicked to the waist by hard leg colliders.
+- **Phase 3 evidence on T:**
+  - **Shots:** the third set in `screenshots/phase-03/` (`?shots=p3-&dir=phase-03`, 2026-10-03 18:56) covers walk-noon, run-golden, side-dawn, hood-dusk and night. The user's verdict: "its good".
+  - **Bench:** `?bench=1` at 60 Hz gives a walk GPU frame of 7.7 ms median and 10.4 ms max with 0 hitches (PERF.md).
+  - **Tests:** gait tests show 0 slide and prints landing on the exact frame (63 tests pass).
+  - **Still needed:** the user's explicit acceptance of the Phase 3 gate.
 - **Phase 3 still open:**
   - target shots (`?shots=p3-&dir=phase-03`) and review;
   - a perf bench with the Wraith on T;
   - traversal-mode whip (Phase 4 traversal does not exist yet);
   - low-health cowl guttering and frost creep (Phase 7);
-  - the 120-step cloth settle on teleport costs ~0.15 s once (machine W);
+  - the hood-dusk close-up still reads slightly back-tilted from a low camera;
   - the Wraith's pipelines are only warmed if it is visible during loading (hidePlayer spots create them late).
 - **Phase 2 gate evidence:**
   - shots on T (`screenshots/phase-02/`): dawn, noon, dusk, night, the north face and a trail close-up;
