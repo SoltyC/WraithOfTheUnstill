@@ -64,7 +64,9 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   let L = shadowData.light.xyz;
   // Normal-offset + slope-scaled bias in metres, proportional to the cascade texel size.
   let ndl = clamp(dot(n, L), 0.05, 1.0);
-  let offsetP = wp + n * texel * 1.5;
+  // Normal offset grows as the surface turns from the light (steep faces at grazing light
+  // otherwise acne into fine stripes).
+  let offsetP = wp + n * texel * (1.5 + 3.5 * (1.0 - ndl));
   let bias = texel * (1.2 + 2.5 * sqrt(1.0 - ndl * ndl) / ndl);
   let clip = shadowData.viewProj[c] * vec4f(offsetP, 1.0);
   // Babylon renders WebGPU render targets Y-flipped (GL convention), so v follows clip y up.

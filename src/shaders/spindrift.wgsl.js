@@ -85,7 +85,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let y = groundAt(p.x, p.y) + lift;
   // Gust sheets: a noise field advected with the wind; plus biome, distance and lifetime fades.
   let gp = (p - wind * t * 9.0) / vec2f(22.0, 22.0);
-  let gust = smoothstep(0.45, 0.85, 0.5 + 0.5 * sin(gp.x * 1.7 + sin(gp.y * 1.3) * 2.0) * cos(gp.y * 0.9 + h1 * 0.6));
+  let gust = smoothstep(0.6, 0.92, 0.5 + 0.5 * sin(gp.x * 1.7 + sin(gp.y * 1.3) * 2.0) * cos(gp.y * 0.9 + h1 * 0.6));
   let life = fract(t * (0.25 + 0.2 * h2) + h3);
   let dist = length(wrapped);
   var alpha = uniforms.drift.y * gust * smoothstep(0.45, 0.8, frostAt(p.x, p.y)) * sin(3.14159 * life)
@@ -118,7 +118,7 @@ ${SHADOW_RECEIVE_WGSL}
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let u = fragmentInputs.vUv;
   let shape = (1.0 - u.x * u.x) * pow(max(1.0 - u.y * u.y, 0.0), 2.0);
-  let a = clamp(fragmentInputs.vAlpha * shape * 0.2, 0.0, 1.0);
+  let a = clamp(fragmentInputs.vAlpha * shape * 0.1, 0.0, 1.0);
   if (a < 0.002) { discard; }
   let wp = fragmentInputs.vWorldPos;
   let V = normalize(uniforms.cameraPosition - wp);

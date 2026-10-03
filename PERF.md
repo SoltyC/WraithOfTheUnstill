@@ -164,6 +164,18 @@ First measurement of the Phase 2 frame: snow material, PCSS, rocks, spindrift an
 
 Re-measure with run 2.
 
+### Phase 2 flight, run 2 at 60 Hz (2026-10-03, `perf/runs/2026-10-03T05-56-20-370Z.json`), after the fixes
+
+| Phase | GPU frame median / p99 / max | main / shadow / compute (median) | Frames with GPU > 16.7 ms | Over median + 4 ms | Hitches the game caused |
+|---|---|---|---|---|---|
+| surf | **7.4 / 13.0 / 14.0 ms** | 4.0 / **2.2** / 0.9 ms | **0** | 20 (15 absorbed) | **0** |
+| glide | **7.1 / 11.9 / 13.2 ms** | 3.6 / 2.0 / 1.0 ms | 0 | 4 (2 absorbed) | 0 |
+
+**Reading:**
+- The Phase 2 frame fits the 16.7 ms budget with at least 2.7 ms to spare at its worst frame. Shadows (2.2 ms) are back under their 2.7 ms budget.
+- No hitch is game-attributable, so the frame-time rule (as ruled for Phase 1) holds.
+- No late pipelines.
+
 ## Phase 1 measurements (machine W, 2026-10-03)
 
 ### Scene cost (structure, any machine)
