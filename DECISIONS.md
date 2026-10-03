@@ -224,3 +224,27 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Camera shake** follows BRIEF §7: hard carves (grip above ~70 %) and Crystallize only, as smooth noise eased out.
 - **Speed streaks:** camera-relative world-space streaks, moved by the distance travelled (a time × speed phase jumps when speed changes). They fade in above 7 m/s while surfing.
 - **Phase 4 gate accepted (user decision, 2026-10-03)** on the target shots (`screenshots/phase-04/`: verbs, carve, field) and the bend bench (surf +1.2 ms, verbs ~0, 0 late pipelines). Carried into polish: refraction against scene colour, spell-light SSS beyond snow, element selection, a curling wave mesh for the wake, and the frost material's cost on the open snowfield.
+
+## Phase 5 — Combat and the frost Shaped
+
+- **The Shaped are procedural bodies clad in chunk rigs**, not skinned meshes. The spine is a rope-follow chain. Legs plan steps in trot groups, lock planted feet, and solve two-bone knees. Each creature hangs material chunks (packed snow, ice shards, a glowing core) on its bones. That is what makes rising (chunks surface lowest-first) and collapsing (chunks fall with momentum, settle and sink into a mound) literal. One mesh holds every chunk slot (snapshot rendering; empty slots collapse in the vertex shader).
+- **The Warden is the same body at colossal scale** with its own chunk shader:
+  - **Chunk shape:** each chunk is a noise-displaced, craggy ellipsoid with analytic normals.
+  - **One mass, not a heap:** each vertex blends its crag normal (70 %) toward the gradient of a soft field over its own and its 16 nearest chunks' ellipsoids. Neighbours are measured once from the first live pose; the rig's topology never changes. Overlaps also give a contact term that darkens the creases where masses meet. Without this the Warden read as a pile of separate pebbles.
+  - **Material:** matte snow, with a rough Fresnel kept low; a glossy look read as plastic.
+  - **Mesh density:** subdivision 4 holds close-up silhouettes for climbing. It costs about +0.7 ms in shadows.
+- **Climbing uses parametric surfaces**, not mesh collision:
+  - legs are tubes foot→knee→hip (u, angle) and the body a tube around the spine (s, θ);
+  - legs move along their axis directly, the body by projected camera-relative input;
+  - radii come from the rig, so the grip sits on the visible surface.
+  
+  The camera pivot stands 1.6 m off the surface, and the arm treats the Warden's chunk ellipsoids as an occluder: the arm is blocked only after it has been outside, so a pivot inside the body is ignored.
+- **Stilled / restored** is a grade (desaturate, warmth, flatten), wind strength and spindrift, driven by one restoration value. The release drives it directly over ~10 s. Stilled is flat, cool and windless; restored is warm, with wind and spindrift.
+- **Release cinematic:** fracture light (0–3 s), the exhale (3 s: powder wave at 16 m/s, wind gust, shake), then lying down into a long drift (3–12 s) while the grade warms.
+  - The camera swings from the player's view into a slow rising orbit (44 m, pulled back to 58 m for the wave), letterboxed, and is skippable.
+  - Powder billows are spray particles over 0.5 m: long-lived and rolling. They are excluded from the shadow pass, because dithered cover from metre-wide puffs screen-doored the ground.
+  - Mound lumps scale with the heap, so a hound's mound is clumpy while the Warden's drift is smooth.
+- **Feedback without a HUD (BRIEF §12):**
+  - focus is the brightness of the hand light;
+  - health is the cowl light (it gutters when low) and frost creeping up the robe, with a cold vignette only at very low health;
+  - a fight reads with the HUD hidden.

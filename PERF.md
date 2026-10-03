@@ -287,3 +287,20 @@ Runs were driven remotely in a separate Chrome instance (no-throttle flags) with
 - **Surfing costs ~+1.2 ms** (wake brushes, spray, crest, streaks, spray shadows). That is after moving the spray off the PCSS shadow path: each spray fragment ran up to 48 shadow taps under heavy overdraw, and surf p95 was 18.7 ms, over the 16.7 ms budget. The spray now uses `shadowVisibilityFast` (4 taps), and puffs within ~2 m of the camera fade out.
 - **First cast:** 0 late pipelines across both bend phases. Every verb's pipeline exists from loading, so there is no first-cast hitch.
 - The open snowfield at 1440p sits at 11.6 ms standing. The frost material is the main cost; worth a pass in Phase 6 post / scalability.
+
+### Phase 5 — the Warden, climbing and a pack on T (2026-10-03, 1440p, monitor at 170 Hz)
+
+Run `13-37-17` with `?bench=fight`, every other browser closed. Phases:
+- `warden`: p5-warden-golden; the Warden awake and advancing, the camera orbiting.
+- `climb`: p5-climb-flank, gripping and climbing.
+- `pack`: p5-pack-afternoon, a pack of Shaped fighting.
+
+| Phase | GPU frame median / p95 / max | Main | Shadow | Compute | Presented median / p99 |
+|---|---|---|---|---|---|
+| warden | 10.7 / 11.0 / 11.9 ms | 6.2 | 3.8 | 0.46 | 10.6 / 12.2 ms |
+| climb | 11.2 / 13.1 / 13.8 ms | 6.2 | 3.8 | 0.72 | 11.2 / 14.3 ms |
+| pack | 13.2 / 13.8 / 14.4 ms | 8.4 | 4.1 | 0.52 | 13.3 / 14.7 ms |
+
+- Draw calls 39, pipelines 34, **late pipelines 0**, GPU memory 689 MB.
+- Every phase stays under the 16.7 ms budget at 1440p. The Warden at subdivision 4 (~1 M vertices, each blending 16 neighbour ellipsoids, in the main and cascade passes) adds about +0.7 ms of shadow over Phase 4.
+- The pack is the heaviest view: up to 8 Shaped × 96 chunks, plus the frost material on the open snowfield.

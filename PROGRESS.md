@@ -4,7 +4,47 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 5 (combat and the frost Shaped), **starting**. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 5 (combat and the frost Shaped), **built; gate evidence captured, awaiting user review**. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase 5 built** (commits 653430b … 049ad9b; DECISIONS.md "Phase 5"):
+  - **Shaped:** procedural bodies (rope spine, planted feet, two-bone knees) clad in chunk rigs of packed snow, ice shards and a glowing core.
+    - Three archetypes: hound, brute (slam), seer (ice shards).
+    - Creatures rise out of the snow chunk by chunk and collapse back into a mound.
+    - Freezing glazes them; a frozen Shaped shatters.
+  - **Combat:** Sweep, Ribbon and Crystallize hit the Shaped, and Shaped attacks land on the Wraith.
+    - Focus is spent on verbs, dodge and climbing; dodge (Ctrl) gives immunity; lock-on (Tab).
+    - Hit-stop and shake on hits.
+    - Health and focus live on the body, not a HUD: the cowl light gutters, frost creeps up the robe, and a cold vignette appears at very low health.
+    - Death folds the Wraith into the snow, and it re-forms at the last safe point.
+  - **The Frost Warden:** a ~35 m glacier-mammoth. Its four water joints are frozen (Crystallize) and then shattered: the two front knees from the ground, the two on its back by climbing it.
+    - Its material is a matte glacier, snow over blue ice. Normals blend across neighbouring chunks so it shades as one mass, with crevice shade where chunks meet.
+    - Its footfalls crush craters into the snow.
+    - It bucks while climbed.
+  - **Climbing (hold RMB on the Warden):**
+    - It grips legs and body as parametric surfaces and the climbing pose reaches in turn.
+    - Climbing drains focus; the Wraith is thrown off, lets go or slips.
+    - The camera stands off the surface and treats the Warden as an occluder.
+  - **Release (the last joint breaks):**
+    - Light fills the ice along its fractures.
+    - The exhale: a ground-hugging powder wave rolls out with a wind gust and a heavy shake.
+    - It lies down into a long drift.
+    - The grade moves from stilled (cool, flat, still air) to restored (wind, spindrift, warmth).
+    - A letterboxed orbit camera follows it all; Jump or E skips it.
+  - **Dev tools:** world tools Spawn, ×3, Kill all, Warden and Release; `?bench=fight`.
+  - **Tests:** 91 pass (Shaped, combat, climb, release camera).
+- **Phase 5 gate evidence (target T, 2026-10-03):**
+  - **Shots:** `screenshots/phase-05/` (`?shots=p5-`):
+    - hounds, pack and combat with the HUD hidden;
+    - Warden golden and afternoon;
+    - climb flank and leg;
+    - release glow, wave and settled;
+    - steppe stilled and restored.
+  - **Bench:** `?bench=fight` on T at 1440p. The pack (the heaviest view) has a GPU frame of 13.2 ms median and 13.8 ms p95; 0 late pipelines (PERF.md).
+- **Phase 5 open (for review / polish):**
+  - The Warden still reads as lumpy snowballs up close; silhouette crags could carry more large-scale form.
+  - The powder wave is subtle against sunlit snow. It reads best in motion and against shade.
+  - A faint brighter disc remains where the release drift sits.
+  - Release, climbing and joint fight need a feel check in live play on the PC. Use the world-tools Warden and Release buttons.
+  - Not built yet: stilled "frozen particles" (motionless diamond dust).
 - **Phase 4 built so far** (commit f74c958; DECISIONS.md "Phase 4"):
   - **Terrain state repack:** word 1 now holds compaction, wetness, frozen and transform (8-bit each). That is one fragment binding, and the snow reads slush, crust and permanent ice from it.
     - Five brush programs: PRESS, PLOUGH, SCORE, FREEZE, WET.
@@ -85,7 +125,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 5 (combat and the frost Shaped): see the session log for the plan.
+- **Exact next step:** user review of the Phase 5 gate (shots in `screenshots/phase-05/`, live play: Warden → climb → joints → release).
 
 ## How to run
 
