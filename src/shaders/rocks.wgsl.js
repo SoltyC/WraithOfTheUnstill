@@ -13,8 +13,8 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
-/** Vertex code shared by the colour pass and the shadow casters. */
-export const rocksVertexWGSL = /* wgsl */ `
+/** Vertex code shared by the colour pass and (with normals off) the shadow casters. */
+const ROCKS_VERTEX = /* wgsl */ `
 attribute position: vec3f;   // unit icosphere
 attribute world0: vec4f;
 attribute world1: vec4f;
@@ -92,15 +92,19 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let aspect = vec3f(1.0 + 0.35 * fract(seed * 3.1), 0.55 + 0.35 * w1.y, 1.0 - 0.2 * fract(seed * 5.3));
   let d = normalize(vertexInputs.position);
   let pl = rk_point(d, seed, aspect);
-  // Normal by finite differences on the sphere (tangent offsets of the direction).
-  var t1 = normalize(cross(d, vec3f(0.0, 1.0, 0.0)));
-  if (abs(d.y) > 0.99) { t1 = vec3f(1.0, 0.0, 0.0); }
-  let t2 = cross(d, t1);
-  let e = 0.02;
-  let pa = rk_point(normalize(d + t1 * e), seed, aspect);
-  let pb = rk_point(normalize(d + t2 * e), seed, aspect);
-  var nl = normalize(cross(pa - pl, pb - pl));
-  if (dot(nl, d) < 0.0) { nl = -nl; }
+  // Normal by finite differences on the sphere (tangent offsets of the direction); the shadow
+  // casters skip it (RK_NORMALS = false), which halves their vertex cost.
+  var nl = d;
+  if (RK_NORMALS) {
+    var t1 = normalize(cross(d, vec3f(0.0, 1.0, 0.0)));
+    if (abs(d.y) > 0.99) { t1 = vec3f(1.0, 0.0, 0.0); }
+    let t2 = cross(d, t1);
+    let e = 0.02;
+    let pa = rk_point(normalize(d + t1 * e), seed, aspect);
+    let pb = rk_point(normalize(d + t2 * e), seed, aspect);
+    nl = normalize(cross(pa - pl, pb - pl));
+    if (dot(nl, d) < 0.0) { nl = -nl; }
+  }
   // Ground: sample around the footprint, seat on the lowest so the rock never floats, sink by burial.
   let r = size * 0.9;
   let g0 = rk_ground(x, z);
@@ -123,6 +127,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vSize = size;
 }
 `;
+
+export const rocksVertexWGSL = 'const RK_NORMALS: bool = true;\n' + ROCKS_VERTEX;
+export const rocksShadowVertexWGSL = 'const RK_NORMALS: bool = false;\n' + ROCKS_VERTEX;
 
 export const rocksFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}

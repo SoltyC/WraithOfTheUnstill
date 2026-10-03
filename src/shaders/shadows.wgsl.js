@@ -75,6 +75,17 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   // Receiver-plane bias: a tap r texels away on a surface tilted from the light sits up to
   // r·texel·tanθ closer to the light; without this, wide filters self-shadow lit slopes (acne).
   let tanT = min(sqrt(1.0 - ndl * ndl) / ndl, 6.0) * texel;
+  // Far cascades (texels of metres): plain 16-tap PCF, no blocker search (penumbrae are below
+  // a texel there anyway) — this keeps distant terrain cheap.
+  if (c >= 2u) {
+    var litF = 0.0;
+    for (var i = 0; i < 16; i++) {
+      let o = POISSON16[i];
+      let r = vec2f(o.x * rot.x - o.y * rot.y, o.x * rot.y + o.y * rot.x) * 1.5;
+      litF += select(0.0, 1.0, d - tanT * length(r) <= shadowLoad(c, vec2i(floor(px + r))));
+    }
+    return litF / 16.0;
+  }
   // 1. Blocker search: mean depth of occluders within the widest penumbra we allow.
   let searchR = clamp(SHADOW_LIGHT_TAN * 60.0 / texel, 2.0, 14.0); // texels: blockers up to ~60 m away
   var blockSum = 0.0; var blockN = 0.0;

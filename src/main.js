@@ -129,7 +129,8 @@ async function boot() {
   const { createRocks } = await import('./render/rocks.js');
   const rocks = createRocks(scene, content.clipmap, atmosphere);
   bindShadows(rocks.material, shadows);
-  shadows.addCaster(rocks.mesh, rocks.makeShadowMaterial);
+  // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).
+  for (const m of rocks.meshes) shadows.addCaster(m, rocks.makeShadowMaterial, 2);
   rocks.freeze();
   // Terrain state (BRIEF §4.3): fine window + coarse pages; the clipmap reads it.
   const { createTerrainState } = await import('./terrain/state/terrainState.js');
@@ -234,7 +235,7 @@ async function boot() {
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
-  reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: meshToggle(rocks.mesh) });
+  reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: (on) => { for (const m of rocks.meshes) m.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'player', label: 'player', group: 'System', on: true, onChange: meshToggle(content.capsule) });
   reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadows.strength = on ? 1 : 0; } });
   reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });

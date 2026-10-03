@@ -60,7 +60,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let px = fwidth(uv.y);
     let core = exp(-dot(d, d) / max(px * px * 0.6, 1e-6));
     // Few bright stars, many faint ones (a steep magnitude distribution).
-    let bright = step(0.975, h) * pow((h - 0.975) / 0.025, 5.0);
+    // max(): pow() of a negative base is NaN on real GPUs (it blacked out the sky between stars).
+    let bright = step(0.975, h) * pow(max(h - 0.975, 0.0) / 0.025, 5.0);
     let starNight = smoothstep(0.6, 1.0, night);
     col += vec3f(0.80, 0.86, 1.0) * core * bright * 0.4 * starNight * smoothstep(0.02, 0.25, up);
   }

@@ -142,6 +142,28 @@ The display was set to 60 Hz (the target refresh). Same flight, same build as ru
 
 **Verdict:** the game causes none of the hitches. **Gate met under the user's ruling of 2026-10-03:** only game-attributable hitches count (DECISIONS.md), and there are 0. Stalls from outside the game (14 real drops in 45.8k frames at 60 Hz, 1 in ~550 frames at 170 Hz) are reported separately and re-checked in every later phase's benchmark.
 
+### Phase 2 flight, run 1 at 60 Hz (2026-10-03, `perf/runs/2026-10-03T04-04-04-009Z.json`)
+
+First measurement of the Phase 2 frame: snow material, PCSS, rocks, spindrift and deformation.
+
+| Phase | GPU frame median / p99 / max | main / shadow / compute (median) | Frames with GPU > 16.7 ms | Over median + 4 ms (presented) | Hitches the game caused |
+|---|---|---|---|---|---|
+| surf | 9.9 / 17.1 / 18.2 ms | 5.0 / 3.8 / 0.9 ms | **787 (2.6 %)** | 22 (18 absorbed) | **2** (GPU frame over a refresh) |
+| glide | 9.6 / 14.9 / 16.7 ms | 4.6 / 3.6 / 1.0 ms | 1 | 9 (7 absorbed) | 0 |
+
+**Over budget:**
+- Shadows cost 3.8 ms against 2.7 ms.
+- The main pass spikes to 11–12 ms while surfing low over snow, which is fragment-bound.
+- Rock casters ran a 9-noise finite-difference vertex shader in all four cascades.
+
+**Fixes since:**
+- rock LOD (near mesh 642 vertices, far mesh 162 beyond 140 m);
+- a normal-free rock shadow vertex shader, and rocks cast into cascades 0–2 only;
+- far cascades use plain PCF (no blocker search);
+- the snow shader skips rock work where there is no rock.
+
+Re-measure with run 2.
+
 ## Phase 1 measurements (machine W, 2026-10-03)
 
 ### Scene cost (structure, any machine)

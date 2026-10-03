@@ -55,35 +55,42 @@ fn rockDetail(wp: vec3f, N: vec3f, fp: f32) -> vec3f {
 
 fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f32) -> FrostSurf {
   var o: FrostSurf;
-  // Snow detail normals: grain (isotropic), wind ripples, drift texture.
+  // Snow detail normals: grain (isotropic), wind ripples, sastrugi, drift texture. The long
+  // layers stay gentle and only mildly stretched (strong stretch read as brush strokes).
   var g = vec2f(0.0);
   g += windLayerGrad(wp.x, wp.z, wind, 0.05, 0.05, 0.003 * fpFade(0.05, fp));
   g += windLayerGrad(wp.x, wp.z, wind, 0.18, 0.75, 0.014 * fpFade(0.18, fp));
   g += windLayerGrad(wp.x, wp.z, wind, 2.6, 0.55, 0.05 * fpFade(0.55, fp)); // sastrugi beyond the geometry
-  g += windLayerGrad(wp.x, wp.z, wind, 1.6, 5.0, 0.11 * fpFade(1.6, fp));
-  g += windLayerGrad(wp.x, wp.z, wind, 7.0, 22.0, 0.4 * fpFade(7.0, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 1.8, 3.2, 0.07 * fpFade(1.8, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 8.0, 12.0, 0.16 * fpFade(8.0, fp));
   let Nsnow = perturb(Ngeo, g);
   // Landform masks use the large-scale normal Nc (no micro relief in it).
   let slope = 1.0 - Nc.y;
 
-  // Rock where it is too steep to hold snow; snow re-accumulates on the upward faces of the
-  // rock's own detail (a noisy threshold, so the edge reads as drifted, not as a slope mask).
-  let Nrock = rockDetail(wp, Ngeo, fp);
-  let n1 = noised(wp.xz * 0.05).x; let n2 = noised(wp.xz * 0.35).x;
-  let rock = smoothstep(0.32, 0.48, slope + n1 * 0.06 + n2 * 0.03);
-  let accum = smoothstep(0.58, 0.84, Nrock.y + n2 * 0.15 + n1 * 0.1);
-  let rockShown = rock * (1.0 - accum);
-  // Rock albedo: dark strata a few metres thick, warped; contrast fades with distance so the
-  // bands never alias into moiré.
-  let strata = fract(wp.y / 5.5 + 0.6 * noised(wp.xz * 0.012).x + 0.15 * n2);
-  let band = (smoothstep(0.0, 0.12, strata) * (1.0 - smoothstep(0.5, 0.7, strata)) - 0.5) * fpFade(5.5, fp);
-  let rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.45 * band) * (0.9 + 0.2 * noised(wp.xz * 0.9 + wp.y * 0.7).x);
+  // Rock where it is too steep to hold snow. The boundary follows the landform (slope), broken
+  // by low-frequency variation; fine edge noise fades with distance so it never aliases into
+  // blocks. Snow re-accumulates on the upward faces of the rock's own detail.
+  let n1 = noised(wp.xz * 0.02).x; let n2 = noised(wp.xz * 0.11).x * fpFade(9.0, fp);
+  let n3 = noised(wp.xz * 0.5).x * fpFade(2.0, fp);
+  let rock = smoothstep(0.30, 0.50, slope + n1 * 0.07 + n2 * 0.04 + n3 * 0.02);
+  var rockShown = 0.0;
+  var Nrock = Ngeo;
+  var rockAlb = vec3f(0.1);
+  if (rock > 0.001) {
+    Nrock = rockDetail(wp, Ngeo, fp);
+    let accum = smoothstep(0.62, 0.86, Nrock.y + n2 * 0.08 + n3 * 0.06);
+    rockShown = rock * (1.0 - accum);
+    // Strata a few metres thick, warped; contrast fades early with distance (no moiré).
+    let strata = fract(wp.y / 5.5 + 0.6 * noised(wp.xz * 0.012).x + 0.1 * n2);
+    let band = (smoothstep(0.0, 0.12, strata) * (1.0 - smoothstep(0.5, 0.7, strata)) - 0.5) * fpFade(11.0, fp);
+    rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.4 * band) * (0.92 + 0.16 * n2);
+  }
 
   // Blue ice: scoured out on steep windward slopes (the landform faces into the wind), in
   // patches; and on frozen tarns where the wind strips the snow off in places.
   let windward = -dot(Nc.xz, wind);                // ≈ sin(slope) when facing straight upwind
-  let scour = smoothstep(0.22, 0.34, windward) * smoothstep(0.05, 0.45, noised(wp.xz / 25.0).x + 0.35 * noised(wp.xz / 5.0).x);
-  let lakeIce = 0.75 * smoothstep(0.5, 0.9, lake) * smoothstep(0.3, 0.65, noised(wp.xz / 9.0).x + 0.3 * noised(wp.xz / 2.0).x);
+  let scour = smoothstep(0.22, 0.34, windward) * smoothstep(0.05, 0.45, noised(wp.xz / 25.0).x + 0.35 * noised(wp.xz / 5.0).x * fpFade(5.0, fp));
+  let lakeIce = 0.75 * smoothstep(0.5, 0.9, lake) * smoothstep(0.3, 0.65, noised(wp.xz / 9.0).x + 0.3 * noised(wp.xz / 2.0).x * fpFade(2.0, fp));
   let ice = max(scour * (1.0 - rock), lakeIce);
   let lakeShare = lakeIce / max(ice, 1e-3);
 
@@ -172,7 +179,10 @@ fn frostLight(s: FrostSurf, wp: vec3f, Ngeo: vec3f, V: vec3f, L: vec3f, key: vec
     if (h0 < 0.05) {
       let t = vec2f(hash12(c + vec2f(3.7, 11.9)), hash12(c + vec2f(23.3, 5.1))) - 0.5;
       let Nf = normalize(N + vec3f(t.x, 0.0, t.y) * 0.5);
-      let lobe = smoothstep(0.9965, 0.9992, dot(Nf, H));
+      // A round facet inside the cell (soft disc), so glints read as points, not jagged cells.
+      let fc = (wp.xz / cell - c) - (vec2f(hash12(c + vec2f(7.1, 2.9)), hash12(c + vec2f(1.3, 9.7))) * 0.5 + 0.25);
+      let disc = 1.0 - smoothstep(0.12, 0.3, length(fc));
+      let lobe = smoothstep(0.9965, 0.9992, dot(Nf, H)) * disc;
       let grazing = smoothstep(0.75, 0.25, nv);
       col += key * lobe * grazing * gFade * vis * 1.6 * uniforms.artParams.x;
     }

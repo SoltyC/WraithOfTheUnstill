@@ -14,13 +14,14 @@ import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
-import { rocksVertexWGSL, rocksFragmentWGSL } from '../shaders/rocks.wgsl.js';
+import { rocksVertexWGSL, rocksShadowVertexWGSL, rocksFragmentWGSL } from '../shaders/rocks.wgsl.js';
 import { hashU32, valueNoise } from '../terrain/noise.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 
-const MAX = 2400;
+const MAX_NEAR = 700, MAX_FAR = 1700;
+const NEAR_R = 140; // m: closer rocks use the 642-vertex mesh, farther the 162-vertex one
 const BOULDER_CELL = 8, BOULDER_R = 52;    // cells: ±52 → 840 m square
 const OUTCROP_CELL = 48, OUTCROP_R = 12;   // ±12 → 1.2 km square
 const SEED = 0x726f;
@@ -54,14 +55,19 @@ const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z
  */
 export function createRocks(scene, clipmap, atmo) {
   ShaderStore.ShadersStoreWGSL.rocksVertexShader = rocksVertexWGSL;
+  ShaderStore.ShadersStoreWGSL.rocksShadowVertexShader = rocksShadowVertexWGSL;
   ShaderStore.ShadersStoreWGSL.rocksFragmentShader = rocksFragmentWGSL;
-  const ico = icosphere(3);
-  const mesh = new Mesh('rocks', scene);
-  const vd = new VertexData(); vd.positions = ico.positions; vd.indices = ico.indices; vd.applyToMesh(mesh, false);
-  const buf = new Float32Array(MAX * 16);
-  mesh.thinInstanceSetBuffer('matrix', buf, 16, false);
-  mesh.alwaysSelectAsActiveMesh = true;
-  mesh.doNotSyncBoundingInfo = true;
+  const makeMesh = (name, level, max) => {
+    const ico = icosphere(level);
+    const m = new Mesh(name, scene);
+    const vd = new VertexData(); vd.positions = ico.positions; vd.indices = ico.indices; vd.applyToMesh(m, false);
+    const b = new Float32Array(max * 16);
+    m.thinInstanceSetBuffer('matrix', b, 16, false);
+    m.alwaysSelectAsActiveMesh = true;
+    m.doNotSyncBoundingInfo = true;
+    return { mesh: m, buf: b, max, n: 0 };
+  };
+  const near = makeMesh('rocksNear', 3, MAX_NEAR), far = makeMesh('rocksFar', 2, MAX_FAR);
 
   const common = {
     attributes: ['position'],
@@ -82,19 +88,26 @@ export function createRocks(scene, clipmap, atmo) {
   bindEnvironment(mat);
   bindAtmosphere(mat, atmo);
   bindVertex(mat);
-  mesh.material = mat;
+  near.mesh.material = mat; far.mesh.material = mat;
 
   let cellX = NaN, cellZ = NaN;
+  let camCX = 0, camCZ = 0;
   function put(n, x, z, size, yaw, seed, aspect, burial, kind) {
-    const o = n * 16;
+    // Near or far mesh by distance from the camera cell (n counts all rocks, unused here).
+    const dx = x - camCX, dz = z - camCZ;
+    const t = dx * dx + dz * dz < NEAR_R * NEAR_R && near.n < near.max ? near : far;
+    if (t.n >= t.max) return;
+    const buf = t.buf, o = t.n++ * 16;
     buf[o] = x; buf[o + 1] = z; buf[o + 2] = size; buf[o + 3] = yaw;
     buf[o + 4] = seed; buf[o + 5] = aspect; buf[o + 6] = burial; buf[o + 7] = kind;
   }
   function rebuild(cx, cz) {
     let n = 0;
+    near.n = 0; far.n = 0;
+    camCX = (cx + 0.5) * BOULDER_CELL; camCZ = (cz + 0.5) * BOULDER_CELL;
     // Outcrops: large, half buried, sparse.
     const ox = Math.floor(cx * BOULDER_CELL / OUTCROP_CELL), oz = Math.floor(cz * BOULDER_CELL / OUTCROP_CELL);
-    for (let j = -OUTCROP_R; j <= OUTCROP_R && n < MAX; j++) for (let i = -OUTCROP_R; i <= OUTCROP_R && n < MAX; i++) {
+    for (let j = -OUTCROP_R; j <= OUTCROP_R; j++) for (let i = -OUTCROP_R; i <= OUTCROP_R; i++) {
       const gx = ox + i, gz = oz + j;
       if (h01(gx, gz, SEED + 1) > 0.24) continue;
       const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * OUTCROP_CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 3)) * OUTCROP_CELL;
@@ -102,7 +115,7 @@ export function createRocks(scene, clipmap, atmo) {
       put(n++, x, z, s, h01(gx, gz, SEED + 5) * 6.283, h01(gx, gz, SEED + 6) * 97, 0.3 + 0.5 * h01(gx, gz, SEED + 7), 0.35 + 0.25 * h01(gx, gz, SEED + 8), 1);
     }
     // Boulders: clustered fields (a low-frequency density), a power law of sizes.
-    for (let j = -BOULDER_R; j <= BOULDER_R && n < MAX; j++) for (let i = -BOULDER_R; i <= BOULDER_R && n < MAX; i++) {
+    for (let j = -BOULDER_R; j <= BOULDER_R; j++) for (let i = -BOULDER_R; i <= BOULDER_R; i++) {
       const gx = cx + i, gz = cz + j;
       const dens = 0.04 + 0.34 * Math.max(0, valueNoise(gx / 22, gz / 22, SEED + 9) * 0.5 + 0.5 - 0.3) / 0.7;
       if (h01(gx, gz, SEED + 10) > dens) continue;
@@ -110,16 +123,19 @@ export function createRocks(scene, clipmap, atmo) {
       const s = 0.45 + 2.4 * Math.pow(h01(gx, gz, SEED + 13), 2);
       put(n++, x, z, s, h01(gx, gz, SEED + 14) * 6.283, h01(gx, gz, SEED + 15) * 97, 0.4 + 0.6 * h01(gx, gz, SEED + 16), 0.2 + 0.25 * h01(gx, gz, SEED + 17), 0);
     }
-    for (let k = n; k < MAX; k++) buf[k * 16 + 2] = 0; // unused slots: size 0 (discarded)
-    mesh.thinInstanceBufferUpdated('matrix');
-    return n;
+    // Unused slots: size 0 (discarded in the vertex shader; the draw count never changes).
+    for (const t of [near, far]) {
+      for (let k = t.n; k < t.max; k++) t.buf[k * 16 + 2] = 0;
+      t.mesh.thinInstanceBufferUpdated('matrix');
+    }
+    return near.n + far.n;
   }
 
   return {
-    mesh, material: mat, count: 0,
-    /** Builds a depth material for a shadow cascade (same vertex shader). */
+    meshes: [near.mesh, far.mesh], material: mat, count: 0,
+    /** Builds a depth material for a shadow cascade (vertex shader without normals). */
     makeShadowMaterial(name, light, origin) {
-      const m = new ShaderMaterial(name, scene, { vertex: 'rocks', fragment: 'shadowDepth' }, {
+      const m = new ShaderMaterial(name, scene, { vertex: 'rocksShadow', fragment: 'shadowDepth' }, {
         ...common, uniforms: ['viewProjection', 'levels', 'shadowLight', 'shadowOrigin'],
       });
       bindVertex(m);

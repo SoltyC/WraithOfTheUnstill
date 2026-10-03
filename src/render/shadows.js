@@ -97,9 +97,9 @@ export function createShadows(scene, viewCamera, casters) {
 
   return {
     maps, shadowData, cameras: cams,
-    /** Adds a caster to every cascade with its own depth material (makeMat(name, light, origin)). */
-    addCaster(mesh, makeMat) {
-      for (let c = 0; c < CASCADES; c++) {
+    /** Adds a caster to cascades 0..maxCascade with its own depth material (makeMat(name, light, origin)). */
+    addCaster(mesh, makeMat, maxCascade = CASCADES - 1) {
+      for (let c = 0; c <= maxCascade; c++) {
         maps[c].renderList.push(mesh);
         maps[c].setMaterialForRendering(mesh, makeMat('casterShadow' + mesh.name + c, lights[c], origins[c]));
       }
