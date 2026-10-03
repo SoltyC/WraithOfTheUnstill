@@ -76,6 +76,35 @@ export function createWarden(ctx) {
     shockX: 0.5, shockZ: 0.5, shockR: -1.5 + 0.5, slam: false, drifts: false,
     /** 0..1 snow cover as it lies down into the land (chunk records carry it in alpha). */
     cover: 0.5 - 0.5,
+    /** Ray out through the mass (fields in: origin rox/roy/roz inside it, unit direction
+     *  rdx/rdy/rdz): distance to where it leaves the outermost chunk (the visible surface along
+     *  that line), or −1 if it hits nothing. Chunk radii are their crag-mean (rig size × 0.47). */
+    rox: 0.5, roy: 0.5, roz: 0.5, rdx: 0.5, rdy: 0.5, rdz: 0.5,
+    rayOut() {
+      const ox = this.rox, oy = this.roy, oz = this.roz, dx = this.rdx, dy = this.rdy, dz = this.rdz;
+      let best = -1;
+      for (let c = 0; c < WARDEN_CHUNKS; c++) {
+        const o = c * CHUNK_FLOATS;
+        if (chunks[o + 15] < 0.5 || chunks[o + 13] === CHUNK.ICE) continue;
+        const px = ox - chunks[o], py = oy - chunks[o + 1], pz = oz - chunks[o + 2];
+        // Cheap reject: the ray's closest approach beyond the chunk's largest radius.
+        const big = Math.max(chunks[o + 3], chunks[o + 7], chunks[o + 11]) * 0.6;
+        const tc = -(px * dx + py * dy + pz * dz);
+        const qx = px + dx * tc, qy = py + dy * tc, qz = pz + dz * tc;
+        if (qx * qx + qy * qy + qz * qz > big * big) continue;
+        const fx = chunks[o + 4], fy = chunks[o + 5], fz = chunks[o + 6], ux = chunks[o + 8], uy = chunks[o + 9], uz = chunks[o + 10];
+        const rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx;
+        const sx = chunks[o + 3] * 0.47, sy = chunks[o + 7] * 0.47, sz = chunks[o + 11] * 0.47;
+        const a0 = (px * rx + py * ry + pz * rz) / sx, a1 = (px * ux + py * uy + pz * uz) / sy, a2 = (px * fx + py * fy + pz * fz) / sz;
+        const b0 = (dx * rx + dy * ry + dz * rz) / sx, b1 = (dx * ux + dy * uy + dz * uz) / sy, b2 = (dx * fx + dy * fy + dz * fz) / sz;
+        const A = b0 * b0 + b1 * b1 + b2 * b2, B = a0 * b0 + a1 * b1 + a2 * b2, C = a0 * a0 + a1 * a1 + a2 * a2 - 1;
+        const disc = B * B - A * C;
+        if (disc < 0) continue;
+        const t = (-B + Math.sqrt(disc)) / A;
+        if (t > best) best = t;
+      }
+      return best;
+    },
     /** Camera probe (fields in): is (qx, qy, qz) inside the mass, with a little clearance? */
     qx: 0.5, qy: 0.5, qz: 0.5,
     probe() {

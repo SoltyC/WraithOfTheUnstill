@@ -35,6 +35,8 @@ export class Body {
     this.climbing = false; this.climbPhase = 0.5 - 0.5; this.climbBlend = 1.5 - 0.5;
     /** Knocked down (with climbing): arms flung out over the head instead of reaching to grip. */
     this.knocked = false;
+    /** Climbing grip (inputs): IK targets for the hands (L, R) then feet (L, R), world xyz. */
+    this.gripOn = false; this.grip = new Float64Array(12);
     this.cr = new Float64Array(3); this.cu = new Float64Array(3); this.cf = new Float64Array(3);
   }
 
@@ -129,6 +131,20 @@ export class Body {
       const b = a + (0.42 + 0.3 * run * (1 - sb) + 0.5 * sb) * (1 - 0.8 * cast);
       this.toWorld(side * 0.2 + ex * 1.5, 0.5 + eyl - Math.cos(b) * fa, -0.01 + ezl + Math.sin(b) * fa);
       this.ha[o] = this.out[0]; this.ha[o + 1] = this.out[1]; this.ha[o + 2] = this.out[2];
+      if (this.climbing && this.gripOn && !this.knocked && this.climbBlend > 0.5) {
+        // Gripping: two-bone IK from the shoulder to the hold; elbows out, down and off the surface.
+        const sx = this.sh[o], sy = this.sh[o + 1], sz = this.sh[o + 2];
+        let dx = this.grip[s * 3] - sx, dy = this.grip[s * 3 + 1] - sy, dz = this.grip[s * 3 + 2] - sz;
+        const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-4;
+        dx /= dl; dy /= dl; dz /= dl;
+        const L = Math.min(dl, ua + fa - 1e-3), along = (ua * ua - fa * fa + L * L) / (2 * L), h = Math.sqrt(Math.max(ua * ua - along * along, 0));
+        const r = this.r, u = this.u, f = this.f;
+        let px = -f[0] * 0.6 + r[0] * side * 0.6 - u[0] * 0.5, py = -f[1] * 0.6 + r[1] * side * 0.6 - u[1] * 0.5, pz = -f[2] * 0.6 + r[2] * side * 0.6 - u[2] * 0.5;
+        const pd = px * dx + py * dy + pz * dz; px -= dx * pd; py -= dy * pd; pz -= dz * pd;
+        const pl = Math.sqrt(px * px + py * py + pz * pz) || 1; px /= pl; py /= pl; pz /= pl;
+        this.el[o] = sx + dx * along + px * h; this.el[o + 1] = sy + dy * along + py * h; this.el[o + 2] = sz + dz * along + pz * h;
+        this.ha[o] = sx + dx * L; this.ha[o + 1] = sy + dy * L; this.ha[o + 2] = sz + dz * L;
+      }
     }
     // Keep the knees/feet in the gait (legs are the gait's); hip width for colliders.
     this.hipWidth = GAIT.hipWidth;

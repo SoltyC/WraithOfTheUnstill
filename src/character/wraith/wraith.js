@@ -2,7 +2,9 @@
 // vertex data the renderer uploads (one storage buffer write per frame) and the footfall events
 // that become terrain-state footprints and spray on the exact frame of contact.
 
-import { Gait } from './gait.js';
+import { Gait, GAIT } from './gait.js';
+
+const GAIT_HIP = GAIT.hipWidth, GAIT_THIGH = GAIT.thigh, GAIT_SHIN = GAIT.shin;
 import { Body } from './body.js';
 import { buildGarments, GARMENT, COLLIDER, SLEEVE_WRIST_ROW, SLEEVE_ELBOW_ROW } from './garments.js';
 
@@ -35,6 +37,10 @@ export class Wraith {
     this.climbing = false; this.climbPhase = 0.5 - 0.5;
     /** Knocked down (with climbing set: the same frame override): thrown, on its back, rising. */
     this.knocked = false;
+    /** Climbing grip (inputs): holds for hands L, R then feet L, R (world xyz); feet hanging free. */
+    this.gripOn = false; this.grip = new Float64Array(12); this.feetFree = false;
+    /** Sprung pelvis velocity while climbing (the body hangs and swings under its grip). */
+    this._cvx = 0.5 - 0.5; this._cvy = 0.5 - 0.5; this._cvz = 0.5 - 0.5;
     this.cpx = 0.5; this.cpy = 0.5; this.cpz = 0.5;
     /** 0..1 how far the body has turned to the surface (from the climb system's blend). */
     this.climbBlend = 0.5 - 0.5;
@@ -125,7 +131,8 @@ export class Wraith {
     const g = this.gait, b = this.body;
     g.dt = this.dt; g.evCount = 0; g.collapse = this.collapse;
     if (this.climbing) this._climbPose(); else { this._cx = NaN; g.update(); }
-    b.climbing = this.climbing; b.climbPhase = this.climbPhase; b.climbBlend = this.climbBlend; b.knocked = this.knocked;
+    b.climbing = this.climbing; b.climbPhase = this.climbPhase; b.climbBlend = this.climbBlend; b.knocked = this.knocked; b.gripOn = this.gripOn;
+    if (this.gripOn) for (let i = 0; i < 12; i++) b.grip[i] = this.grip[i];
     if (this.climbing) for (let i = 0; i < 3; i++) { b.cr[i] = this.cr[i]; b.cu[i] = this.cu[i]; b.cf[i] = this.cf[i]; }
     b.dt = this.dt;
     b.cast += (this.cast - b.cast) * (1 - Math.exp(-this.dt * (this.cast > b.cast ? 18 : 5)));
@@ -151,9 +158,22 @@ export class Wraith {
   _climbPose() {
     const g = this.gait, u = this.cu, f = this.cf, r = this.cr;
     if (Number.isNaN(this._cx)) { this._cx = this.body.px; this._cy = this.body.py; this._cz = this.body.pz; }
-    // Knocked: the pelvis is the knockdown's own (fast; no easing lag in the throw).
-    const k = this.knocked ? 1 : 1 - Math.exp(-this.dt * 9);
-    this._cx += (this.cpx - this._cx) * k; this._cy += (this.cpy - this._cy) * k; this._cz += (this.cpz - this._cz) * k;
+    if (this.knocked) {
+      // Knocked: the pelvis is the knockdown's own (no lag in the throw).
+      this._cx = this.cpx; this._cy = this.cpy; this._cz = this.cpz; this._cvx = 0; this._cvy = 0; this._cvz = 0;
+    } else {
+      // Gripping: the pelvis hangs on a spring under the holds — it lags the pulls and the
+      // Warden's heaves, overshoots a little and settles (weight, not a glide).
+      const dt = Math.min(this.dt, 1 / 30), w = 12, z = 0.42;
+      const ax = (this.cpx - this._cx) * w * w - this._cvx * 2 * z * w;
+      const ay = (this.cpy - this._cy) * w * w - this._cvy * 2 * z * w;
+      const az = (this.cpz - this._cz) * w * w - this._cvz * 2 * z * w;
+      this._cvx += ax * dt; this._cvy += ay * dt; this._cvz += az * dt;
+      this._cx += this._cvx * dt; this._cy += this._cvy * dt; this._cz += this._cvz * dt;
+      // Never hang more than a little way off the target (a thrown grip snaps back in).
+      const ex = this._cx - this.cpx, ey = this._cy - this.cpy, ez = this._cz - this.cpz, el = Math.sqrt(ex * ex + ey * ey + ez * ez);
+      if (el > 0.6) { const q = 0.6 / el; this._cx = this.cpx + ex * q; this._cy = this.cpy + ey * q; this._cz = this.cpz + ez * q; }
+    }
     g.px = this._cx; g.py = this._cy; g.pz = this._cz; g.speed = 0; g.phase = 0; g.evCount = 0;
     if (this.knocked) {
       // Thrown / on its back: legs loose and splayed, knees up off the snow (toward the chest).
@@ -167,6 +187,31 @@ export class Wraith {
         g.kx[k] = g.px - u[0] * down * 0.45 + r[0] * side * 0.17 + f[0] * (0.22 + 0.08 * k);
         g.ky[k] = g.py - u[1] * down * 0.45 + r[1] * side * 0.17 + f[1] * (0.22 + 0.08 * k);
         g.kz[k] = g.pz - u[2] * down * 0.45 + r[2] * side * 0.17 + f[2] * (0.22 + 0.08 * k);
+      }
+      return;
+    }
+    if (this.gripOn) {
+      // Feet on their holds (two-bone knees out to the sides, off the surface), or hanging free
+      // while the Warden heaves.
+      for (let k = 0; k < 2; k++) {
+        const side = k === 0 ? -1 : 1;
+        const hx = g.px + r[0] * side * GAIT_HIP, hy = g.py + r[1] * side * GAIT_HIP, hz = g.pz + r[2] * side * GAIT_HIP;
+        let tx, ty, tz;
+        if (this.feetFree) {
+          const sw = 0.12 * Math.sin(this.time * 7 + k * 2);
+          tx = hx + r[0] * side * 0.05 + f[0] * sw; ty = hy - 0.86; tz = hz + r[2] * side * 0.05 + f[2] * sw;
+        } else { tx = this.grip[6 + k * 3]; ty = this.grip[7 + k * 3]; tz = this.grip[8 + k * 3]; }
+        let dx = tx - hx, dy = ty - hy, dz = tz - hz;
+        const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-4;
+        dx /= dl; dy /= dl; dz /= dl;
+        const a = GAIT_THIGH, bb = GAIT_SHIN, L = Math.min(dl, a + bb - 1e-3);
+        const along = (a * a - bb * bb + L * L) / (2 * L), h = Math.sqrt(Math.max(a * a - along * along, 0));
+        let px = -f[0] * 0.5 + r[0] * side * 0.7, py = -f[1] * 0.5 + r[1] * side * 0.7, pz = -f[2] * 0.5 + r[2] * side * 0.7;
+        const pd = px * dx + py * dy + pz * dz; px -= dx * pd; py -= dy * pd; pz -= dz * pd;
+        const pl = Math.sqrt(px * px + py * py + pz * pz) || 1; px /= pl; py /= pl; pz /= pl;
+        g.kx[k] = hx + dx * along + px * h; g.ky[k] = hy + dy * along + py * h; g.kz[k] = hz + dz * along + pz * h;
+        g.fx[k] = hx + dx * L; g.fy[k] = hy + dy * L; g.fz[k] = hz + dz * L;
+        g.state[k] = 0;
       }
       return;
     }

@@ -209,6 +209,16 @@ async function boot() {
     // The camera's pivot stands off the climbed surface, so the Wraith is seen against it.
     const push = climb.climbing ? 1.6 : 0;
     arm.pushX = -climb.fx * push; arm.pushY = -climb.fy * push; arm.pushZ = -climb.fz * push;
+    if (climb.grabbed) {
+      // A hand bites into the crust: a puff of snow knocked loose, a small jolt.
+      for (let q = 0; q < 10; q++) {
+        const a = q * 0.618 * Math.PI * 2;
+        wraithView.ex = climb.gx; wraithView.ey = climb.gy; wraithView.ez = climb.gz;
+        wraithView.evx = -climb.fx * 0.8 + Math.cos(a) * 0.5; wraithView.evy = -0.4 + (q % 3) * 0.3; wraithView.evz = -climb.fz * 0.8 + Math.sin(a) * 0.5;
+        wraithView.esize = 0.03 + 0.015 * (q % 3); wraithView.emit();
+      }
+      arm.shake += 0.0035;
+    }
     if (climb.climbing) {
       // Held to the surface: the feet point sits below the pelvis along the climb.
       controller.hold = true;
@@ -318,15 +328,17 @@ async function boot() {
   /** The Wraith's pose override from the climb or the knockdown (shared with the captures). */
   function feedWraithOverride(w) {
     if (knock.active) {
-      w.climbing = true; w.knocked = true; w.climbBlend = 1;
+      w.climbing = true; w.knocked = true; w.climbBlend = 1; w.gripOn = false;
       w.cpx = knock.x; w.cpy = knock.y; w.cpz = knock.z; w.climbPhase = clock.simTime * 6;
       w.cr[0] = knock.rx; w.cr[1] = knock.ry; w.cr[2] = knock.rz; w.cu[0] = knock.ux; w.cu[1] = knock.uy; w.cu[2] = knock.uz;
       w.cf[0] = knock.fx; w.cf[1] = knock.fy; w.cf[2] = knock.fz;
       return;
     }
     w.knocked = false;
-    w.climbing = climb.climbing; w.climbBlend = climb.blend;
+    w.climbing = climb.climbing; w.climbBlend = climb.blend; w.gripOn = climb.climbing;
     if (climb.climbing) {
+      for (let i = 0; i < 12; i++) w.grip[i] = climb.holds[i];
+      w.feetFree = climb.feetFree;
       w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
       w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
       w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
@@ -588,16 +600,23 @@ async function boot() {
           const c = spec.climb;
           climb.mode = c.mode === 'leg' ? 1 : 2; climb.leg = c.leg || 0; climb.u = c.u ?? 0.5; climb.a = c.a ?? 0; climb.s = c.s ?? 2; climb.th = c.th ?? -1.2;
           warden.climbed = true;
+          climb.crx = Math.cos(arm.yaw); climb.crz = -Math.sin(arm.yaw);
+          if (c.outward && climb.mode === 1) {
+            // On the outside of the leg (facing away from the body), so it can be seen.
+            const wb = warden.body, l = climb.leg, at = wardenMod.WARDEN_SHAPE.legs[l].at;
+            climb.a = Math.atan2(wb.pz[l] - wb.sz[at], wb.px[l] - wb.sx[at]) + (c.a || 0);
+          }
+          climb.grip = true; climb.regrip();
           const w = wraithView.wraith;
-          for (let k = 0; k < 150; k++) {
-            combat.focus = 100; climb.grip = true; climb.mx = 0; climb.mz = 0; climb.dt = 1 / 60;
+          // Hang still, then (moveT) climb up for a moment, so the shot can catch a reach.
+          const moveT = c.moveT || 0, hangN = 150;
+          for (let k = 0; k < hangN + Math.round(moveT * 60); k++) {
+            combat.focus = 100; climb.grip = true; climb.mx = 0; climb.mz = k >= hangN ? 1 : 0; climb.dt = 1 / 60;
             climb.crx = Math.cos(arm.yaw); climb.crz = -Math.sin(arm.yaw);
-            climb.update(); climb.phase += 1 / 60 * 2;
+            climb.update();
             controller.pos.x = climb.x - climb.ux * 0.85; controller.pos.y = climb.y - climb.uy * 0.85; controller.pos.z = climb.z - climb.uz * 0.85;
             w.bx = controller.pos.x; w.by = controller.pos.y; w.bz = controller.pos.z; w.vx = 0; w.vz = 0; w.yaw = controller.yaw; w.grounded = false; w.dt = 1 / 60;
-            w.climbing = true; w.climbBlend = climb.blend; w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
-            w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
-            w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
+            w.time = clock.simTime - (hangN - k) / 60; feedWraithOverride(w);
             wraithView.update();
           }
           controller.hold = true;

@@ -1127,7 +1127,8 @@
      "mode": "body",
      "s": 2.2,
      "th": -1.25,
-     "faceYaw": 0.5
+     "faceYaw": 0.5,
+     "moveT": 0.4
     }
    },
    "camera": {
@@ -1157,16 +1158,18 @@
     "climb": {
      "mode": "leg",
      "leg": 0,
-     "u": 0.45,
-     "a": 0,
-     "faceYaw": 0.55
+     "u": 0.3,
+     "a": 0.5,
+     "faceYaw": 0.35,
+     "moveT": 1.0,
+     "outward": true
     }
    },
    "camera": {
     "mode": "follow",
     "yaw": 2.6,
-    "pitch": 0.1,
-    "dist": 7
+    "pitch": 0.05,
+    "dist": 6.5
    }
   }
  ]

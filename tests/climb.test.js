@@ -60,3 +60,28 @@ describe('climbing the Warden', () => {
     expect(Math.hypot(r.climb.vx, r.climb.vz)).toBeGreaterThan(1);
   });
 });
+
+describe('hold-to-hold climbing', () => {
+  it('moves in reaches and pulls: the holding hand stays planted while the body pulls up', () => {
+    const r = rig(), b = r.warden.body;
+    r.climb.px = b.fx[0] + 1.2; r.climb.py = 0; r.climb.pz = b.fz[0]; r.climb.grip = true;
+    step(r, 1);
+    r.warden.state = 0; r.warden.climbed = false;   // dormant and still: no bucking
+    const hold = r.climb.holds;
+    let pulls = 0, maxSlip = 0, sawReach = false, prev = r.climb.cycle, y0 = r.climb.y;
+    const still = new Float64Array(3);
+    for (let k = 0; k < 120; k++) {
+      r.focus = 100; r.climb.mz = 1; r.climb.dt = 1 / 60; r.climb.update();
+      r.warden.state = 0; r.warden.shakeT = 0;
+      const c = r.climb.cycle, other = (1 - r.climb.lead) * 3;
+      if (c === 1) sawReach = true;
+      if (c === 2 && prev !== 2) { pulls++; still[0] = hold[other]; still[1] = hold[other + 1]; still[2] = hold[other + 2]; }
+      if (c === 2) maxSlip = Math.max(maxSlip, Math.hypot(hold[other] - still[0], hold[other + 1] - still[1], hold[other + 2] - still[2]));
+      prev = c;
+    }
+    expect(sawReach).toBe(true);
+    expect(pulls).toBeGreaterThanOrEqual(2);
+    expect(maxSlip).toBeLessThan(0.02);            // the gripping hand does not slide
+    expect(r.climb.y - y0).toBeGreaterThan(0.8);   // and the body has gone up
+  });
+});
