@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 5 (combat and the frost Shaped), **built; gate evidence captured, awaiting user review**. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 6 (post, weather and time polish, frost), **starting**. Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 5 built** (commits 653430b … 049ad9b; DECISIONS.md "Phase 5"):
   - **Shaped:** procedural bodies (rope spine, planted feet, two-bone knees) clad in chunk rigs of packed snow, ice shards and a glowing core.
     - Three archetypes: hound, brute (slam), seer (ice shards).
@@ -52,6 +52,10 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
     - **Casting:** flashes the hand light.
   - **Sound (pulled forward from Phase 7):** procedural WebAudio covering hits, shatters, slams, stomps, the shockwave, steps, grabs and the three verbs, plus a wind bed. The stilled steppe is silent; the release brings the wind back.
   - **Tests:** 99 pass (knockdown, release camera, hold-to-hold climbing, fight feel).
+- **Phase 5 final fixes (2026-10-04):**
+  - The Warden's chunks are cut by cleavage planes into angular glacial blocks (it read as snowballs up close).
+  - Lain down, its masses spread and flatten under deeper banked drifts.
+  - Granular snow crunch and scattered shard pings for the shatter.
 - **Phase 5 gate evidence (target T, 2026-10-03):**
   - **Shots:** `screenshots/phase-05/` (`?shots=p5-`):
     - hounds, pack and combat with the HUD hidden;
@@ -147,7 +151,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** user review of the Phase 5 gate (shots in `screenshots/phase-05/`, live play: Warden → climb → joints → release).
+- **Exact next step:** Phase 6 (post, weather and time polish, frost): plan from BRIEF §5.6, §5.8 and §17.
 
 ## How to run
 

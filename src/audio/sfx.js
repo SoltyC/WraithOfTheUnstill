@@ -87,16 +87,36 @@ export function createSfx() {
           v.osc.type = 'sine'; of.setValueAtTime(150 + 30 * r, t); of.exponentialRampToValueAtTime(48, t + 0.16);
           og.linearRampToValueAtTime(0.75 * g, t + 0.004); og.exponentialRampToValueAtTime(0.001, t + 0.2);
           break;
-        case SFX.CRUNCH:    // snow crushed / chipped
-        case SFX.STEP:
-          v.filt.type = 'bandpass'; q.setValueAtTime(kind === SFX.STEP ? 0.9 : 1.3, t); f.setValueAtTime((kind === SFX.STEP ? 1300 : 2100) * (0.85 + 0.3 * r), t);
-          ng.linearRampToValueAtTime((kind === SFX.STEP ? 0.22 : 0.5) * g, t + 0.004); ng.exponentialRampToValueAtTime(0.001, t + (kind === SFX.STEP ? 0.07 : 0.12));
+        case SFX.CRUNCH:    // snow crushed / chipped: a rapid train of grain-breaks
+        case SFX.STEP: {
+          const step = kind === SFX.STEP;
+          v.filt.type = 'bandpass'; q.setValueAtTime(step ? 0.9 : 1.3, t); f.setValueAtTime((step ? 1300 : 2100) * (0.85 + 0.3 * r), t);
+          f.linearRampToValueAtTime((step ? 900 : 1500) * (0.85 + 0.3 * r), t + 0.1);
+          const peak = (step ? 0.24 : 0.5) * g, grains = step ? 4 : 6;
+          let at = t;
+          for (let k = 0; k < grains; k++) {
+            const a = peak * (0.45 + 0.55 * Math.random()) * (1 - k / (grains + 1));
+            ng.setValueAtTime(0.0001, at); ng.linearRampToValueAtTime(a, at + 0.002); ng.exponentialRampToValueAtTime(0.002, at + 0.012 + 0.01 * Math.random());
+            at += 0.011 + 0.014 * Math.random();
+          }
+          ng.setValueAtTime(0, at + 0.02);
           break;
-        case SFX.SHATTER:   // ice breaking: a bright crash and ringing shards
-          v.filt.type = 'highpass'; q.setValueAtTime(0.7, t); f.setValueAtTime(2600, t);
+        }
+        case SFX.SHATTER:   // ice breaking: a bright crash, then shards ringing and tinkling down
+          v.filt.type = 'highpass'; q.setValueAtTime(0.7, t); f.setValueAtTime(2600, t); f.exponentialRampToValueAtTime(5200, t + 0.4);
           ng.linearRampToValueAtTime(0.9 * g, t + 0.003); ng.exponentialRampToValueAtTime(0.001, t + 0.55);
           v.osc.type = 'triangle'; of.setValueAtTime(2600 + 900 * r, t); of.exponentialRampToValueAtTime(1500 + 500 * r, t + 0.5);
           og.linearRampToValueAtTime(0.28 * g, t + 0.003); og.exponentialRampToValueAtTime(0.001, t + 0.6);
+          // Scattered pings on the next voices: shards landing over half a second.
+          for (let k = 0; k < 3; k++) {
+            const w = voices[next]; next = (next + 1) % VOICES;
+            const at = t + 0.06 + k * 0.09 + 0.08 * Math.random(), fr = 3200 + 2600 * Math.random();
+            w.ng.gain.cancelScheduledValues(t); w.og.gain.cancelScheduledValues(t); w.osc.frequency.cancelScheduledValues(t);
+            w.ng.gain.setValueAtTime(0, t); w.og.gain.setValueAtTime(0, t);
+            w.pan.pan.setValueAtTime(Math.max(-1, Math.min(1, pan + (Math.random() - 0.5) * 0.6)), t);
+            w.osc.type = 'sine'; w.osc.frequency.setValueAtTime(fr, at);
+            w.og.gain.setValueAtTime(0.0001, at); w.og.gain.linearRampToValueAtTime(0.14 * g, at + 0.002); w.og.gain.exponentialRampToValueAtTime(0.001, at + 0.25);
+          }
           break;
         case SFX.WHOOSH:    // a sweep of slush through the air
         case SFX.SHARD:

@@ -111,7 +111,7 @@ export function createWarden(ctx) {
     flinch: 0.5 - 0.5, tailDir: 1, tailDone: false, shed: 0,
     /** Ray out through the mass (fields in: origin rox/roy/roz inside it, unit direction
      *  rdx/rdy/rdz): distance to where it leaves the outermost chunk (the visible surface along
-     *  that line), or −1 if it hits nothing. Chunk radii are their crag-mean (rig size × 0.47). */
+     *  that line), or −1 if it hits nothing. Chunk radii are their crag-mean (rig size × 0.43, the cleaved blocks). */
     rox: 0.5, roy: 0.5, roz: 0.5, rdx: 0.5, rdy: 0.5, rdz: 0.5,
     rayOut() {
       const ox = this.rox, oy = this.roy, oz = this.roz, dx = this.rdx, dy = this.rdy, dz = this.rdz;
@@ -127,7 +127,7 @@ export function createWarden(ctx) {
         if (qx * qx + qy * qy + qz * qz > big * big) continue;
         const fx = chunks[o + 4], fy = chunks[o + 5], fz = chunks[o + 6], ux = chunks[o + 8], uy = chunks[o + 9], uz = chunks[o + 10];
         const rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx;
-        const sx = chunks[o + 3] * 0.47, sy = chunks[o + 7] * 0.47, sz = chunks[o + 11] * 0.47;
+        const sx = chunks[o + 3] * 0.43, sy = chunks[o + 7] * 0.43, sz = chunks[o + 11] * 0.43;
         const a0 = (px * rx + py * ry + pz * rz) / sx, a1 = (px * ux + py * uy + pz * uz) / sy, a2 = (px * fx + py * fy + pz * fz) / sz;
         const b0 = (dx * rx + dy * ry + dz * rz) / sx, b1 = (dx * ux + dy * uy + dz * uz) / sy, b2 = (dx * fx + dy * fy + dz * fz) / sz;
         const A = b0 * b0 + b1 * b1 + b2 * b2, B = a0 * b0 + a1 * b1 + a2 * b2, C = a0 * a0 + a1 * a1 + a2 * a2 - 1;
@@ -515,7 +515,7 @@ export function createWarden(ctx) {
       for (let s = -1; s <= 1; s += 2) {
         ts.bx = body.sx[i] + rx * s * w; ts.bz = body.sz[i] + rz * s * w;
         ts.bdx = Math.sin(body.heading); ts.bdz = Math.cos(body.heading);
-        ts.bl = WARDEN_SHAPE.spacing * 1.1; ts.bw = WARDEN_SHAPE.hip * 0.38; ts.bd = 1.3; ts.bc = 0.3;
+        ts.bl = WARDEN_SHAPE.spacing * 1.2; ts.bw = WARDEN_SHAPE.hip * 0.5; ts.bd = 2.3; ts.bc = 0.3;
         ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
         ts.stamp();
       }

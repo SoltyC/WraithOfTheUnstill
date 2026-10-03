@@ -264,3 +264,7 @@ Every deviation from BRIEF.md, one line each, with rationale.
   - A fixed pool of 20 voices (looping noise → filter, plus an oscillator, then a panner) is re-enveloped per sound, so nothing is created per sound.
   - It is silent in captures and benches, and starts on the first input (autoplay rules).
   - The wind bed follows the restoration-driven wind, so the stilled steppe is silent until the release.
+- **Glacial blocks, not balls:** each Warden chunk's radius is clamped by 7 seeded planes (a convex cut), giving flat fractured faces and sharp edges with the crags left between them. The normal blend toward the smooth union dropped to 42 % so the faces read; it rises to 95 % as the snow covers the Warden.
+- **Phase 5 closed (user decision, 2026-10-04):** "fix these issues and move on if it's good". The listed issues were fixed and verified on the target shots. Carried forward:
+  - live feel of the climb and the fight (only the user can judge);
+  - the procedural sounds are placeholders until CC0 samples are vendored (Phase 7 audio).

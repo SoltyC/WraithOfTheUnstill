@@ -61,8 +61,20 @@ fn massR(v: vec3f, seed: f32, kind: f32, cover: f32) -> f32 {
   // Broad lumps, then sharp ridged crags and fine breakup: rock-like masses, not balloons.
   var r = 0.68 + 0.2 * lump + 0.28 * crag * crag * crag + 0.07 * fine * fine;
   if (kind > 0.5 && kind < 1.5) { r = 0.85 + 0.15 * crag; }           // shards: cleaner
-  // Snowed over (the release): crags fill in toward a smooth drift.
-  else { r = mix(r, 0.86 + 0.14 * lump, cover * 0.85); }
+  else {
+    // Cleaved: a few planes cut each mass into an angular glacial block (flat fractured faces
+    // and sharp edges, crags left between them) — ice and packed snow, not snowballs.
+    var rc = 10.0;
+    for (var i = 0; i < 7; i++) {
+      let fi = f32(i);
+      let n = normalize(vec3f(h3(vec3f(seed, fi, 1.0)), h3(vec3f(seed, fi, 2.0)), h3(vec3f(seed, fi, 3.0))) * 2.0 - 1.0 + vec3f(0.0, 1e-3, 0.0));
+      let dn = dot(v, n);
+      if (dn > 0.05) { rc = min(rc, (0.66 + 0.2 * h3(vec3f(seed, fi, 4.0))) / dn); }
+    }
+    r = min(r, mix(rc, 10.0, cover));
+    // Snowed over (the release): crags fill in toward a smooth drift.
+    r = mix(r, 0.86 + 0.14 * lump, cover * 0.85);
+  }
   return r;
 }
 fn shardShape(v: vec3f, kind: f32) -> vec3f {
@@ -86,7 +98,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let p0 = shardShape(v * massR(v, seed, kind, cover), kind);
   let p1 = shardShape(v1 * massR(v1, seed, kind, cover), kind);
   let p2 = shardShape(v2 * massR(v2, seed, kind, cover), kind);
-  let sc = vec3f(a.w, b.w, c.w) * 0.5;
+  // Lain down under snow: the masses spread and settle into one long drift ridge.
+  let sc = vec3f(a.w, b.w, c.w) * 0.5 * select(vec3f(1.0), vec3f(1.0 + 0.3 * cover, 1.0 - 0.25 * cover, 1.0 + 0.3 * cover), kind < 0.5 || kind > 1.5);
   // Normal in the unscaled frame → scaled frame (inverse scale), then to world.
   var nl = normalize(cross(p1 - p0, p2 - p0));
   if (dot(nl, p0) < 0.0) { nl = -nl; }
@@ -116,7 +129,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
       acc += e2.n * exp(-1.6 * e2.d * e2.d);
       contact += smoothstep(1.45, 0.85, e2.d);
     }
-    nW = normalize(mix(nW, normalize(acc), 0.7 + 0.25 * cover));
+    nW = normalize(mix(nW, normalize(acc), 0.42 + 0.53 * cover));
   }
   vertexOutputs.vNormal = nW;
   vertexOutputs.vCover = cover;
