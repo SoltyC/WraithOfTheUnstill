@@ -869,6 +869,52 @@
     "pitch": 0.2,
     "dist": 5
    }
+  },
+  {
+   "id": "p5-pack-afternoon",
+   "biome": "frost",
+   "label": "The frost Shaped together: hounds flanking, a brute rearing to slam, a seer gathering light at a distance",
+   "time": 15.2,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "shaped": {
+    "spawn": [
+     [
+      "hound",
+      -3.5,
+      4
+     ],
+     [
+      "hound",
+      3.5,
+      5
+     ],
+     [
+      "brute",
+      0.5,
+      7.5
+     ],
+     [
+      "seer",
+      -5,
+      12
+     ]
+    ],
+    "seconds": 2.4,
+    "telegraph": [
+     2,
+     3
+    ]
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.2,
+    "dist": 7
+   }
   }
  ]
 }

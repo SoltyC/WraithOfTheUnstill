@@ -117,6 +117,7 @@ export function createCombat(ctx) {
 
   /** Shaped → the Wraith: lunges land unless the Wraith is mid bend-step. */
   function hurt() {
+    if (shaped.slams > 0) self.shake += 0.02 * Math.max(0, 1 - shaped.slamDist / 16);
     if (shaped.hits === 0) return;
     if (controller.dodgeT > 0) return;               // the bend-step slips through
     self.health -= shaped.hitDamage;

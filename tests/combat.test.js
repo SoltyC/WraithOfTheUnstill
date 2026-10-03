@@ -29,6 +29,26 @@ function world() {
 }
 
 describe('combat', () => {
+  it('a brute closes in, rears up and slams: a crater, and the blow lands within reach', () => {
+    const w = world();
+    w.shaped.spawn('brute', 0, 9);
+    let slams = 0, hurt = false;
+    for (let k = 0; k < 60 * 14 && !hurt; k++) { w.step(); slams += w.shaped.slams; if (w.combat.health < combatTuning.health) hurt = true; }
+    expect(slams).toBeGreaterThan(0);
+    expect(hurt).toBe(true);
+  });
+  it('a seer keeps its distance and throws shards that find a Wraith standing still', () => {
+    const w = world();
+    const i = w.shaped.spawn('seer', 0, 6);
+    let hurt = false, far = 0;
+    for (let k = 0; k < 60 * 14 && !hurt; k++) {
+      w.step();
+      const b = w.shaped.slots[i].body; far = Math.max(far, Math.hypot(b.x, b.z));
+      if (w.combat.health < combatTuning.health) hurt = true;
+    }
+    expect(far).toBeGreaterThan(9);              // backed off toward its distance
+    expect(hurt).toBe(true);
+  });
   it('Sweep strikes a hound in its path (damage, stagger, hit-stop)', () => {
     const w = world();
     const i = w.shaped.spawn('hound', 0, 6);

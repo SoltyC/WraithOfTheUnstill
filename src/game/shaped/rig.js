@@ -24,8 +24,11 @@ function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5
  * @param {number} count
  * @param {number} seed
  */
-export function buildRig(sh, count, seed) {
+export function buildRig(sh, count, seed, opt = {}) {
   const r = mulberry(seed);
+  // Proportions per archetype: torso girth and leg thickness (fractions of hip height), head
+  // size, shards per segment.
+  const G = opt.girth ?? 0.44, LW = opt.leg ?? 0.3, HS = opt.head ?? 0.42, SH = opt.shards ?? 1;
   const bone = new Uint8Array(count), index = new Uint8Array(count), kind = new Uint8Array(count);
   const off = new Float32Array(count * 3), size = new Float32Array(count * 3), cseed = new Float32Array(count), rise = new Float32Array(count);
   let n = 0;
@@ -41,7 +44,7 @@ export function buildRig(sh, count, seed) {
   // shoulders, a belly lump, a glowing core inside, and ice shards along the back.
   for (let i = 0; i < S - 1; i++) {
     const t = i / (S - 2);
-    const girth = sh.hip * (0.44 - 0.12 * t);
+    const girth = sh.hip * (G - 0.12 * G / 0.44 * t);
     for (let k = 0; k < 3; k++) {
       const a = (k / 3) * Math.PI * 2 + 0.5 + r() * 0.5;
       add(SPINE, i, Math.cos(a) * girth * 0.32, Math.sin(a) * girth * 0.28 + girth * 0.1, (r() - 0.5) * sh.spacing * 0.4,
@@ -49,11 +52,11 @@ export function buildRig(sh, count, seed) {
     }
     add(SPINE, i, 0, -girth * 0.35, 0, girth * 1.05, girth * 0.7, sh.spacing * 1.2, CHUNK.SNOW);   // belly
     add(SPINE, i, 0, girth * 0.1, 0, girth * 0.8, girth * 0.75, sh.spacing * 0.9, CHUNK.CORE);
-    add(SPINE, i, (r() - 0.5) * girth * 0.5, girth * 0.7, (r() - 0.5) * sh.spacing * 0.3, girth * 0.22, girth * (1.1 + 0.9 * r()), girth * 0.22, CHUNK.ICE);
-    if (r() < 0.6) add(SPINE, i, (r() - 0.5) * girth * 0.9, girth * 0.55, (r() - 0.5) * sh.spacing * 0.5, girth * 0.16, girth * (0.7 + 0.6 * r()), girth * 0.16, CHUNK.ICE);
+    for (let q = 0; q < SH; q++) add(SPINE, i, (r() - 0.5) * girth * 0.5, girth * 0.7, (r() - 0.5) * sh.spacing * 0.3, girth * 0.22, girth * (1.1 + 0.9 * r()), girth * 0.22, CHUNK.ICE);
+    if (SH > 0 && r() < 0.6) add(SPINE, i, (r() - 0.5) * girth * 0.9, girth * 0.55, (r() - 0.5) * sh.spacing * 0.5, girth * 0.16, girth * (0.7 + 0.6 * r()), girth * 0.16, CHUNK.ICE);
   }
   // Head: a heavy blunt wedge, a jaw, an ice brow and a glowing core (the eye-less face).
-  const hs = sh.hip * 0.42;
+  const hs = sh.hip * HS;
   add(HEAD, 0, 0, hs * 0.05, hs * 0.1, hs * 1.15, hs * 0.85, hs * 1.4, CHUNK.SNOW);
   add(HEAD, 0, 0, -hs * 0.3, hs * 0.35, hs * 0.85, hs * 0.5, hs * 1.1, CHUNK.SNOW);
   for (let k = 0; k < 2; k++) add(HEAD, 0, (k ? 1 : -1) * hs * 0.3, hs * 0.25, -hs * 0.2, hs * 0.65, hs * 0.65, hs * 0.8, CHUNK.SNOW);
@@ -66,14 +69,14 @@ export function buildRig(sh, count, seed) {
   }
   // Legs: thick, overlapping chunks along each segment, an ice claw at the foot.
   for (let l = 0; l < sh.legs.length; l++) {
-    const leg = sh.legs[l], w = sh.hip * 0.3;
+    const leg = sh.legs[l], w = sh.hip * LW;
     for (let k = 0; k < 3; k++) add(UPPER, l, 0, 0, leg.upper * (0.15 + 0.35 * k), w * (1.15 - 0.15 * k), w * (1.05 - 0.15 * k), leg.upper * 0.55, CHUNK.SNOW);
     for (let k = 0; k < 2; k++) add(LOWER, l, 0, 0, leg.lower * (0.25 + 0.5 * k), w * 0.75, w * 0.7, leg.lower * 0.65, CHUNK.SNOW);
     add(LOWER, l, 0, 0, leg.lower * 0.98, w * 0.8, w * 0.45, w * 1.3, CHUNK.ICE);
   }
   // Fill any remainder with extra torso lumps.
   while (n < count) {
-    const i = Math.floor(r() * (S - 1)), girth = sh.hip * 0.38, a = r() * Math.PI * 2;
+    const i = Math.floor(r() * (S - 1)), girth = sh.hip * G * 0.86, a = r() * Math.PI * 2;
     add(SPINE, i, Math.cos(a) * girth * 0.45, Math.sin(a) * girth * 0.4, (r() - 0.5) * sh.spacing, girth * (0.55 + 0.3 * r()), girth * (0.5 + 0.3 * r()), girth * (0.6 + 0.3 * r()), CHUNK.SNOW);
   }
   // Rise order: lowest chunks (feet, belly) first, the back and shards last.

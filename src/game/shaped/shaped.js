@@ -14,7 +14,9 @@ export const MAX_SHAPED = 8;
 export const CHUNKS_PER = 96;
 
 // States.
-export const S = { EMPTY: 0, RISING: 1, STALK: 2, TELEGRAPH: 3, LUNGE: 4, RECOVER: 5, STAGGER: 6, FROZEN: 7, FALLING: 8 };
+export const S = { EMPTY: 0, RISING: 1, STALK: 2, TELEGRAPH: 3, LUNGE: 4, RECOVER: 5, STAGGER: 6, FROZEN: 7, FALLING: 8, SLAM: 9, CAST: 10 };
+/** Thrown ice shards in flight (their chunk records follow the creatures'). */
+export const MAX_SHOTS = 12;
 
 const RISE_TIME = 1.5, FALL_TIME = 1.1, SINK_TIME = 2.6;
 
@@ -24,12 +26,16 @@ const RISE_TIME = 1.5, FALL_TIME = 1.1, SINK_TIME = 2.6;
 export function createShaped(ctx) {
   const { ts, fx, ground } = ctx;
   const rigs = {};
-  for (const k in ARCHETYPES) rigs[k] = buildRig(ARCHETYPES[k].shape, Math.min(CHUNKS_PER, ARCHETYPES[k].chunks), 1234 + k.length * 77);
+  for (const k in ARCHETYPES) rigs[k] = buildRig(ARCHETYPES[k].shape, Math.min(CHUNKS_PER, ARCHETYPES[k].chunks), 1234 + k.length * 77, ARCHETYPES[k].rig);
   const slots = [];
   for (let i = 0; i < MAX_SHAPED; i++) slots.push({ arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
     cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
-  const chunks = new Float32Array(MAX_SHAPED * CHUNKS_PER * CHUNK_FLOATS);
+  const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS) * CHUNK_FLOATS);
+  // Shards: position, velocity, alive.
+  const shot = { x: new Float64Array(MAX_SHOTS), y: new Float64Array(MAX_SHOTS), z: new Float64Array(MAX_SHOTS),
+    vx: new Float64Array(MAX_SHOTS), vy: new Float64Array(MAX_SHOTS), vz: new Float64Array(MAX_SHOTS),
+    live: new Uint8Array(MAX_SHOTS), dmg: new Float64Array(MAX_SHOTS), next: 0 };
   let seed = 99;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
@@ -47,6 +53,8 @@ export function createShaped(ctx) {
     /** Player (fields): position, velocity. Events out: hits on the player this frame. */
     px: 0.5, pz: 0.5, pvx: 0.5, pvz: 0.5, dt: 0.5, time: 0.5,
     hits: 0, hitDamage: 0.5 - 0.5,
+    /** Ground slams this frame (camera shake), and the strongest one's distance to the Wraith. */
+    slams: 0, slamDist: 0.5,
     /** Spawn an archetype at (x, z): it rises out of the snow. Returns the slot or −1. */
     spawn(name, x, z) {
       let i = 0;
@@ -71,7 +79,8 @@ export function createShaped(ctx) {
       if (s.state === S.RISING && amount < 1e8) return false;
       s.hp -= amount;
       if (s.hp <= 0) { die(s); return true; }
-      if (stagger && s.state !== S.FROZEN) { s.state = S.STAGGER; s.t = 0; s.body.vx = kx; s.body.vz = kz; s.body.crouch = 0; s.body.lift = 0; }
+      const poise = ARCHETYPES[s.arch].poise || 0;
+      if (stagger && amount >= poise && s.state !== S.FROZEN) { s.state = S.STAGGER; s.t = 0; s.body.vx = kx; s.body.vz = kz; s.body.crouch = 0; s.body.lift = 0; }
       return false;
     },
     /** Freeze slot i solid for `seconds` (wet Shaped freeze longer). */
@@ -103,7 +112,8 @@ export function createShaped(ctx) {
     },
     update() {
       const dt = this.dt;
-      this.hits = 0; this.hitDamage = 0;
+      this.hits = 0; this.hitDamage = 0; this.slams = 0; this.slamDist = 1e9;
+      stepShots(this, dt);
       for (let i = 0; i < MAX_SHAPED; i++) {
         const s = slots[i];
         const rec = i * CHUNKS_PER;
@@ -126,6 +136,15 @@ export function createShaped(ctx) {
         }
         think(s, this, dt);
         const b = s.body;
+        // Keep apart: Shaped push off each other instead of overlapping.
+        const ri = ARCHETYPES[s.arch].shape.hip * 0.9;
+        for (let j = 0; j < MAX_SHAPED; j++) {
+          const o = slots[j];
+          if (j === i || o.state === S.EMPTY || o.state === S.FALLING) continue;
+          const ex = b.x - o.body.x, ez = b.z - o.body.z, d = Math.sqrt(ex * ex + ez * ez) || 1e-3;
+          const min = ri + ARCHETYPES[o.arch].shape.hip * 0.9;
+          if (d < min) { const push = (min - d) / min * 4; b.wantVx += ex / d * push; b.wantVz += ez / d * push; }
+        }
         b.dt = dt; b.update();
         // Prints where it steps.
         for (let e = 0; e < b.evCount; e++) {
@@ -155,13 +174,168 @@ export function createShaped(ctx) {
     get alive() { let n = 0; for (let i = 0; i < MAX_SHAPED; i++) if (slots[i].state !== S.EMPTY && slots[i].state !== S.FALLING) n++; return n; },
   };
 
+  /** Shards: fly (light gravity), wound the Wraith on contact, score the snow where they land. */
+  function stepShots(P, dt) {
+    const base = MAX_SHAPED * CHUNKS_PER;
+    for (let k = 0; k < MAX_SHOTS; k++) {
+      const o = (base + k) * CHUNK_FLOATS;
+      if (!shot.live[k]) { chunks[o + 15] = 0; continue; }
+      shot.vy[k] -= 3 * dt;
+      const ox = shot.x[k], oz = shot.z[k];
+      shot.x[k] += shot.vx[k] * dt; shot.y[k] += shot.vy[k] * dt; shot.z[k] += shot.vz[k] * dt;
+      const dx = shot.x[k] - P.px, dz = shot.z[k] - P.pz;
+      ground.qx = shot.x[k]; ground.qz = shot.z[k]; ground.sample();
+      if (dx * dx + dz * dz < 0.36 && shot.y[k] - ground.h < 1.9) { P.hits++; P.hitDamage += shot.dmg[k]; shot.live[k] = 0; chunks[o + 15] = 0; continue; }
+      if (shot.y[k] <= ground.h + 0.05) {
+        // Buried in the snow: a scored gash along its flight, a puff of powder.
+        const sx = shot.x[k] - ox, sz = shot.z[k] - oz, sl = Math.hypot(sx, sz) || 1;
+        ts.bx = shot.x[k]; ts.bz = shot.z[k]; ts.bdx = sx / sl; ts.bdz = sz / sl; ts.bl = 0.35; ts.bw = 0.06; ts.bd = 0.06; ts.bc = 0.3;
+        ts.bk = BRUSH.SCORE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+        ts.stamp();
+        for (let q = 0; q < 8; q++) { fx.ex = shot.x[k]; fx.ey = ground.h + 0.05; fx.ez = shot.z[k]; fx.evx = (rnd() - 0.5) * 2; fx.evz = (rnd() - 0.5) * 2; fx.evy = 0.5 + rnd() * 1.5; fx.esize = 0.05 + 0.05 * rnd(); fx.emit(); }
+        shot.live[k] = 0; chunks[o + 15] = 0; continue;
+      }
+      // Render: a long ice shard pointing along its flight.
+      const v = Math.hypot(shot.vx[k], shot.vy[k], shot.vz[k]) || 1;
+      const ux = shot.vx[k] / v, uy = shot.vy[k] / v, uz = shot.vz[k] / v;
+      let fx2 = -uz, fz2 = ux; const fl = Math.hypot(fx2, fz2) || 1; fx2 /= fl; fz2 /= fl;
+      chunks[o] = shot.x[k]; chunks[o + 1] = shot.y[k]; chunks[o + 2] = shot.z[k]; chunks[o + 3] = 0.09;
+      chunks[o + 4] = fx2; chunks[o + 5] = 0; chunks[o + 6] = fz2; chunks[o + 7] = 0.6;
+      chunks[o + 8] = ux; chunks[o + 9] = uy; chunks[o + 10] = uz; chunks[o + 11] = 0.09;
+      chunks[o + 12] = k * 13.7; chunks[o + 13] = 1; chunks[o + 14] = 0.6; chunks[o + 15] = 1;
+    }
+  }
+  function throwShard(x, y, z, tx, ty, tz, speed, dmg) {
+    const k = shot.next; shot.next = (shot.next + 1) % MAX_SHOTS;
+    const dx = tx - x, dz = tz - z, d = Math.hypot(dx, dz) || 1, t = d / speed;
+    shot.x[k] = x; shot.y[k] = y; shot.z[k] = z;
+    shot.vx[k] = dx / t; shot.vz[k] = dz / t; shot.vy[k] = (ty - y) / t + 1.5 * t;   // lands on target
+    shot.live[k] = 1; shot.dmg[k] = dmg;
+  }
+
   function die(s) {
     s.state = S.FALLING; s.t = 0; s.glow = 0;
     startFall(s.body, s.st, rnd);
   }
 
-  /** Hound: stalk in a ring around the Wraith, telegraph (crouch, glow), lunge, recover. */
   function think(s, P, dt) {
+    const role = ARCHETYPES[s.arch].role;
+    if (role === 'advance') thinkBrute(s, P, dt);
+    else if (role === 'ranged') thinkSeer(s, P, dt);
+    else thinkHound(s, P, dt);
+  }
+
+  /** Brute: advance straight on; close in, rear up (cracks glow), slam a crater; recover slowly. */
+  function thinkBrute(s, P, dt) {
+    const b = s.body, A = ARCHETYPES[s.arch];
+    const dx = P.px - b.x, dz = P.pz - b.z, dist = Math.sqrt(dx * dx + dz * dz) || 1e-3;
+    s.glow += ((s.state === S.TELEGRAPH ? 1 : 0) - s.glow) * (1 - Math.exp(-dt * (s.state === S.TELEGRAPH ? 3 : 4)));
+    switch (s.state) {
+      case S.RISING: b.wantVx = 0; b.wantVz = 0; if (s.t >= RISE_TIME * 1.4) { s.state = S.STALK; s.t = 0; } break;
+      case S.STALK: {
+        const sp = dist > 3 ? A.shape.maxSpeed : 0.6;
+        b.wantVx = dx / dist * sp; b.wantVz = dz / dist * sp;
+        b.crouch += (0 - b.crouch) * Math.min(1, dt * 4);
+        s.cool -= dt;
+        if (s.cool <= 0 && dist < 3.6) { s.state = S.TELEGRAPH; s.t = 0; }
+        break;
+      }
+      case S.TELEGRAPH:
+        b.wantVx = dx / dist * 0.2; b.wantVz = dz / dist * 0.2;
+        b.crouch += (-0.55 - b.crouch) * Math.min(1, dt * 3);       // rears up
+        if (s.t >= 0.95) { s.state = S.SLAM; s.t = 0; }
+        break;
+      case S.SLAM:
+        b.wantVx = 0; b.wantVz = 0;
+        b.crouch += (1 - b.crouch) * Math.min(1, dt * 18);
+        if (s.t >= 0.22) {
+          // Impact in front: a crater of thrown snow, a burst of powder, and the blow.
+          const hx = Math.sin(b.heading), hz = Math.cos(b.heading);
+          const ix = b.x + hx * 1.3, iz = b.z + hz * 1.3;
+          ts.bx = ix; ts.bz = iz; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 1.3; ts.bd = 0.3; ts.bc = 0.8;
+          ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 1.2;
+          ts.stamp();
+          ground.qx = ix; ground.qz = iz; ground.sample();
+          for (let q = 0; q < 34; q++) {
+            const a = rnd() * Math.PI * 2, r = rnd() * 1.2;
+            fx.ex = ix + Math.cos(a) * r; fx.ez = iz + Math.sin(a) * r; fx.ey = ground.h + 0.1;
+            fx.evx = Math.cos(a) * (2 + 3 * rnd()); fx.evz = Math.sin(a) * (2 + 3 * rnd()); fx.evy = 1.5 + 3.5 * rnd();
+            fx.esize = 0.08 + 0.14 * rnd(); fx.emit();
+          }
+          const pd = Math.hypot(P.px - ix, P.pz - iz);
+          if (pd < A.slamRadius) { P.hits++; P.hitDamage += A.slamDamage; }
+          P.slams++; P.slamDist = Math.min(P.slamDist, pd);
+          s.state = S.RECOVER; s.t = 0;
+        }
+        break;
+      case S.RECOVER:
+        b.wantVx = 0; b.wantVz = 0;
+        b.crouch += (0 - b.crouch) * Math.min(1, dt * 2);
+        if (s.t >= 1.2) { s.state = S.STALK; s.t = 0; s.cool = 1.5 + 1.5 * rnd(); }
+        break;
+      case S.STAGGER:
+        b.wantVx = 0; b.wantVz = 0; b.lift = 0;
+        if (s.t >= 0.8) { s.state = S.STALK; s.t = 0; s.cool = 1; }
+        break;
+      case S.FROZEN:
+        b.frozen = true; b.wantVx = 0; b.wantVz = 0;
+        if (s.t >= s.frozenFor) { s.state = S.STALK; s.t = 0; b.frozen = false; s.cool = 1.5; }
+        break;
+    }
+  }
+
+  /** Seer: hold a distance, drifting sideways; gather light in the core, throw a fan of shards. */
+  function thinkSeer(s, P, dt) {
+    const b = s.body, A = ARCHETYPES[s.arch];
+    const dx = P.px - b.x, dz = P.pz - b.z, dist = Math.sqrt(dx * dx + dz * dz) || 1e-3;
+    const ux = dx / dist, uz = dz / dist;
+    s.glow += ((s.state === S.TELEGRAPH ? 1 : 0) - s.glow) * (1 - Math.exp(-dt * (s.state === S.TELEGRAPH ? 2.5 : 5)));
+    switch (s.state) {
+      case S.RISING: b.wantVx = 0; b.wantVz = 0; if (s.t >= RISE_TIME * 1.2) { s.state = S.STALK; s.t = 0; } break;
+      case S.STALK: {
+        // Back off or close in to its distance, and drift round the Wraith.
+        s.orbit += dt * 0.3;
+        const radial = (dist - A.keep) * 0.8, side = Math.sin(s.orbit * 2) * 1.6;
+        b.wantVx = ux * radial - uz * side; b.wantVz = uz * radial + ux * side;
+        const wl = Math.hypot(b.wantVx, b.wantVz), mx = A.shape.maxSpeed;
+        if (wl > mx) { b.wantVx *= mx / wl; b.wantVz *= mx / wl; }
+        s.cool -= dt;
+        if (s.cool <= 0 && dist > 5 && dist < 20) { s.state = S.TELEGRAPH; s.t = 0; }
+        break;
+      }
+      case S.TELEGRAPH:
+        b.wantVx = ux * 0.15; b.wantVz = uz * 0.15;
+        if (s.t >= 0.85) { s.state = S.CAST; s.t = 0; }
+        break;
+      case S.CAST: {
+        // A fan of three shards at where the Wraith will be.
+        const lead = dist / 16;
+        const tx = P.px + P.pvx * lead, tz = P.pz + P.pvz * lead;
+        ground.qx = tx; ground.qz = tz; ground.sample();
+        for (let k = -1; k <= 1; k++) {
+          const ox = -uz * k * 1.1, oz = ux * k * 1.1;
+          throwShard(b.hx, b.hy + 0.15, b.hz, tx + ox, ground.h + 0.9, tz + oz, 16, A.shardDamage);
+        }
+        s.state = S.RECOVER; s.t = 0;
+        break;
+      }
+      case S.RECOVER:
+        b.wantVx = 0; b.wantVz = 0;
+        if (s.t >= 0.6) { s.state = S.STALK; s.t = 0; s.cool = 2.4 + 1.8 * rnd(); }
+        break;
+      case S.STAGGER:
+        b.wantVx = -ux * 2; b.wantVz = -uz * 2; b.lift = 0;
+        if (s.t >= 0.5) { s.state = S.STALK; s.t = 0; s.cool = 1 + rnd(); }
+        break;
+      case S.FROZEN:
+        b.frozen = true; b.wantVx = 0; b.wantVz = 0;
+        if (s.t >= s.frozenFor) { s.state = S.STALK; s.t = 0; b.frozen = false; s.cool = 1; }
+        break;
+    }
+  }
+
+  /** Hound: stalk in a ring around the Wraith, telegraph (crouch, glow), lunge, recover. */
+  function thinkHound(s, P, dt) {
     const b = s.body;
     const dx = P.px - b.x, dz = P.pz - b.z, dist = Math.sqrt(dx * dx + dz * dz) || 1e-3;
     const ux = dx / dist, uz = dz / dist;
