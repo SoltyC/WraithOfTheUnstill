@@ -4,7 +4,32 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 3 (the Wraith): **gate accepted by the user, closed (2026-10-03).** Phase 4 (frost bending and snow-surf) is next. Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 4 (frost bending and snow-surf), **in progress; gate not yet met**. Phase 3 is closed (accepted by the user, 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase 4 built so far** (commit f74c958; DECISIONS.md "Phase 4"):
+  - **Terrain state repack:** word 1 now holds compaction, wetness, frozen and transform (8-bit each). That is one fragment binding, and the snow reads slush, crust and permanent ice from it.
+    - Five brush programs: PRESS, PLOUGH, SCORE, FREEZE, WET.
+    - Healing uses dithered 8-bit rounding.
+    - 48 brushes per frame.
+  - **Snow-surf (hold RMB on snow):** a surf model in the controller.
+    - Feel: a crest pushes toward cruise; gravity acts along the slope; carving is grip-limited; the lean comes from lateral acceleration; entry and exit ease.
+    - On screen: the Wraith's surf stance and lean, the robe whipping back, a banked camera with wider FOV.
+    - The wake ploughs a groove with outside-heavy berms; a spray plume and a crest at the feet.
+  - **Frost verbs:**
+    - Sweep (tap LMB): a slush crescent ploughs a wet channel.
+    - Ribbon (hold LMB): a GPU water tube from the hand to the aim, scoring thin wet lines.
+    - Crystallize (F): a formation of faceted refractive crystals over permanent ice.
+    - Shared: spell lights glow in the snow; the Wraith faces the aim and reaches with its right arm.
+  - **Photo spots** can pre-roll a scripted surf run (`surf`); gate spots are `p4-surf-*`.
+  - **Tests:** 71 pass, including surf feel targets and every verb writing the state.
+- **Phase 4 open:**
+  - target shots and hand-tuning of the surf with the user;
+  - a perf bench with spells and surf;
+  - first-cast hitch verification on T;
+  - spray shadows (the plume does not cast yet);
+  - screen-space wind streaks;
+  - water refraction against scene colour (approximated for now);
+  - spell-light SSS on non-snow materials;
+  - element selection (1–5; only frost exists).
 - **Phase 3 built so far** (details in DECISIONS.md "Phase 3"):
   - **Locomotion:** procedural gait with true foot planting (0 slide in tests) and two-bone knees; the kinematic body (lean, bank, arm swing). Footfall events stamp a footprint and kick up spray on the exact frame of contact.
   - **Cloth:** CPU Verlet with about 3,000 particles: robe, cord and sash, capelet mantle, bell sleeves, deep cowl, wrapped hands and feet.
@@ -45,7 +70,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 4, frost bending (Sweep, Ribbon, Crystallize) and snow-surf with the full wake (BRIEF §9, §17). Start with the bending grammar and input, then Sweep as the first terrain-state writer, then the surf traversal mode and its wake. Measure every new effect for first-cast hitches (warm pipelines).
+- **Exact next step:** Phase 4: the user surfs and casts on T and reports the feel. Then tune the surf by hand, take the `p4-` shots, and run the bench with spells.
 
 ## How to run
 
