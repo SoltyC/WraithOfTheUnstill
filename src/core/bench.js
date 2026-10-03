@@ -3,6 +3,9 @@
 //   idle — standing at the start spot
 //   walk — walking forward while the camera orbits
 //   fly  — fast free-camera flight toward the mountain ring
+// ?bench=bend (Phase 4) instead, on the frost steppe:
+//   surf — snow-surfing S-turns (traversal held, steering by synthetic mouse motion)
+//   cast — standing: Sweep every 1.5 s, Crystallize every 3 s, Ribbon held in between
 // Records presented frame time (rAF interval; capped by the display's refresh rate) and GPU
 // main-pass time (timestamp queries; the real cost). Shows a results panel and POSTs the JSON to
 // the dev/preview server (`/__wraith/perf`), which writes it to perf/runs/.
@@ -23,6 +26,8 @@ let recCount = 0;
 let recording = false;
 let yawRate = 0;
 
+let steerPx = 0;  // synthetic mouse pixels per frame for surf carving (sine amplitude)
+let benchT = 0;
 /** Late system: records the last frame time while a phase is measured; drives camera orbit. */
 export const benchSystem = {
   name: 'bench',
@@ -31,6 +36,8 @@ export const benchSystem = {
   update() {
     if (recording && recCount < MAX_FRAMES) rec[recCount++] = frameStats.ago(0);
     if (yawRate !== 0 && this.arm) this.arm.yaw += yawRate * clock.realDt;
+    benchT += clock.realDt;
+    input.autoDX = steerPx !== 0 ? steerPx * Math.sin(benchT * 1.6) : 0;
   },
 };
 
@@ -96,7 +103,7 @@ export async function runBench(game, qs) {
   if (qs.get('bench') === 'flight') return runFlightBench(game, qs);
   const seconds = Number(qs.get('benchSeconds') || 10);
   const settle = Number(qs.get('settle') || 3);
-  const spot = findSpot(qs.get('spot') || 'p1-monastery-golden');
+  const spot = findSpot(qs.get('spot') || (qs.get('bench') === 'bend' ? 'p3-wraith-walk-noon' : 'p1-monastery-golden'));
   benchSystem.arm = game.arm;
   benchSystem.enabled = true;
   const timeGpu = qs.get('gpuTimer') !== '0';
@@ -113,6 +120,24 @@ export async function runBench(game, qs) {
   await sleep(2000); // loading fade
 
   const phases = [];
+  if (qs.get('bench') === 'bend') {
+    // Phase 4: surfing and casting on the snowfield.
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('surf', seconds, settle, () => {
+      release(); yawRate = 0; steerPx = 0; game.applySpot(spot);
+      setTimeout(() => { injectAction(Action.Traverse, true); steerPx = 9; }, 1500);
+    }));
+    phaseStarts.push(Math.round(performance.now() - t0));
+    let timers = [];
+    phases.push(await phase('cast', seconds, settle, () => {
+      release(); steerPx = 0; yawRate = 0.15; game.applySpot(spot);
+      const tap = (a, ms) => { injectAction(a, true); timers.push(setTimeout(() => injectAction(a, false), ms)); };
+      timers.push(setInterval(() => tap(Action.Primary, 60), 1500));       // Sweep
+      timers.push(setInterval(() => tap(Action.Heavy, 60), 3000));         // Crystallize
+      timers.push(setTimeout(() => timers.push(setInterval(() => tap(Action.Primary, 900), 2200)), 700)); // Ribbon
+    }));
+    for (const t of timers) { clearInterval(t); clearTimeout(t); }
+  } else {
   phaseStarts.push(Math.round(performance.now() - t0));
   phases.push(await phase('idle', seconds, settle, () => { release(); yawRate = 0; game.applySpot(spot); }));
   phaseStarts.push(Math.round(performance.now() - t0));
@@ -128,7 +153,8 @@ export async function runBench(game, qs) {
     injectAction(Action.MoveForward, true);
     injectAction(Action.FreeCamFast, true);
   }));
-  release(); yawRate = 0;
+  }
+  release(); yawRate = 0; steerPx = 0; input.autoDX = 0;
   gpuTimer.setActive(false);
   benchSystem.enabled = false;
 

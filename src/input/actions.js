@@ -31,6 +31,8 @@ export const input = {
   /** Mouse motion accumulated since last endFrame (pixels). */
   mouseDX: 0,
   mouseDY: 0,
+  /** Automation (benchmarks): mouse motion (pixels) each frame starts with. 0 normally. */
+  autoDX: 0.5 - 0.5,
   /** Wheel accumulated since last endFrame (normalised notches, + = zoom out). */
   wheel: 0,
   /** False while a UI panel (dev overlay) wants the keyboard. */
@@ -116,7 +118,7 @@ export function releasePointer() {
 export function endInputFrame() {
   input.pressed.fill(0);
   input.released.fill(0);
-  input.mouseDX = 0;
+  input.mouseDX = input.autoDX;
   input.mouseDY = 0;
   input.wheel = 0;
 }

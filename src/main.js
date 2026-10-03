@@ -139,6 +139,8 @@ async function boot() {
   bindShadows(wraithView.fur.material, shadows);
   bindShadows(wraithView.fx.material, shadows);
   shadows.addCaster(wraithView.mesh, wraithView.makeShadowMaterial, 2);
+  // The spray plume casts a soft shadow in the near cascades (BRIEF §9.3).
+  shadows.addCaster(wraithView.fx, wraithView.makeFxShadowMaterial, 1);
   wraithView.freeze();
   window.__wraith.wraithView = wraithView;
   content.capsule.setEnabled(false);
@@ -208,6 +210,8 @@ async function boot() {
   bindShadows(crystals.material, shadows);
   shadows.addCaster(crystals.mesh, crystals.makeShadowMaterial, 2);
   crystals.freeze();
+  const { createSpeedStreaks } = await import('./render/speedStreaks.js');
+  const streaks = createSpeedStreaks(scene, atmosphere);
   const { input: inputState, Action: Act } = await import('./input/actions.js');
   let primaryHeld = 0;
   const HOLD = 0.22; // s: a shorter press is a tap (Sweep), a longer one holds the Ribbon
@@ -237,7 +241,7 @@ async function boot() {
       if (!inputState.down[Act.Primary]) primaryHeld = 0;
     } else primaryHeld = 0;
     frost.ribbonHeld = can && primaryHeld >= HOLD;
-    if (can && inputState.pressed[Act.Heavy]) frost.castCrystal = true;
+    if (can && inputState.pressed[Act.Heavy]) { frost.castCrystal = true; arm.shake += 0.01; }
     // The Wraith turns to face what it bends.
     if (frost.castSweep || frost.castCrystal || frost.ribbonHeld) controller.yaw = arm.yaw;
     updateAim();
@@ -253,6 +257,9 @@ async function boot() {
     if (frost.crystalsDirty) { crystals.dirty = true; frost.crystalsDirty = false; }
     crystals.time = clock.simTime;
     crystals.update();
+    streaks.vx = controller.vel.x; streaks.vy = controller.vel.y; streaks.vz = controller.vel.z;
+    streaks.dt = clock.dt; streaks.engaged = controller.surf.blend;
+    streaks.update();
   } });
   // The Wraith follows the controller; each footfall stamps a footprint on its exact frame.
   loop.add({ name: 'wraith', update: () => {
@@ -308,7 +315,7 @@ async function boot() {
       surfRoll.t += dt;
     }
     if (surfRoll.t >= spec.seconds) {
-      surfRoll.active = false; game.pendingSurf = null; game.wraithHeld = true;
+      surfRoll.active = false; game.pendingSurf = null; game.wraithHeld = capture; // held only for frozen-clock captures
       controller.scripted = false; controller.vel.x = 0; controller.vel.z = 0;
       // Camera relative to where the run ended up (its heading is not known in advance).
       const c = spec.camera;
@@ -347,7 +354,7 @@ async function boot() {
       wraithView.update();
       wraithFootfalls();
     }
-    game.wraithHeld = true;
+    game.wraithHeld = capture; // held only for frozen-clock captures
   }
   loop.add({ name: 'atmosphere', update: () => {
     env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();

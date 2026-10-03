@@ -56,6 +56,9 @@ export class SpringArmCamera {
     /** Camera bank (rad) and extra FOV (rad) set by the owner (surf carves), eased here. */
     this.rollTarget = 0.5 - 0.5; this.roll = 0.5 - 0.5;
     this.extraFov = 0.5 - 0.5;
+    /** Shake (BRIEF §7: heavy spells and hard carves only): owner sets shakeHold (sustained, rad)
+     *  each frame and adds impulses to shake; both ease out. */
+    this.shake = 0.5 - 0.5; this.shakeHold = 0.5 - 0.5; this._shakeT = 0.5 - 0.5;
   }
 
   /** Mouse look and zoom input (pixels, wheel notches). */
@@ -125,6 +128,8 @@ export class SpringArmCamera {
     const speed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
     const fovTarget = T.baseFov + T.speedFov * clamp(speed / T.fovSpeedRef, 0, 1) + this.extraFov;
     this.roll += (this.rollTarget - this.roll) * damp(0.12, dt);
+    this.shake = Math.max(this.shakeHold, this.shake * Math.exp(-dt * 7));
+    this._shakeT += dt;
     this.fov += (fovTarget - this.fov) * damp(T.fovHalfLife, dt);
 
     // Arm direction (from pivot toward camera) and shoulder offset (camera right).
@@ -171,7 +176,14 @@ export class SpringArmCamera {
   _apply(x, y, z) {
     const c = this.camera;
     c.position.set(x, y, z);
-    c.rotation.set(this.pitch, this.yaw, this.free ? 0 : this.roll);
+    if (this.free || this.shake < 1e-5) { c.rotation.set(this.pitch, this.yaw, this.free ? 0 : this.roll); }
+    else {
+      // Smooth noise (incommensurate sines), not a per-frame jitter.
+      const t = this._shakeT, a = this.shake;
+      c.rotation.set(this.pitch + a * (Math.sin(t * 37.1) + 0.6 * Math.sin(t * 61.7 + 1.3)) * 0.6,
+        this.yaw + a * (Math.sin(t * 29.3 + 2.1) + 0.5 * Math.sin(t * 53.9)) * 0.6,
+        this.roll + a * 0.4 * Math.sin(t * 43.7 + 0.7));
+    }
     c.fov = this.fov;
   }
 

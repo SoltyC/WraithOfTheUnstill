@@ -130,3 +130,27 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   fragmentOutputs.color = vec4f(outc * a, a);
 }
 `;
+
+/** Shadow pass for the spray (glows cast nothing): dithered coverage from the puff's opacity, so
+ *  the filtered shadow is soft and as dense as the plume. Writes light-space depth like
+ *  shadowDepth (shaders/shadows.wgsl.js). */
+export const fxShadowFragmentWGSL = /* wgsl */ `
+uniform shadowLight: vec4f;
+uniform shadowOrigin: vec4f;
+varying vUv: vec2f;
+varying vAlpha: f32;
+varying vColor: vec3f;
+varying vWorldPos: vec3f;
+varying vKind: f32;
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
+  if (fragmentInputs.vKind > 0.5) { discard; }
+  let r2 = dot(fragmentInputs.vUv, fragmentInputs.vUv);
+  if (r2 > 1.0) { discard; }
+  let cover = clamp(fragmentInputs.vAlpha * pow(1.0 - r2, 1.5) * 1.6, 0.0, 1.0);
+  let n = fract(52.9829189 * fract(dot(fragmentInputs.position.xy, vec2f(0.06711056, 0.00583715))));
+  if (n >= cover) { discard; }
+  let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
+  fragmentOutputs.color = vec4f(d, 0.0, 0.0, 1.0);
+}
+`;

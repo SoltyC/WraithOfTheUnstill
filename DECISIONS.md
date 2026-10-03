@@ -191,3 +191,35 @@ Every deviation from BRIEF.md, one line each, with rationale.
     - traversal whip (Phase 4);
     - low-health cowl guttering and frost creep (Phase 7);
     - pipeline warm-up when the Wraith is hidden during loading.
+
+## Phase 4 — Frost bending and snow-surf
+
+- **Terrain-state repack:** word 1 is now compaction, wetness, frozen and transform as four unorm8 values. Every surface-appearance channel then comes from one storage binding in the terrain fragment shader; WebGPU allows few per stage, and the terrain is at the limit. Thermal is split into frozen (word 1) and molten (word 2) so every channel rests at 0. 8-bit healing uses dithered (unbiased) rounding: plain rounding sticks one step above rest and never heals.
+- **Brush programs:**
+  - **PRESS:** footprints.
+  - **PLOUGH:** a U-groove with clumpy berms and a side bias. Sweep and the surf wake use it.
+  - **SCORE:** a thin wet line (Ribbon).
+  - **FREEZE:** sets the permanent ICE transform (Crystallize).
+  - **WET:** raises wetness only.
+
+  All use max-blend, so repeated stamps along a path never dig in runaway fashion. Up to 48 brushes are applied per frame.
+- **Snow-surf** is a mode of the capsule controller. The surf model owns the horizontal velocity; the controller keeps gravity, jumps and ground snapping.
+  - The crest pushes toward cruise (13 m/s, 17 with W) and carries the drag up to cruise, so the flat settles there.
+  - Gravity acts along the slope, with a 26 m/s cap.
+  - Steering asks for a fraction of the grip (15 m/s² lateral). The turn rate follows with weight, and carving bleeds speed. The lean is atan(lateral acceleration / g).
+  - Letting go brakes to walking speed before handing back.
+  - The mouse steers through a recentring accumulator; the camera follows the heading, banks and widens.
+  - Tuned by tests (cruise, slope, grip, eased exit) and then by hand. The user reports it "feels really good".
+- **Wake:** a PLOUGH brush along each frame's path (groove 0.17–0.32 m deep, berms at 115 %, heavier on the outside by grip). Spray goes from the outside berm, plus a crest at the feet. A finished run reaches the coarse pages, so it stays visible from afar.
+- **Spray look:** snow spray scatters skylight heavily (×2.2) at low opacity; at full opacity in shade it read as soot. It casts a dithered, alpha-tested shadow into the two near cascades (the cascade camera makes the billboards face the light).
+- **Verbs:**
+  - **Sweep (tap):** a 14 m crescent of slush ploughing a wet channel.
+  - **Ribbon (hold):** a spine of water nodes from the hand to the aim, flying, arcing and skimming the ground. It scores where it skims (throttled to one stamp per 15 cm) and renders as a GPU-swept tube.
+  - **Crystallize (F):** an 11-crystal formation of faceted prisms with overshooting growth, over a spreading permanent ICE transform.
+  - Every verb eases in and out and emits a spell light.
+  - The Wraith turns to face the aim and lifts its right arm.
+- **Faked refraction:** water and crystals have no scene colour to refract (there is no scene-colour pass under snapshot rendering). They refract the sky, or lit snow below, through an absorption tint, with fresnel reflection, a glint and fracture planes. A real refraction pass belongs to the Phase 6 post work.
+- **Spell lights** are display-referred, like the cowl light, so they read at night and are subtle at noon. They light the snow mostly from within, as subsurface. There are four slots, shared by the verbs.
+- **Mouse input comes from pointer events.** Babylon prevents the default of pointerdown, which suppressed `mousedown` and `mouseup` (no mouse button ever registered) and `mousemove` while a button was held. Buttons now come from the `buttons` bitmask of every pointer event.
+- **Camera shake** follows BRIEF §7: hard carves (grip above ~70 %) and Crystallize only, as smooth noise eased out.
+- **Speed streaks:** camera-relative world-space streaks, moved by the distance travelled (a time × speed phase jumps when speed changes). They fade in above 7 m/s while surfing.

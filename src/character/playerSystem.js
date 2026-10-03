@@ -63,6 +63,8 @@ export function createPlayerSystem(ctx) {
         if (sf.active) arm.yaw += angleDelta(arm.yaw, sf.heading) * (1 - Math.exp(-dt * SURF_CAM_FOLLOW)) * b;
         arm.rollTarget = -sf.lean * SURF_CAM_BANK * b;
         arm.extraFov = SURF_EXTRA_FOV * b;
+        // Hard carves rattle the camera a little (grip beyond ~70 %).
+        arm.shakeHold = sf.active ? Math.max(0, Math.abs(sf.latAccel) - 10.5) * 0.0012 : 0;
         arm.dt = dt;
         arm.update(controller.pos, controller.vel, 0, 0, 0, false);
       }

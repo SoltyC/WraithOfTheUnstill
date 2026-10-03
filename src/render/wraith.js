@@ -16,7 +16,7 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { clothVertexWGSL, clothFragmentWGSL, furVertexWGSL, furFragmentWGSL, FUR_SHELLS } from '../shaders/cloth.wgsl.js';
-import { fxVertexWGSL, fxFragmentWGSL, FX_GLOWS, FX_SPRAY, FX_COUNT } from '../shaders/wraithFx.wgsl.js';
+import { fxVertexWGSL, fxFragmentWGSL, fxShadowFragmentWGSL, FX_GLOWS, FX_SPRAY, FX_COUNT } from '../shaders/wraithFx.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -59,7 +59,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
   const S = ShaderStore.ShadersStoreWGSL;
   S.clothVertexShader = clothVertexWGSL; S.clothFragmentShader = clothFragmentWGSL;
   S.wraithFurVertexShader = furVertexWGSL; S.wraithFurFragmentShader = furFragmentWGSL;
-  S.wraithFxVertexShader = fxVertexWGSL; S.wraithFxFragmentShader = fxFragmentWGSL;
+  S.wraithFxVertexShader = fxVertexWGSL; S.wraithFxFragmentShader = fxFragmentWGSL; S.wraithFxShadowFragmentShader = fxShadowFragmentWGSL;
   const engine = scene.getEngine();
   const wraith = new Wraith(ground);
   const n = wraith.cloth.n;
@@ -155,6 +155,18 @@ export function createWraithView(scene, atmo, ground, clipmap) {
         storageBuffers: ['clothVerts'], shaderLanguage: ShaderLanguage.WGSL,
       });
       m.setStorageBuffer('clothVerts', verts);
+      m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
+      m.backFaceCulling = false;
+      return m;
+    },
+    /** Shadow material for the spray (cascade camera = the billboards face the light). */
+    makeFxShadowMaterial(name, light, origin) {
+      const m = new ShaderMaterial(name, scene, { vertex: 'wraithFx', fragment: 'wraithFxShadow' }, {
+        attributes: ['position'], uniforms: ['viewProjection', 'cameraPosition', 'fxParams', 'shadowLight', 'shadowOrigin'],
+        storageBuffers: ['fxData', 'biomeA'], shaderLanguage: ShaderLanguage.WGSL,
+      });
+      m.setStorageBuffer('fxData', fxBuf); m.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
+      m.setVector4('fxParams', fxParams);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       m.backFaceCulling = false;
       return m;
