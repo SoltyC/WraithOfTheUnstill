@@ -74,7 +74,7 @@ export class Body {
     this.hf[0] = chl * sy; this.hf[1] = -shl; this.hf[2] = chl * cy;
     // Arms: swing opposite to the legs about the shoulder; running raises and bends them.
     const run = Math.min(1, Math.max(0, (g.speed - 2) / 2.5));
-    const amp = g.speed > 0.25 ? 0.2 + 0.065 * Math.min(g.speed, 5) : 0;
+    const amp = g.speed > 0.25 ? 0.2 + 0.045 * Math.min(g.speed, 5) : 0;
     for (let s = 0; s < 2; s++) {
       const side = s === 0 ? -1 : 1;
       this.toWorld(side * 0.2, 0.5, -0.01);
@@ -88,7 +88,7 @@ export class Body {
       this.toWorld(side * 0.2 + ex, 0.5 + eyl, -0.01 + ezl);
       this.el[o] = this.out[0]; this.el[o + 1] = this.out[1]; this.el[o + 2] = this.out[2];
       // Forearm: bends forward more when running.
-      const b = a + 0.42 + 0.45 * run;
+      const b = a + 0.42 + 0.3 * run;
       this.toWorld(side * 0.2 + ex * 1.5, 0.5 + eyl - Math.cos(b) * fa, -0.01 + ezl + Math.sin(b) * fa);
       this.ha[o] = this.out[0]; this.ha[o + 1] = this.out[1]; this.ha[o + 2] = this.out[2];
     }
