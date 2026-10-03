@@ -73,11 +73,11 @@ export function buildRig(sh, count, seed, opt = {}) {
     const leg = sh.legs[l], w = sh.hip * LW;
     for (let k = 0; k < UN; k++) {
       const f = (k + 0.5) / UN;
-      add(UPPER, l, (r() - 0.5) * w * 0.3, (r() - 0.5) * w * 0.3, leg.upper * f, w * (1.15 - 0.3 * f) * (0.9 + 0.2 * r()), w * (1.05 - 0.3 * f), leg.upper * 1.6 / UN, CHUNK.SNOW);
+      add(UPPER, l, (r() - 0.5) * w * 0.3, (r() - 0.5) * w * 0.3, leg.upper * f, w * (1.15 - 0.3 * f) * (0.9 + 0.3 * r()), w * (1.05 - 0.3 * f) * (0.9 + 0.3 * r()), leg.upper * (opt.legOverlap ?? 2.3) / UN, CHUNK.SNOW);
     }
     for (let k = 0; k < LN; k++) {
       const f = (k + 0.5) / LN;
-      add(LOWER, l, (r() - 0.5) * w * 0.25, (r() - 0.5) * w * 0.25, leg.lower * f, w * 0.75 * (0.9 + 0.2 * r()), w * 0.7, leg.lower * 1.3 / LN, CHUNK.SNOW);
+      add(LOWER, l, (r() - 0.5) * w * 0.25, (r() - 0.5) * w * 0.25, leg.lower * f, w * 0.78 * (0.9 + 0.3 * r()), w * 0.72 * (0.9 + 0.3 * r()), leg.lower * ((opt.legOverlap ?? 2.3) - 0.2) / LN, CHUNK.SNOW);
     }
     add(LOWER, l, 0, 0, leg.lower * 0.98, w * 0.8, w * 0.45, w * 1.3, CHUNK.ICE);
   }

@@ -53,6 +53,7 @@ export function createCombat(ctx) {
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * dt);
       this.wound += ((1 - this.health / T.health) - this.wound) * (1 - Math.exp(-dt * 3));
       hits(dt);
+      if (warden && warden.active) wardenHits();
       hurt();
       lockOn();
       // The bend-step slides through the snow: a short groove.
@@ -105,6 +106,32 @@ export function createCombat(ctx) {
       }
     }
   }
+
+  /** Verbs → the Warden's knee joints: Crystallize freezes a joint near the formation; a Sweep
+   *  crescent through a frozen joint shatters it (the back joints are reached by climbing). */
+  const wardenSweepSeen = new Uint32Array(4 * 2);
+  function wardenHits() {
+    for (let k = 0; k < 2; k++) {
+      if (warden.joint[k] === 2) continue;
+      const jx = warden.jx[k], jz = warden.jz[k];
+      if (frost.crystalEvent && Math.hypot(frost.crystalX - jx, frost.crystalZ - jz) < 5) warden.freezeJoint(k);
+      for (let q = 0; q < 4; q++) {
+        if (!frost.sweepActive[q] || frost.sweepHW[q] <= 0.05 || wardenSweepSeen[q * 2 + k] === frost.sweepId[q]) continue;
+        const ex = jx - frost.sweepFX[q], ez = jz - frost.sweepFZ[q];
+        const along = ex * frost.sweepDX[q] + ez * frost.sweepDZ[q], across = Math.abs(-ex * frost.sweepDZ[q] + ez * frost.sweepDX[q]);
+        if (along < 1.5 && along > -2 && across < frost.sweepHW[q] + 1.6) {
+          wardenSweepSeen[q * 2 + k] = frost.sweepId[q];
+          if (warden.strikeJoint(k)) breakJoint();
+        }
+      }
+    }
+  }
+  /** A joint shatters: the heaviest impact in the game so far. */
+  function breakJoint() {
+    clock.hitStop = Math.max(clock.hitStop, 0.13);
+    self.shake += 0.05;
+  }
+  self.breakJoint = breakJoint;
 
   /** A hit on slot i: frozen Shaped shatter (the reaction), others take damage and stagger. */
   function strike(i, dmg, dx, dz, heavy) {

@@ -30,6 +30,15 @@ export class Wraith {
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
     /** Death collapse 0..1 (input). */
     this.collapse = 0.5 - 0.5;
+    /** Climbing (inputs): the pelvis (cpx, cpy, cpz) and surface frame (right cr, up-the-climb cu,
+     *  into-the-surface cf) replace the gait; climbPhase drives the alternating reach. */
+    this.climbing = false; this.climbPhase = 0.5 - 0.5;
+    this.cpx = 0.5; this.cpy = 0.5; this.cpz = 0.5;
+    /** 0..1 how far the body has turned to the surface (from the climb system's blend). */
+    this.climbBlend = 0.5 - 0.5;
+    /** Eased pelvis while climbing (mounting glides onto the surface instead of snapping). */
+    this._cx = NaN; this._cy = 0.5; this._cz = 0.5;
+    this.cr = new Float64Array(3); this.cu = new Float64Array(3); this.cf = new Float64Array(3);
     /** Bending gesture target 0..1 (input); eased into the body's arm. */
     this.cast = 0.5 - 0.5;
     /** Facing actually shown (input yaw, rate-limited). */
@@ -107,13 +116,15 @@ export class Wraith {
   update() {
     // A jump no walk could make (spawn, respawn, spot changes; vertical too) is a teleport.
     const jx = this.bx - this._lx, jy = this.by - this._ly, jz = this.bz - this._lz;
-    if (!(jx * jx + jy * jy + jz * jz < 4)) this.teleport();
+    if (!(jx * jx + jy * jy + jz * jz < 12)) this.teleport();
     this._lx = this.bx; this._ly = this.by; this._lz = this.bz;
     this._turn(this.dt);
     this._syncInputs();
     const g = this.gait, b = this.body;
     g.dt = this.dt; g.evCount = 0; g.collapse = this.collapse;
-    g.update();
+    if (this.climbing) this._climbPose(); else { this._cx = NaN; g.update(); }
+    b.climbing = this.climbing; b.climbPhase = this.climbPhase; b.climbBlend = this.climbBlend;
+    if (this.climbing) for (let i = 0; i < 3; i++) { b.cr[i] = this.cr[i]; b.cu[i] = this.cu[i]; b.cf[i] = this.cf[i]; }
     b.dt = this.dt;
     b.cast += (this.cast - b.cast) * (1 - Math.exp(-this.dt * (this.cast > b.cast ? 18 : 5)));
     b.collapse = this.collapse;
@@ -131,6 +142,27 @@ export class Wraith {
     if (this.settleLeft > 0) { const k = Math.min(SETTLE_PER_FRAME, this.settleLeft); steps += k; this.settleLeft -= k; }
     for (let s = 0; s < steps; s++) { this._pins(); this.cloth.step(); }
     this._pack();
+  }
+
+  /** Climbing: pelvis held to the surface; feet braced below it, stepping in turn; knees bent
+   *  out from the surface. Replaces the gait's output (no planting, no footfalls). */
+  _climbPose() {
+    const g = this.gait, u = this.cu, f = this.cf, r = this.cr;
+    if (Number.isNaN(this._cx)) { this._cx = this.body.px; this._cy = this.body.py; this._cz = this.body.pz; }
+    const k = 1 - Math.exp(-this.dt * 9);
+    this._cx += (this.cpx - this._cx) * k; this._cy += (this.cpy - this._cy) * k; this._cz += (this.cpz - this._cz) * k;
+    g.px = this._cx; g.py = this._cy; g.pz = this._cz; g.speed = 0; g.phase = 0; g.evCount = 0;
+    for (let k = 0; k < 2; k++) {
+      const side = k === 0 ? -1 : 1, step = 0.12 * Math.sin(this.climbPhase + (k === 0 ? Math.PI : 0));
+      const down = 0.78 - step, out = -0.06;
+      g.fx[k] = g.px - u[0] * down + r[0] * side * 0.14 + f[0] * out;
+      g.fy[k] = g.py - u[1] * down + r[1] * side * 0.14 + f[1] * out;
+      g.fz[k] = g.pz - u[2] * down + r[2] * side * 0.14 + f[2] * out;
+      g.state[k] = 0;
+      g.kx[k] = g.px - u[0] * down * 0.5 + r[0] * side * 0.13 - f[0] * 0.28;
+      g.ky[k] = g.py - u[1] * down * 0.5 + r[1] * side * 0.13 - f[1] * 0.28;
+      g.kz[k] = g.pz - u[2] * down * 0.5 + r[2] * side * 0.13 - f[2] * 0.28;
+    }
   }
 
   _cap(ax, ay, az, bx, by, bz, r) {

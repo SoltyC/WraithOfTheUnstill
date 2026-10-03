@@ -22,6 +22,8 @@ export function findSpot(id) { return photoSpots.find((s) => s.id === id) || nul
 export function applySpot(spot, game) {
   setParam('timeOfDay', spot.time);
   worldState.weather = spot.weather;
+  // Spots show the land restored unless they ask for it stilled (the accepted gate looks).
+  worldState.restoration[spot.biome === 'frost' ? 'frost' : spot.biome] = spot.restoration || 'restored';
   const { controller, arm, teleport } = game;
   const c = spot.camera;
   if (c.mode !== 'free') { arm.yaw = c.yaw; arm.pitch = c.pitch; arm.zoomTarget = c.dist; }

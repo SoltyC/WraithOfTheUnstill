@@ -30,6 +30,10 @@ export class Body {
     this.cast = 0.5 - 0.5;
     /** Death: 0..1 collapse (the figure folds forward as it sinks). */
     this.collapse = 0.5 - 0.5;
+    /** Climbing (inputs): when set, the torso frame comes from the surface — forward into it,
+     *  up along the climb — and the arms reach up onto it, alternating with climbPhase. */
+    this.climbing = false; this.climbPhase = 0.5 - 0.5; this.climbBlend = 1.5 - 0.5;
+    this.cr = new Float64Array(3); this.cu = new Float64Array(3); this.cf = new Float64Array(3);
   }
 
   /** World position of body-local (lx, ly, lz) about the pelvis → this.out. */
@@ -73,6 +77,17 @@ export class Body {
     this.r[0] = r0x * cr + u0x * sr; this.r[1] = r0y * cr + u0y * sr; this.r[2] = r0z * cr + u0z * sr;
     this.u[0] = u0x * cr - r0x * sr; this.u[1] = u0y * cr - r0y * sr; this.u[2] = u0z * cr - r0z * sr;
     this.f[0] = cl * sy; this.f[1] = -sl; this.f[2] = cl * cy;
+    if (this.climbing) {
+      // Turn from upright to the surface over the mount (blend), keeping the frame orthonormal.
+      const k = Math.min(1, Math.max(0, this.climbBlend));
+      let ux = this.u[0] + (this.cu[0] - this.u[0]) * k, uy = this.u[1] + (this.cu[1] - this.u[1]) * k, uz = this.u[2] + (this.cu[2] - this.u[2]) * k;
+      let fx = this.f[0] + (this.cf[0] - this.f[0]) * k, fy = this.f[1] + (this.cf[1] - this.f[1]) * k, fz = this.f[2] + (this.cf[2] - this.f[2]) * k;
+      const ul = Math.hypot(ux, uy, uz) || 1; ux /= ul; uy /= ul; uz /= ul;
+      const d = fx * ux + fy * uy + fz * uz; fx -= ux * d; fy -= uy * d; fz -= uz * d;
+      const fl = Math.hypot(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl;
+      this.u[0] = ux; this.u[1] = uy; this.u[2] = uz; this.f[0] = fx; this.f[1] = fy; this.f[2] = fz;
+      this.r[0] = uy * fz - uz * fy; this.r[1] = uz * fx - ux * fz; this.r[2] = ux * fy - uy * fx;
+    }
     // Chest and head.
     this.toWorld(0, 0.42, 0); this.chest[0] = this.out[0]; this.chest[1] = this.out[1]; this.chest[2] = this.out[2];
     this.toWorld(0, 0.74, 0.02); this.head[0] = this.out[0]; this.head[1] = this.out[1]; this.head[2] = this.out[2];
@@ -81,6 +96,10 @@ export class Body {
     this.hr[0] = cy; this.hr[1] = 0; this.hr[2] = -sy;
     this.hu[0] = shl * sy; this.hu[1] = chl; this.hu[2] = shl * cy;
     this.hf[0] = chl * sy; this.hf[1] = -shl; this.hf[2] = chl * cy;
+    if (this.climbing) {
+      // The head looks up the surface a little.
+      for (let i = 0; i < 3; i++) { this.hr[i] = this.cr[i]; this.hu[i] = this.cu[i] * 0.92 - this.cf[i] * 0.38; this.hf[i] = this.cf[i] * 0.92 + this.cu[i] * 0.38; }
+    }
     // Arms: swing opposite to the legs about the shoulder; running raises and bends them.
     const run = Math.min(1, Math.max(0, (g.speed - 2) / 2.5));
     const amp = g.speed > 0.25 ? 0.2 + 0.045 * Math.min(g.speed, 5) : 0;
@@ -92,8 +111,10 @@ export class Body {
       // Left arm swings forward when the right leg does (phase 0..1 per stride).
       // Surfing: the arms leave the stride and open out and back for balance.
       let a = amp * Math.sin(Math.PI * 2 * g.phase + (s === 0 ? 0 : Math.PI)) * (1 - sb) - 0.35 * sb;
+      // Climbing: both arms reach up the surface, gripping in turn (one reaches while the other holds).
+      if (this.climbing) a = 2.45 + 0.4 * Math.sin(this.climbPhase + (s === 0 ? 0 : Math.PI));
       // Bending: the right arm lifts forward to shoulder height, nearly straight.
-      const cast = s === 1 ? this.cast : 0;
+      const cast = s === 1 && !this.climbing ? this.cast : 0;
       a += (1.35 - a) * cast;
       // Upper arm: down, rotated forward by a, slightly out.
       const ua = 0.3, fa = 0.28;

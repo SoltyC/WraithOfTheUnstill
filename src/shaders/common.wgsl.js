@@ -19,7 +19,7 @@ uniform fogParams: vec4f;
 uniform cameraPosition: vec3f;
 uniform envMisc: vec4f;
 uniform screenInfo: vec4f;
-uniform artParams: vec4f; // x = glint intensity
+uniform artParams: vec4f; // x = glint intensity; y, z, w = grade (desaturate, warmth, flatten); 0 = neutral
 `;
 
 export const COMMON_WGSL = /* wgsl */ `
@@ -88,11 +88,18 @@ fn applyFog(col: vec3f, worldPos: vec3f, camPos: vec3f, sunDir: vec3f, zenith: v
   return col * ext + ins * (1.0 - ext);
 }
 
-// Display transform: exposure → ACES (Narkowicz fit) with a soft shoulder → sRGB.
+// Display transform: exposure → ACES (Narkowicz fit) with a soft shoulder → grade → sRGB.
+// The grade is the biome's stilled/restored look (BRIEF §2.4, §5.8): stilled is desaturated,
+// cool and flat; restored is full colour with a little warmth. artParams.yzw, 0 = neutral.
 fn displayTransform(hdr: vec3f, exposure: f32) -> vec3f {
   let x = hdr * exposure;
   let a = 2.51; let b = 0.03; let c = 2.43; let d = 0.59; let e = 0.14;
-  let mapped = clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
+  var mapped = clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
+  let gr = uniforms.artParams;
+  let luma = dot(mapped, vec3f(0.2126, 0.7152, 0.0722));
+  mapped = mix(mapped, vec3f(luma), gr.y);
+  mapped *= vec3f(1.0 + 0.07 * gr.z, 1.0 + 0.01 * gr.z, 1.0 - 0.09 * gr.z);
+  mapped = clamp(mix(mapped, vec3f(0.42) + (mapped - vec3f(0.42)) * 0.72, gr.w), vec3f(0.0), vec3f(1.0));
   // Linear → sRGB.
   let lo = mapped * 12.92;
   let hi = 1.055 * pow(mapped, vec3f(1.0 / 2.4)) - 0.055;

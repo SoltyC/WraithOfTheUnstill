@@ -13,6 +13,7 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { shapedVertexWGSL, shapedFragmentWGSL } from '../shaders/shaped.wgsl.js';
+import { wardenVertexWGSL, wardenFragmentWGSL } from '../shaders/warden.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -25,6 +26,9 @@ import { fastFrozenIsReady } from './babylonTweaks.js';
 export function createShapedView(scene, atmo, chunks, opts = {}) {
   ShaderStore.ShadersStoreWGSL.shapedVertexShader = shapedVertexWGSL;
   ShaderStore.ShadersStoreWGSL.shapedFragmentShader = shapedFragmentWGSL;
+  ShaderStore.ShadersStoreWGSL.wardenVertexShader = wardenVertexWGSL;
+  ShaderStore.ShadersStoreWGSL.wardenFragmentShader = wardenFragmentWGSL;
+  const shader = opts.shader || 'shaped';
   const engine = scene.getEngine();
   const count = chunks.length / 16;
   const ico = CreateIcoSphereVertexData({ radius: 1, subdivisions: opts.subdivisions ?? 1, flat: false });
@@ -41,28 +45,37 @@ export function createShapedView(scene, atmo, chunks, opts = {}) {
   mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true; mesh.freezeWorldMatrix();
   const buf = new StorageBuffer(engine, chunks.byteLength, undefined, name + '-chunks');
   buf.update(chunks);
-  const mat = new ShaderMaterial(name, scene, { vertex: 'shaped', fragment: 'shaped' }, {
+  // Optional neighbour lists (the Warden's smooth-mass shading).
+  const nbr = opts.neighbours || null;
+  const nbrBuf = nbr ? new StorageBuffer(engine, nbr.byteLength, undefined, name + '-nbr') : null;
+  if (nbrBuf) nbrBuf.update(nbr);
+  const sbufs = nbr ? ['chunkData', 'chunkNbr'] : ['chunkData'];
+  const mat = new ShaderMaterial(name, scene, { vertex: shader, fragment: shader }, {
     attributes: ['position', 'uv'],
     uniforms: ['viewProjection', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
-    storageBuffers: ['chunkData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    storageBuffers: [...sbufs, ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
   mat.setStorageBuffer('chunkData', buf);
+  if (nbrBuf) mat.setStorageBuffer('chunkNbr', nbrBuf);
   mesh.material = mat;
   return {
     mesh, material: mat,
     makeShadowMaterial(name, light, origin) {
-      const m = new ShaderMaterial(name, scene, { vertex: 'shaped', fragment: 'shadowDepth' }, {
+      const m = new ShaderMaterial(name, scene, { vertex: shader, fragment: 'shadowDepth' }, {
         attributes: ['position', 'uv'], uniforms: ['viewProjection', 'shadowLight', 'shadowOrigin'],
-        storageBuffers: ['chunkData'], shaderLanguage: ShaderLanguage.WGSL,
+        storageBuffers: sbufs, shaderLanguage: ShaderLanguage.WGSL,
       });
       m.setStorageBuffer('chunkData', buf);
+      if (nbrBuf) m.setStorageBuffer('chunkNbr', nbrBuf);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       return m;
     },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
     update() { buf.update(chunks); },
+    /** Re-upload the neighbour lists (they change only when the rig is re-measured). */
+    updateNeighbours() { if (nbrBuf) nbrBuf.update(nbr); },
   };
 }

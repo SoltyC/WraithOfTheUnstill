@@ -192,11 +192,45 @@ async function boot() {
       }
     }
   } });
+  // Climbing the Warden (before the player system: while gripping, the climb owns the Wraith).
+  loop.add({ name: 'climb', update: () => {
+    const inp = inputMod.input, A = inputMod.Action, d = inp.down;
+    climb.grip = d[A.Traverse] === 1 && !controller.surf.active && !arm.free && combat.dying === 0;
+    climb.mx = d[A.MoveRight] - d[A.MoveLeft]; climb.mz = d[A.MoveForward] - d[A.MoveBack];
+    climb.crx = Math.cos(arm.yaw); climb.crz = -Math.sin(arm.yaw);
+    climb.px = controller.pos.x; climb.py = controller.pos.y; climb.pz = controller.pos.z;
+    climb.dt = clock.dt;
+    const was = climb.climbing;
+    climb.update();
+    // The camera's pivot stands off the climbed surface, so the Wraith is seen against it.
+    const push = climb.climbing ? 1.6 : 0;
+    arm.pushX = -climb.fx * push; arm.pushY = -climb.fy * push; arm.pushZ = -climb.fz * push;
+    if (climb.climbing) {
+      // Held to the surface: the feet point sits below the pelvis along the climb.
+      controller.hold = true;
+      controller.pos.x = climb.x - climb.ux * 0.85; controller.pos.y = climb.y - climb.uy * 0.85; controller.pos.z = climb.z - climb.uz * 0.85;
+      controller.vel.x = climb.vx; controller.vel.y = climb.vy; controller.vel.z = climb.vz;
+      controller.grounded = false;
+      // Strike or freeze a back joint within reach (the verbs, at hand).
+      if (climb.nearJoint >= 0) {
+        if (inp.pressed[A.Primary] && warden.strikeJoint(climb.nearJoint)) combat.breakJoint();
+        if (inp.pressed[A.Heavy] && combat.spend(combatTuning.costCrystal)) { warden.freezeJoint(climb.nearJoint); arm.shake += 0.01; }
+      }
+    } else if (was) {
+      // Off the Warden: real momentum from here (thrown, dropped or slipped).
+      controller.hold = false; controller.grounded = false;
+      controller.vel.x = climb.vx; controller.vel.y = climb.vy; controller.vel.z = climb.vz;
+      if (climb.fell === 1) arm.shake += 0.03;
+    }
+  } });
   loop.add(playerMod.createPlayerSystem({ controller, arm, ...content, material: streamer }));
   // Snow-surf wake: groove, berms and spray along the carve (terrain-state writer).
   const { createSurfWake } = await import('./character/surfWake.js');
   const surfWake = createSurfWake(terrainState, wraithView);
   surfWake.surf = controller.surf;
+  /** Frost restoration 0 (stilled) … 1 (restored): declared before the systems that read it. */
+  const { worldState: ws } = await import('./game/worldState.js');
+  const restoration = { value: ws.restoration.frost === 'restored' ? 1 : 0 };
   // Frost bending (Phase 4): Sweep on a tap of Primary, Ribbon while held, Crystallize on Heavy.
   const { createFrostBending } = await import('./game/bending/frost.js');
   const frostMod = await import('./game/bending/frost.js');
@@ -221,10 +255,14 @@ async function boot() {
   // The Frost Warden (Phase 5): a colossal Shaped with water joints; its own chunk view.
   const wardenMod = await import('./game/warden/warden.js');
   const warden = wardenMod.createWarden({ ts: terrainState, fx: wraithView, ground });
-  const wardenView = createShapedView(scene, atmosphere, warden.chunks, { subdivisions: 2, name: 'warden' });
+  const wardenView = createShapedView(scene, atmosphere, warden.chunks, { subdivisions: 4, name: 'warden', shader: 'warden', neighbours: warden.nbr });
   bindShadows(wardenView.material, shadows);
   shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 3);
   wardenView.freeze();
+  const { createClimb } = await import('./game/warden/climb.js');
+  const climb = createClimb({ warden });
+  arm.occluder = warden;
+  climb.spend = (c) => combat.spend(c);
   // Combat (Phase 5): focus, hits and reactions, lock-on, dodge, wounds and death.
   const { createCombat, combatTuning } = await import('./game/combat/combat.js');
   const combat = createCombat({ shaped, frost, warden, controller, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
@@ -335,8 +373,14 @@ async function boot() {
     const w = wraithView.wraith, p = controller.pos;
     w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
-    w.windStrength = paramsMod.params.v.windStrength;
+    w.windStrength = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value);
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
+    w.climbing = climb.climbing; w.climbBlend = climb.blend;
+    if (climb.climbing) {
+      w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
+      w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
+      w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
+    }
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);
     wraithView.time = clock.simTime;
     if (!wraithView.isEnabled()) return;
@@ -446,10 +490,35 @@ async function boot() {
         for (let k = 0; k < (spec.seconds || 1) * 60; k++) { warden.dt = 1 / 60; warden.update(); if (spec.dormant) warden.state = wardenMod.W.DORMANT; }
         if (spec.freezeJoints) for (const k of spec.freezeJoints) warden.freezeJoint(k);
         warden.dt = 0; warden.update();
+        if (spec.climb) {
+          // On the Warden: grip at the given surface parameters and let the robe settle.
+          const c = spec.climb;
+          climb.mode = c.mode === 'leg' ? 1 : 2; climb.leg = c.leg || 0; climb.u = c.u ?? 0.5; climb.a = c.a ?? 0; climb.s = c.s ?? 2; climb.th = c.th ?? -1.2;
+          warden.climbed = true;
+          const w = wraithView.wraith;
+          for (let k = 0; k < 150; k++) {
+            combat.focus = 100; climb.grip = true; climb.mx = 0; climb.mz = 0; climb.dt = 1 / 60;
+            climb.crx = Math.cos(arm.yaw); climb.crz = -Math.sin(arm.yaw);
+            climb.update(); climb.phase += 1 / 60 * 2;
+            controller.pos.x = climb.x - climb.ux * 0.85; controller.pos.y = climb.y - climb.uy * 0.85; controller.pos.z = climb.z - climb.uz * 0.85;
+            w.bx = controller.pos.x; w.by = controller.pos.y; w.bz = controller.pos.z; w.vx = 0; w.vz = 0; w.yaw = controller.yaw; w.grounded = false; w.dt = 1 / 60;
+            w.climbing = true; w.climbBlend = climb.blend; w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
+            w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
+            w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
+            wraithView.update();
+          }
+          controller.hold = true;
+          arm.pushX = -climb.fx * 1.6; arm.pushY = -climb.fy * 1.6; arm.pushZ = -climb.fz * 1.6;
+          // Optionally aim the camera out from the surface (yaw relative to its normal).
+          if (c.faceYaw !== undefined) arm.yaw = Math.atan2(climb.fx, climb.fz) + c.faceYaw;
+          arm.snap(controller.pos);
+          game.wraithHeld = capture;
+        }
         game.pendingWarden = null;
       }
     } else if (!game.wraithHeld || !capture) { warden.dt = clock.dt; warden.update(); }
     wardenView.update();
+    if (warden.nbrDirty) { wardenView.updateNeighbours(); warden.nbrDirty = false; }
   } });
   loop.add({ name: 'combat', update: () => {
     if (inputState.pressed[Act.LockOn]) combat.wantLockToggle = true;
@@ -512,8 +581,23 @@ async function boot() {
   } });
   loop.add({ name: 'shadows', update: () => shadows.update() });
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
+  // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
+  // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
+  // warmth. `restore` eases toward the state (the Warden's release drives it directly).
+  restoration.value = ws.restoration.frost === 'restored' ? 1 : 0;
+  const STILLED = [0.5, -0.5, 0.45], RESTORED = [-0.1, 0.22, -0.12];
+  loop.add({ name: 'restoration', update: () => {
+    const target = ws.restoration.frost === 'restored' ? 1 : 0;
+    if (warden.active && warden.state === wardenMod.W.RELEASE) restoration.value = Math.max(restoration.value, warden.restore);
+    else restoration.value += (target - restoration.value) * (1 - Math.exp(-clock.realDt * 1.5));
+    if (warden.restore >= 1 && ws.restoration.frost !== 'restored') ws.restoration.frost = 'restored';
+    const r = restoration.value, ap = env.env.artParams;
+    ap.y = STILLED[0] + (RESTORED[0] - STILLED[0]) * r;
+    ap.z = STILLED[1] + (RESTORED[1] - STILLED[1]) * r;
+    ap.w = STILLED[2] + (RESTORED[2] - STILLED[2]) * r;
+  } });
   loop.add({ name: 'spindrift', update: () => {
-    const w = paramsMod.params.v.windStrength;
+    const w = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value);
     spindrift.time = clock.simTime;
     spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5));
     spindrift.drift.z = 0.4 + w;
@@ -663,7 +747,7 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows, terrainState, wraithView, frost, shaped, combat, warden, env: env.env,
+    ready: true, game, shadows, terrainState, wraithView, frost, shaped, combat, warden, climb, env: env.env,
     /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
     inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */

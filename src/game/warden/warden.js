@@ -10,21 +10,26 @@ import { ShapedBody } from '../shaped/body.js';
 import { buildRig, createRigState, writeAlive, writeHidden, CHUNK_FLOATS, CHUNK } from '../shaped/rig.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 
+// A glacier-mammoth: a massive, broad body on stumpy pillar legs, a heavy lowered head, a short
+// thick tail — the mass reads as land, not as an insect.
 export const WARDEN_SHAPE = {
-  spine: 6, spacing: 3.4, hip: 8.5,
+  spine: 6, spacing: 3.6, hip: 7.2,
   legs: [
-    { at: 1, side: -1, upper: 5.2, lower: 5.8, reach: 3.2, kneeBack: false, group: 0 },
-    { at: 1, side: 1, upper: 5.2, lower: 5.8, reach: 3.2, kneeBack: false, group: 1 },
-    { at: 5, side: -1, upper: 5.0, lower: 5.4, reach: 3.0, kneeBack: true, group: 1 },
-    { at: 5, side: 1, upper: 5.0, lower: 5.4, reach: 3.0, kneeBack: true, group: 0 },
+    { at: 1, side: -1, upper: 3.9, lower: 4.3, reach: 3.6, kneeBack: false, group: 0 },
+    { at: 1, side: 1, upper: 3.9, lower: 4.3, reach: 3.6, kneeBack: false, group: 1 },
+    { at: 5, side: -1, upper: 3.7, lower: 4.1, reach: 3.4, kneeBack: true, group: 1 },
+    { at: 5, side: 1, upper: 3.7, lower: 4.1, reach: 3.4, kneeBack: true, group: 0 },
   ],
-  tail: 5, tailSpacing: 2.6, headUp: 2.2,
-  stride: 6.5, swing: 1.9, lift: 1.4, maxSpeed: 1.8, accel: 0.7, turnRate: 0.22,
+  tail: 4, tailSpacing: 2.4, headUp: 0.4,
+  stride: 5.5, swing: 1.9, lift: 1.1, maxSpeed: 1.6, accel: 0.6, turnRate: 0.2,
 };
-const RIG = { girth: 0.42, leg: 0.27, head: 0.32, shards: 3, upperN: 6, lowerN: 6 };
+export const WARDEN_RIG = { girth: 0.68, leg: 0.48, head: 0.5, shards: 3, upperN: 6, lowerN: 6, legOverlap: 3.4 };
+const RIG = WARDEN_RIG;
 export const WARDEN_CHUNKS = 380;
 /** Water joints: front knees (0, 1) and back (2 over the shoulders, 3 over the hips). */
 export const JOINTS = 4;
+/** Neighbours per chunk for the renderer's smooth-mass shading (chunk indices; self = unused). */
+export const WARDEN_NBR = 16;
 export const JOINT = { LIQUID: 0, FROZEN: 1, SHATTERED: 2 };
 export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4 };
 
@@ -38,6 +43,10 @@ export function createWarden(ctx) {
   const st = createRigState(rig);
   /** Chunk records: the rig, then the joints. */
   const chunks = new Float32Array((WARDEN_CHUNKS + JOINTS) * CHUNK_FLOATS);
+  // Each chunk's nearest overlapping chunks (by surface gap, measured once from the first live
+  // pose: the rig's topology never changes), for the shader's blended normal and crevice shade.
+  const nbr = new Uint32Array(WARDEN_CHUNKS * WARDEN_NBR);
+  const nbrGap = new Float64Array(WARDEN_NBR);
   const joint = new Uint8Array(JOINTS);
   const jointT = new Float64Array(JOINTS);       // seconds frozen
   // Joint world positions (refreshed each frame).
@@ -46,19 +55,45 @@ export function createWarden(ctx) {
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
   const self = {
-    body, chunks, joint, jx, jy, jz,
+    body, chunks, joint, jx, jy, jz, nbr,
+    /** Set when nbr has been (re)computed; the view uploads it and clears the flag. */
+    nbrDirty: false, nbrReady: false,
     active: false, state: W.DORMANT, t: 0.5, glow: 0.5 - 0.5, stompLeg: 0,
+    /** Climbed (set by the climb system); while climbed it bucks every few seconds. */
+    climbed: false, shaking: false, shakeCool: 0.5, shakeT: 0.5 - 0.5,
     /** 0..1 how far it has settled into the land (release). */
     settle: 0.5 - 0.5,
     /** Player (fields) and outputs: hits on the Wraith, footfall shake strength this frame. */
     px: 0.5, pz: 0.5, dt: 0.5, hits: 0, hitDamage: 0.5 - 0.5, shake: 0.5 - 0.5,
     /** Stilled until released: 0 dormant/stilled … 1 restored (drives the biome's restoration). */
     restore: 0.5 - 0.5,
+    /** Camera probe (fields in): is (qx, qy, qz) inside the mass, with a little clearance? */
+    qx: 0.5, qy: 0.5, qz: 0.5,
+    probe() {
+      if (!this.active) return false;
+      const x = this.qx, y = this.qy, z = this.qz;
+      const bx = x - body.x, bz = z - body.z;
+      if (bx * bx + bz * bz > 40 * 40) return false;
+      for (let c = 0; c < WARDEN_CHUNKS; c++) {
+        const o = c * CHUNK_FLOATS;
+        if (chunks[o + 15] < 0.5 || chunks[o + 13] === CHUNK.ICE) continue;
+        const dx = x - chunks[o], dy = y - chunks[o + 1], dz = z - chunks[o + 2];
+        // Ellipsoid in the chunk frame (r = up × fwd), radii a little past the crags' mean.
+        const fx = chunks[o + 4], fy = chunks[o + 5], fz = chunks[o + 6], ux = chunks[o + 8], uy = chunks[o + 9], uz = chunks[o + 10];
+        const rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx;
+        const sx = chunks[o + 3] * 0.5 + 0.6, sy = chunks[o + 7] * 0.5 + 0.6, sz = chunks[o + 11] * 0.5 + 0.6;
+        const qa = (dx * rx + dy * ry + dz * rz) / sx, qb = (dx * ux + dy * uy + dz * uz) / sy, qc = (dx * fx + dy * fy + dz * fz) / sz;
+        if (qa * qa + qb * qb + qc * qc < 1) return true;
+      }
+      return false;
+    },
 
     place(x, z, heading) {
       body.place(x, z, heading);
       body.rise = 1; body.crouch = 0; body.lift = 0; body.frozen = false;
       this.active = true; this.state = W.DORMANT; this.t = 0; this.settle = 0; this.restore = 0;
+      this.nbrReady = false;
+      this.climbed = false; this.shaking = false; this.shakeCool = 4; this.shakeT = 0;
       joint.fill(JOINT.LIQUID); jointT.fill(0);
     },
     /** Joints still unbroken. */
@@ -83,7 +118,18 @@ export function createWarden(ctx) {
       this.t += dt; this.hits = 0; this.hitDamage = 0; this.shake = 0;
       // Frozen joints thaw if not broken in time.
       for (let k = 0; k < JOINTS; k++) if (joint[k] === JOINT.FROZEN && (jointT[k] += dt) > 9) joint[k] = JOINT.LIQUID;
-      think(this, dt);
+      // Bucking: when climbed, every few seconds it heaves to throw the Wraith off.
+      this.shaking = false;
+      if (this.climbed && (this.state === W.AWAKE || this.state === W.DORMANT)) {
+        this.shakeCool -= dt;
+        if (this.shakeCool <= 0) { this.shakeT = 1.7; this.shakeCool = 6.5 + 3 * rnd(); }
+      }
+      if (this.shakeT > 0 && this.state !== W.RELEASE) {
+        this.shakeT -= dt; this.shaking = true;
+        body.crouch = 0.28 * Math.sin(this.shakeT * 13) * Math.min(1, this.shakeT * 2);
+        body.heading += 0.05 * Math.sin(this.shakeT * 9) * dt * 8;
+        body.wantVx = 0; body.wantVz = 0;
+      } else think(this, dt);
       body.dt = dt; body.update();
       // Footfalls: craters crushed into the snow, powder thrown up, the ground shakes.
       for (let e = 0; e < body.evCount; e++) {
@@ -103,9 +149,32 @@ export function createWarden(ctx) {
       // Release: it sinks into the land.
       if (this.state === W.RELEASE) body.rise = 1 - 0.75 * this.settle;
       writeAlive(body, st, chunks, 0, 1, this.glow);
+      if (!this.nbrReady) { neighbours(); this.nbrReady = true; this.nbrDirty = true; }
       writeJoints(this);
     },
   };
+
+  /** Nearest chunks by surface gap (centre distance minus mean radii); ice shards are left out
+   *  (they stand proud of the mass). Runs once. */
+  function neighbours() {
+    for (let i = 0; i < WARDEN_CHUNKS; i++) {
+      nbrGap.fill(1e9);
+      for (let k = 0; k < WARDEN_NBR; k++) nbr[i * WARDEN_NBR + k] = i;
+      const oi = i * CHUNK_FLOATS, ri = (chunks[oi + 3] + chunks[oi + 7] + chunks[oi + 11]) / 6;
+      for (let j = 0; j < WARDEN_CHUNKS; j++) {
+        const oj = j * CHUNK_FLOATS;
+        if (j === i || chunks[oj + 13] === CHUNK.ICE) continue;
+        const rj = (chunks[oj + 3] + chunks[oj + 7] + chunks[oj + 11]) / 6;
+        const g = Math.hypot(chunks[oj] - chunks[oi], chunks[oj + 1] - chunks[oi + 1], chunks[oj + 2] - chunks[oi + 2]) - ri - rj;
+        if (g > 1.5) continue;
+        // Insert into the sorted short list.
+        let k = WARDEN_NBR - 1;
+        if (g >= nbrGap[k]) continue;
+        while (k > 0 && nbrGap[k - 1] > g) { nbrGap[k] = nbrGap[k - 1]; nbr[i * WARDEN_NBR + k] = nbr[i * WARDEN_NBR + k - 1]; k--; }
+        nbrGap[k] = g; nbr[i * WARDEN_NBR + k] = j;
+      }
+    }
+  }
 
   /** Joint positions from the bones, and their records (liquid glows; frozen is ice; broken gone). */
   function writeJoints(W0) {

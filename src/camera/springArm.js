@@ -59,6 +59,12 @@ export class SpringArmCamera {
     /** Shake (BRIEF §7: heavy spells and hard carves only): owner sets shakeHold (sustained, rad)
      *  each frame and adds impulses to shake; both ease out. */
     this.shake = 0.5 - 0.5; this.shakeHold = 0.5 - 0.5; this._shakeT = 0.5 - 0.5;
+    /** Optional solid besides the terrain (the Warden): fields qx/qy/qz, probe() → inside. */
+    this.occluder = null;
+    /** Pivot offset target (owner, e.g. out from a climbed surface), eased here. */
+    this.pushX = 0.5 - 0.5; this.pushY = 0.5 - 0.5; this.pushZ = 0.5 - 0.5;
+    this._px = 0.5 - 0.5; this._py = 0.5 - 0.5; this._pz = 0.5 - 0.5;
+    this._snapped = false;
   }
 
   /** Mouse look and zoom input (pixels, wheel notches). */
@@ -72,7 +78,9 @@ export class SpringArmCamera {
 
   /** Place the pivot and all eased state at their targets (captures, teleports). */
   snap(target) {
-    this.pivot.x = target.x; this.pivot.y = target.y + armTuning.pivotHeight; this.pivot.z = target.z;
+    this._px = this.pushX; this._py = this.pushY; this._pz = this.pushZ;
+    this.pivot.x = target.x + this._px; this.pivot.y = target.y + armTuning.pivotHeight + this._py; this.pivot.z = target.z + this._pz;
+    this._snapped = true;
     this.zoom = this.zoomTarget;
     this.armLen = this.zoomTarget;
     this.fov = armTuning.baseFov;
@@ -120,9 +128,11 @@ export class SpringArmCamera {
     }
     this.prevVel.x = vel.x; this.prevVel.y = vel.y; this.prevVel.z = vel.z;
     const k = damp(T.pivotHalfLife + Math.min(accel, 60) * T.accelLag, dt);
-    this.pivot.x += (feet.x - this.pivot.x) * k;
-    this.pivot.y += (feet.y + T.pivotHeight - this.pivot.y) * k;
-    this.pivot.z += (feet.z - this.pivot.z) * k;
+    const kp = damp(0.25, dt);
+    this._px += (this.pushX - this._px) * kp; this._py += (this.pushY - this._py) * kp; this._pz += (this.pushZ - this._pz) * kp;
+    this.pivot.x += (feet.x + this._px - this.pivot.x) * k;
+    this.pivot.y += (feet.y + T.pivotHeight + this._py - this.pivot.y) * k;
+    this.pivot.z += (feet.z + this._pz - this.pivot.z) * k;
 
     this.zoom += (this.zoomTarget - this.zoom) * damp(T.zoomHalfLife, dt);
     const speed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
@@ -142,15 +152,24 @@ export class SpringArmCamera {
     // Terrain collision: march the arm and keep the first safe length.
     const g = this.ground;
     let safe = this.zoom;
-    const steps = 16;
+    const steps = 16, oc = this.occluder;
+    // The occluder only blocks once the arm has been outside it (a pivot inside it is ignored).
+    let out = false;
     for (let i = 1; i <= steps; i++) {
       const d = (this.zoom * i) / steps;
       const x = ox + bx * d, y = oy + by * d, z = oz + bz * d;
       g.qx = x; g.qz = z; g.sample();
       if (y < g.h + T.collisionClearance) { safe = Math.max(T.minDist * 0.4, (this.zoom * (i - 1)) / steps); break; }
+      if (oc !== null) {
+        oc.qx = x; oc.qy = y; oc.qz = z;
+        const inside = oc.probe();
+        if (!inside) out = true;
+        else if (out) { safe = Math.max(T.minDist * 0.4, (this.zoom * (i - 1)) / steps); break; }
+      }
     }
     const hl = safe < this.armLen ? T.collisionInHalfLife : T.collisionOutHalfLife;
     this.armLen += (safe - this.armLen) * damp(hl, dt);
+    if (this._snapped) { this.armLen = safe; this._snapped = false; }
 
     let x = ox + bx * this.armLen, y = oy + by * this.armLen, z = oz + bz * this.armLen;
     g.qx = x; g.qz = z; g.sample();

@@ -137,6 +137,18 @@ export async function runBench(game, qs) {
       timers.push(setTimeout(() => timers.push(setInterval(() => tap(Action.Primary, 900), 2200)), 700)); // Ribbon
     }));
     for (const t of timers) { clearInterval(t); clearTimeout(t); }
+  } else if (qs.get('bench') === 'fight') {
+    // Phase 5: the Warden in view (awake, advancing), climbing it, and a pack of Shaped.
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('warden', seconds, settle, () => { release(); yawRate = 0.12; game.applySpot(findSpot('p5-warden-golden')); }));
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('climb', seconds, settle, () => {
+      release(); yawRate = 0.1; game.applySpot(findSpot('p5-climb-flank'));
+      injectAction(Action.Traverse, true);
+      setTimeout(() => injectAction(Action.MoveForward, true), 2500);
+    }));
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('pack', seconds, settle, () => { release(); yawRate = 0.15; game.applySpot(findSpot('p5-pack-afternoon')); }));
   } else {
   phaseStarts.push(Math.round(performance.now() - t0));
   phases.push(await phase('idle', seconds, settle, () => { release(); yawRate = 0; game.applySpot(spot); }));

@@ -30,7 +30,7 @@ export function createPlayerSystem(ctx) {
       const surfing = sf.active && !arm.free;
       arm.look(surfing ? 0 : input.mouseDX, input.mouseDY, input.wheel);
 
-      if (controller.scripted) {
+      if (controller.scripted || controller.hold) {
         // A scripted run (photo spots) drives the controller; the camera holds.
         arm.dt = dt;
         arm.update(controller.pos, controller.vel, 0, 0, 0, false);
