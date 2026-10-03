@@ -687,8 +687,8 @@
   {
    "id": "p4-surf-carve-golden",
    "biome": "frost",
-   "label": "Snow-surf mid-carve at golden hour: the crest, the lean, the plume off the outside berm",
-   "time": 17.0,
+   "label": "Snow-surf mid-carve in afternoon sun: the crest, the lean, the plume off the outside berm",
+   "time": 15.6,
    "weather": "clear",
    "player": [
     100,

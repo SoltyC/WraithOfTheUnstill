@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 4 (frost bending and snow-surf), **in progress; gate not yet met**. Phase 3 is closed (accepted by the user, 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 4 (frost bending and snow-surf), **gate evidence complete; awaiting the user's review**. Phase 3 is closed (accepted by the user, 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 4 built so far** (commit f74c958; DECISIONS.md "Phase 4"):
   - **Terrain state repack:** word 1 now holds compaction, wetness, frozen and transform (8-bit each). That is one fragment binding, and the snow reads slush, crust and permanent ice from it.
     - Five brush programs: PRESS, PLOUGH, SCORE, FREEZE, WET.
@@ -21,15 +21,30 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
     - Shared: spell lights glow in the snow; the Wraith faces the aim and reaches with its right arm.
   - **Photo spots** can pre-roll a scripted surf run (`surf`); gate spots are `p4-surf-*`.
   - **Tests:** 71 pass, including surf feel targets and every verb writing the state.
-- **Phase 4 open:**
-  - target shots and hand-tuning of the surf with the user;
-  - a perf bench with spells and surf;
-  - first-cast hitch verification on T;
-  - spray shadows (the plume does not cast yet);
-  - screen-space wind streaks;
-  - water refraction against scene colour (approximated for now);
+- **Phase 4 gate evidence (target T, 2026-10-03):**
+  - **Shots:** `screenshots/phase-04/` (`?shots=p4-`).
+    - `p4-verbs-noon`: every verb's persistent mark (Sweep channel, Ribbon line, Crystallize formation on ice).
+    - `p4-surf-carve-golden`: the wake berm and plume.
+    - `p4-surf-field-noon`: a finished run seen from 40 m.
+  - **Bench:** `?bench=bend` (PERF.md).
+    - Surf costs +1.2 ms over standing in the same view; the verbs cost ~0.
+    - 0 late pipelines (no first-cast hitch).
+    - Surf p95 is 14.0 ms (60 fps budget 16.7).
+  - **Feel:** the user's verdict on the surf is "feels rlly good".
+  - Shots and benches were taken by launching Windows Chrome from WSL. The user granted it; method in memory.
+- **Phase 4 defects fixed this session:**
+  - mouse buttons never registered (Babylon suppresses the compatibility mouse events; input now comes from pointer events);
+  - Ribbon made no marks on downhill ground (now a ballistic launch and slope contact);
+  - zig-zag stripes in plough berms (a stepped hash; now smooth noise);
+  - ghost berms at stamp boundaries;
+  - the walk-in hold froze the Wraith outside captures;
+  - surf spray PCSS overdraw (p95 18.7 → 14.0 ms).
+- **Phase 4 open (polish):**
+  - water and crystal refraction against scene colour (approximated);
   - spell-light SSS on non-snow materials;
-  - element selection (1–5; only frost exists).
+  - element selection (only frost exists);
+  - a curling wave mesh for the wake (spray and berms carry it today);
+  - the open snowfield costs 11.6 ms at 1440p standing (frost material); scalability pass in Phase 6.
 - **Phase 3 built so far** (details in DECISIONS.md "Phase 3"):
   - **Locomotion:** procedural gait with true foot planting (0 slide in tests) and two-bone knees; the kinematic body (lean, bank, arm swing). Footfall events stamp a footprint and kick up spray on the exact frame of contact.
   - **Cloth:** CPU Verlet with about 3,000 particles: robe, cord and sash, capelet mantle, bell sleeves, deep cowl, wrapped hands and feet.
@@ -70,7 +85,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 4: the user surfs and casts on T and reports the feel. Then tune the surf by hand, take the `p4-` shots, and run the bench with spells.
+- **Exact next step:** Phase 4 gate review with the user (shots in `screenshots/phase-04/`, bench in PERF.md). Then Phase 5 (combat and the frost Shaped).
 
 ## How to run
 
