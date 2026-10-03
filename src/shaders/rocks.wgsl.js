@@ -158,9 +158,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Strata: thin layers in the rock's frame, tilted per rock; contrast fades with distance.
   let strata = fract(lp.y / 0.55 + 0.25 * lp.x * 0.15 + 0.3 * noised(lp.xz * 0.6).x);
   let band = (smoothstep(0.0, 0.1, strata) * (1.0 - smoothstep(0.5, 0.65, strata)) - 0.5) * rk_fpFade(0.55, fp);
-  var albedo = vec3f(0.10, 0.098, 0.095) * (1.0 + 0.5 * band) * (0.85 + 0.3 * (0.5 + 0.5 * noised(lp.xz * 1.3 + lp.y).x));
+  var albedo = vec3f(0.09, 0.095, 0.105) * (1.0 + 0.5 * band) * (0.85 + 0.3 * (0.5 + 0.5 * noised(lp.xz * 1.3 + lp.y).x));
   // Lichen-free frost rock: a faint rusty stain in places.
-  albedo = mix(albedo, vec3f(0.13, 0.10, 0.08), 0.35 * smoothstep(0.3, 0.8, noised(lp.xz * 0.35).x));
+  albedo = mix(albedo, vec3f(0.12, 0.10, 0.085), 0.15 * smoothstep(0.3, 0.8, noised(lp.xz * 0.35).x));
   // Accumulation: snow sits on upward faces (noisy edge, more toward the top), and drifts
   // against the base up to ~0.35 m.
   let n1 = noised(wp.xz * 2.1).x; let n2 = noised(wp.xz * 0.6 + 4.0).x;

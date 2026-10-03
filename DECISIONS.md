@@ -112,3 +112,41 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Pipeline warm-up:** compute passes that are idle at start are dispatched as no-ops until they have run once, so no pipeline is created after loading (the late-pipeline detector stays at 0).
 - **Captures stay in the clay view** (BRIEF §17, Phase 1 gate). The dark clay-view sea and the dark dusk on ash are clay-view limits, not final looks.
 - **Phase 1 frame-time gate ruling (user decision, 2026-10-03):** the "no frame above median + 4 ms" gate counts **game-attributable** hitches only. The flight benchmark attributes every hitch to the work of the frame before it (CPU per system and render, GPU per pass, streaming, scroll and patch flags). A hitch is game-attributable if that frame's CPU or GPU time exceeds one refresh or correlates with a work flag. Across four target runs (170 Hz and 60 Hz) there were zero. The remaining drops come from outside the frame (Windows or Chrome presentation; 14 in 45.8k frames at 60 Hz) and are reported separately in every later benchmark. This mirrors the Phase 0 allocation-floor ruling.
+
+### Phase 2 (2026-10-03, in progress)
+
+- **Snow material** (`shaders/snow.wgsl.js`), procedural with no textures:
+  - **detail normals:** four wind-stretched layers (5 cm grain, 18 cm × 75 cm ripples, sastrugi, drift texture), each faded by the pixel footprint (`fwidth`), so distance never aliases;
+  - **landform masks:** rock, scoured ice and lake ice read a micro-free "coarse normal" (three clipmap levels up, bilinear), so sastrugi prows never count as cliffs;
+  - **lighting:** wrapped diffuse, a blue back-scatter subsurface term, and the sky IBL shifted cold (BRIEF §5.3);
+  - **glints:** one candidate facet per 1.4 cm world cell (stable hash), on a narrow lobe at grazing views only, faded below pixel size.
+- **Render-only micro relief** (ripples and sastrugi) lives only on clipmap levels at ≤ 14 cm spacing. On coarser grids it aliased into moiré. Beyond that the shading normals carry it. Collision ignores it (≤ 11 cm; feet plant via readback in Phase 3).
+- **Sky IBL:** the atmosphere's ambient pass projects the live sky (upper hemisphere) plus a ground bounce (lower) onto L2 spherical harmonics every frame, eased over ~0.5 s. Materials evaluate irradiance per normal.
+  - BRIEF §5.2 asks for a time-sliced cubemap reprojection. 9 SH coefficients from 288 sky-view samples cost microseconds, so per-frame easing replaces the slicing. Reflections on ice sample the sky-view LUT directly.
+- **PCSS:**
+  - a 16-tap blocker search, then a penumbra sized by receiver–blocker distance (light tan 0.0065), and a 16- or 32-tap PCF;
+  - a receiver-plane bias that grows with each tap's distance and the slope, which prevents acne on lit slopes;
+  - a white-noise per-pixel rotation. Interleaved gradient noise left a diagonal hatch without TAA.
+- **Deformation:**
+  - the clipmap vertex shader adds (displaced mass − depression) on levels at ≤ 2 m spacing;
+  - fragments take normals from the state field at its resolution: 2 cm in the fine window, 25 cm in pages;
+  - the shadow casters share the vertex shader, so trails self-shadow.
+- **WebGPU's 8 storage buffers per stage:** the page table now lives in the terrain-state params buffer (after the per-frame block), and compaction is read in the fragment stage only.
+- **Writers:**
+  - a swept-capsule brush: a near-flat floor, a ~45 % berm that breaks into granular clumps, and flattening of any berm it lands on;
+  - a brush queue (8192 deep, 16 per frame);
+  - the capsule player's alternating footprints (the Wraith's planted feet replace them in Phase 3);
+  - photo spots can stamp a walked trail (`trail` polyline) once the world settles, and captures wait for the queue to drain.
+- **Healing:** live healing remains decay only; live diffusion stays deferred (Phase 1 decision). The overlay's "Refill (healing) rate" scales it; "Deformation depth" scales footprint depth; "Glint intensity" scales glints.
+- **Spindrift:**
+  - stateless GPU streaks: 9000 quads in a 110 m camera tile, advected downwind and wrapped;
+  - seated on the rendered terrain by reading the clipmap levels, with gust sheets;
+  - lit by Henyey–Greenstein forward scatter plus the sky, and shadowed;
+  - premultiplied alpha, drawn unsorted (the sort would allocate).
+- **Rocks:**
+  - one thin-instanced icosphere (642 vertices) displaced per instance in the vertex shader (no two alike, smooth normals by finite differences);
+  - placement: deterministic hashing on camera-centred grids, rebuilt only when the camera crosses an 8 m cell, into a fixed-size buffer. Unused slots have size 0 and are discarded, so the snapshot-rendered draw count never changes;
+  - seated on the rendered terrain, with frost biome and slope tested on the GPU;
+  - no collision yet; it comes with the worker-side placement in Phase 3/4.
+- **Fog:** Phase 2 relies on the Hillaire aerial perspective (3× Mie haze with height falloff) for depth haze. Low valley fog comes with the Phase 6 weather work.
+- **Software-GPU captures got slow:** about 4 s per frame at 480×270 with PCSS and the new materials, and 10–15 min per 720p spot. Harness load timeout raised to 1 h. These are capture-time costs on machine W only; the GPU cost on T is measured by the flight benchmark.

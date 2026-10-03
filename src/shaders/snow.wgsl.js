@@ -59,9 +59,9 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
   var g = vec2f(0.0);
   g += windLayerGrad(wp.x, wp.z, wind, 0.05, 0.05, 0.003 * fpFade(0.05, fp));
   g += windLayerGrad(wp.x, wp.z, wind, 0.18, 0.75, 0.014 * fpFade(0.18, fp));
-  g += windLayerGrad(wp.x, wp.z, wind, 2.6, 0.55, 0.035 * fpFade(0.55, fp)); // sastrugi beyond the geometry
-  g += windLayerGrad(wp.x, wp.z, wind, 1.6, 5.0, 0.07 * fpFade(1.6, fp));
-  g += windLayerGrad(wp.x, wp.z, wind, 7.0, 22.0, 0.25 * fpFade(7.0, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 2.6, 0.55, 0.05 * fpFade(0.55, fp)); // sastrugi beyond the geometry
+  g += windLayerGrad(wp.x, wp.z, wind, 1.6, 5.0, 0.11 * fpFade(1.6, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 7.0, 22.0, 0.4 * fpFade(7.0, fp));
   let Nsnow = perturb(Ngeo, g);
   // Landform masks use the large-scale normal Nc (no micro relief in it).
   let slope = 1.0 - Nc.y;
@@ -77,7 +77,7 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
   // bands never alias into moiré.
   let strata = fract(wp.y / 5.5 + 0.6 * noised(wp.xz * 0.012).x + 0.15 * n2);
   let band = (smoothstep(0.0, 0.12, strata) * (1.0 - smoothstep(0.5, 0.7, strata)) - 0.5) * fpFade(5.5, fp);
-  let rockAlb = vec3f(0.11, 0.105, 0.10) * (1.0 + 0.45 * band) * (0.9 + 0.2 * noised(wp.xz * 0.9 + wp.y * 0.7).x);
+  let rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.45 * band) * (0.9 + 0.2 * noised(wp.xz * 0.9 + wp.y * 0.7).x);
 
   // Blue ice: scoured out on steep windward slopes (the landform faces into the wind), in
   // patches; and on frozen tarns where the wind strips the snow off in places.

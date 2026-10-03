@@ -36,8 +36,36 @@ function perfSink() {
   };
 }
 
+/**
+ * Gate-screenshot sink: POST /__wraith/shot?dir=phase-02&name=<id> (PNG body from ?shots=…) →
+ * screenshots/<dir>/<name>.png. Lets gate captures be taken on the target GPU (BRIEF §3).
+ */
+function shotSink() {
+  const handler = (req, res, next) => {
+    if (!req.url.startsWith('/__wraith/shot') || req.method !== 'POST') return next();
+    const q = new URL(req.url, 'http://x').searchParams;
+    const dir = String(q.get('dir') || 'phase-xx').replace(/[^a-z0-9-]/gi, '');
+    const name = String(q.get('name') || 'shot').replace(/[^a-z0-9-]/gi, '');
+    const chunks = [];
+    let size = 0;
+    req.on('data', (c) => { size += c.length; if (size > 64 << 20) req.destroy(); else chunks.push(c); });
+    req.on('end', () => {
+      const out = path.resolve('screenshots', dir);
+      fs.mkdirSync(out, { recursive: true });
+      fs.writeFileSync(path.join(out, name + '.png'), Buffer.concat(chunks));
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({ ok: true, file: `screenshots/${dir}/${name}.png` }));
+    });
+  };
+  return {
+    name: 'wraith-shot-sink',
+    configureServer(server) { server.middlewares.use(handler); },
+    configurePreviewServer(server) { server.middlewares.use(handler); },
+  };
+}
+
 export default defineConfig({
-  plugins: [perfSink()],
+  plugins: [perfSink(), shotSink()],
   // data/ is served at the site root (baked world at /world/…) and copied into builds.
   publicDir: 'data',
   server: { host: '127.0.0.1', port: 5173, strictPort: true },

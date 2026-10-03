@@ -59,9 +59,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let d = (uv - cell - jitter) * vec2f(max(cos(asin(clamp(dir.y, -1.0, 1.0))), 0.05), 1.0);
     let px = fwidth(uv.y);
     let core = exp(-dot(d, d) / max(px * px * 0.6, 1e-6));
-    let bright = step(0.965, h) * pow((h - 0.965) / 0.035, 3.0);
+    // Few bright stars, many faint ones (a steep magnitude distribution).
+    let bright = step(0.975, h) * pow((h - 0.975) / 0.025, 5.0);
     let starNight = smoothstep(0.6, 1.0, night);
-    col += vec3f(0.80, 0.86, 1.0) * core * bright * 1.6 * starNight * smoothstep(0.02, 0.25, up);
+    col += vec3f(0.80, 0.86, 1.0) * core * bright * 0.4 * starNight * smoothstep(0.02, 0.25, up);
   }
 
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());

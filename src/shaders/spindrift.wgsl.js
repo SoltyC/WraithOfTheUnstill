@@ -118,7 +118,7 @@ ${SHADOW_RECEIVE_WGSL}
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let u = fragmentInputs.vUv;
   let shape = (1.0 - u.x * u.x) * pow(max(1.0 - u.y * u.y, 0.0), 2.0);
-  let a = clamp(fragmentInputs.vAlpha * shape * 0.12, 0.0, 1.0);
+  let a = clamp(fragmentInputs.vAlpha * shape * 0.2, 0.0, 1.0);
   if (a < 0.002) { discard; }
   let wp = fragmentInputs.vWorldPos;
   let V = normalize(uniforms.cameraPosition - wp);

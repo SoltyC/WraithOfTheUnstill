@@ -22,7 +22,10 @@ if (!navigator.gpu) {
 
 async function boot() {
   const qs = new URLSearchParams(location.search);
-  const capture = qs.get('capture') === '1';
+  // Gate shots on the target GPU (?shots=<spot prefix>): one page load per spot.
+  const shotsMod = qs.get('shots') ? await import('./core/shots.js') : null;
+  if (shotsMod && shotsMod.shotsRedirect(qs)) return;
+  const capture = qs.get('capture') === '1' || !!shotsMod;
   const fill = document.getElementById('loading-fill');
   const progress = (f) => { if (fill) fill.style.width = Math.round(f * 100) + '%'; };
   window.__wraith = { ready: false, captureReady: false, capture };
@@ -111,7 +114,7 @@ async function boot() {
   const ringMod = await import('./render/mountainRing.js');
   const ringData = ringMod.requestRing(streamer.manifest.seed); // builds on its own worker meanwhile
   const { createAtmosphere } = await import('./render/atmosphere.js');
-  const atmosphere = createAtmosphere(scene, camera);
+  const atmosphere = createAtmosphere(scene, camera, streamer.buffers.biomeA);
   const content = createWorldScene(scene, streamer.buffers, atmosphere);
   const [{ createShadows }, { bindShadows }] = await Promise.all([import('./render/shadows.js'), import('./render/shadowBindings.js')]);
   const shadows = createShadows(scene, camera, { clipmap: content.clipmap, capsule: content.capsule });
@@ -325,6 +328,7 @@ async function boot() {
     await waitUntil(engine, () => game.worldSettled() && game.stateSettled());
     await waitFrames(engine, 6);
     window.__wraith.captureReady = true;
+    if (shotsMod) shotsMod.shotsTake(engine, qs);
   }
   if (bench) bench.runBench(game, qs);
 }

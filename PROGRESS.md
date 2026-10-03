@@ -4,7 +4,9 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 1 (World skeleton): **gate met, closed (2026-10-03, user ruling).** Phase 2 (Frost Steppe look-dev) is next; the user approved moving on. Phase 0 is closed (gate met, 2026-10-02).
+- **Phase:** 2 (Frost Steppe look-dev, hard gate): **in progress, gate not yet met.** Phase 1 is closed (gate met under the user's ruling, 2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase 2 status:** all listed systems exist in a first version, and the look is being iterated from captures (see session 5).
+  - Missing: gate screenshots taken on T (`?shots=p2-`) and a flight benchmark of the Phase 2 frame on T.
 - **Gate status (Phase 1): MET under the user's ruling of 2026-10-03** (DECISIONS.md), from four flight runs on T (PERF.md):
   - the gate counts game-attributable hitches only, and there were **0**: CPU ≤ 1.2 ms and GPU ≤ 8.2 ms before every hitch, with no streaming correlation;
   - the GPU frame is ~4.2 ms at 170 Hz and ~6.0 ms at 60 Hz, against a 16.7 ms budget; shadows take 1.4–2.1 ms against 2.7 ms;
@@ -49,6 +51,35 @@ without root into `~/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`, and the 
 up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwright install-deps chromium`.
 
 ## Session log
+
+### Session 5 — 2026-10-03 — Phase 2 (Frost Steppe look-dev), in progress
+
+**Built** (commit 4b85253 plus later work; rationale in DECISIONS.md "Phase 2")
+- **Snow material** (`src/shaders/snow.wgsl.js`):
+  - four-scale wind-stretched detail normals faded by pixel footprint;
+  - wrapped diffuse plus blue back-scatter subsurface, and a cold-shifted sky IBL;
+  - soft sheen, and stable glints at grazing views;
+  - blue ice scoured on steep windward faces; snow-dusted frozen-lake ice;
+  - triplanar rock strata, with snow re-accumulating on upward faces.
+- **Frost sastrugi** in the render-only micro height layer, on the fine levels only.
+- **Sky IBL:** L2 spherical harmonics of the live sky plus a ground bounce, computed in the ambient pass. Eye adaptation compensates for snow's albedo using the frost weight at the camera.
+- **PCSS soft shadows** with a receiver-plane bias and white-noise rotation.
+- **Deformation:**
+  - the clipmap is displaced by the terrain state, its normals come from the state field, and the shadow casters displace too, so trails self-shadow;
+  - packed snow, occluded trail floors and chunky berms;
+  - a swept-capsule brush with a queue, player footprints, and photo-spot trails.
+- **Spindrift ground blow** (GPU, stateless, shadowed).
+- **Rock outcrops:** thin-instanced noise-displaced rocks with snow accumulation; they cast shadows.
+- **Photo spots:** Phase 2 frost spots at dawn, noon, dusk and night, plus a sunlit trail close-up (`hidePlayer`, `trail`). Compositions were chosen with an offline sun-visibility search over the bake.
+- **`?shots=<prefix>`:** in-page gate captures on the target GPU, uploaded to `screenshots/<dir>/` by the preview server.
+- **Art controls:** glint intensity, deformation depth and refill rate are wired. Haze default raised to 4.5.
+
+**Defects and open items**
+- **Not yet on T:** the gate screenshots and the Phase 2 flight benchmark. The GPU cost of PCSS, the snow material, rocks and spindrift is unmeasured.
+- **Live healing is decay only** (no diffusion), and the debug writer stands in for real feet until Phase 3.
+- **Rocks:** no collision.
+- **Fog:** valley fog is deferred to Phase 6, which also brings frame-metered exposure (the frost compensation is a stand-in).
+- **Software-GPU captures are very slow** (10–17 min per 640×360–960×540 spot), so iteration happens at 640×360.
 
 ### Session 4 — 2026-10-02 → 03 — Phase 1 (World skeleton)
 
@@ -284,9 +315,12 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-Start **Phase 2 — Frost Steppe look-dev (hard gate)** (BRIEF §17), carrying over these rules:
-- no doubles as call arguments in hot code;
-- one params write per system per frame;
-- warm every pipeline during loading;
-- re-verify `babylonTweaks.js` and the `_startRenderTargetRenderPass` override in `render/shadows.js` on Babylon upgrades;
-- after major systems, run `?bench=flight` on T and report game-attributable hitches (gate) separately from external stalls.
+1. **On T, run `npm run build && npm run preview`, then:**
+   - **gate shots:** `http://localhost:4173/?shots=p2-&res=2560x1440` in Windows Chrome, fullscreen. It cycles through the 6 Phase 2 spots and saves them to `screenshots/phase-02/`;
+   - **performance:** `http://localhost:4173/?bench=flight&res=2560x1440`.
+2. Review the T screenshots against the Phase 2 gate, iterate, and fix any frame cost the flight benchmark flags.
+3. Carry these rules forward:
+   - no doubles as call arguments in hot code;
+   - one params write per system per frame;
+   - warm every pipeline during loading;
+   - spots live in the bundle, so rebuild after editing `data/photo-spots.json`.

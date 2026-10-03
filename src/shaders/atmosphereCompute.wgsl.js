@@ -219,6 +219,13 @@ ${HEAD}
 @group(0) @binding(5) var skySun: texture_2d<f32>;
 @group(0) @binding(6) var skyMoonSampler: sampler;
 @group(0) @binding(7) var skyMoon: texture_2d<f32>;
+@group(0) @binding(8) var<storage, read> biomeA: array<u32>;
+// Frost weight at the camera (biome map: 8 m texels, row 0 = north): snow fields expose lower.
+fn frostAtCamera() -> f32 {
+  let i = clamp(i32((P.camPos.x + 4096.0) / 8.0), 0, 1023); let j = clamp(i32((4096.0 - P.camPos.z) / 8.0), 0, 1023);
+  let a = unpack4x8unorm(biomeA[j * 1024 + i]);
+  return a.x / max(a.x + a.y + a.z + a.w, 0.05);
+}
 fn sampleTransmittance(r: f32, mu: f32) -> vec3f {
   return textureSampleLevel(transmittanceLut, transmittanceLutSampler, transmittanceUv(r, mu), 0.0).rgb;
 }
@@ -264,7 +271,7 @@ fn main() {
   // (lower hemisphere: ground lit by the key and the sky, albedo ~0.35, a little brighter on snow
   // fields is left to the materials) onto 9 coefficients.
   let keyUp = select(max(P.moonDir.y, 0.0), max(P.sunDir.y, 0.0), dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
-  let groundRad = 0.35 * (outLight[0].xyz * keyUp / PI_A + outLight[1].xyz);
+  let groundRad = 0.3 * (outLight[0].xyz * keyUp / PI_A * 0.6 + outLight[1].xyz);
   var sh: array<vec3f, 9>;
   for (var q = 0; q < 9; q++) { sh[q] = vec3f(0.0); }
   let SA = 24; let SE = 12;
@@ -299,7 +306,9 @@ fn main() {
   // clamp to a narrow range, and ease over time (misc.z = dt; 0 in captures → hold).
   let lumW = vec3f(0.2126, 0.7152, 0.0722);
   let adapt = dot(outLight[0].xyz, lumW) * (0.5 / PI_A) + dot(outLight[1].xyz, lumW) + 1e-5;
-  let wanted = clamp(0.42 / adapt, 0.22, 7.5);
+  // Average-albedo compensation until the post chain meters the real frame (Phase 6): the
+  // target assumes mid-grey ground; snow reflects ~2× as much, so snow fields expose lower.
+  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * mix(1.0, 0.62, smoothstep(0.3, 0.8, frostAtCamera()));
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));

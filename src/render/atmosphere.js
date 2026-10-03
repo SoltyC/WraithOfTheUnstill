@@ -32,8 +32,9 @@ const vp = new Matrix();
 /**
  * @param {import('@babylonjs/core').Scene} scene
  * @param {import('@babylonjs/core').Camera} camera
+ * @param {import('@babylonjs/core').StorageBuffer} biomeA  world biome weights (exposure compensation)
  */
-export function createAtmosphere(scene, camera) {
+export function createAtmosphere(scene, camera, biomeA) {
   const engine = scene.getEngine();
   const tex = (w, h, name) => {
     const t = new RawTexture(null, w, h, Constants.TEXTUREFORMAT_RGBA, scene, false, false,
@@ -73,7 +74,7 @@ export function createAtmosphere(scene, camera) {
   const csMS = cs('atmoMultiScatter', multiScatCS, [P, ['outTex', 'storageTex', multiScatLut], ...T]);
   const csSky = cs('atmoSkyView', skyViewCS, [P, ['outSun', 'storageTex', skyViewSun], ...T, ...M, ['outMoon', 'storageTex', skyViewMoon]]);
   const csAerial = cs('atmoAerial', aerialCS, [P, ['outTex', 'storageTex', aerialLut], ...T, ...M]);
-  const csAmbient = cs('atmoAmbient', ambientCS, [P, ['outLight', 'buffer', atmoLight], ...T, ['skySunSampler', 'sampler'], ['skySun', 'tex', skyViewSun], ['skyMoonSampler', 'sampler'], ['skyMoon', 'tex', skyViewMoon]]);
+  const csAmbient = cs('atmoAmbient', ambientCS, [P, ['outLight', 'buffer', atmoLight], ...T, ['skySunSampler', 'sampler'], ['skySun', 'tex', skyViewSun], ['skyMoonSampler', 'sampler'], ['skyMoon', 'tex', skyViewMoon], ['biomeA', 'buffer', biomeA]]);
 
   let builtHaze = NaN;
   return {

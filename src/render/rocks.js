@@ -96,7 +96,7 @@ export function createRocks(scene, clipmap, atmo) {
     const ox = Math.floor(cx * BOULDER_CELL / OUTCROP_CELL), oz = Math.floor(cz * BOULDER_CELL / OUTCROP_CELL);
     for (let j = -OUTCROP_R; j <= OUTCROP_R && n < MAX; j++) for (let i = -OUTCROP_R; i <= OUTCROP_R && n < MAX; i++) {
       const gx = ox + i, gz = oz + j;
-      if (h01(gx, gz, SEED + 1) > 0.16) continue;
+      if (h01(gx, gz, SEED + 1) > 0.24) continue;
       const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * OUTCROP_CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 3)) * OUTCROP_CELL;
       const s = 3.5 + 8 * Math.pow(h01(gx, gz, SEED + 4), 2);
       put(n++, x, z, s, h01(gx, gz, SEED + 5) * 6.283, h01(gx, gz, SEED + 6) * 97, 0.3 + 0.5 * h01(gx, gz, SEED + 7), 0.35 + 0.25 * h01(gx, gz, SEED + 8), 1);
@@ -104,7 +104,7 @@ export function createRocks(scene, clipmap, atmo) {
     // Boulders: clustered fields (a low-frequency density), a power law of sizes.
     for (let j = -BOULDER_R; j <= BOULDER_R && n < MAX; j++) for (let i = -BOULDER_R; i <= BOULDER_R && n < MAX; i++) {
       const gx = cx + i, gz = cz + j;
-      const dens = 0.02 + 0.22 * Math.max(0, valueNoise(gx / 22, gz / 22, SEED + 9) * 0.5 + 0.5 - 0.35) / 0.65;
+      const dens = 0.04 + 0.34 * Math.max(0, valueNoise(gx / 22, gz / 22, SEED + 9) * 0.5 + 0.5 - 0.3) / 0.7;
       if (h01(gx, gz, SEED + 10) > dens) continue;
       const x = (gx + h01(gx, gz, SEED + 11)) * BOULDER_CELL, z = (gz + h01(gx, gz, SEED + 12)) * BOULDER_CELL;
       const s = 0.45 + 2.4 * Math.pow(h01(gx, gz, SEED + 13), 2);

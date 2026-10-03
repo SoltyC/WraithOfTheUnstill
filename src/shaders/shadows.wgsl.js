@@ -56,7 +56,7 @@ const POISSON16 = array<vec2f, 16>(
 // Angular radius used for penumbrae (tan). The real sun is 0.0047; a little wider reads better
 // at game scale and hides cascade texels. Contact shadows stay sharp because the penumbra grows
 // with the receiver–blocker distance (PCSS, BRIEF §5.3).
-const SHADOW_LIGHT_TAN: f32 = 0.010;
+const SHADOW_LIGHT_TAN: f32 = 0.0065;
 
 // Visibility (1 = lit) of world point wp with geometric normal n, in cascade c.
 fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
@@ -88,23 +88,32 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   // 2. Penumbra from the receiver–blocker distance (metres → texels), never below ~1.4 texels.
   let dBlock = blockSum / blockN;
   let radius = clamp((d - dBlock) * SHADOW_LIGHT_TAN / texel, 1.4, 14.0);
-  // 3. PCF over that radius.
-  var lit = 0.0;
-  for (var i = 0; i < 16; i++) {
-    let o = POISSON16[i];
-    let r = vec2f(o.x * rot.x - o.y * rot.y, o.x * rot.y + o.y * rot.x) * radius;
-    let occ = shadowLoad(c, vec2i(floor(px + r)));
-    lit += select(0.0, 1.0, d - tanT * length(r) <= occ);
+  // 3. PCF over that radius; wide penumbrae take a second, counter-rotated ring of taps so the
+  // estimate stays smooth without temporal accumulation (TAA arrives in Phase 6).
+  var lit = 0.0; var taps = 0.0;
+  let rings = select(1, 2, radius > 3.0);
+  for (var k = 0; k < rings; k++) {
+    let rr = select(rot, vec2f(rot.y, -rot.x) * 0.999, k == 1);
+    let sc = select(1.0, 0.62, k == 1);
+    for (var i = 0; i < 16; i++) {
+      let o = POISSON16[i];
+      let r = vec2f(o.x * rr.x - o.y * rr.y, o.x * rr.y + o.y * rr.x) * radius * sc;
+      let occ = shadowLoad(c, vec2i(floor(px + r)));
+      lit += select(0.0, 1.0, d - tanT * length(r) <= occ);
+      taps += 1.0;
+    }
   }
-  return lit / 16.0;
+  return lit / taps;
 }
 
 fn shadowVisibility(wp: vec3f, n: vec3f, camPos: vec3f, fragXY: vec2f) -> f32 {
   if (shadowData.light.w <= 0.0) { return 1.0; }
   let dist = length(wp - camPos);
   let sp = shadowData.splits;
-  // Per-pixel rotation of the Poisson disk (interleaved gradient noise angle) hides banding.
-  let a = 6.2831853 * fract(52.9829189 * fract(dot(fragXY, vec2f(0.06711056, 0.00583715))));
+  // Per-pixel rotation of the Poisson disk from a white-noise hash (interleaved gradient noise
+  // leaves a diagonal hatch in wide penumbrae without TAA).
+  let hq = fract(sin(dot(floor(fragXY), vec2f(12.9898, 78.233))) * 43758.5453);
+  let a = 6.2831853 * hq;
   let rot = vec2f(cos(a), sin(a));
   var c = 0u;
   if (dist > sp.x) { c = 1u; }
