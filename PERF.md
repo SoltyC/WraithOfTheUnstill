@@ -269,3 +269,21 @@ Wraith live (gait, CPU cloth, fur, effects) while the camera orbits.
 - Draw calls 22, pipelines 25, late pipelines 0, GPU memory 679 MB, JS heap 314–337 MB.
 - The walk phase at 60 Hz has no drops, and the GPU frame stays below 10.4 ms (budget 16.7 ms).
 - On W (Node), the cloth simulation costs a median 1.6 ms and p95 2.0 ms per 60 Hz frame. The idle hitch matches the one-off 120-substep settle that runs when the Wraith is teleported (~0.15 s on W). It is a candidate for spreading over several frames.
+
+### Phase 4 — surf and frost verbs on T (2026-10-03, 1440p, monitor at 170 Hz)
+
+Runs were driven remotely in a separate Chrome instance (no-throttle flags) with every other browser closed. A first attempt measured 25–28 ms GPU frames while earlier game windows were still rendering in the background; those runs are discarded. Same spot for all rows (p3-wraith-walk-noon, the open snowfield, the heaviest view: the frost material).
+
+| Run | Phase | GPU frame median / p95 / max | Main | Shadow | Compute | Presented median / p99 | Hitches |
+|---|---|---|---|---|---|---|---|
+| `12-07-55` `?bench=1` | idle (standing) | 11.6 / 12.6 / – ms | 7.6 | 3.3 | 0.52 | – | – |
+| | walk (camera orbits) | 9.6 / 10.6 ms | 5.7 | 3.1 | 0.59 | – | – |
+| `12-05-06` `?bench=bend`, before the spray fix | surf | 14.4 / 18.7 / 23.5 ms | 9.9 | 3.1 | 0.72 | 14.4 / 23.0 ms | 46 |
+| | cast | 11.7 / 12.6 / 13.2 ms | 7.6 | 3.3 | 0.52 | 11.8 / 13.9 ms | 2 |
+| `12-06-52` `?bench=bend`, spray with cheap shadow lookup | surf | 12.8 / 14.0 / 14.5 ms | 8.2 | 3.2 | 0.72 | 12.6 / 15.1 ms | 1 |
+| | cast | 11.5 / 12.5 / 12.8 ms | 7.5 | 3.3 | 0.52 | 11.6 / 13.7 ms | 3 |
+
+- **Verbs cost ~0** over standing in the same view (cast 11.5 vs idle 11.6 ms).
+- **Surfing costs ~+1.2 ms** (wake brushes, spray, crest, streaks, spray shadows). That is after moving the spray off the PCSS shadow path: each spray fragment ran up to 48 shadow taps under heavy overdraw, and surf p95 was 18.7 ms, over the 16.7 ms budget. The spray now uses `shadowVisibilityFast` (4 taps), and puffs within ~2 m of the camera fade out.
+- **First cast:** 0 late pipelines across both bend phases. Every verb's pipeline exists from loading, so there is no first-cast hitch.
+- The open snowfield at 1440p sits at 11.6 ms standing. The frost material is the main cost; worth a pass in Phase 6 post / scalability.

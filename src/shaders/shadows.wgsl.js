@@ -119,6 +119,31 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   return lit / taps;
 }
 
+// Cheap visibility for volumes (spray, mist): the cascade by distance, a 2×2 bilinear-weighted
+// lookup, no blocker search or penumbra (a cloud of grains has no contact shadows) — 4 reads
+// instead of up to 48.
+fn shadowVisibilityFast(wp: vec3f, camPos: vec3f) -> f32 {
+  if (shadowData.light.w <= 0.0) { return 1.0; }
+  let dist = length(wp - camPos);
+  let sp = shadowData.splits;
+  var c = 0u;
+  if (dist > sp.x) { c = 1u; }
+  if (dist > sp.y) { c = 2u; }
+  if (dist > sp.z) { c = 3u; }
+  if (dist > sp.w) { return 1.0; }
+  let L = shadowData.light.xyz;
+  let clip = shadowData.viewProj[c] * vec4f(wp, 1.0);
+  let uv = vec2f(clip.x * 0.5 + 0.5, 0.5 + clip.y * 0.5);
+  if (uv.x <= 0.0 || uv.x >= 1.0 || uv.y <= 0.0 || uv.y >= 1.0) { return 1.0; }
+  let d = dot(wp - shadowData.origins[c].xyz, -L) - shadowData.origins[c].w * 2.0;
+  let px = uv * ${SHADOW_SIZE}.0 - 0.5;
+  let b = vec2i(floor(px)); let f = px - floor(px);
+  let s00 = select(0.0, 1.0, d <= shadowLoad(c, b)); let s10 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(1, 0)));
+  let s01 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(0, 1))); let s11 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(1, 1)));
+  let v = mix(mix(s00, s10, f.x), mix(s01, s11, f.x), f.y);
+  return mix(1.0, v, shadowData.light.w);
+}
+
 fn shadowVisibility(wp: vec3f, n: vec3f, camPos: vec3f, fragXY: vec2f) -> f32 {
   if (shadowData.light.w <= 0.0) { return 1.0; }
   let dist = length(wp - camPos);

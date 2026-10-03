@@ -81,6 +81,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let right = normalize(cross(vec3f(0.0, 1.0, 0.0), toCam));
   let up = cross(toCam, right);
   let wp = p + (right * corner.x + up * corner.y) * size;
+  // Puffs right at the camera fade out (no screen-filling overdraw).
+  if (kind < 0.5) { alpha *= smoothstep(1.0, 3.0, length(p - cam)); }
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (alpha < 0.002) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
   vertexOutputs.vUv = corner;
@@ -121,7 +123,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let L = uniforms.keyDir;
   let gg = 0.5; let c = dot(-V, L);
   let hg = (1.0 - gg * gg) / pow(max(1.0 + gg * gg - 2.0 * gg * c, 1e-3), 1.5) * (1.0 / (4.0 * PI));
-  let vis = shadowVisibility(wp, vec3f(0.0, 1.0, 0.0), uniforms.cameraPosition, fragmentInputs.position.xy);
+  let vis = shadowVisibilityFast(wp, uniforms.cameraPosition);
   // A cloud of ice grains scatters light many times: in shade it glows with the sky (bright,
   // never sooty), in sun it lights up, most toward the sun.
   let col = fragmentInputs.vColor * (atmoKeyColor() * (0.3 + hg) * vis + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * 2.2);
