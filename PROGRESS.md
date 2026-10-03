@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 3 (the Wraith), **in progress; gate not yet met** (awaiting target-GPU shots and the user's review in motion). Phase 2 is closed (accepted by the user, 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 3 (the Wraith): **gate accepted by the user, closed (2026-10-03).** Phase 4 (frost bending and snow-surf) is next. Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 3 built so far** (details in DECISIONS.md "Phase 3"):
   - **Locomotion:** procedural gait with true foot planting (0 slide in tests) and two-bone knees; the kinematic body (lean, bank, arm swing). Footfall events stamp a footprint and kick up spray on the exact frame of contact.
   - **Cloth:** CPU Verlet with about 3,000 particles: robe, cord and sash, capelet mantle, bell sleeves, deep cowl, wrapped hands and feet.
@@ -19,8 +19,8 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - **Shots:** the third set in `screenshots/phase-03/` (`?shots=p3-&dir=phase-03`, 2026-10-03 18:56) covers walk-noon, run-golden, side-dawn, hood-dusk and night. The user's verdict: "its good".
   - **Bench:** `?bench=1` at 60 Hz gives a walk GPU frame of 7.7 ms median and 10.4 ms max with 0 hitches (PERF.md).
   - **Tests:** gait tests show 0 slide and prints landing on the exact frame (63 tests pass).
-  - **Still needed:** the user's explicit acceptance of the Phase 3 gate.
-- **Phase 3 still open:**
+  - **Gate:** accepted by the user, 2026-10-03.
+- **Phase 3 items carried forward (polish and later phases):**
   - target shots (`?shots=p3-&dir=phase-03`) and review;
   - a perf bench with the Wraith on T;
   - traversal-mode whip (Phase 4 traversal does not exist yet);
@@ -45,7 +45,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 2, Frost Steppe look-dev (see "Next step").
+- **Exact next step:** Phase 4, frost bending (Sweep, Ribbon, Crystallize) and snow-surf with the full wake (BRIEF §9, §17). Start with the bending grammar and input, then Sweep as the first terrain-state writer, then the surf traversal mode and its wake. Measure every new effect for first-cast hitches (warm pipelines).
 
 ## How to run
 

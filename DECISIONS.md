@@ -185,3 +185,9 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Shell fur:** 24 shells over the hood rim and the bell cuffs, reusing the cloth buffer (particle id + 4096 × shell). Strands use a jittered 2.6 mm grid with per-strand length and taper; dark roots run to grey tips; Kajiya-Kay lighting with self-shadow by height. Sub-pixel strands switch to stochastic coverage instead of sparkling.
 - **Footfall spray:** analytic GPU particles in a 384-slot ring, written only when a foot lands. They use the same frame as the footprint stamp. On snow (biome weight read on the GPU) the spray is snow; elsewhere it is faint dust.
 - **Photo spots can `walk`** (`{ speed, seconds, facing }`). Once the world settles, the Wraith is simulated walking into place with real footfalls (prints and spray), then held for the frozen-clock still.
+- **Phase 3 gate accepted (user decision, 2026-10-03)** on the third set of target shots (`screenshots/phase-03/`) and the 60 Hz bench (walk GPU 7.7 ms median, 0 hitches).
+  - Carried into polish:
+    - the hood close-up reads slightly back-tilted from a low camera;
+    - traversal whip (Phase 4);
+    - low-health cowl guttering and frost creep (Phase 7);
+    - pipeline warm-up when the Wraith is hidden during loading.
