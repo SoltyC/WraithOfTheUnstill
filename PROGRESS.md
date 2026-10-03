@@ -4,9 +4,11 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 2 (Frost Steppe look-dev, hard gate): **in progress, gate not yet met.** Phase 1 is closed (gate met under the user's ruling, 2026-10-03). Phase 0 is closed (2026-10-02).
-- **Phase 2 status:** all listed systems exist in a first version, and the look is being iterated from captures (see session 5).
-  - Missing: gate screenshots taken on T (`?shots=p2-`) and a flight benchmark of the Phase 2 frame on T.
+- **Phase:** 2 (Frost Steppe look-dev, hard gate): **gate accepted by the user, closed (2026-10-03).** Phase 3 (the Wraith) is next. Phase 1 is closed (gate met under the user's ruling, 2026-10-03); Phase 0 is closed (2026-10-02).
+- **Phase 2 gate evidence:**
+  - shots on T (`screenshots/phase-02/`): dawn, noon, dusk, night, the north face and a trail close-up;
+  - flight run 2 at 60 Hz: GPU 7.4 ms median, 14.0 ms max, 0 game-attributable hitches.
+  - Polish items carried forward are listed in DECISIONS.md.
 - **Gate status (Phase 1): MET under the user's ruling of 2026-10-03** (DECISIONS.md), from four flight runs on T (PERF.md):
   - the gate counts game-attributable hitches only, and there were **0**: CPU ≤ 1.2 ms and GPU ≤ 8.2 ms before every hitch, with no streaming correlation;
   - the GPU frame is ~4.2 ms at 170 Hz and ~6.0 ms at 60 Hz, against a 16.7 ms budget; shadows take 1.4–2.1 ms against 2.7 ms;
@@ -315,12 +317,9 @@ Reports: `capture-report.json`, `overlay-check.json`, `heap-profile.json` (final
 
 ## Next step (current)
 
-1. **On T, run `npm run build && npm run preview`, then:**
-   - **gate shots:** `http://localhost:4173/?shots=p2-&res=2560x1440` in Windows Chrome, fullscreen. It cycles through the 6 Phase 2 spots and saves them to `screenshots/phase-02/`;
-   - **performance:** `http://localhost:4173/?bench=flight&res=2560x1440`.
-2. Review the T screenshots against the Phase 2 gate, iterate, and fix any frame cost the flight benchmark flags.
-3. Carry these rules forward:
-   - no doubles as call arguments in hot code;
-   - one params write per system per frame;
-   - warm every pipeline during loading;
-   - spots live in the bundle, so rebuild after editing `data/photo-spots.json`.
+Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
+- no doubles as call arguments in hot code;
+- one params write per system per frame;
+- warm every pipeline during loading;
+- gate shots and benchmarks run on T via `?shots=` and `?bench=flight` at 60 Hz;
+- rebuild after editing `data/photo-spots.json`.

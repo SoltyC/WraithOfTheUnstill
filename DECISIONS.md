@@ -113,7 +113,7 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Captures stay in the clay view** (BRIEF §17, Phase 1 gate). The dark clay-view sea and the dark dusk on ash are clay-view limits, not final looks.
 - **Phase 1 frame-time gate ruling (user decision, 2026-10-03):** the "no frame above median + 4 ms" gate counts **game-attributable** hitches only. The flight benchmark attributes every hitch to the work of the frame before it (CPU per system and render, GPU per pass, streaming, scroll and patch flags). A hitch is game-attributable if that frame's CPU or GPU time exceeds one refresh or correlates with a work flag. Across four target runs (170 Hz and 60 Hz) there were zero. The remaining drops come from outside the frame (Windows or Chrome presentation; 14 in 45.8k frames at 60 Hz) and are reported separately in every later benchmark. This mirrors the Phase 0 allocation-floor ruling.
 
-### Phase 2 (2026-10-03, in progress)
+### Phase 2 (2026-10-03), gate accepted by the user
 
 - **Snow material** (`shaders/snow.wgsl.js`), procedural with no textures:
   - **detail normals:** four wind-stretched layers (5 cm grain, 18 cm × 75 cm ripples, sastrugi, drift texture), each faded by the pixel footprint (`fwidth`), so distance never aliases;
@@ -150,3 +150,11 @@ Every deviation from BRIEF.md, one line each, with rationale.
   - no collision yet; it comes with the worker-side placement in Phase 3/4.
 - **Fog:** Phase 2 relies on the Hillaire aerial perspective (3× Mie haze with height falloff) for depth haze. Low valley fog comes with the Phase 6 weather work.
 - **Software-GPU captures got slow:** about 4 s per frame at 480×270 with PCSS and the new materials, and 10–15 min per 720p spot. Harness load timeout raised to 1 h. These are capture-time costs on machine W only; the GPU cost on T is measured by the flight benchmark.
+- **Phase 2 gate accepted (user decision, 2026-10-03)** on the fourth set of gate shots taken on the target GPU (`screenshots/phase-02/`, `?shots=p2-`).
+  - Carried forward as polish items:
+    - distant exposed rock reads as soft-edged patches;
+    - the noon foreground snow looks slightly streaky under flat light;
+    - the sky has no clouds yet (Phase 6).
+  - The flight benchmark at 60 Hz: GPU frame 7.4 ms median and 14.0 ms max, 0 game-attributable hitches.
+- **Alpine relief:** shared JS/WGSL, so collision includes it. Warped ridged crests up to ~70 m and carved gullies on frost terrain above ~750 m macro height. Parity over the mountains: 0.65 mm.
+- **Gate screenshots come from the target GPU** (`?shots=<prefix>` in Windows Chrome, uploaded by the preview server). Headless SwiftShader captures now take 10–17 min per spot and are kept for unattended error checks only.
