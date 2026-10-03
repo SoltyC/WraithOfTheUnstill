@@ -43,6 +43,16 @@ export function createFootprints(ts, depthScale = { v: 1 }) {
       if (acc >= STRIDE) { acc -= STRIDE; print(this.px, this.pz, dx / d, dz / d); }
       lastX = this.px; lastZ = this.pz;
     },
+    /** Owner fields for stampFoot(): a planted foot's centre and facing (from the gait). */
+    ex: 0.5, ez: 0.5, edx: 0.5, edz: 0.5,
+    /** Stamp one footprint exactly where a foot planted (the Wraith's footfall events). */
+    stampFoot() {
+      if (!this.enabled) return;
+      n++;
+      ts.bx = this.ex; ts.bz = this.ez; ts.bdx = this.edx; ts.bdz = this.edz; ts.bl = HALF_LEN; ts.bw = HALF_W;
+      ts.bd = DEPTH * depthScale.v * (0.85 + 0.3 * hash(n + 0.5)); ts.bc = PACK;
+      ts.stamp();
+    },
     /** Stamp a walked trail along a polyline [[x, z], ...] (photo spots; allocation is fine). */
     stampTrail(points) {
       for (let k = 1; k < points.length; k++) {

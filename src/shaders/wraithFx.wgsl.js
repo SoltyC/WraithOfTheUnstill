@@ -1,0 +1,122 @@
+// The Wraith's effects (BRIEF §8.1): footfall spray (snow kicked up on the exact frame a foot
+// plants; dust where the ground is not snow) and the glow sprites (the faint cold light deep in
+// the cowl, the element's light at the fingertips). One mesh of camera-facing quads; per-quad data
+// in a storage buffer (two vec4 per quad), written by the CPU once per frame. Spray motion is
+// analytic from its spawn record (position, time, velocity, size), so only spawns are written.
+// Premultiplied alpha: spray blends, glows add (alpha 0).
+
+import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
+import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+
+export const FX_GLOWS = 3;
+export const FX_SPRAY = 384;
+export const FX_COUNT = FX_GLOWS + FX_SPRAY;
+export const SPRAY_LIFE = 1.1;
+
+export const fxVertexWGSL = /* wgsl */ `
+attribute position: vec3f;          // x = quad id, yz = corner (−1..1)
+uniform viewProjection: mat4x4f;
+uniform cameraPosition: vec3f;
+uniform fxParams: vec4f;            // x = time (s), y = wind x, z = wind z
+var<storage, read> fxData: array<vec4f>;
+var<storage, read> biomeA: array<u32>;
+varying vUv: vec2f;
+varying vAlpha: f32;
+varying vColor: vec3f;
+varying vWorldPos: vec3f;
+varying vKind: f32;
+
+const N8: i32 = 1024; const C8: f32 = 8.0; const W_HALF: f32 = 4096.0;
+fn frostAtF(x: f32, z: f32) -> f32 {
+  let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
+  let a = unpack4x8unorm(biomeA[j * N8 + i]);
+  return a.x / max(a.x + a.y + a.z + a.w, 0.05);
+}
+
+@vertex
+fn main(input: VertexInputs) -> FragmentInputs {
+  let id = u32(vertexInputs.position.x + 0.5);
+  let corner = vertexInputs.position.yz;
+  let a = fxData[id * 2u];
+  let b = fxData[id * 2u + 1u];
+  let cam = uniforms.cameraPosition;
+  var p = a.xyz;
+  var size = b.w;
+  var alpha = 0.0;
+  var color = b.xyz;
+  var kind = 0.0;
+  if (id < ${FX_GLOWS}u) {
+    // Glow: a.w = 1 when shown; b = colour (display-referred), size. Pulled toward the camera a
+    // little so the hood's inner wall does not clip the quad.
+    kind = 1.0;
+    alpha = a.w;
+    p += normalize(cam - p) * size * 0.6;
+  } else {
+    // Spray: a = spawn position, spawn time; b = velocity, size.
+    let age = uniforms.fxParams.x - a.w;
+    if (age >= 0.0 && age < ${SPRAY_LIFE}) {
+      let k = 3.2;                                   // air drag on fine snow
+      let e = (1.0 - exp(-k * age)) / k;
+      let wind = vec3f(uniforms.fxParams.y, 0.0, uniforms.fxParams.z) * 0.6;
+      p = a.xyz + b.xyz * e + wind * (age - e) + vec3f(0.0, -2.2, 0.0) * (age - e) / k;
+      p.y = max(p.y, a.y - 0.01);
+      let t = age / ${SPRAY_LIFE};
+      size = b.w * (1.0 + 2.5 * t);
+      let frost = frostAtF(a.x, a.z);
+      alpha = (1.0 - t) * (1.0 - t) * smoothstep(0.0, 0.05, age) * mix(0.18, 0.55, frost);
+      // Snow on snow; pale grey-brown dust elsewhere.
+      color = mix(vec3f(0.42, 0.38, 0.32), vec3f(0.92, 0.95, 1.0), frost);
+    }
+  }
+  let toCam = normalize(cam - p);
+  let right = normalize(cross(vec3f(0.0, 1.0, 0.0), toCam));
+  let up = cross(toCam, right);
+  let wp = p + (right * corner.x + up * corner.y) * size;
+  vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
+  if (alpha < 0.002) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
+  vertexOutputs.vUv = corner;
+  vertexOutputs.vAlpha = alpha;
+  vertexOutputs.vColor = color;
+  vertexOutputs.vWorldPos = wp;
+  vertexOutputs.vKind = kind;
+}
+`;
+
+export const fxFragmentWGSL = /* wgsl */ `
+${ENV_DECL}
+varying vUv: vec2f;
+varying vAlpha: f32;
+varying vColor: vec3f;
+varying vWorldPos: vec3f;
+varying vKind: f32;
+${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
+${SHADOW_RECEIVE_WGSL}
+
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
+  let r2 = dot(fragmentInputs.vUv, fragmentInputs.vUv);
+  if (r2 > 1.0) { discard; }
+  if (fragmentInputs.vKind > 0.5) {
+    // Additive glow: a tight core and a soft halo (display-referred).
+    let k = (exp(-r2 * 14.0) + 0.25 * exp(-r2 * 3.5)) * (1.0 - r2) * fragmentInputs.vAlpha;
+    fragmentOutputs.color = vec4f(fragmentInputs.vColor * k, 0.0);
+    return fragmentOutputs;
+  }
+  // Spray puff: soft disc, lit by the sun (forward scattering) and the sky.
+  let shape = pow(1.0 - r2, 1.5);
+  let a = clamp(fragmentInputs.vAlpha * shape, 0.0, 1.0);
+  if (a < 0.002) { discard; }
+  let wp = fragmentInputs.vWorldPos;
+  let V = normalize(uniforms.cameraPosition - wp);
+  let L = uniforms.keyDir;
+  let gg = 0.5; let c = dot(-V, L);
+  let hg = (1.0 - gg * gg) / pow(max(1.0 + gg * gg - 2.0 * gg * c, 1e-3), 1.5) * (1.0 / (4.0 * PI));
+  let vis = shadowVisibility(wp, vec3f(0.0, 1.0, 0.0), uniforms.cameraPosition, fragmentInputs.position.xy);
+  let col = fragmentInputs.vColor * (atmoKeyColor() * (0.12 + hg) * vis + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
+  let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
+  let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
+  fragmentOutputs.color = vec4f(outc * a, a);
+}
+`;

@@ -132,6 +132,16 @@ async function boot() {
   // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).
   for (const m of rocks.meshes) shadows.addCaster(m, rocks.makeShadowMaterial, 2);
   rocks.freeze();
+  // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
+  const { createWraithView } = await import('./render/wraith.js');
+  const wraithView = createWraithView(scene, atmosphere, ground, content.clipmap);
+  bindShadows(wraithView.material, shadows);
+  bindShadows(wraithView.fur.material, shadows);
+  bindShadows(wraithView.fx.material, shadows);
+  shadows.addCaster(wraithView.mesh, wraithView.makeShadowMaterial, 2);
+  wraithView.freeze();
+  window.__wraith.wraithView = wraithView;
+  content.capsule.setEnabled(false);
   // Terrain state (BRIEF §4.3): fine window + coarse pages; the clipmap reads it.
   const { createTerrainState } = await import('./terrain/state/terrainState.js');
   const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
@@ -181,6 +191,56 @@ async function boot() {
     }
   } });
   loop.add(playerMod.createPlayerSystem({ controller, arm, ...content }));
+  // The Wraith follows the controller; each footfall stamps a footprint on its exact frame.
+  loop.add({ name: 'wraith', update: () => {
+    const w = wraithView.wraith, p = controller.pos;
+    w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
+    w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
+    w.windStrength = paramsMod.params.v.windStrength;
+    wraithView.time = clock.simTime;
+    if (!wraithView.isEnabled()) return;
+    // Photo spots with a walk: once the world is in, walk the Wraith into place, then hold it.
+    if (game.pendingWalk !== null) {
+      if (game.worldSettled() && game.pendingTrail === null) { walkIntoPlace(game.pendingWalk); game.pendingWalk = null; }
+      return;
+    }
+    if (game.wraithHeld) return;
+    wraithView.update();
+    wraithFootfalls();
+  } });
+  function wraithFootfalls() {
+    const g = wraithView.wraith.gait, ev = g.ev;
+    footprints.enabled = systemsMod.toggles.on.footprints !== false;
+    for (let e = 0; e < g.evCount; e++) {
+      const o = e * 7;
+      footprints.ex = ev[o]; footprints.ez = ev[o + 2]; footprints.edx = ev[o + 3]; footprints.edz = ev[o + 4];
+      footprints.stampFoot();
+      wraithView.spray(ev[o], ev[o + 1], ev[o + 2], ev[o + 3], ev[o + 4], ev[o + 6]);
+    }
+  }
+  /** Photo spots: simulate the Wraith walking (or running) along its facing for `seconds`, ending
+   *  where the player stands, with every footfall printed and sprayed; then hold the pose (the
+   *  capture clock is frozen). One-off, so allocation is fine. */
+  function walkIntoPlace(walk) {
+    const w = wraithView.wraith, p = controller.pos;
+    const f = walk.facing ?? controller.yaw, dx = Math.sin(f), dz = Math.cos(f);
+    const dt = 1 / 60, n = Math.round(walk.seconds / dt);
+    const v = new Float64Array(n);
+    let dist = 0;
+    for (let i = 0; i < n; i++) { v[i] = walk.speed * Math.min(1, (i + 1) * dt / 0.6); dist += v[i] * dt; }
+    let s = -dist;
+    for (let i = 0; i < n; i++) {
+      s += v[i] * dt;
+      const x = p.x + dx * s, z = p.z + dz * s;
+      ground.qx = x; ground.qz = z; ground.sample();
+      w.bx = x; w.by = ground.h; w.bz = z; w.vx = dx * v[i]; w.vz = dz * v[i];
+      w.yaw = f; w.grounded = true; w.dt = dt; w.time = clock.simTime - (n - 1 - i) * dt;
+      wraithView.time = w.time;
+      wraithView.update();
+      wraithFootfalls();
+    }
+    game.wraithHeld = true;
+  }
   loop.add({ name: 'atmosphere', update: () => {
     env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();
     env.env.screenInfo.z = 1 / env.env.screenInfo.x; env.env.screenInfo.w = 1 / env.env.screenInfo.y;
@@ -236,7 +296,7 @@ async function boot() {
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
   reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: (on) => { for (const m of rocks.meshes) m.setEnabled(on); engine.snapshotRenderingReset(); } });
-  reg({ key: 'player', label: 'player', group: 'System', on: true, onChange: meshToggle(content.capsule) });
+  reg({ key: 'player', label: 'player (the Wraith)', group: 'System', on: true, onChange: (on) => { wraithView.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadows.strength = on ? 1 : 0; } });
   reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });
   reg({ key: 'footprints', label: 'player footprints', group: 'Terrain', on: true });
@@ -256,15 +316,21 @@ async function boot() {
     },
     /** Photo-spot trail waiting for the world to settle (then stamped as footprints). */
     pendingTrail: null,
+    /** Photo-spot walk ({ speed, seconds, facing? }) waiting for the world to settle. */
+    pendingWalk: null,
+    /** True while a spot's walked-in pose is held (no Wraith updates). */
+    wraithHeld: false,
     applySpot(spot) {
       spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
       this.pendingTrail = spot.trail || null;
+      this.pendingWalk = spot.walk || null;
+      this.wraithHeld = false;
     },
-    /** True when nothing a capture shows is still being written (spot trails, brush queue). */
-    stateSettled() { return this.pendingTrail === null && terrainState.pendingBrushes === 0; },
+    /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
+    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
-      if (content.capsule.isEnabled() === on) return;
-      content.capsule.setEnabled(on); engine.snapshotRenderingReset();
+      if (wraithView.isEnabled() === on) return;
+      wraithView.setEnabled(on); engine.snapshotRenderingReset();
     },
     setFreeCam(on) { arm.setFree(on); },
     setGod(on) { controller.god = on; if (!on) controller.teleport(controller.pos.x, controller.pos.z); },
@@ -315,7 +381,7 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows, terrainState, env: env.env, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
+    ready: true, game, shadows, terrainState, wraithView, env: env.env, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */
     async prepareSpot(id, frames = 6) {
       game.applySpot(spots.findSpot(id));

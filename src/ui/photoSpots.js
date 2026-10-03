@@ -6,6 +6,7 @@ import { params, setParam } from '../core/params.js';
 import { worldState } from '../game/worldState.js';
 
 /** @typedef {{ id: string, biome: string, label: string, time: number, weather: string, player?: number[],
+ *   hidePlayer?: boolean, trail?: number[][], walk?: { speed: number, seconds: number, facing?: number },
  *   camera: { mode: 'follow', yaw: number, pitch: number, dist: number, fov?: number } | { mode: 'free', pos: number[], yaw: number, pitch: number, fov: number } }} PhotoSpot */
 
 /** @type {PhotoSpot[]} */

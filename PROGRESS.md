@@ -4,7 +4,24 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 2 (Frost Steppe look-dev, hard gate): **gate accepted by the user, closed (2026-10-03).** Phase 3 (the Wraith) is next. Phase 1 is closed (gate met under the user's ruling, 2026-10-03); Phase 0 is closed (2026-10-02).
+- **Phase:** 3 (the Wraith), **in progress; gate not yet met** (awaiting target-GPU shots and the user's review in motion). Phase 2 is closed (accepted by the user, 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase 3 built so far** (details in DECISIONS.md "Phase 3"):
+  - **Locomotion:** procedural gait with true foot planting (0 slide in tests) and two-bone knees; the kinematic body (lean, bank, arm swing). Footfall events stamp a footprint and kick up spray on the exact frame of contact.
+  - **Cloth:** CPU Verlet with about 3,000 particles: robe, cord and sash, capelet mantle, bell sleeves, deep cowl, wrapped hands and feet.
+  - **Shading:** cloth shader (sheen, woven anisotropy, translucency, fold and layer occlusion, torn hems); 24-shell fur at the hood rim and cuffs; the breathing cowl light and fingertip glow.
+  - **Captures:** photo spots can walk the Wraith into place (`walk`). Five gate spots: `p3-wraith-*`.
+- **Phase 3 defects fixed this session:**
+  - robe hung upside down after the spawn's vertical teleport;
+  - hem thrown over the waist on stopping (pelvis offset stepped);
+  - pelvis rose during the running flight phase;
+  - hem kicked to the waist by hard leg colliders.
+- **Phase 3 still open:**
+  - target shots (`?shots=p3-&dir=phase-03`) and review;
+  - a perf bench with the Wraith on T;
+  - traversal-mode whip (Phase 4 traversal does not exist yet);
+  - low-health cowl guttering and frost creep (Phase 7);
+  - the 120-step cloth settle on teleport costs ~0.15 s once (machine W);
+  - the Wraith's pipelines are only warmed if it is visible during loading (hidePlayer spots create them late).
 - **Phase 2 gate evidence:**
   - shots on T (`screenshots/phase-02/`): dawn, noon, dusk, night, the north face and a trail close-up;
   - flight run 2 at 60 Hz: GPU 7.4 ms median, 14.0 ms max, 0 game-attributable hitches.

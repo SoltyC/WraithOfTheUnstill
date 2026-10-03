@@ -158,3 +158,30 @@ Every deviation from BRIEF.md, one line each, with rationale.
   - The flight benchmark at 60 Hz: GPU frame 7.4 ms median and 14.0 ms max, 0 game-attributable hitches.
 - **Alpine relief:** shared JS/WGSL, so collision includes it. Warped ridged crests up to ~70 m and carved gullies on frost terrain above ~750 m macro height. Parity over the mountains: 0.65 mm.
 - **Gate screenshots come from the target GPU** (`?shots=<prefix>` in Windows Chrome, uploaded by the preview server). Headless SwiftShader captures now take 10–17 min per spot and are kept for unattended error checks only.
+
+## Phase 3 — The Wraith
+
+- **CPU Verlet cloth, not GPU.** About 3,000 particles (~1,450 free) and 11k constraints, plus tethers (long-range attachments), capsule colliders with per-particle collider masks, and ground friction. Substeps run at 120 Hz with 6 iterations; collision runs twice per step. Cost on machine W (Node): median 1.6 ms per 60 Hz frame. It stays allocation-free, and the result is uploaded in one storage-buffer write per frame. The CPU leaves the GPU budget to the world, and it can be moved later if the CPU budget tightens.
+- **Garments (one mesh, 11 grids):**
+  - **Robe:** pleated and gathered at the waist by a cord, kinematic to the waist and free below. It is open at the front below the waist so a run parts it, with an uneven hem that trails at the back.
+  - **Sash ends:** two free sash ends hang from the cord.
+  - **Mantle:** a capelet gathered at the neck, pleated, with a ragged hem that is longer at the back.
+  - **Sleeves:** bell sleeves pinned at the shoulder, elbow and wrist along the arm polyline. The cuff's bell hangs free.
+  - **Cowl:** a deep hood whose front edges meet at a soft back-falling point. It closes under the chin, and its drape eases from the head frame to the body frame over the shoulders.
+  - **Hands and feet:** wrapped; feet pitch toe-down in swing.
+- **Feeding body motion into the cloth:**
+  - Damping is mostly relative to the body, plus a small world air drag. Pure world damping made a run look like a gale.
+  - The inertia scale is 0.4.
+  - Leg and arm colliders are soft (0.3 and 0.5 push per pass) and push horizontally only. Legs are never rendered; hard leg capsules flung the hem to the waist at a run.
+  - Facing is rate-limited to 9 rad/s.
+  - The pelvis bob and running crouch are eased. A stop used to jerk every pinned row about 10 cm in one frame and threw the hem over the waist. That was the "flips up when stopping" defect.
+- **Teleport detection lives in the Wraith:** any input jump over 2 m (vertical included) re-drapes every particle from its rest pose. The first in-browser build checked only horizontal distance, missed the spawn's 228 m vertical drop, and hung the robe upside down above the figure.
+- **Shading:**
+  - per-garment albedo and wear; twill micro-normal faded by pixel footprint;
+  - Charlie sheen, Kajiya-Kay along the threads, back-lit thin regions;
+  - per-particle fold occlusion (Laplacian along the normal) and layer occlusion (robe under the mantle, mantle under the cowl drape);
+  - alpha-tested torn hems and cuffs; a snow-dusted wet hem; near-black hood interior.
+- **The cowl light and fingertip glow are display-referred:** the same on screen by day and by night. They light the hood interior and fingertips with a soft inverse-square falloff and breathe on a 5.5 s period, plus additive glow sprites.
+- **Shell fur:** 24 shells over the hood rim and the bell cuffs, reusing the cloth buffer (particle id + 4096 × shell). Strands use a jittered 2.6 mm grid with per-strand length and taper; dark roots run to grey tips; Kajiya-Kay lighting with self-shadow by height. Sub-pixel strands switch to stochastic coverage instead of sparkling.
+- **Footfall spray:** analytic GPU particles in a 384-slot ring, written only when a foot lands. They use the same frame as the footprint stamp. On snow (biome weight read on the GPU) the spray is snow; elsewhere it is faint dust.
+- **Photo spots can `walk`** (`{ speed, seconds, facing }`). Once the world settles, the Wraith is simulated walking into place with real footfalls (prints and spray), then held for the frozen-clock still.

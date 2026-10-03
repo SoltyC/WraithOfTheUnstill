@@ -1,578 +1,688 @@
 {
-  "version": 2,
-  "spots": [
-    {
-      "id": "p1-monastery-golden",
-      "biome": "frost",
-      "label": "Monastery ledge looking south over the frost plateau, golden hour",
-      "time": 17.4,
-      "weather": "clear",
-      "player": [
-        -508,
-        3204
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": 3.0,
-        "pitch": 0.14,
-        "dist": 6
-      }
-    },
-    {
-      "id": "p1-meadow-noon",
-      "biome": "meadow",
-      "label": "Hub uplands, noon",
-      "time": 12.0,
-      "weather": "clear",
-      "player": [
-        -220,
-        580
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": 0.8,
-        "pitch": 0.12,
-        "dist": 6
-      }
-    },
-    {
-      "id": "p1-dunes-golden",
-      "biome": "dunes",
-      "label": "Dune basin across the wind, golden hour",
-      "time": 17.8,
-      "weather": "clear",
-      "player": [
-        2436,
-        1124
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": 2.4,
-        "pitch": 0.1,
-        "dist": 7
-      }
-    },
-    {
-      "id": "p1-volcano-dusk",
-      "biome": "ember",
-      "label": "Toward the volcano from the ash plain, dusk",
-      "time": 18.25,
-      "weather": "clear",
-      "player": [
-        2948,
-        -540
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": -2.79,
-        "pitch": 0.06,
-        "dist": 6
-      }
-    },
-    {
-      "id": "p1-mire-dawn",
-      "biome": "mire",
-      "label": "Mire lowlands, dawn",
-      "time": 6.5,
-      "weather": "clear",
-      "player": [
-        -1212,
-        -668
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": 1.2,
-        "pitch": 0.1,
-        "dist": 6
-      }
-    },
-    {
-      "id": "p1-coast-noon",
-      "biome": "coast",
-      "label": "South coast toward the sea, midday",
-      "time": 13.0,
-      "weather": "clear",
-      "player": [
-        -956,
-        -2908
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": -2.4,
-        "pitch": 0.12,
-        "dist": 6
-      }
-    },
-    {
-      "id": "p1-frost-night",
-      "biome": "frost",
-      "label": "Plateau toward the northern ranges, moonlit night",
-      "time": 23.5,
-      "weather": "clear",
-      "player": [
-        -508,
-        2212
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": 0.0,
-        "pitch": 0.08,
-        "dist": 6
-      }
-    },
-    {
-      "id": "p1-vista-continent",
-      "biome": "coast",
-      "label": "High vista over the continent from the south-west sea, afternoon",
-      "time": 16.8,
-      "weather": "clear",
-      "player": [
-        -956,
-        -2908
-      ],
-      "camera": {
-        "mode": "free",
-        "pos": [
-          -3700,
-          650,
-          -3700
-        ],
-        "yaw": 0.785,
-        "pitch": 0.13,
-        "fov": 0.96
-      }
-    },
-    {
-      "id": "p2-frost-dawn",
-      "biome": "frost",
-      "label": "Frost plateau toward the northern face, dawn",
-      "time": 6.6,
-      "weather": "clear",
-      "player": [
-        -100,
-        2280
-      ],
-      "hidePlayer": true,
-      "camera": {
-        "mode": "free",
-        "pos": [
-          -100,
-          679.3,
-          2280
-        ],
-        "yaw": 0.79,
-        "pitch": -0.08,
-        "fov": 0.96
-      },
-      "trail": [
-        [
-          -97.37,
-          2281.65
-        ],
-        [
-          -95.4,
-          2283.34
-        ],
-        [
-          -93.55,
-          2285.11
-        ],
-        [
-          -91.87,
-          2286.99
-        ],
-        [
-          -90.37,
-          2289.0
-        ],
-        [
-          -89.07,
-          2291.14
-        ],
-        [
-          -87.97,
-          2293.41
-        ],
-        [
-          -87.03,
-          2295.79
-        ],
-        [
-          -86.21,
-          2298.25
-        ],
-        [
-          -85.46,
-          2300.75
-        ],
-        [
-          -84.71,
-          2303.26
-        ],
-        [
-          -83.9,
-          2305.72
-        ],
-        [
-          -82.97,
-          2308.11
-        ],
-        [
-          -81.89,
-          2310.4
-        ]
-      ]
-    },
-    {
-      "id": "p2-frost-noon",
-      "biome": "frost",
-      "label": "Frost plateau toward the northern face, noon",
-      "time": 12.5,
-      "weather": "clear",
-      "player": [
-        100,
-        1740
-      ],
-      "hidePlayer": true,
-      "camera": {
-        "mode": "free",
-        "pos": [
-          100,
-          610.0,
-          1740
-        ],
-        "yaw": -0.39,
-        "pitch": -0.1,
-        "fov": 0.96
-      },
-      "trail": [
-        [
-          99.85,
-          1742.5
-        ],
-        [
-          99.03,
-          1744.97
-        ],
-        [
-          98.1,
-          1747.35
-        ],
-        [
-          97.01,
-          1749.63
-        ],
-        [
-          95.72,
-          1751.78
-        ],
-        [
-          94.24,
-          1753.79
-        ],
-        [
-          92.56,
-          1755.68
-        ],
-        [
-          90.72,
-          1757.45
-        ],
-        [
-          88.75,
-          1759.15
-        ],
-        [
-          86.73,
-          1760.8
-        ],
-        [
-          84.69,
-          1762.45
-        ],
-        [
-          82.72,
-          1764.13
-        ],
-        [
-          80.86,
-          1765.9
-        ],
-        [
-          79.17,
-          1767.77
-        ]
-      ]
-    },
-    {
-      "id": "p2-frost-dusk",
-      "biome": "frost",
-      "label": "Frost plateau toward the northern face, golden hour",
-      "time": 17.5,
-      "weather": "clear",
-      "player": [
-        620,
-        2100
-      ],
-      "hidePlayer": true,
-      "camera": {
-        "mode": "free",
-        "pos": [
-          620,
-          640.3,
-          2100
-        ],
-        "yaw": 0.39,
-        "pitch": -0.08,
-        "fov": 0.96
-      },
-      "trail": [
-        [
-          621.83,
-          2102.31
-        ],
-        [
-          622.98,
-          2104.63
-        ],
-        [
-          624.0,
-          2106.98
-        ],
-        [
-          624.82,
-          2109.37
-        ],
-        [
-          625.42,
-          2111.8
-        ],
-        [
-          625.78,
-          2114.28
-        ],
-        [
-          625.91,
-          2116.8
-        ],
-        [
-          625.85,
-          2119.36
-        ],
-        [
-          625.64,
-          2121.94
-        ],
-        [
-          625.36,
-          2124.54
-        ],
-        [
-          625.08,
-          2127.14
-        ],
-        [
-          624.86,
-          2129.73
-        ],
-        [
-          624.78,
-          2132.29
-        ],
-        [
-          624.89,
-          2134.82
-        ]
-      ]
-    },
-    {
-      "id": "p2-frost-night",
-      "biome": "frost",
-      "label": "Frost plateau toward the northern face, moonlit night",
-      "time": 23.0,
-      "weather": "clear",
-      "player": [
-        620,
-        2100
-      ],
-      "hidePlayer": true,
-      "camera": {
-        "mode": "free",
-        "pos": [
-          620,
-          640.3,
-          2100
-        ],
-        "yaw": 0.39,
-        "pitch": -0.08,
-        "fov": 0.96
-      },
-      "trail": [
-        [
-          621.83,
-          2102.31
-        ],
-        [
-          622.98,
-          2104.63
-        ],
-        [
-          624.0,
-          2106.98
-        ],
-        [
-          624.82,
-          2109.37
-        ],
-        [
-          625.42,
-          2111.8
-        ],
-        [
-          625.78,
-          2114.28
-        ],
-        [
-          625.91,
-          2116.8
-        ],
-        [
-          625.85,
-          2119.36
-        ],
-        [
-          625.64,
-          2121.94
-        ],
-        [
-          625.36,
-          2124.54
-        ],
-        [
-          625.08,
-          2127.14
-        ],
-        [
-          624.86,
-          2129.73
-        ],
-        [
-          624.78,
-          2132.29
-        ],
-        [
-          624.89,
-          2134.82
-        ]
-      ]
-    },
-    {
-      "id": "p2-sastrugi-golden",
-      "biome": "frost",
-      "label": "Fresh trail into the low sun: berms, prints and sastrugi, golden hour",
-      "time": 17.4,
-      "weather": "clear",
-      "player": [
-        612,
-        2100
-      ],
-      "hidePlayer": true,
-      "camera": {
-        "mode": "free",
-        "pos": [
-          620,
-          640.0,
-          2100.6
-        ],
-        "yaw": -1.5,
-        "pitch": 0.22,
-        "fov": 0.9
-      },
-      "trail": [
-        [
-          618.8,
-          2100.81
-        ],
-        [
-          616.8,
-          2101.14
-        ],
-        [
-          614.8,
-          2101.38
-        ],
-        [
-          612.8,
-          2101.49
-        ],
-        [
-          610.8,
-          2101.47
-        ],
-        [
-          608.8,
-          2101.31
-        ],
-        [
-          606.8,
-          2101.03
-        ],
-        [
-          604.8,
-          2100.69
-        ],
-        [
-          602.8,
-          2100.34
-        ],
-        [
-          600.8,
-          2100.02
-        ],
-        [
-          598.8,
-          2099.8
-        ],
-        [
-          596.8,
-          2099.7
-        ],
-        [
-          594.8,
-          2099.75
-        ],
-        [
-          592.8,
-          2099.93
-        ],
-        [
-          590.8,
-          2100.21
-        ]
-      ]
-    },
-    {
-      "id": "p2-northface-noon",
-      "biome": "frost",
-      "label": "The northern face: rock strata and snow accumulation, noon",
-      "time": 12.5,
-      "weather": "clear",
-      "player": [
-        -100,
-        2500
-      ],
-      "hidePlayer": true,
-      "camera": {
-        "mode": "free",
-        "pos": [
-          -100,
-          624.2,
-          2500
-        ],
-        "yaw": -0.4,
-        "pitch": -0.16,
-        "fov": 0.9
-      }
-    }
-  ]
+ "version": 2,
+ "spots": [
+  {
+   "id": "p1-monastery-golden",
+   "biome": "frost",
+   "label": "Monastery ledge looking south over the frost plateau, golden hour",
+   "time": 17.4,
+   "weather": "clear",
+   "player": [
+    -508,
+    3204
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": 3.0,
+    "pitch": 0.14,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p1-meadow-noon",
+   "biome": "meadow",
+   "label": "Hub uplands, noon",
+   "time": 12.0,
+   "weather": "clear",
+   "player": [
+    -220,
+    580
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.8,
+    "pitch": 0.12,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p1-dunes-golden",
+   "biome": "dunes",
+   "label": "Dune basin across the wind, golden hour",
+   "time": 17.8,
+   "weather": "clear",
+   "player": [
+    2436,
+    1124
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": 2.4,
+    "pitch": 0.1,
+    "dist": 7
+   }
+  },
+  {
+   "id": "p1-volcano-dusk",
+   "biome": "ember",
+   "label": "Toward the volcano from the ash plain, dusk",
+   "time": 18.25,
+   "weather": "clear",
+   "player": [
+    2948,
+    -540
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": -2.79,
+    "pitch": 0.06,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p1-mire-dawn",
+   "biome": "mire",
+   "label": "Mire lowlands, dawn",
+   "time": 6.5,
+   "weather": "clear",
+   "player": [
+    -1212,
+    -668
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": 1.2,
+    "pitch": 0.1,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p1-coast-noon",
+   "biome": "coast",
+   "label": "South coast toward the sea, midday",
+   "time": 13.0,
+   "weather": "clear",
+   "player": [
+    -956,
+    -2908
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": -2.4,
+    "pitch": 0.12,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p1-frost-night",
+   "biome": "frost",
+   "label": "Plateau toward the northern ranges, moonlit night",
+   "time": 23.5,
+   "weather": "clear",
+   "player": [
+    -508,
+    2212
+   ],
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.0,
+    "pitch": 0.08,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p1-vista-continent",
+   "biome": "coast",
+   "label": "High vista over the continent from the south-west sea, afternoon",
+   "time": 16.8,
+   "weather": "clear",
+   "player": [
+    -956,
+    -2908
+   ],
+   "camera": {
+    "mode": "free",
+    "pos": [
+     -3700,
+     650,
+     -3700
+    ],
+    "yaw": 0.785,
+    "pitch": 0.13,
+    "fov": 0.96
+   }
+  },
+  {
+   "id": "p2-frost-dawn",
+   "biome": "frost",
+   "label": "Frost plateau toward the northern face, dawn",
+   "time": 6.6,
+   "weather": "clear",
+   "player": [
+    -100,
+    2280
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     -100,
+     679.3,
+     2280
+    ],
+    "yaw": 0.79,
+    "pitch": -0.08,
+    "fov": 0.96
+   },
+   "trail": [
+    [
+     -97.37,
+     2281.65
+    ],
+    [
+     -95.4,
+     2283.34
+    ],
+    [
+     -93.55,
+     2285.11
+    ],
+    [
+     -91.87,
+     2286.99
+    ],
+    [
+     -90.37,
+     2289.0
+    ],
+    [
+     -89.07,
+     2291.14
+    ],
+    [
+     -87.97,
+     2293.41
+    ],
+    [
+     -87.03,
+     2295.79
+    ],
+    [
+     -86.21,
+     2298.25
+    ],
+    [
+     -85.46,
+     2300.75
+    ],
+    [
+     -84.71,
+     2303.26
+    ],
+    [
+     -83.9,
+     2305.72
+    ],
+    [
+     -82.97,
+     2308.11
+    ],
+    [
+     -81.89,
+     2310.4
+    ]
+   ]
+  },
+  {
+   "id": "p2-frost-noon",
+   "biome": "frost",
+   "label": "Frost plateau toward the northern face, noon",
+   "time": 12.5,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     100,
+     610.0,
+     1740
+    ],
+    "yaw": -0.39,
+    "pitch": -0.1,
+    "fov": 0.96
+   },
+   "trail": [
+    [
+     99.85,
+     1742.5
+    ],
+    [
+     99.03,
+     1744.97
+    ],
+    [
+     98.1,
+     1747.35
+    ],
+    [
+     97.01,
+     1749.63
+    ],
+    [
+     95.72,
+     1751.78
+    ],
+    [
+     94.24,
+     1753.79
+    ],
+    [
+     92.56,
+     1755.68
+    ],
+    [
+     90.72,
+     1757.45
+    ],
+    [
+     88.75,
+     1759.15
+    ],
+    [
+     86.73,
+     1760.8
+    ],
+    [
+     84.69,
+     1762.45
+    ],
+    [
+     82.72,
+     1764.13
+    ],
+    [
+     80.86,
+     1765.9
+    ],
+    [
+     79.17,
+     1767.77
+    ]
+   ]
+  },
+  {
+   "id": "p2-frost-dusk",
+   "biome": "frost",
+   "label": "Frost plateau toward the northern face, golden hour",
+   "time": 17.5,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     620,
+     640.3,
+     2100
+    ],
+    "yaw": 0.39,
+    "pitch": -0.08,
+    "fov": 0.96
+   },
+   "trail": [
+    [
+     621.83,
+     2102.31
+    ],
+    [
+     622.98,
+     2104.63
+    ],
+    [
+     624.0,
+     2106.98
+    ],
+    [
+     624.82,
+     2109.37
+    ],
+    [
+     625.42,
+     2111.8
+    ],
+    [
+     625.78,
+     2114.28
+    ],
+    [
+     625.91,
+     2116.8
+    ],
+    [
+     625.85,
+     2119.36
+    ],
+    [
+     625.64,
+     2121.94
+    ],
+    [
+     625.36,
+     2124.54
+    ],
+    [
+     625.08,
+     2127.14
+    ],
+    [
+     624.86,
+     2129.73
+    ],
+    [
+     624.78,
+     2132.29
+    ],
+    [
+     624.89,
+     2134.82
+    ]
+   ]
+  },
+  {
+   "id": "p2-frost-night",
+   "biome": "frost",
+   "label": "Frost plateau toward the northern face, moonlit night",
+   "time": 23.0,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     620,
+     640.3,
+     2100
+    ],
+    "yaw": 0.39,
+    "pitch": -0.08,
+    "fov": 0.96
+   },
+   "trail": [
+    [
+     621.83,
+     2102.31
+    ],
+    [
+     622.98,
+     2104.63
+    ],
+    [
+     624.0,
+     2106.98
+    ],
+    [
+     624.82,
+     2109.37
+    ],
+    [
+     625.42,
+     2111.8
+    ],
+    [
+     625.78,
+     2114.28
+    ],
+    [
+     625.91,
+     2116.8
+    ],
+    [
+     625.85,
+     2119.36
+    ],
+    [
+     625.64,
+     2121.94
+    ],
+    [
+     625.36,
+     2124.54
+    ],
+    [
+     625.08,
+     2127.14
+    ],
+    [
+     624.86,
+     2129.73
+    ],
+    [
+     624.78,
+     2132.29
+    ],
+    [
+     624.89,
+     2134.82
+    ]
+   ]
+  },
+  {
+   "id": "p2-sastrugi-golden",
+   "biome": "frost",
+   "label": "Fresh trail into the low sun: berms, prints and sastrugi, golden hour",
+   "time": 17.4,
+   "weather": "clear",
+   "player": [
+    612,
+    2100
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     620,
+     640.0,
+     2100.6
+    ],
+    "yaw": -1.5,
+    "pitch": 0.22,
+    "fov": 0.9
+   },
+   "trail": [
+    [
+     618.8,
+     2100.81
+    ],
+    [
+     616.8,
+     2101.14
+    ],
+    [
+     614.8,
+     2101.38
+    ],
+    [
+     612.8,
+     2101.49
+    ],
+    [
+     610.8,
+     2101.47
+    ],
+    [
+     608.8,
+     2101.31
+    ],
+    [
+     606.8,
+     2101.03
+    ],
+    [
+     604.8,
+     2100.69
+    ],
+    [
+     602.8,
+     2100.34
+    ],
+    [
+     600.8,
+     2100.02
+    ],
+    [
+     598.8,
+     2099.8
+    ],
+    [
+     596.8,
+     2099.7
+    ],
+    [
+     594.8,
+     2099.75
+    ],
+    [
+     592.8,
+     2099.93
+    ],
+    [
+     590.8,
+     2100.21
+    ]
+   ]
+  },
+  {
+   "id": "p2-northface-noon",
+   "biome": "frost",
+   "label": "The northern face: rock strata and snow accumulation, noon",
+   "time": 12.5,
+   "weather": "clear",
+   "player": [
+    -100,
+    2500
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     -100,
+     624.2,
+     2500
+    ],
+    "yaw": -0.4,
+    "pitch": -0.16,
+    "fov": 0.9
+   }
+  },
+  {
+   "id": "p3-wraith-walk-noon",
+   "biome": "frost",
+   "label": "The Wraith walking away across the steppe, from behind (the play view), noon",
+   "time": 12.5,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 5,
+    "facing": 0.4
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.14,
+    "dist": 4.5
+   }
+  },
+  {
+   "id": "p3-wraith-run-golden",
+   "biome": "frost",
+   "label": "Running in late afternoon, front three-quarter: the hem trailing, the prints behind",
+   "time": 16.4,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "walk": {
+    "speed": 5.2,
+    "seconds": 4,
+    "facing": -1.2
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 1.3,
+    "pitch": 0.12,
+    "dist": 5
+   }
+  },
+  {
+   "id": "p3-wraith-side-dawn",
+   "biome": "frost",
+   "label": "Walking, side view at dawn: planted feet under the hem, each print where a foot fell",
+   "time": 6.8,
+   "weather": "clear",
+   "player": [
+    -100,
+    2280
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 5,
+    "facing": 0.79
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 2.361,
+    "pitch": 0.1,
+    "dist": 3.6
+   }
+  },
+  {
+   "id": "p3-wraith-hood-dusk",
+   "biome": "frost",
+   "label": "The hood close up at dusk: fur ruff, the dark inside, the cold light deep in the cowl",
+   "time": 18.5,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 0.0,
+    "seconds": 1,
+    "facing": 0.6
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 3.292,
+    "pitch": 0.02,
+    "dist": 2.0
+   }
+  },
+  {
+   "id": "p3-wraith-night",
+   "biome": "frost",
+   "label": "Night: the cowl light and the fingertips' glow on the snow",
+   "time": 23.0,
+   "weather": "clear",
+   "player": [
+    -508,
+    2212
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.3
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 2.742,
+    "pitch": 0.08,
+    "dist": 3.2
+   }
+  }
+ ]
 }
