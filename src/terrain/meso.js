@@ -62,3 +62,23 @@ export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast,
   if (wCoast > 0.001) h += wCoast * 0.25 * fbm(u / 40, v / 12, 2, S + 51);
   return h;
 }
+
+const smooth01 = (a, b, x) => { let t = (x - a) / (b - a); t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
+
+/**
+ * Alpine relief (Phase 2 look-dev): sharp warped ridge crests and carved gullies on high frost
+ * terrain, so mountains read as rock-cut, not rounded. Weighted by the macro height (none below
+ * ~750 m) and the frost weight. fRidge/fGully are LOD fades (1 on the CPU; the clipmap fades
+ * them out on grids too coarse to carry them). Shared with WGSL (tn_alpineHeight) — edit both.
+ */
+export function alpineHeight(x, z, macroH, wFrost, fRidge, fGully) {
+  const a = smooth01(750, 1250, macroH) * wFrost;
+  if (a <= 0.001) return 0;
+  const S = MESO_SEED;
+  const wx = x + 60 * fbm(x / 400, z / 400, 2, S + 61);
+  const wz = z + 60 * fbm(x / 400 + 5.2, z / 400, 2, S + 62);
+  let r = 1 - Math.abs(fbm(wx / 180, wz / 180, 3, S + 63));
+  r = r * r * r;
+  const g = 1 - smooth01(0, 0.22, Math.abs(fbm(wx / 60, wz / 60, 2, S + 64)));
+  return a * (fRidge * (70 * r - 20) - fGully * 28 * g);
+}

@@ -176,7 +176,8 @@ fn terrainH(x: f32, z: f32, s: f32) -> f32 {
   var wB = vec2f(0.0);
   let wA = biomeAt(x, z, &wB);
   let wind = windAt(x, z);
-  return macroH + mesoLod(x, z, wA, wB, wind, s) + microH(x, z, wA, wind, s);
+  let alp = tn_alpineHeight(x, z, macroH, wA.x, lodFade(180.0, s), lodFade(60.0, s));
+  return macroH + mesoLod(x, z, wA, wB, wind, s) + alp + microH(x, z, wA, wind, s);
 }
 `;
 

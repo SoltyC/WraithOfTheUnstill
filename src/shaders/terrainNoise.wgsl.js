@@ -92,4 +92,17 @@ fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f) -> f32 {
   if (wB.y > 0.001) { h += wB.y * 0.25 * tn_fbm(u / 40.0, v / 12.0, 2, S + 51u); }
   return h;
 }
+
+// Twin of alpineHeight in src/terrain/meso.js.
+fn tn_alpineHeight(x: f32, z: f32, macroH: f32, wFrost: f32, fRidge: f32, fGully: f32) -> f32 {
+  let a = smoothstep(750.0, 1250.0, macroH) * wFrost;
+  if (a <= 0.001) { return 0.0; }
+  let S = MESO_SEED;
+  let wx = x + 60.0 * tn_fbm(x / 400.0, z / 400.0, 2, S + 61u);
+  let wz = z + 60.0 * tn_fbm(x / 400.0 + 5.2, z / 400.0, 2, S + 62u);
+  var r = 1.0 - abs(tn_fbm(wx / 180.0, wz / 180.0, 3, S + 63u));
+  r = r * r * r;
+  let g = 1.0 - smoothstep(0.0, 0.22, abs(tn_fbm(wx / 60.0, wz / 60.0, 2, S + 64u)));
+  return a * (fRidge * (70.0 * r - 20.0) - fGully * 28.0 * g);
+}
 `;

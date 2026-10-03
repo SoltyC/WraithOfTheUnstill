@@ -53,10 +53,13 @@ fn rk_radius(d: vec3f, seed: f32) -> f32 {
   // Fracture planes: two flattened facets at seeded orientations.
   let n1 = normalize(vec3f(sin(seed * 9.0), 0.6, cos(seed * 9.0)));
   let n2 = normalize(vec3f(cos(seed * 5.0), -0.2, sin(seed * 5.0)));
-  r = min(r, 0.82 / max(dot(d, n1), 0.2));
-  r = min(r, 0.90 / max(dot(d, n2), 0.2));
-  return r;
+  // Smooth minimum: the facets blend into the lumpy body. A hard min() left razor-thin
+  // slivers and abrupt sliced faces where a plane crossed the mesh ("chopped" rocks).
+  r = rk_smin(r, 0.86 / max(dot(d, n1), 0.25), 0.3);
+  r = rk_smin(r, 0.95 / max(dot(d, n2), 0.25), 0.3);
+  return max(r, 0.45);
 }
+fn rk_smin(a: f32, b: f32, k: f32) -> f32 { let h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
 fn rk_point(d: vec3f, seed: f32, aspect: vec3f) -> vec3f { return d * rk_radius(d, seed) * aspect; }
 
 fn rk_ground(x: f32, z: f32) -> f32 {

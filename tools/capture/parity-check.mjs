@@ -2,7 +2,7 @@
 // the GPU (compute, same storage buffers the terrain reads) and src/world/worldData.js in Node
 // from the baked files, at the same points around the player. Collision uses macro + meso, so
 // the GPU side is sampled at spacing 0.5 m (micro off, meso at full detail, 2 m macro).
-//   node tools/capture/parity-check.mjs [--points=4096] [--radius=500] [--skip-build]
+//   node tools/capture/parity-check.mjs [--points=4096] [--radius=500] [--spot=<photo spot>] [--skip-build]
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,7 +17,7 @@ const server = await startServer({ skipBuild: !!args['skip-build'] });
 const browser = await launchBrowser(args);
 let result;
 try {
-  const { page } = await openGame(browser, server.url, 'capture=1', { width: 320, height: 180 });
+  const { page } = await openGame(browser, server.url, 'capture=1' + (args.spot ? '&spot=' + args.spot : ''), { width: 320, height: 180 });
   const center = await page.evaluate(() => { const p = window.__wraith.game.controller.pos; return [p.x, p.z]; });
   // Deterministic point set (golden-angle spiral) within R of the player.
   const pts = new Float32Array(N * 2);

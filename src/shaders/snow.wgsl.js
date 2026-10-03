@@ -42,9 +42,9 @@ fn rockDetail(wp: vec3f, N: vec3f, fp: f32) -> vec3f {
   var w = pow(abs(N), vec3f(4.0));
   w = w / (w.x + w.y + w.z);
   var d = vec3f(0.0);
-  for (var k = 0; k < 2; k++) {
-    let sc = select(0.45, 2.2, k == 1);
-    let a = select(0.06, 0.35, k == 1) * fpFade(sc, fp);
+  for (var k = 0; k < 3; k++) {
+    let sc = select(select(0.45, 2.2, k == 1), 8.0, k == 2);
+    let a = select(select(0.06, 0.35, k == 1), 0.9, k == 2) * fpFade(sc, fp);
     let nx = noised(wp.zy / sc + 3.1); // plane ⟂ x
     let ny = noised(wp.xz / sc + 7.7); // plane ⟂ y
     let nz = noised(wp.xy / sc + 1.3); // plane ⟂ z
@@ -58,11 +58,11 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
   // Snow detail normals: grain (isotropic), wind ripples, sastrugi, drift texture. The long
   // layers stay gentle and only mildly stretched (strong stretch read as brush strokes).
   var g = vec2f(0.0);
-  g += windLayerGrad(wp.x, wp.z, wind, 0.05, 0.05, 0.003 * fpFade(0.05, fp));
-  g += windLayerGrad(wp.x, wp.z, wind, 0.18, 0.75, 0.014 * fpFade(0.18, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 0.05, 0.05, 0.005 * fpFade(0.05, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 0.18, 0.75, 0.018 * fpFade(0.18, fp));
   g += windLayerGrad(wp.x, wp.z, wind, 2.6, 0.55, 0.05 * fpFade(0.55, fp)); // sastrugi beyond the geometry
   g += windLayerGrad(wp.x, wp.z, wind, 1.8, 3.2, 0.07 * fpFade(1.8, fp));
-  g += windLayerGrad(wp.x, wp.z, wind, 8.0, 12.0, 0.16 * fpFade(8.0, fp));
+  g += windLayerGrad(wp.x, wp.z, wind, 8.0, 12.0, 0.1 * fpFade(8.0, fp));
   let Nsnow = perturb(Ngeo, g);
   // Landform masks use the large-scale normal Nc (no micro relief in it).
   let slope = 1.0 - Nc.y;
@@ -72,13 +72,13 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
   // blocks. Snow re-accumulates on the upward faces of the rock's own detail.
   let n1 = noised(wp.xz * 0.02).x; let n2 = noised(wp.xz * 0.11).x * fpFade(9.0, fp);
   let n3 = noised(wp.xz * 0.5).x * fpFade(2.0, fp);
-  let rock = smoothstep(0.30, 0.50, slope + n1 * 0.07 + n2 * 0.04 + n3 * 0.02);
+  let rock = smoothstep(0.35, 0.43, slope + n1 * 0.07 + n2 * 0.04 + n3 * 0.02);
   var rockShown = 0.0;
   var Nrock = Ngeo;
   var rockAlb = vec3f(0.1);
   if (rock > 0.001) {
     Nrock = rockDetail(wp, Ngeo, fp);
-    let accum = smoothstep(0.62, 0.86, Nrock.y + n2 * 0.08 + n3 * 0.06);
+    let accum = smoothstep(0.70, 0.80, Nrock.y + n2 * 0.08 + n3 * 0.06);
     rockShown = rock * (1.0 - accum);
     // Strata: irregular layers (two incommensurate periods, tilted and warped by landform-scale
     // noise), whose contrast itself comes and goes, so they read as geology, not as stripes.
@@ -87,7 +87,9 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
     let s2 = noised(vec2f(tilt / 2.9, 5.1)).x * fpFade(6.0, fp);
     let strength = smoothstep(-0.2, 0.6, noised(wp.xz * 0.03 + vec2f(3.0, 1.0)).x);
     let band = (0.6 * s1 + 0.4 * s2) * strength * fpFade(14.0, fp);
-    rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.22 * band) * (0.9 + 0.2 * n2);
+    // Crevices and overhangs (faces turned down or sideways in the 8 m detail) read darker.
+    let crevice = smoothstep(-0.2, 0.5, Nrock.y);
+    rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.22 * band) * (0.9 + 0.2 * n2) * mix(0.55, 1.0, crevice);
   }
 
   // Blue ice: scoured out on steep windward slopes (the landform faces into the wind), in

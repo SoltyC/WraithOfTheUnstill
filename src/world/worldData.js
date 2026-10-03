@@ -7,7 +7,7 @@
 // Hot-path calling convention (see DECISIONS.md): set qx/qz, call sample() → h, or
 // sampleNormal() → nx/ny/nz. No doubles cross call boundaries.
 
-import { mesoHeight } from '../terrain/meso.js';
+import { mesoHeight, alpineHeight } from '../terrain/meso.js';
 
 export const WORLD_HALF = 4096;
 const H_OFFSET = 128, H_SCALE = 32;
@@ -129,6 +129,7 @@ export class WorldData {
     this._edgeFalloff();
     this._climate();
     this.meso = mesoHeight(this.qx, this.qz, this.w0, this.w1, this.w2, this.w3, this.w4, this.w5, this.windX, this.windZ);
+    this.meso += alpineHeight(this.qx, this.qz, this.macro, this.w0, 1, 1);
     this.h = this.macro + this.meso;
   }
 

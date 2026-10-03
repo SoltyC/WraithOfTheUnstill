@@ -9,7 +9,7 @@ export const paramDefs = [
   { key: 'dayLengthMin', label: 'Day length (real min)', group: 'World', min: 1, max: 120, step: 1, value: 40 },
   { key: 'timeScale', label: 'Time flow (0 = paused)', group: 'World', min: 0, max: 1, step: 1, value: 0 },
   { key: 'sunAzimuth', label: 'Sun azimuth (deg)', group: 'Art', min: 0, max: 360, step: 1, value: 215 },
-  { key: 'fogDensity', label: 'Haze (Mie ×)', group: 'Art', min: 0, max: 10, step: 0.05, value: 4.5 },
+  { key: 'fogDensity', label: 'Haze (Mie ×)', group: 'Art', min: 0, max: 10, step: 0.05, value: 6 },
   { key: 'fogHeightFalloff', label: 'Fog height falloff', group: 'Art', min: 0.002, max: 0.08, step: 0.001, value: 0.018 },
   { key: 'exposure', label: 'Exposure bias', group: 'Art', min: 0.2, max: 3, step: 0.01, value: 1 },
   { key: 'skylight', label: 'Skylight (ambient ×)', group: 'Art', min: 0.5, max: 3, step: 0.05, value: 1.5 },
