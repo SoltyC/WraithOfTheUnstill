@@ -9,6 +9,7 @@ import { buildGarments, GARMENT, COLLIDER, SLEEVE_WRIST_ROW, SLEEVE_ELBOW_ROW } 
 const SUB = 1 / 120;
 /** rad/s: fastest the figure turns to face its input heading. */
 const TURN_RATE = 9;
+const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
 const ARM = 0.58, UPPER = 0.3;
 /** Head centre in the body frame (body.js). */
 const HEAD_Y = 0.74, HEAD_Z = 0.02;
@@ -53,7 +54,8 @@ export class Wraith {
     }
     /** Packed vertex data: (pos.xyz, garment + 0.98·occlusion), (normal.xyz, thinness) per particle. */
     this.packed = new Float32Array(this.cloth.n * 8);
-    this.settled = false;
+    /** Extra substeps still owed to settling the cloth after a teleport. */
+    this.settleLeft = 0;
     this._lx = NaN; this._ly = NaN; this._lz = NaN; // last input position (teleport detection)
     this._k = 0;      // collider cursor for _cap()
     // Arm frame scratch (axis, e1, e2).
@@ -87,7 +89,7 @@ export class Wraith {
     this.body.dt = 0; this.body.prevYaw = this.yaw; this.body.update(this.gait);
     for (const g of this.garments) this._place(g, true);
     this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz; this.cloth.resetFrame();
-    this.settled = false;
+    this.settleLeft = SETTLE_STEPS;
     this._lx = this.bx; this._ly = this.by; this._lz = this.bz;
   }
 
@@ -110,8 +112,10 @@ export class Wraith {
     this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz;
     this.cloth.windX = this.windX * ws; this.cloth.windZ = this.windZ * ws; this.cloth.windY = 0.4 * ws * 0.2;
     // Substeps at 120 Hz; the first frames after a spawn settle the cloth.
+    // After a teleport the cloth settles over a few frames (120 extra substeps, 24 a frame: one
+    // frame of 120 was a visible hitch).
     let steps = Math.min(4, Math.max(1, Math.round(this.dt / SUB)));
-    if (!this.settled) { steps = 120; this.settled = true; }
+    if (this.settleLeft > 0) { const k = Math.min(SETTLE_PER_FRAME, this.settleLeft); steps += k; this.settleLeft -= k; }
     for (let s = 0; s < steps; s++) { this._pins(); this.cloth.step(); }
     this._pack();
   }

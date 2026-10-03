@@ -254,3 +254,18 @@ required. All 9 cases pass (ground sampling, controller walking and idle, spring
 idle and time-flowing, clock, frame stats, pools).
 
 At 90 FPS the steady-state residual is ~24 KB/s of short-lived wrapper objects. That's a young-generation scavenge roughly once a minute, well under 1 ms, and never a major GC.
+
+### Phase 3 — the Wraith on T (2026-10-03, `?bench=1&res=2560x1440`, 60 Hz, run `perf/runs/2026-10-03T08-52-34-462Z.json`)
+
+RTX 3060, Chrome 153, production build, spot p1-monastery-golden. The walk phase drives the
+Wraith live (gait, CPU cloth, fur, effects) while the camera orbits.
+
+| Phase | Presented (median / p99 / max) | FPS | GPU frame (median / p95 / max) | Main / shadow / compute (median) | Hitches |
+|---|---|---|---|---|---|
+| idle | 16.7 / 17.8 / 36.9 ms | 59.9 | 6.16 / 6.36 / 6.75 ms | 3.67 / 1.97 / 0.26 ms | 1 (frame 27, right after the spot is applied: the cloth's 120-step settle on teleport) |
+| walk | 16.7 / 17.8 / 18.3 ms | 60.0 | 7.73 / 9.90 / 10.36 ms | 4.92 / 2.10 / 0.39 ms | 0 |
+| fly | 16.7 / 17.5 / 23.1 ms | 60.0 | 5.96 / 6.29 / 6.55 ms | 3.34 / 1.77 / 0.59 ms | 1 (23.1 ms, presentation; GPU max 6.6 ms) |
+
+- Draw calls 22, pipelines 25, late pipelines 0, GPU memory 679 MB, JS heap 314–337 MB.
+- The walk phase at 60 Hz has no drops, and the GPU frame stays below 10.4 ms (budget 16.7 ms).
+- On W (Node), the cloth simulation costs a median 1.6 ms and p95 2.0 ms per 60 Hz frame. The idle hitch matches the one-off 120-substep settle that runs when the Wraith is teleported (~0.15 s on W). It is a candidate for spreading over several frames.
