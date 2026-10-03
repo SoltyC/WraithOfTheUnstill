@@ -45,6 +45,9 @@ export class Gait {
     this.kx = new Float64Array(2); this.ky = new Float64Array(2); this.kz = new Float64Array(2);
     this.speed = 0.5 - 0.5; this.phase = 0.5 - 0.5;
     this.pyOff = 0.5 - 0.5;   // eased pelvis offset (bob, running crouch)
+    /** Surf engagement 0..1 (input): above ½ the feet hold a surf stance instead of stepping. */
+    this.surf = 0.5 - 0.5;
+    this.stance = false;
     // Footfall events (ring, consumed by the owner): x, y, z, dirX, dirZ, foot, speed.
     this.ev = new Float64Array(GAIT.maxEvents * 7);
     this.evCount = 0;
@@ -86,6 +89,8 @@ export class Gait {
     const T = Math.min(0.62, 0.26 + 0.1 * speed);
     const swingDur = moving ? 0.38 + 0.004 * Math.min(speed, 6) : 0.24;
     const ux = moving ? this.vx / speed : Math.sin(this.yaw), uz = moving ? this.vz / speed : Math.cos(this.yaw);
+    if (this.surf > 0.5) { this._surfStance(); return; }
+    if (this.stance) { this.stance = false; this.reset(); }
 
     // The ground under a planted foot can change (collision data streaming in, teleports):
     // re-seat it vertically, never horizontally; if the body has left the feet far behind, reset.
@@ -172,6 +177,27 @@ export class Gait {
     this.pyOff += (off - this.pyOff) * (1 - Math.exp(-dt * 20));
     this.py = Math.max(footY, this.by - 0.1) + GAIT.hipHeight + this.pyOff;
     // Knees by two-bone IK (pole forward), for the cloth colliders.
+    for (let f = 0; f < 2; f++) this._knee(f);
+  }
+
+  /** Surf stance: feet staggered along the heading and turned across it, riding with the body
+   *  on the crest (no planting, no footfalls: the wake writes the snow); the pelvis sinks. */
+  _surfStance() {
+    this.stance = true;
+    const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw), rx = fz, rz = -fx;
+    for (let f = 0; f < 2; f++) {
+      const along = f === 0 ? 0.27 : -0.23, side = f === 0 ? -0.07 : 0.09;
+      const x = this.bx + fx * along + rx * side, z = this.bz + fz * along + rz * side;
+      this.fx[f] = x; this.fz[f] = z; this.fy[f] = this.grounded ? this._groundAt(x, z) : this.by + 0.05;
+      this.state[f] = PLANTED; this.t[f] = 0;
+      const turn = f === 0 ? 0.35 : 0.6;                   // toes turned across the heading
+      this.dirX[f] = Math.sin(this.yaw + turn); this.dirZ[f] = Math.cos(this.yaw + turn);
+    }
+    const dt = this.dt;
+    this.pyOff += (-0.17 * Math.min(1, (this.surf - 0.5) * 4) - this.pyOff) * (1 - Math.exp(-dt * 8));
+    this.px = this.bx; this.pz = this.bz;
+    this.py = Math.min(this.fy[0], this.fy[1], this.by) + GAIT.hipHeight + this.pyOff;
+    this.phase = 0;
     for (let f = 0; f < 2; f++) this._knee(f);
   }
 

@@ -683,6 +683,64 @@
     "pitch": 0.08,
     "dist": 3.2
    }
+  },
+  {
+   "id": "p4-surf-carve-golden",
+   "biome": "frost",
+   "label": "Snow-surf mid-carve at golden hour: the crest, the lean, the plume off the outside berm",
+   "time": 17.0,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "surf": {
+    "seconds": 7,
+    "facing": -0.4,
+    "steer": 0.75,
+    "period": 3.6,
+    "throttle": 0.4,
+    "camera": {
+     "yaw": 2.5,
+     "pitch": 0.16,
+     "dist": 6
+    }
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": -0.4,
+    "pitch": 0.15,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p4-surf-field-noon",
+   "biome": "frost",
+   "label": "A finished run seen from across the field: the groove and berms carving S-turns down the steppe",
+   "time": 12.5,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "surf": {
+    "seconds": 14,
+    "facing": -0.4,
+    "steer": 0.7,
+    "period": 4.5,
+    "throttle": 0.3,
+    "camera": {
+     "yaw": 3.14,
+     "pitch": 0.42,
+     "dist": 40
+    }
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": -0.4,
+    "pitch": 0.15,
+    "dist": 6
+   }
   }
  ]
 }

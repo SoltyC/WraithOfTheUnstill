@@ -118,13 +118,15 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
   return o;
 }
 
-// Terrain-state response (BRIEF §5.1): packed snow is darker, smoother and tighter in
+// Terrain-state response (BRIEF §5.1, §4.4): packed snow is darker, smoother and tighter in
 // specular; trail floors are occluded (micro-occlusion along the walls); berms of displaced
-// mass break into chunky clumps. st = (depression, displaced) in metres; c = compaction 0..1.
-fn frostApplyState(o: ptr<function, FrostSurf>, wp: vec3f, st: vec2f, c: f32, fp: f32) {
-  if (st.x + st.y + c < 1e-3) { return; }
+// mass break into chunky clumps; wet snow turns to grey translucent slush with a wet gloss;
+// frozen ground crusts over; and a Crystallize transform is clear glossy ice for good.
+// st = (depression, displaced) in metres; sv = (compaction, wetness, frozen, transform id).
+fn frostApplyState(o: ptr<function, FrostSurf>, wp: vec3f, st: vec2f, sv: vec4f, fp: f32) {
+  if (st.x + st.y + sv.x + sv.y + sv.z + sv.w < 1e-3) { return; }
   let snow = (*o).snow;
-  let pack = clamp(c, 0.0, 1.0) * snow;
+  let pack = clamp(sv.x, 0.0, 1.0) * snow;
   (*o).albedo *= 1.0 - 0.10 * pack;
   (*o).rough = mix((*o).rough, 0.32, pack);
   (*o).N = normalize(mix((*o).N, (*o).Ng, pack * 0.7));       // packing irons out the grain
@@ -137,6 +139,32 @@ fn frostApplyState(o: ptr<function, FrostSurf>, wp: vec3f, st: vec2f, c: f32, fp
     let g = (n1.yz / 0.035 * 0.006 + n2.yz / 0.09 * 0.012) * chunk;
     (*o).N = normalize(vec3f((*o).N.x - g.x, (*o).N.y, (*o).N.z - g.y));
     (*o).ao *= 1.0 - 0.25 * chunk * clamp(0.5 - 0.5 * n1.x, 0.0, 1.0);
+  }
+  // Slush: meltwater through the snow. Grey-blue, translucent-dark, with a wet sheen that
+  // pools in the low parts (patchy at the edges).
+  let wet = clamp(sv.y, 0.0, 1.0) * (*o).snow;
+  if (wet > 0.0) {
+    let pool = smoothstep(0.2, 0.8, wet + 0.25 * noised(wp.xz / 0.12).x * fpFade(0.12, fp));
+    (*o).albedo = mix((*o).albedo, vec3f(0.42, 0.5, 0.56), wet * 0.75);
+    (*o).rough = mix((*o).rough, 0.12, pool);
+    (*o).N = normalize(mix((*o).N, (*o).Ng, pool * 0.8));
+    (*o).ice = max((*o).ice, pool * 0.7);               // the ice term carries the wet gloss
+    (*o).snow = (*o).snow * (1.0 - 0.5 * pool);
+  }
+  // Frozen crust: a thin glaze over the snow.
+  let fr = clamp(sv.z, 0.0, 1.0) * (*o).snow;
+  if (fr > 0.0) {
+    (*o).rough = mix((*o).rough, 0.2, fr * 0.7);
+    (*o).ice = max((*o).ice, fr * 0.35);
+    (*o).albedo = mix((*o).albedo, (*o).albedo * vec3f(0.9, 0.96, 1.04), fr);
+  }
+  // Crystallized: clear glossy ice, permanent. Faint internal fractures as albedo variation.
+  if (sv.w > 0.5 && sv.w < 1.5) {
+    let frac = noised(wp.xz / 0.4).x * 0.5 + noised(wp.xz / 0.09).x * 0.25 * fpFade(0.09, fp);
+    (*o).albedo = vec3f(0.34, 0.5, 0.6) * (0.9 + 0.25 * frac);
+    (*o).rough = 0.05;
+    (*o).N = normalize(mix((*o).N, (*o).Ng, 0.9));
+    (*o).ice = 1.0; (*o).snow = 0.0; (*o).rock = 0.0;
   }
 }
 

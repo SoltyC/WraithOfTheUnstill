@@ -3,13 +3,15 @@
 // in a frame all see the last write, so per-dispatch params would collide); workgroup_id.z picks
 // the job.
 
-import { FINE_N, RATIO, PAGE_N, PAGES, WORLD_HALF, COARSE_PER_M, FINE_PER_M, NO_SLOT } from '../terrain/state/layout.js';
+import { FINE_N, RATIO, PAGE_N, PAGES, WORLD_HALF, COARSE_PER_M, FINE_PER_M, NO_SLOT, TRANSFORM } from '../terrain/state/layout.js';
 import { DECAY, MATERIAL_COUNT } from '../terrain/state/healing.js';
 
-export const MAX_BRUSHES = 16;
+export const MAX_BRUSHES = 48;
 // StateParams layout (u32 words; floats bitcast): see terrainState.js writeParams().
 export const MAX_IN = 4;
-export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 * 3;
+export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 * 4;
+/** Brush programs (terrainState.stamp: field bk). */
+export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4 };
 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
@@ -33,19 +35,29 @@ struct StateParams {
   brushes: array<vec4f,${MAX_BRUSHES}>,     // centre x, z (m), half length (m), depth (m)
   brushDirs: array<vec4f,${MAX_BRUSHES}>,   // direction x, z (unit), half width (m), compaction
   brushRects: array<vec4i,${MAX_BRUSHES}>,  // fine texel bbox
+  brushEx: array<vec4f,${MAX_BRUSHES}>,     // program (BRUSH), wetness, side bias (−1..1), berm scale
   pageTable: array<u32>,            // slot per page key (NO_SLOT = none), after the fixed part
 };
 
 fn wrapN(v: i32) -> u32 { let n = i32(FINE_N); return u32(((v % n) + n) % n); }
 fn fineIdx(i: i32, j: i32) -> u32 { return wrapN(j) * FINE_N + wrapN(i); }
 
-// 8 channels: depression, displaced, compaction, thermal | wetness, transform, flatten, spare.
-struct Texel { a: vec4f, b: vec4f };
+// Channels (layout.js): h = depression, displaced | s = compaction, wetness, frozen, transform |
+// m = molten, flatten, spare, spare.
+struct Texel { h: vec2f, s: vec4f, m: vec4f };
 fn unpackTexel(w0: u32, w1: u32, w2: u32) -> Texel {
   var t: Texel;
-  t.a = vec4f(unpack2x16float(w0), unpack2x16float(w1));
-  t.b = unpack4x8unorm(w2);
+  t.h = unpack2x16float(w0);
+  t.s = unpack4x8unorm(w1);
+  t.m = unpack4x8unorm(w2);
   return t;
+}
+fn zeroTexel() -> Texel { var t: Texel; t.h = vec2f(0.0); t.s = vec4f(0.0); t.m = vec4f(0.0); return t; }
+// Unbiased (dithered) 8-bit packing for healing: a decaying value never sticks one step above
+// rest. The transform id is exact (its dither stays inside ±½ step).
+fn packDither(v: vec4f, n: f32) -> u32 { return pack4x8unorm(clamp(v + (n - 0.5) / 255.0, vec4f(0.0), vec4f(1.0))); }
+fn ditherHash(i: i32, j: i32, seed: f32) -> f32 {
+  return fract(sin(f32(i) * 12.9898 + f32(j) * 78.233 + seed * 37.719) * 43758.5453);
 }
 `;
 
@@ -57,9 +69,10 @@ ${DECAY_WGSL}
 fn healTexel(t: Texel, m: u32, dt: f32) -> Texel {
   let o = min(m, ${MATERIAL_COUNT - 1}u) * 6u;
   var r = t;
-  r.a = t.a * exp(-vec4f(DECAY[o], DECAY[o + 1u], DECAY[o + 2u], DECAY[o + 4u]) * dt);
-  r.b.x = t.b.x * exp(-DECAY[o + 3u] * dt);
-  r.b.z = t.b.z * exp(-DECAY[o + 5u] * dt);
+  r.h = t.h * exp(-vec2f(DECAY[o], DECAY[o + 1u]) * dt);
+  // Compaction, wetness, frozen heal; the transform id never does.
+  r.s = vec4f(t.s.xyz * exp(-vec3f(DECAY[o + 2u], DECAY[o + 3u], DECAY[o + 4u]) * dt), t.s.w);
+  r.m = vec4f(t.m.x * exp(-DECAY[o + 4u] * dt), t.m.y * exp(-DECAY[o + 5u] * dt), 0.0, 0.0);
   return r;
 }
 // Bake surface material at world (x, z): surface.rgba8 (4 m texels, row 0 = north), byte 0.
@@ -114,19 +127,19 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   if (c >= r.z || d >= r.w) { return; }
   let ci = coarseIdx(c, d);
   if (ci == 0xffffffffu) { return; }
-  var a = vec4f(0.0); var b = vec4f(0.0); var transform = 0.0;
+  var h = vec2f(0.0); var sv = vec4f(0.0); var mv = vec4f(0.0); var transform = 0.0;
   for (var y = 0; y < RATIO; y++) {
     for (var x = 0; x < RATIO; x++) {
       let k = fineIdx(c * RATIO + x, d * RATIO + y);
       let t = unpackTexel(fine0[k], fine1[k], fine2[k]);
-      a += t.a; b += t.b; transform = max(transform, t.b.y);
+      h += t.h; sv += t.s; mv += t.m; transform = max(transform, t.s.w);
     }
   }
   let n = 1.0 / f32(RATIO * RATIO);
-  a *= n; b *= n; b.y = transform;
-  atlas0[ci] = pack2x16float(a.xy);
-  atlas1[ci] = pack2x16float(a.zw);
-  atlas2[ci] = pack4x8unorm(b);
+  h *= n; sv *= n; mv *= n; sv.w = transform;
+  atlas0[ci] = pack2x16float(h);
+  atlas1[ci] = pack4x8unorm(sv);
+  atlas2[ci] = pack4x8unorm(mv);
 }
 `;
 
@@ -137,7 +150,7 @@ ${decl(SCROLL_IN_BINDINGS, RO_ATLAS)}
 ${COARSE_IDX_WGSL}
 fn coarseTexel(c: i32, d: i32) -> Texel {
   let k = coarseIdx(c, d);
-  if (k == 0xffffffffu) { var t: Texel; t.a = vec4f(0.0); t.b = vec4f(0.0); return t; }
+  if (k == 0xffffffffu) { return zeroTexel(); }
   return unpackTexel(atlas0[k], atlas1[k], atlas2[k]);
 }
 @compute @workgroup_size(8, 8, 1)
@@ -152,15 +165,15 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let c0 = vec2i(floor(u)); let fr = u - floor(u);
   let t00 = coarseTexel(c0.x, c0.y); let t10 = coarseTexel(c0.x + 1, c0.y);
   let t01 = coarseTexel(c0.x, c0.y + 1); let t11 = coarseTexel(c0.x + 1, c0.y + 1);
-  let a = mix(mix(t00.a, t10.a, fr.x), mix(t01.a, t11.a, fr.x), fr.y);
-  var b = mix(mix(t00.b, t10.b, fr.x), mix(t01.b, t11.b, fr.x), fr.y);
+  let h = mix(mix(t00.h, t10.h, fr.x), mix(t01.h, t11.h, fr.x), fr.y);
+  var sv = mix(mix(t00.s, t10.s, fr.x), mix(t01.s, t11.s, fr.x), fr.y);
+  let mv = mix(mix(t00.m, t10.m, fr.x), mix(t01.m, t11.m, fr.x), fr.y);
   // Transform ids do not interpolate: nearest.
-  let near = select(select(t00.b.y, t10.b.y, fr.x >= 0.5), select(t01.b.y, t11.b.y, fr.x >= 0.5), fr.y >= 0.5);
-  b.y = near;
+  sv.w = select(select(t00.s.w, t10.s.w, fr.x >= 0.5), select(t01.s.w, t11.s.w, fr.x >= 0.5), fr.y >= 0.5);
   let k = fineIdx(i, j);
-  fine0[k] = pack2x16float(a.xy);
-  fine1[k] = pack2x16float(a.zw);
-  fine2[k] = pack4x8unorm(b);
+  fine0[k] = pack2x16float(h);
+  fine1[k] = pack4x8unorm(sv);
+  fine2[k] = pack4x8unorm(mv);
 }
 `;
 
@@ -173,6 +186,10 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
 export const stateBrushWGSL = /* wgsl */ `
 ${STATE_COMMON_WGSL}
 ${decl(BRUSH_BINDINGS)}
+fn cellHash(p: vec2f, size: f32) -> f32 {
+  let cell = vec2i(floor(p / size));
+  return fract(sin(f32(cell.x) * 12.9898 + f32(cell.y) * 78.233) * 43758.5453);
+}
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3u) {
   let job = wg.z;
@@ -180,27 +197,62 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let r = sp.brushRects[job];
   let i = r.x + i32(g.x); let j = r.y + i32(g.y);
   if (i >= r.z || j >= r.w) { return; }
-  let br = sp.brushes[job]; let bd = sp.brushDirs[job];
+  let br = sp.brushes[job]; let bd = sp.brushDirs[job]; let ex = sp.brushEx[job];
   let p = (vec2f(f32(i), f32(j)) + 0.5) / FINE_PER_M;
-  // Distance to the segment, in half widths.
+  // Distance to the segment, in half widths; side: +1 right of the direction, −1 left.
   let rel = p - br.xy;
   let along = clamp(dot(rel, bd.xy), -br.z, br.z);
   let d = length(rel - bd.xy * along) / bd.z;
   if (d >= 1.9) { return; }
+  let side = select(-1.0, 1.0, rel.x * bd.y - rel.y * bd.x > 0.0);
   let k = fineIdx(i, j);
   var t = unpackTexel(fine0[k], fine1[k], fine2[k]);
-  let inner = 1.0 - smoothstep(0.55, 1.0, d);
-  let rim = smoothstep(0.8, 1.12, d) * (1.0 - smoothstep(1.12, 1.9, d));
-  // Granular berm: the rim height breaks up with a hash of the texel cell (chunky, not a bevel).
-  let cell = vec2i(floor(p / 0.03));
-  let hsh = fract(sin(f32(cell.x) * 12.9898 + f32(cell.y) * 78.233) * 43758.5453);
-  t.a.x = max(t.a.x, br.w * inner);
-  t.a.y = max(t.a.y * (1.0 - inner), br.w * 0.45 * rim * (0.75 + 0.5 * hsh));
-  t.a.z = max(t.a.z, bd.w * inner);
-  t.b.z = max(t.b.z, inner);
-  fine0[k] = pack2x16float(t.a.xy);
-  fine1[k] = pack2x16float(t.a.zw);
-  fine2[k] = pack4x8unorm(t.b);
+  let program = u32(ex.x + 0.5);
+  let hsh = cellHash(p, 0.03);
+  if (program == ${BRUSH.PRESS}u) {
+    // Footprint: a near-flat floor; the displaced mass rises as a granular berm (≈45 % of the
+    // depth, so volume roughly balances) and any berm where the print lands is flattened.
+    let inner = 1.0 - smoothstep(0.55, 1.0, d);
+    let rim = smoothstep(0.8, 1.12, d) * (1.0 - smoothstep(1.12, 1.9, d));
+    t.h.x = max(t.h.x, br.w * inner);
+    t.h.y = max(t.h.y * (1.0 - inner), br.w * 0.45 * rim * (0.75 + 0.5 * hsh));
+    t.s.x = max(t.s.x, bd.w * inner);
+    t.m.y = max(t.m.y, inner);                       // crushes vegetation
+  } else if (program == ${BRUSH.PLOUGH}u) {
+    // Groove: a rounded U channel ploughed through the surface; the mass is thrown into high,
+    // clumpy berms either side, heavier on the outside (bias) — Sweep's channel, the surf wake.
+    let inner = clamp(1.0 - d * d, 0.0, 1.0);
+    let floorK = pow(inner, 0.45);
+    let rim = smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.9, d));
+    let bias = clamp(1.0 + ex.z * side, 0.15, 1.85);
+    let clump = 0.7 + 0.6 * cellHash(p, 0.06) * (0.6 + 0.4 * hsh);
+    t.h.x = max(t.h.x, br.w * floorK);
+    t.h.y = max(t.h.y * (1.0 - floorK), br.w * ex.w * rim * bias * clump);
+    t.s.x = max(t.s.x, bd.w * floorK);
+    t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.6, 1.3, d)));
+  } else if (program == ${BRUSH.SCORE}u) {
+    // A thin scored line (Ribbon): shallow, wet, with a hairline lip.
+    let inner = 1.0 - smoothstep(0.25, 1.0, d);
+    let lip = smoothstep(0.9, 1.15, d) * (1.0 - smoothstep(1.15, 1.6, d));
+    t.h.x = max(t.h.x, br.w * inner);
+    t.h.y = max(t.h.y * (1.0 - inner), br.w * 0.3 * lip);
+    t.s.x = max(t.s.x, bd.w * inner);
+    t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.4, 1.7, d)));
+  } else if (program == ${BRUSH.FREEZE}u) {
+    // Crystallize: the surface turns to glossy ice for good (transform), with a ragged edge;
+    // wetness freezes out.
+    let edge = 1.0 - smoothstep(0.6 + 0.3 * hsh, 1.0, d);
+    t.s.z = max(t.s.z, edge);
+    t.s.y = t.s.y * (1.0 - edge);
+    if (edge > 0.5) { t.s.w = ${TRANSFORM.ICE}.0 / 255.0; }
+    t.h.x = max(t.h.x, br.w * edge);
+  } else {
+    // Wet (spray, meltwater).
+    t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.3, 1.0, d)));
+  }
+  fine0[k] = pack2x16float(t.h);
+  fine1[k] = pack4x8unorm(t.s);
+  fine2[k] = pack4x8unorm(t.m);
 }
 `;
 
@@ -219,9 +271,10 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   if (w0 == 0u && w1 == 0u && w2 == 0u) { return; } // rest state: nothing to heal
   let m = materialAt((f32(i) + 0.5) / FINE_PER_M, (f32(j) + 0.5) / FINE_PER_M);
   let t = healTexel(unpackTexel(w0, w1, w2), m, sp.healDt.x);
-  fine0[k] = pack2x16float(t.a.xy);
-  fine1[k] = pack2x16float(t.a.zw);
-  fine2[k] = pack4x8unorm(t.b);
+  let n = ditherHash(i, j, sp.healDt.x);
+  fine0[k] = pack2x16float(t.h);
+  fine1[k] = packDither(t.s, n);
+  fine2[k] = packDither(t.m, n);
 }
 `;
 
@@ -239,9 +292,10 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   if (w0 == 0u && w1 == 0u && w2 == 0u) { return; }
   let m = materialAt((f32(s.y + i32(g.x)) + 0.5) * 0.25, (f32(s.z + i32(g.y)) + 0.5) * 0.25);
   let t = healTexel(unpackTexel(w0, w1, w2), m, sp.healDt.y);
-  atlas0[k] = pack2x16float(t.a.xy);
-  atlas1[k] = pack2x16float(t.a.zw);
-  atlas2[k] = pack4x8unorm(t.b);
+  let n = ditherHash(i32(g.x), i32(g.y), sp.healDt.y + f32(s.x));
+  atlas0[k] = pack2x16float(t.h);
+  atlas1[k] = packDither(t.s, n);
+  atlas2[k] = packDither(t.m, n);
 }
 `;
 
@@ -297,14 +351,17 @@ fn stateOffset(x: f32, z: f32) -> f32 { let h = stateHeights(x, z); return h.y -
 fn stateTexel(x: f32, z: f32) -> f32 { return select(${1 / COARSE_PER_M}, ${1 / FINE_PER_M}, stateInWindow(x, z)); }
 `;
 
-/** Fragment-only: compaction (and thermal) inside the fine window (word 1); 0 outside. */
+/** Fragment-only: the surface channels inside the fine window (word 1); rest outside. */
 export const STATE_COMPACTION_BUFFERS = ['stateFine1'];
 export const STATE_COMPACTION_WGSL = /* wgsl */ `
 var<storage, read> stateFine1: array<u32>;
-fn stateCompaction(x: f32, z: f32) -> f32 {
-  if (!stateInWindow(x, z)) { return 0.0; }
+// (compaction, wetness, frozen, transform id) at world (x, z), nearest fine texel.
+fn stateSurface(x: f32, z: f32) -> vec4f {
+  if (!stateInWindow(x, z)) { return vec4f(0.0); }
   let i = i32(floor(x * ${f(FINE_PER_M)})); let j = i32(floor(z * ${f(FINE_PER_M)}));
   let n = ${FINE_N};
-  return unpack2x16float(stateFine1[u32(((j % n) + n) % n) * ${FINE_N}u + u32(((i % n) + n) % n)]).x;
+  let v = unpack4x8unorm(stateFine1[u32(((j % n) + n) % n) * ${FINE_N}u + u32(((i % n) + n) % n)]);
+  return vec4f(v.xyz, floor(v.w * 255.0 + 0.5));
 }
+fn stateCompaction(x: f32, z: f32) -> f32 { return stateSurface(x, z).x; }
 `;

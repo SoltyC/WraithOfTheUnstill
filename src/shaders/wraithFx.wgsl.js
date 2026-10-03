@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
 export const FX_GLOWS = 3;
-export const FX_SPRAY = 384;
+export const FX_SPRAY = 1536;
 export const FX_COUNT = FX_GLOWS + FX_SPRAY;
 export const SPRAY_LIFE = 1.1;
 
@@ -53,20 +53,28 @@ fn main(input: VertexInputs) -> FragmentInputs {
     alpha = a.w;
     p += normalize(cam - p) * size * 0.6;
   } else {
-    // Spray: a = spawn position, spawn time; b = velocity, size.
+    // Spray: a = spawn position, spawn time; b = velocity, size (negative: slush/water, heavy).
     let age = uniforms.fxParams.x - a.w;
-    if (age >= 0.0 && age < ${SPRAY_LIFE}) {
-      let k = 3.2;                                   // air drag on fine snow
+    let wet = b.w < 0.0;
+    let life = select(${SPRAY_LIFE}, 0.8, wet);
+    if (age >= 0.0 && age < life) {
+      let k = select(3.2, 1.3, wet);                 // air drag: fine snow floats, slush falls
+      let gr = select(2.2 * 3.2, 9.8, wet);
       let e = (1.0 - exp(-k * age)) / k;
-      let wind = vec3f(uniforms.fxParams.y, 0.0, uniforms.fxParams.z) * 0.6;
-      p = a.xyz + b.xyz * e + wind * (age - e) + vec3f(0.0, -2.2, 0.0) * (age - e) / k;
+      let wind = vec3f(uniforms.fxParams.y, 0.0, uniforms.fxParams.z) * select(0.6, 0.15, wet);
+      p = a.xyz + b.xyz * e + wind * (age - e) + vec3f(0.0, -gr, 0.0) * (age - e) / k;
       p.y = max(p.y, a.y - 0.01);
-      let t = age / ${SPRAY_LIFE};
-      size = b.w * (1.0 + 2.5 * t);
+      let t = age / life;
+      size = abs(b.w) * (1.0 + select(2.5, 0.6, wet) * t);
       let frost = frostAtF(a.x, a.z);
-      alpha = (1.0 - t) * (1.0 - t) * smoothstep(0.0, 0.05, age) * mix(0.18, 0.55, frost);
-      // Snow on snow; pale grey-brown dust elsewhere.
-      color = mix(vec3f(0.42, 0.38, 0.32), vec3f(0.92, 0.95, 1.0), frost);
+      if (wet) {
+        alpha = (1.0 - t) * smoothstep(0.0, 0.03, age) * 0.75;
+        color = vec3f(0.5, 0.6, 0.68);
+      } else {
+        alpha = (1.0 - t) * (1.0 - t) * smoothstep(0.0, 0.05, age) * mix(0.15, 0.36, frost);
+        // Snow on snow; pale grey-brown dust elsewhere.
+        color = mix(vec3f(0.42, 0.38, 0.32), vec3f(0.92, 0.95, 1.0), frost);
+      }
     }
   }
   let toCam = normalize(cam - p);
@@ -114,7 +122,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let gg = 0.5; let c = dot(-V, L);
   let hg = (1.0 - gg * gg) / pow(max(1.0 + gg * gg - 2.0 * gg * c, 1e-3), 1.5) * (1.0 / (4.0 * PI));
   let vis = shadowVisibility(wp, vec3f(0.0, 1.0, 0.0), uniforms.cameraPosition, fragmentInputs.position.xy);
-  let col = fragmentInputs.vColor * (atmoKeyColor() * (0.12 + hg) * vis + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
+  // A cloud of ice grains scatters light many times: in shade it glows with the sky (bright,
+  // never sooty), in sun it lights up, most toward the sun.
+  let col = fragmentInputs.vColor * (atmoKeyColor() * (0.3 + hg) * vis + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * 2.2);
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
   let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
   fragmentOutputs.color = vec4f(outc * a, a);

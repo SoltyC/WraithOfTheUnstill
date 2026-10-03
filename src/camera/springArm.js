@@ -53,6 +53,9 @@ export class SpringArmCamera {
     this.hold = false;
     /** Frame dt in seconds, set by the owner before update(). */
     this.dt = 0.5;
+    /** Camera bank (rad) and extra FOV (rad) set by the owner (surf carves), eased here. */
+    this.rollTarget = 0.5 - 0.5; this.roll = 0.5 - 0.5;
+    this.extraFov = 0.5 - 0.5;
   }
 
   /** Mouse look and zoom input (pixels, wheel notches). */
@@ -120,7 +123,8 @@ export class SpringArmCamera {
 
     this.zoom += (this.zoomTarget - this.zoom) * damp(T.zoomHalfLife, dt);
     const speed = Math.sqrt(vel.x * vel.x + vel.z * vel.z);
-    const fovTarget = T.baseFov + T.speedFov * clamp(speed / T.fovSpeedRef, 0, 1);
+    const fovTarget = T.baseFov + T.speedFov * clamp(speed / T.fovSpeedRef, 0, 1) + this.extraFov;
+    this.roll += (this.rollTarget - this.roll) * damp(0.12, dt);
     this.fov += (fovTarget - this.fov) * damp(T.fovHalfLife, dt);
 
     // Arm direction (from pivot toward camera) and shoulder offset (camera right).
@@ -167,7 +171,7 @@ export class SpringArmCamera {
   _apply(x, y, z) {
     const c = this.camera;
     c.position.set(x, y, z);
-    c.rotation.set(this.pitch, this.yaw, 0);
+    c.rotation.set(this.pitch, this.yaw, this.free ? 0 : this.roll);
     c.fov = this.fov;
   }
 

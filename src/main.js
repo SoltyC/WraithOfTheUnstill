@@ -190,13 +190,78 @@ async function boot() {
       }
     }
   } });
-  loop.add(playerMod.createPlayerSystem({ controller, arm, ...content }));
+  loop.add(playerMod.createPlayerSystem({ controller, arm, ...content, material: streamer }));
+  // Snow-surf wake: groove, berms and spray along the carve (terrain-state writer).
+  const { createSurfWake } = await import('./character/surfWake.js');
+  const surfWake = createSurfWake(terrainState, wraithView);
+  surfWake.surf = controller.surf;
+  // Frost bending (Phase 4): Sweep on a tap of Primary, Ribbon while held, Crystallize on Heavy.
+  const { createFrostBending } = await import('./game/bending/frost.js');
+  const frostMod = await import('./game/bending/frost.js');
+  const frost = frostMod.createFrostBending({ ts: terrainState, fx: wraithView, ground, lights: content.clipmap.spellLights });
+  const { createRibbon } = await import('./render/ribbon.js');
+  const ribbon = createRibbon(scene, atmosphere, frost.ribbonNodes, frostMod.ribbonTuning.radius);
+  bindShadows(ribbon.material, shadows);
+  ribbon.freeze();
+  const { createCrystals } = await import('./render/crystals.js');
+  const crystals = createCrystals(scene, atmosphere, frost.crystals);
+  bindShadows(crystals.material, shadows);
+  shadows.addCaster(crystals.mesh, crystals.makeShadowMaterial, 2);
+  crystals.freeze();
+  const { input: inputState, Action: Act } = await import('./input/actions.js');
+  let primaryHeld = 0;
+  const HOLD = 0.22; // s: a shorter press is a tap (Sweep), a longer one holds the Ribbon
+  /** Aim: where the camera's view ray meets the ground, kept within the verbs' range. → aim.x/y/z */
+  const aim = { x: 0.5, y: 0.5, z: 0.5 };
+  function updateAim() {
+    const cp = camera.position, cy = Math.cos(arm.pitch), dx = Math.sin(arm.yaw) * cy, dy = -Math.sin(arm.pitch), dz = Math.cos(arm.yaw) * cy;
+    let t = 0, hit = false;
+    for (let k = 1; k <= 80 && !hit; k++) {
+      t = k * 0.6;
+      ground.qx = cp.x + dx * t; ground.qz = cp.z + dz * t; ground.sample();
+      if (cp.y + dy * t <= ground.h) hit = true;
+    }
+    let ax = cp.x + dx * t - controller.pos.x, az = cp.z + dz * t - controller.pos.z;
+    const d = Math.sqrt(ax * ax + az * az) || 1, T = frostMod.ribbonTuning;
+    const c = Math.min(T.maxRange, Math.max(T.minRange, hit ? d : T.maxRange));
+    ax = ax / d * c; az = az / d * c;
+    aim.x = controller.pos.x + ax; aim.z = controller.pos.z + az;
+    ground.qx = aim.x; ground.qz = aim.z; ground.sample(); aim.y = ground.h;
+  }
+  loop.add({ name: 'bending', update: () => {
+    const dt = clock.dt;
+    const can = !arm.free && !controller.scripted && !controller.surf.active;
+    if (can) {
+      if (inputState.down[Act.Primary]) primaryHeld += dt;
+      if (inputState.released[Act.Primary] && primaryHeld < HOLD) frost.castSweep = true;
+      if (!inputState.down[Act.Primary]) primaryHeld = 0;
+    } else primaryHeld = 0;
+    frost.ribbonHeld = can && primaryHeld >= HOLD;
+    if (can && inputState.pressed[Act.Heavy]) frost.castCrystal = true;
+    // The Wraith turns to face what it bends.
+    if (frost.castSweep || frost.castCrystal || frost.ribbonHeld) controller.yaw = arm.yaw;
+    updateAim();
+    const b = wraithView.wraith.body;
+    frost.hx = b.ha[3]; frost.hy = b.ha[4]; frost.hz = b.ha[5];
+    frost.tx = aim.x; frost.ty = aim.y; frost.tz = aim.z;
+    frost.x = controller.pos.x; frost.y = controller.pos.y; frost.z = controller.pos.z;
+    frost.aimX = Math.sin(arm.yaw); frost.aimZ = Math.cos(arm.yaw);
+    frost.dt = dt; frost.time = clock.simTime;
+    frost.update();
+    ribbon.time = clock.simTime;
+    ribbon.update();
+    if (frost.crystalsDirty) { crystals.dirty = true; frost.crystalsDirty = false; }
+    crystals.time = clock.simTime;
+    crystals.update();
+  } });
   // The Wraith follows the controller; each footfall stamps a footprint on its exact frame.
   loop.add({ name: 'wraith', update: () => {
     const w = wraithView.wraith, p = controller.pos;
     w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
     w.windStrength = paramsMod.params.v.windStrength;
+    w.surf = controller.surf.blend; w.surfLean = controller.surf.lean;
+    w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);
     wraithView.time = clock.simTime;
     if (!wraithView.isEnabled()) return;
     // Photo spots with a walk: once the world is in, walk the Wraith into place, then hold it.
@@ -204,10 +269,53 @@ async function boot() {
       if (game.worldSettled() && game.pendingTrail === null) { walkIntoPlace(game.pendingWalk); game.pendingWalk = null; }
       return;
     }
+    // Photo spots with a surf run: carve it a few substeps per frame (brushes drain 16 a frame and
+    // the state window must follow), then hold the pose.
+    if (game.pendingSurf !== null) {
+      if (!surfRoll.active && game.worldSettled() && game.pendingTrail === null) startSurfRoll(game.pendingSurf);
+      if (surfRoll.active) stepSurfRoll();
+      return;
+    }
     if (game.wraithHeld) return;
+    surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded;
+    surfWake.enabled = systemsMod.toggles.on.footprints !== false;
+    surfWake.update();
     wraithView.update();
     wraithFootfalls();
   } });
+  const surfRoll = { active: false, t: 0, spec: null };
+  function startSurfRoll(spec) {
+    surfRoll.active = true; surfRoll.t = 0; surfRoll.spec = spec;
+    controller.scripted = true;
+    if (spec.facing !== undefined) controller.yaw = spec.facing;
+  }
+  /** Scripted carve (photo spots): S-turns of the given amplitude and period; one-off code path. */
+  function stepSurfRoll() {
+    const spec = surfRoll.spec, sf = controller.surf, w = wraithView.wraith, p = controller.pos, dt = 1 / 60;
+    for (let k = 0; k < 8 && surfRoll.t < spec.seconds; k++) {
+      sf.want = true;
+      streamer.mqx = p.x; streamer.mqz = p.z; streamer.sampleMaterial(); sf.canSurf = streamer.mat === 0;
+      sf.steer = (spec.steer ?? 0.6) * Math.sin((2 * Math.PI * surfRoll.t) / (spec.period ?? 4));
+      sf.throttle = spec.throttle ?? 0;
+      controller.dt = dt; controller.update();
+      w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
+      w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = dt;
+      w.time = clock.simTime - (spec.seconds - surfRoll.t); wraithView.time = w.time;
+      w.surf = sf.blend; w.surfLean = sf.lean;
+      surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded; surfWake.enabled = true;
+      surfWake.update();
+      wraithView.update();
+      surfRoll.t += dt;
+    }
+    if (surfRoll.t >= spec.seconds) {
+      surfRoll.active = false; game.pendingSurf = null; game.wraithHeld = true;
+      controller.scripted = false; controller.vel.x = 0; controller.vel.z = 0;
+      // Camera relative to where the run ended up (its heading is not known in advance).
+      const c = spec.camera;
+      if (c) { arm.yaw = controller.yaw + c.yaw; arm.pitch = c.pitch; arm.zoomTarget = c.dist; arm.zoom = c.dist; arm.armLen = c.dist; }
+      arm.snap(controller.pos);
+    }
+  }
   function wraithFootfalls() {
     const g = wraithView.wraith.gait, ev = g.ev;
     footprints.enabled = systemsMod.toggles.on.footprints !== false;
@@ -320,14 +428,17 @@ async function boot() {
     pendingWalk: null,
     /** True while a spot's walked-in pose is held (no Wraith updates). */
     wraithHeld: false,
+    /** Photo-spot surf run ({ seconds, facing?, steer?, period?, throttle? }) still to carve. */
+    pendingSurf: null,
     applySpot(spot) {
       spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
       this.pendingTrail = spot.trail || null;
       this.pendingWalk = spot.walk || null;
+      this.pendingSurf = spot.surf || null;
       this.wraithHeld = false;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
-    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && terrainState.pendingBrushes === 0; },
+    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
       if (wraithView.isEnabled() === on) return;
       wraithView.setEnabled(on); engine.snapshotRenderingReset();
@@ -381,7 +492,9 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows, terrainState, wraithView, env: env.env, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
+    ready: true, game, shadows, terrainState, wraithView, frost, env: env.env,
+    /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
+    inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */
     async prepareSpot(id, frames = 6) {
       game.applySpot(spots.findSpot(id));

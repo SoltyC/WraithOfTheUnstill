@@ -116,7 +116,7 @@ describe('packing', () => {
   });
   it('round-trips a page through pack/unpack', () => {
     const a = allocPlanes(), b = allocPlanes(), words = new Uint32Array(PAGE_N * PAGE_N * WORDS);
-    for (let i = 0; i < PAGE_N * PAGE_N; i += 97) { a[0][i] = 0.3; a[1][i] = 0.05; a[3][i] = -0.75; a[4][i] = 0.2; a[5][i] = 7 / 255; a[6][i] = 1; }
+    for (let i = 0; i < PAGE_N * PAGE_N; i += 97) { a[0][i] = 0.3; a[1][i] = 0.05; a[2][i] = 0.85; a[3][i] = 0.4; a[4][i] = 0.75; a[5][i] = 7 / 255; a[6][i] = 0.2; a[7][i] = 1; }
     packPage(a, words); unpackPage(words, b);
     for (let p = 0; p < 8; p++) for (let i = 0; i < PAGE_N * PAGE_N; i += 97) expect(b[p][i]).toBeCloseTo(a[p][i], 2);
     expect(pack2(1, 0)).toBe(0x3c00);
@@ -128,18 +128,18 @@ describe('closed-form healing', () => {
   const snow = () => 0, sand = () => 1;
   it('is the identity for zero elapsed time', () => {
     const p = allocPlanes(), tmp = new Float32Array(PAGE_N * PAGE_N);
-    p[0][1000] = 0.4; p[4][5] = 0.9;
+    p[0][1000] = 0.4; p[3][5] = 0.9;
     healPlanes(p, 0, snow, tmp);
-    expect(p[0][1000]).toBeCloseTo(0.4, 6); expect(p[4][5]).toBeCloseTo(0.9, 6);
+    expect(p[0][1000]).toBeCloseTo(0.4, 6); expect(p[3][5]).toBeCloseTo(0.9, 6);
   });
   it('decays a uniform field exactly by e^(−kt) toward rest, and never heals transform', () => {
     const p = allocPlanes(), tmp = new Float32Array(PAGE_N * PAGE_N);
-    p[0].fill(0.5); p[3].fill(-1); p[4].fill(1); p[5].fill(9 / 255);
+    p[0].fill(0.5); p[3].fill(1); p[4].fill(1); p[5].fill(9 / 255);
     const t = 300;
     healPlanes(p, t, snow, tmp);
     expect(p[0][777]).toBeCloseTo(0.5 * Math.exp(-DECAY[0] * t), 5);
-    expect(p[3][777]).toBeCloseTo(-Math.exp(-DECAY[4] * t), 5); // thermal (frozen) relaxes to 0
-    expect(p[4][777]).toBeCloseTo(Math.exp(-DECAY[3] * t), 5);  // wetness dries
+    expect(p[4][777]).toBeCloseTo(Math.exp(-DECAY[4] * t), 5);  // frozen relaxes to 0
+    expect(p[3][777]).toBeCloseTo(Math.exp(-DECAY[3] * t), 5);  // wetness dries
     expect(p[5][777]).toBeCloseTo(9 / 255, 6);                  // transform never heals
   });
   it('heals faster on fast materials', () => {

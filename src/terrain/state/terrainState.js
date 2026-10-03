@@ -31,8 +31,9 @@ const HEAL_BANDS = 16;
 
 // Params word offsets (StateParams in terrainState.wgsl.js).
 const P_ORIGIN = 0, P_OUT = 4, P_IN = 12, P_HEAL = P_IN + MAX_IN * 4, P_HEALDT = P_HEAL + 4, P_SLOT = P_HEALDT + 4, P_COUNTS = P_SLOT + 4;
-const P_BRUSH = P_COUNTS + 4, P_BDIR = P_BRUSH + MAX_BRUSHES * 4, P_BRECT = P_BDIR + MAX_BRUSHES * 4;
-const QUEUE = 8192; // pending brushes (8 fields each), drained MAX_BRUSHES per frame
+const P_BRUSH = P_COUNTS + 4, P_BDIR = P_BRUSH + MAX_BRUSHES * 4, P_BRECT = P_BDIR + MAX_BRUSHES * 4, P_BEX = P_BRECT + MAX_BRUSHES * 4;
+const QUEUE = 8192; // pending brushes (BF fields each), drained MAX_BRUSHES per frame
+const BF = 12;
 
 /**
  * @param {import('@babylonjs/core').WebGPUEngine} engine
@@ -86,8 +87,9 @@ export function createTerrainState(engine, opts) {
 
   const origin = [NaN, NaN], next = [0, 0];
   const rects = new Array(8).fill(0);
-  // Brush queue (ring): x, z, dirX, dirZ, halfLen, halfWidth, depth, compaction.
-  const brushQ = new Float64Array(QUEUE * 8);
+  // Brush queue (ring): x, z, dirX, dirZ, halfLen, halfWidth, depth, compaction, program, wetness,
+  // side bias, berm scale.
+  const brushQ = new Float64Array(QUEUE * BF);
   let qHead = 0, qCount = 0, brushN = 0;
   const og = [0, 0];
 
@@ -155,16 +157,22 @@ export function createTerrainState(engine, opts) {
 
     /**
      * Queue a brush (fields, no double arguments): centre (bx, bz), direction (bdx, bdz),
-     * half length bl, half width bw, depth bd (m), compaction bc. Round stamp: bl = 0.
+     * half length bl, half width bw, depth bd (m), compaction bc; program bk (BRUSH in
+     * shaders/terrainState.wgsl.js), wetness bwet, side bias bbias (−1..1: + heavier berm on the
+     * right of the direction), berm scale bberm. Round stamp: bl = 0. Program fields reset to a
+     * footprint (PRESS) after each stamp, so existing writers need not set them.
      */
     bx: 0.5, bz: 0.5, bdx: 0.5, bdz: 0.5, bl: 0.5, bw: 0.5, bd: 0.5, bc: 0.5,
+    bk: 0, bwet: 0.5 - 0.5, bbias: 0.5 - 0.5, bberm: 0.5 - 0.5,
     stamp() {
       if (qCount >= QUEUE) return;
       const r = this.bl + this.bw * 1.9;
       this.claimRect(this.bx - r, this.bz - r, this.bx + r, this.bz + r);
-      const o = ((qHead + qCount) % QUEUE) * 8;
+      const o = ((qHead + qCount) % QUEUE) * BF;
       brushQ[o] = this.bx; brushQ[o + 1] = this.bz; brushQ[o + 2] = this.bdx; brushQ[o + 3] = this.bdz;
       brushQ[o + 4] = this.bl; brushQ[o + 5] = this.bw; brushQ[o + 6] = this.bd; brushQ[o + 7] = this.bc;
+      brushQ[o + 8] = this.bk; brushQ[o + 9] = this.bwet; brushQ[o + 10] = this.bbias; brushQ[o + 11] = this.bberm;
+      this.bk = 0; this.bwet = 0; this.bbias = 0; this.bberm = 0;
       qCount++;
     },
     /** Brushes queued but not yet written to the GPU. */
@@ -281,11 +289,12 @@ export function createTerrainState(engine, opts) {
       // Brushes: up to MAX_BRUSHES from the queue this frame (only after the window exists).
       brushN = Number.isNaN(origin[0]) && !moved ? 0 : Math.min(qCount, MAX_BRUSHES);
       for (let b = 0; b < brushN; b++) {
-        const o = ((qHead + b) % QUEUE) * 8;
+        const o = ((qHead + b) % QUEUE) * BF;
         const x = brushQ[o], z = brushQ[o + 1], dx = brushQ[o + 2], dz = brushQ[o + 3], hl = brushQ[o + 4], hw = brushQ[o + 5];
         const r = hl + hw * 1.9;
         pf[P_BRUSH + b * 4] = x; pf[P_BRUSH + b * 4 + 1] = z; pf[P_BRUSH + b * 4 + 2] = hl; pf[P_BRUSH + b * 4 + 3] = brushQ[o + 6];
         pf[P_BDIR + b * 4] = dx; pf[P_BDIR + b * 4 + 1] = dz; pf[P_BDIR + b * 4 + 2] = hw; pf[P_BDIR + b * 4 + 3] = brushQ[o + 7];
+        pf[P_BEX + b * 4] = brushQ[o + 8]; pf[P_BEX + b * 4 + 1] = brushQ[o + 9]; pf[P_BEX + b * 4 + 2] = brushQ[o + 10]; pf[P_BEX + b * 4 + 3] = brushQ[o + 11];
         pi[P_BRECT + b * 4] = Math.max(next[0], Math.floor((x - r) * FINE_PER_M)); pi[P_BRECT + b * 4 + 1] = Math.max(next[1], Math.floor((z - r) * FINE_PER_M));
         pi[P_BRECT + b * 4 + 2] = Math.min(next[0] + FINE_N, Math.ceil((x + r) * FINE_PER_M)); pi[P_BRECT + b * 4 + 3] = Math.min(next[1] + FINE_N, Math.ceil((z + r) * FINE_PER_M));
       }

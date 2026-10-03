@@ -91,7 +91,7 @@ export function createClipmap(scene, buffers, atmo) {
   const playerPos = new Vector4(0, 0, 0, 0.6);
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
-    uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
     storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -101,6 +101,9 @@ export function createClipmap(scene, buffers, atmo) {
   mat.setArray4('levels', levels);
   mat.setVector4('camGrid', camGrid);
   mat.setVector4('playerPos', playerPos);
+  // Spell lights (written in place by the bending systems each frame).
+  const spellLights = new Float32Array(32);
+  mat.setArray4('spellLights', spellLights);
   mat.setStorageBuffer('levelData', levelData);
   mat.setStorageBuffer('biomeA', buffers.biomeA);
   mat.setStorageBuffer('biomeB', buffers.biomeB);
@@ -113,7 +116,7 @@ export function createClipmap(scene, buffers, atmo) {
   let builtResidency = -1;
 
   return {
-    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers,
+    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers, spellLights,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
     /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
     stateBound: [],

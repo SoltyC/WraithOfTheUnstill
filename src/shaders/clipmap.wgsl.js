@@ -323,6 +323,7 @@ export const clipmapFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform levels: array<vec4f,16>;
 uniform playerPos: vec4f;
+uniform spellLights: array<vec4f,8>;   // 4 × (pos.xyz, radius), (colour.rgb, intensity)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vLevel: f32;
@@ -393,8 +394,21 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let Ng = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                              fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     var fs = frostSurface(wp, Ng, normalize(fragmentInputs.vNormalC), normalize(fragmentInputs.vWind), fragmentInputs.vLake, fp);
-    frostApplyState(&fs, wp, st, stateCompaction(wp.x, wp.z), fp);
-    let fcol = frostLight(fs, wp, Ng, V, L, key, vis * cs, uniforms.envMisc.w, fp);
+    frostApplyState(&fs, wp, st, stateSurface(wp.x, wp.z), fp);
+    var fcol = frostLight(fs, wp, Ng, V, L, key, vis * cs, uniforms.envMisc.w, fp);
+    // Spell lights (BRIEF §5.3): display-referred, and mostly from within — the drift glows
+    // around the light (subsurface), ice and slush catch it on the surface.
+    let ex = uniforms.fogParams.z * atmoExposure();
+    for (var li = 0u; li < 4u; li++) {
+      let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];
+      if (lc.w <= 0.0) { continue; }
+      let lv = lp.xyz - wp; let d = length(lv);
+      if (d >= lp.w) { continue; }
+      let fall = (1.0 - d / lp.w) * (1.0 - d / lp.w) / (1.0 + d * d * 0.6);
+      let nl = max(dot(fs.N, lv / max(d, 1e-3)), 0.0);
+      let glow = lc.rgb * lc.w * fall * (0.35 * nl * (fs.snow + fs.ice) + 0.55 * fs.snow + 0.25 * fs.ice);
+      fcol += glow * fs.albedo / max(ex, 1e-6) * 0.35;
+    }
     col = mix(col, fcol, wFrost);
   }
   // Aerial perspective.

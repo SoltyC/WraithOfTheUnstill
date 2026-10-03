@@ -13,10 +13,12 @@
 //
 // Channels (BRIEF §4.3 table), packed as three u32 words per texel, stored planar (one buffer
 // per word — the fine window is 64 MB per plane, under WebGPU's 128 MiB binding limit):
-//   word 0: depression (m), displaced mass (m)          — pack2x16float
-//   word 1: compaction (0..1), thermal (−1 frozen … +1 molten) — pack2x16float
-//   word 2: wetness, transform id (/255, never heals), flatten, spare — pack4x8unorm
-// Every channel rests at 0, so freshly zeroed buffers are untouched ground.
+//   word 0: depression (m), displaced mass (m)                       — pack2x16float
+//   word 1: compaction, wetness, frozen, transform id (/255, never heals) — pack4x8unorm
+//   word 2: molten, flatten, spare, spare                            — pack4x8unorm
+// Word 1 holds everything a surface shader needs besides height (one storage binding: WebGPU
+// allows few per stage). Thermal is split into frozen and molten so every channel rests at 0
+// and freshly zeroed buffers are untouched ground. Transform ids: TRANSFORM below.
 
 export const FINE_N = 4092;
 export const FINE_PER_M = 48;                 // fine texels per metre
@@ -101,3 +103,6 @@ export function forEachPageInRect(i0, j0, i1, j1, fn) {
   const pz0 = Math.max(0, Math.floor((d0 + off) / PAGE_N)), pz1 = Math.min(PAGES - 1, Math.floor((d1 + off) / PAGE_N));
   for (let pz = pz0; pz <= pz1; pz++) for (let px = px0; px <= px1; px++) fn(pz * PAGES + px);
 }
+
+/** Permanent surface transforms (word 1 .w × 255). Never heal; only a reaction overwrites them. */
+export const TRANSFORM = { NONE: 0, ICE: 1, GLASS: 2, OBSIDIAN: 3, BURNED: 4 };

@@ -162,21 +162,27 @@ export function createWraithView(scene, atmo, ground, clipmap) {
     freeze() {
       for (const m of [mat, furMat, fxMat]) { m.freeze(); fastFrozenIsReady(m); }
     },
+    /** Emit one spray particle: position (ex, ey, ez), velocity (evx, evy, evz), size (fields). */
+    ex: 0.5, ey: 0.5, ez: 0.5, evx: 0.5, evy: 0.5, evz: 0.5, esize: 0.5,
+    emit() {
+      const o = (FX_GLOWS + sprayNext) * 8; sprayNext = (sprayNext + 1) % FX_SPRAY;
+      fxData[o] = this.ex; fxData[o + 1] = this.ey; fxData[o + 2] = this.ez; fxData[o + 3] = this.time - 0.016 * rnd();
+      fxData[o + 4] = this.evx; fxData[o + 5] = this.evy; fxData[o + 6] = this.evz; fxData[o + 7] = this.esize;
+    },
     /** Kick up spray where a foot planted (footfall event), at sim time `time`. */
     spray(x, y, z, dx, dz, speed) {
       const count = Math.min(24, 7 + Math.round(speed * 2.6));
       for (let k = 0; k < count; k++) {
-        const i = FX_GLOWS + sprayNext; sprayNext = (sprayNext + 1) % FX_SPRAY;
-        const o = i * 8, side = (rnd() - 0.5) * 2, fwd = rnd();
-        fxData[o] = x + dx * (0.06 + 0.1 * fwd) + dz * side * 0.07;
-        fxData[o + 1] = y + 0.02;
-        fxData[o + 2] = z + dz * (0.06 + 0.1 * fwd) - dx * side * 0.07;
-        fxData[o + 3] = this.time - 0.02 * rnd();
+        const side = (rnd() - 0.5) * 2, fwd = rnd();
+        this.ex = x + dx * (0.06 + 0.1 * fwd) + dz * side * 0.07;
+        this.ey = y + 0.02;
+        this.ez = z + dz * (0.06 + 0.1 * fwd) - dx * side * 0.07;
         const kick = speed * (0.12 + 0.3 * rnd());
-        fxData[o + 4] = dx * kick + dz * side * (0.3 + 0.4 * rnd());
-        fxData[o + 5] = 0.35 + 0.9 * rnd() + speed * 0.12;
-        fxData[o + 6] = dz * kick - dx * side * (0.3 + 0.4 * rnd());
-        fxData[o + 7] = 0.025 + 0.04 * rnd();
+        this.evx = dx * kick + dz * side * (0.3 + 0.4 * rnd());
+        this.evy = 0.35 + 0.9 * rnd() + speed * 0.12;
+        this.evz = dz * kick - dx * side * (0.3 + 0.4 * rnd());
+        this.esize = 0.025 + 0.04 * rnd();
+        this.emit();
       }
     },
     /** Run the simulation (inputs already set on `wraith`) and upload the vertices and effects. */

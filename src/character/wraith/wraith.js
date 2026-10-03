@@ -10,6 +10,8 @@ const SUB = 1 / 120;
 /** rad/s: fastest the figure turns to face its input heading. */
 const TURN_RATE = 9;
 const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
+/** Air drag on the cloth (1/s): walking, and the extra while surfing (the robe streams back). */
+const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3;
 const ARM = 0.58, UPPER = 0.3;
 /** Head centre in the body frame (body.js). */
 const HEAD_Y = 0.74, HEAD_Z = 0.02;
@@ -24,6 +26,10 @@ export class Wraith {
     // Inputs (fields).
     this.bx = 0.5; this.by = 0.5; this.bz = 0.5; this.vx = 0.5 - 0.5; this.vz = 0.5 - 0.5; this.yaw = 0.5 - 0.5;
     this.grounded = true; this.dt = 0.5;
+    /** Surf engagement 0..1 and carve lean (rad): inputs from the controller's surf model. */
+    this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
+    /** Bending gesture target 0..1 (input); eased into the body's arm. */
+    this.cast = 0.5 - 0.5;
     /** Facing actually shown (input yaw, rate-limited). */
     this.facing = 0.5 - 0.5;
     /** Wind (unit direction blown toward) and strength 0..2, gust phase from time. */
@@ -68,7 +74,8 @@ export class Wraith {
   _syncInputs() {
     const g = this.gait;
     g.bx = this.bx; g.by = this.by; g.bz = this.bz; g.vx = this.vx; g.vz = this.vz; g.yaw = this.facing; g.grounded = this.grounded;
-    this.body.yaw = this.facing;
+    g.surf = this.surf;
+    this.body.yaw = this.facing; this.body.surf = this.surf; this.body.surfLean = this.surfLean;
   }
 
   /** Facing follows the input yaw at a bounded turn rate (a snapped heading would fling the hem). */
@@ -88,7 +95,9 @@ export class Wraith {
     this.gait.reset(); this.gait.dt = 0; this.gait.evCount = 0; this.gait.update();
     this.body.dt = 0; this.body.prevYaw = this.yaw; this.body.update(this.gait);
     for (const g of this.garments) this._place(g, true);
-    this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz; this.cloth.resetFrame();
+    this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz;
+    // Traversal: the robe whips back hard (BRIEF §9.3) — strong drag against the rush of air.
+    this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this.cloth.resetFrame();
     this.settleLeft = SETTLE_STEPS;
     this._lx = this.bx; this._ly = this.by; this._lz = this.bz;
   }
@@ -104,6 +113,7 @@ export class Wraith {
     g.dt = this.dt; g.evCount = 0;
     g.update();
     b.dt = this.dt;
+    b.cast += (this.cast - b.cast) * (1 - Math.exp(-this.dt * (this.cast > b.cast ? 18 : 5)));
     b.update(g);
     this._colliders();
     // Wind: prevailing direction, gusting.

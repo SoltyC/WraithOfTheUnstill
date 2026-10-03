@@ -29,6 +29,9 @@ export class WorldStreamer {
     this.worker = new Worker(new URL('./world.worker.js', import.meta.url), { type: 'module' });
     this.manifest = null;
     this.tiles = 0;
+    // Material query (sampleMaterial): inputs mqx/mqz, output mat.
+    this.surfaceData = null; this.surfaceN = 0; this.surfaceTexel = 4;
+    this.mqx = 0.5; this.mqz = 0.5; this.mat = 0;
     this.state = null;
     this.arrived = [];          // queue of { tx, tz, data } awaiting GPU upload
     this.inFlight = 0;
@@ -92,7 +95,20 @@ export class WorldStreamer {
       resident: sb(resident, 'world-resident'),
       residentData: resident,
     };
+    // CPU copy of the surface material map (byte 0 of rgba8, row 0 = north) for gameplay queries.
+    this.surfaceData = m.surface;
+    this.surfaceN = m.manifest.surface.size; this.surfaceTexel = m.manifest.surface.texel;
     this._initResolve(this);
+  }
+
+  /** Bake surface material id at (mqx, mqz) → mat (fields, not arguments: no boxing). 0 = snow. */
+  sampleMaterial() {
+    const d = this.surfaceData;
+    if (!d) { this.mat = 255; return; }
+    const N = this.surfaceN, half = this.manifest.worldSize / 2;
+    const col = Math.min(N - 1, Math.max(0, Math.floor((this.mqx + half) / this.surfaceTexel)));
+    const row = Math.min(N - 1, Math.max(0, Math.floor((half - this.mqz) / this.surfaceTexel)));
+    this.mat = d[(row * N + col) * 4];
   }
 
   /** RG8 → one u32 per texel (rg in the low bytes) so the shader can unpack4x8unorm it. */

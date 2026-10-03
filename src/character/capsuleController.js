@@ -10,6 +10,8 @@
  * @typedef {{ qx: number, qz: number, h: number, nx: number, ny: number, nz: number, sample: () => void, sampleNormal: () => void }} Ground
  */
 
+import { Surf } from './surf.js';
+
 export const controllerTuning = {
   walkSpeed: 5.2,       // m/s on flat ground
   accel: 26,            // m/s² toward the wish velocity
@@ -50,6 +52,10 @@ export class CapsuleController {
     /** Ground normal under the feet (scratch). */
     this._n = { x: 0.5, y: 0.5, z: 0.5 };
     this._wx = 0.5; this._wz = 0.5; this._wl = 0.5;
+    /** True while a script (photo-spot run) drives the controller instead of player input. */
+    this.scripted = false;
+    /** Snow-surf (traversal): the owner sets surf.want / canSurf / steer / throttle. */
+    this.surf = new Surf();
   }
 
   teleport(x, z, y) {
@@ -98,17 +104,28 @@ export class CapsuleController {
     n.x = g.nx; n.y = g.ny; n.z = g.nz;
     const steep = n.y < T.maxSlopeCos;
 
-    // Horizontal acceleration toward wish velocity.
-    const tx = wx * T.walkSpeed, tz = wz * T.walkSpeed;
-    const control = this.grounded ? 1 : T.airControl;
-    const rate = (wl > 0.01 ? T.accel : T.decel) * control;
-    let dx = tx - v.x, dz = tz - v.z;
-    const dl = Math.sqrt(dx * dx + dz * dz);
-    const maxDv = rate * h;
-    if (dl > maxDv) { dx *= maxDv / dl; dz *= maxDv / dl; }
-    v.x += dx; v.z += dz;
+    // Surfing: the surf model owns the horizontal velocity and the facing.
+    const sf = this.surf;
+    sf.grounded = this.grounded;
+    sf.engage(v.x, v.z, this.yaw);
+    sf.step(h, n.x, n.y, n.z);
+    const surfing = sf.active;
+    if (surfing) {
+      v.x = sf.vx; v.z = sf.vz;
+      this.yaw = sf.heading;
+    } else {
+      // Horizontal acceleration toward wish velocity.
+      const tx = wx * T.walkSpeed, tz = wz * T.walkSpeed;
+      const control = this.grounded ? 1 : T.airControl;
+      const rate = (wl > 0.01 ? T.accel : T.decel) * control;
+      let dx = tx - v.x, dz = tz - v.z;
+      const dl = Math.sqrt(dx * dx + dz * dz);
+      const maxDv = rate * h;
+      if (dl > maxDv) { dx *= maxDv / dl; dz *= maxDv / dl; }
+      v.x += dx; v.z += dz;
+    }
 
-    if (this.grounded && steep) {
+    if (this.grounded && steep && !surfing) {
       // Slide down the fall line; no climbing steep faces.
       v.x += n.x * T.slideAccel * h;
       v.z += n.z * T.slideAccel * h;
@@ -142,7 +159,7 @@ export class CapsuleController {
     }
     if (gy !== gy) throw new Error('heightfield returned NaN');
     this._wx = wx; this._wz = wz; this._wl = wl;
-    this._face();
+    if (!surfing) this._face();
   }
 
   /** Ease facing toward the wish direction stored in _wx/_wz/_wl (fields, not args: see _step). */

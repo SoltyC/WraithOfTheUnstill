@@ -24,6 +24,10 @@ export class Body {
     this.hr = new Float64Array(3); this.hu = new Float64Array(3); this.hf = new Float64Array(3);
     this.out = new Float64Array(3);
     this.dt = 0.5;
+    /** Surf engagement 0..1 and the carve's lean (rad, + = into a right turn): inputs. */
+    this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
+    /** Bending gesture 0..1 (input): the right arm reaches out toward the verb. */
+    this.cast = 0.5 - 0.5;
   }
 
   /** World position of body-local (lx, ly, lz) about the pelvis → this.out. */
@@ -51,8 +55,11 @@ export class Body {
     const yawRate = dt > 0 ? dy / dt : 0;
     this.prevYaw = this.yaw;
     const k = 1 - Math.exp(-dt * 6);
-    this.lean += (0.05 + 0.035 * Math.min(g.speed, 6) - this.lean) * k;
-    this.bank += (Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03)) - this.bank) * k;
+    const sb = this.surf;
+    this.lean += (0.05 + 0.035 * Math.min(g.speed, 6) + 0.12 * sb - this.lean) * k;
+    const walkBank = Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03));
+    // Surfing: the whole figure leans into the carve (roll toward the inside of the turn).
+    this.bank += (walkBank * (1 - sb) - this.surfLean * sb - this.bank) * (1 - Math.exp(-dt * 10));
     const sway = g.speed > 0.25 ? 0.035 * Math.sin(Math.PI * 2 * g.phase) : 0;
     // Torso basis: yaw, then lean (pitch forward), then bank + sway (roll).
     const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
@@ -81,14 +88,18 @@ export class Body {
       const o = s * 3;
       this.sh[o] = this.out[0]; this.sh[o + 1] = this.out[1]; this.sh[o + 2] = this.out[2];
       // Left arm swings forward when the right leg does (phase 0..1 per stride).
-      const a = amp * Math.sin(Math.PI * 2 * g.phase + (s === 0 ? 0 : Math.PI));
+      // Surfing: the arms leave the stride and open out and back for balance.
+      let a = amp * Math.sin(Math.PI * 2 * g.phase + (s === 0 ? 0 : Math.PI)) * (1 - sb) - 0.35 * sb;
+      // Bending: the right arm lifts forward to shoulder height, nearly straight.
+      const cast = s === 1 ? this.cast : 0;
+      a += (1.35 - a) * cast;
       // Upper arm: down, rotated forward by a, slightly out.
       const ua = 0.3, fa = 0.28;
-      const ex = side * 0.045, eyl = -Math.cos(a) * ua, ezl = Math.sin(a) * ua;
+      const ex = side * (0.045 + 0.2 * sb), eyl = -Math.cos(a) * ua, ezl = Math.sin(a) * ua;
       this.toWorld(side * 0.2 + ex, 0.5 + eyl, -0.01 + ezl);
       this.el[o] = this.out[0]; this.el[o + 1] = this.out[1]; this.el[o + 2] = this.out[2];
       // Forearm: bends forward more when running.
-      const b = a + 0.42 + 0.3 * run;
+      const b = a + (0.42 + 0.3 * run * (1 - sb) + 0.5 * sb) * (1 - 0.8 * cast);
       this.toWorld(side * 0.2 + ex * 1.5, 0.5 + eyl - Math.cos(b) * fa, -0.01 + ezl + Math.sin(b) * fa);
       this.ha[o] = this.out[0]; this.ha[o + 1] = this.out[1]; this.ha[o + 2] = this.out[2];
     }

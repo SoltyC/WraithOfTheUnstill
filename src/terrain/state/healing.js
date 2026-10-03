@@ -13,7 +13,7 @@ import { PAGE_N, COARSE_PER_M } from './layout.js';
 // Material ids follow the bake (tools/bake-world/climate.mjs MATERIALS).
 export const MATERIAL_COUNT = 8;
 const HL = (seconds) => Math.LN2 / seconds; // half-life → decay rate (1/s)
-// Channels: depression, displaced, compaction, wetness, thermal, flatten.
+// Channels: depression, displaced, compaction, wetness, thermal (frozen and molten), flatten.
 //                     depress     displaced   compact     wet         thermal     flatten
 const RATES = [
   /* snow   */ [HL(600),   HL(600),   HL(900),   HL(240),   HL(150),   HL(180)],
@@ -65,24 +65,24 @@ export function unpackPage(words, planes) {
   for (let i = 0; i < n; i++) {
     const w0 = words[i], w1 = words[n + i], w2 = words[2 * n + i];
     planes[0][i] = fromHalf(w0 & 0xffff); planes[1][i] = fromHalf(w0 >>> 16);
-    planes[2][i] = fromHalf(w1 & 0xffff); planes[3][i] = fromHalf(w1 >>> 16);
-    planes[4][i] = (w2 & 0xff) / 255; planes[5][i] = ((w2 >>> 8) & 0xff) / 255;
-    planes[6][i] = ((w2 >>> 16) & 0xff) / 255; planes[7][i] = (w2 >>> 24) / 255;
+    planes[2][i] = (w1 & 0xff) / 255; planes[3][i] = ((w1 >>> 8) & 0xff) / 255;
+    planes[4][i] = ((w1 >>> 16) & 0xff) / 255; planes[5][i] = (w1 >>> 24) / 255;
+    planes[6][i] = (w2 & 0xff) / 255; planes[7][i] = ((w2 >>> 8) & 0xff) / 255;
   }
 }
 export function packPage(planes, words) {
   const n = PAGE_N * PAGE_N;
   for (let i = 0; i < n; i++) {
     words[i] = pack2(planes[0][i], planes[1][i]);
-    words[n + i] = pack2(planes[2][i], planes[3][i]);
-    words[2 * n + i] = pack4(planes[4][i], planes[5][i], planes[6][i], planes[7][i]);
+    words[n + i] = pack4(planes[2][i], planes[3][i], planes[4][i], planes[5][i]);
+    words[2 * n + i] = pack4(planes[6][i], planes[7][i], 0, 0);
   }
 }
 export function allocPlanes() { return Array.from({ length: 8 }, () => new Float32Array(PAGE_N * PAGE_N)); }
 
-// Planes follow the packed words: depression, displaced, compaction, thermal | wetness,
-// transform, flatten, spare. Plane → RATES column (transform and spare never heal); rest is 0.
-const PLANE_RATE = [0, 1, 2, 4, 3, -1, 5, -1];
+// Planes follow the packed words (layout.js): depression, displaced | compaction, wetness, frozen,
+// transform | molten, flatten. Plane → RATES column (transform never heals); rest is 0.
+const PLANE_RATE = [0, 1, 2, 3, 4, -1, 4, 5];
 
 /** Separable box blur of radius r (texels), edges clamped. In place via tmp. */
 function boxBlur(p, tmp, r) {
@@ -159,7 +159,7 @@ export function healPlanes(planes, seconds, material, tmp) {
   }
   for (let i = 0; i < n; i++) {
     const m = material(i) * 6;
-    for (let p = 0; p < 7; p++) {
+    for (let p = 0; p < 8; p++) {
       const c = PLANE_RATE[p];
       if (c < 0) continue;
       planes[p][i] *= Math.exp(-DECAY[m + c] * seconds);
