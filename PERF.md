@@ -304,3 +304,11 @@ Run `13-37-17` with `?bench=fight`, every other browser closed. Phases:
 - Draw calls 39, pipelines 34, **late pipelines 0**, GPU memory 689 MB.
 - Every phase stays under the 16.7 ms budget at 1440p. The Warden at subdivision 4 (~1 M vertices, each blending 16 neighbour ellipsoids, in the main and cascade passes) adds about +0.7 ms of shadow over Phase 4.
 - The pack is the heaviest view: up to 8 Shaped × 96 chunks, plus the frost material on the open snowfield.
+
+- **Re-runs later the same day** after the release cinematic and diamond dust (`20-39-45`, `20-40-39`):
+  - warden 10.8–10.9 ms median;
+  - climb 11.9–12.1 ms median;
+  - pack 14.1–14.5 ms median, 16.3–16.5 ms p95, which is at the edge of the budget.
+
+  An A/B in the same session settles the cause. The earlier build (4f16ed4, which produced the 13.2 ms run above) measured pack 14.0 / 16.1 ms, the same as the new build. The rise therefore comes from the machine's load at the time, not from the new code. The diamond dust adds ~0.2 ms where it is visible (stilled warden spot) and is culled in restored air.
+- **Watch item:** the pack view has the least headroom (p95 near 16.7 ms when the PC is busy). Candidates for the Phase 6 scalability pass: the frost material on the open snowfield and Shaped chunk counts at distance.

@@ -248,3 +248,7 @@ Every deviation from BRIEF.md, one line each, with rationale.
   - focus is the brightness of the hand light;
   - health is the cowl light (it gutters when low) and frost creeping up the robe, with a cold vignette only at very low health;
   - a fight reads with the HUD hidden.
+- **Diamond dust (stilled air)** consists of stateless GPU grains in a camera-centred volume.
+  - **Motion:** they move only by an owner-integrated "moving time" whose rate is the restoration (plus the release gust). In stilled air they are literally motionless, then drift off and thin out as the land is restored, with no jump when the rate changes.
+  - **Look:** each grain is a plate crystal with its own orientation, mostly near-horizontal. It flashes only where it mirrors the sun into the eye, so the frozen field twinkles as the camera moves.
+  - **Rendering:** additive, sized to at least ~1.5 px, and dimmed when enlarged.

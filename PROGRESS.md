@@ -29,6 +29,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
     - It lies down into a long drift.
     - The grade moves from stilled (cool, flat, still air) to restored (wind, spindrift, warmth).
     - A letterboxed orbit camera follows it all; Jump or E skips it.
+  - **Diamond dust:** ice grains hang motionless in stilled air. They twinkle as the camera moves and start drifting and thinning on the release's gust.
   - **Dev tools:** world tools Spawn, ×3, Kill all, Warden and Release; `?bench=fight`.
   - **Tests:** 91 pass (Shaped, combat, climb, release camera).
 - **Phase 5 gate evidence (target T, 2026-10-03):**
@@ -44,7 +45,8 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - The powder wave is subtle against sunlit snow. It reads best in motion and against shade.
   - A faint brighter disc remains where the release drift sits.
   - Release, climbing and joint fight need a feel check in live play on the PC. Use the world-tools Warden and Release buttons.
-  - Not built yet: stilled "frozen particles" (motionless diamond dust).
+  - Diamond dust (stilled air) is subtle by design: it shows against the sky and in shade, flashes as plate crystals mirror the sun, and is invisible on sunlit snow. It needs a look in motion.
+  - The pack view has the least perf headroom (p95 16.1–16.5 ms when the PC is loaded; PERF.md).
 - **Phase 4 built so far** (commit f74c958; DECISIONS.md "Phase 4"):
   - **Terrain state repack:** word 1 now holds compaction, wetness, frozen and transform (8-bit each). That is one fragment binding, and the snow reads slush, crust and permanent ice from it.
     - Five brush programs: PRESS, PLOUGH, SCORE, FREEZE, WET.

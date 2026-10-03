@@ -125,6 +125,10 @@ async function boot() {
   const { createSpindrift } = await import('./render/spindrift.js');
   const spindrift = createSpindrift(scene, content.clipmap, atmosphere);
   bindShadows(spindrift.material, shadows);
+  // Diamond dust: the stilled air's motionless ice grains (drawn after the spindrift).
+  const { createDiamondDust } = await import('./render/diamondDust.js');
+  const dust = createDiamondDust(scene, content.clipmap, atmosphere);
+  bindShadows(dust.material, shadows);
   // Rock outcrops with accumulation (frost): cast and receive shadows.
   const { createRocks } = await import('./render/rocks.js');
   const rocks = createRocks(scene, content.clipmap, atmosphere);
@@ -652,6 +656,12 @@ async function boot() {
     spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5));
     spindrift.drift.z = 0.4 + w;
     spindrift.update();
+    // Stilled air holds its ice grains motionless; as it is restored they drift off and thin.
+    const r = restoration.value;
+    dust.moving += clock.dt * (r * (0.6 + 0.4 * paramsMod.params.v.windStrength) + 2.5 * warden.gust);
+    dust.density = Math.max(0, 1 - r * 1.25);
+    dust.time = clock.simTime;
+    dust.update();
   } });
   // Writers: the player's footprints; scripted trails from photo spots once the world is settled.
   const { createFootprints } = await import('./terrain/state/footprints.js');
