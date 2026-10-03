@@ -1003,9 +1003,9 @@
    }
   },
   {
-   "id": "p5-release-glow",
+   "id": "p5-release-rear",
    "biome": "frost",
-   "label": "The release: the stillness leaving the Warden along its fractures",
+   "label": "The release: light floods its fractures as it rears",
    "time": 17.2,
    "weather": "clear",
    "player": [
@@ -1019,7 +1019,7 @@
     "turn": 1.45,
     "seconds": 2,
     "dormant": true,
-    "release": 2.6
+    "release": 2.45
    },
    "camera": {
     "mode": "follow",
@@ -1031,7 +1031,7 @@
   {
    "id": "p5-release-wave",
    "biome": "frost",
-   "label": "The release: its exhale rolls out across the steppe as a wave of wind and powder",
+   "label": "The release: the slam's shockwave rolls in across the snow",
    "time": 17.2,
    "weather": "clear",
    "player": [
@@ -1045,7 +1045,33 @@
     "turn": 1.45,
     "seconds": 2,
     "dormant": true,
-    "release": 4.6
+    "release": 3.45
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": -0.12,
+    "dist": 5
+   }
+  },
+  {
+   "id": "p5-release-thrown",
+   "biome": "frost",
+   "label": "The release: the shockwave throws the Wraith",
+   "time": 17.2,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "restoration": "stilled",
+   "warden": {
+    "ahead": 20,
+    "side": 0,
+    "turn": 1.45,
+    "seconds": 2,
+    "dormant": true,
+    "release": 3.85
    },
    "camera": {
     "mode": "follow",

@@ -32,6 +32,9 @@ export class ShapedBody {
     this.wantVx = 0.5 - 0.5; this.wantVz = 0.5 - 0.5;
     /** Pose modifiers (0..1): crouch (telegraph), lift (m, airborne leap), rise (spawn), bob. */
     this.crouch = 0.5 - 0.5; this.lift = 0.5 - 0.5; this.rise = 1.5 - 0.5; this.frozen = false;
+    /** Rear (0..1): the front of the body rises, head high (the Warden's release). Lie (0..1):
+     *  the body lowers onto its belly, legs folding under it. */
+    this.rear = 0.5 - 0.5; this.lie = 0.5 - 0.5;
     // Spine joints (world), index 0 = the neck/front.
     this.sx = new Float64Array(S); this.sy = new Float64Array(S); this.sz = new Float64Array(S);
     this.tx = new Float64Array(T); this.ty = new Float64Array(T); this.tz = new Float64Array(T);
@@ -193,10 +196,11 @@ export class ShapedBody {
   /** Heights: spine joints ride at hip height over the ground (crouch lowers, a leap lifts). */
   _heights() {
     const sh = this.shape;
-    const base = sh.hip * (1 - 0.35 * this.crouch) * this.rise;
+    const base = sh.hip * (1 - 0.35 * this.crouch) * this.rise * (1 - 0.45 * this.lie);
     for (let i = 0; i < sh.spine; i++) {
       const g = this._groundAt(this.sx[i], this.sz[i]);
-      this.sy[i] = g + base + this.lift + (this.rise < 1 ? (this.rise - 1) * sh.hip : 0);
+      const front = 1 - i / (sh.spine - 1);
+      this.sy[i] = g + base + this.lift + (this.rise < 1 ? (this.rise - 1) * sh.hip : 0) + this.rear * sh.hip * 0.95 * front * front;
     }
     for (let i = 0; i < sh.tail; i++) {
       const g = this._groundAt(this.tx[i], this.tz[i]);
@@ -206,7 +210,7 @@ export class ShapedBody {
     // Head: ahead of the front joint, raised; it dips in a crouch.
     const fx = Math.sin(this.heading), fz = Math.cos(this.heading);
     this.hx = this.sx[0] + fx * sh.spacing * 0.9; this.hz = this.sz[0] + fz * sh.spacing * 0.9;
-    this.hy = this.sy[0] + sh.headUp * (1 - 0.8 * this.crouch);
+    this.hy = this.sy[0] + sh.headUp * (1 - 0.8 * this.crouch) + this.rear * sh.hip * 0.9;
   }
 
   /** Two-bone knees (rear legs bend backward, front legs forward-out). */

@@ -31,7 +31,10 @@ export const JOINTS = 4;
 /** Neighbours per chunk for the renderer's smooth-mass shading (chunk indices; self = unused). */
 export const WARDEN_NBR = 16;
 export const JOINT = { LIQUID: 0, FROZEN: 1, SHATTERED: 2 };
-export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4 };
+export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4, RESTED: 5 };
+/** The release, in seconds from the last joint breaking. */
+export const RELEASE_T = { rear: 1.6, slam: 2.7, impact: 3.05, rested: 15 };
+const SHOCK_SPEED = 24, SHOCK_MAX = 95, SHOCK_RAYS = 64;
 
 /**
  * @param {{ ts: any, fx: any, ground: { qx: number, qz: number, h: number, sample: () => void } }} ctx
@@ -69,6 +72,10 @@ export function createWarden(ctx) {
     restore: 0.5 - 0.5,
     /** Release: the exhale's wind gust 0..1 (owner adds it to the wind), and its wave radius. */
     gust: 0.5 - 0.5, wave: -1.5 + 0.5,
+    /** The slam's shockwave: centre and radius (−1: none); slam is set on the impact frame. */
+    shockX: 0.5, shockZ: 0.5, shockR: -1.5 + 0.5, slam: false, drifts: false,
+    /** 0..1 snow cover as it lies down into the land (chunk records carry it in alpha). */
+    cover: 0.5 - 0.5,
     /** Camera probe (fields in): is (qx, qy, qz) inside the mass, with a little clearance? */
     qx: 0.5, qy: 0.5, qz: 0.5,
     probe() {
@@ -92,8 +99,9 @@ export function createWarden(ctx) {
 
     place(x, z, heading) {
       body.place(x, z, heading);
-      body.rise = 1; body.crouch = 0; body.lift = 0; body.frozen = false;
+      body.rise = 1; body.crouch = 0; body.lift = 0; body.frozen = false; body.rear = 0; body.lie = 0;
       this.active = true; this.state = W.DORMANT; this.t = 0; this.settle = 0; this.restore = 0;
+      this.cover = 0; this.shockR = -1; this.slam = false; this.gust = 0; this.drifts = false;
       this.nbrReady = false;
       this.climbed = false; this.shaking = false; this.shakeCool = 4; this.shakeT = 0;
       joint.fill(JOINT.LIQUID); jointT.fill(0);
@@ -114,10 +122,22 @@ export function createWarden(ctx) {
       else { this.state = W.KNEEL; this.t = 0; }
       return true;
     },
+    /** Skip the rest of the release: straight to lying in the land, snowed over, restored. */
+    finishRelease() {
+      if (this.state !== W.RELEASE) return;
+      this.t = RELEASE_T.rested - 0.01;
+      body.rear = 0; body.crouch = 1; body.lie = 1; this.glow = 0;
+      this.shockR = -1; this.gust = 0;
+      if (!this.drifts) banks(this);
+      const d = this.dt; this.dt = 0.02; this.update(); this.dt = d;
+    },
     update() {
       if (!this.active) { writeHidden(chunks, 0, WARDEN_CHUNKS + JOINTS); return; }
       const dt = this.dt;
-      this.t += dt; this.hits = 0; this.hitDamage = 0; this.shake = 0;
+      this.hits = 0; this.hitDamage = 0; this.shake = 0; this.slam = false;
+      // Rested: it lies in the land for good — a snow-covered ridge with its spires standing.
+      if (this.state === W.RESTED) { this.restore = 1; this.cover = 1; return; }
+      this.t += dt;
       // Frozen joints thaw if not broken in time.
       for (let k = 0; k < JOINTS; k++) if (joint[k] === JOINT.FROZEN && (jointT[k] += dt) > 9) joint[k] = JOINT.LIQUID;
       // Bucking: when climbed, every few seconds it heaves to throw the Wraith off.
@@ -148,9 +168,12 @@ export function createWarden(ctx) {
         const d = Math.hypot(this.px - x, this.pz - z);
         this.shake += 0.03 * Math.max(0, 1 - d / 45);
       }
-      // Release: it sinks into the land.
-      if (this.state === W.RELEASE) body.rise = 1 - 0.75 * this.settle;
       writeAlive(body, st, chunks, 0, 1, this.glow);
+      // Snow cover rides in each visible chunk's alpha (1 bare … 0.51 buried; > 0.5 = shown).
+      if (this.cover > 0) {
+        const a = 1 - 0.49 * this.cover;
+        for (let c = 0; c < WARDEN_CHUNKS; c++) { const o = c * CHUNK_FLOATS + 15; if (chunks[o] > 0.5) chunks[o] = a; }
+      }
       if (!this.nbrReady) { neighbours(); this.nbrReady = true; this.nbrDirty = true; }
       writeJoints(this);
     },
@@ -250,41 +273,119 @@ export function createWarden(ctx) {
         body.crouch += ((W0.t < 4 ? 0.85 : 0) - body.crouch) * Math.min(1, dt * (W0.t < 4 ? 2.5 : 0.8));
         if (W0.t >= 6) { W0.state = W.AWAKE; W0.t = 0; }
         break;
-      case W.RELEASE:
-        // Released: it lowers itself, then settles into the land over several seconds.
-        body.wantVx = 0; body.wantVz = 0;
-        body.crouch += (1 - body.crouch) * Math.min(1, dt * 0.6);
-        W0.settle = Math.min(1, Math.max(0, (W0.t - 3) / 9));
-        W0.restore = Math.min(1, Math.max(0, (W0.t - 4) / 10));
-        // The stillness leaves it: light runs along its fractures, brightest as it exhales.
-        W0.glow = W0.t < 3 ? (W0.t / 3) * (W0.t / 3) : Math.max(0, 1 - (W0.t - 3) / 2.5);
-        // The exhale (t = 3): a wave of wind and powder rolls out across the steppe.
-        W0.gust = W0.t < 3 ? 0 : Math.max(0, 1 - (W0.t - 3) / 7) * Math.min(1, (W0.t - 3) * 3);
-        if (W0.t >= 3 && W0.t < 6.2) {
-          W0.wave = (W0.t - 3) * 16;
-          const R = W0.wave + WARDEN_SHAPE.hip * 1.2, cx = body.sx[3], cz = body.sz[3];
-          for (let q = 0; q < 8; q++) {
-            const a = rnd() * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
-            fx.ex = cx + ca * R * 1.35; fx.ez = cz + sa * R;
-            ground.qx = fx.ex; ground.qz = fx.ez; ground.sample();
-            // A rolling front: low, ground-hugging, carried out nearly at the wave's speed.
-            fx.ey = ground.h + 0.2 + rnd() * 0.8;
-            const v = 11 + 6 * rnd();
-            fx.evx = ca * v * 1.35; fx.evz = sa * v; fx.evy = 0.4 + 1.6 * rnd();
-            fx.esize = 1.0 + 1.4 * rnd();
-            fx.emit();
-          }
-          if (W0.t - dt < 3) W0.shake += 0.08;
-        } else if (W0.t >= 6.2) W0.wave = -1;
-        if (W0.t >= 3 && W0.t - dt < 3) {
-          // The mass it leaves: a long, high drift where it lay down (heals like any snow).
-          ts.bx = body.sx[3]; ts.bz = body.sz[3]; ts.bdx = Math.sin(body.heading); ts.bdz = Math.cos(body.heading);
-          ts.bl = WARDEN_SHAPE.spacing * 3; ts.bw = WARDEN_SHAPE.hip * 0.7; ts.bd = 2.2; ts.bc = 0.3;
-          ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
-          ts.stamp();
-        }
-        if (W0.settle >= 1) { W0.active = false; W0.gust = 0; }
-        break;
+      case W.RELEASE: release(W0, dt); break;
+    }
+  }
+
+  // The shockwave's scour rays (fixed angles, so each ray's groove is continuous frame to frame).
+  const rayA = new Float64Array(SHOCK_RAYS), rayR = new Float64Array(SHOCK_RAYS);
+  for (let k = 0; k < SHOCK_RAYS; k++) rayA[k] = (k + 0.5 * rnd()) / SHOCK_RAYS * Math.PI * 2;
+  const SEG = 2.6;   // m: each ray is scoured in end-to-end segments (no overlap ripple)
+
+  /** Release, not death (BRIEF §8.4). The stillness leaves it along its fractures; it rears,
+   *  slams down onto its chest — a shockwave tears out across the steppe — then lies down into
+   *  the land, snowing over, while the biome is restored around it. It never sinks or vanishes. */
+  function release(W0, dt) {
+    const t = W0.t, R = RELEASE_T, hip = WARDEN_SHAPE.hip;
+    body.wantVx = 0; body.wantVz = 0;
+    if (t < R.rear) {
+      // Stillness breaking: light floods the fractures; it gathers itself.
+      W0.glow = (t / R.rear) * (t / R.rear);
+      body.crouch += (0.3 - body.crouch) * Math.min(1, dt * 3);
+    } else if (t < R.slam) {
+      // Rearing: front up, head high, the spires shedding powder.
+      W0.glow = 1;
+      body.crouch += (0 - body.crouch) * Math.min(1, dt * 4);
+      body.rear += (1 - body.rear) * Math.min(1, dt * 3.2);
+      for (let q = 0; q < 3; q++) {
+        const i = Math.floor(rnd() * 3);
+        fx.ex = body.sx[i] + (rnd() - 0.5) * hip; fx.ey = body.sy[i] + hip * 0.6; fx.ez = body.sz[i] + (rnd() - 0.5) * hip;
+        fx.evx = (rnd() - 0.5) * 2; fx.evy = -1.5; fx.evz = (rnd() - 0.5) * 2; fx.esize = 0.05 + 0.07 * rnd(); fx.emit();
+      }
+    } else if (t < R.impact) {
+      // The slam: down onto its chest, accelerating.
+      const u = (t - R.slam) / (R.impact - R.slam);
+      body.rear = 1 - u * u; body.crouch = u * u; body.lie = 0.6 * u * u;
+    } else {
+      if (t - dt < R.impact) impact(W0);
+      body.rear = 0; body.crouch = 1;
+      body.lie += (1 - body.lie) * Math.min(1, dt * 1.2);
+      W0.glow = Math.max(0, 1 - (t - R.impact) / 2.2);
+      shockwave(W0);
+      if (t > 6 && !W0.drifts) banks(W0);
+    }
+    // Snow over it, and the land restored around it.
+    const c = Math.min(1, Math.max(0, (t - 4.5) / 8)); W0.cover = c * c * (3 - 2 * c);
+    W0.restore = Math.min(1, Math.max(0, (t - 3.5) / 10));
+    W0.settle = W0.restore;
+    W0.gust = t < R.impact ? 0 : Math.max(0, 1 - (t - R.impact) / 8) * Math.min(1, (t - R.impact) * 4);
+    if (t >= R.rested) { W0.state = W.RESTED; W0.shockR = -1; W0.gust = 0; W0.glow = 0; W0.cover = 1; W0.restore = 1; }
+  }
+
+  /** The slam lands: a crater under the chest, a burst of powder, the shockwave begins. */
+  function impact(W0) {
+    W0.slam = true; W0.shake += 0.14;
+    const cx = body.sx[1], cz = body.sz[1], fwx = Math.sin(body.heading), fwz = Math.cos(body.heading);
+    W0.shockX = body.sx[2]; W0.shockZ = body.sz[2]; W0.shockR = WARDEN_SHAPE.hip * 1.3;
+    ts.bx = cx + fwx * 2; ts.bz = cz + fwz * 2; ts.bdx = fwx; ts.bdz = fwz; ts.bl = 5; ts.bw = 6; ts.bd = 0.7; ts.bc = 0.8;
+    ts.stamp();
+    for (let q = 0; q < 140; q++) {
+      const a = rnd() * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a), r = WARDEN_SHAPE.hip * (0.6 + 0.6 * rnd());
+      fx.ex = cx + ca * r; fx.ez = cz + sa * r;
+      ground.qx = fx.ex; ground.qz = fx.ez; ground.sample();
+      fx.ey = ground.h + 0.3 + rnd() * 2;
+      const v = 6 + 10 * rnd();
+      fx.evx = ca * v; fx.evz = sa * v; fx.evy = 2 + 6 * rnd(); fx.esize = 1.2 + 1.8 * rnd();
+      fx.emit();
+    }
+  }
+
+  /** The shockwave front: a wall of powder riding outward, scouring radial grooves near the
+   *  Wraith (where the fine terrain state is), past it and out across the steppe. */
+  function shockwave(W0) {
+    if (W0.shockR < 0) return;
+    W0.shockR += SHOCK_SPEED * W0.dt;
+    if (W0.shockR > SHOCK_MAX) { W0.shockR = -1; return; }
+    const R = W0.shockR, cx = W0.shockX, cz = W0.shockZ;
+    const pa = Math.atan2(W0.pz - cz, W0.px - cx);
+    for (let q = 0; q < 18; q++) {
+      // Half the powder toward the Wraith (where the camera is), half all round.
+      const a = q < 9 ? pa + (rnd() - 0.5) * 1.6 : rnd() * Math.PI * 2;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      fx.ex = cx + ca * R; fx.ez = cz + sa * R;
+      ground.qx = fx.ex; ground.qz = fx.ez; ground.sample();
+      fx.ey = ground.h + 0.1 + rnd() * 1.4;
+      const v = 14 + 9 * rnd();
+      fx.evx = ca * v; fx.evz = sa * v; fx.evy = 0.6 + 2.4 * rnd(); fx.esize = 1.0 + 1.6 * rnd();
+      fx.emit();
+    }
+    if (W0.t - W0.dt < RELEASE_T.impact) rayR.fill(R);
+    let n = 0;
+    for (let r = 0; r < SHOCK_RAYS && n < 20; r++) {
+      if (R - rayR[r] < SEG) continue;
+      const ca = Math.cos(rayA[r]), sa = Math.sin(rayA[r]);
+      const m = rayR[r] + SEG * 0.5, x = cx + ca * m, z = cz + sa * m;
+      rayR[r] += SEG;
+      const dx = x - W0.px, dz = z - W0.pz;
+      if (dx * dx + dz * dz > 38 * 38) continue;
+      ts.bx = x; ts.bz = z; ts.bdx = ca; ts.bdz = sa; ts.bl = SEG * 0.5 - 0.15; ts.bw = 0.45 + 0.15 * Math.sin(r * 1.7); ts.bd = 0.07; ts.bc = 0.2;
+      ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.5;
+      ts.stamp(); n++;
+    }
+  }
+
+  /** Drifts bank up against it as it lies down: one long mound per spine segment, either side. */
+  function banks(W0) {
+    W0.drifts = true;
+    const rx = Math.cos(body.heading), rz = -Math.sin(body.heading), w = WARDEN_SHAPE.hip * 0.62;
+    for (let i = 0; i < WARDEN_SHAPE.spine; i++) {
+      for (let s = -1; s <= 1; s += 2) {
+        ts.bx = body.sx[i] + rx * s * w; ts.bz = body.sz[i] + rz * s * w;
+        ts.bdx = Math.sin(body.heading); ts.bdz = Math.cos(body.heading);
+        ts.bl = WARDEN_SHAPE.spacing * 1.1; ts.bw = WARDEN_SHAPE.hip * 0.38; ts.bd = 1.3; ts.bc = 0.3;
+        ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+        ts.stamp();
+      }
     }
   }
 

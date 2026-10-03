@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
 export const FX_GLOWS = 3;
-export const FX_SPRAY = 1536;
+export const FX_SPRAY = 3072;
 export const FX_COUNT = FX_GLOWS + FX_SPRAY;
 export const SPRAY_LIFE = 1.1;
 
@@ -88,7 +88,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let wp = p + (right * corner.x + up * corner.y) * size;
   // Puffs right at the camera fade out (no screen-filling overdraw).
   if (kind < 0.5) { alpha *= smoothstep(1.0, 3.0, length(p - cam)); }
-  if (kind > 1.5) { alpha *= smoothstep(2.0, 8.0, length(p - cam)); }
+  if (kind > 1.5) { alpha *= smoothstep(3.0, 13.0, length(p - cam)); }
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (alpha < 0.002) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
   vertexOutputs.vUv = corner;

@@ -33,6 +33,8 @@ export class Wraith {
     /** Climbing (inputs): the pelvis (cpx, cpy, cpz) and surface frame (right cr, up-the-climb cu,
      *  into-the-surface cf) replace the gait; climbPhase drives the alternating reach. */
     this.climbing = false; this.climbPhase = 0.5 - 0.5;
+    /** Knocked down (with climbing set: the same frame override): thrown, on its back, rising. */
+    this.knocked = false;
     this.cpx = 0.5; this.cpy = 0.5; this.cpz = 0.5;
     /** 0..1 how far the body has turned to the surface (from the climb system's blend). */
     this.climbBlend = 0.5 - 0.5;
@@ -123,7 +125,7 @@ export class Wraith {
     const g = this.gait, b = this.body;
     g.dt = this.dt; g.evCount = 0; g.collapse = this.collapse;
     if (this.climbing) this._climbPose(); else { this._cx = NaN; g.update(); }
-    b.climbing = this.climbing; b.climbPhase = this.climbPhase; b.climbBlend = this.climbBlend;
+    b.climbing = this.climbing; b.climbPhase = this.climbPhase; b.climbBlend = this.climbBlend; b.knocked = this.knocked;
     if (this.climbing) for (let i = 0; i < 3; i++) { b.cr[i] = this.cr[i]; b.cu[i] = this.cu[i]; b.cf[i] = this.cf[i]; }
     b.dt = this.dt;
     b.cast += (this.cast - b.cast) * (1 - Math.exp(-this.dt * (this.cast > b.cast ? 18 : 5)));
@@ -149,9 +151,25 @@ export class Wraith {
   _climbPose() {
     const g = this.gait, u = this.cu, f = this.cf, r = this.cr;
     if (Number.isNaN(this._cx)) { this._cx = this.body.px; this._cy = this.body.py; this._cz = this.body.pz; }
-    const k = 1 - Math.exp(-this.dt * 9);
+    // Knocked: the pelvis is the knockdown's own (fast; no easing lag in the throw).
+    const k = this.knocked ? 1 : 1 - Math.exp(-this.dt * 9);
     this._cx += (this.cpx - this._cx) * k; this._cy += (this.cpy - this._cy) * k; this._cz += (this.cpz - this._cz) * k;
     g.px = this._cx; g.py = this._cy; g.pz = this._cz; g.speed = 0; g.phase = 0; g.evCount = 0;
+    if (this.knocked) {
+      // Thrown / on its back: legs loose and splayed, knees up off the snow (toward the chest).
+      for (let k = 0; k < 2; k++) {
+        const side = k === 0 ? -1 : 1, kick = 0.1 * Math.sin(this.climbPhase * 1.7 + k * 2.1);
+        const down = 0.8, spread = 0.2 + 0.06 * k;
+        g.fx[k] = g.px - u[0] * down + r[0] * side * spread + f[0] * kick;
+        g.fy[k] = g.py - u[1] * down + r[1] * side * spread + f[1] * kick;
+        g.fz[k] = g.pz - u[2] * down + r[2] * side * spread + f[2] * kick;
+        g.state[k] = 0;
+        g.kx[k] = g.px - u[0] * down * 0.45 + r[0] * side * 0.17 + f[0] * (0.22 + 0.08 * k);
+        g.ky[k] = g.py - u[1] * down * 0.45 + r[1] * side * 0.17 + f[1] * (0.22 + 0.08 * k);
+        g.kz[k] = g.pz - u[2] * down * 0.45 + r[2] * side * 0.17 + f[2] * (0.22 + 0.08 * k);
+      }
+      return;
+    }
     for (let k = 0; k < 2; k++) {
       const side = k === 0 ? -1 : 1, step = 0.12 * Math.sin(this.climbPhase + (k === 0 ? Math.PI : 0));
       const down = 0.78 - step, out = -0.06;

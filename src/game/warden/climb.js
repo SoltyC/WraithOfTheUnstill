@@ -48,7 +48,7 @@ export function createClimb(ctx) {
     update() {
       const dt = this.dt;
       this.fell = 0;
-      if (!warden.active || warden.state === 4) { if (this.mode) letGo(this, 2); this.blend = Math.max(0, this.blend - dt * T.ease); return; }
+      if (!warden.active || warden.state >= 4) { if (this.mode) letGo(this, 2); this.blend = Math.max(0, this.blend - dt * T.ease); return; }
       if (this.mode === 0) {
         this.blend = Math.max(0, this.blend - dt * T.ease);
         if (this.grip) tryMount(this);

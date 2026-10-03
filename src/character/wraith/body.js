@@ -33,6 +33,8 @@ export class Body {
     /** Climbing (inputs): when set, the torso frame comes from the surface — forward into it,
      *  up along the climb — and the arms reach up onto it, alternating with climbPhase. */
     this.climbing = false; this.climbPhase = 0.5 - 0.5; this.climbBlend = 1.5 - 0.5;
+    /** Knocked down (with climbing): arms flung out over the head instead of reaching to grip. */
+    this.knocked = false;
     this.cr = new Float64Array(3); this.cu = new Float64Array(3); this.cf = new Float64Array(3);
   }
 
@@ -98,7 +100,8 @@ export class Body {
     this.hf[0] = chl * sy; this.hf[1] = -shl; this.hf[2] = chl * cy;
     if (this.climbing) {
       // The head looks up the surface a little.
-      for (let i = 0; i < 3; i++) { this.hr[i] = this.cr[i]; this.hu[i] = this.cu[i] * 0.92 - this.cf[i] * 0.38; this.hf[i] = this.cf[i] * 0.92 + this.cu[i] * 0.38; }
+      if (this.knocked) for (let i = 0; i < 3; i++) { this.hr[i] = this.r[i]; this.hu[i] = this.u[i]; this.hf[i] = this.f[i]; }
+      else for (let i = 0; i < 3; i++) { this.hr[i] = this.cr[i]; this.hu[i] = this.cu[i] * 0.92 - this.cf[i] * 0.38; this.hf[i] = this.cf[i] * 0.92 + this.cu[i] * 0.38; }
     }
     // Arms: swing opposite to the legs about the shoulder; running raises and bends them.
     const run = Math.min(1, Math.max(0, (g.speed - 2) / 2.5));
@@ -113,12 +116,13 @@ export class Body {
       let a = amp * Math.sin(Math.PI * 2 * g.phase + (s === 0 ? 0 : Math.PI)) * (1 - sb) - 0.35 * sb;
       // Climbing: both arms reach up the surface, gripping in turn (one reaches while the other holds).
       if (this.climbing) a = 2.45 + 0.4 * Math.sin(this.climbPhase + (s === 0 ? 0 : Math.PI));
+      if (this.knocked) a = 2.1 + 0.5 * Math.sin(this.climbPhase * 1.3 + s * 2.4);
       // Bending: the right arm lifts forward to shoulder height, nearly straight.
       const cast = s === 1 && !this.climbing ? this.cast : 0;
       a += (1.35 - a) * cast;
       // Upper arm: down, rotated forward by a, slightly out.
       const ua = 0.3, fa = 0.28;
-      const ex = side * (0.045 + 0.2 * sb), eyl = -Math.cos(a) * ua, ezl = Math.sin(a) * ua;
+      const ex = side * (0.045 + 0.2 * sb + (this.knocked ? 0.22 : 0)), eyl = -Math.cos(a) * ua, ezl = Math.sin(a) * ua;
       this.toWorld(side * 0.2 + ex, 0.5 + eyl, -0.01 + ezl);
       this.el[o] = this.out[0]; this.el[o + 1] = this.out[1]; this.el[o + 2] = this.out[2];
       // Forearm: bends forward more when running.

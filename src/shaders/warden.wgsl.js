@@ -33,6 +33,7 @@ varying vKind: f32;
 varying vGlow: f32;
 varying vSeed: f32;
 varying vOcc: f32;
+varying vCover: f32;
 ${NOISE3}
 const NBR = 16u;
 const WARDEN_CHUNKS = 380u;
@@ -52,7 +53,7 @@ fn ell(j: u32, p: vec3f) -> Ell {
 }
 
 // Radius of the craggy mass along unit direction v: broad lumps, then ridged crags.
-fn massR(v: vec3f, seed: f32, kind: f32) -> f32 {
+fn massR(v: vec3f, seed: f32, kind: f32, cover: f32) -> f32 {
   let s = vec3f(seed * 0.37, seed * 0.11, seed * 0.23);
   let lump = vnoise3(v * 1.6 + s);
   let crag = 1.0 - abs(vnoise3(v * 3.7 + s * 1.7) * 2.0 - 1.0);
@@ -60,6 +61,8 @@ fn massR(v: vec3f, seed: f32, kind: f32) -> f32 {
   // Broad lumps, then sharp ridged crags and fine breakup: rock-like masses, not balloons.
   var r = 0.68 + 0.2 * lump + 0.28 * crag * crag * crag + 0.07 * fine * fine;
   if (kind > 0.5 && kind < 1.5) { r = 0.85 + 0.15 * crag; }           // shards: cleaner
+  // Snowed over (the release): crags fill in toward a smooth drift.
+  else { r = mix(r, 0.86 + 0.14 * lump, cover * 0.85); }
   return r;
 }
 fn shardShape(v: vec3f, kind: f32) -> vec3f {
@@ -72,15 +75,17 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let ci = u32(vertexInputs.uv.x + 0.5);
   let a = chunkData[ci * 4u]; let b = chunkData[ci * 4u + 1u]; let c = chunkData[ci * 4u + 2u]; let d = chunkData[ci * 4u + 3u];
   let seed = d.x; let kind = d.y;
+  // Snow cover rides in alpha: 1 bare … 0.51 buried (≤ 0.5 hidden).
+  let cover = select(0.0, clamp((1.0 - d.w) / 0.49, 0.0, 1.0), d.w > 0.5 && ci < WARDEN_CHUNKS);
   let v = normalize(vertexInputs.position);
   // Displaced surface point, and two neighbours along the tangent plane for the normal.
   let t1 = normalize(cross(v, select(vec3f(0.0, 1.0, 0.0), vec3f(1.0, 0.0, 0.0), abs(v.y) > 0.9)));
   let t2 = cross(v, t1);
   let e = 0.04;
   let v1 = normalize(v + t1 * e); let v2 = normalize(v + t2 * e);
-  let p0 = shardShape(v * massR(v, seed, kind), kind);
-  let p1 = shardShape(v1 * massR(v1, seed, kind), kind);
-  let p2 = shardShape(v2 * massR(v2, seed, kind), kind);
+  let p0 = shardShape(v * massR(v, seed, kind, cover), kind);
+  let p1 = shardShape(v1 * massR(v1, seed, kind, cover), kind);
+  let p2 = shardShape(v2 * massR(v2, seed, kind, cover), kind);
   let sc = vec3f(a.w, b.w, c.w) * 0.5;
   // Normal in the unscaled frame → scaled frame (inverse scale), then to world.
   var nl = normalize(cross(p1 - p0, p2 - p0));
@@ -111,9 +116,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
       acc += e2.n * exp(-1.6 * e2.d * e2.d);
       contact += smoothstep(1.45, 0.85, e2.d);
     }
-    nW = normalize(mix(nW, normalize(acc), 0.7));
+    nW = normalize(mix(nW, normalize(acc), 0.7 + 0.25 * cover));
   }
   vertexOutputs.vNormal = nW;
+  vertexOutputs.vCover = cover;
   vertexOutputs.vLocal = p0;
   vertexOutputs.vKind = kind;
   vertexOutputs.vGlow = d.z;
@@ -132,6 +138,7 @@ varying vKind: f32;
 varying vGlow: f32;
 varying vSeed: f32;
 varying vOcc: f32;
+varying vCover: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
@@ -179,6 +186,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let Ns = normalize(fragmentInputs.vNormal);
     var snow = smoothstep(-0.35, 0.25, Ns.y + 0.25 * (vnoise3(wp * 0.07) - 0.5)) * (1.0 - scour);
     if (kind != 0 || frozen) { snow = snow * 0.2; }
+    // Lain down into the land: fresh drift snow over all of it (the spires stay ice).
+    if (kind != 1) { snow = max(snow, fragmentInputs.vCover); }
     // Snow: the terrain's look — wrapped diffuse, cold subsurface glow in shade, sparkle.
     let snowAlb = vec3f(0.86, 0.88, 0.92);
     let diffS = clamp((nl + 0.35) / 1.35, 0.0, 1.0);
@@ -207,7 +216,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       // Light within: the ice fills with a cold blue glow; the fractures carry the brightest light.
       let core = 1.0 - smoothstep(0.0, 0.025, abs(vnoise3(wp * vec3f(0.35, 0.9, 0.35) + 3.0) - 0.5));
       let inner = (1.0 - snow * 0.7) * (0.25 + 0.75 * pow(1.0 - nv, 1.5));
-      col = col * (1.0 - 0.35 * g) + (vec3f(0.12, 0.42, 1.0) * (frac * 0.9 + inner * 0.35) + vec3f(0.6, 0.85, 1.0) * core * 0.8) * g / max(exposure, 1e-6) * 0.55;
+      col = col * (1.0 - 0.35 * g) + (vec3f(0.12, 0.42, 1.0) * (frac * 0.25 + inner * 0.8) + vec3f(0.6, 0.85, 1.0) * core * 0.2) * g / max(exposure, 1e-6) * 0.55;
     }
     if (frozen) { col += vec3f(0.4, 0.7, 1.0) * 0.06 / max(exposure, 1e-6); }
   }

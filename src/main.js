@@ -226,6 +226,7 @@ async function boot() {
       controller.vel.x = climb.vx; controller.vel.y = climb.vy; controller.vel.z = climb.vz;
       if (climb.fell === 1) arm.shake += 0.03;
     }
+    stepKnock(clock.dt);
   } });
   loop.add(playerMod.createPlayerSystem({ controller, arm, ...content, material: streamer }));
   // Snow-surf wake: groove, berms and spray along the carve (terrain-state writer).
@@ -266,6 +267,71 @@ async function boot() {
   const { createClimb } = await import('./game/warden/climb.js');
   const climb = createClimb({ warden });
   arm.occluder = warden;
+  // Knockdown: the release's shockwave throws the Wraith onto its back (character/knockdown.js).
+  const { createKnockdown } = await import('./character/knockdown.js');
+  const BRUSH_PLOUGH = (await import('./shaders/terrainState.wgsl.js')).BRUSH.PLOUGH;
+  const knock = createKnockdown(ground);
+  let knockHitT = -1, prevShockR = -1;
+  /** Shockwave → knockdown; while down the knockdown owns the Wraith's position. */
+  function stepKnock(dt) {
+    const p = controller.pos;
+    if (warden.active && warden.shockR > 0 && !knock.active && !climb.climbing && combat.dying === 0 && !controller.god) {
+      const dx = p.x - warden.shockX, dz = p.z - warden.shockZ, d = Math.hypot(dx, dz);
+      if (prevShockR >= 0 && prevShockR < d && warden.shockR >= d && d < 70) {
+        knock.hx = p.x; knock.hy = p.y; knock.hz = p.z; knock.hdx = dx / (d || 1); knock.hdz = dz / (d || 1);
+        knock.hit(); knockHitT = warden.t;
+        arm.shake += 0.07; if (!capture) clock.hitStop = Math.max(clock.hitStop, 0.09);
+      }
+    }
+    prevShockR = warden.active ? warden.shockR : -1;
+    const was = knock.active;
+    knock.dt = dt; knock.hold = releaseCam.active || releaseCam.hold; knock.update();
+    if (knock.active) {
+      controller.hold = true; controller.grounded = false;
+      p.x = knock.footX; p.y = knock.footY; p.z = knock.footZ;
+      controller.vel.x = knock.vx; controller.vel.y = knock.vy; controller.vel.z = knock.vz;
+      if (knock.landed) {
+        // A thump in the snow: powder from under it.
+        for (let q = 0; q < 26; q++) {
+          const a = q * 0.2417 * Math.PI * 2;
+          wraithView.ex = knock.x + Math.cos(a) * 0.3; wraithView.ey = knock.y - 0.1; wraithView.ez = knock.z + Math.sin(a) * 0.3;
+          wraithView.evx = Math.cos(a) * 2.2 + knock.vx * 0.3; wraithView.evy = 1 + (q % 5) * 0.4; wraithView.evz = Math.sin(a) * 2.2 + knock.vz * 0.3;
+          wraithView.esize = 0.08 + 0.02 * (q % 4); wraithView.emit();
+        }
+        arm.shake += 0.02;
+      }
+      if (knock.sliding) {
+        // Its back ploughs a furrow through the snow.
+        const sp = Math.hypot(knock.vx, knock.vz) || 1;
+        terrainState.bx = knock.x; terrainState.bz = knock.z; terrainState.bdx = knock.vx / sp; terrainState.bdz = knock.vz / sp;
+        terrainState.bl = 0.3; terrainState.bw = 0.42; terrainState.bd = 0.12; terrainState.bc = 0.6;
+        terrainState.bk = BRUSH_PLOUGH; terrainState.bwet = 0; terrainState.bbias = 0; terrainState.bberm = 0.8;
+        terrainState.stamp();
+      }
+    } else if (was) {
+      // On its feet again, facing back toward where it was thrown from.
+      controller.hold = false; controller.grounded = true;
+      controller.vel.x = 0; controller.vel.y = 0; controller.vel.z = 0;
+      controller.yaw = Math.atan2(-knock.dx, -knock.dz);
+    }
+  }
+  /** The Wraith's pose override from the climb or the knockdown (shared with the captures). */
+  function feedWraithOverride(w) {
+    if (knock.active) {
+      w.climbing = true; w.knocked = true; w.climbBlend = 1;
+      w.cpx = knock.x; w.cpy = knock.y; w.cpz = knock.z; w.climbPhase = clock.simTime * 6;
+      w.cr[0] = knock.rx; w.cr[1] = knock.ry; w.cr[2] = knock.rz; w.cu[0] = knock.ux; w.cu[1] = knock.uy; w.cu[2] = knock.uz;
+      w.cf[0] = knock.fx; w.cf[1] = knock.fy; w.cf[2] = knock.fz;
+      return;
+    }
+    w.knocked = false;
+    w.climbing = climb.climbing; w.climbBlend = climb.blend;
+    if (climb.climbing) {
+      w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
+      w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
+      w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
+    }
+  }
   climb.spend = (c) => combat.spend(c);
   // Combat (Phase 5): focus, hits and reactions, lock-on, dodge, wounds and death.
   const { createCombat, combatTuning } = await import('./game/combat/combat.js');
@@ -379,12 +445,7 @@ async function boot() {
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
     w.windStrength = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
-    w.climbing = climb.climbing; w.climbBlend = climb.blend;
-    if (climb.climbing) {
-      w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
-      w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
-      w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
-    }
+    feedWraithOverride(w);
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);
     wraithView.time = clock.simTime;
     if (!wraithView.isEnabled()) return;
@@ -495,21 +556,30 @@ async function boot() {
         if (spec.freezeJoints) for (const k of spec.freezeJoints) warden.freezeJoint(k);
         releaseCam.hold = false;
         if (spec.release !== undefined) {
-          // The release, `release` seconds in, with the cinematic camera where it would be.
+          // The release, `release` seconds in: the Warden, the shockwave, the Wraith's knockdown
+          // and the cinematic camera, all stepped together as they would play.
           warden.joint.fill(wardenMod.JOINT.SHATTERED); warden.state = wardenMod.W.RELEASE; warden.t = 0;
-          const rc = releaseCam, b = warden.body, cp = camera.position;
-          rc.x = cp.x; rc.y = cp.y; rc.z = cp.z; rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3]; rc.start();
+          const rc = releaseCam, w = wraithView.wraith;
+          knockHitT = -1; prevShockR = -1;
+          feedReleaseCam(rc); rc.start();
           const n = Math.round(spec.release * 60);
           for (let k = 0; k < n; k++) {
-            wraithView.time = clock.simTime - (n - k) / 60;
+            const t = clock.simTime - (n - k) / 60;
+            wraithView.time = t;
+            warden.px = controller.pos.x; warden.pz = controller.pos.z;
             warden.dt = 1 / 60; warden.update();
-            rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3];
-            ground.qx = rc.x; ground.qz = rc.z; ground.sample(); rc.groundY = ground.h;
-            rc.dt = 1 / 60; rc.skip = false; rc.update();
+            rc.hold = true; stepKnock(1 / 60);
+            const p = controller.pos;
+            w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z; w.yaw = controller.yaw;
+            w.grounded = !knock.active; w.dt = 1 / 60; w.time = t; w.surf = 0; w.cast = 0;
+            feedWraithOverride(w); w.climbPhase = t * 6;
+            wraithView.update();
+            feedReleaseCam(rc); rc.dt = 1 / 60; rc.skip = false; rc.update();
           }
           wraithView.time = clock.simTime; wraithView.uploadFx();
+          const cpose = rc.active;
           rc.active = false; rc.hold = true; rc.bars = 1;
-          arm.setPose(rc.x, rc.y, rc.z, rc.yaw, rc.pitch, rc.fov);
+          if (cpose) arm.setPose(rc.x, rc.y, rc.z, rc.yaw, rc.pitch, rc.fov);
           game.wraithHeld = capture;
         }
         warden.dt = 0; warden.update();
@@ -570,25 +640,40 @@ async function boot() {
   // The release cinematic: when the last joint breaks the camera takes a slow orbit around the
   // Warden as it exhales and lies down (letterboxed, skippable).
   const { createReleaseCam } = await import('./camera/releaseCam.js');
-  const releaseCam = createReleaseCam();
+  const releaseCam = createReleaseCam(ground);
   const bars = [document.createElement('div'), document.createElement('div')];
   bars[0].className = 'letterbox letterbox-top'; bars[1].className = 'letterbox letterbox-bottom';
   document.body.append(bars[0], bars[1]);
   let barsShown = -1;
+  // The slam's flash: a brief white-out (DOM overlay, eased out).
+  const flashEl = document.createElement('div'); flashEl.className = 'release-flash'; document.body.append(flashEl);
+  let flash = 0, flashShown = -1;
+  /** Release camera inputs from the Warden and the Wraith. */
+  function feedReleaseCam(rc) {
+    const b = warden.body;
+    rc.wt = warden.state === wardenMod.W.RESTED ? 99 : warden.t;
+    rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3];
+    rc.hx = b.hx; rc.hy = b.hy; rc.hz = b.hz;
+    if (knock.active) { rc.px = knock.x; rc.py = knock.y; rc.pz = knock.z; }
+    else { rc.px = controller.pos.x; rc.py = controller.pos.y + 0.9; rc.pz = controller.pos.z; }
+    rc.hitT = knockHitT;
+  }
   loop.add({ name: 'releaseCam', update: () => {
     const rc = releaseCam;
     rc.dt = clock.realDt;
-    if (warden.active && warden.state === wardenMod.W.RELEASE) {
-      const b = warden.body;
-      rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3];
-      if (!rc.played && !rc.active && !capture) {
-        const c = camera.position; rc.x = c.x; rc.y = c.y; rc.z = c.z;
-        rc.start();
-      }
-    } else if (!warden.active || warden.state !== wardenMod.W.RELEASE) { if (!rc.active) rc.played = false; }
+    const releasing = warden.active && warden.state === wardenMod.W.RELEASE;
+    if (releasing) {
+      feedReleaseCam(rc);
+      if (!rc.played && !rc.active && !capture) { knockHitT = -1; rc.start(); }
+      if (warden.slam && !capture) { clock.hitStop = Math.max(clock.hitStop, 0.22); flash = 0.85; }
+    } else if (!rc.active && warden.state !== wardenMod.W.RESTED) rc.played = false;
     const was = rc.active;
-    rc.skip = inputState.pressed[Act.Jump] || inputState.pressed[Act.Interact];
-    if (rc.active) { ground.qx = rc.x; ground.qz = rc.z; ground.sample(); rc.groundY = ground.h; }
+    rc.skip = rc.active && (inputState.pressed[Act.Jump] || inputState.pressed[Act.Interact]);
+    if (rc.skip) {
+      // Skipped: straight to the end — lain down in the land, the Wraith on its feet.
+      warden.finishRelease(); knock.reset(); stepKnock(0);
+    }
+    if (rc.active) feedReleaseCam(rc);
     rc.update();
     if (rc.active) arm.setPose(rc.x, rc.y, rc.z, rc.yaw, rc.pitch, rc.fov);
     else if (was) {
@@ -597,6 +682,9 @@ async function boot() {
     }
     const shown = Math.round(rc.bars * 100);
     if (shown !== barsShown) { barsShown = shown; bars[0].style.transform = bars[1].style.transform = 'scaleY(' + (rc.bars * rc.bars * (3 - 2 * rc.bars)).toFixed(3) + ')'; }
+    flash *= Math.exp(-clock.realDt * 4.5);
+    const fs = Math.round(flash * 100);
+    if (fs !== flashShown) { flashShown = fs; flashEl.style.opacity = (fs / 100).toFixed(2); }
   } });
   /** Photo spots with Shaped (`shaped: { spawn: [[name, dx, dz], …], seconds }`): spawn them
    *  around the player, simulate a few substeps per frame (frozen capture clock), then hold. */

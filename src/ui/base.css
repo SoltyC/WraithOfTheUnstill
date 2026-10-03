@@ -132,3 +132,13 @@ html, body {
 }
 .letterbox-top { top: 0; transform-origin: top; }
 .letterbox-bottom { bottom: 0; transform-origin: bottom; }
+
+/* The release's slam: a brief white-out. */
+.release-flash {
+  position: fixed;
+  inset: 0;
+  background: #f4f8ff;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 6;
+}
