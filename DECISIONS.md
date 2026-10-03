@@ -252,3 +252,15 @@ Every deviation from BRIEF.md, one line each, with rationale.
   - **Motion:** they move only by an owner-integrated "moving time" whose rate is the restoration (plus the release gust). In stilled air they are literally motionless, then drift off and thin out as the land is restored, with no jump when the rate changes.
   - **Look:** each grain is a plate crystal with its own orientation, mostly near-horizontal. It flashes only where it mirrors the sun into the eye, so the frozen field twinkles as the camera moves.
   - **Rendering:** additive, sized to at least ~1.5 px, and dimmed when enlarged.
+
+### Phase 5 rework (after the user's review, 2026-10-04)
+
+- **Climbing is hold-to-hold.** Continuous surface sliding read as flying, so movement now comes only from a reach → pull → beat cycle. Holds are stored in the surface's own parameters, so they ride every step and buck. Hands reach them by two-bone IK, and the pelvis hangs on an underdamped spring (ω 12, ζ 0.42), which gives the weight. The climb surface is the visible one: a ray from the bone axis leaves the outermost chunk ellipsoid, with the smooth tube only as a floor. Bumps are holds, and the Wraith is never buried in a bulge.
+- **The release never removes the Warden** (BRIEF: "settles into the land"). It rears, slams, sends a shockwave, then lies down under snow. Snow cover rides in the chunk records' alpha (1 bare … 0.51 buried) and smooths the crags toward drift. It rests for good (state RESTED) as a ridge with its spires standing.
+- **The shockwave throws the Wraith** (character/knockdown.js). It goes through the climb's frame-override path (pelvis plus body frame), so no new animation system was needed. It is held down while the cinematic plays.
+- **Scour grooves are laid end to end** (one stamp per 2.6 m segment per ray). Per-frame overlapping plough stamps left a tyre-tread ripple.
+- **Hit feedback travels in the chunk records:** the hurt flash is the fractional part of `kind` (kind + 0.45 × hurt), which needs no new channel. Shaders round the kind down.
+- **Audio is pulled forward from Phase 7,** procedural only (no samples yet), because the fight was mute.
+  - A fixed pool of 20 voices (looping noise → filter, plus an oscillator, then a panner) is re-enveloped per sound, so nothing is created per sound.
+  - It is silent in captures and benches, and starts on the first input (autoplay rules).
+  - The wind bed follows the restoration-driven wind, so the stilled steppe is silent until the release.

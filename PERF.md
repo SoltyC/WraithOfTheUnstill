@@ -312,3 +312,13 @@ Run `13-37-17` with `?bench=fight`, every other browser closed. Phases:
 
   An A/B in the same session settles the cause. The earlier build (4f16ed4, which produced the 13.2 ms run above) measured pack 14.0 / 16.1 ms, the same as the new build. The rise therefore comes from the machine's load at the time, not from the new code. The diamond dust adds ~0.2 ms where it is visible (stilled warden spot) and is culled in restored air.
 - **Watch item:** the pack view has the least headroom (p95 near 16.7 ms when the PC is busy). Candidates for the Phase 6 scalability pass: the frost material on the open snowfield and Shaped chunk counts at distance.
+
+- **After the Phase 5 rework** (`21-24-49`: hold-to-hold climb, release rebuild, combat feel, audio):
+
+  | Phase | GPU median | GPU p95 |
+  |---|---|---|
+  | warden | 10.9 ms | 12.5 ms |
+  | climb | 9.1 ms | 11.1 ms |
+  | pack | 13.0 ms | 14.5 ms |
+
+  Late pipelines 0, draw calls 40. Still within the 16.7 ms budget at 1440p. The climb's chunk ray casts (up to ~8 rays × 380 ellipsoids a frame) do not show up.

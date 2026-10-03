@@ -5,6 +5,7 @@
 
 import { MAX_SHAPED } from '../shaped/shaped.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
+import { SFX } from '../../audio/sfx.js';
 
 export const combatTuning = {
   health: 100, focus: 100,
@@ -37,6 +38,8 @@ export function createCombat(ctx) {
     shrineX: 0.5, shrineZ: 0.5,
     /** Camera shake and punch (FOV kick) requested this frame (owner adds them to the arm). */
     shake: 0.5 - 0.5, kick: 0.5 - 0.5,
+    /** Sound (audio/sfx.js), set by the owner; null = silent. */
+    sfx: null,
     /** Inputs (fields) for one frame. */
     dt: 0.5, wantLockToggle: false,
 
@@ -145,6 +148,7 @@ export function createCombat(ctx) {
           wardenBodySeen[q] = frost.sweepId[q];
           warden.hx = b.kx[l]; warden.hy = b.ky[l]; warden.hz = b.kz[l]; warden.hdx = -frost.sweepDX[q]; warden.hdz = -frost.sweepDZ[q];
           warden.bodyHit(); self.shake += 0.006; self.kick += T.kickHit * 0.6;
+          if (self.sfx) { const sx = self.sfx; sx.x = b.kx[l]; sx.y = b.ky[l]; sx.z = b.kz[l]; sx.gain = 1.3; sx.play(SFX.THUD); sx.play(SFX.CRUNCH); }
           clock.hitStop = Math.max(clock.hitStop, T.hitStopHit * 0.7);
           break;
         }
@@ -169,6 +173,7 @@ export function createCombat(ctx) {
   function breakJoint() {
     clock.hitStop = Math.max(clock.hitStop, 0.16);
     self.shake += 0.06; self.kick += 0.09;
+    if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 2; sx.z = controller.pos.z; sx.gain = 1.4; sx.play(SFX.SHATTER); sx.play(SFX.BOOM); }
   }
   self.breakJoint = breakJoint;
 
@@ -178,6 +183,11 @@ export function createCombat(ctx) {
     const frozen = shaped.isFrozen(i);
     const amount = frozen ? dmg * T.shatterMul : dmg;
     shaped.chip(i, dx, dz, frozen ? 40 : heavy ? 24 : 3);
+    const sx = self.sfx;
+    if (sx && (frozen || heavy || ribbonTick <= 0)) {
+      const b = shaped.slots[i].body; sx.x = b.sx[1]; sx.y = b.sy[1]; sx.z = b.sz[1]; sx.gain = frozen ? 1.2 : heavy ? 1 : 0.5;
+      sx.play(frozen ? SFX.SHATTER : heavy ? SFX.THUD : SFX.CRUNCH);
+    }
     shaped.damage(i, amount, true, dx * 3, dz * 3);
     if (frozen) { clock.hitStop = Math.max(clock.hitStop, T.hitStopShatter); self.shake += 0.02; self.kick += T.kickShatter; }
     else if (heavy) { clock.hitStop = Math.max(clock.hitStop, T.hitStopHit); self.shake += 0.008; self.kick += T.kickHit; }
@@ -191,6 +201,7 @@ export function createCombat(ctx) {
     if (shaped.hits === 0 && wh === 0) return;
     if (controller.dodgeT > 0) return;               // the bend-step slips through
     self.health -= shaped.hitDamage + (wh ? warden.hitDamage : 0);
+    if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
     self.shake += 0.015;
     if (self.health <= 0) { self.health = 0; self.dying = 1e-4; self.lock = -1; }

@@ -32,12 +32,32 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - **Diamond dust:** ice grains hang motionless in stilled air. They twinkle as the camera moves and start drifting and thinning on the release's gust.
   - **Dev tools:** world tools Spawn, ×3, Kill all, Warden and Release; `?bench=fight`.
   - **Tests:** 91 pass (Shaped, combat, climb, release camera).
+- **Phase 5 rework after the user's review (2026-10-04)**, which said the climb looked like flying, the release sank and vanished, and combat was bland:
+  - **Climb, now hold-to-hold:**
+    - Each move is a reach (the lead hand arcs to a new hold), then a pull (the body surges up under it), then a beat.
+    - Hands and feet are holds that ride the Warden. The arms use two-bone IK; the feet plant with frog knees, or hang while it heaves.
+    - The pelvis hangs on a spring. Each grab gives a puff of snow, a jolt and a crunch.
+    - The climb surface is now the visible one (rays leave the outermost chunk).
+  - **Release, rebuilt:**
+    - Light fills the ice, the Warden rears, then slams onto its chest with a hit-stop and a white flash.
+    - A shockwave tears out across the steppe: a powder wall and radial scour grooves.
+    - The shockwave throws the Wraith onto its back. It lies through the cinematic and gets up afterwards.
+    - The Warden lies down under snow and stays for good, as a ridge with its spires standing.
+    - The camera directs three shots (the rearing, the wave, a crane); skipping jumps to the end state.
+  - **Combat:**
+    - **Hits:** cold-white hit flash and knockback (hounds hop, big ones rock); heavier hit-stops and a camera punch; frozen kills blow apart.
+    - **Hounds:** take turns (a lunge token) and spread round the Wraith.
+    - **Brutes:** crack the ground where the slam lands; the slam's ring passes under a jump.
+    - **The Warden:** spells on its body chip it and make it flinch and turn on you. It stomps (a ground ring), tail-sweeps behind and sheds shard volleys at range, and enrages per broken joint.
+    - **Casting:** flashes the hand light.
+  - **Sound (pulled forward from Phase 7):** procedural WebAudio covering hits, shatters, slams, stomps, the shockwave, steps, grabs and the three verbs, plus a wind bed. The stilled steppe is silent; the release brings the wind back.
+  - **Tests:** 99 pass (knockdown, release camera, hold-to-hold climbing, fight feel).
 - **Phase 5 gate evidence (target T, 2026-10-03):**
   - **Shots:** `screenshots/phase-05/` (`?shots=p5-`):
     - hounds, pack and combat with the HUD hidden;
     - Warden golden and afternoon;
     - climb flank and leg;
-    - release glow, wave and settled;
+    - release rear, wave, thrown and settled;
     - steppe stilled and restored.
   - **Bench:** `?bench=fight` on T at 1440p. The pack (the heaviest view) has a GPU frame of 13.2 ms median and 13.8 ms p95; 0 late pipelines (PERF.md).
 - **Phase 5 open (for review / polish):**

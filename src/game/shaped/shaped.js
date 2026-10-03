@@ -8,6 +8,7 @@ import { ShapedBody } from './body.js';
 import { ARCHETYPES } from './archetypes.js';
 import { buildRig, createRigState, writeAlive, writeFall, writeHidden, startFall, CHUNK_FLOATS } from './rig.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
+import { SFX } from '../../audio/sfx.js';
 
 export const MAX_SHAPED = 8;
 /** Chunk records per slot (the largest archetype). */
@@ -59,6 +60,8 @@ export function createShaped(ctx) {
     lungeToken: -1,
     /** A shattering kill happened this frame (owner: the big hit-stop and punch) at (bx, by, bz). */
     shattered: 0, bx: 0.5, by: 0.5, bz: 0.5,
+    /** Sound (audio/sfx.js), set by the owner; null = silent. */
+    sfx: null,
     /** Ground slams this frame (camera shake), and the strongest one's distance to the Wraith. */
     slams: 0, slamDist: 0.5,
     /** Spawn an archetype at (x, z): it rises out of the snow. Returns the slot or −1. */
@@ -201,7 +204,10 @@ export function createShaped(ctx) {
     /** Throw a shard from (sx, sy, sz) at (tx, ty, tz) at shotSpeed, wounding shotDmg (fields in;
      *  the Warden's volley uses the same pool). */
     sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, shotSpeed: 14.5, shotDmg: 12.5,
-    shoot() { throwShard(this.sx, this.sy, this.sz, this.tx, this.ty, this.tz, this.shotSpeed, this.shotDmg); },
+    shoot() {
+      throwShard(this.sx, this.sy, this.sz, this.tx, this.ty, this.tz, this.shotSpeed, this.shotDmg);
+      if (this.sfx) { this.sfx.x = this.sx; this.sfx.y = this.sy; this.sfx.z = this.sz; this.sfx.gain = 1; this.sfx.play(SFX.SHARD); }
+    },
     /** Count of living (or rising) Shaped. */
     get alive() { let n = 0; for (let i = 0; i < MAX_SHAPED; i++) if (slots[i].state !== S.EMPTY && slots[i].state !== S.FALLING) n++; return n; },
   };
@@ -224,6 +230,7 @@ export function createShaped(ctx) {
         ts.bx = shot.x[k]; ts.bz = shot.z[k]; ts.bdx = sx / sl; ts.bdz = sz / sl; ts.bl = 0.35; ts.bw = 0.06; ts.bd = 0.06; ts.bc = 0.3;
         ts.bk = BRUSH.SCORE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
         ts.stamp();
+        if (P.sfx) { P.sfx.x = shot.x[k]; P.sfx.y = ground.h; P.sfx.z = shot.z[k]; P.sfx.gain = 0.6; P.sfx.play(SFX.CRUNCH); }
         for (let q = 0; q < 8; q++) { fx.ex = shot.x[k]; fx.ey = ground.h + 0.05; fx.ez = shot.z[k]; fx.evx = (rnd() - 0.5) * 2; fx.evz = (rnd() - 0.5) * 2; fx.evy = 0.5 + rnd() * 1.5; fx.esize = 0.05 + 0.05 * rnd(); fx.emit(); }
         shot.live[k] = 0; chunks[o + 15] = 0; continue;
       }
@@ -324,6 +331,7 @@ export function createShaped(ctx) {
           const pd = Math.hypot(P.px - ix, P.pz - iz);
           if (pd < A.slamRadius && P.pgrounded) { P.hits++; P.hitDamage += A.slamDamage; }
           P.slams++; P.slamDist = Math.min(P.slamDist, pd);
+          if (P.sfx) { P.sfx.x = ix; P.sfx.y = ground.h; P.sfx.z = iz; P.sfx.gain = 0.9; P.sfx.play(SFX.BOOM); P.sfx.play(SFX.CRUNCH); }
           s.state = S.RECOVER; s.t = 0;
         }
         break;
@@ -375,6 +383,7 @@ export function createShaped(ctx) {
           const ox = -uz * k * 1.1, oz = ux * k * 1.1;
           throwShard(b.hx, b.hy + 0.15, b.hz, tx + ox, ground.h + 0.9, tz + oz, 16, A.shardDamage);
         }
+        if (P.sfx) { P.sfx.x = b.hx; P.sfx.y = b.hy; P.sfx.z = b.hz; P.sfx.gain = 0.8; P.sfx.play(SFX.SHARD); }
         s.state = S.RECOVER; s.t = 0;
         break;
       }
@@ -427,6 +436,7 @@ export function createShaped(ctx) {
           const tx = P.px + P.pvx * 0.35 - b.x, tz = P.pz + P.pvz * 0.35 - b.z;
           const tl = Math.sqrt(tx * tx + tz * tz) || 1;
           s.lungeX = tx / tl; s.lungeZ = tz / tl;
+          if (P.sfx) { P.sfx.x = b.x; P.sfx.y = b.y + 0.4; P.sfx.z = b.z; P.sfx.gain = 0.7; P.sfx.play(SFX.WHOOSH); }
         }
         break;
       case S.LUNGE: {

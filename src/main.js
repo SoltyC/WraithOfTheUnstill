@@ -211,6 +211,7 @@ async function boot() {
     arm.pushX = -climb.fx * push; arm.pushY = -climb.fy * push; arm.pushZ = -climb.fz * push;
     if (climb.grabbed) {
       // A hand bites into the crust: a puff of snow knocked loose, a small jolt.
+      sfx.x = climb.gx; sfx.y = climb.gy; sfx.z = climb.gz; sfx.gain = 0.8; sfx.play(SFX.CRUNCH);
       for (let q = 0; q < 10; q++) {
         const a = q * 0.618 * Math.PI * 2;
         wraithView.ex = climb.gx; wraithView.ey = climb.gy; wraithView.ez = climb.gz;
@@ -272,6 +273,14 @@ async function boot() {
   // The Frost Warden (Phase 5): a colossal Shaped with water joints; its own chunk view.
   const wardenMod = await import('./game/warden/warden.js');
   const warden = wardenMod.createWarden({ ts: terrainState, fx: wraithView, ground });
+  // Sound (audio/sfx.js): live play only (captures and benches stay silent); it starts on the
+  // first key or pointer press.
+  const { createSfx, SFX } = await import('./audio/sfx.js');
+  const sfx = createSfx();
+  sfx.enabled = !capture && !qs.get('bench');
+  const unlockAudio = () => sfx.unlock();
+  window.addEventListener('pointerdown', unlockAudio); window.addEventListener('keydown', unlockAudio);
+  shaped.sfx = sfx; warden.sfx = sfx;
   // The Warden's shard volley flies in the Shaped's shard pool (rendered with them).
   warden.shoot = () => {
     shaped.sx = warden.sx; shaped.sy = warden.sy; shaped.sz = warden.sz; shaped.tx = warden.tx; shaped.ty = warden.ty; shaped.tz = warden.tz;
@@ -297,6 +306,7 @@ async function boot() {
       if (prevShockR >= 0 && prevShockR < d && warden.shockR >= d && d < 70) {
         knock.hx = p.x; knock.hy = p.y; knock.hz = p.z; knock.hdx = dx / (d || 1); knock.hdz = dz / (d || 1);
         knock.hit(); knockHitT = warden.t;
+        sfx.x = p.x; sfx.y = p.y + 1; sfx.z = p.z; sfx.gain = 1.6; sfx.play(SFX.RUMBLE); sfx.play(SFX.WHOOSH);
         arm.shake += 0.07; if (!capture) clock.hitStop = Math.max(clock.hitStop, 0.09);
       }
     }
@@ -308,6 +318,7 @@ async function boot() {
       p.x = knock.footX; p.y = knock.footY; p.z = knock.footZ;
       controller.vel.x = knock.vx; controller.vel.y = knock.vy; controller.vel.z = knock.vz;
       if (knock.landed) {
+        sfx.x = knock.x; sfx.y = knock.y; sfx.z = knock.z; sfx.gain = 1.2; sfx.play(SFX.THUD); sfx.play(SFX.CRUNCH);
         // A thump in the snow: powder from under it.
         for (let q = 0; q < 26; q++) {
           const a = q * 0.2417 * Math.PI * 2;
@@ -355,6 +366,7 @@ async function boot() {
   // Combat (Phase 5): focus, hits and reactions, lock-on, dodge, wounds and death.
   const { createCombat, combatTuning } = await import('./game/combat/combat.js');
   const combat = createCombat({ shaped, frost, warden, controller, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
+  combat.sfx = sfx;
   combat.shrineX = monastery.pos[0]; combat.shrineZ = monastery.pos[1];
   const vignette = document.createElement('div');
   vignette.className = 'wound-vignette';
@@ -433,7 +445,7 @@ async function boot() {
     const able = can && combat.dying === 0;
     if (able) {
       if (inputState.down[Act.Primary]) primaryHeld += dt;
-      if (inputState.released[Act.Primary] && primaryHeld < HOLD && combat.spend(combatTuning.costSweep)) { frost.castSweep = true; castFlash = 1; arm.kick += 0.012; }
+      if (inputState.released[Act.Primary] && primaryHeld < HOLD && combat.spend(combatTuning.costSweep)) { frost.castSweep = true; castFlash = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH); }
       if (!inputState.down[Act.Primary]) primaryHeld = 0;
     } else primaryHeld = 0;
     frost.ribbonHeld = able && primaryHeld >= HOLD && combat.focus > 1;
@@ -525,6 +537,7 @@ async function boot() {
     footprints.enabled = systemsMod.toggles.on.footprints !== false;
     for (let e = 0; e < g.evCount; e++) {
       const o = e * 7;
+      sfx.x = ev[o]; sfx.y = ev[o + 1]; sfx.z = ev[o + 2]; sfx.gain = 0.35 + 0.08 * Math.min(ev[o + 6], 6); sfx.play(SFX.STEP);
       footprints.ex = ev[o]; footprints.ez = ev[o + 2]; footprints.edx = ev[o + 3]; footprints.edz = ev[o + 4];
       footprints.stampFoot();
       wraithView.spray(ev[o], ev[o + 1], ev[o + 2], ev[o + 3], ev[o + 4], ev[o + 6]);
@@ -778,6 +791,13 @@ async function boot() {
     dust.density = Math.max(0, 1 - r * 1.25);
     dust.time = clock.simTime;
     dust.update();
+    // Sound: listener at the camera; the wind bed follows the wind (silent while stilled); the
+    // Ribbon hisses while it flows; a formation chimes where it rises.
+    const cp = camera.position;
+    sfx.lx = cp.x; sfx.ly = cp.y; sfx.lz = cp.z; sfx.rx = Math.cos(arm.yaw); sfx.rz = -Math.sin(arm.yaw);
+    sfx.wind = Math.min(1, w / 1.1); sfx.hiss = Math.min(1, frost.ribbonStrength); sfx.time = clock.simTime;
+    if (frost.crystalEvent) { sfx.x = frost.crystalX; sfx.y = controller.pos.y + 0.5; sfx.z = frost.crystalZ; sfx.gain = 1.1; sfx.play(SFX.CHIME); }
+    sfx.update();
   } });
   // Writers: the player's footprints; scripted trails from photo spots once the world is settled.
   const { createFootprints } = await import('./terrain/state/footprints.js');

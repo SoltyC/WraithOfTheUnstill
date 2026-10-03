@@ -9,6 +9,7 @@
 import { ShapedBody } from '../shaped/body.js';
 import { buildRig, createRigState, writeAlive, writeHidden, CHUNK_FLOATS, CHUNK } from '../shaped/rig.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
+import { SFX } from '../../audio/sfx.js';
 
 // A glacier-mammoth: a massive, broad body on stumpy pillar legs, a heavy lowered head, a short
 // thick tail — the mass reads as land, not as an insect.
@@ -84,6 +85,8 @@ export function createWarden(ctx) {
     shoot: null, sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5,
     /** Seconds until it may attack again; how angry it is (joints broken). */
     cool: 0.5 + 2.5,
+    /** Sound (audio/sfx.js), set by the owner; null = silent. */
+    sfx: null,
     get rage() { return JOINTS - this.remaining; },
     /** A spell struck its body at (hx, hy, hz) along (hdx, hdz): material chips off, it flinches,
      *  it turns on the Wraith. */
@@ -227,6 +230,7 @@ export function createWarden(ctx) {
         }
         const d = Math.hypot(this.px - x, this.pz - z);
         this.shake += 0.03 * Math.max(0, 1 - d / 45);
+        if (this.sfx) { this.sfx.x = x; this.sfx.y = ground.h; this.sfx.z = z; this.sfx.gain = 0.55; this.sfx.play(SFX.BOOM); }
       }
       this.hurt = Math.max(0, this.hurt - dt * 4);
       if (this.flinch > 0) { this.flinch = Math.max(0, this.flinch - dt * 2.5); body.crouch = Math.max(body.crouch, 0.18 * Math.sin(Math.PI * (1 - this.flinch))); }
@@ -318,6 +322,7 @@ export function createWarden(ctx) {
         W0.glow += ((W0.t < 0.9 ? 0.7 : 0) - W0.glow) * Math.min(1, dt * 4);
         if (W0.t < 0.9) body.heading -= W0.tailDir * 0.12 * dt;              // wind-up
         else if (W0.t < 1.6) {
+          if (W0.t - dt < 0.9 && W0.sfx) { const k = WARDEN_SHAPE.tail - 1; W0.sfx.x = body.tx[k]; W0.sfx.y = body.ty[k]; W0.sfx.z = body.tz[k]; W0.sfx.gain = 1.6; W0.sfx.play(SFX.WHOOSH); W0.sfx.play(SFX.RUMBLE); }
           body.heading += W0.tailDir * 1.25 * dt;                             // the swing
           const n = WARDEN_SHAPE.tail - 1;
           for (let k = 1; k <= n; k++) {
@@ -369,6 +374,7 @@ export function createWarden(ctx) {
           }
           const d = Math.hypot(W0.px - x, W0.pz - z);
           if (d < 3.5) { W0.hits++; W0.hitDamage += 35; }               // under the foot
+          if (W0.sfx) { W0.sfx.x = x; W0.sfx.y = ground.h; W0.sfx.z = z; W0.sfx.gain = 1.5; W0.sfx.play(SFX.BOOM); W0.sfx.play(SFX.RUMBLE); }
           W0.shake += 0.06 * Math.max(0, 1 - d / 60);
           // The shock runs out along the ground as a ring.
           W0.ringX = x; W0.ringZ = z; W0.ringR = 3; W0.ringHit = d < 3.5;
@@ -451,6 +457,7 @@ export function createWarden(ctx) {
   /** The slam lands: a crater under the chest, a burst of powder, the shockwave begins. */
   function impact(W0) {
     W0.slam = true; W0.shake += 0.14;
+    if (W0.sfx) { W0.sfx.x = body.sx[1]; W0.sfx.y = body.sy[1]; W0.sfx.z = body.sz[1]; W0.sfx.gain = 2.2; W0.sfx.play(SFX.BOOM); W0.sfx.play(SFX.BOOM); W0.sfx.play(SFX.RUMBLE); }
     const cx = body.sx[1], cz = body.sz[1], fwx = Math.sin(body.heading), fwz = Math.cos(body.heading);
     W0.shockX = body.sx[2]; W0.shockZ = body.sz[2]; W0.shockR = WARDEN_SHAPE.hip * 1.3;
     ts.bx = cx + fwx * 2; ts.bz = cz + fwz * 2; ts.bdx = fwx; ts.bdz = fwz; ts.bl = 5; ts.bw = 6; ts.bd = 0.7; ts.bc = 0.8;
