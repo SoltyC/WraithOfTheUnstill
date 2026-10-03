@@ -185,7 +185,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let H = normalize(L + V);
   let sheen = charlieD(max(dot(N, H), 0.0), 0.5) / (4.0 * (max(nl, 0.0) + nv - max(nl, 0.0) * nv) + 1e-3);
   col += key * sheenTint * sheen * clamp(nl, 0.0, 1.0) * vis * mix(0.4, 1.0, occ) * 0.6;
-  col += sky * sheenTint * 0.9 * pow(1.0 - nv, 4.0) * ao * ambientK;
+  col += sky * sheenTint * 2.2 * pow(1.0 - nv, 3.0) * ao * ambientK;
   // Anisotropic woven highlight along the threads (Kajiya-Kay).
   let th = dot(Tv, H);
   col += key * sheenTint * 0.25 * pow(sqrt(max(1.0 - th * th, 0.0)), 40.0) * clamp(nl, 0.0, 1.0) * vis * wf;
@@ -200,8 +200,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let cold = vec3f(0.55, 0.78, 1.0);
   var glow = vec3f(0.0);
   if (g == 4) {
+    // Faint: it should only just pick the inner folds out of the dark, strongest close to it.
     let k = coldLight(wp, uniforms.clothHead, 0.045) * uniforms.clothParams.x;
-    glow += cold * k * select(0.03, 0.14, inside);
+    glow += cold * k * k * select(0.015, 0.09, inside);
   }
   if (g >= 2 && g <= 6) {
     let k = coldLight(wp, uniforms.clothHandL, 0.035) + coldLight(wp, uniforms.clothHandR, 0.035);
@@ -270,19 +271,27 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let h = fragmentInputs.vH;
   let m = fragmentInputs.vUv * garmentScale(g);
   // Strand cells (~2.6 mm), jittered; each strand has its own length and tapers to its tip.
-  // Strand grid LOD: coarsen by powers of two so a strand stays at least ~1.5 px wide (at a
-  // distance strands merge into tufts instead of sparkling).
-  let base = m * 380.0;
-  let pix0 = max(max(fwidth(base.x), fwidth(base.y)), 1e-4);
-  let lod = max(0.0, ceil(log2(pix0 / 0.45)));
-  let c = base / exp2(lod);
-  let cell = floor(c);
-  let r1 = h21(cell); let r2 = h21(cell + vec2f(17.0, 3.0)); let r3 = h21(cell + vec2f(5.0, 29.0));
-  let f = fract(c) - vec2f(0.5) - (vec2f(r2, r3) - 0.5) * 0.4;
-  let sl = 0.45 + 0.55 * r1;
-  if (h > sl) { discard; }
-  let rad = 0.55 * pow(1.0 - h / sl, 0.55);
-  if (length(f) > rad) { discard; }
+  // Strands: a jittered grid (~3 mm) in garment metres, each strand leaning across the surface
+  // as it rises (seen end-on it is a short streak, not a dot), with its own length and taper.
+  // Once strands fall below a pixel the shells become a soft fuzz volume with a noisy top
+  // instead (a regular grid of sub-pixel strands reads as chainmail).
+  let base = m * 330.0;
+  let pix = max(max(fwidth(base.x), fwidth(base.y)), 1e-4);
+  let fuzz = vn2(m * 55.0) * 0.6 + vn2(m * 160.0) * 0.4;
+  var sl = 0.5 + 0.5 * fuzz;
+  var r1 = fuzz; var r2 = vn2(m * 90.0 + vec2f(3.0, 1.0));
+  if (pix > 0.55) {
+    if (h > 0.25 + 0.6 * fuzz) { discard; }
+  } else {
+    let c = base + vec2f(1.7, 0.9) * h;
+    let cell = floor(c);
+    r1 = h21(cell); r2 = h21(cell + vec2f(17.0, 3.0)); let r3 = h21(cell + vec2f(5.0, 29.0));
+    let f = fract(c) - vec2f(0.5) - (vec2f(r2, r3) - 0.5) * 0.7;
+    sl = 0.4 + 0.6 * r1;
+    if (h > sl) { discard; }
+    let rad = 0.42 * pow(1.0 - h / sl, 0.7);
+    if (length(f) > rad) { discard; }
+  }
 
   let wp = fragmentInputs.vWorldPos;
   let camPos = uniforms.cameraPosition;
@@ -291,8 +300,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   // Dark roots, grey frost-tipped ends (a wolf-grey ruff), varying per strand.
-  var albedo = mix(vec3f(0.035, 0.032, 0.03), vec3f(0.12, 0.115, 0.11), smoothstep(0.25, 1.0, h / sl));
-  albedo *= 0.8 + 0.4 * r2;
+  var albedo = mix(vec3f(0.04, 0.037, 0.034), vec3f(0.1, 0.096, 0.09), smoothstep(0.25, 1.0, h / sl));
+  albedo *= 0.85 + 0.3 * r2;
   let selfShadow = mix(0.2, 1.0, h) * mix(0.4, 1.0, fragmentInputs.vOcc);
   let vis = shadowVisibility(wp, T, camPos, fragmentInputs.position.xy);
   let tl = dot(T, L);

@@ -175,16 +175,19 @@ export function buildGarments(body) {
   const HOOD_ROWS = 18, HOOD_SPLIT = 0.68;
   grid(GARMENT.COWL, 'head', 0, HOOD_ROWS, 28, false, (u, v, g, k) => {
     const d = smooth(HOOD_SPLIT - 0.04, 1, v);                 // 0: hood shell → 1: shoulder drape
-    const phi0 = lerp(150, 177, d) * Math.PI / 180;           // half-angle from the back to the edge
+    const phi0 = lerp(143, 177, d) * Math.PI / 180;           // half-angle from the back to the edge
     const phi = -phi0 + u * 2 * phi0;
     const rim = smooth(0.62, 0.98, Math.abs(phi) / phi0) * (1 - d);
     if (v <= HOOD_SPLIT) {
       const th = lerp(0.05, 2.05, v / HOOD_SPLIT);
       const rx = 0.152, ry = 0.17, rz = 0.172 * (1 + 0.32 * rim);
       const tip = Math.pow(1 - v / HOOD_SPLIT, 3);
+      // The brim: the upper rim is drawn forward and down over the brow, so the hood broods
+      // forward instead of gazing up.
+      const brim = rim * Math.pow(1 - v / HOOD_SPLIT, 1.5);
       g.lx[k] = Math.sin(th) * Math.sin(phi) * rx;
-      g.lz[k] = -Math.sin(th) * Math.cos(phi) * rz - 0.015 - 0.085 * tip + 0.02 * rim;
-      g.ly[k] = Math.cos(th) * ry + 0.012 + 0.03 * tip - 0.015 * rim;
+      g.lz[k] = -Math.sin(th) * Math.cos(phi) * rz - 0.015 - 0.055 * tip + 0.02 * rim + 0.07 * brim;
+      g.ly[k] = Math.cos(th) * ry + 0.012 + 0.025 * tip - 0.015 * rim - 0.05 * brim;
     } else {
       const s = (v - HOOD_SPLIT) / (1 - HOOD_SPLIT), e = Math.pow(s, 0.8);
       const s0 = Math.sin(2.05), c0 = Math.cos(2.05);

@@ -100,7 +100,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (r2 > 1.0) { discard; }
   if (fragmentInputs.vKind > 0.5) {
     // Additive glow: a tight core and a soft halo (display-referred).
-    let k = (exp(-r2 * 14.0) + 0.25 * exp(-r2 * 3.5)) * (1.0 - r2) * fragmentInputs.vAlpha;
+    let k = (exp(-r2 * 30.0) + 0.3 * exp(-r2 * 6.0)) * (1.0 - r2) * fragmentInputs.vAlpha;
     fragmentOutputs.color = vec4f(fragmentInputs.vColor * k, 0.0);
     return fragmentOutputs;
   }

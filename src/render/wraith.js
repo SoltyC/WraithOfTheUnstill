@@ -186,7 +186,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
       const b = wraith.body, t = this.time;
       // The cowl light: deep in the hood, a little forward of the head's centre, breathing slowly.
       const breath = 1 - BREATH_DEPTH * (0.5 + 0.5 * Math.sin(t * 2 * Math.PI / BREATH_PERIOD));
-      head.x = b.head[0] + b.hf[0] * 0.03 - b.hu[0] * 0.01; head.y = b.head[1] + b.hf[1] * 0.03 - b.hu[1] * 0.01; head.z = b.head[2] + b.hf[2] * 0.03 - b.hu[2] * 0.01;
+      head.x = b.head[0] + b.hf[0] * 0.07 - b.hu[0] * 0.015; head.y = b.head[1] + b.hf[1] * 0.07 - b.hu[1] * 0.015; head.z = b.head[2] + b.hf[2] * 0.07 - b.hu[2] * 0.015;
       head.w = this.cowlLight * breath;
       clothParams.x = 1; clothParams.y = t; clothParams.w = this.handLight;
       // Fingertips: along the forearm past the wrist.
@@ -198,7 +198,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
         h.w = 0.75 + 0.25 * Math.sin(t * 3.7 + s * 2.1);
       }
       // Glow sprites: cowl (cold, small, faint) and fingertips (the element's light).
-      glow(fxData, 0, head, 0.3 * head.w, 0.5 * head.w, 0.75 * head.w, 0.045, 1);
+      glow(fxData, 0, head, 0.32 * head.w, 0.55 * head.w, 0.85 * head.w, 0.065, 1);
       glow(fxData, 1, handL, 0.25 * handL.w, 0.45 * handL.w, 0.6 * handL.w, 0.035, this.handLight);
       glow(fxData, 2, handR, 0.25 * handR.w, 0.45 * handR.w, 0.6 * handR.w, 0.035, this.handLight);
       fxBuf.update(fxData);

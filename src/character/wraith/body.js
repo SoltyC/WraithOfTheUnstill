@@ -88,7 +88,7 @@ export class Body {
       this.toWorld(side * 0.2 + ex, 0.5 + eyl, -0.01 + ezl);
       this.el[o] = this.out[0]; this.el[o + 1] = this.out[1]; this.el[o + 2] = this.out[2];
       // Forearm: bends forward more when running.
-      const b = a + 0.42 + 0.9 * run;
+      const b = a + 0.42 + 0.45 * run;
       this.toWorld(side * 0.2 + ex * 1.5, 0.5 + eyl - Math.cos(b) * fa, -0.01 + ezl + Math.sin(b) * fa);
       this.ha[o] = this.out[0]; this.ha[o + 1] = this.out[1]; this.ha[o + 2] = this.out[2];
     }
