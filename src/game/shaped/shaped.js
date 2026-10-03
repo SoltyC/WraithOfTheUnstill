@@ -27,7 +27,7 @@ export function createShaped(ctx) {
   for (const k in ARCHETYPES) rigs[k] = buildRig(ARCHETYPES[k].shape, Math.min(CHUNKS_PER, ARCHETYPES[k].chunks), 1234 + k.length * 77);
   const slots = [];
   for (let i = 0; i < MAX_SHAPED; i++) slots.push({ arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
-    cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0 });
+    cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
   const chunks = new Float32Array(MAX_SHAPED * CHUNKS_PER * CHUNK_FLOATS);
   let seed = 99;
@@ -57,19 +57,49 @@ export function createShaped(ctx) {
       b.place(x, z, Math.atan2(this.px - x, this.pz - z));
       b.rise = 0; b.crouch = 0; b.lift = 0; b.frozen = false; b.wantVx = 0; b.wantVz = 0;
       s.state = S.RISING; s.t = 0; s.hp = A.health; s.glow = 0; s.cool = 1 + rnd(); s.orbit = rnd() * Math.PI * 2; s.fallSink = 0;
+      s.wet = 0; s.frozenFor = 0; s.sweepHit = 0;
       // The hollow it rises out of: snow ploughed aside into a ring.
       ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = A.shape.spacing * A.shape.spine * 0.55; ts.bd = 0.22; ts.bc = 0.3;
       ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.9;
       ts.stamp();
       return i;
     },
-    /** Damage slot i; stagger knocks it back along (kx, kz). */
+    /** Damage slot i; stagger knocks it back along (kx, kz). Returns true if it died. */
     damage(i, amount, stagger, kx, kz) {
       const s = slots[i];
-      if (s.state === S.EMPTY || s.state === S.FALLING || s.state === S.RISING) return;
+      if (s.state === S.EMPTY || s.state === S.FALLING) return false;
+      if (s.state === S.RISING && amount < 1e8) return false;
       s.hp -= amount;
-      if (s.hp <= 0) { die(s); return; }
+      if (s.hp <= 0) { die(s); return true; }
       if (stagger && s.state !== S.FROZEN) { s.state = S.STAGGER; s.t = 0; s.body.vx = kx; s.body.vz = kz; s.body.crouch = 0; s.body.lift = 0; }
+      return false;
+    },
+    /** Freeze slot i solid for `seconds` (wet Shaped freeze longer). */
+    freeze(i, seconds) {
+      const s = slots[i];
+      if (s.state === S.EMPTY || s.state === S.FALLING || s.state === S.RISING) return;
+      s.state = S.FROZEN; s.t = 0; s.frozenFor = seconds + (s.wet > 0 ? 2 : 0); s.glow = 0;
+      s.body.lift = 0; s.body.crouch = 0;
+    },
+    isFrozen(i) { return slots[i].state === S.FROZEN; },
+    isLive(i) { const st = slots[i].state; return st !== S.EMPTY && st !== S.FALLING && st !== S.RISING; },
+    /** Material chips off slot i: spray thrown along (dx, dz), and small mounds of it left in the snow. */
+    chip(i, dx, dz, amount) {
+      const s = slots[i], b = s.body;
+      const n = Math.min(40, Math.round(10 + amount));
+      for (let k = 0; k < n; k++) {
+        fx.ex = b.sx[1] + (rnd() - 0.5) * 0.4; fx.ez = b.sz[1] + (rnd() - 0.5) * 0.4; fx.ey = b.sy[1] + (rnd() - 0.3) * 0.3;
+        fx.evx = dx * (1.5 + 3 * rnd()) + (rnd() - 0.5) * 2; fx.evz = dz * (1.5 + 3 * rnd()) + (rnd() - 0.5) * 2; fx.evy = 0.8 + 2.4 * rnd();
+        fx.esize = 0.04 + 0.08 * rnd();
+        fx.emit();
+      }
+      const m = amount > 25 ? 3 : 1;
+      for (let k = 0; k < m; k++) {
+        ts.bx = b.sx[1] + dx * (0.6 + 0.9 * rnd()) + (rnd() - 0.5) * 0.6; ts.bz = b.sz[1] + dz * (0.6 + 0.9 * rnd()) + (rnd() - 0.5) * 0.6;
+        ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 0.12 + 0.12 * rnd(); ts.bd = 0.05 + 0.05 * rnd(); ts.bc = 0;
+        ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+        ts.stamp();
+      }
     },
     update() {
       const dt = this.dt;
@@ -105,7 +135,9 @@ export function createShaped(ctx) {
         }
         const rise = s.state === S.RISING ? Math.min(1, s.t / RISE_TIME) : 1;
         b.rise = 0.55 + 0.45 * rise;
-        writeAlive(b, s.st, chunks, rec, rise, s.glow);
+        s.wet = Math.max(0, s.wet - dt);
+        // Glow channel: telegraph light 0..1, +2 when frozen solid (glazed ice in the shader).
+        writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0));
         for (let c = s.rig.count; c < CHUNKS_PER; c++) chunks[(rec + c) * CHUNK_FLOATS + 15] = 0;
         if (s.state === S.RISING) {
           // Snow gathering up into the body as it forms.
@@ -120,7 +152,7 @@ export function createShaped(ctx) {
       }
     },
     /** Count of living (or rising) Shaped. */
-    get alive() { let n = 0; for (const s of slots) if (s.state !== S.EMPTY && s.state !== S.FALLING) n++; return n; },
+    get alive() { let n = 0; for (let i = 0; i < MAX_SHAPED; i++) if (slots[i].state !== S.EMPTY && slots[i].state !== S.FALLING) n++; return n; },
   };
 
   function die(s) {
@@ -183,7 +215,7 @@ export function createShaped(ctx) {
         break;
       case S.FROZEN:
         b.frozen = true; b.wantVx = 0; b.wantVz = 0;
-        if (s.t >= 3) { s.state = S.STALK; s.t = 0; b.frozen = false; }
+        if (s.t >= s.frozenFor) { s.state = S.STALK; s.t = 0; b.frozen = false; s.cool = 0.8; }
         break;
     }
   }

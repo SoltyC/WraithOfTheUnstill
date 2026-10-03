@@ -218,6 +218,13 @@ async function boot() {
   bindShadows(shapedView.material, shadows);
   shadows.addCaster(shapedView.mesh, shapedView.makeShadowMaterial, 2);
   shapedView.freeze();
+  // Combat (Phase 5): focus, hits and reactions, lock-on, dodge, wounds and death.
+  const { createCombat, combatTuning } = await import('./game/combat/combat.js');
+  const combat = createCombat({ shaped, frost, controller, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
+  combat.shrineX = monastery.pos[0]; combat.shrineZ = monastery.pos[1];
+  const vignette = document.createElement('div');
+  vignette.className = 'wound-vignette';
+  document.body.append(vignette);
   const { createSpeedStreaks } = await import('./render/speedStreaks.js');
   const streaks = createSpeedStreaks(scene, atmosphere);
   const { input: inputState, Action: Act } = await import('./input/actions.js');
@@ -226,6 +233,11 @@ async function boot() {
   /** Aim: where the camera's view ray meets the ground, kept within the verbs' range. → aim.x/y/z */
   const aim = { x: 0.5, y: 0.5, z: 0.5 };
   function updateAim() {
+    if (combat.lock >= 0) {
+      const b = shaped.slots[combat.lock].body;
+      aim.x = b.sx[1]; aim.z = b.sz[1]; ground.qx = aim.x; ground.qz = aim.z; ground.sample(); aim.y = ground.h;
+      return;
+    }
     const cp = camera.position, cy = Math.cos(arm.pitch), dx = Math.sin(arm.yaw) * cy, dy = -Math.sin(arm.pitch), dz = Math.cos(arm.yaw) * cy;
     let t = 0, hit = false;
     for (let k = 1; k <= 80 && !hit; k++) {
@@ -284,13 +296,14 @@ async function boot() {
     }
     const dt = clock.dt;
     const can = !arm.free && !controller.scripted && !controller.surf.active;
-    if (can) {
+    const able = can && combat.dying === 0;
+    if (able) {
       if (inputState.down[Act.Primary]) primaryHeld += dt;
-      if (inputState.released[Act.Primary] && primaryHeld < HOLD) frost.castSweep = true;
+      if (inputState.released[Act.Primary] && primaryHeld < HOLD && combat.spend(combatTuning.costSweep)) frost.castSweep = true;
       if (!inputState.down[Act.Primary]) primaryHeld = 0;
     } else primaryHeld = 0;
-    frost.ribbonHeld = can && primaryHeld >= HOLD;
-    if (can && inputState.pressed[Act.Heavy]) { frost.castCrystal = true; arm.shake += 0.01; }
+    frost.ribbonHeld = able && primaryHeld >= HOLD && combat.focus > 1;
+    if (able && inputState.pressed[Act.Heavy] && combat.spend(combatTuning.costCrystal)) { frost.castCrystal = true; arm.shake += 0.01; }
     // The Wraith turns to face what it bends.
     if (frost.castSweep || frost.castCrystal || frost.ribbonHeld) controller.yaw = arm.yaw;
     updateAim();
@@ -316,7 +329,7 @@ async function boot() {
     w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
     w.windStrength = paramsMod.params.v.windStrength;
-    w.surf = controller.surf.blend; w.surfLean = controller.surf.lean;
+    w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);
     wraithView.time = clock.simTime;
     if (!wraithView.isEnabled()) return;
@@ -415,6 +428,30 @@ async function boot() {
     }
     shapedView.update();
   } });
+  loop.add({ name: 'combat', update: () => {
+    if (inputState.pressed[Act.LockOn]) combat.wantLockToggle = true;
+    if (inputState.pressed[Act.Dodge] && !controller.god && combat.dying === 0 && combat.spend(combatTuning.costDodge)) controller.dodgeRequested = true;
+    combat.dt = clock.dt;
+    combat.update();
+    arm.shake += combat.shake;
+    // Lock-on: the camera turns to keep the target ahead (soft; the mouse still pitches).
+    if (combat.lock >= 0 && !controller.surf.active) {
+      const b = shaped.slots[combat.lock].body;
+      const want = Math.atan2(b.x - controller.pos.x, b.z - controller.pos.z);
+      let d = want - arm.yaw; d -= Math.round(d / (2 * Math.PI)) * 2 * Math.PI;
+      arm.yaw += d * (1 - Math.exp(-clock.realDt * 5));
+    }
+    // On the body, not a HUD: focus is the hand-light, health the cowl light and the robe's frost.
+    const w = combat.wound, dying = combat.dying;
+    const gutter = w > 0.6 ? 0.75 + 0.25 * Math.sin(clock.simTime * 17) * Math.sin(clock.simTime * 7.3) : 1;
+    const deathFade = dying > 0 ? Math.max(0, 1 - dying / 1.2) : 1;
+    const reform = dying > combatTuning.deathTime ? Math.min(1, (dying - combatTuning.deathTime) / combatTuning.reformTime) : 0;
+    wraithView.cowlLight = (1 - 0.65 * w) * gutter * Math.max(deathFade, reform);
+    wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus) * Math.max(deathFade, reform);
+    wraithView.frost = Math.min(1, w * 1.15);
+    wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;
+    vignette.style.opacity = String(Math.max(0, (w - 0.65) / 0.35).toFixed(3));
+  } });
   /** Photo spots with Shaped (`shaped: { spawn: [[name, dx, dz], …], seconds }`): spawn them
    *  around the player, simulate a few substeps per frame (frozen capture clock), then hold. */
   const shapedRoll = { t: -1 };
@@ -431,7 +468,13 @@ async function boot() {
       shaped.update();
       shapedRoll.t += 1 / 60;
     }
-    if (shapedRoll.t >= spec.seconds) { game.pendingShaped = null; shapedRoll.t = -1; }
+    if (shapedRoll.t >= spec.seconds) {
+      // Optional combat pose for the still: some Shaped frozen solid, the Wraith wounded.
+      if (spec.freeze) for (const k of spec.freeze) shaped.freeze(k, 1e6);
+      if (spec.telegraph) for (const k of spec.telegraph) { shaped.slots[k].state = shapedMod.S.TELEGRAPH; shaped.slots[k].glow = 1; shaped.slots[k].body.crouch = 1; shaped.update(); }
+      if (spec.wound !== undefined) { combat.health = combatTuning.health * (1 - spec.wound); combat.wound = spec.wound; }
+      game.pendingShaped = null; shapedRoll.t = -1;
+    }
   }
   loop.add({ name: 'atmosphere', update: () => {
     env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();
@@ -592,7 +635,7 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows, terrainState, wraithView, frost, shaped, env: env.env,
+    ready: true, game, shadows, terrainState, wraithView, frost, shaped, combat, env: env.env,
     /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
     inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */

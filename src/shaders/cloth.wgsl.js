@@ -65,6 +65,7 @@ uniform clothParams: vec4f;          // x = cowl light (health), y = time, z = s
 uniform clothHead: vec4f;            // xyz = the cowl light's position, w = breath 0..1
 uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
+uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -159,7 +160,19 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     albedo = mix(albedo, vec3f(0.42, 0.44, 0.47), dust * 0.45 * uniforms.clothParams.z);
   }
 
-  // Inner faces: darker (enclosed, the light that reaches them has crossed the cloth).
+  // Wounds: frost creeps up the robe from the hem (and in from cuffs and the mantle's edge) as
+  // health falls (BRIEF §8.1, §12) — a pale crystalline crust, with a ragged, glinting front.
+  let creep = uniforms.clothFrost.x;
+  var frostAmt = 0.0;
+  if (creep > 0.001 && g <= 3) {
+    // Robe: up to about the thigh at worst; the mantle only at its edge; the cuffs.
+    let reach = select(select(0.45, 0.25, g == 1), 0.3, g >= 2) * creep;
+    let front = 1.0 - reach + 0.1 * (vn2(m * vec2f(6.0, 2.0)) - 0.5);
+    frostAmt = smoothstep(front, front + 0.1, uv.y);
+    let crystal = vn2(m * 90.0);
+    albedo = mix(albedo, vec3f(0.7, 0.8, 0.92) * (0.8 + 0.4 * crystal), frostAmt * 0.9);
+  }
+  // Inner faces: darker  // Inner faces: darker (enclosed, the light that reaches them has crossed the cloth).
   var ambientK = 1.0;
   if (inside) {
     if (g == 4) { albedo = vec3f(0.006, 0.006, 0.008); ambientK = 0.04; }
@@ -193,6 +206,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let back = clamp(-nl, 0.0, 1.0) * pow(clamp(dot(-V, L), 0.0, 1.0), 2.0);
   col += key * albedo * vec3f(1.6, 1.35, 1.15) * back * vis * fragmentInputs.vThin * 0.8;
 
+  // Frost crust: glassy glints and a cold sheen of sky.
+  if (frostAmt > 0.0) {
+    let fc = floor(m * 140.0);
+    let gl = step(0.93, hash12(fc)) * pow(max(dot(N, H), 0.0), 60.0);
+    col += (key * gl * 2.0 * vis + sky * 0.25 * pow(1.0 - nv, 2.0)) * frostAmt;
+  }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   let exposure = uniforms.fogParams.z * atmoExposure();
   // The cowl light: lights the inside of the hood (and faintly the rim), breathing slowly; the

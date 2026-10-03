@@ -48,6 +48,8 @@ export class Gait {
     /** Surf engagement 0..1 (input): above ½ the feet hold a surf stance instead of stepping. */
     this.surf = 0.5 - 0.5;
     this.stance = false;
+    /** Death: 0..1 the figure sinks to the snow (the robe pools around it). */
+    this.collapse = 0.5 - 0.5;
     // Footfall events (ring, consumed by the owner): x, y, z, dirX, dirZ, foot, speed.
     this.ev = new Float64Array(GAIT.maxEvents * 7);
     this.evCount = 0;
@@ -175,7 +177,7 @@ export class Gait {
     // and every pinned row of cloth with it, ~10 cm in one frame).
     const off = bob - Math.min(speed, 6) * 0.012;
     this.pyOff += (off - this.pyOff) * (1 - Math.exp(-dt * 20));
-    this.py = Math.max(footY, this.by - 0.1) + GAIT.hipHeight + this.pyOff;
+    this.py = Math.max(footY, this.by - 0.1) + GAIT.hipHeight + this.pyOff - this.collapse * 0.74;
     // Knees by two-bone IK (pole forward), for the cloth colliders.
     for (let f = 0; f < 2; f++) this._knee(f);
   }

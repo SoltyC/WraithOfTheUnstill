@@ -76,7 +76,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
   const lit = { samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES], storage: [...ATMO_MATERIAL_BUFFERS, 'shadowData'] };
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', ...ENV_UNIFORMS],
     samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -84,6 +84,8 @@ export function createWraithView(scene, atmo, ground, clipmap) {
   mat.setStorageBuffer('clothVerts', verts);
   mat.setVector4('clothParams', clothParams);
   mat.setVector4('clothHead', head); mat.setVector4('clothHandL', handL); mat.setVector4('clothHandR', handR);
+  const frostCreep = new Vector4(0, 0, 0, 0);
+  mat.setVector4('clothFrost', frostCreep);
   mat.backFaceCulling = false;
   mesh.material = mat;
 
@@ -144,6 +146,8 @@ export function createWraithView(scene, atmo, ground, clipmap) {
     wraith, mesh, fur, fx, material: mat, clothParams,
     /** Element light at the fingertips (0 = none) and the cowl light (1 = full health). */
     handLight: 0.6, cowlLight: 1,
+    /** Frost creeping up the robe (0..1, from wounds). */
+    frost: 0.5 - 0.5,
     /** Owner fields: sim time (s), set before update(). */
     time: 0.5,
     isEnabled() { return mesh.isEnabled(); },
@@ -207,6 +211,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
       head.x = b.head[0] + b.hf[0] * 0.07 - b.hu[0] * 0.015; head.y = b.head[1] + b.hf[1] * 0.07 - b.hu[1] * 0.015; head.z = b.head[2] + b.hf[2] * 0.07 - b.hu[2] * 0.015;
       head.w = this.cowlLight * breath;
       clothParams.x = 1; clothParams.y = t; clothParams.w = this.handLight;
+      frostCreep.x = this.frost;
       // Fingertips: along the forearm past the wrist.
       for (let s = 0; s < 2; s++) {
         const o = s * 3, h = s === 0 ? handL : handR;

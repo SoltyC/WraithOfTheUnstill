@@ -830,6 +830,45 @@
     "pitch": 0.18,
     "dist": 5.5
    }
+  },
+  {
+   "id": "p5-combat-dusk",
+   "biome": "frost",
+   "label": "A fight at dusk: one hound frozen solid, one telegraphing, the wounded Wraith's robe frosted to the knee",
+   "time": 17.6,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "shaped": {
+    "spawn": [
+     [
+      "hound",
+      -2.5,
+      4.5
+     ],
+     [
+      "hound",
+      2.5,
+      5
+     ]
+    ],
+    "seconds": 2.5,
+    "freeze": [
+     0
+    ],
+    "telegraph": [
+     1
+    ],
+    "wound": 0.8
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.2,
+    "dist": 5
+   }
   }
  ]
 }

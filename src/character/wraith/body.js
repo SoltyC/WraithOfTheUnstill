@@ -28,6 +28,8 @@ export class Body {
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
     /** Bending gesture 0..1 (input): the right arm reaches out toward the verb. */
     this.cast = 0.5 - 0.5;
+    /** Death: 0..1 collapse (the figure folds forward as it sinks). */
+    this.collapse = 0.5 - 0.5;
   }
 
   /** World position of body-local (lx, ly, lz) about the pelvis → this.out. */
@@ -56,7 +58,7 @@ export class Body {
     this.prevYaw = this.yaw;
     const k = 1 - Math.exp(-dt * 6);
     const sb = this.surf;
-    this.lean += (0.05 + 0.035 * Math.min(g.speed, 6) + 0.12 * sb - this.lean) * k;
+    this.lean += (0.05 + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse - this.lean) * k;
     const walkBank = Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03));
     // Surfing: the whole figure leans into the carve (roll toward the inside of the turn).
     this.bank += (walkBank * (1 - sb) - this.surfLean * sb - this.bank) * (1 - Math.exp(-dt * 10));

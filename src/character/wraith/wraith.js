@@ -28,6 +28,8 @@ export class Wraith {
     this.grounded = true; this.dt = 0.5;
     /** Surf engagement 0..1 and carve lean (rad): inputs from the controller's surf model. */
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
+    /** Death collapse 0..1 (input). */
+    this.collapse = 0.5 - 0.5;
     /** Bending gesture target 0..1 (input); eased into the body's arm. */
     this.cast = 0.5 - 0.5;
     /** Facing actually shown (input yaw, rate-limited). */
@@ -110,10 +112,11 @@ export class Wraith {
     this._turn(this.dt);
     this._syncInputs();
     const g = this.gait, b = this.body;
-    g.dt = this.dt; g.evCount = 0;
+    g.dt = this.dt; g.evCount = 0; g.collapse = this.collapse;
     g.update();
     b.dt = this.dt;
     b.cast += (this.cast - b.cast) * (1 - Math.exp(-this.dt * (this.cast > b.cast ? 18 : 5)));
+    b.collapse = this.collapse;
     b.update(g);
     this._colliders();
     // Wind: prevailing direction, gusting.

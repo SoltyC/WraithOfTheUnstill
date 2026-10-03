@@ -59,7 +59,7 @@ export function createFrostBending(ctx) {
   // Sweep pool: active, t, origin x/z, dir x/z, previous front distance.
   const sw = { active: new Uint8Array(SWEEPS), t: new Float64Array(SWEEPS), ox: new Float64Array(SWEEPS), oz: new Float64Array(SWEEPS),
     dx: new Float64Array(SWEEPS), dz: new Float64Array(SWEEPS), prev: new Float64Array(SWEEPS) };
-  let seed = 11;
+  let seed = 11, sweepSerial = 0;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
   // Ribbon spine: a ring of nodes (oldest overwritten): pos, vel, age, grounded, previous
@@ -78,6 +78,11 @@ export function createFrostBending(ctx) {
 
   const self = {
     lights, ribbonNodes, crystals,
+    /** Sweeps for combat: per slot active, front x/z, direction x/z, half width, id (new per cast). */
+    sweepActive: sw.active, sweepFX: new Float64Array(SWEEPS), sweepFZ: new Float64Array(SWEEPS), sweepDX: sw.dx, sweepDZ: sw.dz,
+    sweepHW: new Float64Array(SWEEPS), sweepId: new Uint32Array(SWEEPS),
+    /** A formation was cast this frame at (crystalX, crystalZ) (combat freezes what it catches). */
+    crystalEvent: false, crystalX: 0.5, crystalZ: 0.5,
     /** True after a formation was written (the renderer uploads and clears it). */
     crystalsDirty: false,
     /** Heavy: freeze a formation at the aim target (tx, ty, tz) this frame. */
@@ -95,6 +100,7 @@ export function createFrostBending(ctx) {
 
     update() {
       this.gesture = Math.max(0, this.gesture - this.dt / 0.45);
+      this.crystalEvent = false;
       if (this.castSweep) { this.castSweep = false; startSweep(this); this.gesture = 1; }
       if (this.castCrystal) { this.castCrystal = false; startCrystals(this); this.gesture = 1; }
       lights.fill(0);
@@ -114,6 +120,7 @@ export function createFrostBending(ctx) {
     sw.dx[k] = s.aimX / l; sw.dz[k] = s.aimZ / l;
     sw.ox[k] = s.x + sw.dx[k] * 0.6; sw.oz[k] = s.z + sw.dz[k] * 0.6;
     sw.prev[k] = 0;
+    self.sweepId[k] = ++sweepSerial;
   }
 
   /** Advance sweep k: plough from its previous front to the new one; spray the crescent. */
@@ -136,6 +143,7 @@ export function createFrostBending(ctx) {
       ts.stamp();
     }
     sw.prev[k] = d;
+    self.sweepFX[k] = sw.ox[k] + dx * d; self.sweepFZ[k] = sw.oz[k] + dz * d; self.sweepHW[k] = hw * Math.min(1, ease * 2);
     // The crescent: a wall of slush along an arc ahead of the channel, thrown up and forward.
     const fx0 = sw.ox[k] + dx * d, fz0 = sw.oz[k] + dz * d;
     ground.qx = fx0; ground.qz = fz0; ground.sample();
@@ -165,7 +173,8 @@ export function createFrostBending(ctx) {
   /** A crystal formation at the aim: a tall central crystal and satellites leaning out of it. */
   function startCrystals(s) {
     const T = crystalTuning, c = cl.next; cl.next = (cl.next + 1) % CC;
-    cl.x[c] = s.tx; cl.z[c] = s.tz; ground.qx = s.tx; ground.qz = s.tz; ground.sample(); cl.y[c] = ground.h; cl.age[c] = 0;
+    cl.x[c] = s.tx; cl.z[c] = s.tz;
+    self.crystalEvent = true; self.crystalX = s.tx; self.crystalZ = s.tz; ground.qx = s.tx; ground.qz = s.tz; ground.sample(); cl.y[c] = ground.h; cl.age[c] = 0;
     for (let k = 0; k < CK; k++) {
       const o = (c * CK + k) * 12;
       const centre = k === 0;

@@ -107,3 +107,14 @@ html, body {
 .bench-panel th:first-child, .bench-panel td:first-child { text-align: left; }
 .bench-panel th { color: #7f8a97; font-weight: 400; }
 .bench-panel p { margin: 8px 0 0; color: #9aa4af; }
+
+/* Wounds (BRIEF §12): at very low health a subtle cold vignette, tinted by the biome. */
+.wound-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 55%, rgba(40, 70, 110, 0.42) 100%);
+  transition: opacity 0.4s ease;
+  z-index: 5;
+}

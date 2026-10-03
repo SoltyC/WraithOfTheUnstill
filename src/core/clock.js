@@ -11,6 +11,8 @@ export const clock = {
   frame: 0,
   /** Real elapsed seconds since the previous frame; written by the loop before advanceClock(). */
   realDt: 0.5,
+  /** Hit-stop (BRIEF §10): real seconds the simulation holds still after a heavy impact. */
+  hitStop: 0.5 - 0.5,
 };
 
 const MAX_DT = 1 / 15;
@@ -21,6 +23,7 @@ export function advanceClock() {
   const r = clock.realDt;
   const dt = r > MAX_DT ? MAX_DT : r < 0 ? 0 : r;
   clock.dt = clock.frozen ? 0 : dt;
+  if (clock.hitStop > 0) { clock.hitStop = Math.max(0, clock.hitStop - r); clock.dt = 0; }
   clock.simTime += clock.dt;
   const p = params.v;
   if (p.timeScale > 0 && !clock.frozen) {

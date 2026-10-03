@@ -25,6 +25,9 @@ export const controllerTuning = {
   turnHalfLife: 0.07,   // s, facing smoothing
   substep: 1 / 120,
   godSpeed: 40,         // m/s in god mode
+  dodgeTime: 0.3,       // s: the bend-step slide
+  dodgeSpeed: 13,       // m/s at its start, easing off
+  dodgeCool: 0.45,      // s between dodges
 };
 
 export class CapsuleController {
@@ -52,6 +55,8 @@ export class CapsuleController {
     /** Ground normal under the feet (scratch). */
     this._n = { x: 0.5, y: 0.5, z: 0.5 };
     this._wx = 0.5; this._wz = 0.5; this._wl = 0.5;
+    /** Bend-step dodge (BRIEF §7): request (field), remaining time, direction, cooldown. */
+    this.dodgeRequested = false; this.dodgeT = 0.5 - 0.5; this.dodgeX = 0.5 - 0.5; this.dodgeZ = 0.5 - 0.5; this.dodgeCd = 0.5 - 0.5;
     /** True while a script (photo-spot run) drives the controller instead of player input. */
     this.scripted = false;
     /** Snow-surf (traversal): the owner sets surf.want / canSurf / steer / throttle. */
@@ -104,6 +109,20 @@ export class CapsuleController {
     n.x = g.nx; n.y = g.ny; n.z = g.nz;
     const steep = n.y < T.maxSlopeCos;
 
+    // Bend-step dodge: a short momentum-carrying slide along the wish (or backward).
+    this.dodgeCd = Math.max(0, this.dodgeCd - h);
+    if (this.dodgeRequested) {
+      this.dodgeRequested = false;
+      if (this.grounded && this.dodgeT <= 0 && this.dodgeCd <= 0 && !this.surf.active) {
+        if (wl > 0.1) { this.dodgeX = wx / Math.min(1, wl); this.dodgeZ = wz / Math.min(1, wl); }
+        else { this.dodgeX = -Math.sin(this.cameraYaw); this.dodgeZ = -Math.cos(this.cameraYaw); }
+        const dl = Math.sqrt(this.dodgeX * this.dodgeX + this.dodgeZ * this.dodgeZ) || 1;
+        this.dodgeX /= dl; this.dodgeZ /= dl;
+        this.dodgeT = T.dodgeTime; this.dodgeCd = T.dodgeTime + T.dodgeCool;
+      }
+    }
+    const dodging = this.dodgeT > 0;
+    if (dodging) this.dodgeT = Math.max(0, this.dodgeT - h);
     // Surfing: the surf model owns the horizontal velocity and the facing.
     const sf = this.surf;
     sf.grounded = this.grounded;
@@ -113,6 +132,9 @@ export class CapsuleController {
     if (surfing) {
       v.x = sf.vx; v.z = sf.vz;
       this.yaw = sf.heading;
+    } else if (dodging) {
+      const u = 1 - this.dodgeT / T.dodgeTime, sp = T.dodgeSpeed * (1 - 0.65 * u * u);
+      v.x = this.dodgeX * sp; v.z = this.dodgeZ * sp;
     } else {
       // Horizontal acceleration toward wish velocity.
       const tx = wx * T.walkSpeed, tz = wz * T.walkSpeed;

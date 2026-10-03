@@ -77,7 +77,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let nv = clamp(dot(N, V), 0.0, 1.0);
   let sky = shIrradiance(N) * uniforms.envMisc.w;
   let exposure = uniforms.fogParams.z * atmoExposure();
-  let kind = i32(fragmentInputs.vKind + 0.5);
+  // Glow channel: telegraph 0..1, +2 when the creature is frozen solid.
+  let frozen = fragmentInputs.vGlow > 1.5;
+  var kind = i32(fragmentInputs.vKind + 0.5);
+  if (frozen && kind == 0) { kind = 1; }               // the snow is glazed over: all ice
   let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
   var col = vec3f(0.0);
   if (kind == 0) {
@@ -96,14 +99,20 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let F = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
     let R = reflect(-V, N);
     let refl = atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z)));
-    let body = select(vec3f(0.3, 0.52, 0.62), vec3f(0.12, 0.24, 0.34), kind == 2);
-    col = body * (key * clamp(nl * 0.5 + 0.5, 0.0, 1.0) * vis / PI + sky * cold) * (1.0 - F) + refl * F;
+    var body = select(vec3f(0.3, 0.52, 0.62), vec3f(0.12, 0.24, 0.34), kind == 2);
+    if (frozen && kind != 2) { body = vec3f(0.42, 0.68, 0.82); }    // glazed: bright, clear cyan
+    col = body * (key * clamp(nl * 0.5 + 0.5, 0.0, 1.0) * vis / PI + sky * cold) * (1.0 - F) + refl * max(F, select(0.0, 0.12, frozen));
     let H = normalize(L + V);
     col += key * pow(max(dot(N, H), 0.0), 300.0) * 5.0 * vis;
+    if (frozen) {
+      // Glazed ice: glints on every facet edge and a pale inner light.
+      col += key * pow(max(dot(N, H), 0.0), 40.0) * 0.6 * vis;
+      col += vec3f(0.4, 0.7, 1.0) * 0.05 / max(exposure, 1e-6) * (0.4 + 0.6 * nv);
+    }
   }
   // Telegraph: the core lights from within and cracks glow across the snow (display-referred).
   // A faint living light in the core at all times; the telegraph floods it.
-  let g = max(fragmentInputs.vGlow, select(0.0, 0.18, kind == 2));
+  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, kind == 2));
   if (g > 0.001) {
     let glowCol = vec3f(0.45, 0.78, 1.0);
     if (kind == 2) { col += glowCol * g * 0.9 / max(exposure, 1e-6); }
