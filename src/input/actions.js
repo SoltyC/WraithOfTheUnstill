@@ -66,20 +66,34 @@ export function attachInput(canvas) {
   };
   window.addEventListener('keydown', (e) => onKey(e, true));
   window.addEventListener('keyup', (e) => onKey(e, false));
-  window.addEventListener('blur', () => { for (let i = 0; i < COUNT; i++) setAction(i, false); });
+  window.addEventListener('blur', () => { for (let i = 0; i < COUNT; i++) setAction(i, false); buttons = 0; });
 
-  canvas.addEventListener('mousedown', (e) => {
+  // Mouse buttons and motion come from pointer events. Babylon's scene input prevents the default
+  // of pointerdown, which suppresses the browser's compatibility mouse events (mousedown/mouseup,
+  // and mousemove while a button is held), so mouse listeners never saw a click. Buttons are read
+  // from the `buttons` bitmask on every pointer event: a second button pressed while another is
+  // held arrives only as a pointermove.
+  let buttons = 0;
+  const BUTTON_NAMES = ['Mouse0', 'Mouse2', 'Mouse1', 'Mouse3', 'Mouse4']; // `buttons` bit order
+  const syncButtons = (b) => {
+    if (b === buttons) return;
+    for (let k = 0; k < 5; k++) {
+      const bit = 1 << k;
+      if ((b & bit) === (buttons & bit)) continue;
+      const a = input.bindings[BUTTON_NAMES[k]];
+      if (a !== undefined) setAction(a, (b & bit) !== 0);
+    }
+    buttons = b;
+  };
+  canvas.addEventListener('pointerdown', (e) => {
     canvas.focus();
     if (!input.pointerLocked && input.gameHasFocus) canvas.requestPointerLock?.();
-    const a = input.bindings['Mouse' + e.button];
-    if (a !== undefined) setAction(a, true);
+    syncButtons(e.buttons);
   });
-  window.addEventListener('mouseup', (e) => {
-    const a = input.bindings['Mouse' + e.button];
-    if (a !== undefined) setAction(a, false);
-  });
+  window.addEventListener('pointerup', (e) => syncButtons(e.buttons));
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-  window.addEventListener('mousemove', (e) => {
+  window.addEventListener('pointermove', (e) => {
+    syncButtons(e.buttons);
     if (!input.pointerLocked) return;
     input.mouseDX += e.movementX;
     input.mouseDY += e.movementY;
