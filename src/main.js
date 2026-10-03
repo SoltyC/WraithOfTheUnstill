@@ -249,6 +249,8 @@ async function boot() {
   // Frost bending (Phase 4): Sweep on a tap of Primary, Ribbon while held, Crystallize on Heavy.
   const { createFrostBending } = await import('./game/bending/frost.js');
   const frostMod = await import('./game/bending/frost.js');
+  /** A cast's flash at the hand (0..1, eased out in the combat system). */
+  let castFlash = 0;
   const frost = frostMod.createFrostBending({ ts: terrainState, fx: wraithView, ground, lights: content.clipmap.spellLights });
   const { createRibbon } = await import('./render/ribbon.js');
   const ribbon = createRibbon(scene, atmosphere, frost.ribbonNodes, frostMod.ribbonTuning.radius);
@@ -270,6 +272,11 @@ async function boot() {
   // The Frost Warden (Phase 5): a colossal Shaped with water joints; its own chunk view.
   const wardenMod = await import('./game/warden/warden.js');
   const warden = wardenMod.createWarden({ ts: terrainState, fx: wraithView, ground });
+  // The Warden's shard volley flies in the Shaped's shard pool (rendered with them).
+  warden.shoot = () => {
+    shaped.sx = warden.sx; shaped.sy = warden.sy; shaped.sz = warden.sz; shaped.tx = warden.tx; shaped.ty = warden.ty; shaped.tz = warden.tz;
+    shaped.shotSpeed = 15; shaped.shotDmg = 14; shaped.shoot();
+  };
   const wardenView = createShapedView(scene, atmosphere, warden.chunks, { subdivisions: 4, name: 'warden', shader: 'warden', neighbours: warden.nbr });
   bindShadows(wardenView.material, shadows);
   shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 3);
@@ -426,11 +433,11 @@ async function boot() {
     const able = can && combat.dying === 0;
     if (able) {
       if (inputState.down[Act.Primary]) primaryHeld += dt;
-      if (inputState.released[Act.Primary] && primaryHeld < HOLD && combat.spend(combatTuning.costSweep)) frost.castSweep = true;
+      if (inputState.released[Act.Primary] && primaryHeld < HOLD && combat.spend(combatTuning.costSweep)) { frost.castSweep = true; castFlash = 1; arm.kick += 0.012; }
       if (!inputState.down[Act.Primary]) primaryHeld = 0;
     } else primaryHeld = 0;
     frost.ribbonHeld = able && primaryHeld >= HOLD && combat.focus > 1;
-    if (able && inputState.pressed[Act.Heavy] && combat.spend(combatTuning.costCrystal)) { frost.castCrystal = true; arm.shake += 0.01; }
+    if (able && inputState.pressed[Act.Heavy] && combat.spend(combatTuning.costCrystal)) { frost.castCrystal = true; arm.shake += 0.01; castFlash = 1; arm.kick += 0.02; }
     // The Wraith turns to face what it bends.
     if (frost.castSweep || frost.castCrystal || frost.ribbonHeld) controller.yaw = arm.yaw;
     updateAim();
@@ -548,6 +555,7 @@ async function boot() {
   }
   loop.add({ name: 'shaped', update: () => {
     shaped.px = controller.pos.x; shaped.pz = controller.pos.z; shaped.pvx = controller.vel.x; shaped.pvz = controller.vel.z;
+    shaped.pgrounded = controller.grounded && controller.dodgeT <= 0;
     if (game.pendingShaped !== null) {
       if (game.worldSettled() && game.pendingTrail === null) stepShapedRoll();
     } else if (!game.wraithHeld || !capture) {
@@ -557,7 +565,7 @@ async function boot() {
     shapedView.update();
   } });
   loop.add({ name: 'warden', update: () => {
-    warden.px = controller.pos.x; warden.pz = controller.pos.z;
+    warden.px = controller.pos.x; warden.pz = controller.pos.z; warden.pgrounded = controller.grounded && controller.dodgeT <= 0;
     if (game.pendingWarden !== null) {
       if (game.worldSettled() && game.pendingTrail === null) {
         const spec = game.pendingWarden, p = controller.pos, f = controller.yaw;
@@ -637,7 +645,8 @@ async function boot() {
     if (inputState.pressed[Act.Dodge] && !controller.god && combat.dying === 0 && combat.spend(combatTuning.costDodge)) controller.dodgeRequested = true;
     combat.dt = clock.dt;
     combat.update();
-    arm.shake += combat.shake + warden.shake;
+    arm.shake += combat.shake + warden.shake; arm.kick += combat.kick;
+    castFlash *= Math.exp(-clock.realDt * 6);
     // Lock-on: the camera turns to keep the target ahead (soft; the mouse still pitches).
     if (combat.lock >= 0 && !controller.surf.active) {
       const b = shaped.slots[combat.lock].body;
@@ -651,7 +660,7 @@ async function boot() {
     const deathFade = dying > 0 ? Math.max(0, 1 - dying / 1.2) : 1;
     const reform = dying > combatTuning.deathTime ? Math.min(1, (dying - combatTuning.deathTime) / combatTuning.reformTime) : 0;
     wraithView.cowlLight = (1 - 0.65 * w) * gutter * Math.max(deathFade, reform);
-    wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus) * Math.max(deathFade, reform);
+    wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus + 1.2 * castFlash) * Math.max(deathFade, reform);
     wraithView.frost = Math.min(1, w * 1.15);
     wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;
     vignette.style.opacity = String(Math.max(0, (w - 0.65) / 0.35).toFixed(3));

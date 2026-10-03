@@ -31,7 +31,7 @@ export const JOINTS = 4;
 /** Neighbours per chunk for the renderer's smooth-mass shading (chunk indices; self = unused). */
 export const WARDEN_NBR = 16;
 export const JOINT = { LIQUID: 0, FROZEN: 1, SHATTERED: 2 };
-export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4, RESTED: 5 };
+export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4, RESTED: 5, TAIL: 6, SHED: 7 };
 /** The release, in seconds from the last joint breaking. */
 export const RELEASE_T = { rear: 1.6, slam: 2.7, impact: 3.05, rested: 15 };
 const SHOCK_SPEED = 24, SHOCK_MAX = 95, SHOCK_RAYS = 64;
@@ -76,6 +76,36 @@ export function createWarden(ctx) {
     shockX: 0.5, shockZ: 0.5, shockR: -1.5 + 0.5, slam: false, drifts: false,
     /** 0..1 snow cover as it lies down into the land (chunk records carry it in alpha). */
     cover: 0.5 - 0.5,
+    /** Struck flash (0..1) and the stomp's ground ring (centre, radius; −1 none). */
+    hurt: 0.5 - 0.5, ringX: 0.5, ringZ: 0.5, ringR: -1.5 + 0.5, ringHit: false,
+    /** The Wraith is on the ground (the stomp's ring passes under a jump). */
+    pgrounded: true,
+    /** Owner hook: throw an ice shard from (sx, sy, sz) at (tx, ty, tz) (shaped.js's shard pool). */
+    shoot: null, sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5,
+    /** Seconds until it may attack again; how angry it is (joints broken). */
+    cool: 0.5 + 2.5,
+    get rage() { return JOINTS - this.remaining; },
+    /** A spell struck its body at (hx, hy, hz) along (hdx, hdz): material chips off, it flinches,
+     *  it turns on the Wraith. */
+    hx: 0.5, hy: 0.5, hz: 0.5, hdx: 0.5, hdz: 0.5,
+    bodyHit() {
+      if (!this.active || this.state >= W.RELEASE && this.state <= W.RESTED) return;
+      this.hurt = 1;
+      for (let q = 0; q < 26; q++) {
+        fx.ex = this.hx + (rnd() - 0.5) * 0.8; fx.ey = this.hy + (rnd() - 0.5) * 0.8; fx.ez = this.hz + (rnd() - 0.5) * 0.8;
+        fx.evx = -this.hdx * (1 + 3 * rnd()) + (rnd() - 0.5) * 3; fx.evz = -this.hdz * (1 + 3 * rnd()) + (rnd() - 0.5) * 3; fx.evy = 0.5 + 3 * rnd();
+        fx.esize = 0.08 + 0.16 * rnd(); fx.emit();
+      }
+      // Lumps of it land in the snow below.
+      ground.qx = this.hx; ground.qz = this.hz; ground.sample();
+      ts.bx = this.hx - this.hdx * 1.5; ts.bz = this.hz - this.hdz * 1.5; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 0.4 + 0.3 * rnd(); ts.bd = 0.18; ts.bc = 0;
+      ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+      ts.stamp();
+      this.flinch = 1;
+      if (this.state === W.DORMANT) { this.state = W.AWAKE; this.t = 0; }
+      this.cool = Math.min(this.cool, 1.2);
+    },
+    flinch: 0.5 - 0.5, tailDir: 1, tailDone: false, shed: 0,
     /** Ray out through the mass (fields in: origin rox/roy/roz inside it, unit direction
      *  rdx/rdy/rdz): distance to where it leaves the outermost chunk (the visible surface along
      *  that line), or −1 if it hits nothing. Chunk radii are their crag-mean (rig size × 0.47). */
@@ -131,6 +161,7 @@ export function createWarden(ctx) {
       body.rise = 1; body.crouch = 0; body.lift = 0; body.frozen = false; body.rear = 0; body.lie = 0;
       this.active = true; this.state = W.DORMANT; this.t = 0; this.settle = 0; this.restore = 0;
       this.cover = 0; this.shockR = -1; this.slam = false; this.gust = 0; this.drifts = false;
+      this.hurt = 0; this.ringR = -1; this.cool = 3; this.flinch = 0;
       this.nbrReady = false;
       this.climbed = false; this.shaking = false; this.shakeCool = 4; this.shakeT = 0;
       joint.fill(JOINT.LIQUID); jointT.fill(0);
@@ -197,7 +228,10 @@ export function createWarden(ctx) {
         const d = Math.hypot(this.px - x, this.pz - z);
         this.shake += 0.03 * Math.max(0, 1 - d / 45);
       }
-      writeAlive(body, st, chunks, 0, 1, this.glow);
+      this.hurt = Math.max(0, this.hurt - dt * 4);
+      if (this.flinch > 0) { this.flinch = Math.max(0, this.flinch - dt * 2.5); body.crouch = Math.max(body.crouch, 0.18 * Math.sin(Math.PI * (1 - this.flinch))); }
+      stompRing(this);
+      writeAlive(body, st, chunks, 0, 1, this.glow, this.hurt);
       // Snow cover rides in each visible chunk's alpha (1 bare … 0.51 buried; > 0.5 = shown).
       if (this.cover > 0) {
         const a = 1 - 0.49 * this.cover;
@@ -263,13 +297,57 @@ export function createWarden(ctx) {
       case W.AWAKE: {
         // Turn to face, then advance until close; a slow, heavy approach.
         let want = Math.atan2(dx, dz) - body.heading; want -= Math.round(want / (2 * Math.PI)) * 2 * Math.PI;
-        const sp = Math.abs(want) > 0.5 ? 0.6 : dist > 18 ? WARDEN_SHAPE.maxSpeed : 0;
+        const fury = 1 + 0.25 * W0.rage;
+        const sp = (Math.abs(want) > 0.5 ? 0.6 : dist > 18 ? WARDEN_SHAPE.maxSpeed : 0) * fury;
         body.wantVx = dx / dist * sp; body.wantVz = dz / dist * sp;
         body.crouch += (0 - body.crouch) * Math.min(1, dt);
-        // Near a front foot? Stomp.
+        W0.cool -= dt * fury;
+        if (W0.cool > 0 || W0.climbed) break;
+        // Pick an attack by where the Wraith is: at a front foot → stomp; behind → tail; far → shards.
         for (let l = 0; l < 2; l++) {
-          if (Math.hypot(W0.px - body.fx[l], W0.pz - body.fz[l]) < 7 && W0.t > 3) { W0.state = W.STOMP; W0.t = 0; W0.stompLeg = l; }
+          if (Math.hypot(W0.px - body.fx[l], W0.pz - body.fz[l]) < 8) { W0.state = W.STOMP; W0.t = 0; W0.stompLeg = l; return; }
         }
+        if (Math.abs(want) > 2.1 && dist < 22) { W0.state = W.TAIL; W0.t = 0; W0.tailDir = want > 0 ? -1 : 1; W0.tailDone = false; return; }
+        if (dist > 14 && dist < 45) { W0.state = W.SHED; W0.t = 0; W0.shed = 0; return; }
+        break;
+      }
+      case W.TAIL: {
+        // Tail sweep: it shifts its weight (the spires along the back glow), then pivots hard,
+        // swinging its tail through where the Wraith stands.
+        body.wantVx = 0; body.wantVz = 0;
+        W0.glow += ((W0.t < 0.9 ? 0.7 : 0) - W0.glow) * Math.min(1, dt * 4);
+        if (W0.t < 0.9) body.heading -= W0.tailDir * 0.12 * dt;              // wind-up
+        else if (W0.t < 1.6) {
+          body.heading += W0.tailDir * 1.25 * dt;                             // the swing
+          const n = WARDEN_SHAPE.tail - 1;
+          for (let k = 1; k <= n; k++) {
+            if (!W0.tailDone && Math.hypot(W0.px - body.tx[k], W0.pz - body.tz[k]) < 3.2) {
+              W0.tailDone = true; W0.hits++; W0.hitDamage += 28;
+            }
+          }
+          if (rnd() < 0.7) {
+            const k = WARDEN_SHAPE.tail - 1; ground.qx = body.tx[k]; ground.qz = body.tz[k]; ground.sample();
+            fx.ex = body.tx[k]; fx.ey = ground.h + 0.2; fx.ez = body.tz[k]; fx.evx = (rnd() - 0.5) * 3; fx.evy = 1 + 2 * rnd(); fx.evz = (rnd() - 0.5) * 3; fx.esize = 0.3 + 0.3 * rnd(); fx.emit();
+          }
+        }
+        if (W0.t >= 2.4) { W0.state = W.AWAKE; W0.t = 0; W0.cool = 3.5; W0.glow = 0; }
+        break;
+      }
+      case W.SHED: {
+        // Ice shard volley: its spires glow, then it sheds shards that arc down around the Wraith.
+        body.wantVx = 0; body.wantVz = 0;
+        W0.glow += (0.8 - W0.glow) * Math.min(1, dt * 3);
+        body.crouch += (0.15 - body.crouch) * Math.min(1, dt * 3);
+        if (W0.t > 1.0 && W0.shed < 5 + W0.rage && W0.t > 1.0 + W0.shed * 0.22) {
+          const i = 1 + (W0.shed % 4);
+          W0.sx = body.sx[i]; W0.sy = body.sy[i] + WARDEN_SHAPE.hip * 0.8; W0.sz = body.sz[i];
+          const a = rnd() * Math.PI * 2, r = W0.shed === 0 ? 0 : 1 + 3 * rnd();
+          W0.tx = W0.px + Math.cos(a) * r; W0.tz = W0.pz + Math.sin(a) * r;
+          ground.qx = W0.tx; ground.qz = W0.tz; ground.sample(); W0.ty = ground.h + 0.8;
+          if (W0.shoot) W0.shoot();
+          W0.shed++;
+        }
+        if (W0.t >= 3.2) { W0.state = W.AWAKE; W0.t = 0; W0.cool = 4; W0.glow = 0; }
         break;
       }
       case W.STOMP: {
@@ -290,10 +368,12 @@ export function createWarden(ctx) {
             fx.emit();
           }
           const d = Math.hypot(W0.px - x, W0.pz - z);
-          if (d < 6) { W0.hits++; W0.hitDamage += 35 * (1 - d / 8); }
-          W0.shake += 0.05 * Math.max(0, 1 - d / 60);
+          if (d < 3.5) { W0.hits++; W0.hitDamage += 35; }               // under the foot
+          W0.shake += 0.06 * Math.max(0, 1 - d / 60);
+          // The shock runs out along the ground as a ring.
+          W0.ringX = x; W0.ringZ = z; W0.ringR = 3; W0.ringHit = d < 3.5;
         }
-        if (W0.t >= 2.6) { W0.state = W.AWAKE; W0.t = 0; W0.glow = 0; }
+        if (W0.t >= 2.6) { W0.state = W.AWAKE; W0.t = 0; W0.glow = 0; W0.cool = 2.5; }
         break;
       }
       case W.KNEEL:
@@ -304,6 +384,23 @@ export function createWarden(ctx) {
         break;
       case W.RELEASE: release(W0, dt); break;
     }
+  }
+
+  /** The stomp's ground ring: rides out to 16 m; it knocks the Wraith if it passes under its
+   *  feet (a jump or a bend-step clears it). */
+  function stompRing(W0) {
+    if (W0.ringR < 0) return;
+    const prev = W0.ringR;
+    W0.ringR += 17 * W0.dt;
+    if (W0.ringR > 16) { W0.ringR = -1; return; }
+    const R = W0.ringR, cx = W0.ringX, cz = W0.ringZ;
+    for (let q = 0; q < 10; q++) {
+      const a = rnd() * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+      fx.ex = cx + ca * R; fx.ez = cz + sa * R; ground.qx = fx.ex; ground.qz = fx.ez; ground.sample(); fx.ey = ground.h + 0.05;
+      fx.evx = ca * 6; fx.evz = sa * 6; fx.evy = 0.6 + 1.2 * rnd(); fx.esize = 0.25 + 0.3 * rnd(); fx.emit();
+    }
+    const d = Math.hypot(W0.px - cx, W0.pz - cz);
+    if (!W0.ringHit && prev < d && R >= d && W0.pgrounded) { W0.ringHit = true; W0.hits++; W0.hitDamage += 18; }
   }
 
   // The shockwave's scour rays (fixed angles, so each ray's groove is continuous frame to frame).

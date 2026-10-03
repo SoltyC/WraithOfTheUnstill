@@ -74,7 +74,7 @@ fn shardShape(v: vec3f, kind: f32) -> vec3f {
 fn main(input: VertexInputs) -> FragmentInputs {
   let ci = u32(vertexInputs.uv.x + 0.5);
   let a = chunkData[ci * 4u]; let b = chunkData[ci * 4u + 1u]; let c = chunkData[ci * 4u + 2u]; let d = chunkData[ci * 4u + 3u];
-  let seed = d.x; let kind = d.y;
+  let seed = d.x; let kind = floor(d.y + 0.02);
   // Snow cover rides in alpha: 1 bare … 0.51 buried (≤ 0.5 hidden).
   let cover = select(0.0, clamp((1.0 - d.w) / 0.49, 0.0, 1.0), d.w > 0.5 && ci < WARDEN_CHUNKS);
   let v = normalize(vertexInputs.position);
@@ -121,7 +121,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vNormal = nW;
   vertexOutputs.vCover = cover;
   vertexOutputs.vLocal = p0;
-  vertexOutputs.vKind = kind;
+  vertexOutputs.vKind = d.y;
   vertexOutputs.vGlow = d.z;
   vertexOutputs.vSeed = seed;
   // Crevice occlusion: recesses of the mass, and the underside of each chunk.
@@ -152,7 +152,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let fp = length(fwidth(wp));
   var N = normalize(fragmentInputs.vNormal);
   if (dot(N, V) < 0.0) { N = -N; }
-  let kind = i32(fragmentInputs.vKind + 0.5);
+  let kind = i32(floor(fragmentInputs.vKind + 0.02));
+  let hurt = clamp((fragmentInputs.vKind - f32(kind)) / 0.45, 0.0, 1.0);
   let frozen = fragmentInputs.vGlow > 1.5;
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
@@ -219,6 +220,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       col = col * (1.0 - 0.35 * g) + (vec3f(0.12, 0.42, 1.0) * (frac * 0.25 + inner * 0.8) + vec3f(0.6, 0.85, 1.0) * core * 0.2) * g / max(exposure, 1e-6) * 0.55;
     }
     if (frozen) { col += vec3f(0.4, 0.7, 1.0) * 0.06 / max(exposure, 1e-6); }
+  }
+  // Hurt flash (kind's fraction): the struck body whitens and its rim burns cold for an instant.
+  if (hurt > 0.001) {
+    col = mix(col, vec3f(0.85, 0.93, 1.0) * (sky + key * 0.25), hurt * 0.55);
+    col += vec3f(0.5, 0.8, 1.0) * hurt * (0.25 + 0.75 * pow(1.0 - nv, 2.0)) * 0.35 / max(exposure, 1e-6);
   }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, exposure);

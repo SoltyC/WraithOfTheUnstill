@@ -65,6 +65,8 @@ export class SpringArmCamera {
     this.pushX = 0.5 - 0.5; this.pushY = 0.5 - 0.5; this.pushZ = 0.5 - 0.5;
     this._px = 0.5 - 0.5; this._py = 0.5 - 0.5; this._pz = 0.5 - 0.5;
     this._snapped = false;
+    /** Punch (rad): a sudden zoom-in on heavy impacts, eased out (owner adds impulses). */
+    this.kick = 0.5 - 0.5;
   }
 
   /** Mouse look and zoom input (pixels, wheel notches). */
@@ -141,6 +143,7 @@ export class SpringArmCamera {
     this.shake = Math.max(this.shakeHold, this.shake * Math.exp(-dt * 7));
     this._shakeT += dt;
     this.fov += (fovTarget - this.fov) * damp(T.fovHalfLife, dt);
+    this.kick = Math.min(0.15, this.kick) * Math.exp(-dt * 7);
 
     // Arm direction (from pivot toward camera) and shoulder offset (camera right).
     const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
@@ -203,7 +206,7 @@ export class SpringArmCamera {
         this.yaw + a * (Math.sin(t * 29.3 + 2.1) + 0.5 * Math.sin(t * 53.9)) * 0.6,
         this.roll + a * 0.4 * Math.sin(t * 43.7 + 0.7));
     }
-    c.fov = this.fov;
+    c.fov = this.free ? this.fov : this.fov - this.kick;
   }
 
   /** Smallest turn toward a yaw (used when re-attaching to the player). */

@@ -79,7 +79,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let exposure = uniforms.fogParams.z * atmoExposure();
   // Glow channel: telegraph 0..1, +2 when the creature is frozen solid.
   let frozen = fragmentInputs.vGlow > 1.5;
-  var kind = i32(fragmentInputs.vKind + 0.5);
+  var kind = i32(floor(fragmentInputs.vKind + 0.02));
+  let hurt = clamp((fragmentInputs.vKind - f32(kind)) / 0.45, 0.0, 1.0);
   if (frozen && (kind == 0 || kind == 3)) { kind = 1; } // glazed over: all ice (a frozen joint too)
   let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
   var col = vec3f(0.0);
@@ -132,6 +133,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       let crack = 1.0 - smoothstep(0.0, 0.08, abs(n));
       col += glowCol * g * crack * 0.6 / max(exposure, 1e-6);
     }
+  }
+  // Hurt flash (kind's fraction): the struck body whitens and its rim burns cold for an instant.
+  if (hurt > 0.001) {
+    col = mix(col, vec3f(0.85, 0.93, 1.0) * (sky + key * 0.25), hurt * 0.55);
+    col += vec3f(0.5, 0.8, 1.0) * hurt * (0.25 + 0.75 * pow(1.0 - nv, 2.0)) * 0.35 / max(exposure, 1e-6);
   }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, exposure);

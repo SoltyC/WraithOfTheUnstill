@@ -11,7 +11,8 @@ export const combatTuning = {
   focusIdle: 6, focusMove: 14, focusSurf: 28,   // per second: movement and flow restore focus
   costSweep: 14, costRibbon: 16, costCrystal: 30, costDodge: 8,   // focus
   sweepDamage: 16, ribbonDps: 26, shatterMul: 3, freezeTime: 3,
-  hitStopHit: 0.035, hitStopShatter: 0.07, hitStopHurt: 0.05,
+  hitStopHit: 0.055, hitStopLight: 0.02, hitStopShatter: 0.12, hitStopHurt: 0.06,
+  kickHit: 0.02, kickShatter: 0.06,      // camera punch (rad of FOV)
   lockRange: 20,
   deathTime: 2.4, reformTime: 1.6,
 };
@@ -34,8 +35,8 @@ export function createCombat(ctx) {
     dying: 0.5 - 0.5,
     /** Respawn point (the last shrine). */
     shrineX: 0.5, shrineZ: 0.5,
-    /** Camera shake impulse requested this frame (owner adds it to the arm). */
-    shake: 0.5 - 0.5,
+    /** Camera shake and punch (FOV kick) requested this frame (owner adds them to the arm). */
+    shake: 0.5 - 0.5, kick: 0.5 - 0.5,
     /** Inputs (fields) for one frame. */
     dt: 0.5, wantLockToggle: false,
 
@@ -44,7 +45,7 @@ export function createCombat(ctx) {
 
     update() {
       const dt = this.dt;
-      this.shake = 0;
+      this.shake = 0; this.kick = 0;
       if (this.dying > 0) { stepDeath(dt); return; }
       // Focus: restored by movement and flow, spent by the verbs.
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
@@ -52,8 +53,9 @@ export function createCombat(ctx) {
       this.focus = Math.min(T.focus, this.focus + regen * dt);
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * dt);
       this.wound += ((1 - this.health / T.health) - this.wound) * (1 - Math.exp(-dt * 3));
+      ribbonTick -= dt; bodyTick -= dt;
       hits(dt);
-      if (warden && warden.active) wardenHits();
+      if (warden && warden.active) { wardenHits(); wardenBody(); }
       hurt();
       lockOn();
       // The bend-step slides through the snow: a short groove.
@@ -126,21 +128,60 @@ export function createCombat(ctx) {
       }
     }
   }
+  /** Verbs → the Warden's body (not a joint): material chips off where it is struck, it
+   *  flinches and turns on the Wraith. A Sweep crescent through a leg or under the body, the
+   *  Ribbon's stream into it, a formation at its feet. */
+  const wardenBodySeen = new Uint32Array(4);
+  let bodyTick = 0;
+  function wardenBody() {
+    if (warden.state === 4 || warden.state === 5) return;
+    const b = warden.body, legs = b.shape.legs.length;
+    for (let q = 0; q < 4; q++) {
+      if (!frost.sweepActive[q] || frost.sweepHW[q] <= 0.05 || wardenBodySeen[q] === frost.sweepId[q]) continue;
+      for (let l = 0; l < legs; l++) {
+        const ex = b.kx[l] - frost.sweepFX[q], ez = b.kz[l] - frost.sweepFZ[q];
+        const along = ex * frost.sweepDX[q] + ez * frost.sweepDZ[q], across = Math.abs(-ex * frost.sweepDZ[q] + ez * frost.sweepDX[q]);
+        if (along < 2 && along > -2.5 && across < frost.sweepHW[q] + 2) {
+          wardenBodySeen[q] = frost.sweepId[q];
+          warden.hx = b.kx[l]; warden.hy = b.ky[l]; warden.hz = b.kz[l]; warden.hdx = -frost.sweepDX[q]; warden.hdz = -frost.sweepDZ[q];
+          warden.bodyHit(); self.shake += 0.006; self.kick += T.kickHit * 0.6;
+          clock.hitStop = Math.max(clock.hitStop, T.hitStopHit * 0.7);
+          break;
+        }
+      }
+    }
+    if (frost.ribbonStrength > 0.2 && bodyTick <= 0) {
+      const n = frost.ribbonNodes;
+      for (let k = 0; k < n.length; k += 4) {
+        if (n[k + 3] <= 0.05) continue;
+        warden.qx = n[k]; warden.qy = n[k + 1]; warden.qz = n[k + 2];
+        if (warden.probe()) {
+          const ux = n[k] - controller.pos.x, uz = n[k + 2] - controller.pos.z, ul = Math.hypot(ux, uz) || 1;
+          warden.hx = n[k]; warden.hy = n[k + 1]; warden.hz = n[k + 2]; warden.hdx = -ux / ul; warden.hdz = -uz / ul;
+          warden.bodyHit(); bodyTick = 0.2; self.kick += T.kickHit * 0.25;
+          break;
+        }
+      }
+    }
+  }
+
   /** A joint shatters: the heaviest impact in the game so far. */
   function breakJoint() {
-    clock.hitStop = Math.max(clock.hitStop, 0.13);
-    self.shake += 0.05;
+    clock.hitStop = Math.max(clock.hitStop, 0.16);
+    self.shake += 0.06; self.kick += 0.09;
   }
   self.breakJoint = breakJoint;
 
+  let ribbonTick = 0;
   /** A hit on slot i: frozen Shaped shatter (the reaction), others take damage and stagger. */
   function strike(i, dmg, dx, dz, heavy) {
     const frozen = shaped.isFrozen(i);
     const amount = frozen ? dmg * T.shatterMul : dmg;
-    shaped.chip(i, dx, dz, frozen ? 40 : heavy ? 18 : 2);
-    shaped.damage(i, amount, heavy, dx * 3, dz * 3);
-    if (frozen) { clock.hitStop = Math.max(clock.hitStop, T.hitStopShatter); self.shake += 0.012; }
-    else if (heavy) { clock.hitStop = Math.max(clock.hitStop, T.hitStopHit); self.shake += 0.004; }
+    shaped.chip(i, dx, dz, frozen ? 40 : heavy ? 24 : 3);
+    shaped.damage(i, amount, true, dx * 3, dz * 3);
+    if (frozen) { clock.hitStop = Math.max(clock.hitStop, T.hitStopShatter); self.shake += 0.02; self.kick += T.kickShatter; }
+    else if (heavy) { clock.hitStop = Math.max(clock.hitStop, T.hitStopHit); self.shake += 0.008; self.kick += T.kickHit; }
+    else if (ribbonTick <= 0) { clock.hitStop = Math.max(clock.hitStop, T.hitStopLight); ribbonTick = 0.18; self.kick += T.kickHit * 0.3; }
   }
 
   /** Shaped → the Wraith: lunges land unless the Wraith is mid bend-step. */

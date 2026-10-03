@@ -28,8 +28,8 @@ export function createShaped(ctx) {
   const rigs = {};
   for (const k in ARCHETYPES) rigs[k] = buildRig(ARCHETYPES[k].shape, Math.min(CHUNKS_PER, ARCHETYPES[k].chunks), 1234 + k.length * 77, ARCHETYPES[k].rig);
   const slots = [];
-  for (let i = 0; i < MAX_SHAPED; i++) slots.push({ arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
-    cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0 });
+  for (let i = 0; i < MAX_SHAPED; i++) slots.push({ idx: i, arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
+    cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0, hurt: 0, flinch: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
   const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS) * CHUNK_FLOATS);
   // Shards: position, velocity, alive.
@@ -53,6 +53,12 @@ export function createShaped(ctx) {
     /** Player (fields): position, velocity. Events out: hits on the player this frame. */
     px: 0.5, pz: 0.5, pvx: 0.5, pvz: 0.5, dt: 0.5, time: 0.5,
     hits: 0, hitDamage: 0.5 - 0.5,
+    /** The Wraith is on the ground (slams and shockwaves pass under a jump). */
+    pgrounded: true,
+    /** The pack's lunge token: one hound attacks at a time while the rest circle (−1 free). */
+    lungeToken: -1,
+    /** A shattering kill happened this frame (owner: the big hit-stop and punch) at (bx, by, bz). */
+    shattered: 0, bx: 0.5, by: 0.5, bz: 0.5,
     /** Ground slams this frame (camera shake), and the strongest one's distance to the Wraith. */
     slams: 0, slamDist: 0.5,
     /** Spawn an archetype at (x, z): it rises out of the snow. Returns the slot or −1. */
@@ -65,7 +71,8 @@ export function createShaped(ctx) {
       b.place(x, z, Math.atan2(this.px - x, this.pz - z));
       b.rise = 0; b.crouch = 0; b.lift = 0; b.frozen = false; b.wantVx = 0; b.wantVz = 0;
       s.state = S.RISING; s.t = 0; s.hp = A.health; s.glow = 0; s.cool = 1 + rnd(); s.orbit = rnd() * Math.PI * 2; s.fallSink = 0;
-      s.wet = 0; s.frozenFor = 0; s.sweepHit = 0;
+      s.wet = 0; s.frozenFor = 0; s.sweepHit = 0; s.hurt = 0; s.flinch = 0;
+      s.orbit = (i / MAX_SHAPED) * Math.PI * 2 * 3.3;   // a pack spreads round the Wraith
       // The hollow it rises out of: snow ploughed aside into a ring.
       ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = A.shape.spacing * A.shape.spine * 0.55; ts.bd = 0.22; ts.bc = 0.3;
       ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.9;
@@ -78,9 +85,21 @@ export function createShaped(ctx) {
       if (s.state === S.EMPTY || s.state === S.FALLING) return false;
       if (s.state === S.RISING && amount < 1e8) return false;
       s.hp -= amount;
-      if (s.hp <= 0) { die(s); return true; }
-      const poise = ARCHETYPES[s.arch].poise || 0;
-      if (stagger && amount >= poise && s.state !== S.FROZEN) { s.state = S.STAGGER; s.t = 0; s.body.vx = kx; s.body.vz = kz; s.body.crouch = 0; s.body.lift = 0; }
+      s.hurt = 1;
+      if (s.hp <= 0) {
+        const shatter = s.state === S.FROZEN;
+        if (shatter) { this.shattered++; this.bx = s.body.sx[1]; this.by = s.body.sy[1]; this.bz = s.body.sz[1]; }
+        die(s, shatter ? 7 : 0);
+        return true;
+      }
+      const A = ARCHETYPES[s.arch], poise = A.poise || 0, b = s.body;
+      if (stagger && amount >= poise && s.state !== S.FROZEN) {
+        s.state = S.STAGGER; s.t = 0; b.vx = kx * A.knock; b.vz = kz * A.knock; b.crouch = 0; b.lift = 0;
+        if (this.lungeToken === s.idx) this.lungeToken = -1;
+      } else if (s.state !== S.FROZEN && amount > 1) {
+        // Every real hit tells: a recoil along the blow and a flinch (a hop, a dip, a rock).
+        b.vx += kx * A.knock * 0.5; b.vz += kz * A.knock * 0.5; s.flinch = 1;
+      }
       return false;
     },
     /** Freeze slot i solid for `seconds` (wet Shaped freeze longer). */
@@ -112,7 +131,8 @@ export function createShaped(ctx) {
     },
     update() {
       const dt = this.dt;
-      this.hits = 0; this.hitDamage = 0; this.slams = 0; this.slamDist = 1e9;
+      this.hits = 0; this.hitDamage = 0; this.slams = 0; this.slamDist = 1e9; this.shattered = 0;
+      if (this.lungeToken >= 0) { const ts0 = slots[this.lungeToken].state; if (ts0 !== S.TELEGRAPH && ts0 !== S.LUNGE) this.lungeToken = -1; }
       stepShots(this, dt);
       for (let i = 0; i < MAX_SHAPED; i++) {
         const s = slots[i];
@@ -136,6 +156,14 @@ export function createShaped(ctx) {
         }
         think(s, this, dt);
         const b = s.body;
+        s.hurt = Math.max(0, s.hurt - dt * 5);
+        if (s.flinch > 0) {
+          // Flinch: hounds hop back, the big ones dip and rock.
+          s.flinch = Math.max(0, s.flinch - dt * 4);
+          const f = Math.sin(Math.PI * (1 - s.flinch));
+          if (s.arch === 'hound') b.lift = Math.max(b.lift, 0.22 * f);
+          else b.crouch = Math.max(b.crouch, 0.35 * f);
+        }
         // Keep apart: Shaped push off each other instead of overlapping.
         const ri = ARCHETYPES[s.arch].shape.hip * 0.9;
         for (let j = 0; j < MAX_SHAPED; j++) {
@@ -156,7 +184,7 @@ export function createShaped(ctx) {
         b.rise = 0.55 + 0.45 * rise;
         s.wet = Math.max(0, s.wet - dt);
         // Glow channel: telegraph light 0..1, +2 when frozen solid (glazed ice in the shader).
-        writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0));
+        writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0), s.hurt);
         for (let c = s.rig.count; c < CHUNKS_PER; c++) chunks[(rec + c) * CHUNK_FLOATS + 15] = 0;
         if (s.state === S.RISING) {
           // Snow gathering up into the body as it forms.
@@ -170,6 +198,10 @@ export function createShaped(ctx) {
         }
       }
     },
+    /** Throw a shard from (sx, sy, sz) at (tx, ty, tz) at shotSpeed, wounding shotDmg (fields in;
+     *  the Warden's volley uses the same pool). */
+    sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, shotSpeed: 14.5, shotDmg: 12.5,
+    shoot() { throwShard(this.sx, this.sy, this.sz, this.tx, this.ty, this.tz, this.shotSpeed, this.shotDmg); },
     /** Count of living (or rising) Shaped. */
     get alive() { let n = 0; for (let i = 0; i < MAX_SHAPED; i++) if (slots[i].state !== S.EMPTY && slots[i].state !== S.FALLING) n++; return n; },
   };
@@ -213,9 +245,20 @@ export function createShaped(ctx) {
     shot.live[k] = 1; shot.dmg[k] = dmg;
   }
 
-  function die(s) {
+  function die(s, burst) {
     s.state = S.FALLING; s.t = 0; s.glow = 0;
-    startFall(s.body, s.st, rnd);
+    if (self.lungeToken === s.idx) self.lungeToken = -1;
+    startFall(s.body, s.st, rnd, burst);
+    if (burst > 0) {
+      // Shattered: a blast of ice glinting outward.
+      const b = s.body;
+      for (let k = 0; k < 60; k++) {
+        const a = rnd() * Math.PI * 2, up = rnd();
+        fx.ex = b.sx[1]; fx.ey = b.sy[1]; fx.ez = b.sz[1];
+        fx.evx = Math.cos(a) * (3 + 6 * rnd()); fx.evz = Math.sin(a) * (3 + 6 * rnd()); fx.evy = 1 + 5 * up;
+        fx.esize = 0.03 + 0.09 * rnd(); fx.emit();
+      }
+    }
   }
 
   function think(s, P, dt) {
@@ -237,7 +280,17 @@ export function createShaped(ctx) {
         b.wantVx = dx / dist * sp; b.wantVz = dz / dist * sp;
         b.crouch += (0 - b.crouch) * Math.min(1, dt * 4);
         s.cool -= dt;
-        if (s.cool <= 0 && dist < 3.6) { s.state = S.TELEGRAPH; s.t = 0; }
+        if (s.cool <= 0 && dist < 3.6) {
+          s.state = S.TELEGRAPH; s.t = 0;
+          // The ground cracks where the blow will land: frost lines radiating from it.
+          const hx = Math.sin(b.heading), hz = Math.cos(b.heading), ix = b.x + hx * 1.3, iz = b.z + hz * 1.3;
+          for (let q = 0; q < 7; q++) {
+            const a = q / 7 * Math.PI * 2 + rnd() * 0.5, ca = Math.cos(a), sa = Math.sin(a), r = A.slamRadius * (0.45 + 0.25 * rnd());
+            ts.bx = ix + ca * r * 0.55; ts.bz = iz + sa * r * 0.55; ts.bdx = ca; ts.bdz = sa; ts.bl = r * 0.5; ts.bw = 0.05; ts.bd = 0.04; ts.bc = 0.2;
+            ts.bk = BRUSH.SCORE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+            ts.stamp();
+          }
+        }
         break;
       }
       case S.TELEGRAPH:
@@ -262,8 +315,14 @@ export function createShaped(ctx) {
             fx.evx = Math.cos(a) * (2 + 3 * rnd()); fx.evz = Math.sin(a) * (2 + 3 * rnd()); fx.evy = 1.5 + 3.5 * rnd();
             fx.esize = 0.08 + 0.14 * rnd(); fx.emit();
           }
+          // The shock runs out along the ground: a ring of powder; a jump clears it.
+          for (let q = 0; q < 30; q++) {
+            const a = q / 30 * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+            fx.ex = ix + ca * 0.8; fx.ez = iz + sa * 0.8; fx.ey = ground.h + 0.05;
+            fx.evx = ca * A.slamRadius * 2.6; fx.evz = sa * A.slamRadius * 2.6; fx.evy = 0.4 + 0.6 * rnd(); fx.esize = 0.1 + 0.08 * rnd(); fx.emit();
+          }
           const pd = Math.hypot(P.px - ix, P.pz - iz);
-          if (pd < A.slamRadius) { P.hits++; P.hitDamage += A.slamDamage; }
+          if (pd < A.slamRadius && P.pgrounded) { P.hits++; P.hitDamage += A.slamDamage; }
           P.slams++; P.slamDist = Math.min(P.slamDist, pd);
           s.state = S.RECOVER; s.t = 0;
         }
@@ -356,7 +415,7 @@ export function createShaped(ctx) {
         b.wantVx = wx / wl * sp; b.wantVz = wz / wl * sp;
         b.crouch += (0 - b.crouch) * Math.min(1, dt * 6);
         s.cool -= dt;
-        if (s.cool <= 0 && dist < 7 && dist > 2.5) { s.state = S.TELEGRAPH; s.t = 0; }
+        if (s.cool <= 0 && dist < 7 && dist > 2.5 && (P.lungeToken < 0 || P.lungeToken === s.idx)) { s.state = S.TELEGRAPH; s.t = 0; P.lungeToken = s.idx; }
         break;
       }
       case S.TELEGRAPH:

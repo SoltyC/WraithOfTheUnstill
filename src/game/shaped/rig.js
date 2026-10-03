@@ -146,7 +146,8 @@ function boneFrame(b, rig, c) {
  * @param {number} rise  0..1 spawn progress
  * @param {number} glow  0..1 telegraph light
  */
-export function writeAlive(b, st, out, rec, rise, glow) {
+/** Hurt flash (0..1) rides in each record's kind as a fraction (kind + 0.45 × hurt). */
+export function writeAlive(b, st, out, rec, rise, glow, hurt = 0) {
   const rig = st.rig;
   for (let c = 0; c < rig.count; c++) {
     boneFrame(b, rig, c);
@@ -163,7 +164,7 @@ export function writeAlive(b, st, out, rec, rise, glow) {
     out[o] = x; out[o + 1] = y; out[o + 2] = z; out[o + 3] = rig.size[c * 3] * sc;
     out[o + 4] = fx; out[o + 5] = fy; out[o + 6] = fz; out[o + 7] = rig.size[c * 3 + 1] * sc;
     out[o + 8] = ux; out[o + 9] = uy; out[o + 10] = uz; out[o + 11] = rig.size[c * 3 + 2] * sc;
-    out[o + 12] = rig.cseed[c]; out[o + 13] = rig.kind[c]; out[o + 14] = glow; out[o + 15] = e > 0.01 ? 1 : 0;
+    out[o + 12] = rig.cseed[c]; out[o + 13] = rig.kind[c] + 0.45 * hurt; out[o + 14] = glow; out[o + 15] = e > 0.01 ? 1 : 0;
     // Remember the frame and position for a death hand-off.
     st.fwd[c * 3] = fx; st.fwd[c * 3 + 1] = fy; st.fwd[c * 3 + 2] = fz;
     st.up[c * 3] = ux; st.up[c * 3 + 1] = uy; st.up[c * 3 + 2] = uz;
@@ -172,12 +173,18 @@ export function writeAlive(b, st, out, rec, rise, glow) {
 }
 
 /** Death: hand every chunk to the debris simulation with the body's momentum plus a burst. */
-export function startFall(b, st, rnd) {
+export function startFall(b, st, rnd, burst = 0) {
   const n = st.rig.count;
   for (let c = 0; c < n; c++) {
     st.dvx[c] = b.vx * 0.6 + (rnd() - 0.5) * 1.6;
     st.dvz[c] = b.vz * 0.6 + (rnd() - 0.5) * 1.6;
     st.dvy[c] = 0.4 + rnd() * 1.2;
+    if (burst > 0) {
+      // Shattered: every chunk blown out from the body's middle.
+      const ex = st.dx[c] - b.sx[1], ey = st.dy[c] - b.sy[1], ez = st.dz[c] - b.sz[1], el = Math.sqrt(ex * ex + ey * ey + ez * ez) || 1;
+      const v = burst * (0.6 + 0.8 * rnd());
+      st.dvx[c] += ex / el * v; st.dvy[c] += Math.max(0, ey / el) * v + burst * 0.4; st.dvz[c] += ez / el * v;
+    }
   }
 }
 
