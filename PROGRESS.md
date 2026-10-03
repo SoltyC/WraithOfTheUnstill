@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 4 (frost bending and snow-surf), **gate evidence complete; awaiting the user's review**. Phase 3 is closed (accepted by the user, 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 5 (combat and the frost Shaped), **starting**. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 4 built so far** (commit f74c958; DECISIONS.md "Phase 4"):
   - **Terrain state repack:** word 1 now holds compaction, wetness, frozen and transform (8-bit each). That is one fragment binding, and the snow reads slush, crust and permanent ice from it.
     - Five brush programs: PRESS, PLOUGH, SCORE, FREEZE, WET.
@@ -85,7 +85,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 4 gate review with the user (shots in `screenshots/phase-04/`, bench in PERF.md). Then Phase 5 (combat and the frost Shaped).
+- **Exact next step:** Phase 5 (combat and the frost Shaped): see the session log for the plan.
 
 ## How to run
 
