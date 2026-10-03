@@ -80,10 +80,14 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
     Nrock = rockDetail(wp, Ngeo, fp);
     let accum = smoothstep(0.62, 0.86, Nrock.y + n2 * 0.08 + n3 * 0.06);
     rockShown = rock * (1.0 - accum);
-    // Strata a few metres thick, warped; contrast fades early with distance (no moiré).
-    let strata = fract(wp.y / 5.5 + 0.6 * noised(wp.xz * 0.012).x + 0.1 * n2);
-    let band = (smoothstep(0.0, 0.12, strata) * (1.0 - smoothstep(0.5, 0.7, strata)) - 0.5) * fpFade(11.0, fp);
-    rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.4 * band) * (0.92 + 0.16 * n2);
+    // Strata: irregular layers (two incommensurate periods, tilted and warped by landform-scale
+    // noise), whose contrast itself comes and goes, so they read as geology, not as stripes.
+    let tilt = wp.y + 0.12 * wp.x - 0.07 * wp.z + 9.0 * noised(wp.xz * 0.008).x;
+    let s1 = noised(vec2f(tilt / 7.3, 0.37)).x;
+    let s2 = noised(vec2f(tilt / 2.9, 5.1)).x * fpFade(6.0, fp);
+    let strength = smoothstep(-0.2, 0.6, noised(wp.xz * 0.03 + vec2f(3.0, 1.0)).x);
+    let band = (0.6 * s1 + 0.4 * s2) * strength * fpFade(14.0, fp);
+    rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.22 * band) * (0.9 + 0.2 * n2);
   }
 
   // Blue ice: scoured out on steep windward slopes (the landform faces into the wind), in
