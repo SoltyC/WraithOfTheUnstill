@@ -203,7 +203,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col = mix(ci, cs, snow) * mix(0.55, 1.0, occ);
     // The stomp's telegraph: light along the fractures.
     let g = fragmentInputs.vGlow;
-    if (g > 0.001 && !frozen) { col += vec3f(0.45, 0.78, 1.0) * g * (frac * 0.8 + 0.05) / max(exposure, 1e-6) * 0.6; }
+    if (g > 0.001 && !frozen) {
+      // Light within: the ice fills with a cold blue glow; the fractures carry the brightest light.
+      let core = 1.0 - smoothstep(0.0, 0.025, abs(vnoise3(wp * vec3f(0.35, 0.9, 0.35) + 3.0) - 0.5));
+      let inner = (1.0 - snow * 0.7) * (0.25 + 0.75 * pow(1.0 - nv, 1.5));
+      col = col * (1.0 - 0.35 * g) + (vec3f(0.12, 0.42, 1.0) * (frac * 0.9 + inner * 0.35) + vec3f(0.6, 0.85, 1.0) * core * 0.8) * g / max(exposure, 1e-6) * 0.55;
+    }
     if (frozen) { col += vec3f(0.4, 0.7, 1.0) * 0.06 / max(exposure, 1e-6); }
   }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);

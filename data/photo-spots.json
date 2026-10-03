@@ -1003,6 +1003,84 @@
    }
   },
   {
+   "id": "p5-release-glow",
+   "biome": "frost",
+   "label": "The release: the stillness leaving the Warden along its fractures",
+   "time": 17.2,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "restoration": "stilled",
+   "warden": {
+    "ahead": 20,
+    "side": 0,
+    "turn": 1.45,
+    "seconds": 2,
+    "dormant": true,
+    "release": 2.6
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": -0.12,
+    "dist": 5
+   }
+  },
+  {
+   "id": "p5-release-wave",
+   "biome": "frost",
+   "label": "The release: its exhale rolls out across the steppe as a wave of wind and powder",
+   "time": 17.2,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "restoration": "stilled",
+   "warden": {
+    "ahead": 20,
+    "side": 0,
+    "turn": 1.45,
+    "seconds": 2,
+    "dormant": true,
+    "release": 4.6
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": -0.12,
+    "dist": 5
+   }
+  },
+  {
+   "id": "p5-release-settled",
+   "biome": "frost",
+   "label": "The release: lain down into the land, the steppe restored",
+   "time": 17.2,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "restoration": "stilled",
+   "warden": {
+    "ahead": 20,
+    "side": 0,
+    "turn": 1.45,
+    "seconds": 2,
+    "dormant": true,
+    "release": 13.5
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": -0.12,
+    "dist": 5
+   }
+  },
+  {
    "id": "p5-climb-flank",
    "biome": "frost",
    "label": "Gripping the Warden's flank 8 m up, the robe hanging, golden hour",

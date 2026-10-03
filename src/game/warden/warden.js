@@ -67,6 +67,8 @@ export function createWarden(ctx) {
     px: 0.5, pz: 0.5, dt: 0.5, hits: 0, hitDamage: 0.5 - 0.5, shake: 0.5 - 0.5,
     /** Stilled until released: 0 dormant/stilled … 1 restored (drives the biome's restoration). */
     restore: 0.5 - 0.5,
+    /** Release: the exhale's wind gust 0..1 (owner adds it to the wind), and its wave radius. */
+    gust: 0.5 - 0.5, wave: -1.5 + 0.5,
     /** Camera probe (fields in): is (qx, qy, qz) inside the mass, with a little clearance? */
     qx: 0.5, qy: 0.5, qz: 0.5,
     probe() {
@@ -250,10 +252,30 @@ export function createWarden(ctx) {
         break;
       case W.RELEASE:
         // Released: it lowers itself, then settles into the land over several seconds.
-        body.wantVx = 0; body.wantVz = 0; W0.glow = 0;
+        body.wantVx = 0; body.wantVz = 0;
         body.crouch += (1 - body.crouch) * Math.min(1, dt * 0.6);
         W0.settle = Math.min(1, Math.max(0, (W0.t - 3) / 9));
         W0.restore = Math.min(1, Math.max(0, (W0.t - 4) / 10));
+        // The stillness leaves it: light runs along its fractures, brightest as it exhales.
+        W0.glow = W0.t < 3 ? (W0.t / 3) * (W0.t / 3) : Math.max(0, 1 - (W0.t - 3) / 2.5);
+        // The exhale (t = 3): a wave of wind and powder rolls out across the steppe.
+        W0.gust = W0.t < 3 ? 0 : Math.max(0, 1 - (W0.t - 3) / 7) * Math.min(1, (W0.t - 3) * 3);
+        if (W0.t >= 3 && W0.t < 6.2) {
+          W0.wave = (W0.t - 3) * 16;
+          const R = W0.wave + WARDEN_SHAPE.hip * 1.2, cx = body.sx[3], cz = body.sz[3];
+          for (let q = 0; q < 8; q++) {
+            const a = rnd() * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+            fx.ex = cx + ca * R * 1.35; fx.ez = cz + sa * R;
+            ground.qx = fx.ex; ground.qz = fx.ez; ground.sample();
+            // A rolling front: low, ground-hugging, carried out nearly at the wave's speed.
+            fx.ey = ground.h + 0.2 + rnd() * 0.8;
+            const v = 11 + 6 * rnd();
+            fx.evx = ca * v * 1.35; fx.evz = sa * v; fx.evy = 0.4 + 1.6 * rnd();
+            fx.esize = 1.0 + 1.4 * rnd();
+            fx.emit();
+          }
+          if (W0.t - dt < 3) W0.shake += 0.08;
+        } else if (W0.t >= 6.2) W0.wave = -1;
         if (W0.t >= 3 && W0.t - dt < 3) {
           // The mass it leaves: a long, high drift where it lay down (heals like any snow).
           ts.bx = body.sx[3]; ts.bz = body.sz[3]; ts.bdx = Math.sin(body.heading); ts.bdz = Math.cos(body.heading);
@@ -261,7 +283,7 @@ export function createWarden(ctx) {
           ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
           ts.stamp();
         }
-        if (W0.settle >= 1) { W0.active = false; }
+        if (W0.settle >= 1) { W0.active = false; W0.gust = 0; }
         break;
     }
   }

@@ -373,7 +373,7 @@ async function boot() {
     const w = wraithView.wraith, p = controller.pos;
     w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
-    w.windStrength = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value);
+    w.windStrength = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
     w.climbing = climb.climbing; w.climbBlend = climb.blend;
     if (climb.climbing) {
@@ -489,6 +489,25 @@ async function boot() {
         // Settle it into its pose (frozen capture clock: substeps here).
         for (let k = 0; k < (spec.seconds || 1) * 60; k++) { warden.dt = 1 / 60; warden.update(); if (spec.dormant) warden.state = wardenMod.W.DORMANT; }
         if (spec.freezeJoints) for (const k of spec.freezeJoints) warden.freezeJoint(k);
+        releaseCam.hold = false;
+        if (spec.release !== undefined) {
+          // The release, `release` seconds in, with the cinematic camera where it would be.
+          warden.joint.fill(wardenMod.JOINT.SHATTERED); warden.state = wardenMod.W.RELEASE; warden.t = 0;
+          const rc = releaseCam, b = warden.body, cp = camera.position;
+          rc.x = cp.x; rc.y = cp.y; rc.z = cp.z; rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3]; rc.start();
+          const n = Math.round(spec.release * 60);
+          for (let k = 0; k < n; k++) {
+            wraithView.time = clock.simTime - (n - k) / 60;
+            warden.dt = 1 / 60; warden.update();
+            rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3];
+            ground.qx = rc.x; ground.qz = rc.z; ground.sample(); rc.groundY = ground.h;
+            rc.dt = 1 / 60; rc.skip = false; rc.update();
+          }
+          wraithView.time = clock.simTime; wraithView.uploadFx();
+          rc.active = false; rc.hold = true; rc.bars = 1;
+          arm.setPose(rc.x, rc.y, rc.z, rc.yaw, rc.pitch, rc.fov);
+          game.wraithHeld = capture;
+        }
         warden.dt = 0; warden.update();
         if (spec.climb) {
           // On the Warden: grip at the given surface parameters and let the robe settle.
@@ -544,6 +563,37 @@ async function boot() {
     wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;
     vignette.style.opacity = String(Math.max(0, (w - 0.65) / 0.35).toFixed(3));
   } });
+  // The release cinematic: when the last joint breaks the camera takes a slow orbit around the
+  // Warden as it exhales and lies down (letterboxed, skippable).
+  const { createReleaseCam } = await import('./camera/releaseCam.js');
+  const releaseCam = createReleaseCam();
+  const bars = [document.createElement('div'), document.createElement('div')];
+  bars[0].className = 'letterbox letterbox-top'; bars[1].className = 'letterbox letterbox-bottom';
+  document.body.append(bars[0], bars[1]);
+  let barsShown = -1;
+  loop.add({ name: 'releaseCam', update: () => {
+    const rc = releaseCam;
+    rc.dt = clock.realDt;
+    if (warden.active && warden.state === wardenMod.W.RELEASE) {
+      const b = warden.body;
+      rc.tx = b.sx[3]; rc.ty = b.sy[3] + 2; rc.tz = b.sz[3];
+      if (!rc.played && !rc.active && !capture) {
+        const c = camera.position; rc.x = c.x; rc.y = c.y; rc.z = c.z;
+        rc.start();
+      }
+    } else if (!warden.active || warden.state !== wardenMod.W.RELEASE) { if (!rc.active) rc.played = false; }
+    const was = rc.active;
+    rc.skip = inputState.pressed[Act.Jump] || inputState.pressed[Act.Interact];
+    if (rc.active) { ground.qx = rc.x; ground.qz = rc.z; ground.sample(); rc.groundY = ground.h; }
+    rc.update();
+    if (rc.active) arm.setPose(rc.x, rc.y, rc.z, rc.yaw, rc.pitch, rc.fov);
+    else if (was) {
+      // Back to the Wraith, looking the way the camera last looked.
+      arm.setFree(false); arm.yaw = rc.yaw; arm.pitch = 0.2; arm.snap(controller.pos);
+    }
+    const shown = Math.round(rc.bars * 100);
+    if (shown !== barsShown) { barsShown = shown; bars[0].style.transform = bars[1].style.transform = 'scaleY(' + (rc.bars * rc.bars * (3 - 2 * rc.bars)).toFixed(3) + ')'; }
+  } });
   /** Photo spots with Shaped (`shaped: { spawn: [[name, dx, dz], …], seconds }`): spawn them
    *  around the player, simulate a few substeps per frame (frozen capture clock), then hold. */
   const shapedRoll = { t: -1 };
@@ -597,7 +647,7 @@ async function boot() {
     ap.w = STILLED[2] + (RESTORED[2] - STILLED[2]) * r;
   } });
   loop.add({ name: 'spindrift', update: () => {
-    const w = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value);
+    const w = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;
     spindrift.time = clock.simTime;
     spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5));
     spindrift.drift.z = 0.4 + w;
@@ -672,6 +722,12 @@ async function boot() {
     pendingWarden: null,
     /** Dev: place the Frost Warden ahead of the player. */
     spawnWarden() { this.pendingWarden = { ahead: 40, seconds: 0.1 }; },
+    /** Dev: break every joint of the active Warden at once (plays the release). */
+    releaseWarden() {
+      if (!warden.active) return;
+      for (let k = 0; k < wardenMod.JOINTS; k++) { warden.freezeJoint(k); warden.strikeJoint(k); }
+      combat.breakJoint();
+    },
     shapedArchetypes: Object.keys((await import('./game/shaped/archetypes.js')).ARCHETYPES),
     /** Dev: spawn n Shaped of an archetype in an arc 6 m in front of the player. */
     spawnShaped(name, n) {

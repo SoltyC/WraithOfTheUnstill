@@ -56,22 +56,27 @@ fn main(input: VertexInputs) -> FragmentInputs {
     // Spray: a = spawn position, spawn time; b = velocity, size (negative: slush/water, heavy).
     let age = uniforms.fxParams.x - a.w;
     let wet = b.w < 0.0;
-    let life = select(${SPRAY_LIFE}, 0.8, wet);
+    // Size above 0.5 m: a billow of powder (the Warden's release wave) — long-lived, rolling.
+    let big = b.w > 0.5;
+    let life = select(select(${SPRAY_LIFE}, 0.8, wet), 3.4, big);
     if (age >= 0.0 && age < life) {
-      let k = select(3.2, 1.3, wet);                 // air drag: fine snow floats, slush falls
-      let gr = select(2.2 * 3.2, 9.8, wet);
+      let k = select(select(3.2, 1.3, wet), 0.9, big);  // air drag: fine snow floats, slush falls
+      let gr = select(select(2.2 * 3.2, 9.8, wet), 0.5, big);
       let e = (1.0 - exp(-k * age)) / k;
       let wind = vec3f(uniforms.fxParams.y, 0.0, uniforms.fxParams.z) * select(0.6, 0.15, wet);
       p = a.xyz + b.xyz * e + wind * (age - e) + vec3f(0.0, -gr, 0.0) * (age - e) / k;
       p.y = max(p.y, a.y - 0.01);
       let t = age / life;
-      size = abs(b.w) * (1.0 + select(2.5, 0.6, wet) * t);
+      size = abs(b.w) * (1.0 + select(select(2.5, 0.6, wet), 1.6, big) * t);
       let frost = frostAtF(a.x, a.z);
       if (wet) {
         alpha = (1.0 - t) * smoothstep(0.0, 0.03, age) * 0.75;
         color = vec3f(0.5, 0.6, 0.68);
       } else {
         alpha = (1.0 - t) * (1.0 - t) * smoothstep(0.0, 0.05, age) * mix(0.15, 0.36, frost);
+        // Billows cast no shadow (kind 2: the shadow pass skips them; dithered cover from
+        // metre-wide puffs would screen-door the ground).
+        if (big) { alpha = (1.0 - t) * (1.0 - t) * smoothstep(0.0, 0.35, age) * 0.42; kind = 2.0; }
         // Snow on snow; pale grey-brown dust elsewhere.
         color = mix(vec3f(0.42, 0.38, 0.32), vec3f(0.92, 0.95, 1.0), frost);
       }
@@ -83,6 +88,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let wp = p + (right * corner.x + up * corner.y) * size;
   // Puffs right at the camera fade out (no screen-filling overdraw).
   if (kind < 0.5) { alpha *= smoothstep(1.0, 3.0, length(p - cam)); }
+  if (kind > 1.5) { alpha *= smoothstep(2.0, 8.0, length(p - cam)); }
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (alpha < 0.002) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
   vertexOutputs.vUv = corner;
@@ -108,7 +114,7 @@ ${SHADOW_RECEIVE_WGSL}
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let r2 = dot(fragmentInputs.vUv, fragmentInputs.vUv);
   if (r2 > 1.0) { discard; }
-  if (fragmentInputs.vKind > 0.5) {
+  if (fragmentInputs.vKind > 0.5 && fragmentInputs.vKind < 1.5) {
     // Additive glow: a tight core and a soft halo (display-referred).
     let k = (exp(-r2 * 30.0) + 0.3 * exp(-r2 * 6.0)) * (1.0 - r2) * fragmentInputs.vAlpha;
     fragmentOutputs.color = vec4f(fragmentInputs.vColor * k, 0.0);

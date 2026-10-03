@@ -262,7 +262,9 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     // Mound: displaced mass heaped in a soft, lumpy dome (a Shaped collapsing back into the snow);
     // it fills any hollow under it. Heals like any displaced mass.
     let k = clamp(1.0 - d * d, 0.0, 1.0);
-    let dome = k * sqrt(k) * (0.8 + 0.4 * smoothHash(p, 0.18));
+    // Lumps scale with the heap: a hound's mound is clumpy, the Warden's a long smooth drift.
+    let lump = max(0.18, br.w * 0.9);
+    let dome = k * sqrt(k) * (0.85 + 0.2 * smoothHash(p, lump) + 0.1 * smoothHash(p + vec2f(5.1, 2.3), lump * 0.4));
     t.h.y = max(t.h.y, br.w * dome);
     t.h.x = t.h.x * (1.0 - min(1.0, dome * 2.0));
   } else {

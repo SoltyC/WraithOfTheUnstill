@@ -118,3 +118,17 @@ html, body {
   transition: opacity 0.4s ease;
   z-index: 5;
 }
+
+/* The release cinematic's letterbox (scaled in from the edges). */
+.letterbox {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 11vh;
+  background: #000;
+  pointer-events: none;
+  transform: scaleY(0);
+  z-index: 6;
+}
+.letterbox-top { top: 0; transform-origin: top; }
+.letterbox-bottom { bottom: 0; transform-origin: bottom; }

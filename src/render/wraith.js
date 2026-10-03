@@ -201,6 +201,8 @@ export function createWraithView(scene, atmo, ground, clipmap) {
         this.emit();
       }
     },
+    /** Upload the effects alone at `time` (a held pose: spray emitted by others still shows). */
+    uploadFx() { fxBuf.update(fxData); fxParams.x = this.time; },
     /** Run the simulation (inputs already set on `wraith`) and upload the vertices and effects. */
     update() {
       wraith.update();
