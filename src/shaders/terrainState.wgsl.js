@@ -11,7 +11,7 @@ export const MAX_BRUSHES = 48;
 export const MAX_IN = 4;
 export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 * 4;
 /** Brush programs (terrainState.stamp: field bk). */
-export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4 };
+export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 5 };
 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
@@ -258,6 +258,13 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     t.s.y = t.s.y * (1.0 - edge);
     if (edge > 0.5) { t.s.w = ${TRANSFORM.ICE}.0 / 255.0; }
     t.h.x = max(t.h.x, br.w * edge);
+  } else if (program == ${BRUSH.MOUND}u) {
+    // Mound: displaced mass heaped in a soft, lumpy dome (a Shaped collapsing back into the snow);
+    // it fills any hollow under it. Heals like any displaced mass.
+    let k = clamp(1.0 - d * d, 0.0, 1.0);
+    let dome = k * sqrt(k) * (0.8 + 0.4 * smoothHash(p, 0.18));
+    t.h.y = max(t.h.y, br.w * dome);
+    t.h.x = t.h.x * (1.0 - min(1.0, dome * 2.0));
   } else {
     // Wet (spray, meltwater).
     t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.3, 1.0, d)));

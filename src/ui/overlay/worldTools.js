@@ -54,9 +54,13 @@ export function buildWorldTools(game, el) {
   root.append(el('div', { class: 'toggles' }, el('label', { class: 'toggle' }, free, 'free camera'), el('label', { class: 'toggle' }, god, 'god mode')), pos,
     el('div', { class: 'note' }, 'Free cam: WASD, R/Q up/down, Shift fast. God mode: fly, no collision.'));
 
-  // Spawn: populated when the Shaped exist (Phase 5).
+  // Spawn a Shaped a few metres in front of the player (it rises out of the ground).
   h('Spawn');
-  root.append(el('div', { class: 'row' }, el('select', { disabled: true }, el('option', null, 'no Shaped yet (Phase 5)')), el('button', { disabled: true }, 'Spawn')));
+  const archSel = el('select', null, ...(game.shapedArchetypes || []).map((n) => el('option', { value: n }, n)));
+  root.append(el('div', { class: 'row' }, archSel,
+    el('button', { onclick: () => game.spawnShaped && game.spawnShaped(archSel.value, 1) }, 'Spawn'),
+    el('button', { onclick: () => game.spawnShaped && game.spawnShaped(archSel.value, 3) }, '×3'),
+    el('button', { onclick: () => game.killShaped && game.killShaped() }, 'Kill all')));
 
   // Save slots.
   h('Save');

@@ -761,6 +761,75 @@
     "pitch": 0.42,
     "dist": 7.5
    }
+  },
+  {
+   "id": "p5-hounds-noon",
+   "biome": "frost",
+   "label": "Rime hounds risen out of the snow, stalking the Wraith; one telegraphs a lunge",
+   "time": 14.0,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "shaped": {
+    "spawn": [
+     [
+      "hound",
+      -3,
+      6
+     ],
+     [
+      "hound",
+      2.5,
+      7
+     ],
+     [
+      "hound",
+      5,
+      3.5
+     ]
+    ],
+    "seconds": 3.2
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.25,
+    "dist": 6.5
+   }
+  },
+  {
+   "id": "p5-hounds-rising",
+   "biome": "frost",
+   "label": "Rime hounds rising out of the snow (mid-spawn)",
+   "time": 15.5,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "shaped": {
+    "spawn": [
+     [
+      "hound",
+      -2,
+      5
+     ],
+     [
+      "hound",
+      2,
+      6.5
+     ]
+    ],
+    "seconds": 0.8
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.18,
+    "dist": 5.5
+   }
   }
  ]
 }

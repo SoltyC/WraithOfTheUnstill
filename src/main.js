@@ -210,6 +210,14 @@ async function boot() {
   bindShadows(crystals.material, shadows);
   shadows.addCaster(crystals.mesh, crystals.makeShadowMaterial, 2);
   crystals.freeze();
+  // The Shaped (Phase 5): creatures of the biome's material, and their renderer.
+  const shapedMod = await import('./game/shaped/shaped.js');
+  const shaped = shapedMod.createShaped({ ts: terrainState, fx: wraithView, ground });
+  const { createShapedView } = await import('./render/shapedView.js');
+  const shapedView = createShapedView(scene, atmosphere, shaped.chunks);
+  bindShadows(shapedView.material, shadows);
+  shadows.addCaster(shapedView.mesh, shapedView.makeShadowMaterial, 2);
+  shapedView.freeze();
   const { createSpeedStreaks } = await import('./render/speedStreaks.js');
   const streaks = createSpeedStreaks(scene, atmosphere);
   const { input: inputState, Action: Act } = await import('./input/actions.js');
@@ -397,6 +405,34 @@ async function boot() {
     }
     game.wraithHeld = capture; // held only for frozen-clock captures
   }
+  loop.add({ name: 'shaped', update: () => {
+    shaped.px = controller.pos.x; shaped.pz = controller.pos.z; shaped.pvx = controller.vel.x; shaped.pvz = controller.vel.z;
+    if (game.pendingShaped !== null) {
+      if (game.worldSettled() && game.pendingTrail === null) stepShapedRoll();
+    } else if (!game.wraithHeld || !capture) {
+      shaped.dt = clock.dt; shaped.time = clock.simTime;
+      shaped.update();
+    }
+    shapedView.update();
+  } });
+  /** Photo spots with Shaped (`shaped: { spawn: [[name, dx, dz], …], seconds }`): spawn them
+   *  around the player, simulate a few substeps per frame (frozen capture clock), then hold. */
+  const shapedRoll = { t: -1 };
+  function stepShapedRoll() {
+    const spec = game.pendingShaped, p = controller.pos, f = controller.yaw;
+    if (shapedRoll.t < 0) {
+      const fx = Math.sin(f), fz = Math.cos(f), rx = fz, rz = -fx;
+      for (const [name, dx, dz] of spec.spawn) shaped.spawn(name, p.x + rx * dx + fx * dz, p.z + rz * dx + fz * dz);
+      shapedRoll.t = 0;
+    }
+    for (let k = 0; k < 6 && shapedRoll.t < spec.seconds; k++) {
+      shaped.dt = 1 / 60; shaped.time = clock.simTime - (spec.seconds - shapedRoll.t);
+      wraithView.time = shaped.time;
+      shaped.update();
+      shapedRoll.t += 1 / 60;
+    }
+    if (shapedRoll.t >= spec.seconds) { game.pendingShaped = null; shapedRoll.t = -1; }
+  }
   loop.add({ name: 'atmosphere', update: () => {
     env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();
     env.env.screenInfo.z = 1 / env.env.screenInfo.x; env.env.screenInfo.w = 1 / env.env.screenInfo.y;
@@ -480,16 +516,29 @@ async function boot() {
     pendingSurf: null,
     /** Photo-spot bending sequence ({ seconds }) still to cast. */
     pendingBend: null,
+    /** Photo-spot Shaped encounter still to simulate. */
+    pendingShaped: null,
+    shapedArchetypes: Object.keys((await import('./game/shaped/archetypes.js')).ARCHETYPES),
+    /** Dev: spawn n Shaped of an archetype in an arc 6 m in front of the player. */
+    spawnShaped(name, n) {
+      const p = controller.pos, f = arm.yaw;
+      for (let k = 0; k < n; k++) {
+        const a = f + (k - (n - 1) / 2) * 0.5;
+        shaped.spawn(name, p.x + Math.sin(a) * 6, p.z + Math.cos(a) * 6);
+      }
+    },
+    killShaped() { for (let i = 0; i < shapedMod.MAX_SHAPED; i++) shaped.damage(i, 1e9, false, 0, 0); },
     applySpot(spot) {
       spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
       this.pendingTrail = spot.trail || null;
       this.pendingWalk = spot.walk || null;
       this.pendingSurf = spot.surf || null;
       this.pendingBend = spot.bend || null;
+      this.pendingShaped = spot.shaped || null;
       this.wraithHeld = false;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
-    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && terrainState.pendingBrushes === 0; },
+    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingShaped === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
       if (wraithView.isEnabled() === on) return;
       wraithView.setEnabled(on); engine.snapshotRenderingReset();
@@ -543,7 +592,7 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows, terrainState, wraithView, frost, env: env.env,
+    ready: true, game, shadows, terrainState, wraithView, frost, shaped, env: env.env,
     /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
     inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */
