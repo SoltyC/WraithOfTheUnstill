@@ -915,6 +915,30 @@
     "pitch": 0.2,
     "dist": 7
    }
+  },
+  {
+   "id": "p5-warden-afternoon",
+   "biome": "frost",
+   "label": "The Frost Warden: a glacier-beast holding the steppe in stillness, water joints glowing at its knees and back",
+   "time": 15.4,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "warden": {
+    "ahead": 34,
+    "side": -6,
+    "turn": 0.5,
+    "seconds": 2,
+    "dormant": true
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.06,
+    "dist": 7
+   }
   }
  ]
 }

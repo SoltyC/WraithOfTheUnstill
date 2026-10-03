@@ -80,10 +80,21 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Glow channel: telegraph 0..1, +2 when the creature is frozen solid.
   let frozen = fragmentInputs.vGlow > 1.5;
   var kind = i32(fragmentInputs.vKind + 0.5);
-  if (frozen && kind == 0) { kind = 1; }               // the snow is glazed over: all ice
+  if (frozen && (kind == 0 || kind == 3)) { kind = 1; } // glazed over: all ice (a frozen joint too)
   let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
   var col = vec3f(0.0);
-  if (kind == 0) {
+  if (kind == 3) {
+    // A water joint: liquid held in the body by the Warden's stillness — churning, glossy, lit
+    // from within (the target: freeze it, then break it).
+    let t = fragmentInputs.vGlow * 3.0;               // the joint's pulse (the Warden's clock)
+    let churn = noised(fragmentInputs.vLocal.xz * 2.5 + vec2f(t * 0.7, -t * 0.5)).x;
+    let F = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
+    let R = reflect(-V, normalize(N + vec3f(churn * 0.3, 0.0, churn * 0.3)));
+    col = atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z))) * F + vec3f(0.1, 0.3, 0.4) * sky * cold;
+    let H = normalize(L + V);
+    col += key * pow(max(dot(N, H), 0.0), 200.0) * 4.0 * vis;
+    col += vec3f(0.3, 0.75, 1.0) * (0.55 + 0.25 * churn) * (0.6 + 0.4 * fragmentInputs.vGlow) / max(exposure, 1e-6) * 0.5;
+  } else if (kind == 0) {
     // Packed rime: denser and greyer-blue than the fresh snow it rose from (so it reads against
     // it), wrapped diffuse, a cold subsurface glow in shade, undersides and crevices darker.
     let grain = noised(wp.xz * 9.0 + vec2f(fragmentInputs.vSeed, 0.0)).x;

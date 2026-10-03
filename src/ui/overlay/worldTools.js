@@ -60,7 +60,8 @@ export function buildWorldTools(game, el) {
   root.append(el('div', { class: 'row' }, archSel,
     el('button', { onclick: () => game.spawnShaped && game.spawnShaped(archSel.value, 1) }, 'Spawn'),
     el('button', { onclick: () => game.spawnShaped && game.spawnShaped(archSel.value, 3) }, '×3'),
-    el('button', { onclick: () => game.killShaped && game.killShaped() }, 'Kill all')));
+    el('button', { onclick: () => game.killShaped && game.killShaped() }, 'Kill all'),
+    el('button', { onclick: () => game.spawnWarden && game.spawnWarden() }, 'Warden')));
 
   // Save slots.
   h('Save');

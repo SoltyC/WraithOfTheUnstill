@@ -12,7 +12,7 @@ import { MAX_LEGS } from './body.js';
 // Bone kinds.
 const SPINE = 0, HEAD = 1, TAIL = 2, UPPER = 3, LOWER = 4;
 // Chunk kinds (shader): packed snow, ice shard, glowing core (telegraph light).
-export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2 };
+export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3 };
 /** Floats per chunk record: (pos, sx), (fwd, sy), (up, sz), (seed, kind, glow, alpha). */
 export const CHUNK_FLOATS = 16;
 
@@ -29,6 +29,7 @@ export function buildRig(sh, count, seed, opt = {}) {
   // Proportions per archetype: torso girth and leg thickness (fractions of hip height), head
   // size, shards per segment.
   const G = opt.girth ?? 0.44, LW = opt.leg ?? 0.3, HS = opt.head ?? 0.42, SH = opt.shards ?? 1;
+  const UN = opt.upperN ?? 3, LN = opt.lowerN ?? 2;
   const bone = new Uint8Array(count), index = new Uint8Array(count), kind = new Uint8Array(count);
   const off = new Float32Array(count * 3), size = new Float32Array(count * 3), cseed = new Float32Array(count), rise = new Float32Array(count);
   let n = 0;
@@ -70,8 +71,14 @@ export function buildRig(sh, count, seed, opt = {}) {
   // Legs: thick, overlapping chunks along each segment, an ice claw at the foot.
   for (let l = 0; l < sh.legs.length; l++) {
     const leg = sh.legs[l], w = sh.hip * LW;
-    for (let k = 0; k < 3; k++) add(UPPER, l, 0, 0, leg.upper * (0.15 + 0.35 * k), w * (1.15 - 0.15 * k), w * (1.05 - 0.15 * k), leg.upper * 0.55, CHUNK.SNOW);
-    for (let k = 0; k < 2; k++) add(LOWER, l, 0, 0, leg.lower * (0.25 + 0.5 * k), w * 0.75, w * 0.7, leg.lower * 0.65, CHUNK.SNOW);
+    for (let k = 0; k < UN; k++) {
+      const f = (k + 0.5) / UN;
+      add(UPPER, l, (r() - 0.5) * w * 0.3, (r() - 0.5) * w * 0.3, leg.upper * f, w * (1.15 - 0.3 * f) * (0.9 + 0.2 * r()), w * (1.05 - 0.3 * f), leg.upper * 1.6 / UN, CHUNK.SNOW);
+    }
+    for (let k = 0; k < LN; k++) {
+      const f = (k + 0.5) / LN;
+      add(LOWER, l, (r() - 0.5) * w * 0.25, (r() - 0.5) * w * 0.25, leg.lower * f, w * 0.75 * (0.9 + 0.2 * r()), w * 0.7, leg.lower * 1.3 / LN, CHUNK.SNOW);
+    }
     add(LOWER, l, 0, 0, leg.lower * 0.98, w * 0.8, w * 0.45, w * 1.3, CHUNK.ICE);
   }
   // Fill any remainder with extra torso lumps.

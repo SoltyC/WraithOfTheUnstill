@@ -1,0 +1,201 @@
+// The Frost Warden (BRIEF §8.4): a colossal Shaped — a glacier-beast some 35 m long and 12 m to
+// the back — holding the Frost Steppe in stillness. The same procedural body and chunk rig as
+// the lesser Shaped at colossal scale (its footfalls crush craters into the snow), plus four
+// water joints: liquid cores that must be frozen (Crystallize, or a soaking Ribbon) and then
+// shattered. Two sit at the front knees (reachable from the ground); two on its back (reachable
+// only by climbing it). When the last joint breaks it is released: it settles into the land.
+// Allocation-free per frame.
+
+import { ShapedBody } from '../shaped/body.js';
+import { buildRig, createRigState, writeAlive, writeHidden, CHUNK_FLOATS, CHUNK } from '../shaped/rig.js';
+import { BRUSH } from '../../shaders/terrainState.wgsl.js';
+
+export const WARDEN_SHAPE = {
+  spine: 6, spacing: 3.4, hip: 8.5,
+  legs: [
+    { at: 1, side: -1, upper: 5.2, lower: 5.8, reach: 3.2, kneeBack: false, group: 0 },
+    { at: 1, side: 1, upper: 5.2, lower: 5.8, reach: 3.2, kneeBack: false, group: 1 },
+    { at: 5, side: -1, upper: 5.0, lower: 5.4, reach: 3.0, kneeBack: true, group: 1 },
+    { at: 5, side: 1, upper: 5.0, lower: 5.4, reach: 3.0, kneeBack: true, group: 0 },
+  ],
+  tail: 5, tailSpacing: 2.6, headUp: 2.2,
+  stride: 6.5, swing: 1.9, lift: 1.4, maxSpeed: 1.8, accel: 0.7, turnRate: 0.22,
+};
+const RIG = { girth: 0.42, leg: 0.27, head: 0.32, shards: 3, upperN: 6, lowerN: 6 };
+export const WARDEN_CHUNKS = 380;
+/** Water joints: front knees (0, 1) and back (2 over the shoulders, 3 over the hips). */
+export const JOINTS = 4;
+export const JOINT = { LIQUID: 0, FROZEN: 1, SHATTERED: 2 };
+export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4 };
+
+/**
+ * @param {{ ts: any, fx: any, ground: { qx: number, qz: number, h: number, sample: () => void } }} ctx
+ */
+export function createWarden(ctx) {
+  const { ts, fx, ground } = ctx;
+  const body = new ShapedBody(WARDEN_SHAPE, ground);
+  const rig = buildRig(WARDEN_SHAPE, WARDEN_CHUNKS, 4242, RIG);
+  const st = createRigState(rig);
+  /** Chunk records: the rig, then the joints. */
+  const chunks = new Float32Array((WARDEN_CHUNKS + JOINTS) * CHUNK_FLOATS);
+  const joint = new Uint8Array(JOINTS);
+  const jointT = new Float64Array(JOINTS);       // seconds frozen
+  // Joint world positions (refreshed each frame).
+  const jx = new Float64Array(JOINTS), jy = new Float64Array(JOINTS), jz = new Float64Array(JOINTS);
+  let seed = 7;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+
+  const self = {
+    body, chunks, joint, jx, jy, jz,
+    active: false, state: W.DORMANT, t: 0.5, glow: 0.5 - 0.5, stompLeg: 0,
+    /** 0..1 how far it has settled into the land (release). */
+    settle: 0.5 - 0.5,
+    /** Player (fields) and outputs: hits on the Wraith, footfall shake strength this frame. */
+    px: 0.5, pz: 0.5, dt: 0.5, hits: 0, hitDamage: 0.5 - 0.5, shake: 0.5 - 0.5,
+    /** Stilled until released: 0 dormant/stilled … 1 restored (drives the biome's restoration). */
+    restore: 0.5 - 0.5,
+
+    place(x, z, heading) {
+      body.place(x, z, heading);
+      body.rise = 1; body.crouch = 0; body.lift = 0; body.frozen = false;
+      this.active = true; this.state = W.DORMANT; this.t = 0; this.settle = 0; this.restore = 0;
+      joint.fill(JOINT.LIQUID); jointT.fill(0);
+    },
+    /** Joints still unbroken. */
+    get remaining() { let n = 0; for (let k = 0; k < JOINTS; k++) if (joint[k] !== JOINT.SHATTERED) n++; return n; },
+    /** Freeze joint k (Crystallize, a soaked Ribbon). */
+    freezeJoint(k) { if (joint[k] === JOINT.LIQUID) { joint[k] = JOINT.FROZEN; jointT[k] = 0; } },
+    /** Strike joint k: a frozen joint shatters; returns true if it broke. */
+    strikeJoint(k) {
+      if (joint[k] !== JOINT.FROZEN) return false;
+      joint[k] = JOINT.SHATTERED;
+      for (let q = 0; q < 60; q++) {
+        fx.ex = jx[k]; fx.ey = jy[k]; fx.ez = jz[k];
+        fx.evx = (rnd() - 0.5) * 9; fx.evy = 1 + rnd() * 7; fx.evz = (rnd() - 0.5) * 9; fx.esize = 0.12 + 0.3 * rnd(); fx.emit();
+      }
+      if (this.remaining === 0) { this.state = W.RELEASE; this.t = 0; }
+      else { this.state = W.KNEEL; this.t = 0; }
+      return true;
+    },
+    update() {
+      if (!this.active) { writeHidden(chunks, 0, WARDEN_CHUNKS + JOINTS); return; }
+      const dt = this.dt;
+      this.t += dt; this.hits = 0; this.hitDamage = 0; this.shake = 0;
+      // Frozen joints thaw if not broken in time.
+      for (let k = 0; k < JOINTS; k++) if (joint[k] === JOINT.FROZEN && (jointT[k] += dt) > 9) joint[k] = JOINT.LIQUID;
+      think(this, dt);
+      body.dt = dt; body.update();
+      // Footfalls: craters crushed into the snow, powder thrown up, the ground shakes.
+      for (let e = 0; e < body.evCount; e++) {
+        const o = e * 5, x = body.ev[o], z = body.ev[o + 1];
+        ts.bx = x; ts.bz = z; ts.bdx = body.ev[o + 2]; ts.bdz = body.ev[o + 3]; ts.bl = 0.6; ts.bw = 1.25; ts.bd = 0.4; ts.bc = 0.9;
+        ts.stamp();
+        ground.qx = x; ground.qz = z; ground.sample();
+        for (let q = 0; q < 26; q++) {
+          const a = rnd() * Math.PI * 2;
+          fx.ex = x + Math.cos(a) * 1.2; fx.ez = z + Math.sin(a) * 1.2; fx.ey = ground.h + 0.1;
+          fx.evx = Math.cos(a) * (2 + 4 * rnd()); fx.evz = Math.sin(a) * (2 + 4 * rnd()); fx.evy = 1 + 3 * rnd(); fx.esize = 0.15 + 0.25 * rnd();
+          fx.emit();
+        }
+        const d = Math.hypot(this.px - x, this.pz - z);
+        this.shake += 0.03 * Math.max(0, 1 - d / 45);
+      }
+      // Release: it sinks into the land.
+      if (this.state === W.RELEASE) body.rise = 1 - 0.75 * this.settle;
+      writeAlive(body, st, chunks, 0, 1, this.glow);
+      writeJoints(this);
+    },
+  };
+
+  /** Joint positions from the bones, and their records (liquid glows; frozen is ice; broken gone). */
+  function writeJoints(W0) {
+    for (let k = 0; k < JOINTS; k++) {
+      if (k < 2) {
+        // Front knees, a little outboard.
+        const l = k, side = l === 0 ? -1 : 1;
+        jx[k] = body.kx[l] + Math.cos(body.heading) * side * 0.6; jy[k] = body.ky[l]; jz[k] = body.kz[l] - Math.sin(body.heading) * side * 0.6;
+      } else {
+        const i = k === 2 ? 1 : 5;
+        jx[k] = body.sx[i]; jy[k] = body.sy[i] + WARDEN_SHAPE.hip * 0.42 * (1 - 0.75 * W0.settle); jz[k] = body.sz[i];
+      }
+      const o = (WARDEN_CHUNKS + k) * CHUNK_FLOATS, sz = k < 2 ? 1.3 : 1.7;
+      chunks[o] = jx[k]; chunks[o + 1] = jy[k]; chunks[o + 2] = jz[k]; chunks[o + 3] = sz;
+      chunks[o + 4] = Math.sin(body.heading); chunks[o + 5] = 0; chunks[o + 6] = Math.cos(body.heading); chunks[o + 7] = sz;
+      chunks[o + 8] = 0; chunks[o + 9] = 1; chunks[o + 10] = 0; chunks[o + 11] = sz;
+      chunks[o + 12] = 31 + k * 7; chunks[o + 13] = CHUNK.WATER;
+      chunks[o + 14] = joint[k] === JOINT.FROZEN ? 2.5 : 0.5 + 0.5 * Math.sin(W0.t * 2.2 + k);
+      chunks[o + 15] = joint[k] === JOINT.SHATTERED ? 0 : 1 - W0.settle;
+    }
+  }
+
+  /** Dormant until the Wraith comes near; then turns to face it, advances slowly, stomps at it
+   *  when it is near a front foot. A broken joint drops it to a kneel. */
+  function think(W0, dt) {
+    const dx = W0.px - body.x, dz = W0.pz - body.z, dist = Math.hypot(dx, dz) || 1e-3;
+    switch (W0.state) {
+      case W.DORMANT:
+        body.wantVx = 0; body.wantVz = 0;
+        if (dist < 45) { W0.state = W.AWAKE; W0.t = 0; }
+        break;
+      case W.AWAKE: {
+        // Turn to face, then advance until close; a slow, heavy approach.
+        let want = Math.atan2(dx, dz) - body.heading; want -= Math.round(want / (2 * Math.PI)) * 2 * Math.PI;
+        const sp = Math.abs(want) > 0.5 ? 0.6 : dist > 18 ? WARDEN_SHAPE.maxSpeed : 0;
+        body.wantVx = dx / dist * sp; body.wantVz = dz / dist * sp;
+        body.crouch += (0 - body.crouch) * Math.min(1, dt);
+        // Near a front foot? Stomp.
+        for (let l = 0; l < 2; l++) {
+          if (Math.hypot(W0.px - body.fx[l], W0.pz - body.fz[l]) < 7 && W0.t > 3) { W0.state = W.STOMP; W0.t = 0; W0.stompLeg = l; }
+        }
+        break;
+      }
+      case W.STOMP: {
+        // Rear the front up (glow in the cracks), then crash down: a crater where it lands.
+        body.wantVx = 0; body.wantVz = 0;
+        W0.glow += (1 - W0.glow) * Math.min(1, dt * 3);
+        body.crouch = W0.t < 1.3 ? -0.25 * Math.min(1, W0.t / 0.8) : body.crouch + (0.3 - body.crouch) * Math.min(1, dt * 12);
+        if (W0.t >= 1.5 && W0.t - dt < 1.5) {
+          const l = W0.stompLeg || 0, x = body.fx[l] + Math.sin(body.heading) * 2, z = body.fz[l] + Math.cos(body.heading) * 2;
+          ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 3.2; ts.bd = 0.6; ts.bc = 0.9;
+          ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 1.2;
+          ts.stamp();
+          ground.qx = x; ground.qz = z; ground.sample();
+          for (let q = 0; q < 80; q++) {
+            const a = rnd() * Math.PI * 2, r = rnd() * 3;
+            fx.ex = x + Math.cos(a) * r; fx.ez = z + Math.sin(a) * r; fx.ey = ground.h + 0.2;
+            fx.evx = Math.cos(a) * (3 + 6 * rnd()); fx.evz = Math.sin(a) * (3 + 6 * rnd()); fx.evy = 2 + 6 * rnd(); fx.esize = 0.2 + 0.4 * rnd();
+            fx.emit();
+          }
+          const d = Math.hypot(W0.px - x, W0.pz - z);
+          if (d < 6) { W0.hits++; W0.hitDamage += 35 * (1 - d / 8); }
+          W0.shake += 0.05 * Math.max(0, 1 - d / 60);
+        }
+        if (W0.t >= 2.6) { W0.state = W.AWAKE; W0.t = 0; W0.glow = 0; }
+        break;
+      }
+      case W.KNEEL:
+        // A joint broke: it buckles to its knees, then rises again.
+        body.wantVx = 0; body.wantVz = 0; W0.glow += (0 - W0.glow) * Math.min(1, dt * 2);
+        body.crouch += ((W0.t < 4 ? 0.85 : 0) - body.crouch) * Math.min(1, dt * (W0.t < 4 ? 2.5 : 0.8));
+        if (W0.t >= 6) { W0.state = W.AWAKE; W0.t = 0; }
+        break;
+      case W.RELEASE:
+        // Released: it lowers itself, then settles into the land over several seconds.
+        body.wantVx = 0; body.wantVz = 0; W0.glow = 0;
+        body.crouch += (1 - body.crouch) * Math.min(1, dt * 0.6);
+        W0.settle = Math.min(1, Math.max(0, (W0.t - 3) / 9));
+        W0.restore = Math.min(1, Math.max(0, (W0.t - 4) / 10));
+        if (W0.t >= 3 && W0.t - dt < 3) {
+          // The mass it leaves: a long, high drift where it lay down (heals like any snow).
+          ts.bx = body.sx[3]; ts.bz = body.sz[3]; ts.bdx = Math.sin(body.heading); ts.bdz = Math.cos(body.heading);
+          ts.bl = WARDEN_SHAPE.spacing * 3; ts.bw = WARDEN_SHAPE.hip * 0.7; ts.bd = 2.2; ts.bc = 0.3;
+          ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+          ts.stamp();
+        }
+        if (W0.settle >= 1) { W0.active = false; }
+        break;
+    }
+  }
+
+  return self;
+}

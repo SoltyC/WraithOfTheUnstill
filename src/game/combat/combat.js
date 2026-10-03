@@ -21,6 +21,7 @@ export const combatTuning = {
  */
 export function createCombat(ctx) {
   const { shaped, frost, controller, ts, clock, teleport } = ctx;
+  const warden = ctx.warden || null;
   const T = combatTuning;
   const sweepSeen = new Uint32Array(4 * MAX_SHAPED);   // last sweep id that hit each slot, per sweep slot
   const self = {
@@ -118,9 +119,10 @@ export function createCombat(ctx) {
   /** Shaped → the Wraith: lunges land unless the Wraith is mid bend-step. */
   function hurt() {
     if (shaped.slams > 0) self.shake += 0.02 * Math.max(0, 1 - shaped.slamDist / 16);
-    if (shaped.hits === 0) return;
+    const wh = warden && warden.active ? warden.hits : 0;
+    if (shaped.hits === 0 && wh === 0) return;
     if (controller.dodgeT > 0) return;               // the bend-step slips through
-    self.health -= shaped.hitDamage;
+    self.health -= shaped.hitDamage + (wh ? warden.hitDamage : 0);
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
     self.shake += 0.015;
     if (self.health <= 0) { self.health = 0; self.dying = 1e-4; self.lock = -1; }

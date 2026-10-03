@@ -22,12 +22,12 @@ import { fastFrozenIsReady } from './babylonTweaks.js';
  * @param {any} atmo
  * @param {Float32Array} chunks  records (16 floats each) owned by the Shaped system
  */
-export function createShapedView(scene, atmo, chunks) {
+export function createShapedView(scene, atmo, chunks, opts = {}) {
   ShaderStore.ShadersStoreWGSL.shapedVertexShader = shapedVertexWGSL;
   ShaderStore.ShadersStoreWGSL.shapedFragmentShader = shapedFragmentWGSL;
   const engine = scene.getEngine();
   const count = chunks.length / 16;
-  const ico = CreateIcoSphereVertexData({ radius: 1, subdivisions: 1, flat: false });
+  const ico = CreateIcoSphereVertexData({ radius: 1, subdivisions: opts.subdivisions ?? 1, flat: false });
   const nv = ico.positions.length / 3, ni = ico.indices.length;
   const pos = new Float32Array(count * nv * 3), uv = new Float32Array(count * nv * 2), idx = new Uint32Array(count * ni);
   for (let c = 0; c < count; c++) {
@@ -35,12 +35,13 @@ export function createShapedView(scene, atmo, chunks) {
     for (let v = 0; v < nv; v++) uv[(c * nv + v) * 2] = c;
     for (let k = 0; k < ni; k++) idx[c * ni + k] = ico.indices[k] + c * nv;
   }
-  const mesh = new Mesh('shaped', scene);
+  const name = opts.name || 'shaped';
+  const mesh = new Mesh(name, scene);
   const vd = new VertexData(); vd.positions = pos; vd.uvs = uv; vd.indices = idx; vd.applyToMesh(mesh, false);
   mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true; mesh.freezeWorldMatrix();
-  const buf = new StorageBuffer(engine, chunks.byteLength, undefined, 'shaped-chunks');
+  const buf = new StorageBuffer(engine, chunks.byteLength, undefined, name + '-chunks');
   buf.update(chunks);
-  const mat = new ShaderMaterial('shaped', scene, { vertex: 'shaped', fragment: 'shaped' }, {
+  const mat = new ShaderMaterial(name, scene, { vertex: 'shaped', fragment: 'shaped' }, {
     attributes: ['position', 'uv'],
     uniforms: ['viewProjection', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],

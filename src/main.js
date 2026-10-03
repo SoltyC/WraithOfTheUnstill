@@ -218,9 +218,16 @@ async function boot() {
   bindShadows(shapedView.material, shadows);
   shadows.addCaster(shapedView.mesh, shapedView.makeShadowMaterial, 2);
   shapedView.freeze();
+  // The Frost Warden (Phase 5): a colossal Shaped with water joints; its own chunk view.
+  const wardenMod = await import('./game/warden/warden.js');
+  const warden = wardenMod.createWarden({ ts: terrainState, fx: wraithView, ground });
+  const wardenView = createShapedView(scene, atmosphere, warden.chunks, { subdivisions: 2, name: 'warden' });
+  bindShadows(wardenView.material, shadows);
+  shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 3);
+  wardenView.freeze();
   // Combat (Phase 5): focus, hits and reactions, lock-on, dodge, wounds and death.
   const { createCombat, combatTuning } = await import('./game/combat/combat.js');
-  const combat = createCombat({ shaped, frost, controller, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
+  const combat = createCombat({ shaped, frost, warden, controller, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
   combat.shrineX = monastery.pos[0]; combat.shrineZ = monastery.pos[1];
   const vignette = document.createElement('div');
   vignette.className = 'wound-vignette';
@@ -428,12 +435,28 @@ async function boot() {
     }
     shapedView.update();
   } });
+  loop.add({ name: 'warden', update: () => {
+    warden.px = controller.pos.x; warden.pz = controller.pos.z;
+    if (game.pendingWarden !== null) {
+      if (game.worldSettled() && game.pendingTrail === null) {
+        const spec = game.pendingWarden, p = controller.pos, f = controller.yaw;
+        const x = p.x + Math.sin(f) * spec.ahead + Math.cos(f) * (spec.side || 0), z = p.z + Math.cos(f) * spec.ahead - Math.sin(f) * (spec.side || 0);
+        warden.place(x, z, Math.atan2(p.x - x, p.z - z) + (spec.turn || 0));
+        // Settle it into its pose (frozen capture clock: substeps here).
+        for (let k = 0; k < (spec.seconds || 1) * 60; k++) { warden.dt = 1 / 60; warden.update(); if (spec.dormant) warden.state = wardenMod.W.DORMANT; }
+        if (spec.freezeJoints) for (const k of spec.freezeJoints) warden.freezeJoint(k);
+        warden.dt = 0; warden.update();
+        game.pendingWarden = null;
+      }
+    } else if (!game.wraithHeld || !capture) { warden.dt = clock.dt; warden.update(); }
+    wardenView.update();
+  } });
   loop.add({ name: 'combat', update: () => {
     if (inputState.pressed[Act.LockOn]) combat.wantLockToggle = true;
     if (inputState.pressed[Act.Dodge] && !controller.god && combat.dying === 0 && combat.spend(combatTuning.costDodge)) controller.dodgeRequested = true;
     combat.dt = clock.dt;
     combat.update();
-    arm.shake += combat.shake;
+    arm.shake += combat.shake + warden.shake;
     // Lock-on: the camera turns to keep the target ahead (soft; the mouse still pitches).
     if (combat.lock >= 0 && !controller.surf.active) {
       const b = shaped.slots[combat.lock].body;
@@ -561,6 +584,10 @@ async function boot() {
     pendingBend: null,
     /** Photo-spot Shaped encounter still to simulate. */
     pendingShaped: null,
+    /** Photo-spot Warden placement ({ ahead, side?, turn?, seconds?, dormant?, freezeJoints? }). */
+    pendingWarden: null,
+    /** Dev: place the Frost Warden ahead of the player. */
+    spawnWarden() { this.pendingWarden = { ahead: 40, seconds: 0.1 }; },
     shapedArchetypes: Object.keys((await import('./game/shaped/archetypes.js')).ARCHETYPES),
     /** Dev: spawn n Shaped of an archetype in an arc 6 m in front of the player. */
     spawnShaped(name, n) {
@@ -578,10 +605,11 @@ async function boot() {
       this.pendingSurf = spot.surf || null;
       this.pendingBend = spot.bend || null;
       this.pendingShaped = spot.shaped || null;
+      this.pendingWarden = spot.warden || null;
       this.wraithHeld = false;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
-    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingShaped === null && terrainState.pendingBrushes === 0; },
+    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingShaped === null && this.pendingWarden === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
       if (wraithView.isEnabled() === on) return;
       wraithView.setEnabled(on); engine.snapshotRenderingReset();
@@ -635,7 +663,7 @@ async function boot() {
   if (qs.get('overlay') === '1') overlay.toggle(true);
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows, terrainState, wraithView, frost, shaped, combat, env: env.env,
+    ready: true, game, shadows, terrainState, wraithView, frost, shaped, combat, warden, env: env.env,
     /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
     inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */
