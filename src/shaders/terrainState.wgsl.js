@@ -190,6 +190,14 @@ fn cellHash(p: vec2f, size: f32) -> f32 {
   let cell = vec2i(floor(p / size));
   return fract(sin(f32(cell.x) * 12.9898 + f32(cell.y) * 78.233) * 43758.5453);
 }
+// Smooth value noise (interpolated cell hashes): clumps without height steps (a stepped hash
+// over a wide berm lit as zig-zag stripes).
+fn smoothHash(p: vec2f, size: f32) -> f32 {
+  let u = p / size; let i = floor(u); let f = u - i; let w = f * f * (3.0 - 2.0 * f);
+  let h = vec4f(cellHash(i * size, size), cellHash((i + vec2f(1.0, 0.0)) * size, size),
+                cellHash((i + vec2f(0.0, 1.0)) * size, size), cellHash((i + vec2f(1.0, 1.0)) * size, size));
+  return mix(mix(h.x, h.y, w.x), mix(h.z, h.w, w.x), w.y);
+}
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3u) {
   let job = wg.z;
@@ -223,11 +231,15 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     // clumpy berms either side, heavier on the outside (bias) — Sweep's channel, the surf wake.
     let inner = clamp(1.0 - d * d, 0.0, 1.0);
     let floorK = pow(inner, 0.45);
-    let rim = smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.9, d));
+    let rim = smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.65, d));
     let bias = clamp(1.0 + ex.z * side, 0.15, 1.85);
-    let clump = 0.7 + 0.6 * cellHash(p, 0.06) * (0.6 + 0.4 * hsh);
+    let clump = 0.72 + 0.4 * smoothHash(p, 0.11) + 0.18 * smoothHash(p + vec2f(3.7, 1.3), 0.045);
     t.h.x = max(t.h.x, br.w * floorK);
-    t.h.y = max(t.h.y * (1.0 - floorK), br.w * ex.w * rim * bias * clump);
+    // The groove's interior is ploughed clean: any berm there (the rounded front of the previous
+    // frame's stamp throws one into the path ahead) is cleared, or a ghost ridge would remain at
+    // every stamp boundary.
+    let cleared = select(t.h.y * (1.0 - floorK), 0.0, d < 0.85);
+    t.h.y = max(cleared, br.w * ex.w * rim * bias * clump);
     t.s.x = max(t.s.x, bd.w * floorK);
     t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.6, 1.3, d)));
   } else if (program == ${BRUSH.SCORE}u) {

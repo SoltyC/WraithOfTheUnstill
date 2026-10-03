@@ -47,6 +47,18 @@ describe('frost bending', () => {
     r.run(2);
     expect(r.f.ribbonStrength).toBeLessThan(0.05);
   });
+  it('Ribbon still lands and scores on ground falling away (downhill, hand low)', () => {
+    const r = rig();
+    // Ground drops 0.25 m per metre away from the caster; the hand is 0.8 m up.
+    const g = { qx: 0, qz: 0, h: 0, sample() { this.h = -0.25 * Math.hypot(this.qx, this.qz); } };
+    const stamps = [];
+    const ts = { stamp() { stamps.push(this.bk); this.bk = 0; } };
+    const f = createFrostBending({ ts, fx: { emit() {} }, ground: g });
+    f.hx = 0.3; f.hy = 0.8; f.hz = 0; f.tx = 2; f.tz = 8; g.qx = 2; g.qz = 8; g.sample(); f.ty = g.h;
+    f.ribbonHeld = true;
+    for (let t = 0; t < 1.5; t += 1 / 60) { f.dt = 1 / 60; f.time += 1 / 60; f.update(); }
+    expect(stamps.filter((k) => k === BRUSH.SCORE).length).toBeGreaterThan(20);
+  });
   it('Crystallize raises a formation and spreads permanent ice under it, with a light that fades', () => {
     const r = rig();
     r.f.tx = 3; r.f.tz = 7; r.f.castCrystal = true;

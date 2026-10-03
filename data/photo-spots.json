@@ -741,6 +741,26 @@
     "pitch": 0.15,
     "dist": 6
    }
+  },
+  {
+   "id": "p4-verbs-noon",
+   "biome": "frost",
+   "label": "Every frost verb's mark: Sweep's slush channel, Ribbon's scored figure-eight, Crystallize's formation on permanent ice",
+   "time": 13.5,
+   "weather": "clear",
+   "player": [
+    100,
+    1740
+   ],
+   "bend": {
+    "seconds": 4.2
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.4,
+    "pitch": 0.42,
+    "dist": 7.5
+   }
   }
  ]
 }

@@ -25,13 +25,13 @@ export const ribbonTuning = {
   nodes: 48,          // spine length (one node emitted per emitStep seconds)
   emitStep: 1 / 60,
   speed: 13,          // m/s leaving the hand
-  arc: 0.18,          // upward share of the launch (the stream arcs before it lands)
   gravity: 7,         // m/s² (water held together by the bending: lighter than a fall)
-  life: 0.8,          // s per node
+  life: 1.15,         // s per node (flight to the aim, then skimming)
   skimFriction: 2.5,  // 1/s along the ground
   minRange: 3, maxRange: 18,
   radius: 0.055,      // m at full body
-  scoreHalfWidth: 0.045, scoreDepth: 0.03, wetness: 0.9,
+  scoreHalfWidth: 0.05, scoreDepth: 0.035, wetness: 0.9,
+  scoreTime: 0.12,    // s after a node lands during which it scores
   lightRadius: 3, lightIntensity: 1.2,
 };
 
@@ -66,7 +66,7 @@ export function createFrostBending(ctx) {
   // ground contact (for scoring). Published for the tube mesh as pos.xyz + life fraction.
   const R = ribbonTuning.nodes;
   const rb = { px: new Float64Array(R), py: new Float64Array(R), pz: new Float64Array(R), vx: new Float64Array(R), vy: new Float64Array(R), vz: new Float64Array(R),
-    age: new Float64Array(R).fill(1e9), ground: new Uint8Array(R), sx: new Float64Array(R), sz: new Float64Array(R),
+    age: new Float64Array(R).fill(1e9), ground: new Uint8Array(R), sx: new Float64Array(R), sz: new Float64Array(R), land: new Float64Array(R),
     head: 0, acc: 0, strength: 0 };
   /** Ribbon nodes for the renderer, in emission order from the hand (index 0 = newest): pos.xyz, alpha. */
   const ribbonNodes = new Float32Array(R * 4);
@@ -222,9 +222,11 @@ export function createFrostBending(ctx) {
         rb.acc -= T.emitStep;
         const i = rb.head = (rb.head + R - 1) % R;
         rb.px[i] = s.hx; rb.py[i] = s.hy; rb.pz[i] = s.hz;
-        let ax = s.tx - s.hx, ay = s.ty - s.hy, az = s.tz - s.hz;
-        const l = Math.sqrt(ax * ax + ay * ay + az * az) || 1; ax /= l; ay /= l; az /= l;
-        rb.vx[i] = ax * T.speed; rb.vy[i] = (ay + T.arc) * T.speed; rb.vz[i] = az * T.speed;
+        // Ballistic aim: launched so it lands on the aim point after distance/speed seconds,
+        // whatever the slope (it arcs over level ground, dives onto ground falling away).
+        const ax = s.tx - s.hx, ay = s.ty + 0.03 - s.hy, az = s.tz - s.hz;
+        const tau = Math.min(0.9, Math.max(0.25, Math.sqrt(ax * ax + az * az) / T.speed));
+        rb.vx[i] = ax / tau; rb.vy[i] = ay / tau + 0.5 * T.gravity * tau; rb.vz[i] = az / tau;
         rb.age[i] = 0; rb.ground[i] = 0;
       }
     } else rb.acc = 0;
@@ -237,16 +239,22 @@ export function createFrostBending(ctx) {
       rb.px[i] += rb.vx[i] * dt; rb.py[i] += rb.vy[i] * dt; rb.pz[i] += rb.vz[i] * dt;
       ground.qx = rb.px[i]; ground.qz = rb.pz[i]; ground.sample();
       const gy = ground.h + 0.03;
-      if (rb.py[i] <= gy) {
+      // Once down, a node stays in contact (it follows the slope instead of flying off a
+      // downhill as the ground falls away from it).
+      if (rb.py[i] <= gy || (rb.ground[i] && rb.py[i] <= gy + 0.25)) {
         // Skims along the surface, scoring a thin wet line.
-        rb.py[i] = gy; rb.vy[i] = 0;
+        rb.py[i] = gy;
         const k = Math.exp(-dt * T.skimFriction);
         rb.vx[i] *= k; rb.vz[i] *= k;
-        if (!rb.ground[i]) { rb.sx[i] = rb.px[i]; rb.sz[i] = rb.pz[i]; rb.ground[i] = 1; }
+        ground.qx = rb.px[i] + rb.vx[i] * dt; ground.qz = rb.pz[i] + rb.vz[i] * dt; ground.sample();
+        rb.vy[i] = (ground.h + 0.03 - gy) / Math.max(dt, 1e-4);
+        if (!rb.ground[i]) { rb.sx[i] = rb.px[i]; rb.sz[i] = rb.pz[i]; rb.ground[i] = 1; rb.land[i] = rb.age[i]; }
         // Score from the last stamped point once the node has slid far enough (keeps the brush
         // queue near what the GPU drains per frame).
         const dx = rb.px[i] - rb.sx[i], dz = rb.pz[i] - rb.sz[i], len = Math.sqrt(dx * dx + dz * dz);
-        if (len > 0.15) {
+        // Only where the stream meets the snow (just after a node lands) does it score: the line
+        // traces the contact point as the aim moves, instead of every skimming node scratching.
+        if (len > 0.15 && rb.age[i] - rb.land[i] < ribbonTuning.scoreTime) {
           ts.bx = (rb.px[i] + rb.sx[i]) * 0.5; ts.bz = (rb.pz[i] + rb.sz[i]) * 0.5; ts.bdx = dx / len; ts.bdz = dz / len;
           ts.bl = len * 0.5; ts.bw = T.scoreHalfWidth; ts.bd = T.scoreDepth; ts.bc = 0.3;
           ts.bk = BRUSH.SCORE; ts.bwet = T.wetness; ts.bbias = 0; ts.bberm = 0;

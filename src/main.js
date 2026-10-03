@@ -232,7 +232,48 @@ async function boot() {
     aim.x = controller.pos.x + ax; aim.z = controller.pos.z + az;
     ground.qx = aim.x; ground.qz = aim.z; ground.sample(); aim.y = ground.h;
   }
+  /** Photo spots with a scripted bending sequence (`bend`): Sweep ahead, a Ribbon figure-eight,
+   *  a Crystallize formation, then settle — 4 substeps per frame (the frozen capture clock). */
+  const bendRoll = { active: false, t: 0, spec: null };
+  function stepBendRoll() {
+    const spec = bendRoll.spec, p = controller.pos, w = wraithView.wraith, dt = 1 / 60;
+    const f = controller.yaw, fx = Math.sin(f), fz = Math.cos(f), rx = fz, rz = -fx;
+    for (let k = 0; k < 4 && bendRoll.t < spec.seconds; k++) {
+      const t = bendRoll.t;
+      frost.castSweep = t === 0;
+      frost.ribbonHeld = t > 0.5 && t < 2.6;
+      // Each verb gets its own ground: Sweep angled right, the Ribbon's figure-eight ahead-left,
+      // the crystals further out on the left.
+      const a = (t - 0.5) * 2.4;
+      const ahead = 7.5 + 2.2 * Math.sin(a), side = -3 + 2.2 * Math.sin(a) * Math.cos(a);
+      frost.tx = p.x + fx * ahead + rx * side; frost.tz = p.z + fz * ahead + rz * side;
+      if (Math.abs(t - 2.9) < dt * 0.5) { frost.tx = p.x + fx * 9 - rx * 8.5; frost.tz = p.z + fz * 9 - rz * 8.5; frost.castCrystal = true; }
+      ground.qx = frost.tx; ground.qz = frost.tz; ground.sample(); frost.ty = ground.h;
+      w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = 0; w.vz = 0; w.yaw = f; w.grounded = true; w.dt = dt;
+      w.time = clock.simTime - (spec.seconds - t); wraithView.time = w.time;
+      w.cast = (frost.gesture > 0 || frost.ribbonStrength > 0.05) ? 1 : 0;
+      wraithView.update();
+      const b = w.body;
+      frost.hx = b.ha[3]; frost.hy = b.ha[4]; frost.hz = b.ha[5];
+      const sa = f + 0.5; // Sweep heads off to the right
+      frost.x = p.x; frost.y = p.y; frost.z = p.z; frost.aimX = Math.sin(sa); frost.aimZ = Math.cos(sa);
+      frost.dt = dt; frost.time = w.time;
+      frost.update();
+      bendRoll.t += dt;
+    }
+    if (frost.crystalsDirty) { crystals.dirty = true; frost.crystalsDirty = false; }
+    ribbon.time = frost.time; ribbon.update();
+    crystals.time = clock.simTime; crystals.update();
+    if (bendRoll.t >= spec.seconds) { bendRoll.active = false; game.pendingBend = null; game.wraithHeld = capture; }
+  }
   loop.add({ name: 'bending', update: () => {
+    if (game.pendingBend !== null) {
+      if (!bendRoll.active && game.worldSettled() && game.pendingTrail === null && game.pendingWalk === null) {
+        bendRoll.active = true; bendRoll.t = 0; bendRoll.spec = game.pendingBend;
+      }
+      if (bendRoll.active) stepBendRoll();
+      return;
+    }
     const dt = clock.dt;
     const can = !arm.free && !controller.scripted && !controller.surf.active;
     if (can) {
@@ -283,7 +324,7 @@ async function boot() {
       if (surfRoll.active) stepSurfRoll();
       return;
     }
-    if (game.wraithHeld) return;
+    if (game.wraithHeld || game.pendingBend !== null) return;
     surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded;
     surfWake.enabled = systemsMod.toggles.on.footprints !== false;
     surfWake.update();
@@ -437,15 +478,18 @@ async function boot() {
     wraithHeld: false,
     /** Photo-spot surf run ({ seconds, facing?, steer?, period?, throttle? }) still to carve. */
     pendingSurf: null,
+    /** Photo-spot bending sequence ({ seconds }) still to cast. */
+    pendingBend: null,
     applySpot(spot) {
       spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
       this.pendingTrail = spot.trail || null;
       this.pendingWalk = spot.walk || null;
       this.pendingSurf = spot.surf || null;
+      this.pendingBend = spot.bend || null;
       this.wraithHeld = false;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
-    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && terrainState.pendingBrushes === 0; },
+    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
       if (wraithView.isEnabled() === on) return;
       wraithView.setEnabled(on); engine.snapshotRenderingReset();
