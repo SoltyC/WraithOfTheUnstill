@@ -42,6 +42,22 @@ function perfSink() {
  */
 function shotSink() {
   const handler = (req, res, next) => {
+    if (req.url.startsWith('/__wraith/shot-log') && req.method === 'POST') {
+      // Progress and failures from ?shots= runs: printed here and kept beside the shots.
+      const q = new URL(req.url, 'http://x').searchParams;
+      const dir = String(q.get('dir') || 'phase-xx').replace(/[^a-z0-9-]/gi, '');
+      let body = '';
+      req.on('data', (c) => { if (body.length < 8192) body += c; });
+      req.on('end', () => {
+        const line = new Date().toISOString() + ' ' + body.replace(/\s+/g, ' ').slice(0, 1000);
+        console.log('[shots] ' + line);
+        const out = path.resolve('screenshots', dir);
+        fs.mkdirSync(out, { recursive: true });
+        fs.appendFileSync(path.join(out, 'shots-log.txt'), line + '\n');
+        res.end('ok');
+      });
+      return;
+    }
     if (!req.url.startsWith('/__wraith/shot') || req.method !== 'POST') return next();
     const q = new URL(req.url, 'http://x').searchParams;
     const dir = String(q.get('dir') || 'phase-xx').replace(/[^a-z0-9-]/gi, '');

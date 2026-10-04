@@ -14,9 +14,11 @@ if (!navigator.gpu) {
   document.body.append(line);
 } else {
   installGpuInstrumentation();
-  boot().catch((e) => {
+  boot().catch(async (e) => {
     console.error(e);
     window.__wraith = { ...(window.__wraith || {}), error: String(e && e.stack || e) };
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('shots')) (await import('./core/shots.js')).shotsBootFailed(qs, e);
   });
 }
 
