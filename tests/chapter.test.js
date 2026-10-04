@@ -65,6 +65,17 @@ describe('frost chapter flow', () => {
     expect(got.echo).toContain('echo-frost-hold');
   });
 
+  it('never stalls when the Warden is released before Varo is met', () => {
+    const { ch, at, finish, tick } = setup();
+    tick();
+    at('monastery'); ch.talk('aud'); tick(); finish();
+    at('shrine-frost-2'); ch.raise('shrine:shrine-frost-2'); tick();
+    ch.raise('warden:released'); ch.facts.restored.add('frost'); tick();
+    at('camp-frost'); ch.talk('maren'); tick(); finish(); tick(4); finish(); tick(4);
+    expect(ch.graph.quests['held-snow'].state).toBe('done');
+    expect(ch.graph.quests['first-snow'].state).not.toBe('locked');
+  });
+
   it('finds the lost child and is thanked', () => {
     const { ch, got, at, finish, tick } = setup();
     ch.graph.flags.add('met-maren'); tick();

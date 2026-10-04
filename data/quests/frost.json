@@ -116,8 +116,8 @@
       "summary": "A Warden lies across the steppe, holding its snow in the air.",
       "start": { "quest": "empty-robe" },
       "steps": [
-        { "id": "varo", "journal": "Maren says Varo went east to watch the Warden. He waits at the watching stone.", "when": { "event": "talk:varo" } },
-        { "id": "warden", "journal": "Varo: its knees are water, held still. Freeze them, break them, and let it lie down.", "when": { "event": "warden:released" }, "actions": [{ "say": "bark.snow-returns" }, { "autosave": true }] }
+        { "id": "varo", "journal": "Maren says Varo went east to watch the Warden. He waits at the watching stone.", "when": { "any": [{ "event": "talk:varo" }, { "restored": "frost" }] } },
+        { "id": "warden", "journal": "Varo: its knees are water, held still. Freeze them, break them, and let it lie down.", "when": { "any": [{ "event": "warden:released" }, { "restored": "frost" }] }, "actions": [{ "say": "bark.snow-returns" }, { "autosave": true }] }
       ],
       "onDone": [{ "startQuest": "first-snow" }] },
 
