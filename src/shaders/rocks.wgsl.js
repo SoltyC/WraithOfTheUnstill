@@ -53,9 +53,11 @@ fn rk_noise3(p: vec3f) -> f32 {
 fn rk_radius(d: vec3f, seed: f32) -> f32 {
   let o = vec3f(seed * 17.3, seed * 7.1, seed * 3.7);
   var r = 1.0 + 0.30 * rk_noise3(d * 1.3 + o) + 0.14 * rk_noise3(d * 2.9 + o * 1.7) + 0.05 * rk_noise3(d * 6.5 + o);
-  // Fracture planes: two flattened facets at seeded orientations.
-  let n1 = normalize(vec3f(sin(seed * 9.0), 0.6, cos(seed * 9.0)));
-  let n2 = normalize(vec3f(cos(seed * 5.0), -0.2, sin(seed * 5.0)));
+  // Fracture planes: two flattened facets at seeded orientations, on the rock's sides (a
+  // near-vertical split). A facet tilted toward the sky sliced the top flat: half-buried, all
+  // that showed above the snow was that tilted plane and slivers of the body past its edges.
+  let n1 = normalize(vec3f(sin(seed * 9.0), 0.12, cos(seed * 9.0)));
+  let n2 = normalize(vec3f(cos(seed * 5.0), -0.25, sin(seed * 5.0)));
   // Smooth minimum: the facets blend into the lumpy body. A hard min() left razor-thin
   // slivers and abrupt sliced faces where a plane crossed the mesh ("chopped" rocks).
   r = rk_smin(r, 0.86 / max(dot(d, n1), 0.25), 0.3);

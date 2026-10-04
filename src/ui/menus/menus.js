@@ -4,6 +4,7 @@
 
 import './menus.css';
 import { createMap } from './map.js';
+import { releaseAll } from '../../input/actions.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
@@ -28,6 +29,7 @@ export function createMenus(g) {
   let openedAt = 0;
   function open(name, arg) {
     openedAt = performance.now();
+    releaseAll();
     if (!page) { wasFrozen = clock.frozen; clock.frozen = true; input.gameHasFocus = false; document.exitPointerLock?.(); }
     page = name; shrine = name === 'shrine' ? arg : shrine;
     sheet.replaceChildren();
@@ -38,7 +40,7 @@ export function createMenus(g) {
     if (!page) return;
     page = null; shrine = null;
     veil.classList.remove('on');
-    clock.frozen = wasFrozen; input.gameHasFocus = true;
+    clock.frozen = wasFrozen; input.gameHasFocus = true; releaseAll();
     g.canvas?.focus();
   }
   function head(title, sub) {

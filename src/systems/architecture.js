@@ -17,6 +17,8 @@ export function addArchitectureSystem(g) {
   shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
   view.freeze();
   const solids = g.solids = createSolids(sites, built);
+  // No boulders inside the built places (one stood beside the camp fire).
+  g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]));
   /** Prop sites by NPC id (the NPC system places them at the hand). */
   g.props = {};
   sites.forEach((s, i) => { if (s.prop) g.props[s.npc] = { index: i, kind: s.kind }; });

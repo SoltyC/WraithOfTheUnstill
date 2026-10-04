@@ -1723,6 +1723,24 @@
     "pitch": 0.38,
     "fov": 1.0
    }
+  },
+  {
+   "id": "p7-rock-outcrop",
+   "biome": "frost",
+   "label": "A half-buried outcrop near the pilgrims' camp, close: rock form and snow accumulation",
+   "time": 11,
+   "weather": "clear",
+   "player": [
+    -19,
+    2462
+   ],
+   "restoration": "stilled",
+   "camera": {
+    "mode": "follow",
+    "yaw": -1.571,
+    "pitch": 0.18,
+    "dist": 6
+   }
   }
  ]
 }

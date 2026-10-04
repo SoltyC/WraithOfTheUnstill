@@ -98,7 +98,13 @@ export function createRocks(scene, clipmap, atmo) {
   function bindStateTo(m, ts) { m.setStorageBuffer('stateFine0', ts.fine[0]); m.setStorageBuffer('stateAtlas0', ts.atlas[0]); m.setStorageBuffer('stateParams', ts.params); }
   let cellX = NaN, cellZ = NaN;
   let camCX = 0, camCZ = 0;
+  /** Places kept clear of rocks (built sites): [x, z, radius] each. */
+  let exclude = [];
   function put(n, x, z, size, yaw, seed, aspect, burial, kind) {
+    for (let k = 0; k < exclude.length; k++) {
+      const e = exclude[k], ex = x - e[0], ez = z - e[1], r = e[2] + size;
+      if (ex * ex + ez * ez < r * r) return;
+    }
     // Near or far mesh by distance from the camera cell (n counts all rocks, unused here).
     const dx = x - camCX, dz = z - camCZ;
     const t = dx * dx + dz * dz < NEAR_R * NEAR_R && near.n < near.max ? near : far;
@@ -159,6 +165,8 @@ export function createRocks(scene, clipmap, atmo) {
       this.count = rebuild(cx, cz);
     },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
+    /** Keep rocks out of these circles ([x, z, r]: the camp, the monastery, shrines…). */
+    setExclusions(list) { exclude = list; cellX = NaN; },
     /** The terrain state the rocks sit on (deformed snow); shadow casters made later bind it too. */
     bindState(ts) { stateBound = ts; for (const m of vertexMats) bindStateTo(m, ts); },
   };

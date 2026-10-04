@@ -83,7 +83,11 @@ export function attachInput(canvas) {
       const bit = 1 << k;
       if ((b & bit) === (buttons & bit)) continue;
       const a = input.bindings[BUTTON_NAMES[k]];
-      if (a !== undefined) setAction(a, (b & bit) !== 0);
+      const down = (b & bit) !== 0;
+      // A press counts only in play (the mouse captured by the game, no menu or dialogue page
+      // open): a click on a menu button, a dialogue choice, or the click that captures the mouse
+      // must never cast. Releases always count, so nothing stays held.
+      if (a !== undefined && (!down || (input.gameHasFocus && input.pointerLocked))) setAction(a, down);
     }
     buttons = b;
   };
@@ -109,6 +113,9 @@ export function attachInput(canvas) {
     input.pointerLocked = document.pointerLockElement === canvas;
   });
 }
+
+/** Release every held action (a menu opened or closed: nothing carries across it). */
+export function releaseAll() { for (let i = 0; i < COUNT; i++) setAction(i, false); }
 
 export function releasePointer() {
   if (document.pointerLockElement) document.exitPointerLock();
