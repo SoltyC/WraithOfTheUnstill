@@ -139,6 +139,24 @@ describe('save store and manager', () => {
     expect(Array.from(back.terrainPages[0].data)).toEqual([4, 5]);
   });
 
+  it('a save asked for during an autosave waits for it instead of failing', async () => {
+    const db = await openSaveDb(new IDBFactory());
+    let release;
+    const gate = new Promise((r) => { release = r; });
+    let first = true;
+    const mgr = new SaveManager({
+      store: new SaveStore(db), codec: { encode: encodeSave, decode: decodeSave },
+      collect: async () => { if (first) { first = false; await gate; } }, apply: () => {}, now: () => 1,
+    });
+    const auto = mgr.save('auto');
+    const manual = mgr.save('slot2');
+    expect(await mgr.save('auto')).toBe(false); // a second autosave does not queue
+    release();
+    expect(await auto).toBe(true);
+    expect(await manual).toBe(true);
+    expect((await mgr.list()).map((r) => r.slot).sort()).toEqual(['auto', 'slot2']);
+  });
+
   it('autosaves on the interval and on request', async () => {
     let saved = 0;
     const clock = { realDt: 0 };

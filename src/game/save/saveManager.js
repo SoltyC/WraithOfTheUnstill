@@ -48,6 +48,8 @@ export class SaveManager {
     this.clock = opts.clock || { realDt: 0 };
     this.sinceAutosave = 0;
     this.busy = false;
+    /** The running save (a later save waits on it). */
+    this._current = null;
     this.lastError = null;
     this.saveCount = 0;
   }
@@ -65,9 +67,19 @@ export class SaveManager {
   /** Shrines and quest beats call this. */
   requestAutosave() { this.sinceAutosave = this.autosaveIntervalSec; }
 
+  /** Save to a slot. A save asked for while another runs (an autosave) waits for it, then runs. */
   async save(slot) {
-    if (this.busy) return false;
+    while (this.busy) {
+      if (slot === 'auto') return false; // an autosave never queues behind another save
+      await this._current;
+    }
     this.busy = true;
+    let done;
+    this._current = new Promise((r) => { done = r; });
+    try { return await this._save(slot); } finally { this.busy = false; done(); }
+  }
+
+  async _save(slot) {
     try {
       const t = this.now();
       const s = createEmptySave(slot, t);
@@ -81,8 +93,6 @@ export class SaveManager {
       this.lastError = e;
       console.error('[save] failed', e);
       return false;
-    } finally {
-      this.busy = false;
     }
   }
 

@@ -25,7 +25,9 @@ export function createMenus(g) {
   const sheet = el('div', 'parchment', veil);
   let page = null, shrine = null, wasFrozen = false;
 
+  let openedAt = 0;
   function open(name, arg) {
+    openedAt = performance.now();
     if (!page) { wasFrozen = clock.frozen; clock.frozen = true; input.gameHasFocus = false; document.exitPointerLock?.(); }
     page = name; shrine = name === 'shrine' ? arg : shrine;
     sheet.replaceChildren();
@@ -213,7 +215,12 @@ export function createMenus(g) {
   window.addEventListener('keydown', (e) => {
     if (title.classList.contains('on')) return;
     if (!page) return;
-    if (e.code === 'Escape') { e.preventDefault(); page === 'pause' ? close() : open('pause'); }
+    if (e.code === 'Escape') {
+      e.preventDefault();
+      // The Esc that released the pointer (and opened this page) must not close it again.
+      if (performance.now() - openedAt < 400) return;
+      page === 'pause' ? close() : open('pause');
+    }
     else if (e.code === 'KeyJ') page === 'journal' ? close() : open('journal');
     else if (e.code === 'KeyM') page === 'map' ? close() : open('map');
   });
@@ -246,7 +253,8 @@ export function createMenus(g) {
     /** Per frame: keys in play, fog of war. */
     update() {
       if (!page && started && input.gameHasFocus) {
-        if (input.pressed[g.Action.Journal]) open('journal');
+        if (input.pressed[g.Action.Pause]) open('pause');
+        else if (input.pressed[g.Action.Journal]) open('journal');
         else if (input.pressed[g.Action.Map]) open('map');
       }
       if (clock.frame % 20 === 0) map.reveal(controller.pos.x, controller.pos.z);
