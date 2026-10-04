@@ -34,9 +34,10 @@ export function buildWorldTools(game, el) {
     }, 'Copy view as spot'), copyNote),
   );
 
-  // Weather and restoration (state only until Phase 6 / Phase 5 give them visuals).
+  // Weather (natural cycle or forced) and restoration.
   h('Weather & restoration');
-  const wSel = el('select', { onchange: (e) => { worldState.weather = e.target.value; } });
+  const wSel = el('select', { onchange: (e) => { worldState.weatherOverride = e.target.value === 'auto' ? null : e.target.value; } });
+  wSel.append(el('option', { value: 'auto' }, 'auto (cycle)'));
   for (const w of WEATHER_STATES[worldState.biome]) wSel.append(el('option', { value: w }, w));
   root.append(el('div', { class: 'row' }, el('label', null, 'Weather (' + worldState.biome + ')'), wSel));
   const restRow = el('div', { class: 'toggles' });
@@ -44,7 +45,7 @@ export function buildWorldTools(game, el) {
     const cb = el('input', { type: 'checkbox', checked: worldState.restoration[b] === 'restored', onchange: (e) => { worldState.restoration[b] = e.target.checked ? 'restored' : 'stilled'; } });
     restRow.append(el('label', { class: 'toggle' }, cb, b + ' restored'));
   }
-  root.append(restRow, el('div', { class: 'note' }, 'Weather and restoration are world state only until Phases 5–6 render them.'));
+  root.append(restRow, el('div', { class: 'note' }, 'Weather eases over ~40 s. A stilled steppe has no falling snow or blizzard (still air).'));
 
   // Camera and player.
   h('Camera & player');

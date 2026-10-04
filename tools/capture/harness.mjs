@@ -53,6 +53,9 @@ export async function launchBrowser(args = {}) {
   const software = process.platform === 'linux' && !args.channel && !args['real-gpu'];
   return chromium.launch({
     env: browserEnv(),
+    // A browser build other than the one this Playwright pins (e.g. a cloud box with a
+    // preinstalled Chromium): WRAITH_CHROME=/path/to/chrome or headless_shell.
+    executablePath: process.env.WRAITH_CHROME || undefined,
     channel: args.channel || undefined,
     headless: !args.headed,
     args: ['--enable-unsafe-webgpu', '--ignore-gpu-blocklist', '--enable-precise-memory-info', (args.natives ? '--js-flags=--expose-gc --allow-natives-syntax' : '--js-flags=--expose-gc'), '--hide-scrollbars', ...(software ? SWIFTSHADER_FLAGS : [])],

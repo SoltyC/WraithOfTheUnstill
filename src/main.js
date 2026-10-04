@@ -43,7 +43,8 @@ async function boot() {
   // Empty glslang paths: every shader is WGSL, and any GLSL compile must fail loudly rather
   // than fetch a compiler from a CDN (BRIEF §3: no runtime CDN fetches).
   const engine = new WebGPUEngine(canvas, {
-    antialias: true,
+    // No MSAA: the post chain's TAA anti-aliases (and resolves shading aliasing MSAA cannot).
+    antialias: false,
     powerPreference: 'high-performance',
     adaptToDeviceRatio: false,
     glslangOptions: { jsPath: '', wasmPath: '' },
@@ -120,6 +121,10 @@ async function boot() {
   const shadows = createShadows(scene, camera, { clipmap: content.clipmap, capsule: content.capsule });
   bindShadows(content.clipmap.material, shadows);
   bindShadows(content.capsuleMat, shadows);
+  // Post chain (Phase 6, src/post/): the camera renders into an HDR target, post passes follow.
+  const { createPostChain } = await import('./post/chain.js');
+  const post = createPostChain(scene, camera, atmosphere, shadows);
+  post.fog.keyDir = env.env.keyDir;
   const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
   // Ground blow (spindrift): created after the opaque meshes, drawn in the transparent pass.
   const { createSpindrift } = await import('./render/spindrift.js');
@@ -129,6 +134,10 @@ async function boot() {
   const { createDiamondDust } = await import('./render/diamondDust.js');
   const dust = createDiamondDust(scene, content.clipmap, atmosphere);
   bindShadows(dust.material, shadows);
+  // Falling snow (weather): snowfall and blizzard flakes around the camera.
+  const { createSnowfall } = await import('./render/snowfall.js');
+  const snowfall = createSnowfall(scene, content.clipmap, atmosphere);
+  bindShadows(snowfall.material, shadows);
   // Rock outcrops with accumulation (frost): cast and receive shadows.
   const { createRocks } = await import('./render/rocks.js');
   const rocks = createRocks(scene, content.clipmap, atmosphere);
@@ -192,6 +201,7 @@ async function boot() {
         controller.teleport(pendingTp.x, pendingTp.z);
         controller.hold = false;
         pendingTp.active = false;
+        post.post.resetHistory = true; atmosphere.snapExposure = true;
         arm.snap(controller.pos);
       }
     }
@@ -474,7 +484,7 @@ async function boot() {
     const w = wraithView.wraith, p = controller.pos;
     w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
-    w.windStrength = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
+    w.windStrength = paramsMod.params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
     feedWraithOverride(w);
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);
@@ -688,7 +698,7 @@ async function boot() {
   let barsShown = -1;
   // The slam's flash: a brief white-out (DOM overlay, eased out).
   const flashEl = document.createElement('div'); flashEl.className = 'release-flash'; document.body.append(flashEl);
-  let flash = 0, flashShown = -1;
+  let flash = 0, flashShown = -1, releaseWasActive = false;
   /** Release camera inputs from the Warden and the Wraith. */
   function feedReleaseCam(rc) {
     const b = warden.body;
@@ -710,6 +720,8 @@ async function boot() {
     } else if (!rc.active && warden.state !== wardenMod.W.RESTED) rc.played = false;
     const was = rc.active;
     rc.skip = rc.active && (inputState.pressed[Act.Jump] || inputState.pressed[Act.Interact]);
+    if (rc.skip || rc.active !== releaseWasActive) post.post.resetHistory = true; // camera cuts
+    releaseWasActive = rc.active;
     if (rc.skip) {
       // Skipped: straight to the end — lain down in the land, the Wraith on its feet.
       warden.finishRelease(); knock.reset(); stepKnock(0);
@@ -717,6 +729,14 @@ async function boot() {
     if (rc.active) feedReleaseCam(rc);
     rc.update();
     if (rc.active) arm.setPose(rc.x, rc.y, rc.z, rc.yaw, rc.pitch, rc.fov);
+    // The cinematic's restrained depth of field: focus on the Warden, the far steppe softens.
+    const taa = post.taa;
+    const cine = rc.active || (rc.hold && rc.bars > 0.5); // held cinematic frames (captures) too
+    taa.dofOn = cine;
+    if (cine) {
+      const dx = rc.tx - rc.x, dy = rc.ty - rc.y, dz = rc.tz - rc.z;
+      taa.focus = Math.sqrt(dx * dx + dy * dy + dz * dz); taa.focusRange = Math.max(18, taa.focus * 0.55);
+    }
     else if (was) {
       // Back to the Wraith, looking the way the camera last looked.
       arm.setFree(false); arm.yaw = rc.yaw; arm.pitch = 0.2; arm.snap(controller.pos);
@@ -763,26 +783,51 @@ async function boot() {
     content.clipmap.update();
   } });
   loop.add({ name: 'shadows', update: () => shadows.update() });
+  loop.add(post);
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
   // warmth. `restore` eases toward the state (the Warden's release drives it directly).
   restoration.value = ws.restoration.frost === 'restored' ? 1 : 0;
-  const STILLED = [0.5, -0.5, 0.45], RESTORED = [-0.1, 0.22, -0.12];
+  // Weather (BRIEF §5.6, world/weather.js): the frost state machine, driven by restoration and
+  // time (or forced by the overlay / a photo spot); feeds the sky, light, fog, wind and snow.
+  const { createWeather } = await import('./world/weather.js');
+  const weather = createWeather();
+  let fogGroundY = controller.pos.y, snowWX = 1, snowWZ = 0;
+  loop.add({ name: 'weather', update: () => {
+    weather.restored = ws.restoration.frost === 'restored' ? 1 : 0;
+    weather.override = ws.weatherOverride;
+    weather.dt = clock.dt;
+    weather.update();
+    ws.weather = weather.state;
+    atmosphere.cover = weather.cover; atmosphere.snow = weather.snow;
+    // The fog's base follows the ground under the camera, eased (no jumps on steps or teleports
+    // beyond what the fog itself would show).
+    ground.qx = camera.position.x; ground.qz = camera.position.z; ground.sample();
+    fogGroundY += (ground.h - fogGroundY) * (pendingTp.active ? 1 : 1 - Math.exp(-clock.realDt * 0.5));
+    const pf = post.fog;
+    pf.weather = weather; pf.groundY = fogGroundY; pf.dt = clock.dt;
+  } });
+  // Grades (post/grades.js): the LUT is rebuilt only when the blended grade moves.
+  const { blendGrade } = await import('./post/grades.js');
+  let lastGradeR = -1, lastGradeS = -1;
   loop.add({ name: 'restoration', update: () => {
     const target = ws.restoration.frost === 'restored' ? 1 : 0;
     if (warden.active && warden.state === wardenMod.W.RELEASE) restoration.value = Math.max(restoration.value, warden.restore);
     else restoration.value += (target - restoration.value) * (1 - Math.exp(-clock.realDt * 1.5));
     if (warden.restore >= 1 && ws.restoration.frost !== 'restored') ws.restoration.frost = 'restored';
-    const r = restoration.value, ap = env.env.artParams;
-    ap.y = STILLED[0] + (RESTORED[0] - STILLED[0]) * r;
-    ap.z = STILLED[1] + (RESTORED[1] - STILLED[1]) * r;
-    ap.w = STILLED[2] + (RESTORED[2] - STILLED[2]) * r;
+    const r = restoration.value, gs = paramsMod.params.v.gradeStrength;
+    if (Math.abs(r - lastGradeR) > 0.002 || gs !== lastGradeS) {
+      lastGradeR = r; lastGradeS = gs;
+      blendGrade(post.post.grade, r, gs);
+      post.post.gradeDirty = true;
+    }
   } });
   loop.add({ name: 'spindrift', update: () => {
-    const w = paramsMod.params.v.windStrength * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;
+    const w = paramsMod.params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;
     spindrift.time = clock.simTime;
-    spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5));
+    // Ground blow thickens with the weather (a blizzard is mostly snow on the move).
+    spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5) * (1 + 0.6 * weather.snow * weather.gust));
     spindrift.drift.z = 0.4 + w;
     spindrift.update();
     // Stilled air holds its ice grains motionless; as it is restored they drift off and thin.
@@ -791,6 +836,16 @@ async function boot() {
     dust.density = Math.max(0, 1 - r * 1.25);
     dust.time = clock.simTime;
     dust.update();
+    // Falling snow: density from the weather, carried by the prevailing wind (eased direction).
+    streamer.mqx = camera.position.x; streamer.mqz = camera.position.z; streamer.sampleWind();
+    const ke = 1 - Math.exp(-clock.dt * 0.3);
+    snowWX += (streamer.windX - snowWX) * ke; snowWZ += (streamer.windZ - snowWZ) * ke;
+    const wl = Math.sqrt(snowWX * snowWX + snowWZ * snowWZ) || 1;
+    snowfall.windX = snowWX / wl; snowfall.windZ = snowWZ / wl;
+    snowfall.windSpeed = 1 + 7 * Math.pow(Math.max(w, 0), 1.5);
+    snowfall.fallSpeed = 1.1 + 0.9 * weather.gust;
+    snowfall.density = weather.snow; snowfall.dt = clock.dt;
+    snowfall.update();
     // Sound: listener at the camera; the wind bed follows the wind (silent while stilled); the
     // Ribbon hisses while it flows; a formation chimes where it rises.
     const cp = camera.position;
@@ -807,7 +862,8 @@ async function boot() {
     terrainState.px = tsFollow ? terrainState.followX : controller.pos.x;
     terrainState.pz = tsFollow ? terrainState.followZ : controller.pos.z;
     terrainState.time = clock.simTime;
-    terrainState.healScale = paramsMod.params.v.refillRate;
+    // Falling snow fills depressions (BRIEF §4.3: weather writes too): refill runs faster under it.
+    terrainState.healScale = paramsMod.params.v.refillRate * (1 + 5 * weather.snow);
     footprints.enabled = systemsMod.toggles.on.footprints !== false;
     footprints.px = controller.pos.x; footprints.pz = controller.pos.z;
     footprints.grounded = controller.grounded && !arm.free && content.capsule.isEnabled();
@@ -833,6 +889,7 @@ async function boot() {
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
+  reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });
   reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: (on) => { for (const m of rocks.meshes) m.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'player', label: 'player (the Wraith)', group: 'System', on: true, onChange: (on) => { wraithView.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadows.strength = on ? 1 : 0; } });
@@ -893,6 +950,7 @@ async function boot() {
       this.pendingShaped = spot.shaped || null;
       this.pendingWarden = spot.warden || null;
       this.wraithHeld = false;
+      weather.snap = true; post.post.resetHistory = true;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
     stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingShaped === null && this.pendingWarden === null && terrainState.pendingBrushes === 0; },
@@ -918,7 +976,7 @@ async function boot() {
     if (!spot) throw new Error('unknown photo spot ' + spotId);
     game.applySpot(spot);
   }
-  if (capture) clock.frozen = true;
+  if (capture) { clock.frozen = true; atmosphere.alwaysSnap = true; }
   env.updateEnvironment();
 
   // Warm-up (BRIEF §15): make every material ready, then render frames behind the loading
@@ -957,18 +1015,23 @@ async function boot() {
       game.applySpot(spots.findSpot(id));
       env.updateEnvironment();
       await waitUntil(engine, () => game.worldSettled() && game.stateSettled());
-      await waitFrames(engine, frames);
+      post.post.resetHistory = true; // TAA converges from here, the same way every load
+      await waitFrames(engine, frames + TAA_SETTLE);
       return true;
     },
   });
   if (capture) {
     await waitUntil(engine, () => game.worldSettled() && game.stateSettled());
-    await waitFrames(engine, 6);
+    post.post.resetHistory = true;
+    await waitFrames(engine, 6 + TAA_SETTLE);
     window.__wraith.captureReady = true;
     if (shotsMod) shotsMod.shotsTake(engine, qs);
   }
   if (bench) bench.runBench(game, qs);
 }
+
+/** Frames for TAA to converge from a history reset before a capture (3 jitter cycles). */
+const TAA_SETTLE = 24;
 
 /** Resolve on the first end-of-frame where test() is true. */
 function waitUntil(engine, test) {

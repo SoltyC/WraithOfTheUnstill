@@ -6,6 +6,8 @@
 // ?bench=bend (Phase 4) instead, on the frost steppe:
 //   surf — snow-surfing S-turns (traversal held, steering by synthetic mouse motion)
 //   cast — standing: Sweep every 1.5 s, Crystallize every 3 s, Ribbon held in between
+// ?bench=weather (Phase 6): the full post chain on the steppe in each frost weather (walking,
+// camera orbiting), a live clear → blizzard transition, and the Shaped pack in a blizzard.
 // Records presented frame time (rAF interval; capped by the display's refresh rate) and GPU
 // main-pass time (timestamp queries; the real cost). Shows a results panel and POSTs the JSON to
 // the dev/preview server (`/__wraith/perf`), which writes it to perf/runs/.
@@ -137,6 +139,26 @@ export async function runBench(game, qs) {
       timers.push(setTimeout(() => timers.push(setInterval(() => tap(Action.Primary, 900), 2200)), 700)); // Ribbon
     }));
     for (const t of timers) { clearInterval(t); clearTimeout(t); }
+  } else if (qs.get('bench') === 'weather') {
+    const { worldState } = await import('../game/worldState.js');
+    for (const w of ['clear', 'overcast', 'snowfall', 'blizzard']) {
+      phaseStarts.push(Math.round(performance.now() - t0));
+      phases.push(await phase(w, seconds, settle, () => {
+        release(); yawRate = 0.2; game.applySpot(findSpot('p6-' + w + '-noon'));
+        setTimeout(() => injectAction(Action.MoveForward, true), 1500);
+      }));
+    }
+    // A live transition (not snapped): clear eases into a blizzard while measured.
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('transition', seconds * 2, settle, () => {
+      release(); yawRate = 0.2; game.applySpot(findSpot('p6-clear-noon'));
+      setTimeout(() => { worldState.weatherOverride = 'blizzard'; }, settle * 1000);
+    }));
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('pack-blizzard', seconds, settle, () => {
+      release(); yawRate = 0.15; game.applySpot(findSpot('p5-pack-afternoon'));
+      worldState.weatherOverride = 'blizzard';
+    }));
   } else if (qs.get('bench') === 'fight') {
     // Phase 5: the Warden in view (awake, advancing), climbing it, and a pack of Shaped.
     phaseStarts.push(Math.round(performance.now() - t0));

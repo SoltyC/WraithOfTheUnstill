@@ -220,6 +220,8 @@ ${HEAD}
 @group(0) @binding(6) var skyMoonSampler: sampler;
 @group(0) @binding(7) var skyMoon: texture_2d<f32>;
 @group(0) @binding(8) var<storage, read> biomeA: array<u32>;
+// Frame meter (post/meter): x = trimmed mean log2 absolute luminance of the last frame, y = valid.
+@group(0) @binding(9) var<storage, read> meter: array<vec4f, 1>;
 // Frost weight at the camera (biome map: 8 m texels, row 0 = north): snow fields expose lower.
 fn frostAtCamera() -> f32 {
   let i = clamp(i32((P.camPos.x + 4096.0) / 8.0), 0, 1023); let j = clamp(i32((4096.0 - P.camPos.z) / 8.0), 0, 1023);
@@ -229,7 +231,16 @@ fn frostAtCamera() -> f32 {
 fn sampleTransmittance(r: f32, mu: f32) -> vec3f {
   return textureSampleLevel(transmittanceLut, transmittanceLutSampler, transmittanceUv(r, mu), 0.0).rgb;
 }
+// Overcast sky (weather): a grey deck lit through by the undimmed sun/moon, brighter toward the
+// zenith (CIE overcast gradient, (1 + 2 sin θ) / 3).
+fn overcastRadiance(dir: vec3f) -> vec3f {
+  let e = P.weather.y * max(P.sunDir.y, 0.04) + P.weather.z * max(P.moonDir.y, 0.04) * 0.6;
+  return vec3f(0.90, 0.94, 1.0) * e * 0.22 / PI_A * (1.0 + 2.0 * max(dir.y, 0.0)) / 2.0;
+}
 fn skyRadiance(dir: vec3f, r: f32) -> vec3f {
+  return mix(clearSkyRadiance(dir, r), overcastRadiance(dir), P.weather.x * 0.92);
+}
+fn clearSkyRadiance(dir: vec3f, r: f32) -> vec3f {
   var L = vec3f(0.0);
   // Sun LUT: azimuth relative to the sun.
   let sd = normalize(vec2f(P.sunDir.x, P.sunDir.z) + vec2f(1e-6, 0.0));
@@ -306,9 +317,18 @@ fn main() {
   // clamp to a narrow range, and ease over time (misc.z = dt; 0 in captures → hold).
   let lumW = vec3f(0.2126, 0.7152, 0.0722);
   let adapt = dot(outLight[0].xyz, lumW) * (0.5 / PI_A) + dot(outLight[1].xyz, lumW) + 1e-5;
-  // Average-albedo compensation until the post chain meters the real frame (Phase 6): the
-  // target assumes mid-grey ground; snow reflects ~2× as much, so snow fields expose lower.
-  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * mix(1.0, 0.62, smoothstep(0.3, 0.8, frostAtCamera()));
+  // The analytic exposure assumes mid-grey ground under this light. The frame meter (Phase 6)
+  // corrects it within tight limits (−1 … +0.75 stop): expected scene luminance for ~0.5 albedo vs
+  // what the last frame actually held. Snow (albedo ~0.9) lands near the old frost compensation
+  // (0.62); a scene in a ridge's shadow opens up a little; staring at a bright sky closes down.
+  // Without a valid meter it falls back to that biome compensation.
+  var comp = mix(1.0, 0.62, smoothstep(0.3, 0.8, frostAtCamera()));
+  let mt = meter[0];
+  if (mt.y > 0.5) {
+    let expected = 0.5 * adapt;
+    comp = clamp(pow(expected / exp2(mt.x), 0.75), 0.5, 1.68);
+  }
+  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp;
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));

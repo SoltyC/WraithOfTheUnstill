@@ -228,8 +228,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     glow += vec3f(0.6, 0.85, 1.0) * k * uniforms.clothParams.w * select(0.15, 0.6, g >= 5);
   }
   var outc = displayTransform(col + glow / max(exposure, 1e-6), exposure);
-  outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
-  fragmentOutputs.color = vec4f(outc, 1.0);
+  fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;
 
@@ -332,7 +331,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
           + albedo * shIrradiance(T) * uniforms.envMisc.w * selfShadow;
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
-  outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
-  fragmentOutputs.color = vec4f(outc, 1.0);
+  fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;

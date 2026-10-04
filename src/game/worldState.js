@@ -13,7 +13,10 @@ export const WEATHER_STATES = {
 export const worldState = {
   /** Biome the player stands in. Phase 0 has only the test field, treated as frost. */
   biome: 'frost',
+  /** The weather now (written by world/weather.js). */
   weather: 'clear',
+  /** A forced weather state (dev overlay, photo spots), or null for the natural cycle. */
+  weatherOverride: null,
   /** @type {Record<string, 'stilled'|'restored'>} */
   restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' },
 };

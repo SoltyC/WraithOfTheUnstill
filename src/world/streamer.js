@@ -98,6 +98,8 @@ export class WorldStreamer {
     // CPU copy of the surface material map (byte 0 of rgba8, row 0 = north) for gameplay queries.
     this.surfaceData = m.surface;
     this.surfaceN = m.manifest.surface.size; this.surfaceTexel = m.manifest.surface.texel;
+    // CPU copy of the wind climatology (RG8, row 0 = north) for weather consumers.
+    this.windData = m.wind; this.windN = m.manifest.wind.size; this.windTexel = m.manifest.wind.texel;
     this._initResolve(this);
   }
 
@@ -109,6 +111,18 @@ export class WorldStreamer {
     const col = Math.min(N - 1, Math.max(0, Math.floor((this.mqx + half) / this.surfaceTexel)));
     const row = Math.min(N - 1, Math.max(0, Math.floor((half - this.mqz) / this.surfaceTexel)));
     this.mat = d[(row * N + col) * 4];
+  }
+
+  /** Prevailing wind direction at (mqx, mqz) → windX, windZ (unit; fields, not arguments). */
+  sampleWind() {
+    const d = this.windData;
+    if (!d) { this.windX = 1; this.windZ = 0; return; }
+    const N = this.windN, half = this.manifest.worldSize / 2;
+    const col = Math.min(N - 1, Math.max(0, Math.floor((this.mqx + half) / this.windTexel)));
+    const row = Math.min(N - 1, Math.max(0, Math.floor((half - this.mqz) / this.windTexel)));
+    const x = (d[(row * N + col) * 2] - 128) / 127, z = (d[(row * N + col) * 2 + 1] - 128) / 127;
+    const l = Math.sqrt(x * x + z * z);
+    if (l > 1e-4) { this.windX = x / l; this.windZ = z / l; } else { this.windX = 1; this.windZ = 0; }
   }
 
   /** RG8 → one u32 per texel (rg in the low bytes) so the shader can unpack4x8unorm it. */

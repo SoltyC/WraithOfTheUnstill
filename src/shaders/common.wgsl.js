@@ -1,8 +1,8 @@
 // Shared WGSL functions: lighting environment, sky gradient, height fog / aerial perspective,
 // detail noise, and the display transform. Concatenated into each shader source.
 //
-// Phase 0 note: this is an analytic stand-in. Phase 1 replaces skyColor/applyFog with the
-// Hillaire LUT atmosphere, and Phase 6 moves tonemapping into the post chain.
+// Phase 0 note: skyColor/applyFog are the analytic stand-ins Phase 1 replaced with the Hillaire
+// LUT atmosphere; since Phase 6 tonemapping lives in the post chain.
 
 /** Uniforms every lit material declares (names must match render/environment.js). */
 export const ENV_UNIFORMS = ['keyDir', 'keyColor', 'skyZenith', 'skyHorizon', 'groundBounce', 'sunDir', 'sunHalo', 'fogParams', 'cameraPosition', 'envMisc', 'screenInfo', 'artParams'];
@@ -88,22 +88,12 @@ fn applyFog(col: vec3f, worldPos: vec3f, camPos: vec3f, sunDir: vec3f, zenith: v
   return col * ext + ins * (1.0 - ext);
 }
 
-// Display transform: exposure → ACES (Narkowicz fit) with a soft shoulder → grade → sRGB.
-// The grade is the biome's stilled/restored look (BRIEF §2.4, §5.8): stilled is desaturated,
-// cool and flat; restored is full colour with a little warmth. artParams.yzw, 0 = neutral.
+// Scene output (Phase 6): materials write pre-exposed linear HDR into the scene target. Tonemap,
+// grade (the stilled/restored LUT) and the sRGB encode happen in the post chain (src/post/).
+// Non-finite or overflowing values are clamped so a hot pixel never spreads through bloom/TAA.
 fn displayTransform(hdr: vec3f, exposure: f32) -> vec3f {
   let x = hdr * exposure;
-  let a = 2.51; let b = 0.03; let c = 2.43; let d = 0.59; let e = 0.14;
-  var mapped = clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
-  let gr = uniforms.artParams;
-  let luma = dot(mapped, vec3f(0.2126, 0.7152, 0.0722));
-  mapped = mix(mapped, vec3f(luma), gr.y);
-  mapped *= vec3f(1.0 + 0.07 * gr.z, 1.0 + 0.01 * gr.z, 1.0 - 0.09 * gr.z);
-  mapped = clamp(mix(mapped, vec3f(0.42) + (mapped - vec3f(0.42)) * 0.72, gr.w), vec3f(0.0), vec3f(1.0));
-  // Linear → sRGB.
-  let lo = mapped * 12.92;
-  let hi = 1.055 * pow(mapped, vec3f(1.0 / 2.4)) - 0.055;
-  return select(hi, lo, mapped <= vec3f(0.0031308));
+  return clamp(select(x, vec3f(0.0), x != x), vec3f(0.0), vec3f(30000.0));
 }
 
 // Interleaved gradient noise for dithering away 8-bit banding in the gradients.

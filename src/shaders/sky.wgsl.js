@@ -67,7 +67,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
 
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
-  outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
-  fragmentOutputs.color = vec4f(outc, 1.0);
+  fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;

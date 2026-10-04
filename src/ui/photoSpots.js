@@ -21,7 +21,8 @@ export function findSpot(id) { return photoSpots.find((s) => s.id === id) || nul
  */
 export function applySpot(spot, game) {
   setParam('timeOfDay', spot.time);
-  worldState.weather = spot.weather;
+  // Spots force their weather (reproducible shots); 'auto' leaves the natural cycle.
+  worldState.weatherOverride = spot.weather && spot.weather !== 'auto' ? spot.weather : null;
   // Spots show the land restored unless they ask for it stilled (the accepted gate looks).
   worldState.restoration[spot.biome === 'frost' ? 'frost' : spot.biome] = spot.restoration || 'restored';
   const { controller, arm, teleport } = game;

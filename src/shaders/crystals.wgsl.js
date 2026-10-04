@@ -162,7 +162,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += vec3f(0.35, 0.65, 1.0) * core * 0.045 * flare / max(exposure, 1e-6);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, exposure);
-  outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
-  fragmentOutputs.color = vec4f(outc, 1.0);
+  fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;

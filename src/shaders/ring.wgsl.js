@@ -50,7 +50,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var col = albedo * (key * diff * (1.0 / PI) + sky);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
-  outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
-  fragmentOutputs.color = vec4f(outc, 1.0);
+  fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;

@@ -390,12 +390,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Frost Steppe material (Phase 2) over the clay view, by frost weight.
   let wSum = wA.x + wA.y + wA.z + wA.w + wB.x + wB.y;
   let wFrost = smoothstep(0.3, 0.7, wA.x / max(wSum, 0.001)) * (1.0 - sea);
+  // Reflection weight for SSR (post chain): Fresnel × the ice/wet gloss, in the target's alpha.
+  var ssrMask = 0.0;
   if (wFrost > 0.001) {
     let Ng = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                              fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     var fs = frostSurface(wp, Ng, normalize(fragmentInputs.vNormalC), normalize(fragmentInputs.vWind), fragmentInputs.vLake, fp);
     frostApplyState(&fs, wp, st, stateSurface(wp.x, wp.z), fp);
     var fcol = frostLight(fs, wp, Ng, V, L, key, vis * cs, uniforms.envMisc.w, fp);
+    ssrMask = wFrost * fs.ice * (0.02 + 0.98 * pow(1.0 - max(dot(fs.N, V), 0.0), 5.0)) * 0.6;
     // Spell lights (BRIEF §5.3): display-referred, and mostly from within — the drift glows
     // around the light (subsurface), ice and slush catch it on the surface.
     let ex = uniforms.fogParams.z * atmoExposure();
@@ -414,7 +417,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
-  outc += vec3f(ditherNoise(fragmentInputs.position.xy) / 255.0);
-  fragmentOutputs.color = vec4f(outc, 1.0);
+  fragmentOutputs.color = vec4f(outc, ssrMask);
 }
 `;

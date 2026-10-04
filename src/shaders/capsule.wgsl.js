@@ -63,6 +63,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += vec3f(0.55, 0.75, 1.0) * cowl * 0.15;
 
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
-  fragmentOutputs.color = vec4f(displayTransform(col, uniforms.fogParams.z * atmoExposure()), 1.0);
+  fragmentOutputs.color = vec4f(displayTransform(col, uniforms.fogParams.z * atmoExposure()), 0.0);
 }
 `;

@@ -13,7 +13,7 @@
    ],
    "camera": {
     "mode": "follow",
-    "yaw": 3.0,
+    "yaw": 3,
     "pitch": 0.14,
     "dist": 6
    }
@@ -22,7 +22,7 @@
    "id": "p1-meadow-noon",
    "biome": "meadow",
    "label": "Hub uplands, noon",
-   "time": 12.0,
+   "time": 12,
    "weather": "clear",
    "player": [
     -220,
@@ -90,7 +90,7 @@
    "id": "p1-coast-noon",
    "biome": "coast",
    "label": "South coast toward the sea, midday",
-   "time": 13.0,
+   "time": 13,
    "weather": "clear",
    "player": [
     -956,
@@ -115,7 +115,7 @@
    ],
    "camera": {
     "mode": "follow",
-    "yaw": 0.0,
+    "yaw": 0,
     "pitch": 0.08,
     "dist": 6
    }
@@ -183,7 +183,7 @@
     ],
     [
      -90.37,
-     2289.0
+     2289
     ],
     [
      -89.07,
@@ -238,7 +238,7 @@
     "mode": "free",
     "pos": [
      100,
-     610.0,
+     610,
      1740
     ],
     "yaw": -0.39,
@@ -336,7 +336,7 @@
      2104.63
     ],
     [
-     624.0,
+     624,
      2106.98
     ],
     [
@@ -389,7 +389,7 @@
    "id": "p2-frost-night",
    "biome": "frost",
    "label": "Frost plateau toward the northern face, moonlit night",
-   "time": 23.0,
+   "time": 23,
    "weather": "clear",
    "player": [
     620,
@@ -417,7 +417,7 @@
      2104.63
     ],
     [
-     624.0,
+     624,
      2106.98
     ],
     [
@@ -481,7 +481,7 @@
     "mode": "free",
     "pos": [
      620,
-     640.0,
+     640,
      2100.6
     ],
     "yaw": -1.5,
@@ -651,7 +651,7 @@
     2100
    ],
    "walk": {
-    "speed": 0.0,
+    "speed": 0,
     "seconds": 1,
     "facing": 0.6
    },
@@ -659,14 +659,14 @@
     "mode": "follow",
     "yaw": 3.292,
     "pitch": 0.02,
-    "dist": 2.0
+    "dist": 2
    }
   },
   {
    "id": "p3-wraith-night",
    "biome": "frost",
    "label": "Night: the cowl light and the fingertips' glow on the snow",
-   "time": 23.0,
+   "time": 23,
    "weather": "clear",
    "player": [
     -508,
@@ -766,7 +766,7 @@
    "id": "p5-hounds-noon",
    "biome": "frost",
    "label": "Rime hounds risen out of the snow, stalking the Wraith; one telegraphs a lunge",
-   "time": 14.0,
+   "time": 14,
    "weather": "clear",
    "player": [
     100,
@@ -1110,7 +1110,7 @@
    "id": "p5-climb-flank",
    "biome": "frost",
    "label": "Gripping the Warden's flank 8 m up, the robe hanging, golden hour",
-   "time": 17.0,
+   "time": 17,
    "weather": "clear",
    "player": [
     100,
@@ -1161,7 +1161,7 @@
      "u": 0.3,
      "a": 0.5,
      "faceYaw": 0.35,
-     "moveT": 1.0,
+     "moveT": 1,
      "outward": true
     }
    },
@@ -1170,6 +1170,462 @@
     "yaw": 2.6,
     "pitch": 0.05,
     "dist": 6.5
+   }
+  },
+  {
+   "id": "p6-clear-dawn",
+   "biome": "frost",
+   "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 6.6,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-clear-noon",
+   "biome": "frost",
+   "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 12.5,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-clear-dusk",
+   "biome": "frost",
+   "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 17.5,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-clear-night",
+   "biome": "frost",
+   "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 23,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-overcast-dawn",
+   "biome": "frost",
+   "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 6.6,
+   "weather": "overcast",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-overcast-noon",
+   "biome": "frost",
+   "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 12.5,
+   "weather": "overcast",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-overcast-dusk",
+   "biome": "frost",
+   "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 17.5,
+   "weather": "overcast",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-overcast-night",
+   "biome": "frost",
+   "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 23,
+   "weather": "overcast",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-snowfall-dawn",
+   "biome": "frost",
+   "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 6.6,
+   "weather": "snowfall",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-snowfall-noon",
+   "biome": "frost",
+   "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 12.5,
+   "weather": "snowfall",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-snowfall-dusk",
+   "biome": "frost",
+   "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 17.5,
+   "weather": "snowfall",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-snowfall-night",
+   "biome": "frost",
+   "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 23,
+   "weather": "snowfall",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-blizzard-dawn",
+   "biome": "frost",
+   "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 6.6,
+   "weather": "blizzard",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-blizzard-noon",
+   "biome": "frost",
+   "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 12.5,
+   "weather": "blizzard",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-blizzard-dusk",
+   "biome": "frost",
+   "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 17.5,
+   "weather": "blizzard",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-blizzard-night",
+   "biome": "frost",
+   "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+   "time": 23,
+   "weather": "blizzard",
+   "player": [
+    620,
+    2100
+   ],
+   "walk": {
+    "speed": 1.4,
+    "seconds": 4,
+    "facing": 0.39
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.39,
+    "pitch": 0.12,
+    "dist": 5.5
+   }
+  },
+  {
+   "id": "p6-vista-overcast",
+   "biome": "frost",
+   "label": "The northern face under an overcast deck: clouds with volume, flat cold light, distance compressed",
+   "time": 13.5,
+   "weather": "overcast",
+   "player": [
+    -100,
+    2500
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     -100,
+     624.2,
+     2500
+    ],
+    "yaw": -0.4,
+    "pitch": -0.05,
+    "fov": 0.9
+   }
+  },
+  {
+   "id": "p6-vista-clear",
+   "biome": "frost",
+   "label": "The northern face, clear with scattered cloud: cloud volumes over the range",
+   "time": 15.5,
+   "weather": "clear",
+   "player": [
+    -100,
+    2500
+   ],
+   "hidePlayer": true,
+   "camera": {
+    "mode": "free",
+    "pos": [
+     -100,
+     624.2,
+     2500
+    ],
+    "yaw": -0.4,
+    "pitch": 0.02,
+    "fov": 0.9
+   }
+  },
+  {
+   "id": "p6-shafts-snowfall",
+   "biome": "frost",
+   "label": "Into the low sun through falling snow: light shafts past the ridge and the Wraith",
+   "time": 17.4,
+   "weather": "snowfall",
+   "player": [
+    612,
+    2100
+   ],
+   "walk": {
+    "speed": 1.2,
+    "seconds": 3,
+    "facing": -1.5
+   },
+   "camera": {
+    "mode": "follow",
+    "yaw": -1.5,
+    "pitch": 0.08,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p6-stilled-golden",
+   "biome": "frost",
+   "label": "Stilled steppe at golden hour: the stilled grade (cool, flat, drained), still air",
+   "time": 16.6,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "restoration": "stilled",
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.9,
+    "pitch": 0.1,
+    "dist": 6
+   }
+  },
+  {
+   "id": "p6-restored-golden",
+   "biome": "frost",
+   "label": "Restored steppe at golden hour (same view): the restored grade, wind back",
+   "time": 16.6,
+   "weather": "clear",
+   "player": [
+    620,
+    2100
+   ],
+   "restoration": "restored",
+   "camera": {
+    "mode": "follow",
+    "yaw": 0.9,
+    "pitch": 0.1,
+    "dist": 6
    }
   }
  ]

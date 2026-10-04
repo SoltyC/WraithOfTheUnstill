@@ -28,6 +28,8 @@ struct AtmoParams {
   sunDir: vec4f,        // xyz unit, w = sun illuminance
   moonDir: vec4f,       // xyz unit, w = moon illuminance
   misc: vec4f,          // x = haze (Mie) multiplier, y = night floor, z = dt (s), w = 1 → snap exposure
+  weather: vec4f,       // x = cloud cover 0..1, y = undimmed sun illuminance (sunDir.w is dimmed by
+                        //     the cloud deck), z = undimmed moon illuminance, w = snowfall 0..1
 };
 `;
 

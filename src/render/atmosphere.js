@@ -49,9 +49,11 @@ export function createAtmosphere(scene, camera, biomeA) {
   const skyViewMoon = tex(SKYVIEW_W, SKYVIEW_H, 'atmo-skyview-moon');
   const aerialLut = tex(AP_RES * AP_SLICES, AP_RES, 'atmo-aerial');
 
-  const paramsData = new Float32Array(32);
+  const paramsData = new Float32Array(36);
   const atmoParams = new StorageBuffer(engine, paramsData.byteLength, undefined, 'atmo-params');
   const atmoLight = new StorageBuffer(engine, 13 * 16, undefined, 'atmo-light'); // key, sky up/side, horizon+exposure, 9 SH
+  // Frame meter, written by the post chain's metering pass (post/meter.js); zero = no meter yet.
+  const meterBuf = new StorageBuffer(engine, 16, undefined, 'exposure-meter');
 
   /** Bind list entries: [name, kind, value]; kinds: buffer | storageTex | tex | sampler (paired with the tex after it). */
   const cs = (name, code, bind) => {
@@ -74,11 +76,15 @@ export function createAtmosphere(scene, camera, biomeA) {
   const csMS = cs('atmoMultiScatter', multiScatCS, [P, ['outTex', 'storageTex', multiScatLut], ...T]);
   const csSky = cs('atmoSkyView', skyViewCS, [P, ['outSun', 'storageTex', skyViewSun], ...T, ...M, ['outMoon', 'storageTex', skyViewMoon]]);
   const csAerial = cs('atmoAerial', aerialCS, [P, ['outTex', 'storageTex', aerialLut], ...T, ...M]);
-  const csAmbient = cs('atmoAmbient', ambientCS, [P, ['outLight', 'buffer', atmoLight], ...T, ['skySunSampler', 'sampler'], ['skySun', 'tex', skyViewSun], ['skyMoonSampler', 'sampler'], ['skyMoon', 'tex', skyViewMoon], ['biomeA', 'buffer', biomeA]]);
+  const csAmbient = cs('atmoAmbient', ambientCS, [P, ['outLight', 'buffer', atmoLight], ...T, ['skySunSampler', 'sampler'], ['skySun', 'tex', skyViewSun], ['skyMoonSampler', 'sampler'], ['skyMoon', 'tex', skyViewMoon], ['biomeA', 'buffer', biomeA], ['meter', 'buffer', meterBuf]]);
 
   let builtHaze = NaN;
   return {
-    transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight,
+    transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
+    /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
+    cover: 0.5 - 0.5, snow: 0.5 - 0.5,
+    /** Snap exposure every frame (frozen-clock captures: converge, never ease). */
+    alwaysSnap: false,
     /** True once the static LUTs exist (the first frames may still be compiling pipelines). */
     ready: false,
     /** Set to jump exposure to its target next frame (teleports, photo spots). */
@@ -95,10 +101,14 @@ export function createAtmosphere(scene, camera, biomeA) {
       const c = camera.position;
       p[16] = c.x; p[17] = c.y; p[18] = c.z; p[19] = Math.max(c.y, 0) * 0.001;
       const s = env.sunDir, mo = env.moonDir;
-      p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE;
-      p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE;
+      // The cloud deck (weather) dims the sun and moon reaching the sky, the air and the ground;
+      // the overcast sky itself is added to the IBL in the ambient pass and drawn by the clouds.
+      const dim = 1 - 0.8 * this.cover;
+      p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
+      p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
+      p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;
-      p[28] = haze; p[29] = NIGHT_FLOOR * env.night; p[30] = clock.realDt; p[31] = this.snapExposure ? 1 : 0;
+      p[28] = haze; p[29] = NIGHT_FLOOR * env.night; p[30] = clock.realDt; p[31] = this.snapExposure || this.alwaysSnap ? 1 : 0;
       this.snapExposure = false;
       atmoParams.update(p);
       if (haze !== builtHaze) {
