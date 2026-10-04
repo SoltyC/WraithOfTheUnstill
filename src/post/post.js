@@ -170,7 +170,7 @@ export function createPost(scene, camera) {
       post.resetHistory = false;
       const c = camera.position;
       P[40] = c.x; P[41] = c.y; P[42] = c.z; P[43] = camera.minZ;
-      P[104] = post.debug === 1 ? 1 : 0;
+      P[104] = post.debug === 1 ? 1 : 0; P[105] = post.debug === 4 ? 1 : 0;
       for (let i = 0; i < pre.length; i++) pre[i](P);
       paramsBuf.update(P);
       if (jx !== 0 || jy !== 0) {

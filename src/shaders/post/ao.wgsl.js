@@ -31,7 +31,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   if (hp.x >= half.x || hp.y >= half.y) { return; }
   let p = hp * 2;
   let d = textureLoad(depthTex, p, 0);
-  if (d <= 0.0 || P.ao.z < 0.5) { textureStore(outAo, hp, vec4f(1.0, 1e6, 0.0, 1.0)); return; }
+  // Sky: open, at a far distance that still fits in half float (65504 max; 1e6 became ∞).
+  if (d <= 0.0 || P.ao.z < 0.5) { textureStore(outAo, hp, vec4f(1.0, 6e4, 0.0, 1.0)); return; }
   let pos = worldPos(texelNdc(p, P.size), d, P.invVP);
   let dist = length(pos - P.cam.xyz);
   // Normal from the smaller of the forward/backward depth differences (no halo at silhouettes).
@@ -126,6 +127,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let fh = P.invVP * vec4f(ndc, 1e-7, 1.0);
     dir = normalize(fh.xyz / fh.w - cam);
   }
+  var dbgAo = 1.0; var dbgT = 1.0; var dbgSsr = 0.0;
   if (P.ao.z > 0.5 && d > 0.0) {
     // Depth-aware 2×2 upsample of the half-resolution AO.
     let half = (sz + 1) / 2;
@@ -138,13 +140,16 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         acc += s.r * w; wsum += w;
       }
     }
-    c = vec4f(c.rgb * (acc / max(wsum, 1e-5)), c.a);
+    // No texel at this depth (a thin silhouette between sky texels): leave it open.
+    dbgAo = select(1.0, acc / wsum, wsum > 1e-4);
+    c = vec4f(c.rgb * dbgAo, c.a);
   }
   let exposure = P.keyCol.w * atmoLight[3].w;
   let uv = (vec2f(p) + 0.5) * P.size.zw;
   // Screen-space reflections on ice and wet slush (premultiplied, half resolution).
   if (P.ssr.w > 0.5 && c.a > 0.03) {
     let r = textureSampleLevel(ssrTex, ssrSampler, uv, 0.0);
+    dbgSsr = r.a;
     c = vec4f(c.rgb * (1.0 - r.a) + r.rgb, c.a);
   }
   // Clouds over the sky.
@@ -163,9 +168,15 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     if (P.fog.w > 0.5) { ratio = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).r; }
     let phase = mix(hgPhase(cosT, 0.55), 0.0795775, 0.45);
     let ins = (keyC * phase * ratio * 0.9 + skyUp * 0.95) * (1.0 - T);
+    dbgT = T;
     c = vec4f(c.rgb * T + ins * exposure, c.a);
   }
   c = vec4f(select(c.rgb, vec3f(0.0), c.rgb != c.rgb), c.a);
+  // Debug (?postDebug=4): AO factor, fog transmittance, SSR weight as r, g, b; NaN shows white.
+  if (P.pad[0].y > 0.5) {
+    let f = vec3f(dbgAo, dbgT, dbgSsr);
+    c = vec4f(select(f, vec3f(1.0), f != f) * 2.0, c.a);
+  }
   textureStore(outColor, p, c);
 }
 `;

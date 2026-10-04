@@ -233,6 +233,9 @@ fn frostAtCamera() -> f32 {
 fn sampleTransmittance(r: f32, mu: f32) -> vec3f {
   return textureSampleLevel(transmittanceLut, transmittanceLutSampler, transmittanceUv(r, mu), 0.0).rgb;
 }
+// The closed share of the cloud deck: scattered cloud (cover ≤ 0.25) is drawn by the cloud pass
+// but changes neither the sky's light nor the exposure.
+fn deckCover() -> f32 { return max(P.weather.x - 0.25, 0.0) / 0.75; }
 // Overcast sky (weather): a grey deck lit through by the undimmed sun/moon, brighter toward the
 // zenith (CIE overcast gradient, (1 + 2 sin θ) / 3).
 fn overcastRadiance(dir: vec3f) -> vec3f {
@@ -240,7 +243,7 @@ fn overcastRadiance(dir: vec3f) -> vec3f {
   return vec3f(0.90, 0.94, 1.0) * e * 0.22 / PI_A * (1.0 + 2.0 * max(dir.y, 0.0)) / 2.0;
 }
 fn skyRadiance(dir: vec3f, r: f32) -> vec3f {
-  return mix(clearSkyRadiance(dir, r), overcastRadiance(dir), P.weather.x * 0.92);
+  return mix(clearSkyRadiance(dir, r), overcastRadiance(dir), deckCover() * 0.92);
 }
 fn clearSkyRadiance(dir: vec3f, r: f32) -> vec3f {
   var L = vec3f(0.0);
@@ -332,7 +335,7 @@ fn main() {
   }
   // Weather: an overcast or snowing day is meant to read grey and heavy, not auto-exposed back
   // to a sunny day's brightness (−0.5 stop under a closed deck).
-  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * P.weather.x);
+  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * deckCover());
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));

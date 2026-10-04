@@ -13,14 +13,14 @@
 /** Target parameters per state. cover: cloud cover 0..1; snow: snowfall 0..1; wind: wind
  *  multiplier; fog: weather fog density 0..1 (visibility); gust: gustiness 0..1. */
 export const FROST_STATES = {
-  clear: { cover: 0.12, snow: 0, wind: 1, fog: 0.04, gust: 0.3 },
+  clear: { cover: 0.3, snow: 0, wind: 1, fog: 0.04, gust: 0.3 },
   overcast: { cover: 0.82, snow: 0, wind: 1.15, fog: 0.22, gust: 0.4 },
   snowfall: { cover: 0.94, snow: 0.55, wind: 0.85, fog: 0.42, gust: 0.3 },
   blizzard: { cover: 1, snow: 1, wind: 2.4, fog: 1, gust: 1 },
 };
 /** Stilled variants: no precipitation, still air. */
 const STILLED_STATES = {
-  clear: { cover: 0.06, snow: 0, wind: 1, fog: 0.06, gust: 0 },
+  clear: { cover: 0.2, snow: 0, wind: 1, fog: 0.06, gust: 0 },
   overcast: { cover: 0.7, snow: 0, wind: 1, fog: 0.3, gust: 0 },
 };
 

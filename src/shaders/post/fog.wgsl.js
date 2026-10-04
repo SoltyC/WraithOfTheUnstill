@@ -139,7 +139,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       // Silver lining + back-scatter; sun light reaching the cloud is the undimmed sun (the
       // deck itself is what dims the ground's key light).
       let phase = mix(hgPhase(cosT, 0.62), hgPhase(cosT, -0.18), 0.3) * 4.0 * 3.14159;
-      let sunC = keyC / max(1.0 - 0.92 * P.fog2.y * sqrt(P.fog2.y), 0.08);
+      let cc = max(P.fog2.y - 0.25, 0.0) / 0.75;
+      let sunC = keyC / max(1.0 - 0.92 * cc * sqrt(cc), 0.08);
       for (var i = 0; i < N; i++) {
         let t = t0 + (f32(i) + ign) * dt;
         let p = cam + dir * t;
