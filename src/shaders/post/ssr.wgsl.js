@@ -34,6 +34,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let d = textureLoad(depthTex, p, 0);
   if (P.ssr.w < 0.5 || mask < 0.03 || d <= 0.0) { textureStore(outSsr, hp, vec4f(0.0)); return; }
   let pos = worldPos(texelNdc(p, P.size), d, P.invVP);
+  // Reflections are a near-field effect (ice under the Wraith, a frozen lake ahead); far terrain
+  // keeps its material sky reflection.
+  let dist0 = length(pos - P.cam.xyz);
+  if (dist0 > 160.0) { textureStore(outSsr, hp, vec4f(0.0)); return; }
   let far = pos + vec3f(1e3);
   let px1 = posOr(p + vec2i(1, 0), sz, far); let px0 = posOr(p - vec2i(1, 0), sz, far);
   let py1 = posOr(p + vec2i(0, 1), sz, far); let py0 = posOr(p - vec2i(0, 1), sz, far);
@@ -45,11 +49,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let V = normalize(P.cam.xyz - pos);
   if (dot(n, V) < 0.0) { n = -n; }
   let R = reflect(-V, n);
-  let dist0 = length(pos - P.cam.xyz);
   // March: growing steps from a small offset; per-pixel jitter (TAA integrates it).
   let ign = fract(52.9829189 * fract(dot(vec2f(p) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));
-  var t = 0.05 + 0.1 * ign;
+  // Start beyond the surface's own reconstruction noise (it grows with distance).
+  var t = (0.05 + 0.1 * ign) * (1.0 + dist0 * 0.05);
   var stepL = 0.12 * (1.0 + dist0 * 0.02);
+  let thick = P.ssr.z * (1.0 + dist0 * 0.02);
   var hitUv = vec2f(-1.0);
   var prevT = 0.0;
   for (var i = 0; i < 28; i++) {
@@ -64,7 +69,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     if (sd > ndc.z && sd > 0.0) {
       let surf = worldPos(ndc.xy, sd, P.invVP);
       let behind = length(q - P.cam.xyz) - length(surf - P.cam.xyz);
-      if (behind < P.ssr.z + stepL) {
+      if (behind < thick + stepL) {
         // Binary refine between the last two samples.
         var a = prevT; var b = t;
         for (var k = 0; k < 5; k++) {
@@ -84,11 +89,15 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     stepL *= 1.18;
     if (t > P.ssr.y) { break; }
   }
-  if (hitUv.x < 0.0) { textureStore(outSsr, hp, vec4f(0.0)); return; }
-  let hc = textureLoad(sceneTex, vec2i(hitUv * P.size.xy), 0).rgb;
+  // A valid hit is real geometry (not sky, which a refine step can land on at a silhouette) and
+  // not the reflecting surface's own neighbourhood.
+  let hp2 = vec2i(hitUv * P.size.xy);
+  let hd = textureLoad(depthTex, clamp(hp2, vec2i(0), sz - 1), 0);
+  if (hitUv.x < 0.0 || hd <= 0.0 || length(vec2f(hp2 - p)) < 3.0) { textureStore(outSsr, hp, vec4f(0.0)); return; }
+  let hc = textureLoad(sceneTex, hp2, 0).rgb;
   // Confidence: screen edges, march length, rays turning back toward the camera.
   let edge = min(min(hitUv.x, 1.0 - hitUv.x), min(hitUv.y, 1.0 - hitUv.y));
-  var conf = smoothstep(0.0, 0.08, edge) * (1.0 - smoothstep(P.ssr.y * 0.6, P.ssr.y, t));
+  var conf = smoothstep(0.0, 0.08, edge) * (1.0 - smoothstep(P.ssr.y * 0.6, P.ssr.y, t)) * (1.0 - smoothstep(100.0, 160.0, dist0));
   conf *= 1.0 - smoothstep(0.2, 0.6, dot(R, V));
   let w = clamp(mask * conf * P.ssr.x, 0.0, 1.0);
   textureStore(outSsr, hp, vec4f(hc * w, w)); // premultiplied: bilinear upsampling stays correct

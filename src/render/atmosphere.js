@@ -103,7 +103,8 @@ export function createAtmosphere(scene, camera, biomeA) {
       const s = env.sunDir, mo = env.moonDir;
       // The cloud deck (weather) dims the sun and moon reaching the sky, the air and the ground;
       // the overcast sky itself is added to the IBL in the ambient pass and drawn by the clouds.
-      const dim = 1 - 0.8 * this.cover;
+      // Steeper as the deck closes: scattered cloud barely dims, a snowing deck leaves ~15 %.
+      const dim = 1 - 0.92 * this.cover * Math.sqrt(this.cover);
       p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
       p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
