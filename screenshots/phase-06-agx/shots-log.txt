@@ -1,0 +1,22 @@
+2026-10-04T09:50:41.196Z 1/21 p6-clear-dawn: saved screenshots/phase-06-agx/p6-clear-dawn.png
+2026-10-04T09:50:44.123Z 2/21 p6-clear-noon: saved screenshots/phase-06-agx/p6-clear-noon.png
+2026-10-04T09:50:46.996Z 3/21 p6-clear-dusk: saved screenshots/phase-06-agx/p6-clear-dusk.png
+2026-10-04T09:50:49.773Z 4/21 p6-clear-night: saved screenshots/phase-06-agx/p6-clear-night.png
+2026-10-04T09:50:52.665Z 5/21 p6-overcast-dawn: saved screenshots/phase-06-agx/p6-overcast-dawn.png
+2026-10-04T09:50:55.515Z 6/21 p6-overcast-noon: saved screenshots/phase-06-agx/p6-overcast-noon.png
+2026-10-04T09:50:58.424Z 7/21 p6-overcast-dusk: saved screenshots/phase-06-agx/p6-overcast-dusk.png
+2026-10-04T09:51:01.163Z 8/21 p6-overcast-night: saved screenshots/phase-06-agx/p6-overcast-night.png
+2026-10-04T09:51:04.144Z 9/21 p6-snowfall-dawn: saved screenshots/phase-06-agx/p6-snowfall-dawn.png
+2026-10-04T09:51:06.954Z 10/21 p6-snowfall-noon: saved screenshots/phase-06-agx/p6-snowfall-noon.png
+2026-10-04T09:51:09.824Z 11/21 p6-snowfall-dusk: saved screenshots/phase-06-agx/p6-snowfall-dusk.png
+2026-10-04T09:51:12.647Z 12/21 p6-snowfall-night: saved screenshots/phase-06-agx/p6-snowfall-night.png
+2026-10-04T09:51:15.496Z 13/21 p6-blizzard-dawn: saved screenshots/phase-06-agx/p6-blizzard-dawn.png
+2026-10-04T09:51:18.338Z 14/21 p6-blizzard-noon: saved screenshots/phase-06-agx/p6-blizzard-noon.png
+2026-10-04T09:51:21.205Z 15/21 p6-blizzard-dusk: saved screenshots/phase-06-agx/p6-blizzard-dusk.png
+2026-10-04T09:51:24.082Z 16/21 p6-blizzard-night: saved screenshots/phase-06-agx/p6-blizzard-night.png
+2026-10-04T09:51:26.504Z 17/21 p6-vista-overcast: saved screenshots/phase-06-agx/p6-vista-overcast.png
+2026-10-04T09:51:28.874Z 18/21 p6-vista-clear: saved screenshots/phase-06-agx/p6-vista-clear.png
+2026-10-04T09:51:31.673Z 19/21 p6-shafts-snowfall: saved screenshots/phase-06-agx/p6-shafts-snowfall.png
+2026-10-04T09:51:34.284Z 20/21 p6-stilled-golden: saved screenshots/phase-06-agx/p6-stilled-golden.png
+2026-10-04T09:51:36.794Z 21/21 p6-restored-golden: saved screenshots/phase-06-agx/p6-restored-golden.png
+2026-10-04T09:51:36.795Z Shots done: 21/21 spot(s) (p6-*) → screenshots/phase-06-agx/.
