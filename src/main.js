@@ -87,6 +87,7 @@ async function boot() {
   sysCreatures.addCreatureSystems(g);
   sysCinematic.addCinematicSystem(g);
   await sysEnv.addEnvironmentSystems(g);
+  (await import('./systems/audio.js')).addAudioSystem(g);
 
   const overlay = new overlayMod.DevOverlay(game);
   overlay.refreshToggles();
@@ -132,6 +133,8 @@ async function boot() {
   if (capture) loading.remove();
   else { loading.classList.add('done'); setTimeout(() => loading.remove(), 1600); }
   if (qs.get('overlay') === '1') overlay.toggle(true);
+  // A new game opens on the waking (the title screen will precede it once menus exist).
+  if (!capture && !bench) g.musicState.waking = true;
 
   window.__wraith = Object.assign(window.__wraith, {
     ready: true, game, shadows: g.shadows, terrainState: g.terrainState, wraithView: g.wraithView, frost: g.frost, shaped: g.shaped,

@@ -62,6 +62,9 @@ export function createSfx() {
     /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss. */
     wind: 0.5 - 0.5, hiss: 0.5 - 0.5, time: 0.5,
 
+    /** The shared AudioContext (null until unlocked); music plays through it too. */
+    context() { return ac; },
+
     /** Start (or resume) the audio context: call from a user gesture. */
     unlock() { if (this.enabled) init(); },
 

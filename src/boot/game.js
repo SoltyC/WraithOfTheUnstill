@@ -15,6 +15,7 @@ export async function createGame(g) {
     worldSettled() {
       if (pendingTp.active || streamer.arrived.length > 0) return false;
       if (streamer.pendingNear(controller.pos.x, controller.pos.z) !== 0) return false;
+      if (terrainState.pendingPages !== 0) return false;
       return !arm.free || streamer.pendingNear(camera.position.x, camera.position.z) === 0;
     },
     /** Photo-spot trail waiting for the world to settle (then stamped as footprints). */
@@ -73,7 +74,8 @@ export async function createGame(g) {
 }
 
 /** Saves (lazy: the worker and IndexedDB open only when first used, so idle frames stay clean). */
-async function createSaves({ controller, arm, paramsMod, clock }) {
+async function createSaves(g) {
+  const { controller, arm, paramsMod, clock, terrainState, frost, warden, wardenMod, weather, restoration } = g;
   const [{ SaveManager, WorkerCodec }, { SaveStore, openSaveDb }, { worldState }] = await Promise.all([
     import('../game/save/saveManager.js'),
     import('../game/save/saveStore.js'),
@@ -94,7 +96,7 @@ async function createSaves({ controller, arm, paramsMod, clock }) {
     clock,
     store: lazyStore,
     codec: lazyCodec,
-    collect(s) {
+    async collect(s) {
       const p = controller.pos;
       s.player.pos = [p.x, p.y, p.z];
       s.player.yaw = controller.yaw;
@@ -103,6 +105,16 @@ async function createSaves({ controller, arm, paramsMod, clock }) {
       s.world.weather = worldState.weather;
       s.world.biome = worldState.biome;
       s.world.restoration = { ...worldState.restoration };
+      s.world.weatherOverride = worldState.weatherOverride;
+      if (g.quests) Object.assign(s.quests, g.quests.serialize());
+      if (g.progress) g.progress.collect(s);
+      s.entities.crystals = frost.serializeCrystals(clock.simTime);
+      if (warden.active) {
+        const W = wardenMod.W, b = warden.body;
+        s.entities.warden = { state: warden.state === W.RELEASE || warden.state === W.RESTED ? 'rested' : 'dormant', x: b.x, z: b.z, heading: b.heading };
+      }
+      // Last: the terrain pages (read back across frames; everything above is this frame's).
+      s.terrainPages = await terrainState.snapshot();
     },
     apply(s) {
       controller.god = false;
@@ -112,7 +124,20 @@ async function createSaves({ controller, arm, paramsMod, clock }) {
       arm.snap(controller.pos);
       paramsMod.setParam('timeOfDay', s.world.timeOfDay);
       worldState.weather = s.world.weather;
+      worldState.weatherOverride = s.world.weatherOverride ?? null;
       Object.assign(worldState.restoration, s.world.restoration);
+      restoration.value = worldState.restoration.frost === 'restored' ? 1 : 0;
+      weather.snap = true;
+      if (g.quests) g.quests.restore(s.quests);
+      if (g.progress) g.progress.apply(s);
+      // Saved game times (pages, formations) move onto this session's clock.
+      const shift = clock.simTime - s.playSeconds;
+      terrainState.restore(s.terrainPages.map((p) => ({ key: p.key, savedAt: p.savedAt + shift, data: p.data })));
+      frost.restoreCrystals(s.entities.crystals, clock.simTime);
+      // The Warden is placed again by its system: dormant in its arena, or lying where it rests.
+      const w = s.entities.warden;
+      g.wardenRest = w && w.state === 'rested' ? { x: w.x, z: w.z, heading: w.heading } : null;
+      warden.active = false;
     },
   });
 }

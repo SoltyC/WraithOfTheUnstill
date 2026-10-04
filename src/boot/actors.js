@@ -65,7 +65,11 @@ export async function createActors(g) {
   const { createSfx, SFX } = await import('../audio/sfx.js');
   const sfx = createSfx();
   sfx.enabled = !capture && !qs.get('bench');
-  const unlockAudio = () => sfx.unlock();
+  // Music (audio/music.js): the user's score, through the same context.
+  const { createMusic } = await import('../audio/music.js');
+  const music = createMusic(sfx);
+  music.enabled = sfx.enabled;
+  const unlockAudio = () => { sfx.unlock(); music.unlock(); };
   window.addEventListener('pointerdown', unlockAudio); window.addEventListener('keydown', unlockAudio);
   shaped.sfx = sfx; warden.sfx = sfx;
   // The Warden's shard volley flies in the Shaped's shard pool (rendered with them).
@@ -115,7 +119,7 @@ export async function createActors(g) {
 
   Object.assign(g, {
     clock, ws, pois, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
-    frostMod, frost, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, wardenView,
+    frostMod, frost, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView,
     climb, knock, BRUSH_PLOUGH, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },

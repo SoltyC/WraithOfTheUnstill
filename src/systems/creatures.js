@@ -112,7 +112,30 @@ export function addCreatureSystems(g) {
     }
     shapedView.update();
   } });
+  // The Frost Warden in live play: it waits dormant in its arena (the ground there is kept known
+  // by an anchor patch, so it stands from afar), or lies where it was released (saves). Photo
+  // spots and the dev overlay place it themselves; captures never place it here.
+  const arena = g.pois.find((p) => p.id === 'warden-frost');
+  /** Saved rest pose { x, z, heading } of a released Warden (set by a load), or null. */
+  g.wardenRest = null;
+  g.wardenAuto = !capture;
+  let anchored = null;
+  function autoPlaceWarden() {
+    const rest = g.wardenRest || (g.ws.restoration.frost === 'restored' ? { x: arena.pos[0], z: arena.pos[1], heading: 0 } : null);
+    const ax = rest ? rest.x : arena.pos[0], az = rest ? rest.z : arena.pos[1];
+    if (anchored !== rest) { g.streamer.setAnchor(0, ax, az); anchored = rest; }
+    g.ground.qx = ax; g.ground.qz = az;
+    if (!g.ground.covers()) return;
+    if (rest) warden.rest(rest.x, rest.z, rest.heading);
+    else {
+      // Facing the way the Wraith comes down from the monastery.
+      const m = g.monastery.pos;
+      warden.place(ax, az, Math.atan2(m[0] - ax, m[1] - az));
+    }
+  }
+
   loop.add({ name: 'warden', update: () => {
+    if (g.wardenAuto && !warden.active && game.pendingWarden === null) autoPlaceWarden();
     warden.px = controller.pos.x; warden.pz = controller.pos.z; warden.pgrounded = controller.grounded && controller.dodgeT <= 0;
     if (game.pendingWarden !== null) {
       if (game.worldSettled() && game.pendingTrail === null) placeWardenForSpot();

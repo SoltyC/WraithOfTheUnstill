@@ -34,6 +34,7 @@ export const WARDEN_NBR = 16;
 export const JOINT = { LIQUID: 0, FROZEN: 1, SHATTERED: 2 };
 export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4, RESTED: 5, TAIL: 6, SHED: 7 };
 /** The release, in seconds from the last joint breaking. */
+function noop() {}
 export const RELEASE_T = { rear: 1.6, slam: 2.7, impact: 3.05, rested: 15 };
 const SHOCK_SPEED = 24, SHOCK_MAX = 95, SHOCK_RAYS = 64;
 
@@ -184,6 +185,23 @@ export function createWarden(ctx) {
       if (this.remaining === 0) { this.state = W.RELEASE; this.t = 0; }
       else { this.state = W.KNEEL; this.t = 0; }
       return true;
+    },
+    /**
+     * Load a released Warden (save v2): lying in the land at (x, z) with its heading, snowed over.
+     * Its release is stepped silently from the impact to rest — no terrain writes (the saved pages
+     * already hold its crater, shockwave and drifts), no spray, no sound.
+     */
+    rest(x, z, heading) {
+      this.place(x, z, heading);
+      joint.fill(JOINT.SHATTERED);
+      const stamp = ts.stamp, emit = fx.emit, sfx = this.sfx, d = this.dt;
+      ts.stamp = noop; fx.emit = noop; this.sfx = null;
+      this.state = W.RELEASE; this.t = RELEASE_T.impact + 0.05; this.drifts = true;
+      body.rear = 0; body.crouch = 1; body.lie = 0.6;
+      this.dt = 1 / 30;
+      for (let k = 0; k < 2000 && this.state === W.RELEASE; k++) this.update();
+      ts.stamp = stamp; fx.emit = emit; this.sfx = sfx; this.dt = d;
+      this.shake = 0; this.slam = false;
     },
     /** Skip the rest of the release: straight to lying in the land, snowed over, restored. */
     finishRelease() {
