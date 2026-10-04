@@ -16,7 +16,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - **Photo spots:** `p6-{clear,overcast,snowfall,blizzard}-{dawn,noon,dusk,night}` (the gate matrix), `p6-vista-clear`, `p6-vista-overcast`, `p6-shafts-snowfall`, `p6-stilled-golden`, `p6-restored-golden`.
   - **Bench:** `?bench=weather` — each weather walking with an orbiting camera, a live clear→blizzard transition, and the Shaped pack in a blizzard.
   - **Tests:** 102 (weather state machine added). `npm run alloc`: the weather update is allocation-free.
-- **Phase 6 verification so far (cloud container, SwiftShader, 480×270 — look only, no timings):** shots in this session's scratch only (not committed: they are software renders at 480×270, not gate evidence). Checked: clear noon/dusk, overcast noon, snowfall dusk, blizzard noon, the vista. Fixed from them: a dark outline on far silhouettes (TAA history undershoot, then SSR sky hits), overcast and blizzard exposed too bright, peaks showing through a blizzard, crisp sun shadows under a snowing deck.
+- **Phase 6 verification so far (cloud container, SwiftShader, 480×270 — look only, no timings):** shots in this session's scratch only (not committed: they are software renders at 480×270, not gate evidence). Checked: clear noon/dusk/night, overcast noon, snowfall dusk, blizzard noon, the vista. Fixed from them: a black outline on far silhouettes (SSAO's half-float overflow; see the session log), overcast and blizzard exposed too bright, peaks showing through a blizzard, crisp sun shadows under a snowing deck, a clear sky with no clouds at all.
 - **Phase 6 open (for the gate on T):**
   - Take the gate shots and the bench on T (exact commands under "Exact next step").
   - Tonemapper: ACES stays the default (the look Phases 2–5 were accepted on); AgX is one click away for an A/B on the target. The user should pick.
@@ -217,9 +217,10 @@ bundled Playwright wants a newer build) and `WRAITH_OUTDIR=/tmp/...` so concurre
 
 **Built:** see "Phase 6 built" above.
 
-**Defects found and fixed from the software shots:** dark 1-px outline on far silhouettes (first a
-NaN from SSAO taps on sky, then Catmull-Rom history undershoot compounding under variance clipping,
-then SSR self-hits whose refine landed on sky); overcast/blizzard over-exposed; peaks visible through
+**Defects found and fixed from the software shots:** a black outline on far silhouettes, bisected
+with the new `?postDebug` views to the SSAO upsample: sky AO texels stored their distance as 1e6,
+which is ∞ in half float, so every weight at a silhouette was 0 (on the way: a NaN from SSAO taps on
+sky, TAA history undershoot needing a min/max clamp, and SSR self-hits landing on sky — all fixed); overcast/blizzard over-exposed; peaks visible through
 a blizzard (fog layer too shallow); crisp sun shadows under a snowing deck.
 
 **Environment notes:** in this container one logic test fails (`Math.f16round` needs Node ≥ 24; the
