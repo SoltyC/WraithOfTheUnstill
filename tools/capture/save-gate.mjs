@@ -15,7 +15,19 @@ let ok = true;
 const check = (name, pass, detail) => { log(pass ? 'PASS' : 'FAIL', name, detail ?? ''); if (!pass) ok = false; };
 
 const frames = (page, n) => page.evaluate((n) => new Promise((r) => { let k = n; const f = () => (--k <= 0 ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
-const settled = (page) => page.waitForFunction(() => window.__wraith.game.worldSettled(), null, { timeout: 3600000, polling: 500 });
+/** Wait for the world to settle, reporting what it still waits on once a minute. */
+async function settled(page) {
+  for (let k = 0; k < 120; k++) {
+    const st = await page.evaluate(() => {
+      const w = window.__wraith, g = w.game, c = g.controller.pos;
+      return { ok: g.worldSettled(), pendingNear: g.streamer.pendingNear(c.x, c.z), arrived: g.streamer.arrived.length, pages: w.terrainState.pendingPages, brushes: w.terrainState.pendingBrushes, stats: w.terrainState.stats, pos: [c.x, c.y, c.z] };
+    });
+    if (st.ok) return;
+    log('waiting to settle', JSON.stringify(st));
+    await page.waitForTimeout(60000);
+  }
+  throw new Error('world never settled');
+}
 
 try {
   // Session 1: make marks and save.

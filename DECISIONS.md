@@ -333,7 +333,7 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Data, not code:** `data/quests/frost.json` holds places, NPCs, talk tables (first matching condition wins), dialogue (lines, at most one choice of two, `then` actions), quests, Echoes and lore. The quest graph (Phase 7 start) runs it; `game/chapter.js` adds talk, dialogue and progression; tests play the whole chapter from waking to first snow, the lost child, and a save round trip.
 - **Story is a draft** for the user's review (user decision: Claude drafts, the user reviews). Proposed shape: wake in the monastery (Aud) → the shrine below the cliffs → the pilgrims' fire (Maren) → the watching stone (Varo) → release the Warden → first snow at the camp. Side: a child's trail to a frozen spring, freezing the spring and seeing it run after the release, the five shrines, the night songs.
 - **New place: the pilgrims' camp** at (80, 2480), ~600 m, between the monastery and the arena: the only broad flat frost ground on that line (sampled from the bake).
-- **Echoes are few and visible** (BRIEF §2.4): longer Ribbon reach, longer freezes, surf that keeps its speed, faster focus at rest. Granted by quests; the shrine "upgrade" choice of the BRIEF is not built yet (shrines rest, travel and save).
+- **Echoes are few and visible** (BRIEF §2.4): longer Ribbon reach, longer freezes, surf that keeps its speed, faster focus at rest. Found through quests, they are carried until **attuned at a shrine** (the BRIEF's shrine Echo upgrades); only then does the effect apply. Attunement is a world flag (`attuned:<id>`), so saves need no schema change. Shrines: rest (time skip, autosave), travel between rested shrines, attune Echoes.
 
 ### The Veiled (BRIEF §8.2)
 

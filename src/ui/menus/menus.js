@@ -178,6 +178,19 @@ export function createMenus(g) {
     el('div', 'codex-sub', left, 'Rest until');
     actions(left, REST.map(([name, tod]) => [name, () => { params.v.timeOfDay = tod; params.version++; g.weather.snap = true; g.post.post.resetHistory = true; close(); }]));
     const right = el('div', 'codex-page', body);
+    // Echoes carried: attune them here (their effect from now on).
+    const carried = [...chapter.echoes].sort();
+    if (carried.length) {
+      el('h2', null, right, 'Echoes');
+      for (const id of carried) {
+        const e = chapter.data.echoes[id];
+        if (chapter.attuned(id)) { const p = el('p', 'past', right, e.name + ' \u2014 attuned. '); el('span', 'echo-effect', p, e.effect); }
+        else {
+          el('p', null, right, e.name + ': ' + e.text);
+          actions(right, [['Attune', () => { chapter.attune(id); open('shrine', t); }, false, e.effect]]);
+        }
+      }
+    }
     el('h2', null, right, 'Travel');
     const dest = [...chapter.shrines].filter((id) => id !== t.id).sort();
     if (!dest.length) el('p', 'codex-empty', right, 'Rest at other shrines, and the stones will carry you between them.');

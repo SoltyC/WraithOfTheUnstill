@@ -18,7 +18,11 @@ export function addChapterSystem(g) {
   const chapter = g.chapter = createChapter({
     data: frostData, pois: g.pois,
     hooks: {
-      echo: (id, e, loading) => { applyEcho(g, id); if (!loading) { music.sting('echo'); hud.notice('Echo', e?.name || id, e?.effect, 8); } },
+      // An Echo found is carried; it takes effect once attuned at a shrine (BRIEF §11).
+      echo: (id, e, loading) => {
+        if (loading) { if (chapter.graph.flags.has('attuned:' + id)) applyEcho(g, id); return; }
+        music.sting('echo'); hud.notice('Echo found', e?.name || id, 'Attune it at a shrine.', 8);
+      },
       lore: (id, l) => hud.notice('Lore', l?.title || id, null, 6),
       shrine: () => {},
       autosave: () => { if (!capture) game.saves.requestAutosave(); },
@@ -26,6 +30,16 @@ export function addChapterSystem(g) {
       questDone: (q) => { if (q.kind === 'side') music.sting('echo'); hud.notice('Completed', q.title, null, 6); },
     },
   });
+  /** Attune a carried Echo (at a shrine): its effect from now on; remembered as a world flag. */
+  chapter.attune = (id) => {
+    if (!chapter.echoes.has(id) || chapter.graph.flags.has('attuned:' + id)) return false;
+    chapter.graph.flags.add('attuned:' + id);
+    applyEcho(g, id);
+    const e = frostData.echoes[id];
+    music.sting('echo'); hud.notice('Attuned', e?.name || id, e?.effect, 7);
+    return true;
+  };
+  chapter.attuned = (id) => chapter.graph.flags.has('attuned:' + id);
   // Saves: the chapter is the quest graph and the progression (save v2).
   game.places = frostData.places;
   g.quests = chapter;
