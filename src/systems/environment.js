@@ -1,0 +1,128 @@
+// Per-frame world rendering inputs, after the actors: atmosphere, clipmap, shadows, the post
+// chain, rocks; then weather, restoration (and the grade), ground blow / dust / falling snow /
+// sound, the terrain state and its writers, render scale and the shadow strength. Also the
+// system toggles of the dev overlay.
+
+/** @param {any} g  shared boot context */
+export async function addEnvironmentSystems(g) {
+  const { loop, engine, env, atmosphere, content, camera, streamer, shadows, post, rocks, weather, ws, clock, ground, pendingTp, warden, wardenMod, restoration,
+    params, spindrift, dust, snowfall, sfx, SFX, arm, frost, controller, terrainState, footprints, toggles, game, registerToggle, ring, wraithView, setRenderScale } = g;
+  loop.add({ name: 'atmosphere', update: () => {
+    env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();
+    env.env.screenInfo.z = 1 / env.env.screenInfo.x; env.env.screenInfo.w = 1 / env.env.screenInfo.y;
+    atmosphere.update();
+  } });
+  loop.add({ name: 'clipmap', update: () => {
+    content.clipmap.camX = camera.position.x;
+    content.clipmap.camZ = camera.position.z;
+    content.clipmap.residencyVersion = streamer.residencyVersion;
+    content.clipmap.update();
+  } });
+  loop.add({ name: 'shadows', update: () => shadows.update() });
+  loop.add(post);
+  loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
+  // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
+  // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
+  // warmth. `restore` eases toward the state (the Warden's release drives it directly).
+  restoration.value = ws.restoration.frost === 'restored' ? 1 : 0;
+  let fogGroundY = controller.pos.y, snowWX = 1, snowWZ = 0;
+  loop.add({ name: 'weather', update: () => {
+    weather.restored = ws.restoration.frost === 'restored' ? 1 : 0;
+    weather.override = ws.weatherOverride;
+    weather.dt = clock.dt;
+    weather.update();
+    ws.weather = weather.state;
+    atmosphere.cover = weather.cover; atmosphere.snow = weather.snow;
+    // The fog's base follows the ground under the camera, eased (no jumps on steps or teleports
+    // beyond what the fog itself would show).
+    ground.qx = camera.position.x; ground.qz = camera.position.z; ground.sample();
+    fogGroundY += (ground.h - fogGroundY) * (pendingTp.active ? 1 : 1 - Math.exp(-clock.realDt * 0.5));
+    const pf = post.fog;
+    pf.weather = weather; pf.groundY = fogGroundY; pf.dt = clock.dt;
+  } });
+  // Grades (post/grades.js): the LUT is rebuilt only when the blended grade moves.
+  const { blendGrade } = await import('../post/grades.js');
+  let lastGradeR = -1, lastGradeS = -1;
+  loop.add({ name: 'restoration', update: () => {
+    const target = ws.restoration.frost === 'restored' ? 1 : 0;
+    if (warden.active && warden.state === wardenMod.W.RELEASE) restoration.value = Math.max(restoration.value, warden.restore);
+    else restoration.value += (target - restoration.value) * (1 - Math.exp(-clock.realDt * 1.5));
+    if (warden.restore >= 1 && ws.restoration.frost !== 'restored') ws.restoration.frost = 'restored';
+    const r = restoration.value, gs = params.v.gradeStrength;
+    if (Math.abs(r - lastGradeR) > 0.002 || gs !== lastGradeS) {
+      lastGradeR = r; lastGradeS = gs;
+      blendGrade(post.post.grade, r, gs);
+      post.post.gradeDirty = true;
+    }
+  } });
+  loop.add({ name: 'spindrift', update: () => {
+    const w = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;
+    spindrift.time = clock.simTime;
+    // Ground blow thickens with the weather (a blizzard is mostly snow on the move).
+    spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5) * (1 + 0.6 * weather.snow * weather.gust));
+    spindrift.drift.z = 0.4 + w;
+    spindrift.update();
+    // Stilled air holds its ice grains motionless; as it is restored they drift off and thin.
+    const r = restoration.value;
+    dust.moving += clock.dt * (r * (0.6 + 0.4 * params.v.windStrength) + 2.5 * warden.gust);
+    dust.density = Math.max(0, 1 - r * 1.25);
+    dust.time = clock.simTime;
+    dust.update();
+    // Falling snow: density from the weather, carried by the prevailing wind (eased direction).
+    streamer.mqx = camera.position.x; streamer.mqz = camera.position.z; streamer.sampleWind();
+    const ke = 1 - Math.exp(-clock.dt * 0.3);
+    snowWX += (streamer.windX - snowWX) * ke; snowWZ += (streamer.windZ - snowWZ) * ke;
+    const wl = Math.sqrt(snowWX * snowWX + snowWZ * snowWZ) || 1;
+    snowfall.windX = snowWX / wl; snowfall.windZ = snowWZ / wl;
+    snowfall.windSpeed = 1 + 7 * Math.pow(Math.max(w, 0), 1.5);
+    snowfall.fallSpeed = 1.1 + 0.9 * weather.gust;
+    snowfall.density = weather.snow; snowfall.dt = clock.dt;
+    snowfall.update();
+    // Sound: listener at the camera; the wind bed follows the wind (silent while stilled); the
+    // Ribbon hisses while it flows; a formation chimes where it rises.
+    const cp = camera.position;
+    sfx.lx = cp.x; sfx.ly = cp.y; sfx.lz = cp.z; sfx.rx = Math.cos(arm.yaw); sfx.rz = -Math.sin(arm.yaw);
+    sfx.wind = Math.min(1, w / 1.1); sfx.hiss = Math.min(1, frost.ribbonStrength); sfx.time = clock.simTime;
+    if (frost.crystalEvent) { sfx.x = frost.crystalX; sfx.y = controller.pos.y + 0.5; sfx.z = frost.crystalZ; sfx.gain = 1.1; sfx.play(SFX.CHIME); }
+    sfx.update();
+  } });
+  loop.add({ name: 'terrainState', update: () => {
+    const tsFollow = terrainState.followOverride;
+    terrainState.px = tsFollow ? terrainState.followX : controller.pos.x;
+    terrainState.pz = tsFollow ? terrainState.followZ : controller.pos.z;
+    terrainState.time = clock.simTime;
+    // Falling snow fills depressions (BRIEF §4.3: weather writes too): refill runs faster under it.
+    terrainState.healScale = params.v.refillRate * (1 + 5 * weather.snow);
+    footprints.enabled = toggles.on.footprints !== false;
+    footprints.px = controller.pos.x; footprints.pz = controller.pos.z;
+    footprints.grounded = controller.grounded && !arm.free && content.capsule.isEnabled();
+    footprints.update();
+    if (game.pendingTrail !== null && game.worldSettled()) { footprints.stampTrail(game.pendingTrail); game.pendingTrail = null; }
+    terrainState.update();
+  } });
+
+  // Render scale follows the Quality slider (checked via the integer params version).
+  let lastParamsVersion = -1;
+  loop.add({ name: 'renderScale', update: () => {
+    if (params.version === lastParamsVersion) return;
+    lastParamsVersion = params.version;
+    setRenderScale(params.v.renderScale);
+  } });
+
+  // System toggles. Changing the drawn mesh set invalidates a recorded snapshot.
+  const reg = registerToggle;
+  const meshToggle = (mesh) => (on) => { mesh.setEnabled(on); engine.snapshotRenderingReset(); };
+  reg({ key: 'sky', label: 'sky', group: 'System', on: true, onChange: meshToggle(content.sky) });
+  reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
+  reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
+  reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
+  reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });
+  reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: (on) => { for (const m of rocks.meshes) m.setEnabled(on); engine.snapshotRenderingReset(); } });
+  reg({ key: 'player', label: 'player (the Wraith)', group: 'System', on: true, onChange: (on) => { wraithView.setEnabled(on); engine.snapshotRenderingReset(); } });
+  // Shadows fade under a closed cloud deck (what little sun remains is diffused by it).
+  let shadowsOn = true;
+  reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadowsOn = on; } });
+  loop.add({ name: 'shadowStrength', update: () => { shadows.strength = shadowsOn ? 1 - 0.85 * atmosphere.deck : 0; } });
+  reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });
+  reg({ key: 'footprints', label: 'player footprints', group: 'Terrain', on: true });
+}
