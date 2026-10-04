@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 6 (post, weather and time polish, frost), **built; gate NOT yet met — it needs the target shots and benchmark on T**, which this session could not take (it ran in a cloud container with no GPU; see below). Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 6 (post, weather and time polish, frost), **built and measured on T; gate NOT yet met** — the first target review found three look defects (fixed, re-shoot pending) and the user has not yet accepted it. Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 6 built** (commits 3bee69a …; DECISIONS.md "Phase 6"):
   - **Post chain** (`src/post/`, `src/shaders/post/`): the camera renders into an HDR target (rgba16f + sampleable reverse-Z depth); compute passes follow and one display pass draws to the swapchain. MSAA is off (TAA replaces it).
     - SSAO (½ res, depth only) → SSR on ice/wet slush (½ res; reflective pixels marked in the scene alpha by the frost clipmap) → weather volumes (¼ res: raymarched clouds, light-shaft ratio through the shadow cascades) → compose (AO, SSR, clouds, analytic weather fog) → frame-metered exposure → **TAA** (Halton jitter, depth reprojection, Catmull-Rom history, variance + min/max clip) → DOF (release cinematic only) → bloom (6-level compute chain) → display (AgX or ACES, CAS sharpen, 32³ LUT grade, grain, dither).
@@ -16,14 +16,17 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - **Photo spots:** `p6-{clear,overcast,snowfall,blizzard}-{dawn,noon,dusk,night}` (the gate matrix), `p6-vista-clear`, `p6-vista-overcast`, `p6-shafts-snowfall`, `p6-stilled-golden`, `p6-restored-golden`.
   - **Bench:** `?bench=weather` — each weather walking with an orbiting camera, a live clear→blizzard transition, and the Shaped pack in a blizzard.
   - **Tests:** 102 (weather state machine added). `npm run alloc`: the weather update is allocation-free.
-- **Phase 6 verification so far (cloud container, SwiftShader, 480×270 — look only, no timings):** shots in this session's scratch only (not committed: they are software renders at 480×270, not gate evidence). Checked: clear noon/dusk/night, overcast noon, snowfall dusk, blizzard noon, the vista. Fixed from them: a black outline on far silhouettes (SSAO's half-float overflow; see the session log), overcast and blizzard exposed too bright, peaks showing through a blizzard, crisp sun shadows under a snowing deck, a clear sky with no clouds at all.
-- **Phase 6 open (for the gate on T):**
-  - Take the gate shots and the bench on T (exact commands under "Exact next step").
-  - Tonemapper: ACES stays the default (the look Phases 2–5 were accepted on); AgX is one click away for an A/B on the target. The user should pick.
-  - Falling snow could not be judged at 480×270 (flakes are sub-pixel there); judge it on T at 1440p.
-  - Light shafts, the cloud volume and SSR need a look in motion on T.
-  - Not done: per-position cloud shadows on the ground (the deck dims the sun globally), real refraction for spell water/crystals (still the Phase 4 fake), per-object motion vectors for TAA. DECISIONS.md has the reasons.
-  - Performance is unmeasured: the post chain plus weather adds an estimated 2–3 ms; the pack view (13–14.5 ms before) is the one to watch. Render scale (overlay → Quality) is the lever if needed.
+- **Phase 6 evidence on T (2026-10-04, user's run):**
+  - **Shots:** `screenshots/phase-06/` (21, ACES) and `screenshots/phase-06-agx/` (same spots, AgX), all saved in ~3 s each (`shots-log.txt`).
+  - **Bench:** `?bench=weather` at 1440p (175 Hz display): GPU frame 12.3–12.6 ms median, p95 ≤ 13.2 ms in every weather, in the live clear→blizzard transition and with the 8-Shaped pack in a blizzard; 0 late pipelines; 785 MB (PERF.md). The pack's presented hitches are 175 Hz pacing, not GPU (as in Phase 5); repeat at 60 Hz for the gate.
+  - **Review of the target shots:** time of day reads at every weather (warm low light over blue shadow at dawn and dusk, deep-blue moonlit night with stars, flat white noon); overcast shows its grey deck; the blizzard swallows the peaks while the near ground still reads; stilled vs restored grades differ clearly. **ACES chosen over AgX** (AgX drains the golden hour; DECISIONS.md).
+  - **Fixed after the review** (needs a re-shoot): clouds read as vertical streaks (2D density → height-varying density, flat bases, dome tops); overcast and snowfall still threw crisp warm sun shadows at dawn/dusk (the deck now leaves ~4–11 % of the sun); falling flakes read as dark dashes on sunlit snow (lit brighter); the shafts spot framing.
+- **Phase 6 open:**
+  - Re-shoot on T after the fixes above (`?shots=p6-&dir=phase-06…`) and confirm; a 60 Hz bench for the hitch rule.
+  - In motion on T (only the user can judge): falling snow and blizzard streaks, light shafts, TAA on the moving Wraith (no per-object motion vectors), the weather easing.
+  - The Wraith's robe bunches strangely at the hem in the snowfall-noon shot (cloth in wind during the walk-in); watch it in motion.
+  - Not done: per-position cloud shadows on the ground, real refraction for spell water/crystals, per-object motion vectors for TAA (DECISIONS.md).
+  - Software-renderer checks in the cloud session found and fixed: a black outline on far silhouettes (SSAO half-float overflow), overcast/blizzard over-exposure, peaks through a blizzard.
 - **Phase 5 built** (commits 653430b … 049ad9b; DECISIONS.md "Phase 5"):
   - **Shaped:** procedural bodies (rope spine, planted feet, two-bone knees) clad in chunk rigs of packed snow, ice shards and a glowing core.
     - Three archetypes: hound, brute (slam), seer (ice shards).
@@ -170,10 +173,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** on the target PC, `npm install && npm run build && npm run preview`, then in Windows Chrome:
-  1. `http://localhost:4173/?shots=p6-&dir=phase-06&capture=1&res=2560x1440` → 21 gate shots into `screenshots/phase-06/`;
-  2. `http://localhost:4173/?bench=weather&res=2560x1440` → `perf/runs/`;
-  3. review the shots against BRIEF §18 at every time of day and weather; A/B AgX vs ACES with the overlay toggle (or `&tonemap=agx`); fix what the shots show; then record PERF.md and ask the user to accept the Phase 6 gate.
+- **Exact next step:** on the target PC, `git pull && npm run build && npm run preview`, then in Windows Chrome `http://localhost:4173/?shots=p6-&dir=phase-06&capture=1&res=2560x1440` (re-shoot after the cloud / overcast-sun / flake fixes); review the clear vista (clouds), overcast and snowfall at dawn/dusk (no hard shadows) and the shafts spot; then `?bench=weather&res=2560x1440` with the display at 60 Hz; then ask the user to accept the Phase 6 gate.
 
 ## How to run
 

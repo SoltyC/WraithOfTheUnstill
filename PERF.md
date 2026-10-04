@@ -323,26 +323,34 @@ Run `13-37-17` with `?bench=fight`, every other browser closed. Phases:
 
   Late pipelines 0, draw calls 40. Still within the 16.7 ms budget at 1440p. The climb's chunk ray casts (up to ~8 rays × 380 ellipsoids a frame) do not show up.
 
-## Phase 6 (post chain and weather) — not yet measured on T
+## Phase 6 (post chain and weather) — target T, 2026-10-04
 
-This session ran in a cloud container without a GPU, so there are **no Phase 6 timings**. Run
-`?bench=weather&res=2560x1440` on T (phases: clear, overcast, snowfall, blizzard walking with an
-orbiting camera; a live clear→blizzard transition; the Shaped pack in a blizzard).
+`?bench=weather&res=2560x1440` (`perf/runs/2026-10-04T09-54-39-706Z.json`), Chrome on the RTX 3060,
+**display at 175 Hz** (the user's run). Draw calls 42, pipelines 49, **late pipelines 0**, GPU memory
+785 MB (+96 MB over Phase 5: the post targets).
 
-Expected costs to check against the 3.0 ms post budget (and the 1.5 ms sky/clouds budget):
+| Phase | GPU frame median / p95 / max | Scene (RTT passes) | Display | Compute | Presented median / p99 / max | > median+4 |
+|---|---|---|---|---|---|---|
+| clear | 12.3 / 12.8 / 13.1 ms | 8.9 | 0.66 | 2.36 | 12.3 / 13.5 / 13.9 | 0 |
+| overcast | 12.5 / 13.0 / 13.6 | 9.0 | 0.66 | 2.43 | 12.4 / 13.8 / 14.4 | 0 |
+| snowfall | 12.5 / 12.9 / 13.6 | 9.0 | 0.66 | 2.36 | 12.4 / 13.9 / 19.8 | 1 |
+| blizzard | 12.6 / 13.0 / 13.4 | 9.1 | 0.66 | 2.36 | 12.5 / 13.8 / 14.8 | 0 |
+| clear → blizzard (live) | 11.9 / 13.2 / 13.3 | 8.8 | 0.66 | 2.23 | 11.8 / 13.9 / 14.9 | 0 |
+| pack in a blizzard | 12.4 / 12.8 / 13.0 | 9.2 | 0.66 | 2.16 | 12.3 / 19.3 / 22.9 | 10 |
 
-| Pass | Resolution | Notes |
-|---|---|---|
-| SSAO | ½ | 8 taps + 4 neighbours, from depth |
-| SSR | ½ | early-out except marked ice/wet within 160 m |
-| Clouds + shaft ratio | ¼ | 24 cloud steps × (1 + 4 light taps); 16 shadow taps for shafts |
-| Compose | full | AO upsample, SSR, clouds, analytic fog |
-| Meter | 1 workgroup | 4096 samples |
-| TAA | full | 9 + 5 taps, two writes |
-| DOF | full | release cinematic only |
-| Bloom | ½ … 1/64 | 11 dispatches |
-| Display | full | tonemap ×5 (CAS), LUT, grain |
-| Falling snow | — | 16k quads, premultiplied; every quad collapses in the vertex shader when not snowing (64k vertices still run) |
+**How to read the columns since Phase 6:** the GPU timer's "shadow" category is every render-target
+pass, which now includes the **scene itself** (the camera renders into the HDR target), so the
+"Scene" column is the shadow cascades + the main scene. "Main" is now only the display pass
+(tonemap, CAS sharpen, LUT, grain: 0.66 ms). "Compute" is the atmosphere + terrain state + every
+post pass (SSAO, SSR, clouds/shafts, compose, meter, TAA, bloom): ~2.4 ms, inside the 3.0 ms post
+budget even counting the atmosphere.
 
-MSAA is off now (TAA), which should return some of the main pass's cost. The pack view
-(13.0–14.5 ms before Phase 6) is the one to watch; render scale is the lever if it overruns.
+**Reading:**
+- Every weather, the live transition and the 8-Shaped pack in a blizzard stay at 12–12.6 ms GPU
+  median, p95 ≤ 13.2 ms, against the 16.7 ms budget at 1440p. The transition costs nothing extra.
+- The full frame is about the Phase 5 cost (pack was 13.0–14.5 ms median before): dropping MSAA
+  paid for most of the post chain.
+- The pack's 10 presented hitches are not GPU (GPU max 13.0 ms): a ~12 ms frame on a 175 Hz display
+  is presented on alternating 2- and 3-refresh boundaries (11.4 / 17.1 ms), and 3–4-refresh frames
+  (17–23 ms) cross the median + 4 line. The Phase 5 pack run had 12 of the same kind. A 60 Hz run is
+  the gate configuration (DECISIONS, Phase 1 ruling) and should be repeated there.

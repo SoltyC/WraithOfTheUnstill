@@ -132,7 +132,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let c = dot(-V, L);
   let phase = 0.25 + 1.6 * pow(max(c, 0.0), 6.0);
   let vis = shadowVisibilityFast(wp, uniforms.cameraPosition);
-  let col = atmoKeyColor() * phase * vis * 0.35 + shIrradiance(V) * uniforms.envMisc.w * 0.9;
+  // Lit by the whole sky (flakes are tiny white scatterers; at 0.9 they read as dark dashes
+  // against sunlit snow), plus the sun.
+  let col = atmoKeyColor() * phase * vis * 0.45 + (shIrradiance(V) + shIrradiance(vec3f(0.0, 1.0, 0.0))) * uniforms.envMisc.w * 1.1;
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
   let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
   let a = fragmentInputs.vAlpha * (1.0 - r2) * 0.85;

@@ -1587,9 +1587,9 @@
    },
    "camera": {
     "mode": "follow",
-    "yaw": -1.25,
-    "pitch": 0.16,
-    "dist": 11
+    "yaw": -1.5,
+    "pitch": 0.3,
+    "dist": 9
    }
   },
   {

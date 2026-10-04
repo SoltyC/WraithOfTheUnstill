@@ -233,9 +233,9 @@ fn frostAtCamera() -> f32 {
 fn sampleTransmittance(r: f32, mu: f32) -> vec3f {
   return textureSampleLevel(transmittanceLut, transmittanceLutSampler, transmittanceUv(r, mu), 0.0).rgb;
 }
-// The closed share of the cloud deck: scattered cloud (cover ≤ 0.25) is drawn by the cloud pass
+// The closed share of the cloud deck: scattered cloud (cover ≤ 0.35) is drawn by the cloud pass
 // but changes neither the sky's light nor the exposure.
-fn deckCover() -> f32 { return max(P.weather.x - 0.25, 0.0) / 0.75; }
+fn deckCover() -> f32 { return clamp((P.weather.x - 0.35) / 0.65, 0.0, 1.0); }
 // Overcast sky (weather): a grey deck lit through by the undimmed sun/moon, brighter toward the
 // zenith (CIE overcast gradient, (1 + 2 sin θ) / 3).
 fn overcastRadiance(dir: vec3f) -> vec3f {
