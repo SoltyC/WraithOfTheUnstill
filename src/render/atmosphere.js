@@ -83,6 +83,8 @@ export function createAtmosphere(scene, camera, biomeA) {
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,
+    /** Closed share of the cloud deck (0..1), derived from cover each frame. */
+    deck: 0.5 - 0.5,
     /** Snap exposure every frame (frozen-clock captures: converge, never ease). */
     alwaysSnap: false,
     /** True once the static LUTs exist (the first frames may still be compiling pipelines). */
@@ -104,10 +106,13 @@ export function createAtmosphere(scene, camera, biomeA) {
       // The cloud deck (weather) dims the sun and moon reaching the sky, the air and the ground;
       // the overcast sky itself is added to the IBL in the ambient pass and drawn by the clouds.
       // Steeper as the deck closes: scattered cloud barely dims, a snowing deck leaves ~15 %.
-      // Scattered cloud (cover ≤ 0.35, "clear") leaves the sun alone; a closed deck lets ~4 %
-      // through, so overcast and snowfall cast no hard shadows (overcast ≈ 11 %, snowfall ≈ 5 %).
+      // Scattered cloud (cover ≤ 0.35, "clear") leaves the sun alone; under a closing deck the
+      // direct sun all but goes (overcast ≈ 4 %, snowfall ≈ 2 %). It has to: at a low sun even a
+      // tenth of the sun on a slope facing it outshines the dim overcast sky, which is lit by the
+      // sun's height, not its angle to the slope — the first target shots kept hard warm shadows.
       const cc = Math.min(1, Math.max(0, (this.cover - 0.35) / 0.65));
-      const dim = 0.04 + 0.96 * (1 - cc) * (1 - cc);
+      this.deck = cc;
+      const dim = 0.015 + 0.985 * (1 - cc) * (1 - cc) * (1 - cc);
       p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
       p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;

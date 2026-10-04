@@ -894,7 +894,10 @@ async function boot() {
   reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });
   reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: (on) => { for (const m of rocks.meshes) m.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'player', label: 'player (the Wraith)', group: 'System', on: true, onChange: (on) => { wraithView.setEnabled(on); engine.snapshotRenderingReset(); } });
-  reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadows.strength = on ? 1 : 0; } });
+  // Shadows fade under a closed cloud deck (what little sun remains is diffused by it).
+  let shadowsOn = true;
+  reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadowsOn = on; } });
+  loop.add({ name: 'shadowStrength', update: () => { shadows.strength = shadowsOn ? 1 - 0.85 * atmosphere.deck : 0; } });
   reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });
   reg({ key: 'footprints', label: 'player footprints', group: 'Terrain', on: true });
 

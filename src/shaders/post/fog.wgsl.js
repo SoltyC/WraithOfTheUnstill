@@ -49,8 +49,10 @@ struct ShadowData {
 @group(0) @binding(6) var shadowMap2: texture_2d<f32>;
 @group(0) @binding(7) var noiseSampler: sampler;
 @group(0) @binding(8) var noiseTex: texture_2d<f32>;
-@group(0) @binding(9) var cloudOut: texture_storage_2d<rgba16float, write>;
-@group(0) @binding(10) var shaftOut: texture_storage_2d<rgba16float, write>;
+@group(0) @binding(9) var noiseLoSampler: sampler;
+@group(0) @binding(10) var noiseLo: texture_2d<f32>;
+@group(0) @binding(11) var cloudOut: texture_storage_2d<rgba16float, write>;
+@group(0) @binding(12) var shaftOut: texture_storage_2d<rgba16float, write>;
 ${WEATHER_FOG_WGSL}
 
 fn shadowLoad(c: u32, p: vec2i) -> f32 {
@@ -82,19 +84,29 @@ fn cloudLayer() -> vec2f {
   let base = mix(2700.0, 1750.0, smoothstep(0.5, 1.0, cover) * (0.4 + 0.6 * P.fog2.x));
   return vec2f(base, base + mix(900.0, 1500.0, cover));
 }
+// Noise with a crude level of detail: the 512² field (27 m texels over 14 km) aliases into radial
+// streaks where long, grazing marches sample it every few hundred metres, so far samples blend to
+// a 4×-box-filtered copy (noiseLo) and drop the fine octaves.
+fn cloudNoise(uv: vec2f, lod: f32) -> vec4f {
+  let hi = textureSampleLevel(noiseTex, noiseSampler, uv, 0.0);
+  if (lod < 0.05) { return hi; }
+  let lo = textureSampleLevel(noiseLo, noiseLoSampler, uv, 0.0);
+  return mix(hi, lo, clamp(lod, 0.0, 1.0));
+}
 fn cloudDensity(p: vec3f, lay: vec2f, lod: f32) -> f32 {
   let h = (p.y - lay.x) / (lay.y - lay.x);
   if (h <= 0.0 || h >= 1.0) { return 0.0; }
   // fog2.zw: the cloud field's offset (m), integrated from the wind on the CPU.
   let uv = (p.xz + P.fog2.zw) / 14000.0;
-  let n = textureSampleLevel(noiseTex, noiseSampler, uv, lod);
+  let n = cloudNoise(uv, lod);
+  let fine = 1.0 - clamp(lod, 0.0, 1.0); // fine octaves fade out with distance
   // A second octave sheared with height, so the shape changes going up (a 2D field alone made
   // every column uniform in height: the clouds read as vertical streaks from below).
-  let n2 = textureSampleLevel(noiseTex, noiseSampler, uv * 2.3 + vec2f(h * 0.21, h * 0.13), lod).r;
+  let n2 = cloudNoise(uv * 2.3 + vec2f(h * 0.21, h * 0.13), lod + 0.5).r;
   let cover = P.fog2.y;
   var c = n.r * 0.6 + n2 * 0.25 + n.g * 0.15;
-  // Coverage: remap so cover 0 → nothing, 1 → a closed deck.
-  c = clamp((c - (1.0 - cover) * 0.8) / max(1.0 - (1.0 - cover) * 0.8, 0.05), 0.0, 1.0);
+  // Coverage: remap so cover 0 → nothing, 1 → a closed deck ("clear" at 0.3 keeps scattered cumulus).
+  c = clamp((c - (1.0 - cover) * 0.62) / max(1.0 - (1.0 - cover) * 0.62, 0.05), 0.0, 1.0);
   // Each column's top follows its coverage: thin edges stay low, cores tower — flat bases,
   // rounded (dome) tops, the way cumulus build. A closing deck fills the whole layer.
   let top = mix(0.12, 1.0, max(c, smoothstep(0.75, 1.0, cover)));
@@ -102,8 +114,10 @@ fn cloudDensity(p: vec3f, lay: vec2f, lod: f32) -> f32 {
   if (hn >= 1.0) { return 0.0; }
   var d = c * sqrt(1.0 - hn * hn) * smoothstep(0.0, 0.06, h);
   // Erode the edges with the detail noise, sheared with height (billows, not extrusions).
-  let detail = textureSampleLevel(noiseTex, noiseSampler, uv * 6.1 + vec2f(h * 0.37, -h * 0.29), lod).g;
-  d = clamp(d - (1.0 - d) * detail * 0.6, 0.0, 1.0);
+  if (fine > 0.0) {
+    let detail = textureSampleLevel(noiseTex, noiseSampler, uv * 6.1 + vec2f(h * 0.37, -h * 0.29), 0.0).g;
+    d = clamp(d - (1.0 - d) * detail * 0.6 * fine, 0.0, 1.0);
+  }
   return d * mix(0.006, 0.012, cover);
 }
 
@@ -139,20 +153,22 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     } else if (cam.y < lay.y) {
       t0 = 0.0; t1 = select((lay.x - cam.y) / dir.y, (lay.y - cam.y) / dir.y, dir.y > 0.0);
     } else if (dir.y < -0.003) { t0 = (lay.y - cam.y) / dir.y; t1 = (lay.x - cam.y) / dir.y; }
-    t1 = min(t1, 60000.0);
+    // Long grazing paths through the layer are capped (the far deck fades into the air anyway).
+    t1 = min(min(t1, 60000.0), t0 + 14000.0);
     if (t1 > t0) {
-      let N = 24;
+      let N = 32;
       let dt = (t1 - t0) / f32(N);
       var T = 1.0; var S = vec3f(0.0);
       // Silver lining + back-scatter; sun light reaching the cloud is the undimmed sun (the
       // deck itself is what dims the ground's key light).
       let phase = mix(hgPhase(cosT, 0.62), hgPhase(cosT, -0.18), 0.3) * 4.0 * 3.14159;
       let cc = clamp((P.fog2.y - 0.35) / 0.65, 0.0, 1.0);
-      let sunC = keyC / (0.04 + 0.96 * (1.0 - cc) * (1.0 - cc));
+      let sunC = keyC / (0.015 + 0.985 * (1.0 - cc) * (1.0 - cc) * (1.0 - cc));
       for (var i = 0; i < N; i++) {
         let t = t0 + (f32(i) + ign) * dt;
         let p = cam + dir * t;
-        let lod = clamp(log2(t / 3000.0), 0.0, 4.0);
+        // Detail fades as the step (and the distance) grows past the noise's texel size.
+        let lod = clamp(max(dt / 250.0, t / 9000.0) - 0.5, 0.0, 1.0);
         let dens = cloudDensity(p, lay, lod);
         if (dens > 1e-5) {
           // Light march toward the sun (4 taps, growing steps).
@@ -250,5 +266,20 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let base = clamp((pn - (1.0 - wf) * 0.55) / 0.6, 0.0, 1.0);
   let detail = (1.0 - worley(uv, 24.0)) * 0.6 + (1.0 - worley(uv, 48.0)) * 0.4;
   textureStore(outTex, gid.xy, vec4f(base, detail, pn, 1.0));
+}
+`;
+
+/** 4×4 box downsample of the cloud noise (512² → 128²): the far-field level of cloudNoise(). */
+export const cloudNoiseLoCS = /* wgsl */ `
+@group(0) @binding(0) var src: texture_2d<f32>;
+@group(0) @binding(1) var outTex: texture_storage_2d<rgba16float, write>;
+@compute @workgroup_size(8, 8, 1)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+  if (gid.x >= 128u || gid.y >= 128u) { return; }
+  var acc = vec4f(0.0);
+  for (var j = 0u; j < 4u; j++) { for (var i = 0u; i < 4u; i++) {
+    acc += textureLoad(src, vec2u(gid.x * 4u + i, gid.y * 4u + j), 0);
+  } }
+  textureStore(outTex, gid.xy, acc / 16.0);
 }
 `;

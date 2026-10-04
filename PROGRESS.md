@@ -21,6 +21,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
   - **Bench:** `?bench=weather` at 1440p (175 Hz display): GPU frame 12.3–12.6 ms median, p95 ≤ 13.2 ms in every weather, in the live clear→blizzard transition and with the 8-Shaped pack in a blizzard; 0 late pipelines; 785 MB (PERF.md). The pack's presented hitches are 175 Hz pacing, not GPU (as in Phase 5); repeat at 60 Hz for the gate.
   - **Review of the target shots:** time of day reads at every weather (warm low light over blue shadow at dawn and dusk, deep-blue moonlit night with stars, flat white noon); overcast shows its grey deck; the blizzard swallows the peaks while the near ground still reads; stilled vs restored grades differ clearly. **ACES chosen over AgX** (AgX drains the golden hour; DECISIONS.md).
   - **Fixed after the review** (needs a re-shoot): clouds read as vertical streaks (2D density → height-varying density, flat bases, dome tops); overcast and snowfall still threw crisp warm sun shadows at dawn/dusk (the deck now leaves ~4–11 % of the sun); falling flakes read as dark dashes on sunlit snow (lit brighter); the shafts spot framing.
+- **MacBook re-shoot (2026-10-04, `screenshots/phase-06-mac/`, look only — not the target):** falling snow now reads as white wind-driven streaks; snowfall haze good; shafts framing better. Still wrong, fixed after it (re-shoot pending): hard warm shadows at overcast/snowfall dawn and dusk (the sun now goes to ~2–4 % and the shadow maps fade under a deck), no clouds at all in the clear sky (coverage threshold lowered), radial streaks across the overcast deck (far-field noise level, capped grazing paths).
 - **Phase 6 open:**
   - Re-shoot on T after the fixes above (`?shots=p6-&dir=phase-06…`) and confirm; a 60 Hz bench for the hitch rule.
   - In motion on T (only the user can judge): falling snow and blizzard streaks, light shafts, TAA on the moving Wraith (no per-object motion vectors), the weather easing.
@@ -173,7 +174,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** on the target PC, `git pull && npm run build && npm run preview`, then in Windows Chrome `http://localhost:4173/?shots=p6-&dir=phase-06&capture=1&res=2560x1440` (re-shoot after the cloud / overcast-sun / flake fixes); review the clear vista (clouds), overcast and snowfall at dawn/dusk (no hard shadows) and the shafts spot; then `?bench=weather&res=2560x1440` with the display at 60 Hz; then ask the user to accept the Phase 6 gate.
+- **Exact next step:** on the target PC, `git pull && npm run build && npm run preview`, then in Windows Chrome `http://localhost:4173/?shots=p6-&dir=phase-06&capture=1&res=2560x1440` (re-shoot after the overcast-sun / cloud fixes); review the clear vista (scattered cumulus), the overcast vista (no radial streaks), overcast and snowfall at dawn/dusk (no hard shadows); then `?bench=weather&res=2560x1440` with the display at 60 Hz; then ask the user to accept the Phase 6 gate.
 
 ## How to run
 
