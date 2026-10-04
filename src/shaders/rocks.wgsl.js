@@ -12,6 +12,7 @@ import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { STATE_SAMPLE_WGSL } from './terrainState.wgsl.js';
 
 /** Vertex code shared by the colour pass and (with normals off) the shadow casters. */
 const ROCKS_VERTEX = /* wgsl */ `
@@ -29,6 +30,8 @@ varying vNormal: vec3f;
 varying vLocal: vec3f;
 varying vBase: f32;          // height above the rock's ground contact (m)
 varying vSize: f32;
+
+${STATE_SAMPLE_WGSL}
 
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
@@ -112,7 +115,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let r = size * 0.9;
   let g0 = rk_ground(x, z);
   let gmin = min(min(rk_ground(x + r, z), rk_ground(x - r, z)), min(rk_ground(x, z + r), rk_ground(x, z - r)));
-  let ground = min(g0, gmin + (g0 - gmin) * 0.3);
+  // The snow as it is now (trails, berms, craters): the rock rides the deformed surface at its
+  // centre, so a berm never slices through it and a trench never bares its buried underside.
+  let ground = min(g0, gmin + (g0 - gmin) * 0.3) + stateOffset(x, z);
   let slope = (g0 - gmin) / r;
   let cy = cos(yaw); let sy = sin(yaw);
   let pw = vec3f(pl.x * cy - pl.z * sy, pl.y, pl.x * sy + pl.z * cy) * size;

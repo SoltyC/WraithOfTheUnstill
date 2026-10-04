@@ -15,6 +15,7 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { rocksVertexWGSL, rocksShadowVertexWGSL, rocksFragmentWGSL } from '../shaders/rocks.wgsl.js';
+import { STATE_SAMPLE_BUFFERS } from '../shaders/terrainState.wgsl.js';
 import { hashU32, valueNoise } from '../terrain/noise.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
@@ -71,9 +72,11 @@ export function createRocks(scene, clipmap, atmo) {
 
   const common = {
     attributes: ['position'],
-    storageBuffers: ['levelData', 'biomeA'],
+    storageBuffers: ['levelData', 'biomeA', ...STATE_SAMPLE_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   };
+  /** Every material using the rock vertex shader (it reads the terrain state). */
+  const vertexMats = [];
   const bindVertex = (m) => {
     m.setArray4('levels', clipmap.levels);
     m.setStorageBuffer('levelData', clipmap.levelData);
@@ -83,13 +86,16 @@ export function createRocks(scene, clipmap, atmo) {
     ...common,
     uniforms: ['viewProjection', 'levels', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
-    storageBuffers: ['levelData', 'biomeA', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    storageBuffers: ['levelData', 'biomeA', ...STATE_SAMPLE_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
   });
+  vertexMats.push(mat);
   bindEnvironment(mat);
   bindAtmosphere(mat, atmo);
   bindVertex(mat);
   near.mesh.material = mat; far.mesh.material = mat;
 
+  let stateBound = null;
+  function bindStateTo(m, ts) { m.setStorageBuffer('stateFine0', ts.fine[0]); m.setStorageBuffer('stateAtlas0', ts.atlas[0]); m.setStorageBuffer('stateParams', ts.params); }
   let cellX = NaN, cellZ = NaN;
   let camCX = 0, camCZ = 0;
   function put(n, x, z, size, yaw, seed, aspect, burial, kind) {
@@ -140,6 +146,8 @@ export function createRocks(scene, clipmap, atmo) {
       });
       bindVertex(m);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
+      vertexMats.push(m);
+      if (stateBound) bindStateTo(m, stateBound);
       return m;
     },
     /** Owner fields: camera x, z; set before update(). */
@@ -151,5 +159,7 @@ export function createRocks(scene, clipmap, atmo) {
       this.count = rebuild(cx, cz);
     },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
+    /** The terrain state the rocks sit on (deformed snow); shadow casters made later bind it too. */
+    bindState(ts) { stateBound = ts; for (const m of vertexMats) bindStateTo(m, ts); },
   };
 }

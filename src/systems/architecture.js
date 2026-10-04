@@ -40,6 +40,18 @@ export function addArchitectureSystem(g) {
   /** Seat: the lowest ground over the site's footprint (9 samples) — or the highest for a site
    *  built up from a peak (seatAt 'top', foundations running down) — or NaN until known. */
   function seat(s) {
+    if (s.box) {
+      // A platform over a peak: the highest ground anywhere under its square (1.5 m grid), so
+      // no rock or snow of the summit shows through its floor.
+      const cf = Math.cos(s.facing), sf = Math.sin(s.facing);
+      let top = -Infinity;
+      for (let j = -s.box; j <= s.box + 1e-6; j += 1.5) for (let i = -s.box; i <= s.box + 1e-6; i += 1.5) {
+        ground.qx = s.at[0] + i * cf + j * sf; ground.qz = s.at[1] - i * sf + j * cf;
+        if (!ground.covers()) return NaN;
+        ground.sample(); if (ground.h > top) top = ground.h;
+      }
+      return top;
+    }
     let lo = Infinity, hi = -Infinity;
     for (let k = 0; k < 9; k++) {
       const a = (k / 8) * Math.PI * 2, r = k === 8 ? 0 : s.footprint;

@@ -85,6 +85,7 @@ export async function createWorld(g) {
   const { createTerrainState } = await import('../terrain/state/terrainState.js');
   const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
   content.clipmap.bindState(terrainState);
+  rocks.bindState(terrainState);
 
   Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState });
 }

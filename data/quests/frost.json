@@ -10,7 +10,7 @@
   },
 
   "npcs": [
-    { "id": "aud", "name": "Aud", "archetype": "monk", "home": { "poi": "monastery", "dx": -2.3, "dz": -0.6 },
+    { "id": "aud", "name": "Aud", "archetype": "monk", "home": { "poi": "monastery", "dx": 0.94, "dz": 3.6 },
       "about": "The last keeper of the monastery. Swept the floor around the Shaper's body for nine winters." },
     { "id": "maren", "name": "Old Maren", "archetype": "elder", "home": { "poi": "camp-frost", "dx": 3, "dz": 2 },
       "about": "Leads the pilgrims. Remembers snow that fell." },

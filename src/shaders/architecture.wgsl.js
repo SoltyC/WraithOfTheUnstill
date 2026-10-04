@@ -168,7 +168,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let diff = clamp(nl, 0.0, 1.0);
   let vis = shadowVisibility(wp, normalize(fragmentInputs.vNormal) * sign(dot(fragmentInputs.vNormal, V)), camPos, fragmentInputs.position.xy);
   let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
-  let sky = shIrradiance(N) * cold * uniforms.envMisc.w * ao * (0.8 + 0.2 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0));
+  // The cold boost is the snow's (blue in shade); stone, felt and wood keep the sky's own colour,
+  // a little warmed by light bounced off the sunlit snow around them.
+  let skyTint = mix(vec3f(1.04, 1.0, 0.94), cold, snow);
+  let sky = shIrradiance(N) * skyTint * uniforms.envMisc.w * ao * (0.8 + 0.2 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0));
   var col = albedo * (key * diff * vis / PI + sky);
   // Canvas: sun through the felt, and the fire behind it.
   if (trans > 0.0) {

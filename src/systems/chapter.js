@@ -81,6 +81,11 @@ export function addChapterSystem(g) {
     // Events from the world.
     const wst = warden.active ? warden.state : -1;
     if (wst === wardenMod.W.RELEASE && lastWarden !== wardenMod.W.RELEASE && lastWarden >= 0) chapter.raise('warden:released');
+    // The first time it wakes: one quiet line on how to break it (then never again).
+    if (wst === wardenMod.W.AWAKE && lastWarden === wardenMod.W.DORMANT && !chapter.graph.flags.has('hint:warden') && !capture) {
+      chapter.graph.flags.add('hint:warden');
+      hud.notice('The Held Snow', 'Its knees are water, held still', 'F: Crystallize at a knee · then click: Sweep through the ice · hold right mouse on its body to climb to the back joints', 12);
+    }
     lastWarden = wst;
     if (frost.crystalEvent && !wasCrystal) chapter.raise('crystal');
     wasCrystal = frost.crystalEvent;

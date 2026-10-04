@@ -119,7 +119,7 @@ export function createCombat(ctx) {
     for (let k = 0; k < 2; k++) {
       if (warden.joint[k] === 2) continue;
       const jx = warden.jx[k], jz = warden.jz[k];
-      if (frost.crystalEvent && Math.hypot(frost.crystalX - jx, frost.crystalZ - jz) < 5) warden.freezeJoint(k);
+      if (frost.crystalEvent && Math.hypot(frost.crystalX - jx, frost.crystalZ - jz) < 7) warden.freezeJoint(k);
       for (let q = 0; q < 4; q++) {
         if (!frost.sweepActive[q] || frost.sweepHW[q] <= 0.05 || wardenSweepSeen[q * 2 + k] === frost.sweepId[q]) continue;
         const ex = jx - frost.sweepFX[q], ez = jz - frost.sweepFZ[q];

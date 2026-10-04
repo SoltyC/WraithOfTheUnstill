@@ -158,8 +158,8 @@ function monastery(b, facing, R) {
   { const [x, z] = at(0, 5); b.box(x, z, 0.35 + 3.6, 0.35 + H, 2.2, T, facing, MAT.GLYPH, 8, { carve: 1, solid: false }); } // lintel
   // Roof slabs: the west half still spans; the east half lies fallen and leaning in.
   for (let k = 0; k < 4; k++) { const [x, z] = at(-3.6, -3.75 + k * 2.5); b.box(x, z, 0.35 + H, 0.35 + H + 0.4, 3.4, 1.3, facing, MAT.STONE, 20 + k, { solid: false, roll: 0.05 }); }
-  { const [x, z] = at(3.6, -1); b.box(x, z, 0.35, 0.35 + 0.5, 3.2, 1.4, facing, MAT.STONE, 30, { roll: -0.55, solid: false }); }
-  { const [x, z] = at(4.4, 2.6); b.box(x, z, 0.35, 0.35 + 0.45, 3.0, 1.2, facing + 0.3, MAT.STONE, 31, { roll: 0.4, solid: false }); }
+  { const [x, z] = at(3.6, -1); b.box(x, z, 0.35, 0.35 + 0.5, 3.2, 1.4, facing, MAT.STONE, 30, { roll: -0.55 }); }
+  { const [x, z] = at(4.4, 2.6); b.box(x, z, 0.35, 0.35 + 0.45, 3.0, 1.2, facing + 0.3, MAT.STONE, 31, { roll: 0.4 }); }
   // The bier where the Shaper lay (the Wraith wakes beside it), a glyph band round its edge.
   { const [x, z] = at(0, -2.2); b.box(x, z, 0.35, 0.95, 1.1, 1.9, facing, MAT.GLYPH, 40, { carve: 1 }); }
   // Cloister colonnade: 14 columns on a ring, some broken, two fallen.
@@ -251,7 +251,7 @@ export function frostSites(table) {
   const mon = P('monastery'), camp0 = P('camp-frost');
   const toward = (a, b) => Math.atan2(b[0] - a[0], b[1] - a[1]);
   const sites = [
-    { id: 'monastery', at: mon, facing: toward(mon, camp0), build: monastery, footprint: 16, seatAt: 'top' },
+    { id: 'monastery', at: mon, facing: toward(mon, camp0), build: monastery, footprint: 16, seatAt: 'top', box: 15 },
     { id: 'camp-frost', at: camp0, facing: toward(camp0, P('warden-frost')), build: camp, footprint: 12 },
     { id: 'spring-frost', at: P('spring-frost'), facing: 0, build: spring, footprint: 7.5 },
     { id: 'varo-rise', at: P('varo-rise'), facing: toward(P('varo-rise'), P('warden-frost')), build: watchingStone, footprint: 1.5 },

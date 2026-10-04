@@ -64,7 +64,7 @@ export function createWarden(ctx) {
     /** Set when nbr has been (re)computed; the view uploads it and clears the flag. */
     nbrDirty: false, nbrReady: false,
     /** Seconds a frozen joint holds before it thaws (an Echo lengthens it). */
-    thawTime: 9,
+    thawTime: 12,
     active: false, state: W.DORMANT, t: 0.5, glow: 0.5 - 0.5, stompLeg: 0,
     /** Climbed (set by the climb system); while climbed it bucks every few seconds. */
     climbed: false, shaking: false, shakeCool: 0.5, shakeT: 0.5 - 0.5,
