@@ -1,0 +1,4 @@
+# CC0 audio sources (Freesound, License filter: Creative Commons 0 only).
+# One line per file:  folder/filename | freesound URL | author
+# Example:
+# steps-snow/123456__someone__snow-step-1.wav | https://freesound.org/s/123456/ | someone
