@@ -10,16 +10,16 @@
   },
 
   "npcs": [
-    { "id": "aud", "name": "Aud", "archetype": "monk", "home": { "poi": "monastery", "dx": 6, "dz": -4 },
+    { "id": "aud", "name": "Aud", "archetype": "monk", "home": { "poi": "monastery", "dx": -2.3, "dz": -0.6 },
       "about": "The last keeper of the monastery. Swept the floor around the Shaper's body for nine winters." },
     { "id": "maren", "name": "Old Maren", "archetype": "elder", "home": { "poi": "camp-frost", "dx": 3, "dz": 2 },
       "about": "Leads the pilgrims. Remembers snow that fell." },
     { "id": "tobin", "name": "Tobin", "archetype": "child", "home": { "poi": "camp-frost", "dx": -4, "dz": 5 },
       "lost": { "poi": "spring-frost", "dx": 4, "dz": 2 },
       "about": "A pilgrim child who follows things." },
-    { "id": "isolde", "name": "Isolde", "archetype": "lantern", "home": { "poi": "camp-frost", "dx": 8, "dz": -3 },
+    { "id": "isolde", "name": "Isolde", "archetype": "lantern", "home": { "poi": "camp-frost", "dx": 2.2, "dz": -4.2 },
       "about": "Keeps the camp's lantern. Plays the lyre at night." },
-    { "id": "varo", "name": "Varo", "archetype": "staff", "home": { "poi": "varo-rise", "dx": 0, "dz": 0 },
+    { "id": "varo", "name": "Varo", "archetype": "staff", "home": { "poi": "varo-rise", "dx": -2, "dz": -1.5 },
       "about": "A staff-bearer who walked out to watch the Warden and did not come back." }
   ],
 

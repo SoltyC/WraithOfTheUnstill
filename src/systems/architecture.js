@@ -21,6 +21,7 @@ export function addArchitectureSystem(g) {
   g.props = {};
   sites.forEach((s, i) => { if (s.prop) g.props[s.npc] = { index: i, kind: s.kind }; });
   controller.solids = solids;
+  g.wraithGround.solids = solids;
   // Ground anchors for every site (indices after the NPCs' 1..5).
   sites.forEach((s, i) => { if (!s.prop) streamer.setAnchor(8 + i, s.at[0], s.at[1]); });
   const camp = sites.findIndex((s) => s.id === 'camp-frost');

@@ -22,13 +22,15 @@ export function createSolids(sites, built) {
     },
     /** Query fields for floorQ() (no doubles across calls on the substep path): qx, qz, qh → h. */
     qx: 0.5, qz: 0.5, qh: 0.5, h: 0.5,
-    floorQ() { this.h = this.floor(this.qx, this.qz, this.qh); },
+    floorQ() { this.h = this.floor(this.qx, this.qz, this.qh, false); },
+    /** The same for anyone anywhere (the Veiled): every seated site, not just those near the player. */
+    floorAnyQ() { this.h = this.floor(this.qx, this.qz, this.qh, true); },
     /** Ground under (x, z) given the terrain height gy: the highest platform top beneath, if higher. */
-    floor(x, z, gy) {
+    floor(x, z, gy, any = false) {
       let h = gy;
       for (let i = 0; i < platforms.length; i++) {
         const p = platforms[i];
-        if (!near[p.site]) continue;
+        if (any ? Number.isNaN(S[p.site].seat) : !near[p.site]) continue;
         const dx = x - p.x, dz = z - p.z;
         const lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
         if (lx < -p.hx || lx > p.hx || lz < -p.hz || lz > p.hz) continue;
@@ -64,6 +66,19 @@ export function createSolids(sites, built) {
           const into = v.x * nx + v.z * nz; if (into < 0) { v.x -= into * nx; v.z -= into * nz; }
         }
       }
+    },
+  };
+}
+
+/** A ground query that also stands on built floors (once `solids` is set): for feet and cloth. */
+export function flooredGround(ground) {
+  return {
+    qx: 0.5, qz: 0.5, h: 0.5, solids: null,
+    sample() {
+      ground.qx = this.qx; ground.qz = this.qz; ground.sample();
+      const so = this.solids;
+      if (so === null) { this.h = ground.h; return; }
+      so.qx = this.qx; so.qz = this.qz; so.qh = ground.h; so.floorAnyQ(); this.h = so.h;
     },
   };
 }

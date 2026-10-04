@@ -26,7 +26,7 @@ export function addNpcSystems(g) {
   function makeNpc(id, name, archetype, home) {
     const A = ARCHETYPES[archetype];
     const xf = { ox: home[0], oy: 0, oz: home[1], s: A.scale };
-    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: A.tint, simGround: scaledGround(ground, xf), xform: xf });
+    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: A.tint, simGround: scaledGround(ground, xf, g.solids || null), xform: xf });
     bindShadows(view.material, shadows); bindShadows(view.fur.material, shadows); bindShadows(view.fx.material, shadows);
     shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
     view.freeze();
@@ -151,6 +151,7 @@ export function addNpcSystems(g) {
       if (n.target) n.target.hidden = !show;
       if (!show) continue;
       ground.sample(); n.y = ground.h;
+      if (g.solids) { const so = g.solids; so.qx = n.x; so.qz = n.z; so.qh = n.y; so.floorAnyQ(); n.y = so.h; }
       if (!n.placed) { xf.oy = n.y; n.placed = true; }
       // Idle life: shift weight now and then (a small corrective step), turn toward the Wraith.
       if (!n.path) {

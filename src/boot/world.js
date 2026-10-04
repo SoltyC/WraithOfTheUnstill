@@ -69,7 +69,9 @@ export async function createWorld(g) {
   rocks.freeze();
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
-  const wraithView = createWraithView(scene, atmosphere, ground, content.clipmap);
+  // The Wraith's feet and hem stand on built floors too (solids arrive with the architecture).
+  const wraithGround = (await import('../world/solids.js')).flooredGround(ground);
+  const wraithView = createWraithView(scene, atmosphere, ground, content.clipmap, { simGround: wraithGround });
   bindShadows(wraithView.material, shadows);
   bindShadows(wraithView.fur.material, shadows);
   bindShadows(wraithView.fx.material, shadows);
@@ -84,5 +86,5 @@ export async function createWorld(g) {
   const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
   content.clipmap.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, terrainState });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState });
 }

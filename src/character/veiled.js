@@ -19,13 +19,17 @@ export const ARCHETYPES = {
  * heights the same way, so the figure (built at the Wraith's size) stands at size s on real ground.
  * @param {{ qx: number, qz: number, h: number, sample: () => void }} ground
  */
-export function scaledGround(ground, xf) {
+export function scaledGround(ground, xf, solids = null) {
   return {
     qx: 0.5, qz: 0.5, h: 0.5,
     sample() {
-      ground.qx = xf.ox + (this.qx - xf.ox) * xf.s; ground.qz = xf.oz + (this.qz - xf.oz) * xf.s;
+      const x = xf.ox + (this.qx - xf.ox) * xf.s, z = xf.oz + (this.qz - xf.oz) * xf.s;
+      ground.qx = x; ground.qz = z;
       ground.sample();
-      this.h = xf.oy + (ground.h - xf.oy) / xf.s;
+      let h = ground.h;
+      // Built floors (plinths) are ground too.
+      if (solids !== null) { solids.qx = x; solids.qz = z; solids.qh = h; solids.floorAnyQ(); h = solids.h; }
+      this.h = xf.oy + (h - xf.oy) / xf.s;
     },
   };
 }
