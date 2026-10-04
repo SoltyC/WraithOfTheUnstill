@@ -17,7 +17,8 @@ export function addWorldSystems(g) {
       // resident, so the drop height matches the final collision surface (and the GPU terrain).
       ground.qx = pendingTp.x; ground.qz = pendingTp.z;
       if (ground.coversFine() && ground.f.version === streamer.residencyVersion && streamer.arrived.length === 0
-          && streamer.pendingNear(pendingTp.x, pendingTp.z) === 0) {
+          && streamer.pendingNear(pendingTp.x, pendingTp.z) === 0
+          && (!g.solids || g.solids.seatedNear(pendingTp.x, pendingTp.z))) { // built floors known
         controller.teleport(pendingTp.x, pendingTp.z);
         controller.hold = false;
         pendingTp.active = false;

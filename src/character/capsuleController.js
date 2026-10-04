@@ -67,7 +67,11 @@ export class CapsuleController {
 
   teleport(x, z, y) {
     this.pos.x = x; this.pos.z = z;
-    if (y === undefined) { this.ground.qx = x; this.ground.qz = z; this.ground.sample(); y = this.ground.h; }
+    if (y === undefined) {
+      this.ground.qx = x; this.ground.qz = z; this.ground.sample(); y = this.ground.h;
+      // Placed from above (spawn, teleport, load): stand on the highest built floor here.
+      if (this.solids !== null) { const so = this.solids; so.cull(x, z); so.qx = x; so.qz = z; so.qh = y; so.floorAnyQ(); y = so.h; }
+    }
     this.pos.y = y;
     this.vel.x = 0; this.vel.y = 0; this.vel.z = 0;
     this.grounded = true;

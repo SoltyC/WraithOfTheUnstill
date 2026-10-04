@@ -16,6 +16,11 @@ export function createSolids(sites, built) {
 
   return {
     sites: S, blockers, platforms,
+    /** False while a site whose footprint covers (x, z) has no seat yet (a landing would miss its floors). */
+    seatedNear(x, z) {
+      for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; if (s.rad > 0 && dx * dx + dz * dz < s.rad * s.rad && Number.isNaN(s.seat)) return false; }
+      return true;
+    },
     /** Mark sites near (x, z) (call once per frame before the substeps). */
     cull(x, z) {
       for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; near[i] = !Number.isNaN(s.seat) && dx * dx + dz * dz < s.rad * s.rad ? 1 : 0; }

@@ -63,6 +63,18 @@ class Builder {
     if (solid && Math.abs(tilt) < 0.6 && Math.abs(roll) < 0.6) this.blockers.push({ site: this.site, kind: 'box', x, z, hx: hx + 0.05, hz: hz + 0.05, cos: cy, sin: sy, y0, y1 });
     if (platform) this.platforms.push({ site: this.site, x, z, hx, hz, cos: cy, sin: sy, top: y1 });
   }
+  /** Battered block: a box whose half extents go from (hx0, hz0) at y0 to (hx1, hz1) at y1
+   *  (foundations, buttresses that widen toward the ground). Never solid (walls above are). */
+  frustum(x, z, y0, y1, hx0, hz0, hx1, hz1, yaw, mat, seed) {
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const P = (lx, y, lz) => [x + lx * cy + lz * sy, y, z - lx * sy + lz * cy];
+    const c = [P(-hx0, y0, -hz0), P(hx0, y0, -hz0), P(hx0, y0, hz0), P(-hx0, y0, hz0), P(-hx1, y1, -hz1), P(hx1, y1, -hz1), P(hx1, y1, hz1), P(-hx1, y1, hz1)];
+    this.quad(c[4], c[5], c[6], c[7], mat, seed);
+    this.quad(c[0], c[1], c[5], c[4], mat, seed);
+    this.quad(c[2], c[3], c[7], c[6], mat, seed);
+    this.quad(c[3], c[0], c[4], c[7], mat, seed);
+    this.quad(c[1], c[2], c[6], c[5], mat, seed);
+  }
   /** Drum (column, altar, bell): n sides, radius r0 at y0 to r1 at y1; capped. */
   drum(x, z, y0, y1, r0, r1, n, mat, seed, { carve = 0, solid = true, lie = 0, yaw = 0 } = {}) {
     // lie: lying on its side (fallen column) along yaw, length = y1 − y0, resting at y0.
@@ -108,8 +120,28 @@ function monastery(b, facing, R) {
   const fx = Math.sin(facing), fz = Math.cos(facing), rx = Math.cos(facing), rz = -Math.sin(facing);
   const at = (s, f) => [rx * s + fx * f, rz * s + fz * f];
   // Platform: a stepped plinth (walkable), foundations into the slope.
-  b.box(0, 0, -CITADEL, 0.35, 15, 15, facing, MAT.STONE, 1, { solid: false, platform: true });
-  b.box(...at(0, 15.6), -CITADEL, 0.17, 5, 0.6, facing, MAT.STONE, 2, { solid: false, platform: true });
+  // The platform: a top course, then battered tiers stepping out as they go down, string courses
+  // between them, and buttresses down each face.
+  b.box(0, 0, -6, 0.35, 15, 15, facing, MAT.STONE, 1, { solid: false, platform: true });
+  b.box(0, 0, -6.5, -5.7, 15.35, 15.35, facing, MAT.STONE, 3, { solid: false });          // string course
+  b.frustum(0, 0, -22, -6.2, 16.6, 16.6, 15.1, 15.1, facing, MAT.STONE, 4);
+  b.box(0, 0, -22.6, -21.8, 16.9, 16.9, facing, MAT.STONE, 5, { solid: false });          // string course
+  b.frustum(0, 0, -CITADEL, -22, 19, 19, 16.7, 16.7, facing, MAT.STONE, 6);
+  for (let side = 0; side < 4; side++) {
+    const yaw = facing + side * Math.PI / 2, nx = Math.sin(yaw), nz = Math.cos(yaw), tx = Math.cos(yaw), tz = -Math.sin(yaw);
+    for (const t of [-9.5, 0, 9.5]) {
+      if (side === 0 && t === 0) continue; // the stair comes down this face
+      const bx = nx * 15.6 + tx * t, bz = nz * 15.6 + tz * t;
+      b.frustum(bx + nx * 1.6, bz + nz * 1.6, -CITADEL, -20, 1.5, 3.4, 1.2, 1.2, yaw, MAT.STONE, 7 + side * 3 + t);
+      b.frustum(bx + nx * 0.4, bz + nz * 0.4, -20.2, -1.5, 1.2, 1.2, 0.9, 0.5, yaw, MAT.STONE, 8 + side * 3 + t);
+    }
+  }
+  // The stair down the descent face: flights of steps on a ramp of masonry.
+  for (let k = 0; k < 14; k++) {
+    const f = 15.6 + k * 0.9, top = 0.17 - k * 0.55;
+    const [x, z] = at(0, f);
+    b.box(x, z, -CITADEL + k * 0.5, top, 2.6, 0.5, facing, MAT.STONE, 2 + k, { solid: false, platform: true });
+  }
   // A parapet round the platform's edge, open toward the descent.
   for (let k = 0; k < 4; k++) {
     const yaw = facing + k * Math.PI / 2, ex = Math.sin(yaw) * 14.6, ez = Math.cos(yaw) * 14.6;
@@ -180,7 +212,7 @@ function camp(b, facing, R) {
   b.box(3.35, -3.5, 2.3, 2.34, 0.4, 0.04, 0, MAT.WOOD, 61, { solid: false });
   // Sleds and packs.
   b.box(-5, -5, -0.1, 0.35, 0.6, 1.4, facing + 0.4, MAT.WOOD, 70);
-  b.box(-5, -5, 0.35, 0.85, 0.5, 0.8, facing + 0.4, MAT.CANVAS, 71, { solid: false });
+  b.box(-5, -5, 0.35, 0.85, 0.5, 0.8, facing + 0.4, MAT.WOOD, 71, { solid: false }); // packs (hide-wrapped)
   b.box(-3.2, -6.4, -0.1, 0.6, 0.45, 0.45, 0.7, MAT.WOOD, 72);
   // A low windbreak of stacked stones on the weather side.
   for (let k = 0; k < 7; k++) { const a = facing + Math.PI + (k - 3) * 0.16; b.box(Math.sin(a) * 12, Math.cos(a) * 12, -0.4, 0.9 + R() * 0.3, 0.9, 0.35, a + Math.PI / 2, MAT.STONE, 80 + k); }

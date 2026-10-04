@@ -117,11 +117,10 @@ async function createSaves(g) {
       s.terrainPages = await terrainState.snapshot();
     },
     apply(s) {
-      controller.god = false;
-      controller.teleport(s.player.pos[0], s.player.pos[2]);
+      // Back to where the save was made, once the ground (and any floor) there is known.
+      g.requestTeleport(s.player.pos[0], s.player.pos[2]);
       controller.yaw = s.player.yaw;
-      arm.setFree(false);
-      arm.snap(controller.pos);
+      arm.yaw = s.player.yaw;
       paramsMod.setParam('timeOfDay', s.world.timeOfDay);
       worldState.weather = s.world.weather;
       worldState.weatherOverride = s.world.weatherOverride ?? null;
