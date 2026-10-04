@@ -122,7 +122,7 @@ export function createPost(scene, camera) {
   const post = {
     sceneRT, depthTex, lutTex,
     /** Tonemapper: 0 ACES, 1 AgX. */
-    tonemapper: 0,
+    tonemapper: new URLSearchParams(location.search).get('tonemap') === 'agx' ? 1 : 0,
     grain: 0.035,
     /** Bloom mix (set by post/bloom.js's owner). */
     bloomIntensity: 0, bloomOn: false,
@@ -135,6 +135,9 @@ export function createPost(scene, camera) {
     params: P, paramsBuf,
     /** Sub-pixel projection jitter for TAA (Halton 2,3; off when TAA is off). */
     jitter: true,
+    /** Debug view (?postDebug=1): flag non-finite pass inputs by colour (compose). */
+    // 2 = show the raw scene target, 3 = the composed frame (pre-TAA): bisecting the chain.
+    debug: Number(new URLSearchParams(location.search).get('postDebug') || 0),
     /** Set to drop the temporal history (teleports, cuts, captures). */
     resetHistory: true,
     get width() { return W; },
@@ -167,6 +170,7 @@ export function createPost(scene, camera) {
       post.resetHistory = false;
       const c = camera.position;
       P[40] = c.x; P[41] = c.y; P[42] = c.z; P[43] = camera.minZ;
+      P[104] = post.debug === 1 ? 1 : 0;
       for (let i = 0; i < pre.length; i++) pre[i](P);
       paramsBuf.update(P);
       if (jx !== 0 || jy !== 0) {

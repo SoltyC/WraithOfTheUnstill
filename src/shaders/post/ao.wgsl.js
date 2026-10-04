@@ -97,6 +97,24 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   var c = textureLoad(sceneTex, p, 0);
   let d = textureLoad(depthTex, p, 0);
   let ndc = texelNdc(p, P.size);
+  // Debug (?postDebug=1): flag non-finite inputs by colour — scene magenta, AO green,
+  // clouds red, shafts blue, SSR yellow, depth cyan.
+  if (P.pad[0].x > 0.5) {
+    let half = (sz + 1) / 2;
+    let a = textureLoad(aoTex, min(p / 2, half - 1), 0);
+    let uvd = (vec2f(p) + 0.5) * P.size.zw;
+    let cl = textureSampleLevel(cloudTex, cloudSampler, uvd, 0.0);
+    let sh = textureSampleLevel(shaftTex, shaftSampler, uvd, 0.0);
+    let sr = textureSampleLevel(ssrTex, ssrSampler, uvd, 0.0);
+    var dbg = vec3f(-1.0);
+    if (any(c != c) || any(abs(c) > vec4f(1e30))) { dbg = vec3f(1.0, 0.0, 1.0); }
+    else if (any(a != a)) { dbg = vec3f(0.0, 1.0, 0.0); }
+    else if (any(cl != cl)) { dbg = vec3f(1.0, 0.0, 0.0); }
+    else if (any(sh != sh)) { dbg = vec3f(0.0, 0.0, 1.0); }
+    else if (any(sr != sr)) { dbg = vec3f(1.0, 1.0, 0.0); }
+    else if (d != d) { dbg = vec3f(0.0, 1.0, 1.0); }
+    if (dbg.x >= 0.0) { textureStore(outColor, p, vec4f(dbg * 50.0, 0.0)); return; }
+  }
   let cam = P.cam.xyz;
   var dist = 2e4;
   var dir: vec3f;

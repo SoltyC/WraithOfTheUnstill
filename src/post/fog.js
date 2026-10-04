@@ -50,10 +50,11 @@ export function createFog(post, scene, atmo, shadows) {
     const w = fog.weather;
     if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; return; }
     // Visibility: ~300 km clear haze is the atmosphere's job; overcast ~4 km, snowfall ~1 km,
-    // blizzard ~150 m (σ = 3 / visibility). Ground-hugging: scale height shrinks in a blizzard.
+    // blizzard ~150 m (σ = 3 / visibility).
     const f = Math.pow(w.fog, 2.2);
     P[56] = 0.00002 + (0.02 - 0.00002) * f;
-    P[57] = 1 / (420 - 280 * w.fog);
+    // Scale height deepens with the weather: a blizzard swallows the peaks, a haze hugs the valleys.
+    P[57] = 1 / (300 + 600 * w.fog * w.fog);
     P[58] = fog.groundY;
     P[59] = fog.shaftsOn ? 1 : 0;
     // Clouds drift downwind (the field's offset is subtracted: features move with the wind).

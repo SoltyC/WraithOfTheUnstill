@@ -25,8 +25,10 @@ export function parseArgs(argv = process.argv.slice(2)) {
 }
 
 export async function startServer({ skipBuild = false } = {}) {
-  if (!skipBuild) await build({ root: ROOT, logLevel: 'warn' });
-  const server = await preview({ root: ROOT, logLevel: 'warn', preview: { port: 4173, strictPort: false, host: '127.0.0.1' } });
+  // WRAITH_OUTDIR builds and serves a separate output directory, so two runs never share dist/.
+  const outDir = process.env.WRAITH_OUTDIR || undefined;
+  if (!skipBuild) await build({ root: ROOT, logLevel: 'warn', build: outDir ? { outDir, emptyOutDir: true } : undefined });
+  const server = await preview({ root: ROOT, logLevel: 'warn', build: outDir ? { outDir } : undefined, preview: { port: 4173, strictPort: false, host: '127.0.0.1' } });
   const url = server.resolvedUrls.local[0];
   return { url, close: () => new Promise((r) => server.httpServer.close(r)) };
 }

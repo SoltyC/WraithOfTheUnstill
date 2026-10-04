@@ -1,6 +1,7 @@
 // Photo-spot capture (BRIEF §12.1, §17 gates).
 //   node tools/capture/capture.mjs [--spots=a,b] [--out=screenshots/phase-01] [--repeat=2]
 //                                  [--width=2560 --height=1440] [--channel=chrome] [--headed] [--skip-build]
+//                                  [--query=postDebug=1] (extra URL parameters)
 // Each spot loads in a fresh context with ?spot=<id>&capture=1 (frozen clock, no overlay).
 // With --repeat=2 (default) every spot is captured twice and compared; the run fails if any
 // pair differs, which is the "captures are reproducible" gate check.
@@ -65,7 +66,7 @@ try {
     let timing = 0;
     for (let r = 0; r < Math.max(1, repeat); r++) {
       const t0 = Date.now();
-      const { page, context, logs } = await openGame(browser, server.url, 'spot=' + encodeURIComponent(id) + '&capture=1', { width, height });
+      const { page, context, logs } = await openGame(browser, server.url, 'spot=' + encodeURIComponent(id) + '&capture=1' + (args.query ? '&' + args.query : ''), { width, height });
       if (!report.machine) report.machine = await machineInfo(page);
       const late = await page.evaluate(() => window.__wraith.gpuStats.late.length);
       const buf = await page.screenshot({ type: 'png', timeout: 0 }); // software GPU frames can take > 30 s at 1440p

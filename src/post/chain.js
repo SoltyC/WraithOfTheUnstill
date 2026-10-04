@@ -39,7 +39,10 @@ export function createPostChain(scene, camera, atmo, shadows) {
   const bloom = createBloom(post, scene, () => taa.out);
   post.addPass(() => taa.run());
   post.addPass(() => bloom.run());
-  const wire = () => { post.setFinal(taa.out); post.setBloom(bloom.out); };
+  const wire = () => {
+    post.setFinal(post.debug === 2 ? post.sceneRT : post.debug === 3 ? comp.out : taa.out);
+    post.setBloom(bloom.out);
+  };
   wire();
   post.onResize(wire);
   post.onParams(() => { post.bloomOn = bloom.on; post.bloomIntensity = bloom.intensity; });

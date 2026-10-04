@@ -68,12 +68,13 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   // Neighbourhood: moments of the 3×3 in YCoCg (tonemapped), and the nearest depth for
   // reprojection (reverse-Z: nearest = largest), so edges reproject with the foreground.
   var m1 = vec3f(0.0); var m2 = vec3f(0.0);
+  var mn = vec3f(1e9); var mx = vec3f(-1e9);
   var dBest = 0.0; var pBest = p;
   for (var y = -1; y <= 1; y++) {
     for (var x = -1; x <= 1; x++) {
       let q = p + vec2i(x, y);
       let s = toYCoCg(tmap(loadCur(q, sz)));
-      m1 += s; m2 += s * s;
+      m1 += s; m2 += s * s; mn = min(mn, s); mx = max(mx, s);
       let qd = textureLoad(depthTex, clamp(q, vec2i(0), sz - 1), 0);
       if (qd > dBest) { dBest = qd; pBest = q; }
     }
@@ -96,8 +97,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let cen = (lo + hi) * 0.5; let ext = max((hi - lo) * 0.5, vec3f(1e-5));
     let v = h - cen;
     let unit = abs(v / ext);
-    let mx = max(unit.x, max(unit.y, unit.z));
-    let hc = select(h, cen + v / mx, mx > 1.0);
+    let vmax = max(unit.x, max(unit.y, unit.z));
+    var hc = select(h, cen + v / vmax, vmax > 1.0);
+    // Also inside the neighbourhood's min/max: the variance box can reach below the darkest
+    // neighbour at a hard edge, and the Catmull-Rom undershoot there would compound frame after
+    // frame into a dark outline.
+    hc = clamp(hc, mn, mx);
     let ct = toYCoCg(tmap(c0));
     // Feedback: steady at P.taa.x; less where the history moved fast (sub-pixel blur adds up).
     let motion = length((uv - (vec2f(p) + 0.5) * P.size.zw) * P.size.xy);

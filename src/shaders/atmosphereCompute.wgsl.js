@@ -184,8 +184,10 @@ ${INTEGRATE}
 @compute @workgroup_size(4, 4, 4)
 fn main(@builtin(global_invocation_id) id: vec3u) {
   if (id.x >= ${AP_RES}u || id.y >= ${AP_RES}u || id.z >= ${AP_SLICES}u) { return; }
-  // Froxel centre direction from the camera (NDC y up; texture row 0 = top of screen).
-  let ndc = vec2f((f32(id.x) + 0.5) / ${AP_RES}.0 * 2.0 - 1.0, 1.0 - (f32(id.y) + 0.5) / ${AP_RES}.0 * 2.0);
+  // Froxel centre direction from the camera. Row 0 is the BOTTOM of the view: materials look the
+  // LUT up with fragmentInputs.position, which Babylon presents y-up on the canvas and in render
+  // targets alike. (Until Phase 6 row 0 was built as the top, so the lookup was mirrored.)
+  let ndc = vec2f((f32(id.x) + 0.5) / ${AP_RES}.0 * 2.0 - 1.0, (f32(id.y) + 0.5) / ${AP_RES}.0 * 2.0 - 1.0);
   let wp = P.invViewProj * vec4f(ndc, 1.0, 1.0);
   let rd = normalize(wp.xyz / wp.w - P.camPos.xyz);
   let dKm = apSliceToKm(f32(id.z) + 1.0);
@@ -328,7 +330,9 @@ fn main() {
     let expected = 0.5 * adapt;
     comp = clamp(pow(expected / exp2(mt.x), 0.75), 0.5, 1.68);
   }
-  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp;
+  // Weather: an overcast or snowing day is meant to read grey and heavy, not auto-exposed back
+  // to a sunny day's brightness (−0.5 stop under a closed deck).
+  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * P.weather.x);
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));
