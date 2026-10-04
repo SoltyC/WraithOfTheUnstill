@@ -82,7 +82,7 @@ export async function createActors(g) {
   shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 3);
   wardenView.freeze();
   const { createClimb } = await import('../game/warden/climb.js');
-  const climb = createClimb({ warden });
+  const climb = createClimb({ warden, ground });
   arm.occluder = warden;
   // Knockdown: the release's shockwave throws the Wraith onto its back (character/knockdown.js).
   const { createKnockdown } = await import('../character/knockdown.js');

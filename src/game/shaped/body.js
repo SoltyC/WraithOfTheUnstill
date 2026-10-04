@@ -108,13 +108,23 @@ export class ShapedBody {
     } else { this.vx = 0; this.vz = 0; }
     this.x += this.vx * dt; this.z += this.vz * dt;
     this.y = this._groundAt(this.x, this.z);
-    // Spine: the front joint leads; each follows the one ahead at its spacing (rope).
+    // Spine: the front joint leads; each follows the one ahead at its spacing (rope), bending at
+    // most maxBend from the segment ahead (the first from the heading) — a body never folds back
+    // on itself however the head moves.
     this.sx[0] = this.x; this.sz[0] = this.z;
+    const maxBend = sh.maxBend ?? 0.45, cb = Math.cos(maxBend), sbend = Math.sin(maxBend);
+    let rx = -Math.sin(this.heading), rz = -Math.cos(this.heading);
     for (let i = 1; i < sh.spine; i++) {
       let dx = this.sx[i] - this.sx[i - 1], dz = this.sz[i] - this.sz[i - 1];
       const d = Math.sqrt(dx * dx + dz * dz);
-      if (d < 1e-6) { dx = -Math.sin(this.heading); dz = -Math.cos(this.heading); } else { dx /= d; dz /= d; }
+      if (d < 1e-6) { dx = rx; dz = rz; } else { dx /= d; dz /= d; }
+      if (dx * rx + dz * rz < cb) {
+        // Clamp to the edge of the cone around the reference direction, on the side it leans.
+        const side = rx * dz - rz * dx >= 0 ? 1 : -1;
+        dx = rx * cb - rz * sbend * side; dz = rz * cb + rx * sbend * side;
+      }
       this.sx[i] = this.sx[i - 1] + dx * sh.spacing; this.sz[i] = this.sz[i - 1] + dz * sh.spacing;
+      rx = dx; rz = dz;
     }
     for (let i = 0; i < sh.tail; i++) {
       const px = i === 0 ? this.sx[sh.spine - 1] : this.tx[i - 1], pz = i === 0 ? this.sz[sh.spine - 1] : this.tz[i - 1];

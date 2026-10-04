@@ -116,6 +116,8 @@ export function createWarden(ctx) {
      *  rdx/rdy/rdz): distance to where it leaves the outermost chunk (the visible surface along
      *  that line), or −1 if it hits nothing. Chunk radii are their crag-mean (rig size × 0.43, the cleaved blocks). */
     rox: 0.5, roy: 0.5, roz: 0.5, rdx: 0.5, rdy: 0.5, rdz: 0.5,
+    /** rayOut() window (m along the ray): a chunk counts only if entered before rnear and left before rfar. */
+    rnear: 1e9, rfar: 1e9,
     rayOut() {
       const ox = this.rox, oy = this.roy, oz = this.roz, dx = this.rdx, dy = this.rdy, dz = this.rdz;
       let best = -1;
@@ -136,7 +138,10 @@ export function createWarden(ctx) {
         const A = b0 * b0 + b1 * b1 + b2 * b2, B = a0 * b0 + a1 * b1 + a2 * b2, C = a0 * a0 + a1 * a1 + a2 * a2 - 1;
         const disc = B * B - A * C;
         if (disc < 0) continue;
-        const t = (-B + Math.sqrt(disc)) / A;
+        const sq = Math.sqrt(disc), tIn = (-B - sq) / A, t = (-B + sq) / A;
+        // Only chunks on the surface being climbed: entered near the tube and left within reach
+        // (a far chunk along the same ray — another leg, the body — is not this surface).
+        if (tIn > this.rnear || t > this.rfar) continue;
         if (t > best) best = t;
       }
       return best;
@@ -231,10 +236,15 @@ export function createWarden(ctx) {
       }
       if (this.shakeT > 0 && this.state !== W.RELEASE) {
         this.shakeT -= dt; this.shaking = true;
-        body.crouch = 0.28 * Math.sin(this.shakeT * 13) * Math.min(1, this.shakeT * 2);
-        body.heading += 0.05 * Math.sin(this.shakeT * 9) * dt * 8;
+        // A slow, heavy heave (a colossus cannot judder: at 2 m and 13 rad/s it read as a glitch).
+        body.crouch = 0.2 * Math.sin(this.shakeT * 7.5) * Math.min(1, this.shakeT * 2);
+        body.heading += 0.035 * Math.sin(this.shakeT * 5.5) * dt * 8;
         body.wantVx = 0; body.wantVz = 0;
-      } else think(this, dt);
+      } else {
+        think(this, dt);
+        // Climbed: it plants its feet and heaves; it does not chase what is on its own back.
+        if (this.climbed && (this.state === W.AWAKE || this.state === W.STOMP)) { body.wantVx = 0; body.wantVz = 0; }
+      }
       body.dt = dt; body.update();
       // Footfalls: craters crushed into the snow, powder thrown up, the ground shakes.
       for (let e = 0; e < body.evCount; e++) {

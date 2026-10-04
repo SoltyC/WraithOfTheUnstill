@@ -21,6 +21,9 @@ export const climbTuning = {
   throwSpeed: 7, dropSpeed: 2.5,
   jointReach: 3.2,       // m: a back joint is within reach
   ease: 7,               // 1/s: pose blend on mount/dismount
+  bump: 0.35,            // m: the body rides this far out from the smooth tube (the crust's mean)
+  bumpReach: 1.3,        // m: hands find holds on chunks standing at most this far proud of the tube
+  footClear: 0.85,       // m: feet below the pelvis; climbing down past the ground steps off
 };
 
 const LEG = 1, BODY = 2;
@@ -31,6 +34,10 @@ const HANG = 0, REACH = 1, PULL = 2;
  */
 export function createClimb(ctx) {
   const { warden } = ctx;
+  /** Ground query (optional): climbing down to the ground steps off rather than sinking in. */
+  const ground = ctx.ground || null;
+  /** evalSurface: true → the crust's real bumps (hands), false → the smooth tube (the body). */
+  let bumps = false;
   const T = climbTuning, SH = WARDEN_SHAPE;
   // Scratch (no allocation per frame).
   const P = new Float64Array(3), N = new Float64Array(3), Ts = new Float64Array(3), Ta = new Float64Array(3);
@@ -59,6 +66,8 @@ export function createClimb(ctx) {
     spend: null,
     // Move: from / to in the surface's parameters.
     _f1: 0.5, _f2: 0.5, _t1: 0.5, _t2: 0.5, _feetMoved: 0,
+    /** Carried offset after changing surface (eased to zero). */
+    _cx: 0.5 - 0.5, _cy: 0.5 - 0.5, _cz: 0.5 - 0.5,
 
     get climbing() { return this.mode !== 0; },
     /** Fresh holds around the current position (after setting mode and parameters directly). */
@@ -99,13 +108,24 @@ export function createClimb(ctx) {
         this.phase += dt * 6;
         if (k >= 1) {
           this.cycle = HANG; this.cycleT = 0; this.lead = 1 - this.lead;
-          const was = this.mode;
+          const was = this.mode, wx = this.x, wy = this.y, wz = this.z;
           transitions(this);
           if (this.mode === 0) return;
-          if (this.mode !== was) regrip(this);
+          if (this.mode !== was) {
+            regrip(this);
+            // What the two surfaces do not share eases out instead of snapping.
+            this._cx += wx - this.x; this._cy += wy - this.y; this._cz += wz - this.z;
+          }
         }
       }
       surface(this);
+      // Carry from a surface change, decaying (the body glides across, the hands are already there).
+      const kc = Math.exp(-dt * 7);
+      this._cx *= kc; this._cy *= kc; this._cz *= kc;
+      this.x += this._cx; this.y += this._cy; this.z += this._cz;
+      // Down at the ground: step off onto it (the feet would otherwise go into the snow).
+      // (Also when the Warden kneels and lowers the climbed leg or flank onto the snow.)
+      if (ground !== null && feetBelowGround(this)) { letGo(this, 2); this.vx = 0; this.vy = 0; this.vz = 0; return; }
       writeHolds(this);
       this.blend = Math.min(1, this.blend + dt * T.ease);
       const idt = dt > 0 ? 1 / dt : 0;
@@ -175,10 +195,12 @@ export function createClimb(ctx) {
   function writeHolds(c) {
     const p1 = getP1(c), p2 = getP2(c), x = c.x, y = c.y, z = c.z;
     const nx = -c.fx, ny = -c.fy, nz = -c.fz;
+    bumps = true;
     for (let i = 0; i < 4; i++) {
       setP(c, hold[i * 2], hold[i * 2 + 1]); evalSurface(c);
       holdW[i * 3] = P[0]; holdW[i * 3 + 1] = P[1]; holdW[i * 3 + 2] = P[2];
     }
+    bumps = false;
     setP(c, p1, p2); surface(c);
     c.x = x; c.y = y; c.z = z;
     if (c.cycle === REACH) {
@@ -208,9 +230,17 @@ export function createClimb(ctx) {
     }
     if (best < 0 || bestD > T.reach) return;
     c.mode = LEG; c.leg = best; c.u = Math.max(0.06, bestU); c.a = bestA; c.phase = 0;
+    // Mount with the feet clear of the snow (grabbing the leg low means reaching up it).
+    if (ground !== null) for (let k = 0; k < 20; k++) { surface(c); if (!feetBelowGround(c)) break; c.u += 0.03; }
     warden.climbed = true;
     regrip(c);
     c.grabbed = true; c.gx = holdW[0]; c.gy = holdW[1]; c.gz = holdW[2];
+  }
+
+  function feetBelowGround(c) {
+    const fx = c.x - c.ux * T.footClear, fy = c.y - c.uy * T.footClear, fz = c.z - c.uz * T.footClear;
+    ground.qx = fx; ground.qz = fz; ground.sample();
+    return fy < ground.h + 0.05;
   }
 
   function letGo(c, why) {
@@ -218,7 +248,7 @@ export function createClimb(ctx) {
     // Thrown: flung outward and up; let go/slipped: drop away from the surface.
     const sp = why === 1 ? T.throwSpeed : T.dropSpeed;
     c.vx = -c.fx * sp + c.vx * 0.5; c.vy = (why === 1 ? 4 : 0.5) + c.vy * 0.5; c.vz = -c.fz * sp + c.vz * 0.5;
-    c.mode = 0; c.fell = why; c.nearJoint = -1;
+    c.mode = 0; c.fell = why; c.nearJoint = -1; c._cx = 0; c._cy = 0; c._cz = 0;
     warden.climbed = false;
   }
 
@@ -242,30 +272,56 @@ export function createClimb(ctx) {
       let ax, ay, az, ex, ey, ez;
       if (u < 0.5) { const t = u / 0.5; ax = b.fx[l] + (b.kx[l] - b.fx[l]) * t; ay = b.fy[l] + (b.ky[l] - b.fy[l]) * t; az = b.fz[l] + (b.kz[l] - b.fz[l]) * t; ex = b.kx[l] - b.fx[l]; ey = b.ky[l] - b.fy[l]; ez = b.kz[l] - b.fz[l]; }
       else { const t = (u - 0.5) / 0.5; ax = b.kx[l] + (b.px[l] - b.kx[l]) * t; ay = b.ky[l] + (b.py[l] - b.ky[l]) * t; az = b.kz[l] + (b.pz[l] - b.kz[l]) * t; ex = b.px[l] - b.kx[l]; ey = b.py[l] - b.ky[l]; ez = b.pz[l] - b.kz[l]; }
-      const el = Math.hypot(ex, ey, ez) || 1; ex /= el; ey /= el; ez /= el;
+      let el = Math.hypot(ex, ey, ez) || 1; ex /= el; ey /= el; ez /= el;
+      // Round the knee: the axis direction turns smoothly from the shin's to the thigh's over
+      // u 0.38–0.62 (a hard switch flips the radial direction across the crease: a snap).
+      if (u > 0.38 && u < 0.62) {
+        let sx = b.kx[l] - b.fx[l], sy = b.ky[l] - b.fy[l], sz = b.kz[l] - b.fz[l];
+        let tx = b.px[l] - b.kx[l], ty = b.py[l] - b.ky[l], tz = b.pz[l] - b.kz[l];
+        const sl = Math.hypot(sx, sy, sz) || 1, tl = Math.hypot(tx, ty, tz) || 1;
+        sx /= sl; sy /= sl; sz /= sl; tx /= tl; ty /= tl; tz /= tl;
+        const k = (u - 0.38) / 0.24, w = k * k * (3 - 2 * k);
+        ex = sx + (tx - sx) * w; ey = sy + (ty - sy) * w; ez = sz + (tz - sz) * w;
+        el = Math.hypot(ex, ey, ez) || 1; ex /= el; ey /= el; ez /= el;
+      }
       // Radial direction at angle a (a measured around the axis from world +x, projected).
       let rx = Math.cos(c.a), ry = 0, rz = Math.sin(c.a);
       const d = rx * ex + ry * ey + rz * ez; rx -= ex * d; ry -= ey * d; rz -= ez * d;
       const rl = Math.hypot(rx, ry, rz) || 1; rx /= rl; ry /= rl; rz /= rl;
       // The visible surface along the ray: where it leaves the outermost chunk (bumps are
       // holds), never inside the smooth tube.
-      warden.rox = ax; warden.roy = ay; warden.roz = az; warden.rdx = rx; warden.rdy = ry; warden.rdz = rz;
-      const tr = legRadius(l, u), to = warden.rayOut(), R = to > tr ? to : tr;
+      const tr = legRadius(l, u);
+      let R = tr + T.bump;
+      if (bumps) {
+        warden.rox = ax; warden.roy = ay; warden.roz = az; warden.rdx = rx; warden.rdy = ry; warden.rdz = rz;
+        warden.rnear = tr + 0.4; warden.rfar = tr + T.bumpReach;
+        const to = warden.rayOut(); R = to > tr ? to : tr;
+      }
       P[0] = ax + rx * R; P[1] = ay + ry * R; P[2] = az + rz * R; N[0] = rx; N[1] = ry; N[2] = rz;
     } else {
       const S = SH.spine;
       const s = Math.min(S - 1, Math.max(0, c.s)), i = Math.min(S - 2, Math.floor(s)), t = s - i;
       const cx = b.sx[i] + (b.sx[i + 1] - b.sx[i]) * t, cy = b.sy[i] + (b.sy[i + 1] - b.sy[i]) * t, cz = b.sz[i] + (b.sz[i + 1] - b.sz[i]) * t;
-      // Body frame at s: forward (toward the head), up ⟂ forward, right.
-      let fx = b.sx[i] - b.sx[i + 1], fy = b.sy[i] - b.sy[i + 1], fz = b.sz[i] - b.sz[i + 1];
+      // Body frame at s: forward (toward the head) from the spine half a segment either side —
+      // continuous across the joints (one segment's direction flips at each: a snap).
+      const sa = Math.max(0, s - 0.5), sb = Math.min(S - 1, s + 0.5);
+      const ia = Math.min(S - 2, Math.floor(sa)), ta = sa - ia, ib = Math.min(S - 2, Math.floor(sb)), tb = sb - ib;
+      let fx = (b.sx[ia] + (b.sx[ia + 1] - b.sx[ia]) * ta) - (b.sx[ib] + (b.sx[ib + 1] - b.sx[ib]) * tb);
+      let fy = (b.sy[ia] + (b.sy[ia + 1] - b.sy[ia]) * ta) - (b.sy[ib] + (b.sy[ib + 1] - b.sy[ib]) * tb);
+      let fz = (b.sz[ia] + (b.sz[ia + 1] - b.sz[ia]) * ta) - (b.sz[ib] + (b.sz[ib + 1] - b.sz[ib]) * tb);
       const fl = Math.hypot(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl;
       let ux = -fx * fy, uy = 1 - fy * fy, uz = -fz * fy;
       const ul = Math.hypot(ux, uy, uz) || 1; ux /= ul; uy /= ul; uz /= ul;
       const rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx;
       const st = Math.sin(c.th), ct = Math.cos(c.th);
       N[0] = rx * st + ux * ct; N[1] = ry * st + uy * ct; N[2] = rz * st + uz * ct;
-      warden.rox = cx; warden.roy = cy; warden.roz = cz; warden.rdx = N[0]; warden.rdy = N[1]; warden.rdz = N[2];
-      const tr = bodyRadius(s), to = warden.rayOut(), R = to > tr ? to : tr;
+      const tr = bodyRadius(s);
+      let R = tr + T.bump;
+      if (bumps) {
+        warden.rox = cx; warden.roy = cy; warden.roz = cz; warden.rdx = N[0]; warden.rdy = N[1]; warden.rdz = N[2];
+        warden.rnear = tr + 0.4; warden.rfar = tr + T.bumpReach;
+        const to = warden.rayOut(); R = to > tr ? to : tr;
+      }
       P[0] = cx + N[0] * R; P[1] = cy + N[1] * R; P[2] = cz + N[2] * R;
     }
   }
@@ -307,8 +363,16 @@ export function createClimb(ctx) {
     const legs = SH.legs;
     if (c.mode === LEG) {
       if (c.u >= 1) {
-        const leg = legs[c.leg];
-        c.mode = BODY; c.s = leg.at; c.th = leg.side * 1.95;
+        // Onto the flank at the hip: the body point nearest the climber (not a fixed spot).
+        const leg = legs[c.leg], x = c.x, y = c.y, z = c.z;
+        c.mode = BODY;
+        let bd = 1e18, bs = leg.at, bt = leg.side * 1.95;
+        for (let ss = leg.at - 1; ss <= leg.at + 1.001; ss += 0.1) for (let t = -2.1; t <= 2.101; t += 0.05) {
+          c.s = Math.min(SH.spine - 1, Math.max(0, ss)); c.th = t; evalSurface(c);
+          const d = (P[0] + N[0] * T.standoff - x) ** 2 + (P[1] + N[1] * T.standoff - y) ** 2 + (P[2] + N[2] * T.standoff - z) ** 2;
+          if (d < bd) { bd = d; bs = c.s; bt = t; }
+        }
+        c.s = bs; c.th = bt;
       } else if (c.u < 0.04) letGo(c, 2);
       return;
     }
@@ -316,9 +380,16 @@ export function createClimb(ctx) {
     if (Math.abs(c.th) > 2.15) {
       for (let l = 0; l < legs.length; l++) {
         if (Math.abs(c.s - legs[l].at) < 0.7 && Math.sign(c.th) === legs[l].side) {
-          const b = warden.body;
-          c.mode = LEG; c.leg = l; c.u = 0.96;
-          c.a = Math.atan2(c.z - b.pz[l], c.x - b.px[l]);
+          // Down onto the leg: its point nearest the climber.
+          const x = c.x, y = c.y, z = c.z;
+          c.mode = LEG; c.leg = l;
+          let bd = 1e18, bu = 0.96, ba = 0;
+          for (let u = 0.7; u <= 0.981; u += 0.03) for (let a = 0; a < 6.283; a += 0.1) {
+            c.u = u; c.a = a; evalSurface(c);
+            const d = (P[0] + N[0] * T.standoff - x) ** 2 + (P[1] + N[1] * T.standoff - y) ** 2 + (P[2] + N[2] * T.standoff - z) ** 2;
+            if (d < bd) { bd = d; bu = u; ba = a; }
+          }
+          c.u = bu; c.a = ba;
           return;
         }
       }
