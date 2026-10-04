@@ -167,9 +167,15 @@ export function createTerrainState(engine, opts) {
       let ok = true;
       for (let pz = pz0; pz <= pz1; pz++) for (let px = px0; px <= px1; px++) {
         const key = pz * PAGES + px;
-        if (pageSlot[key] >= 0) continue;
-        // A stored page under a fresh write: its history is dropped (reload would race the write).
-        if (pageStored[key]) { pageStored[key] = 0; this.stats.stored--; worker.postMessage({ type: 'drop', key }); }
+        if (pageSlot[key] >= 0 || pageLoading[key]) continue;
+        // A stored page under a fresh write (a page the Wraith walked away from, or one a loaded
+        // save holds): bring its record back first. The write waits in the queue until it has
+        // arrived (update() holds brushes over loading pages), so nothing of either is lost.
+        if (pageStored[key]) {
+          pageStored[key] = 0; this.stats.stored--; pageLoading[key] = 1;
+          worker.postMessage({ type: 'load', key, time: this.time, gen });
+          continue;
+        }
         if (allocSlot(key, this.time, true) < 0) ok = false;
       }
       return ok;
@@ -321,6 +327,9 @@ export function createTerrainState(engine, opts) {
             const i1 = Math.min((og[0] + PAGE_N) * RATIO, next[0] + FINE_N), j1 = Math.min((og[1] + PAGE_N) * RATIO, next[1] + FINE_N);
             if (i0 < i1 && j0 < j1) { pi[P_IN + nIn * 4] = i0; pi[P_IN + nIn * 4 + 1] = j0; pi[P_IN + nIn * 4 + 2] = i1; pi[P_IN + nIn * 4 + 3] = j1; nIn++; }
           } else { arrivals.unshift(a); pageLoading[a.key] = 1; }
+        } else if (!a.words && pageSlot[a.key] < 0) {
+          // Nothing was stored after all (a write asked for it): a fresh page for that write.
+          allocSlot(a.key, now, true);
         }
       }
 
@@ -369,6 +378,11 @@ export function createTerrainState(engine, opts) {
 
       // Brushes: up to MAX_BRUSHES from the queue this frame (only after the window exists).
       brushN = Number.isNaN(origin[0]) && !moved ? 0 : Math.min(qCount, MAX_BRUSHES);
+      // Hold the queue at the first brush over a page still coming back from the worker.
+      for (let b = 0; b < brushN; b++) {
+        const o = ((qHead + b) % QUEUE) * BF, r = brushQ[o + 4] + brushQ[o + 5] * 1.9;
+        if (loadingUnder(brushQ[o] - r, brushQ[o + 1] - r, brushQ[o] + r, brushQ[o + 1] + r)) { brushN = b; break; }
+      }
       for (let b = 0; b < brushN; b++) {
         const o = ((qHead + b) % QUEUE) * BF;
         const x = brushQ[o], z = brushQ[o + 1], dx = brushQ[o + 2], dz = brushQ[o + 3], hl = brushQ[o + 4], hw = brushQ[o + 5];
@@ -416,6 +430,13 @@ export function createTerrainState(engine, opts) {
     },
   };
 
+  /** True when a page under the world-metre rect is loading from the worker. */
+  function loadingUnder(x0, z0, x1, z1) {
+    const px0 = Math.max(0, Math.floor((x0 + WORLD_HALF) / PAGE_M)), px1 = Math.min(PAGES - 1, Math.floor((x1 + WORLD_HALF) / PAGE_M));
+    const pz0 = Math.max(0, Math.floor((z0 + WORLD_HALF) / PAGE_M)), pz1 = Math.min(PAGES - 1, Math.floor((z1 + WORLD_HALF) / PAGE_M));
+    for (let pz = pz0; pz <= pz1; pz++) for (let px = px0; px <= px1; px++) if (pageLoading[pz * PAGES + px]) return true;
+    return false;
+  }
   function anySlot(c0, d0, c1, d1) {
     const off = WORLD_HALF * COARSE_PER_M;
     const px0 = Math.max(0, Math.floor((c0 + off) / PAGE_N)), px1 = Math.min(PAGES - 1, Math.floor((c1 - 1 + off) / PAGE_N));
