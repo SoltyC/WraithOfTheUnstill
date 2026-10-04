@@ -1,3 +1,6 @@
+@import '@fontsource/im-fell-english/400.css';
+@import '@fontsource/im-fell-english/400-italic.css';
+
 :root {
   --ink: #e9e4d8;
   --ink-dim: #9a968c;
@@ -52,14 +55,22 @@ html, body {
   animation: breathe 4.5s ease-in-out infinite;
 }
 .loading-title {
-  font-size: 15px;
-  letter-spacing: 0.42em;
-  text-transform: uppercase;
+  font-family: "IM Fell English", var(--serif);
+  font-size: clamp(22px, 2.1vw, 38px);
+  letter-spacing: 0.04em;
   color: var(--ink);
-  opacity: 0.82;
+  opacity: 0.88;
 }
+.loading-line {
+  position: absolute; bottom: 12vh; left: 50%; transform: translateX(-50%);
+  width: min(70vw, 760px); text-align: center;
+  font-family: "IM Fell English", var(--serif); font-style: italic;
+  font-size: clamp(15px, 1.1vw, 20px); line-height: 1.5; color: #a9b4bf;
+  opacity: 0; transition: opacity 1.8s ease;
+}
+.loading-line.on { opacity: 0.85; }
 .loading-bar {
-  width: 180px;
+  width: min(260px, 40vw);
   height: 1px;
   background: rgba(233, 228, 216, 0.12);
 }

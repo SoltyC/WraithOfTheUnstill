@@ -20,16 +20,17 @@ export function createFootprints(ts, depthScale = { v: 1 }) {
   let side = 1, acc = 0, lastX = NaN, lastZ = NaN, n = 0;
   function print(x, z, dx, dz) {
     n++;
+    const k = self.size;
     const jitter = (hash(n) - 0.5) * 0.12;           // a few degrees of toe-out variation
     const c = Math.cos(jitter), s = Math.sin(jitter);
     const fx = dx * c - dz * s, fz = dx * s + dz * c;
-    ts.bx = x - dz * SIDE * side; ts.bz = z + dx * SIDE * side;
-    ts.bdx = fx; ts.bdz = fz; ts.bl = HALF_LEN; ts.bw = HALF_W;
-    ts.bd = DEPTH * depthScale.v * (0.85 + 0.3 * hash(n + 0.5)); ts.bc = PACK;
+    ts.bx = x - dz * SIDE * side * k; ts.bz = z + dx * SIDE * side * k;
+    ts.bdx = fx; ts.bdz = fz; ts.bl = HALF_LEN * k; ts.bw = HALF_W * k;
+    ts.bd = DEPTH * depthScale.v * (0.85 + 0.3 * hash(n + 0.5)) * (0.4 + 0.6 * k); ts.bc = PACK;
     ts.stamp();
     side = -side;
   }
-  return {
+  const self = {
     /** Owner fields: player position and grounded flag, set before update(). */
     px: 0.5, pz: 0.5, grounded: false, enabled: true,
     update() {
@@ -45,12 +46,15 @@ export function createFootprints(ts, depthScale = { v: 1 }) {
     },
     /** Owner fields for stampFoot(): a planted foot's centre and facing (from the gait). */
     ex: 0.5, ez: 0.5, edx: 0.5, edz: 0.5,
+    /** Foot size for stampFoot() (1 = the Wraith; a child's prints are smaller and shallower). */
+    size: 1.5 - 0.5,
     /** Stamp one footprint exactly where a foot planted (the Wraith's footfall events). */
     stampFoot() {
       if (!this.enabled) return;
       n++;
-      ts.bx = this.ex; ts.bz = this.ez; ts.bdx = this.edx; ts.bdz = this.edz; ts.bl = HALF_LEN; ts.bw = HALF_W;
-      ts.bd = DEPTH * depthScale.v * (0.85 + 0.3 * hash(n + 0.5)); ts.bc = PACK;
+      const k = this.size;
+      ts.bx = this.ex; ts.bz = this.ez; ts.bdx = this.edx; ts.bdz = this.edz; ts.bl = HALF_LEN * k; ts.bw = HALF_W * k;
+      ts.bd = DEPTH * depthScale.v * (0.85 + 0.3 * hash(n + 0.5)) * (0.4 + 0.6 * k); ts.bc = PACK;
       ts.stamp();
     },
     /** Stamp a walked trail along a polyline [[x, z], ...] (photo spots; allocation is fine). */
@@ -60,7 +64,7 @@ export function createFootprints(ts, depthScale = { v: 1 }) {
         const len = Math.hypot(bx - ax, bz - az);
         if (len < 1e-3) continue;
         const dx = (bx - ax) / len, dz = (bz - az) / len;
-        for (let t = 0; t < len; t += STRIDE) {
+        for (let t = 0; t < len; t += STRIDE * self.size) {
           // A slight wander so the line is walked, not ruled.
           const w = Math.sin((k * 7.1 + t) * 0.9) * 0.04;
           print(ax + dx * t - dz * w, az + dz * t + dx * w, dx, dz);
@@ -68,4 +72,5 @@ export function createFootprints(ts, depthScale = { v: 1 }) {
       }
     },
   };
+  return self;
 }

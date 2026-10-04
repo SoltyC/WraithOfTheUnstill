@@ -12,7 +12,22 @@
     <div class="loading-mark"></div>
     <div class="loading-title">The Wraith of the Unstill</div>
     <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+    <div class="loading-line" id="loading-line"></div>
   </div>
+  <script>
+    // A line of the world while it loads (the first thing anyone sees: BRIEF §12).
+    (function () {
+      var lines = [
+        'For an age, the Shapers kept the world in motion.',
+        'When the last of them died, the motion had nowhere to go. It gathered in the empty robe.',
+        'The snow on the steppe has not fallen since. It hangs.',
+        'The Wraith does not kill Wardens. It lets them lie down.',
+      ];
+      var el = document.getElementById('loading-line'), i = Math.floor(Math.random() * lines.length);
+      function next() { if (!document.getElementById('loading')) return; el.classList.remove('on'); setTimeout(function () { el.textContent = lines[i++ % lines.length]; el.classList.add('on'); }, 900); setTimeout(next, 9000); }
+      if (!/capture=1|shots=/.test(location.search)) next();
+    })();
+  </script>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

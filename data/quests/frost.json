@@ -1,0 +1,176 @@
+{
+  "_review": "DRAFT for the user's review (story: Claude drafts, the user reviews). Every line of text here is a proposal.",
+  "chapter": "frost",
+  "title": "The Snow That Would Not Fall",
+
+  "places": {
+    "camp-frost": { "pos": [80, 2480], "name": "The Pilgrims' Fire" },
+    "spring-frost": { "pos": [-300, 2350], "name": "The Sleeping Spring" },
+    "varo-rise": { "pos": [860, 2380], "name": "The Watching Stone" }
+  },
+
+  "npcs": [
+    { "id": "aud", "name": "Aud", "archetype": "monk", "home": { "poi": "monastery", "dx": 6, "dz": -4 },
+      "about": "The last keeper of the monastery. Swept the floor around the Shaper's body for nine winters." },
+    { "id": "maren", "name": "Old Maren", "archetype": "elder", "home": { "poi": "camp-frost", "dx": 3, "dz": 2 },
+      "about": "Leads the pilgrims. Remembers snow that fell." },
+    { "id": "tobin", "name": "Tobin", "archetype": "child", "home": { "poi": "camp-frost", "dx": -4, "dz": 5 },
+      "lost": { "poi": "spring-frost", "dx": 4, "dz": 2 },
+      "about": "A pilgrim child who follows things." },
+    { "id": "isolde", "name": "Isolde", "archetype": "lantern", "home": { "poi": "camp-frost", "dx": 8, "dz": -3 },
+      "about": "Keeps the camp's lantern. Plays the lyre at night." },
+    { "id": "varo", "name": "Varo", "archetype": "staff", "home": { "poi": "varo-rise", "dx": 0, "dz": 0 },
+      "about": "A staff-bearer who walked out to watch the Warden and did not come back." }
+  ],
+
+  "talk": {
+    "aud": [
+      { "when": { "notFlag": "met-aud" }, "say": "aud.wake" },
+      { "when": { "restored": "frost" }, "say": "aud.after" },
+      { "say": "aud.again" }
+    ],
+    "maren": [
+      { "when": { "notFlag": "met-maren" }, "say": "maren.first" },
+      { "when": { "flag": "tobin-found", "notFlag": "thanked-tobin" }, "say": "maren.tobin" },
+      { "when": { "restored": "frost" }, "say": "maren.after" },
+      { "when": { "night": true }, "say": "maren.night" },
+      { "say": "maren.again" }
+    ],
+    "tobin": [
+      { "when": { "flag": "met-maren", "notFlag": "tobin-found" }, "say": "tobin.found" },
+      { "when": { "restored": "frost" }, "say": "tobin.after" },
+      { "say": "tobin.again" }
+    ],
+    "isolde": [
+      { "when": { "night": true }, "say": "isolde.night" },
+      { "when": { "restored": "frost" }, "say": "isolde.after" },
+      { "say": "isolde.day" }
+    ],
+    "varo": [
+      { "when": { "notFlag": "met-varo" }, "say": "varo.first" },
+      { "when": { "restored": "frost" }, "say": "varo.after" },
+      { "say": "varo.again" }
+    ]
+  },
+
+  "dialogue": {
+    "aud.wake": { "speaker": "aud", "lines": [
+      "You stood up out of his robe.",
+      "Nine winters I swept around him. I thought the cloth would rot before it moved.",
+      "The snow on the steppe has not fallen since he died. It hangs. Go down and see it.",
+      "There is a shrine below the cliffs. The stones there still remember him."
+    ], "then": [{ "setFlag": "met-aud" }] },
+    "aud.again": { "speaker": "aud", "lines": ["Down. The shrine, then the pilgrims' fire."] },
+    "aud.after": { "speaker": "aud", "lines": ["I heard the wind on the bell this morning. I had forgotten the note it makes."] },
+
+    "maren.first": { "speaker": "maren", "lines": [
+      "A robe with no one in it. The stories said you would come like this.",
+      "Out past the stone, something old lies across the steppe and holds the snow in the air.",
+      "Varo went to watch it. He has not come back to the fire.",
+      "And the boy has wandered again. If you see small tracks, follow them."
+    ], "then": [{ "setFlag": "met-maren" }] },
+    "maren.again": { "speaker": "maren", "lines": ["Varo is at the watching stone, east. Go quietly. It sleeps lightly."] },
+    "maren.tobin": { "speaker": "maren", "lines": ["You brought him back. Take this. It was a Shaper's, before it was ours."], "then": [{ "setFlag": "thanked-tobin" }, { "echo": "echo-frost-reach" }] },
+    "maren.night": { "speaker": "maren", "lines": [
+      "My mother saw them once. Tall, robed like you. They walked ahead of the weather.",
+      "Where they stopped, the snow came down. Where they went on, it followed."
+    ], "then": [{ "lore": "lore-shapers-walked" }] },
+    "maren.after": { "speaker": "maren", "lines": ["Listen. Snow is falling on the tents. I am too old to cry about weather, and I am crying about weather."] },
+
+    "tobin.found": { "speaker": "tobin", "lines": [
+      "There's water under the ice. It's not moving either.",
+      "I'm not lost. I was following the quiet."
+    ], "choice": { "options": [
+      { "text": "Lead him back.", "then": [{ "setFlag": "tobin-found" }] },
+      { "text": "Let him listen a while longer.", "then": [{ "setFlag": "tobin-found" }, { "setFlag": "tobin-listened" }] }
+    ] } },
+    "tobin.again": { "speaker": "tobin", "lines": ["Do you have a face in there? Maren says no. I think it's just dark."] },
+    "tobin.after": { "speaker": "tobin", "lines": ["The spring is talking now. It doesn't say anything. It just talks."] },
+
+    "isolde.day": { "speaker": "isolde", "lines": ["The lantern was lit at the monastery. I carry it so the fire never has to start from nothing."] },
+    "isolde.night": { "speaker": "isolde", "lines": ["Sit, if you sit. I only know the slow songs. The fast ones need wind."] },
+    "isolde.after": { "speaker": "isolde", "lines": ["The flame leans now. I had never seen it lean."] },
+
+    "varo.first": { "speaker": "varo", "lines": [
+      "There. Do you see it? I thought it was a ridge for three days.",
+      "It breathes once an hour. Its knees are water, held still.",
+      "Freeze what moves in it, and break what you freeze. Then let it lie down."
+    ], "then": [{ "setFlag": "met-varo" }] },
+    "varo.again": { "speaker": "varo", "lines": ["Its knees. Then its hips. Do not stand where it is looking."] },
+    "varo.after": { "speaker": "varo", "lines": ["It is a hill now. A good hill. I will tell them it lay down on its own; they would not believe the rest."] },
+
+    "bark.snow-returns": { "speaker": null, "lines": ["Far off, the first snow in nine winters reaches the ground."] }
+  },
+
+  "quests": [
+    { "id": "empty-robe", "kind": "main", "title": "The Empty Robe",
+      "summary": "Something has woken in the last Shaper's robe.",
+      "steps": [
+        { "id": "wake", "journal": "I woke in the monastery where the last Shaper died. A keeper named Aud was waiting.", "when": { "event": "talk:aud" } },
+        { "id": "shrine", "journal": "Aud told me of a shrine below the cliffs whose stones remember the Shaper.", "when": { "event": "shrine:shrine-frost-2" }, "actions": [{ "shrine": "shrine-frost-2" }, { "autosave": true }] },
+        { "id": "camp", "journal": "Pilgrims keep a fire on the plain below. They may know why the snow hangs.", "when": { "event": "talk:maren" } }
+      ],
+      "onDone": [{ "startQuest": "held-snow" }] },
+
+    { "id": "held-snow", "kind": "main", "title": "The Held Snow",
+      "summary": "A Warden lies across the steppe, holding its snow in the air.",
+      "start": { "quest": "empty-robe" },
+      "steps": [
+        { "id": "varo", "journal": "Maren says Varo went east to watch the Warden. He waits at the watching stone.", "when": { "event": "talk:varo" } },
+        { "id": "warden", "journal": "Varo: its knees are water, held still. Freeze them, break them, and let it lie down.", "when": { "event": "warden:released" }, "actions": [{ "say": "bark.snow-returns" }, { "autosave": true }] }
+      ],
+      "onDone": [{ "startQuest": "first-snow" }] },
+
+    { "id": "first-snow", "kind": "main", "title": "First Snow",
+      "summary": "The Warden has lain down. Motion is returning to the steppe.",
+      "start": { "quest": "held-snow" },
+      "steps": [
+        { "id": "return", "journal": "The snow is falling again. The pilgrims should see it.", "when": { "near": { "poi": "camp-frost", "r": 25 } } },
+        { "id": "maren", "journal": "Snow on the tents. Maren is waiting by the fire.", "when": { "event": "talk:maren" }, "actions": [{ "echo": "echo-frost-hold" }, { "autosave": true }] }
+      ] },
+
+    { "id": "trail-in-snow", "kind": "side", "title": "A Trail in the Snow",
+      "summary": "A pilgrim child has wandered from the fire.",
+      "start": { "flag": "met-maren" },
+      "steps": [
+        { "id": "follow", "journal": "Small footprints lead west from the pilgrims' fire.", "when": { "event": "talk:tobin" } },
+        { "id": "return", "journal": "I found Tobin at a frozen spring, listening to it. Maren will want him back.", "when": { "flag": "thanked-tobin" } }
+      ] },
+
+    { "id": "sleeping-spring", "kind": "side", "title": "The Sleeping Spring",
+      "summary": "Water lies still under the ice west of the camp.",
+      "start": { "flag": "tobin-found" },
+      "steps": [
+        { "id": "freeze", "journal": "Tobin said the water under the ice isn't moving. Perhaps it needs to be held harder before it can let go.", "when": { "event": "crystal", "near": { "poi": "spring-frost", "r": 14 } }, "actions": [{ "lore": "lore-spring" }] },
+        { "id": "flow", "journal": "I froze the spring solid. When the steppe is released, it may run.", "when": { "restored": "frost", "near": { "poi": "spring-frost", "r": 40 } }, "actions": [{ "echo": "echo-frost-surf" }] }
+      ] },
+
+    { "id": "stones-remember", "kind": "side", "title": "The Stones Remember",
+      "summary": "Five shrines stand on the frost steppe. Each remembers a Shaper's step.",
+      "start": { "quest": "empty-robe", "questStep": "shrine" },
+      "steps": [
+        { "id": "all", "journal": "Shrines on the steppe: the stones are warm under the frost. Find all five.", "when": { "flag": ["shrine-frost-1", "shrine-frost-2", "shrine-frost-3", "shrine-frost-4", "shrine-frost-5"] }, "actions": [{ "lore": "lore-five-stones" }, { "echo": "echo-frost-still" }] }
+      ] },
+
+    { "id": "night-song", "kind": "side", "title": "The Slow Songs",
+      "summary": "Isolde plays at night by the pilgrims' fire.",
+      "start": { "flag": "met-maren" },
+      "steps": [
+        { "id": "listen", "journal": "Isolde only knows the slow songs. She plays them at night.", "when": { "event": "talk:isolde", "night": true }, "actions": [{ "lore": "lore-slow-songs" }] }
+      ] }
+  ],
+
+  "echoes": {
+    "echo-frost-reach": { "name": "Echo of the Long Throw", "effect": "Ribbon reaches 25% farther.", "text": "A Shaper's gesture, flung wide." },
+    "echo-frost-hold": { "name": "Echo of the Held Breath", "effect": "Frozen joints and Shaped stay frozen 40% longer.", "text": "What is held may be held a little longer." },
+    "echo-frost-surf": { "name": "Echo of the Running Water", "effect": "Snow-surf keeps its speed longer on flats.", "text": "Water remembers which way is down." },
+    "echo-frost-still": { "name": "Echo of the Still Stone", "effect": "Focus returns faster while standing still.", "text": "The stones were patient. So were they." }
+  },
+
+  "lore": {
+    "lore-shapers-walked": { "title": "They Walked Ahead of the Weather", "text": "The Shapers did not command the snow. They walked, and the snow came after, the way a dog follows someone it loves. — as told by Old Maren" },
+    "lore-spring": { "title": "The Sleeping Spring", "text": "Beneath the ice the water stands in the shape it had when the last Shaper died, mid-ripple, waiting to finish the motion." },
+    "lore-five-stones": { "title": "The Five Stones", "text": "Each shrine marks where a Shaper stood still for a night. It was the only stillness they allowed themselves. The stones kept it for them." },
+    "lore-slow-songs": { "title": "The Slow Songs", "text": "Pilgrims' songs lost their quick verses as the wind died. Isolde says the quick verses were about weather, and no one could remember what weather sounded like." }
+  }
+}

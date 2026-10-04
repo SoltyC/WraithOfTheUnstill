@@ -1,0 +1,106 @@
+/* Menus (BRIEF §12): parchment, ink and the Shapers' visual language. Fully art-directed: no
+   browser default survives (buttons, ranges and focus rings are all restyled). The paper grain is
+   an SVG turbulence filter; nothing is loaded. */
+
+.codex-veil {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, rgba(6, 9, 14, 0.35), rgba(3, 4, 7, 0.82));
+  backdrop-filter: blur(3px) saturate(0.7);
+  opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+  font-family: var(--ink-font); color: #2b2116;
+}
+.codex-veil.on { opacity: 1; pointer-events: auto; }
+
+.parchment {
+  position: relative; width: min(88vw, 1320px); height: min(84vh, 860px);
+  padding: clamp(28px, 4vh, 54px) clamp(30px, 4vw, 64px);
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(255, 246, 222, 0.0) 40%, rgba(120, 84, 40, 0.28) 100%),
+    linear-gradient(180deg, #e9dcc0 0%, #e2d2b2 50%, #d9c7a2 100%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(80, 56, 28, 0.35), inset 0 0 120px rgba(110, 72, 30, 0.35);
+  border-radius: 3px;
+  transform: translateY(10px) scale(0.985); transition: transform 0.6s cubic-bezier(.2, .7, .2, 1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.codex-veil.on .parchment { transform: none; }
+.parchment::before { /* paper grain */
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.55; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.33  0 0 0 0 0.18  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.parchment::after { /* foxing and worn edges */
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(140, 92, 40, 0.16), transparent 18%),
+    radial-gradient(circle at 86% 74%, rgba(140, 92, 40, 0.12), transparent 22%),
+    radial-gradient(circle at 70% 12%, rgba(140, 92, 40, 0.08), transparent 14%);
+  box-shadow: inset 0 0 0 10px rgba(255, 250, 235, 0.08), inset 0 0 40px 6px rgba(70, 44, 18, 0.35);
+}
+
+.codex-head { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; position: relative; z-index: 1; }
+.codex-title { font-size: clamp(28px, 2.6vw, 46px); letter-spacing: 0.02em; color: #2a1d10; }
+.codex-sub { font-family: var(--text); font-style: italic; font-size: clamp(14px, 1.05vw, 19px); color: #6a5236; }
+.codex-rule { height: 14px; margin: 10px 0 18px; position: relative; z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(60, 40, 20, 0.55) 12%, rgba(60, 40, 20, 0.55) 88%, transparent) center / 100% 1px no-repeat; }
+.codex-rule::after { content: '◇'; position: absolute; left: 50%; top: -4px; transform: translateX(-50%); font-size: 14px; color: #5a3f22; background: #e3d4b5; padding: 0 8px; }
+
+.codex-tabs { display: flex; gap: 26px; position: relative; z-index: 1; }
+.codex-tabs button, .codex-list button, .codex-actions button {
+  all: unset; cursor: pointer; font-family: var(--ink-font); color: #4a3520; transition: color 0.2s ease, opacity 0.2s ease;
+}
+.codex-tabs button { font-size: clamp(16px, 1.25vw, 22px); opacity: 0.6; padding-bottom: 4px; border-bottom: 1px solid transparent; }
+.codex-tabs button.on { opacity: 1; border-bottom-color: rgba(60, 40, 20, 0.6); }
+.codex-tabs button:hover, .codex-tabs button:focus-visible { opacity: 1; }
+
+.codex-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(220px, 34%) 1fr; gap: clamp(20px, 3vw, 48px); position: relative; z-index: 1; }
+.codex-list { overflow-y: auto; padding-right: 10px; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: rgba(80, 56, 28, 0.4) transparent; }
+.codex-list .group { font-family: var(--text); font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; color: #7a5d3a; margin: 14px 0 4px; }
+.codex-list button { font-size: clamp(16px, 1.2vw, 21px); padding: 5px 0 5px 18px; position: relative; opacity: 0.78; }
+.codex-list button::before { content: ''; position: absolute; left: 2px; top: 50%; width: 7px; height: 7px; transform: translateY(-50%) rotate(45deg); border: 1px solid rgba(60, 40, 20, 0.6); }
+.codex-list button.done { opacity: 0.5; text-decoration: line-through; text-decoration-color: rgba(60, 40, 20, 0.4); }
+.codex-list button.done::before { background: rgba(60, 40, 20, 0.5); }
+.codex-list button.on, .codex-list button:hover, .codex-list button:focus-visible { opacity: 1; color: #24180c; }
+.codex-page { overflow-y: auto; font-family: var(--text); font-size: clamp(17px, 1.25vw, 22px); line-height: 1.55; color: #2f2416; padding-right: 8px; }
+.codex-page h2 { font-family: var(--ink-font); font-weight: 400; font-size: clamp(24px, 2vw, 34px); margin: 0 0 4px; color: #2a1d10; }
+.codex-page .summary { font-style: italic; color: #6a5236; margin-bottom: 18px; }
+.codex-page p { margin: 0 0 12px; }
+.codex-page p.past { color: #6d5a42; }
+.codex-page .echo-effect { font-family: var(--ink-font); color: #3a5a6a; }
+.codex-empty { font-family: var(--text); font-style: italic; color: #7a6244; }
+
+.codex-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; position: relative; z-index: 1; }
+.codex-actions button { font-size: clamp(20px, 1.7vw, 30px); opacity: 0.75; padding: 2px 0 2px 26px; position: relative; }
+.codex-actions button::before { content: '◇'; position: absolute; left: 0; font-size: 0.6em; top: 0.55em; opacity: 0; transition: opacity 0.2s ease; }
+.codex-actions button:hover, .codex-actions button:focus-visible { opacity: 1; }
+.codex-actions button:hover::before, .codex-actions button:focus-visible::before { opacity: 0.8; }
+.codex-actions button[disabled] { opacity: 0.3; cursor: default; }
+.codex-actions .note { font-family: var(--text); font-style: italic; font-size: 15px; color: #7a6244; }
+
+.codex-foot { position: relative; z-index: 1; margin-top: 14px; font-family: var(--text); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: #7a5d3a; display: flex; gap: 26px; }
+.codex-foot b { font-family: var(--ink-font); font-weight: 400; letter-spacing: 0; text-transform: none; color: #4a3520; margin-right: 6px; }
+
+/* Settings: ink sliders. */
+.codex-setting { display: grid; grid-template-columns: 200px 1fr 50px; align-items: center; gap: 18px; margin: 10px 0; font-family: var(--ink-font); font-size: 19px; }
+.codex-setting input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; height: 20px; }
+.codex-setting input[type=range]::-webkit-slider-runnable-track { height: 1px; background: rgba(60, 40, 20, 0.6); }
+.codex-setting input[type=range]::-moz-range-track { height: 1px; background: rgba(60, 40, 20, 0.6); }
+.codex-setting input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; margin-top: -5px; transform: rotate(45deg); background: #3a2a18; border: 0; }
+.codex-setting input[type=range]::-moz-range-thumb { width: 11px; height: 11px; transform: rotate(45deg); background: #3a2a18; border: 0; border-radius: 0; }
+.codex-setting output { font-family: var(--text); font-size: 16px; color: #6a5236; }
+
+/* Map. */
+.codex-map { flex: 1; min-height: 0; position: relative; z-index: 1; display: grid; place-items: center; }
+.codex-map canvas { max-width: 100%; max-height: 100%; mix-blend-mode: multiply; }
+
+/* Title screen: over the living world, no parchment. */
+.title-screen {
+  position: fixed; inset: 0; z-index: 19; display: flex; flex-direction: column; justify-content: center;
+  padding-left: 9vw; gap: 4vh; color: #ece6da;
+  background: linear-gradient(90deg, rgba(4, 6, 10, 0.78) 0%, rgba(4, 6, 10, 0.35) 45%, transparent 75%);
+  opacity: 0; pointer-events: none; transition: opacity 1.6s ease;
+}
+.title-screen.on { opacity: 1; pointer-events: auto; }
+.title-screen .name { font-family: var(--ink-font); font-size: clamp(38px, 4.4vw, 82px); line-height: 1.02; letter-spacing: 0.01em; text-shadow: 0 0 30px rgba(0, 0, 0, 0.6); }
+.title-screen .name small { display: block; font-family: var(--text); font-size: 0.26em; letter-spacing: 0.5em; text-transform: uppercase; color: #b8c8d8; margin-bottom: 1.2em; }
+.title-screen .codex-actions button { color: #ece6da; font-size: clamp(20px, 1.6vw, 28px); }
+.title-screen .codex-actions .note { color: #9aa6b2; }
+.title-screen .mark { width: 9px; height: 9px; border-radius: 50%; background: #cfe4ff; box-shadow: 0 0 18px 6px rgba(160, 200, 255, 0.35); animation: breathe 4.5s ease-in-out infinite; }

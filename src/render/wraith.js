@@ -42,6 +42,15 @@ function glow(d, i, v, r, g, b, size, on) {
   const o = i * 8; d[o] = v.x; d[o + 1] = v.y; d[o + 2] = v.z; d[o + 3] = on;
   d[o + 4] = r; d[o + 5] = g; d[o + 6] = b; d[o + 7] = size;
 }
+/** Similarity from a Veiled's simulation space to the world: p ← o + (p − o)·s (packed: 8 floats a particle, xyz first). */
+function mapOut(packed, n, xf) {
+  const ox = xf.ox, oy = xf.oy, oz = xf.oz, k = xf.s;
+  for (let i = 0; i < n; i++) {
+    const o = i * 8;
+    packed[o] = ox + (packed[o] - ox) * k; packed[o + 1] = oy + (packed[o + 1] - oy) * k; packed[o + 2] = oz + (packed[o + 2] - oz) * k;
+  }
+}
+function mapPoint(v, xf) { v.x = xf.ox + (v.x - xf.ox) * xf.s; v.y = xf.oy + (v.y - xf.oy) * xf.s; v.z = xf.oz + (v.z - xf.oz) * xf.s; }
 function staticMesh(mesh) {
   mesh.alwaysSelectAsActiveMesh = true;
   mesh.doNotSyncBoundingInfo = true;
@@ -55,20 +64,24 @@ function staticMesh(mesh) {
  * @param {{ qx: number, qz: number, h: number, sample: () => void }} ground
  * @param {{ buffers: { biomeA: any } }} clipmap  biome weights (spray: snow on snow, dust elsewhere)
  */
-export function createWraithView(scene, atmo, ground, clipmap) {
+export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const S = ShaderStore.ShadersStoreWGSL;
   S.clothVertexShader = clothVertexWGSL; S.clothFragmentShader = clothFragmentWGSL;
   S.wraithFurVertexShader = furVertexWGSL; S.wraithFurFragmentShader = furFragmentWGSL;
   S.wraithFxVertexShader = fxVertexWGSL; S.wraithFxFragmentShader = fxFragmentWGSL; S.wraithFxShadowFragmentShader = fxShadowFragmentWGSL;
   const engine = scene.getEngine();
-  const wraith = new Wraith(ground);
+  // The Veiled (opts.veiled) reuse the whole figure: their simulation runs in a scaled copy of the
+  // world (simGround), and the vertices are mapped back by the same similarity (xform) before
+  // upload, so a child's feet plant exactly on the real ground at its size.
+  const wraith = new Wraith(opts.simGround || ground);
+  const xf = opts.xform || null;
   const n = wraith.cloth.n;
   if (n > 4096) throw new Error('Wraith: fur encoding needs particle ids < 4096');
 
   // ---- Cloth: position = (particle id, u, v); indices from the garment grids.
   const pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) { pos[i * 3] = i; pos[i * 3 + 1] = wraith.uv[i * 2]; pos[i * 3 + 2] = wraith.uv[i * 2 + 1]; }
-  const mesh = staticMesh(new Mesh('wraith', scene));
+  const mesh = staticMesh(new Mesh(opts.name || 'wraith', scene));
   const vd = new VertexData(); vd.positions = pos; vd.indices = wraith.indices; vd.applyToMesh(mesh, false);
   const verts = new StorageBuffer(engine, wraith.packed.byteLength, undefined, 'wraith-cloth');
   const clothParams = new Vector4(1, 0, 1, 0.6);
@@ -76,7 +89,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
   const lit = { samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES], storage: [...ATMO_MATERIAL_BUFFERS, 'shadowData'] };
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', ...ENV_UNIFORMS],
     samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -86,6 +99,8 @@ export function createWraithView(scene, atmo, ground, clipmap) {
   mat.setVector4('clothHead', head); mat.setVector4('clothHandL', handL); mat.setVector4('clothHandR', handR);
   const frostCreep = new Vector4(0, 0, 0, 0);
   mat.setVector4('clothFrost', frostCreep);
+  const tint = opts.tint || [1, 1, 1];
+  mat.setVector4('clothTint', new Vector4(tint[0], tint[1], tint[2], 1));
   mat.backFaceCulling = false;
   mesh.material = mat;
 
@@ -101,7 +116,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
     }
     for (let t = 0; t < fi.length; t++) fidx[s * fi.length + t] = s * U + local.get(fi[t]);
   }
-  const fur = staticMesh(new Mesh('wraith-fur', scene));
+  const fur = staticMesh(new Mesh((opts.name || 'wraith') + '-fur', scene));
   const fvd = new VertexData(); fvd.positions = fpos; fvd.indices = fidx; fvd.applyToMesh(fur, false);
   const furParams = new Vector4(0, 0, 0, 0);
   const furMat = new ShaderMaterial('wraithFur', scene, { vertex: 'wraithFur', fragment: 'wraithFur' }, {
@@ -117,7 +132,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
   fur.material = furMat;
 
   // ---- Effects: glows (cowl, fingertips) then the spray ring.
-  const fx = staticMesh(quadMesh('wraith-fx', scene, FX_COUNT));
+  const fx = staticMesh(quadMesh((opts.name || 'wraith') + '-fx', scene, FX_COUNT));
   const fxData = new Float32Array(FX_COUNT * 8);
   for (let i = FX_GLOWS; i < FX_COUNT; i++) fxData[i * 8 + 3] = -1e9; // no spray yet
   const fxBuf = new StorageBuffer(engine, fxData.byteLength, undefined, 'wraith-fx');
@@ -146,6 +161,7 @@ export function createWraithView(scene, atmo, ground, clipmap) {
     wraith, mesh, fur, fx, material: mat, clothParams,
     /** Element light at the fingertips (0 = none) and the cowl light (1 = full health). */
     handLight: 0.6, cowlLight: 1,
+    handGlowSize: 0.035,
     /** Frost creeping up the robe (0..1, from wounds). */
     frost: 0.5 - 0.5,
     /** Owner fields: sim time (s), set before update(). */
@@ -204,8 +220,12 @@ export function createWraithView(scene, atmo, ground, clipmap) {
     /** Upload the effects alone at `time` (a held pose: spray emitted by others still shows). */
     uploadFx() { fxBuf.update(fxData); fxParams.x = this.time; },
     /** Run the simulation (inputs already set on `wraith`) and upload the vertices and effects. */
+    /** Glow colour of the hands (rgb; the Wraith's element light, or a Veiled's lantern). */
+    handGlow: [0.25, 0.45, 0.6],
+    /** Run the simulation only, without upload (a far Veiled keeps its pose cheaply). */
     update() {
       wraith.update();
+      if (xf) mapOut(wraith.packed, n, xf);
       verts.update(wraith.packed);
       const b = wraith.body, t = this.time;
       // The cowl light: deep in the hood, a little forward of the head's centre, breathing slowly.
@@ -224,8 +244,10 @@ export function createWraithView(scene, atmo, ground, clipmap) {
       }
       // Glow sprites: cowl (cold, small, faint) and fingertips (the element's light).
       glow(fxData, 0, head, 0.32 * head.w, 0.55 * head.w, 0.85 * head.w, 0.065, 1);
-      glow(fxData, 1, handL, 0.25 * handL.w, 0.45 * handL.w, 0.6 * handL.w, 0.035, this.handLight);
-      glow(fxData, 2, handR, 0.25 * handR.w, 0.45 * handR.w, 0.6 * handR.w, 0.035, this.handLight);
+      if (xf) { mapPoint(head, xf); mapPoint(handL, xf); mapPoint(handR, xf); }
+      const hg = this.handGlow;
+      glow(fxData, 1, handL, hg[0] * handL.w, hg[1] * handL.w, hg[2] * handL.w, this.handGlowSize, this.handLight);
+      glow(fxData, 2, handR, hg[0] * handR.w, hg[1] * handR.w, hg[2] * handR.w, this.handGlowSize, this.handLightR ?? this.handLight);
       fxBuf.update(fxData);
       fxParams.x = t; fxParams.y = wraith.cloth.windX * 0.2; fxParams.z = wraith.cloth.windZ * 0.2;
       furParams.x = wraith.cloth.windX * 0.05; furParams.y = wraith.cloth.windZ * 0.05; furParams.z = t;

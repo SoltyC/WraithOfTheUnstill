@@ -20,7 +20,9 @@ const settled = (page) => page.waitForFunction(() => window.__wraith.game.worldS
 try {
   // Session 1: make marks and save.
   // One browser context for both sessions: the save lives in its IndexedDB.
-  let { page, context } = await openGame(browser, server.url, 'snapshot=1', { width: W, height: H });
+  let { page, context } = await openGame(browser, server.url, 'snapshot=1&title=0', { width: W, height: H });
+  page.on('console', (m) => log('console', m.type(), m.text().slice(0, 300)));
+  page.on('pageerror', (e) => log('pageerror', e.message));
   log('booted');
   const marks = await page.evaluate(() => {
     const w = window.__wraith, ts = w.terrainState, c = w.game.controller.pos;
@@ -34,7 +36,9 @@ try {
     w.game.spawnWarden();
     return { near, far, trail: { x: c.x - 1, z: c.z - 5 } };
   });
+  log('marks queued');
   await frames(page, 30);
+  log('30 frames');
   await page.evaluate(() => { const w = window.__wraith; w.game.releaseWarden(); });
   await frames(page, 10);
   await page.evaluate(() => window.__wraith.warden.finishRelease());
@@ -43,6 +47,7 @@ try {
   // it lives only in its coarse page. Evict it to the worker to cover that path too.
   await page.evaluate(() => window.__wraith.terrainState.debugEvictFar());
   await frames(page, 10);
+  log('saving');
   const before = await page.evaluate(async (m) => {
     const w = window.__wraith;
     const ok = await w.game.saves.save('slot1');
@@ -57,7 +62,7 @@ try {
   // Session 2: a fresh page, load the slot.
   page = await context.newPage();
   page.on('pageerror', (e) => log('pageerror', e.message));
-  await page.goto(server.url + '?snapshot=1');
+  await page.goto(server.url + '?snapshot=1&title=0');
   await page.waitForFunction(() => window.__wraith && (window.__wraith.ready || window.__wraith.error), null, { timeout: 3600000, polling: 500 });
   log('rebooted');
   const pre = await page.evaluate(async (m) => (await window.__wraith.terrainState.debugProbe(m.near.x, m.near.z)), marks);

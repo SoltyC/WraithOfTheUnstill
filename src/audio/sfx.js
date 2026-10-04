@@ -28,7 +28,7 @@ export function createSfx() {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return;
     ac = new Ctx();
-    master = ac.createGain(); master.gain.value = 0.7;
+    master = ac.createGain(); master.gain.value = 0.7 * self.volume;
     const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
     master.connect(comp); comp.connect(ac.destination);
     const nb = noiseBuffer(ac, 2.5);
@@ -62,6 +62,9 @@ export function createSfx() {
     /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss. */
     wind: 0.5 - 0.5, hiss: 0.5 - 0.5, time: 0.5,
 
+    /** Effects volume 0..1 (settings). */
+    setVolume(v) { this.volume = v; if (master) master.gain.value = 0.7 * v; },
+    volume: 1,
     /** The shared AudioContext (null until unlocked); music plays through it too. */
     context() { return ac; },
 

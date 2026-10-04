@@ -50,7 +50,7 @@ async function boot() {
   progress(0.2);
 
   /** The shared boot context. */
-  const g = { qs, capture, progress, engine, setRenderScale };
+  const g = { qs, capture, progress, engine, setRenderScale, canvas };
   await (await import('./boot/world.js')).createWorld(g);
   progress(0.4);
   await (await import('./boot/actors.js')).createActors(g);
@@ -87,6 +87,9 @@ async function boot() {
   sysCreatures.addCreatureSystems(g);
   sysCinematic.addCinematicSystem(g);
   await sysEnv.addEnvironmentSystems(g);
+  (await import('./systems/chapter.js')).addChapterSystem(g);
+  (await import('./systems/npcs.js')).addNpcSystems(g);
+  (await import('./systems/architecture.js')).addArchitectureSystem(g);
   (await import('./systems/audio.js')).addAudioSystem(g);
 
   const overlay = new overlayMod.DevOverlay(game);
@@ -95,6 +98,15 @@ async function boot() {
   loop.addLate({ name: 'saves', update: () => { if (systemsMod.toggles.on.autosave && !capture) game.saves.tick(); } });
   const bench = qs.get('bench') ? await import('./core/bench.js') : null;
   if (bench) loop.addLate(bench.benchSystem);
+  // Screens (title, codex pages): live play only.
+  const menus = !capture && !bench ? (await import('./ui/menus/menus.js')).createMenus(g) : null;
+  if (menus) {
+    g.menus = menus;
+    g.openShrine = (t) => menus.open('shrine', t);
+    const ch = g.chapter;
+    g.progress = { collect(s) { ch.collect(s); s.journal.map = menus.map.serialize(); }, apply(s) { ch.apply(s); menus.map.restore(s.journal.map); } };
+    loop.addLate({ name: 'menus', update: () => menus.update() });
+  }
   loop.addLate({ name: 'inputEnd', update: inputMod.endInputFrame });
 
   const { env, clock, atmosphere, post, scene, streamer, controller } = g;
@@ -133,8 +145,8 @@ async function boot() {
   if (capture) loading.remove();
   else { loading.classList.add('done'); setTimeout(() => loading.remove(), 1600); }
   if (qs.get('overlay') === '1') overlay.toggle(true);
-  // A new game opens on the waking (the title screen will precede it once menus exist).
-  if (!capture && !bench) g.musicState.waking = true;
+  // The title over the living world; Begin plays the waking.
+  if (menus && qs.get('title') !== '0') menus.showTitle(); else if (menus) menus.started = true;
 
   window.__wraith = Object.assign(window.__wraith, {
     ready: true, game, shadows: g.shadows, terrainState: g.terrainState, wraithView: g.wraithView, frost: g.frost, shaped: g.shaped,

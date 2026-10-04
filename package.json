@@ -18,7 +18,9 @@
     "parity": "node tools/capture/parity-check.mjs"
   },
   "dependencies": {
-    "@babylonjs/core": "^9.29.0"
+    "@babylonjs/core": "^9.29.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/im-fell-english": "^5.3.0"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.2.5",

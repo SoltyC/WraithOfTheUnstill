@@ -12,6 +12,8 @@ export class Body {
   constructor() {
     this.yaw = 0.5 - 0.5;
     this.lean = 0.5 - 0.5;     // forward pitch (rad), eased
+    /** Posture inputs (the Veiled; 0 for the Wraith): standing hunch (rad) and breath depth (rad). */
+    this.hunch = 0.5 - 0.5; this.breath = 0.5 - 0.5; this._bt = 0.5 - 0.5;
     this.bank = 0.5 - 0.5;     // roll into turns (rad), eased
     this.prevYaw = 0.5 - 0.5;
     this.px = 0.5; this.py = 0.5; this.pz = 0.5;
@@ -66,7 +68,10 @@ export class Body {
     this.prevYaw = this.yaw;
     const k = 1 - Math.exp(-dt * 6);
     const sb = this.surf;
-    this.lean += (0.05 + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse - this.lean) * k;
+    // Posture (the Veiled): a standing hunch, and breathing — a slow rise and settle of the chest.
+    this._bt += dt;
+    const breathe = this.breath * Math.sin(this._bt * 2 * Math.PI / 4.6);
+    this.lean += (0.05 + this.hunch + breathe + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse - this.lean) * k;
     const walkBank = Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03));
     // Surfing: the whole figure leans into the carve (roll toward the inside of the turn).
     this.bank += (walkBank * (1 - sb) - this.surfLean * sb - this.bank) * (1 - Math.exp(-dt * 10));

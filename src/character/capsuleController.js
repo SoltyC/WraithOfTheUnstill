@@ -41,6 +41,8 @@ export class CapsuleController {
     this.grounded = false;
     /** God mode: no gravity or collision, flies along the wish direction. */
     this.god = false;
+    /** Architecture collision (world/solids.js) or null. */
+    this.solids = null;
     /** While true the controller does nothing (e.g. waiting for collision data after a teleport). */
     this.hold = false;
     // Inputs set each frame by the owner.
@@ -73,6 +75,7 @@ export class CapsuleController {
 
   /** Advance by `this.dt` (set by the caller; a field, not an argument, so no boxing). */
   update() {
+    if (this.solids !== null) this.solids.cull(this.pos.x, this.pos.z);
     if (this.hold) { this._acc = 0; return; }
     this._acc += this.dt;
     const h = controllerTuning.substep;
@@ -166,10 +169,13 @@ export class CapsuleController {
     p.x += v.x * h;
     p.z += v.z * h;
     p.y += v.y * h;
+    // Built things (world/solids.js): walls push out; plinths and floors are ground.
+    if (this.solids !== null) this.solids.push(p, v);
 
     g.qx = p.x; g.qz = p.z;
     g.sample();
-    const gy = g.h;
+    let gy = g.h;
+    if (this.solids !== null) { const so = this.solids; so.qx = p.x; so.qz = p.z; so.qh = gy; so.floorQ(); gy = so.h; }
     if (this.grounded) {
       // Stay glued to the ground over crests unless the drop exceeds snap distance.
       if (p.y - gy <= T.snapDistance) { p.y = gy; v.y = 0; }

@@ -66,6 +66,7 @@ uniform clothHead: vec4f;            // xyz = the cowl light's position, w = bre
 uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
 uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1)
+uniform clothTint: vec4f;            // rgb = robe dye (multiplies the outer garments), w = undyed trims kept (1)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -122,6 +123,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   else if (g >= 5 && g <= 8) { albedo = vec3f(0.2, 0.188, 0.165); sheenTint = vec3f(0.06); weaveAmp = 0.5; }
   else if (g == 9) { albedo = vec3f(0.085, 0.07, 0.05); sheenTint = vec3f(0.05); weaveAmp = 0.0; }
   else if (g == 10) { albedo = vec3f(0.11, 0.045, 0.038); sheenTint = vec3f(0.2, 0.12, 0.1); }
+  // The Veiled wear dyed robes (the Wraith's tint is 1).
+  if (g <= 4 || g == 10) { albedo *= uniforms.clothTint.rgb; }
 
   // Large-scale wear and fading (tens of cm), and slubs in the yarn (cm).
   let wear = vn2(m * vec2f(3.1, 2.3) + vec2f(f32(g) * 7.3, 0.0));

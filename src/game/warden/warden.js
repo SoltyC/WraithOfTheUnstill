@@ -63,6 +63,8 @@ export function createWarden(ctx) {
     body, chunks, joint, jx, jy, jz, nbr,
     /** Set when nbr has been (re)computed; the view uploads it and clears the flag. */
     nbrDirty: false, nbrReady: false,
+    /** Seconds a frozen joint holds before it thaws (an Echo lengthens it). */
+    thawTime: 9,
     active: false, state: W.DORMANT, t: 0.5, glow: 0.5 - 0.5, stompLeg: 0,
     /** Climbed (set by the climb system); while climbed it bucks every few seconds. */
     climbed: false, shaking: false, shakeCool: 0.5, shakeT: 0.5 - 0.5,
@@ -220,7 +222,7 @@ export function createWarden(ctx) {
       if (this.state === W.RESTED) { this.restore = 1; this.cover = 1; return; }
       this.t += dt;
       // Frozen joints thaw if not broken in time.
-      for (let k = 0; k < JOINTS; k++) if (joint[k] === JOINT.FROZEN && (jointT[k] += dt) > 9) joint[k] = JOINT.LIQUID;
+      for (let k = 0; k < JOINTS; k++) if (joint[k] === JOINT.FROZEN && (jointT[k] += dt) > this.thawTime) joint[k] = JOINT.LIQUID;
       // Bucking: when climbed, every few seconds it heaves to throw the Wraith off.
       this.shaking = false;
       if (this.climbed && (this.state === W.AWAKE || this.state === W.DORMANT)) {
