@@ -4,7 +4,26 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 6 (post, weather and time polish, frost), **starting**. Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 6 (post, weather and time polish, frost), **built; gate NOT yet met — it needs the target shots and benchmark on T**, which this session could not take (it ran in a cloud container with no GPU; see below). Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase 6 built** (commits 3bee69a …; DECISIONS.md "Phase 6"):
+  - **Post chain** (`src/post/`, `src/shaders/post/`): the camera renders into an HDR target (rgba16f + sampleable reverse-Z depth); compute passes follow and one display pass draws to the swapchain. MSAA is off (TAA replaces it).
+    - SSAO (½ res, depth only) → SSR on ice/wet slush (½ res; reflective pixels marked in the scene alpha by the frost clipmap) → weather volumes (¼ res: raymarched clouds, light-shaft ratio through the shadow cascades) → compose (AO, SSR, clouds, analytic weather fog) → frame-metered exposure → **TAA** (Halton jitter, depth reprojection, Catmull-Rom history, variance + min/max clip) → DOF (release cinematic only) → bloom (6-level compute chain) → display (AgX or ACES, CAS sharpen, 32³ LUT grade, grain, dither).
+    - Every pass has a toggle in the overlay (Systems & post). `?tonemap=agx` starts with AgX; `?postDebug=1|2|3` flags non-finite inputs / shows the raw scene / the composed frame.
+  - **Grading:** the stilled/restored grade moved into a procedural LUT (`post/grades.js`), with cold shadow tint and warm highlights when restored.
+  - **Eye adaptation:** a histogram meter of the real frame corrects the analytic exposure within −1 … +0.75 stop (replaces the fixed frost-albedo compensation); overcast and snow sit ~0.5 stop lower on purpose.
+  - **Weather** (`world/weather.js`): clear, overcast, snowfall, blizzard, eased over ~40 s. A stilled steppe has only clear and a still overcast. It drives cloud cover (clouds, sun dimming, overcast sky in the IBL), weather fog and light shafts, falling snow (`render/snowfall.js`, 16k GPU flakes, blizzard streaks), wind (cloth, spindrift, sound) and snow refill of tracks (×(1+5·snow)). Overlay: weather select with "auto (cycle)".
+  - **Fix:** the aerial-perspective LUT was looked up vertically mirrored since Phase 1 (DECISIONS.md).
+  - **Photo spots:** `p6-{clear,overcast,snowfall,blizzard}-{dawn,noon,dusk,night}` (the gate matrix), `p6-vista-clear`, `p6-vista-overcast`, `p6-shafts-snowfall`, `p6-stilled-golden`, `p6-restored-golden`.
+  - **Bench:** `?bench=weather` — each weather walking with an orbiting camera, a live clear→blizzard transition, and the Shaped pack in a blizzard.
+  - **Tests:** 102 (weather state machine added). `npm run alloc`: the weather update is allocation-free.
+- **Phase 6 verification so far (cloud container, SwiftShader, 480×270 — look only, no timings):** shots in this session's scratch only (not committed: they are software renders at 480×270, not gate evidence). Checked: clear noon/dusk, overcast noon, snowfall dusk, blizzard noon, the vista. Fixed from them: a dark outline on far silhouettes (TAA history undershoot, then SSR sky hits), overcast and blizzard exposed too bright, peaks showing through a blizzard, crisp sun shadows under a snowing deck.
+- **Phase 6 open (for the gate on T):**
+  - Take the gate shots and the bench on T (exact commands under "Exact next step").
+  - Tonemapper: ACES stays the default (the look Phases 2–5 were accepted on); AgX is one click away for an A/B on the target. The user should pick.
+  - Falling snow could not be judged at 480×270 (flakes are sub-pixel there); judge it on T at 1440p.
+  - Light shafts, the cloud volume and SSR need a look in motion on T.
+  - Not done: per-position cloud shadows on the ground (the deck dims the sun globally), real refraction for spell water/crystals (still the Phase 4 fake), per-object motion vectors for TAA. DECISIONS.md has the reasons.
+  - Performance is unmeasured: the post chain plus weather adds an estimated 2–3 ms; the pack view (13–14.5 ms before) is the one to watch. Render scale (overlay → Quality) is the lever if needed.
 - **Phase 5 built** (commits 653430b … 049ad9b; DECISIONS.md "Phase 5"):
   - **Shaped:** procedural bodies (rope spine, planted feet, two-bone knees) clad in chunk rigs of packed snow, ice shards and a glowing core.
     - Three archetypes: hound, brute (slam), seer (ice shards).
@@ -151,14 +170,17 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 - **Machines:**
   - **Target T** is this PC: Windows 11, RTX 3060, Chrome. Measure it with the in-page benchmark; the results go to `perf/runs/`.
   - **W** is WSL headless SwiftShader on the same PC, used for captures and allocation profiles.
-- **Exact next step:** Phase 6 (post, weather and time polish, frost): plan from BRIEF §5.6, §5.8 and §17.
+- **Exact next step:** on the target PC, `npm install && npm run build && npm run preview`, then in Windows Chrome:
+  1. `http://localhost:4173/?shots=p6-&dir=phase-06&capture=1&res=2560x1440` → 21 gate shots into `screenshots/phase-06/`;
+  2. `http://localhost:4173/?bench=weather&res=2560x1440` → `perf/runs/`;
+  3. review the shots against BRIEF §18 at every time of day and weather; A/B AgX vs ACES with the overlay toggle (or `&tonemap=agx`); fix what the shots show; then record PERF.md and ask the user to accept the Phase 6 gate.
 
 ## How to run
 
 ```
 npm install
 npm run dev                 # http://127.0.0.1:5173  (F1 or ` = dev overlay)
-npm test                    # Vitest logic tests (52)
+npm test                    # Vitest logic tests (102)
 npm run alloc               # zero-allocation check of hot CPU paths in Node's V8
 npm run capture             # build + 1440p photo-spot captures ×2 → screenshots/phase-01/, reproducibility + clipping report
 npm run bake                # rebuild data/world/ from the seed (≈25 s); npm run bake:verify checks it is byte-identical
@@ -168,6 +190,8 @@ npm run parity              # CPU/GPU height parity over 4096 points (gate: < 1 
 npm run build && npm run preview            # then, in Windows Chrome on the target:
 #   http://localhost:4173/?bench=1&res=2560x1440        → idle/walk/fly bench, results in perf/runs/
 #   http://localhost:4173/?bench=flight&res=2560x1440   → Phase 1 gate flight (surf + glide across the continent)
+#   http://localhost:4173/?bench=weather&res=2560x1440  → Phase 6: each weather, a live transition, pack in a blizzard
+#   http://localhost:4173/?shots=p6-&dir=phase-06&capture=1&res=2560x1440 → Phase 6 gate shots
 #   (add &gpuTimer=0 to skip GPU timing)
 ```
 
@@ -176,11 +200,31 @@ loading fade. `&overlay=1` opens the overlay. `&snapshot=0` disables snapshot re
 locks the render resolution.
 
 **WSL/Linux without a GPU:** the harness adds the SwiftShader flags automatically (DECISIONS.md).
+`WRAITH_CHROME=<chrome or headless_shell>` uses a preinstalled browser build; `WRAITH_OUTDIR=<dir>`
+builds and serves a separate output directory; `--query=postDebug=2` appends URL parameters.
 The bundled Chromium needs libgbm, libasound and libwayland-server. On this box they were unpacked
 without root into `~/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`, and the harness picks that
 up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwright install-deps chromium`.
 
 ## Session log
+
+### Session — 2026-10-04 — Phase 6 (post, weather and time polish, frost)
+
+**Machine:** a cloud container (4 cores, no GPU) — not T. Headless Chromium 1194 on SwiftShader via
+`WRAITH_CHROME=/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell` (the
+bundled Playwright wants a newer build) and `WRAITH_OUTDIR=/tmp/...` so concurrent runs never share
+`dist/`. A 480×270 spot takes 11–22 min. No timings were taken; no gate shots were committed.
+
+**Built:** see "Phase 6 built" above.
+
+**Defects found and fixed from the software shots:** dark 1-px outline on far silhouettes (first a
+NaN from SSAO taps on sky, then Catmull-Rom history undershoot compounding under variance clipping,
+then SSR self-hits whose refine landed on sky); overcast/blizzard over-exposed; peaks visible through
+a blizzard (fog layer too shallow); crisp sun shadows under a snowing deck.
+
+**Environment notes:** in this container one logic test fails (`Math.f16round` needs Node ≥ 24; the
+target's Node has it) and `npm run alloc` reports the same three pre-existing controller/spring-arm
+failures with and without this session's changes (Node 22 here).
 
 ### Session 5 — 2026-10-03 — Phase 2 (Frost Steppe look-dev), in progress
 

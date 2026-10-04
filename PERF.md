@@ -322,3 +322,27 @@ Run `13-37-17` with `?bench=fight`, every other browser closed. Phases:
   | pack | 13.0 ms | 14.5 ms |
 
   Late pipelines 0, draw calls 40. Still within the 16.7 ms budget at 1440p. The climb's chunk ray casts (up to ~8 rays × 380 ellipsoids a frame) do not show up.
+
+## Phase 6 (post chain and weather) — not yet measured on T
+
+This session ran in a cloud container without a GPU, so there are **no Phase 6 timings**. Run
+`?bench=weather&res=2560x1440` on T (phases: clear, overcast, snowfall, blizzard walking with an
+orbiting camera; a live clear→blizzard transition; the Shaped pack in a blizzard).
+
+Expected costs to check against the 3.0 ms post budget (and the 1.5 ms sky/clouds budget):
+
+| Pass | Resolution | Notes |
+|---|---|---|
+| SSAO | ½ | 8 taps + 4 neighbours, from depth |
+| SSR | ½ | early-out except marked ice/wet within 160 m |
+| Clouds + shaft ratio | ¼ | 24 cloud steps × (1 + 4 light taps); 16 shadow taps for shafts |
+| Compose | full | AO upsample, SSR, clouds, analytic fog |
+| Meter | 1 workgroup | 4096 samples |
+| TAA | full | 9 + 5 taps, two writes |
+| DOF | full | release cinematic only |
+| Bloom | ½ … 1/64 | 11 dispatches |
+| Display | full | tonemap ×5 (CAS), LUT, grain |
+| Falling snow | — | 16k quads, premultiplied; every quad collapses in the vertex shader when not snowing (64k vertices still run) |
+
+MSAA is off now (TAA), which should return some of the main pass's cost. The pack view
+(13.0–14.5 ms before Phase 6) is the one to watch; render scale is the lever if it overruns.
