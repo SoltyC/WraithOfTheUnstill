@@ -106,7 +106,7 @@ fn cloudDensity(p: vec3f, lay: vec2f, lod: f32) -> f32 {
   let cover = P.fog2.y;
   var c = n.r * 0.6 + n2 * 0.25 + n.g * 0.15;
   // Coverage: remap so cover 0 → nothing, 1 → a closed deck ("clear" at 0.3 keeps scattered cumulus).
-  c = clamp((c - (1.0 - cover) * 0.62) / max(1.0 - (1.0 - cover) * 0.62, 0.05), 0.0, 1.0);
+  c = clamp((c - (1.0 - cover) * 0.5) / max(1.0 - (1.0 - cover) * 0.5, 0.05), 0.0, 1.0);
   // Each column's top follows its coverage: thin edges stay low, cores tower — flat bases,
   // rounded (dome) tops, the way cumulus build. A closing deck fills the whole layer.
   let top = mix(0.12, 1.0, max(c, smoothstep(0.75, 1.0, cover)));
@@ -144,6 +144,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let ign = fract(52.9829189 * fract(dot(vec2f(q) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));
 
   // --- Clouds ---------------------------------------------------------------------------------
+  // A 64-frame golden-ratio jitter of the march start (TAA integrates it).
+  let cj = fract(ign + f32(i32(P.jitter.z) % 64) * 0.618034);
   var cl = vec4f(0.0, 0.0, 0.0, 1.0);
   let lay = cloudLayer();
   if (P.fog2.y > 0.02) {
@@ -156,8 +158,11 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     // Long grazing paths through the layer are capped (the far deck fades into the air anyway).
     t1 = min(min(t1, 60000.0), t0 + 14000.0);
     if (t1 > t0) {
+      // Steps start fine at the layer's entry (what you see of a deck from below is its first few
+      // hundred metres) and grow ×1.12; equal 440 m steps banded into ladders across the deck.
       let N = 32;
-      let dt = (t1 - t0) / f32(N);
+      var dt = 60.0 * max((t1 - t0) / 18000.0, 0.25);
+      var t = t0 + dt * cj;
       var T = 1.0; var S = vec3f(0.0);
       // Silver lining + back-scatter; sun light reaching the cloud is the undimmed sun (the
       // deck itself is what dims the ground's key light).
@@ -165,7 +170,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       let cc = clamp((P.fog2.y - 0.35) / 0.65, 0.0, 1.0);
       let sunC = keyC / (0.015 + 0.985 * (1.0 - cc) * (1.0 - cc) * (1.0 - cc));
       for (var i = 0; i < N; i++) {
-        let t = t0 + (f32(i) + ign) * dt;
+        if (t > t1) { break; }
         let p = cam + dir * t;
         // Detail fades as the step (and the distance) grows past the noise's texel size.
         let lod = clamp(max(dt / 250.0, t / 9000.0) - 0.5, 0.0, 1.0);
@@ -187,6 +192,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
           T *= tr;
           if (T < 0.01) { break; }
         }
+        t += dt; dt *= 1.12;
       }
       // Distant clouds fade into the atmosphere (they are seen through kilometres of air).
       let fade = exp(-t0 / 26000.0);

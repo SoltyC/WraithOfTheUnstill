@@ -166,7 +166,7 @@ export function createPost(scene, camera) {
       if (post.resetHistory) resetFrame = frame;
       const k = ((frame - resetFrame) % 8) * 2; // relative to the reset: captures repeat exactly
       const jx = post.jitter ? JITTER[k] : 0, jy = post.jitter ? JITTER[k + 1] : 0;
-      P[36] = jx; P[37] = jy; P[38] = frame; P[39] = post.resetHistory ? 1 : 0;
+      P[36] = jx; P[37] = jy; P[38] = frame - resetFrame; P[39] = post.resetHistory ? 1 : 0; // frame relative to the last reset: captures repeat exactly
       post.resetHistory = false;
       const c = camera.position;
       P[40] = c.x; P[41] = c.y; P[42] = c.z; P[43] = camera.minZ;
