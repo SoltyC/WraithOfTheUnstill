@@ -189,6 +189,21 @@ function watchingStone(b, facing) {
   b.box(1.6, 0.9, -0.5, 0.7, 0.7, 0.6, facing + 0.8, MAT.STONE, 2);
 }
 
+/** Props the Veiled carry: drawn with the architecture, each its own site that the NPC system
+ *  moves to the figure's hand every frame (local origin: the staff's foot, the lantern's ring). */
+function staff(len) { return (b) => { b.drum(0, 0, 0, len, 0.032, 0.026, 6, MAT.WOOD, 1, { solid: false }); b.drum(0, 0, len - 0.02, len + 0.06, 0.05, 0.02, 6, MAT.WOOD, 2, { solid: false }); }; }
+function lantern(b) {
+  b.box(0, 0, -0.34, -0.06, 0.085, 0.085, 0, MAT.METAL, 1, { solid: false });
+  b.box(0, 0, -0.3, -0.1, 0.07, 0.07, 0, MAT.EMBER, 2, { solid: false });
+  b.drum(0, 0, -0.06, 0, 0.012, 0.012, 4, MAT.METAL, 3, { solid: false });
+}
+export const PROPS = [
+  { id: 'prop-varo', npc: 'varo', kind: 'staff', build: staff(1.95) },
+  { id: 'prop-maren', npc: 'maren', kind: 'staff', build: staff(1.05) },
+  { id: 'prop-pilgrim-1', npc: 'pilgrim-1', kind: 'staff', build: staff(1.75) },
+  { id: 'prop-isolde', npc: 'isolde', kind: 'lantern', build: lantern },
+];
+
 /** Every site of the frost chapter: { id, x, z, facing, build, footprint (seat radius, m) }. */
 export function frostSites(table) {
   const P = (id) => table[id].pos;
@@ -201,6 +216,7 @@ export function frostSites(table) {
     { id: 'varo-rise', at: P('varo-rise'), facing: toward(P('varo-rise'), P('warden-frost')), build: watchingStone, footprint: 1.5 },
   ];
   for (let k = 1; k <= 5; k++) { const id = 'shrine-frost-' + k; sites.push({ id, at: P(id), facing: k * 1.3, build: shrine, footprint: 4.6 }); }
+  for (const p of PROPS) sites.push({ ...p, at: [0, 0], facing: 0, footprint: 0, prop: true });
   return sites;
 }
 

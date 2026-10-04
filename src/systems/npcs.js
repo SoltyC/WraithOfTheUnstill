@@ -143,7 +143,11 @@ export function addNpcSystems(g) {
       ground.qx = n.x; ground.qz = n.z;
       const known = ground.covers();
       const show = known && dc < FAR;
-      if (show !== n.shown) { n.shown = show; n.view.setEnabled(show); changed = true; if (!show) n.placed = false; }
+      if (show !== n.shown) {
+        n.shown = show; n.view.setEnabled(show); changed = true; if (!show) n.placed = false;
+        const prop = g.props?.[n.id];
+        if (prop && !show) g.architecture.sites[prop.index * 4 + 3] = 0;
+      }
       if (n.target) n.target.hidden = !show;
       if (!show) continue;
       ground.sample(); n.y = ground.h;
@@ -176,6 +180,15 @@ export function addNpcSystems(g) {
         footprints.stampFoot();
       }
       footprints.size = 1;
+      // What they carry: a staff planted beside the right hand, a lantern hanging from the left.
+      const prop = g.props?.[n.id];
+      if (prop) {
+        const b = w.body, sites = g.architecture.sites, o = prop.index * 4, k = prop.kind === 'lantern' ? 0 : 3;
+        const hx = xf.ox + (b.ha[k] - xf.ox) * xf.s, hy = xf.oy + (b.ha[k + 1] - xf.oy) * xf.s, hz = xf.oz + (b.ha[k + 2] - xf.oz) * xf.s;
+        if (prop.kind === 'lantern') { sites[o] = hx; sites[o + 1] = hy - 0.02; sites[o + 2] = hz; }
+        else { ground.qx = hx; ground.qz = hz; ground.sample(); sites[o] = hx; sites[o + 1] = ground.h - 0.05; sites[o + 2] = hz; }
+        sites[o + 3] = 1;
+      }
       if (n.target) { const h = w.body.head; n.target.x = xf.ox + (h[0] - xf.ox) * xf.s; n.target.y = xf.oy + (h[1] - xf.oy) * xf.s; n.target.z = xf.oz + (h[2] - xf.oz) * xf.s; }
     }
     if (!capture && frame % 15 === 0) pressTrail();

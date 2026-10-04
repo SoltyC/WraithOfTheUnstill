@@ -13,7 +13,8 @@ describe('Shaper architecture', () => {
   const sites = frostSites(table);
   const built = buildArchitecture(sites);
   it('builds every frost site into one indexed mesh with outward normals', () => {
-    expect(sites.length).toBe(9);
+    expect(sites.filter((s) => !s.prop).length).toBe(9);
+    expect(sites.length).toBeLessThanOrEqual(16); // ARCH_SITES
     const n = built.positions.length / 3;
     expect(built.indices.length % 3).toBe(0);
     expect(Math.max(...built.indices)).toBeLessThan(n);

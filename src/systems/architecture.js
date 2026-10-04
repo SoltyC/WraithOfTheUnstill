@@ -17,9 +17,12 @@ export function addArchitectureSystem(g) {
   shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
   view.freeze();
   const solids = g.solids = createSolids(sites, built);
+  /** Prop sites by NPC id (the NPC system places them at the hand). */
+  g.props = {};
+  sites.forEach((s, i) => { if (s.prop) g.props[s.npc] = { index: i, kind: s.kind }; });
   controller.solids = solids;
   // Ground anchors for every site (indices after the NPCs' 1..5).
-  sites.forEach((s, i) => streamer.setAnchor(8 + i, s.at[0], s.at[1]));
+  sites.forEach((s, i) => { if (!s.prop) streamer.setAnchor(8 + i, s.at[0], s.at[1]); });
   const camp = sites.findIndex((s) => s.id === 'camp-frost');
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
 
@@ -41,6 +44,7 @@ export function addArchitectureSystem(g) {
     // Seat sites whose ground has come in (re-seated only while far, so nothing shifts in view).
     for (let i = 0; i < sites.length; i++) {
       const s = sites[i], o = i * 4;
+      if (s.prop) continue; // moved by the NPC system
       if ((frame + i) % 20 !== 0 && view.sites[o + 3] > 0.5) continue;
       const dx = s.at[0] - p.x, dz = s.at[1] - p.z;
       if (view.sites[o + 3] > 0.5 && dx * dx + dz * dz < 200 * 200) continue;
@@ -57,6 +61,18 @@ export function addArchitectureSystem(g) {
     }
     const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5 ? 1 : tod < 7 || tod > 17.5 ? 0.5 : 0.2;
     view.glow[camp * 4 + 1] = night;
+    for (let i = 0; i < sites.length; i++) if (sites[i].kind === 'lantern') view.glow[i * 4 + 1] = 0.35 + 0.65 * night;
     view.params.x = clock.simTime; view.params.y = weather.snow; view.params.z = restoration.value;
+    // The camp fire lights the snow round it (the terrain's last spell-light slot, when no verb
+    // is using it; the verbs fill the slots from the first each frame).
+    const L = g.content.clipmap.spellLights, cs = view.sites, co = camp * 4;
+    if (L[31] <= 0 && cs[co + 3] > 0.5) {
+      const dx = cs[co] - p.x, dz = cs[co + 2] - p.z;
+      if (dx * dx + dz * dz < 300 * 300) {
+        const t = clock.simTime, flick = 0.82 + 0.1 * Math.sin(t * 7.1) + 0.08 * Math.sin(t * 12.7 + 1.3);
+        L[24] = cs[co]; L[25] = cs[co + 1] + 0.7; L[26] = cs[co + 2]; L[27] = 16;
+        L[28] = 1; L[29] = 0.5; L[30] = 0.22; L[31] = 1.4 * night * flick;
+      }
+    }
   } });
 }
