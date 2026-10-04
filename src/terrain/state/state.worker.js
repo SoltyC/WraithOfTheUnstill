@@ -4,7 +4,9 @@
 //   → { type:'init', base }                                  (fetches the surface map)
 //   → { type:'store', key, time, words: Uint32Array }        (evicted page, transferred)
 //   → { type:'drop', key }                                   (history overwritten by a fresh write)
-//   → { type:'load', key, time }                             ← { type:'page', key, words } | { type:'page', key, words: null }
+//   → { type:'load', key, time, gen }                        ← { type:'page', key, gen, words } | { …, words: null }
+//   → { type:'dump' }                                        ← { type:'dump', pages: [{ key, time, words }] } (copies)
+//   → { type:'restore', pages: [{ key, time, words }] }      (a loaded save: replaces the whole store)
 
 import { PAGE_N, COARSE_PER_M, WORLD_HALF, pageOriginCoarse } from './layout.js';
 import { unpackPage, packPage, allocPlanes, healPlanes } from './healing.js';
@@ -28,12 +30,19 @@ self.onmessage = async (e) => {
     })();
   } else if (m.type === 'drop') {
     store.delete(m.key);
+  } else if (m.type === 'dump') {
+    const pages = [];
+    for (const [key, v] of store) pages.push({ key, time: v.time, words: v.words.slice() });
+    self.postMessage({ type: 'dump', pages }, pages.map((p) => p.words.buffer));
+  } else if (m.type === 'restore') {
+    store.clear();
+    for (const p of m.pages) store.set(p.key, { time: p.time, words: p.words });
   } else if (m.type === 'store') {
     store.set(m.key, { time: m.time, words: m.words });
   } else if (m.type === 'load') {
     await initDone;
     const entry = store.get(m.key);
-    if (!entry) { self.postMessage({ type: 'page', key: m.key, words: null }); return; }
+    if (!entry) { self.postMessage({ type: 'page', key: m.key, gen: m.gen, words: null }); return; }
     store.delete(m.key);
     pageOriginCoarse(m.key, origin);
     const ox = origin[0], oz = origin[1];
@@ -46,6 +55,6 @@ self.onmessage = async (e) => {
     unpackPage(entry.words, planes);
     healPlanes(planes, Math.max(0, m.time - entry.time), material, tmp);
     packPage(planes, entry.words);
-    self.postMessage({ type: 'page', key: m.key, words: entry.words }, [entry.words.buffer]);
+    self.postMessage({ type: 'page', key: m.key, gen: m.gen, words: entry.words }, [entry.words.buffer]);
   }
 };

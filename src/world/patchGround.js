@@ -13,6 +13,9 @@ export class PatchGround {
     // Fine and coarse patch state: origin (x0, z0 = min corner), spacing, size, data.
     this.f = { x0: 0.5, z0: 0.5, step: 0.25, n: 0, data: null, version: -1 };
     this.c = { x0: 0.5, z0: 0.5, step: 2.5, n: 0, data: null, version: -1 };
+    /** Anchor patches (2 m) around fixed places the game keeps alive away from the player (the
+     *  Warden's arena, the camp): the last fallback, so distant actors stand on real ground. */
+    this.anchors = [];
     /** True once at least the coarse patch exists. */
     this.ready = false;
     /** Patches installed so far (diagnostics). */
@@ -25,6 +28,20 @@ export class PatchGround {
     t.x0 = p.x0; t.z0 = p.z0; t.step = p.step; t.n = p.n; t.data = p.heights; t.version = p.version;
     this.installs++;
     if (!fine) this.ready = true;
+  }
+
+  /** Install anchor patch i. */
+  installAnchor(i, p) {
+    while (this.anchors.length <= i) this.anchors.push({ x0: 0.5, z0: 0.5, step: 2.5, n: 0, data: null, version: -1 });
+    const t = this.anchors[i];
+    t.x0 = p.x0; t.z0 = p.z0; t.step = p.step; t.n = p.n; t.data = p.heights; t.version = p.version;
+  }
+
+  /** True when some patch covers (qx, qz) (the ground there is known). */
+  covers() {
+    if (this._inside(this.f) || this._inside(this.c)) return true;
+    for (let k = 0; k < this.anchors.length; k++) if (this._inside(this.anchors[k])) return true;
+    return false;
   }
 
   /** Bilinear lookup in patch t at (qx, qz); returns false when outside (uses this.h as output). */
@@ -40,10 +57,11 @@ export class PatchGround {
     return true;
   }
 
-  /** Height at (qx, qz) → h. Fine patch first, then coarse; 0 if neither covers the point. */
+  /** Height at (qx, qz) → h. Fine patch first, then coarse, then anchors; 0 if none covers it. */
   sample() {
     if (this._from(this.f)) return;
     if (this._from(this.c)) return;
+    for (let k = 0; k < this.anchors.length; k++) if (this._from(this.anchors[k])) return;
     this.h = 0;
   }
 

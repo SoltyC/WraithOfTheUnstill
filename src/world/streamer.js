@@ -14,6 +14,7 @@ const LOOKAHEAD_S = 2.5;
 const DETAIL_RADIUS = 1400;    // m: keep 2 m tiles resident within this of the predicted position
 const FINE = { n: 193, step: 0.25, refresh: 10 };  // 48 m patch, refresh when 10 m off-centre
 const COARSE = { n: 129, step: 2, refresh: 64 };    // 256 m patch
+const ANCHOR = { n: 97, step: 2 };                   // 192 m patches around fixed places
 
 // Tile states.
 const NONE = 0, REQUESTED = 1, ARRIVED = 2, RESIDENT = 3;
@@ -38,6 +39,9 @@ export class WorldStreamer {
     this.fineCx = 1e9; this.fineCz = 1e9; this.coarseCx = 1e9; this.coarseCz = 1e9;
     this.finePending = false; this.coarsePending = false;
     this.patchId = 0;
+    /** Anchor patches (setAnchor): fixed places whose ground stays known away from the player. */
+    this.anchors = [];
+    this.anchorPending = -1;
     this.residentCount = 0;
     /** Bumped on every tile upload; patches remember the version they were computed at. */
     this.residencyVersion = 0;
@@ -46,6 +50,13 @@ export class WorldStreamer {
     this.px = 0.5; this.pz = 0.5; this.vx = 0.5 - 0.5; this.vz = 0.5 - 0.5;
     this._initResolve = null;
     this.worker.onmessage = (e) => this._onMessage(e.data);
+  }
+
+  /** Keep the ground known around (x, z) as anchor i (refreshed as tiles arrive). */
+  setAnchor(i, x, z) {
+    while (this.anchors.length <= i) this.anchors.push({ x: NaN, z: NaN, version: -1 });
+    const a = this.anchors[i];
+    if (a.x !== x || a.z !== z) { a.x = x; a.z = z; a.version = -1; }
   }
 
   /** Load the world: resolves once GPU buffers exist (no height tiles yet). */
@@ -67,6 +78,12 @@ export class WorldStreamer {
       return;
     }
     if (m.type === 'patch') {
+      if (m.n === ANCHOR.n) {
+        const a = this.anchors[m.anchor];
+        if (a && a.x === m.cx && a.z === m.cz) { this.ground.installAnchor(m.anchor, m); a.version = m.version; }
+        this.anchorPending = -1;
+        return;
+      }
       const fine = m.n === FINE.n;
       this.ground.install(m, fine);
       if (fine) this.finePending = false; else this.coarsePending = false;
@@ -191,6 +208,18 @@ export class WorldStreamer {
       this.coarsePending = true;
       this.coarseCx = ax; this.coarseCz = az;
       this.worker.postMessage({ type: 'patch', id: ++this.patchId, version: this.residencyVersion, cx: ax, cz: az, n: COARSE.n, step: COARSE.step });
+    }
+    // Anchors: one request in flight; refreshed when the residency changed since (heights near
+    // newly resident tiles sharpen from the overview to the 2 m data, as on the GPU).
+    if (this.anchorPending < 0) {
+      for (let i = 0; i < this.anchors.length; i++) {
+        const a = this.anchors[i];
+        if (a.version === this.residencyVersion || Number.isNaN(a.x)) continue;
+        if (a.version >= 0 && this.inFlight > 0) continue; // refresh once streaming calms down
+        this.anchorPending = i;
+        this.worker.postMessage({ type: 'patch', id: ++this.patchId, version: this.residencyVersion, cx: a.x, cz: a.z, n: ANCHOR.n, step: ANCHOR.step, anchor: i });
+        break;
+      }
     }
     streaming.queueDepth = this.inFlight + this.arrived.length;
   }

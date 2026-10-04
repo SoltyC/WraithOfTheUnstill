@@ -1,7 +1,7 @@
 // Save schema, defaults, validation, and version migrations (BRIEF §4.5).
 // A save is plain JSON-compatible data plus binary terrain pages (Uint8Array).
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
 
 /**
@@ -9,11 +9,17 @@ export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
  * @typedef {{
  *   version: number, slot: string, createdAt: number, updatedAt: number, playSeconds: number,
  *   player: { pos: number[], yaw: number, element: number, health: number, focus: number },
- *   progression: { elements: string[], echoes: string[], robes: string[], robe: string },
- *   quests: Record<string, { state: string, vars: Record<string, number|string|boolean> }>,
- *   world: { timeOfDay: number, weather: string, biome: string, restoration: Record<string, string> },
+ *   progression: { elements: string[], echoes: string[], robes: string[], robe: string, shrines: string[] },
+ *   quests: { quests: Record<string, { state: string, step: number }>, flags: string[] },
+ *   journal: { lore: string[], map: string },
+ *   world: { timeOfDay: number, weather: string, weatherOverride: string|null, biome: string, restoration: Record<string, string> },
+ *   entities: { crystals: number[], warden: null | { state: string, x: number, z: number, heading: number } },
  *   terrainPages: TerrainPage[],
  * }} SaveData
+ *
+ * Times: playSeconds is the game clock (clock.simTime) at the save; terrain pages' savedAt and
+ * crystal birth times are on that same clock, and a load shifts them to the new session's clock.
+ * journal.map is the explored-cells bitmask (map/fog of war), base64.
  */
 
 /** @returns {SaveData} */
@@ -25,9 +31,11 @@ export function createEmptySave(slot = 'auto', now = 0) {
     updatedAt: now,
     playSeconds: 0,
     player: { pos: [0, 0, 0], yaw: 0, element: 0, health: 1, focus: 1 },
-    progression: { elements: [], echoes: [], robes: ['pilgrim'], robe: 'pilgrim' },
-    quests: {},
-    world: { timeOfDay: 16.5, weather: 'clear', biome: 'frost', restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' } },
+    progression: { elements: [], echoes: [], robes: ['pilgrim'], robe: 'pilgrim', shrines: [] },
+    quests: { quests: {}, flags: [] },
+    journal: { lore: [], map: '' },
+    world: { timeOfDay: 16.5, weather: 'clear', weatherOverride: null, biome: 'frost', restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' } },
+    entities: { crystals: [], warden: null },
     terrainPages: [],
   };
 }
@@ -37,7 +45,20 @@ export function createEmptySave(slot = 'auto', now = 0) {
  * add a new one and bump SAVE_VERSION.
  * @type {Record<number, (s: any) => any>}
  */
-export const migrations = {};
+export const migrations = {
+  // v1 (Phase 0 skeleton) → v2 (Phase 7): the quest graph's state replaces the per-quest vars
+  // (no v1 build had quests, so they start fresh); shrines, journal and the world's entities
+  // (crystal formations, the Warden) are added empty; the weather is no longer forced.
+  1: (s) => ({
+    ...s,
+    version: 2,
+    progression: { ...s.progression, shrines: [] },
+    quests: { quests: {}, flags: [] },
+    journal: { lore: [], map: '' },
+    world: { ...s.world, weatherOverride: null },
+    entities: { crystals: [], warden: null },
+  }),
+};
 
 /**
  * Upgrade a save to `target`, applying each step in order.
@@ -67,7 +88,12 @@ export function validateSave(s) {
   if (!Array.isArray(s.player?.pos) || s.player.pos.length !== 3 || s.player.pos.some((n) => !Number.isFinite(n))) fail('player.pos');
   for (const k of ['yaw', 'element', 'health', 'focus']) if (!Number.isFinite(s.player[k])) fail('player.' + k);
   if (!Array.isArray(s.progression?.elements)) fail('progression.elements');
-  if (typeof s.quests !== 'object' || s.quests === null) fail('quests');
+  if (typeof s.quests?.quests !== 'object' || s.quests.quests === null || !Array.isArray(s.quests.flags)) fail('quests');
+  if (!Array.isArray(s.progression.shrines)) fail('progression.shrines');
+  if (!Array.isArray(s.journal?.lore) || typeof s.journal.map !== 'string') fail('journal');
+  if (!Array.isArray(s.entities?.crystals) || s.entities.crystals.some((n) => !Number.isFinite(n))) fail('entities.crystals');
+  const w = s.entities.warden;
+  if (w !== null && (typeof w?.state !== 'string' || !Number.isFinite(w.x) || !Number.isFinite(w.z) || !Number.isFinite(w.heading))) fail('entities.warden');
   if (!Number.isFinite(s.world?.timeOfDay)) fail('world.timeOfDay');
   if (!Array.isArray(s.terrainPages)) fail('terrainPages');
   for (const p of s.terrainPages) if (typeof p.key !== 'string' || !(p.data instanceof Uint8Array)) fail('terrainPages[]');

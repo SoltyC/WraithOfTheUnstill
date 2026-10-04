@@ -2,8 +2,7 @@
 // Gathering game state is delegated to `collect()` / `apply(save)` callbacks supplied by the
 // game, so this module knows nothing about individual systems.
 //
-// Skeleton status (Phase 0): player pose, time of day, weather, restoration and progression
-// fields are wired. Terrain pages arrive with the terrain-state system (Phase 1/2).
+// collect() may be async: terrain pages are read back from the GPU across frames.
 
 import { createEmptySave } from './saveSchema.js';
 
@@ -35,7 +34,7 @@ export class WorkerCodec {
 export class SaveManager {
   /**
    * @param {{ store: import('./saveStore.js').SaveStore, codec: { encode: (s: any) => Promise<Uint8Array>, decode: (b: Uint8Array) => Promise<any> },
-   *           collect: (save: import('./saveSchema.js').SaveData) => void, apply: (save: import('./saveSchema.js').SaveData) => void,
+   *           collect: (save: import('./saveSchema.js').SaveData) => void|Promise<void>, apply: (save: import('./saveSchema.js').SaveData) => void,
    *           now?: () => number, autosaveIntervalSec?: number, clock?: { realDt: number } }} opts
    */
   constructor(opts) {
@@ -72,7 +71,7 @@ export class SaveManager {
     try {
       const t = this.now();
       const s = createEmptySave(slot, t);
-      this.collect(s);
+      await this.collect(s);
       s.updatedAt = t;
       const bytes = await this.codec.encode(s);
       await this.store.put(slot, bytes, { updatedAt: t, playSeconds: s.playSeconds, biome: s.world.biome, timeOfDay: s.world.timeOfDay });

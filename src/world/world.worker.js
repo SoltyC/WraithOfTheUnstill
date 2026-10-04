@@ -4,7 +4,7 @@
 //   → { type:'init', base }                          ← { type:'init', manifest, overview, biomeA, biomeB, wind, surface, hydro }
 //   → { type:'tile', tx, tz }                        ← { type:'tile', tx, tz, data: Uint16Array }
 //   → { type:'resident', tx, tz }                    (GPU upload done: tile now used for collision)
-//   → { type:'patch', id, cx, cz, n, step }          ← { type:'patch', id, x0, z0, n, step, heights: Float32Array }
+//   → { type:'patch', id, cx, cz, n, step, anchor? } ← { type:'patch', id, x0, z0, n, step, heights: Float32Array, anchor, cx, cz }
 
 import { WorldData } from './worldData.js';
 
@@ -56,7 +56,7 @@ self.onmessage = async (e) => {
           heights[j * n + i] = world.h;
         }
       }
-      self.postMessage({ type: 'patch', id: m.id, version: m.version, x0, z0, n, step, heights }, [heights.buffer]);
+      self.postMessage({ type: 'patch', id: m.id, version: m.version, x0, z0, n, step, heights, anchor: m.anchor, cx: m.cx, cz: m.cz }, [heights.buffer]);
     }
   } catch (err) {
     self.postMessage({ type: 'error', message: String(err && err.message || err) });

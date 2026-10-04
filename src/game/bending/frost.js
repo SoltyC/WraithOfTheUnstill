@@ -109,6 +109,31 @@ export function createFrostBending(ctx) {
       li = stepRibbon(this, li);
       li = stepCrystals(this.dt, li);
     },
+    /** Save: the standing formations as flat numbers (per cluster: x, y, z, age, then its
+     *  prisms' 12 floats with birth times relative to `now`). Ice formations are permanent. */
+    serializeCrystals(now) {
+      const out = [];
+      for (let c = 0; c < CC; c++) {
+        if (cl.age[c] > 1e8) continue;
+        out.push(c, cl.x[c], cl.y[c], cl.z[c], cl.age[c]);
+        for (let k = 0; k < CK * 12; k++) { const v = crystals[c * CK * 12 + k]; out.push(k % 12 === 3 ? v - now : v); }
+      }
+      out.push(cl.next);
+      return out;
+    },
+    /** Load: replace every formation with the saved ones (birth times shifted to `now`). */
+    restoreCrystals(data, now) {
+      cl.age.fill(1e9); crystals.fill(0); cl.next = 0;
+      const per = 5 + CK * 12;
+      for (let i = 0; i + per <= data.length; i += per) {
+        const c = data[i];
+        if (!(c >= 0 && c < CC)) continue;
+        cl.x[c] = data[i + 1]; cl.y[c] = data[i + 2]; cl.z[c] = data[i + 3]; cl.age[c] = data[i + 4];
+        for (let k = 0; k < CK * 12; k++) { const v = data[i + 5 + k]; crystals[c * CK * 12 + k] = k % 12 === 3 ? v + now : v; }
+      }
+      if (data.length % per === 1) cl.next = data[data.length - 1] % CC;
+      self.crystalsDirty = true;
+    },
   };
 
   function startSweep(s) {

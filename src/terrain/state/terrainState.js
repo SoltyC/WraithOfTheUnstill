@@ -77,15 +77,25 @@ export function createTerrainState(engine, opts) {
   const slotBusy = new Uint8Array(SLOTS);             // reading back for eviction
   const slotUsed = new Float64Array(SLOTS);           // last time the window overlapped it
   const slotHealed = new Float64Array(SLOTS);
+  const slotDirty = new Uint8Array(SLOTS);            // holds an earlier page's data (zero before reuse)
+  let zeroPlane = null;                               // PAGE_N² zero words, made on first reuse
+  /** Bumped by restore(): replies and evictions from before it are dropped. */
+  let gen = 0;
   const bandHealed = new Float64Array(HEAL_BANDS);
   let tableDirty = false, freeSlots = SLOTS, healCursor = 0, bandCursor = 0, warmed = 0;
 
   const worker = new Worker(new URL('./state.worker.js', import.meta.url), { type: 'module' });
   worker.postMessage({ type: 'init', base: opts.base });
   const arrivals = []; // { key, words } from the worker, uploaded one per frame
-  worker.onmessage = (e) => { if (e.data.type === 'page') arrivals.push(e.data); };
+  let dumpWait = null; // resolve of a pending snapshot dump
+  worker.onmessage = (e) => {
+    if (e.data.type === 'page') { if (e.data.gen === gen) arrivals.push(e.data); }
+    else if (e.data.type === 'dump' && dumpWait) { const r = dumpWait; dumpWait = null; r(e.data.pages); }
+  };
 
   const origin = [NaN, NaN], next = [0, 0];
+  /** Snapshot requests waiting for the window flush (resolved in update). */
+  const flushWait = [];
   const rects = new Array(8).fill(0);
   // Brush queue (ring): x, z, dirX, dirZ, halfLen, halfWidth, depth, compaction, program, wetness,
   // side bias, berm scale.
@@ -99,9 +109,19 @@ export function createTerrainState(engine, opts) {
     if (slot >= 0) { slotKey[slot] = key; freeSlots--; }
     tableDirty = true;
   }
-  function allocSlot(key, now) {
+  /** Map key to a free slot; a fresh page (not a reload, which uploads its record) is zeroed if
+   *  the slot held another page, so nothing of it shows outside the window. */
+  function allocSlot(key, now, fresh) {
     for (let s = 0; s < SLOTS; s++) {
-      if (slotKey[s] < 0 && !slotBusy[s]) { setSlot(key, s); slotUsed[s] = now; slotHealed[s] = now; return s; }
+      if (slotKey[s] < 0 && !slotBusy[s]) {
+        setSlot(key, s); slotUsed[s] = now; slotHealed[s] = now;
+        if (fresh && slotDirty[s]) {
+          zeroPlane ||= new Uint32Array(PAGE_N * PAGE_N);
+          for (let w = 0; w < 3; w++) atlas[w].update(zeroPlane, s * PLANE_BYTES, PLANE_BYTES);
+        }
+        slotDirty[s] = 1;
+        return s;
+      }
     }
     return -1;
   }
@@ -113,7 +133,7 @@ export function createTerrainState(engine, opts) {
     return Math.sqrt(dx * dx + dz * dz);
   }
   function evict(slot, now) {
-    const key = slotKey[slot];
+    const key = slotKey[slot], g0 = gen;
     slotBusy[slot] = 1;
     const words = new Uint32Array(3 * PAGE_N * PAGE_N);
     // Each plane reads into its own array: Babylon's read() ignores a view's byteOffset.
@@ -124,9 +144,9 @@ export function createTerrainState(engine, opts) {
     setSlot(key, -1); slotKey[slot] = -1; freeSlots++;
     pageStored[key] = 1; self.stats.stored++;
     Promise.all(reads).then(() => {
-      worker.postMessage({ type: 'store', key, time: now, words }, [words.buffer]);
+      if (g0 === gen) worker.postMessage({ type: 'store', key, time: now, words }, [words.buffer]);
       slotBusy[slot] = 0;
-    }, () => { slotBusy[slot] = 0; pageStored[key] = 0; self.stats.stored--; });
+    }, () => { slotBusy[slot] = 0; if (g0 === gen) { pageStored[key] = 0; self.stats.stored--; } });
   }
 
   const self = {
@@ -150,7 +170,7 @@ export function createTerrainState(engine, opts) {
         if (pageSlot[key] >= 0) continue;
         // A stored page under a fresh write: its history is dropped (reload would race the write).
         if (pageStored[key]) { pageStored[key] = 0; this.stats.stored--; worker.postMessage({ type: 'drop', key }); }
-        if (allocSlot(key, this.time) < 0) ok = false;
+        if (allocSlot(key, this.time, true) < 0) ok = false;
       }
       return ok;
     },
@@ -202,6 +222,56 @@ export function createTerrainState(engine, opts) {
       return { fine: fineV, coarse: coarseV, slot: s, stored: pageStored[key], loading: pageLoading[key] };
     },
 
+    /**
+     * Save (BRIEF §4.5): every page that holds marks, as { key, time, data } with the 3 planes'
+     * words as bytes (time = game time its healing is current to). The window is first written
+     * down into its pages; resident pages are read back one at a time (async, across frames);
+     * evicted pages come from the worker's store. Pages are not modified.
+     */
+    async snapshot() {
+      await new Promise((r) => flushWait.push(r));
+      const out = new Map();
+      for (let s = 0; s < SLOTS; s++) {
+        const key = slotKey[s];
+        if (key < 0 || slotBusy[s]) continue;
+        const words = new Uint32Array(3 * PAGE_N * PAGE_N);
+        const t = this.time;
+        await Promise.all(atlas.map((b, w) => b.read(s * PLANE_BYTES, PLANE_BYTES).then((v) => {
+          words.set(new Uint32Array(v.buffer, v.byteOffset, PAGE_N * PAGE_N), w * PAGE_N * PAGE_N);
+        })));
+        if (slotKey[s] === key) out.set(key, { key, time: t, words });
+      }
+      // Evictions in flight land in the worker's store first; then the store is copied out.
+      while (slotBusy.some((b) => b)) await new Promise((r) => setTimeout(r, 16));
+      const stored = await new Promise((r) => { dumpWait = r; worker.postMessage({ type: 'dump' }); });
+      for (const p of stored) if (pageSlot[p.key] < 0) out.set(p.key, p);
+      for (const a of arrivals) if (a.words && !out.has(a.key)) out.set(a.key, { key: a.key, time: this.time, words: a.words.slice() });
+      return [...out.values()].map((p) => ({ key: String(p.key), savedAt: p.time, data: new Uint8Array(p.words.buffer, p.words.byteOffset, p.words.byteLength) }));
+    },
+    /**
+     * Load: forget every page and the window, and hand the saved pages to the worker's store as
+     * evicted pages (time already shifted to this session's game time). They reload as the
+     * window approaches them, exactly like pages the player walked away from.
+     */
+    restore(pages) {
+      gen++;
+      for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0) { setSlot(slotKey[s], -1); slotKey[s] = -1; freeSlots++; }
+      pageStored.fill(0); pageLoading.fill(0); arrivals.length = 0;
+      qHead = 0; qCount = 0;
+      const list = [];
+      for (const p of pages) {
+        const key = +p.key, words = new Uint32Array(p.data.buffer.slice(p.data.byteOffset, p.data.byteOffset + p.data.byteLength));
+        if (!(key >= 0 && key < PAGES * PAGES) || words.length !== 3 * PAGE_N * PAGE_N) continue;
+        pageStored[key] = 1;
+        list.push({ key, time: p.savedAt, words });
+      }
+      this.stats.stored = list.length;
+      worker.postMessage({ type: 'restore', pages: list }, list.map((p) => p.words.buffer));
+      origin[0] = NaN; origin[1] = NaN; // the whole window refills from the records
+    },
+    /** Pages near the player still to come back from the worker (loading waits on them). */
+    get pendingPages() { let n = arrivals.length; for (let k = 0; k < pageLoading.length; k++) n += pageLoading[k]; return n; },
+
     update() {
       const now = this.time;
       windowOrigin(this.px, this.pz, next);
@@ -226,12 +296,23 @@ export function createTerrainState(engine, opts) {
           nIn++;
         }
       }
+      // Save snapshot: write the whole window down into its pages (the coarse record is otherwise
+      // only refreshed as strips scroll out), so a readback of the pages holds every mark.
+      let flushing = false;
+      if (flushWait.length > 0 && nOut < 2 && !Number.isNaN(origin[0]) && !moved) {
+        const c0 = next[0] / RATIO, d0 = next[1] / RATIO, c1 = c0 + FINE_N / RATIO, d1 = d0 + FINE_N / RATIO;
+        if (anySlot(c0, d0, c1, d1)) {
+          pi[P_OUT + nOut * 4] = c0; pi[P_OUT + nOut * 4 + 1] = d0; pi[P_OUT + nOut * 4 + 2] = c1; pi[P_OUT + nOut * 4 + 3] = d1;
+          nOut++;
+        }
+        flushing = true;
+      }
       // Page arrivals from the worker (one per frame): upload, map, refill the window over it.
       if (arrivals.length > 0 && nIn < MAX_IN) {
         const a = arrivals.shift();
         pageLoading[a.key] = 0;
         if (a.words && pageSlot[a.key] < 0) {
-          const s = allocSlot(a.key, now);
+          const s = allocSlot(a.key, now, false);
           if (s >= 0) {
             for (let w = 0; w < 3; w++) atlas[w].update(new Uint32Array(a.words.buffer, w * PLANE_BYTES, PAGE_N * PAGE_N), s * PLANE_BYTES, PLANE_BYTES);
             // If the window already covers part of the page, refill that part from the record.
@@ -251,7 +332,7 @@ export function createTerrainState(engine, opts) {
         const key = pz * PAGES + px;
         if (pageStored[key] && !pageLoading[key] && pageSlot[key] < 0) {
           pageStored[key] = 0; pageLoading[key] = 1; this.stats.stored--;
-          worker.postMessage({ type: 'load', key, time: now });
+          worker.postMessage({ type: 'load', key, time: now, gen });
         } else if (pageSlot[key] >= 0) slotUsed[pageSlot[key]] = now;
       }
       // Keep a reserve of free slots: evict the least recently used page outside KEEP_RADIUS.
@@ -302,7 +383,10 @@ export function createTerrainState(engine, opts) {
       pu[P_COUNTS] = nOut; pu[P_COUNTS + 1] = nIn; pu[P_COUNTS + 2] = brushN;
 
       const warming = warmed < 5;
-      if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming) return;
+      if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming) {
+        if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
+        return;
+      }
       if (tableDirty) { params.update(tableData, PARAM_WORDS * 4, tableData.byteLength); tableDirty = false; }
       params.update(pu, 0, PARAM_WORDS * 4);
       // Dispatch order matters: out (reads the old window) before in (overwrites it).
@@ -310,6 +394,7 @@ export function createTerrainState(engine, opts) {
       if (nOut > 0) { ok = csOut.dispatch(maxGroups(P_OUT, nOut), maxGroupsY(P_OUT, nOut), nOut) && ok; passRan[0] |= ok; }
       if (ok && nIn > 0) { ok = csIn.dispatch(maxGroups(P_IN, nIn), maxGroupsY(P_IN, nIn), nIn) && ok; passRan[1] |= ok; }
       if (!ok) return; // pipelines still compiling: retry the whole step next frame
+      if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
       if (brushN > 0 && csBrush.dispatch(maxGroups(P_BRECT, brushN), maxGroupsY(P_BRECT, brushN), brushN)) { qHead = (qHead + brushN) % QUEUE; qCount -= brushN; passRan[2] = 1; }
       if (healFine && csHealFine.dispatch(Math.ceil(FINE_N / 8), Math.ceil(FINE_N / HEAL_BANDS / 8), 1)) {
         bandHealed[bandCursor] = now; bandCursor = (bandCursor + 1) % HEAL_BANDS; passRan[3] = 1;
