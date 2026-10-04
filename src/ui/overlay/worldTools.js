@@ -13,9 +13,11 @@ export function buildWorldTools(game, el) {
   // Teleport.
   h('Teleport');
   const poiSel = el('select');
-  for (const p of poiData.pois) poiSel.append(el('option', { value: p.id }, p.id + ' (' + p.biome + ')'));
+  // Baked POIs and the chapter's own places (camp, spring, watching stone).
+  const places = [...poiData.pois, ...Object.entries(game.places || {}).map(([id, p]) => ({ id, biome: 'frost', pos: p.pos }))];
+  for (const p of places) poiSel.append(el('option', { value: p.id }, p.id + ' (' + p.biome + ')'));
   root.append(el('div', { class: 'row' }, poiSel, el('button', {
-    onclick: () => { const p = poiData.pois.find((x) => x.id === poiSel.value); game.teleport(p.pos[0], p.pos[1]); },
+    onclick: () => { const p = places.find((x) => x.id === poiSel.value); game.teleport(p.pos[0], p.pos[1]); },
   }, 'Go')));
 
   // Photo spots.

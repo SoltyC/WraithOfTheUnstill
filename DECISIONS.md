@@ -327,3 +327,29 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Fixed on the way:** a reused atlas slot kept the previous page's data where the new page lay outside the fine window (ghost marks far away). A fresh page's slot is now zeroed when it held another page.
 - **Ice formations** (permanent) save their prisms with birth times relative to the save. **The Warden** saves as dormant or rested with its pose; a rested Warden is re-laid by stepping its release silently from the impact to rest (no terrain writes — the saved pages hold its crater, shockwave and drifts). A fight in progress saves as dormant (the fight restarts).
 - **The Warden in live play:** it now waits dormant in its arena (`warden-frost`); until Phase 7 it only existed through photo spots and the dev overlay. Its ground is kept known from afar by an **anchor patch** (a 192 m collision patch the streamer keeps around a fixed place), so it stands on real ground before the player is near.
+
+### The frost chapter (BRIEF §11)
+
+- **Data, not code:** `data/quests/frost.json` holds places, NPCs, talk tables (first matching condition wins), dialogue (lines, at most one choice of two, `then` actions), quests, Echoes and lore. The quest graph (Phase 7 start) runs it; `game/chapter.js` adds talk, dialogue and progression; tests play the whole chapter from waking to first snow, the lost child, and a save round trip.
+- **Story is a draft** for the user's review (user decision: Claude drafts, the user reviews). Proposed shape: wake in the monastery (Aud) → the shrine below the cliffs → the pilgrims' fire (Maren) → the watching stone (Varo) → release the Warden → first snow at the camp. Side: a child's trail to a frozen spring, freezing the spring and seeing it run after the release, the five shrines, the night songs.
+- **New place: the pilgrims' camp** at (80, 2480), ~600 m, between the monastery and the arena: the only broad flat frost ground on that line (sampled from the bake).
+- **Echoes are few and visible** (BRIEF §2.4): longer Ribbon reach, longer freezes, surf that keeps its speed, faster focus at rest. Granted by quests; the shrine "upgrade" choice of the BRIEF is not built yet (shrines rest, travel and save).
+
+### The Veiled (BRIEF §8.2)
+
+- **Same robe system, parameter variations:** each NPC is a full Wraith figure (cloth, gait, body) — staff-bearer (1.1×), elder (0.9×, hunched), child (0.62×), lantern-keeper, monk — with dyed robes (a tint on the outer garments), a hunch and breathing in the body's lean, no cowl light.
+- **Size by a similarity, not new rigs:** the figure is simulated at the Wraith's size in a scaled copy of the world (ground heights mapped through it) and its vertices are mapped back before upload. Feet plant exactly on the real ground at any size, and footprints land where they plant. No second gait or cloth tuning to keep in step.
+- **Cost:** CPU cloth per figure; five named Veiled and one walker. Full rate within 60 m, every third frame to 260 m, hidden beyond. Measure on T (`?bench=` not yet extended to the camp).
+
+### Architecture (BRIEF §11, §17)
+
+- **Procedural Shaper stone** (user decision): primitives (blocks, drums, cones, slabs) built once on the CPU into one mesh in site-local metres, placed per site by a uniform array (anchor, seat, shown). Seats are the lowest ground under each site's footprint, found once its ground is known (anchor patches), re-seated only while far; foundations run 3 m into the ground so slopes never show a gap. One draw, two shadow cascades.
+- **Collision:** `world/solids.js` — circles and oriented boxes that push the capsule out, platforms whose tops are floors. Field-based query on the substep path (no doubles across calls).
+- **Material language:** pale warm ashlar in 0.55 m courses, carved glyph bands that hold a cold light at shrines the Wraith has rested at (the monastery's wake as the steppe is restored), felt tents lit through by the fire at night, bronze, timber, and the frozen pool writing the SSR weight.
+
+### Screens (BRIEF §12)
+
+- **Title over the living world** (the sim keeps running behind it), not a separate scene. Continue loads the newest save; Begin plays the waking.
+- **One parchment codex** for every page (pause, journal, map, shrine, saves, settings): CSS gradients and an SVG turbulence grain, no image files; every control restyled. The world's clock stops under a page.
+- **The map is drawn from the bake** (8 m overview heights → ink hill shading and contours), revealed in 125 m cells as the Wraith explores, saved as a bitmask in the save. Places are lettered once found.
+- **Fonts:** Cormorant Garamond (text, subtitles) and IM Fell English (ink, titles), both OFL, bundled from npm (@fontsource) — no runtime font fetches.

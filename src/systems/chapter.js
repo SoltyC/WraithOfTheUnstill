@@ -27,6 +27,7 @@ export function addChapterSystem(g) {
     },
   });
   // Saves: the chapter is the quest graph and the progression (save v2).
+  game.places = frostData.places;
   g.quests = chapter;
   g.progress = chapter;
 
