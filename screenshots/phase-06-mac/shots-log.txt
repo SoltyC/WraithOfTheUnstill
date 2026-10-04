@@ -42,3 +42,25 @@
 2026-10-04T11:24:58.514Z 20/21 p6-stilled-golden: saved screenshots/phase-06-mac/p6-stilled-golden.png
 2026-10-04T11:25:01.209Z 21/21 p6-restored-golden: saved screenshots/phase-06-mac/p6-restored-golden.png
 2026-10-04T11:25:01.212Z Shots done: 21/21 spot(s) (p6-*) → screenshots/phase-06-mac/.
+2026-10-04T11:37:35.563Z 1/21 p6-clear-dawn: saved screenshots/phase-06-mac/p6-clear-dawn.png
+2026-10-04T11:37:38.703Z 2/21 p6-clear-noon: saved screenshots/phase-06-mac/p6-clear-noon.png
+2026-10-04T11:37:41.871Z 3/21 p6-clear-dusk: saved screenshots/phase-06-mac/p6-clear-dusk.png
+2026-10-04T11:37:44.957Z 4/21 p6-clear-night: saved screenshots/phase-06-mac/p6-clear-night.png
+2026-10-04T11:37:48.097Z 5/21 p6-overcast-dawn: saved screenshots/phase-06-mac/p6-overcast-dawn.png
+2026-10-04T11:37:51.201Z 6/21 p6-overcast-noon: saved screenshots/phase-06-mac/p6-overcast-noon.png
+2026-10-04T11:37:54.328Z 7/21 p6-overcast-dusk: saved screenshots/phase-06-mac/p6-overcast-dusk.png
+2026-10-04T11:37:57.463Z 8/21 p6-overcast-night: saved screenshots/phase-06-mac/p6-overcast-night.png
+2026-10-04T11:38:00.993Z 9/21 p6-snowfall-dawn: saved screenshots/phase-06-mac/p6-snowfall-dawn.png
+2026-10-04T11:38:04.120Z 10/21 p6-snowfall-noon: saved screenshots/phase-06-mac/p6-snowfall-noon.png
+2026-10-04T11:38:07.347Z 11/21 p6-snowfall-dusk: saved screenshots/phase-06-mac/p6-snowfall-dusk.png
+2026-10-04T11:38:10.470Z 12/21 p6-snowfall-night: saved screenshots/phase-06-mac/p6-snowfall-night.png
+2026-10-04T11:38:13.634Z 13/21 p6-blizzard-dawn: saved screenshots/phase-06-mac/p6-blizzard-dawn.png
+2026-10-04T11:38:16.843Z 14/21 p6-blizzard-noon: saved screenshots/phase-06-mac/p6-blizzard-noon.png
+2026-10-04T11:38:20.130Z 15/21 p6-blizzard-dusk: saved screenshots/phase-06-mac/p6-blizzard-dusk.png
+2026-10-04T11:38:23.404Z 16/21 p6-blizzard-night: saved screenshots/phase-06-mac/p6-blizzard-night.png
+2026-10-04T11:38:26.535Z 17/21 p6-vista-overcast: saved screenshots/phase-06-mac/p6-vista-overcast.png
+2026-10-04T11:38:29.574Z 18/21 p6-vista-clear: saved screenshots/phase-06-mac/p6-vista-clear.png
+2026-10-04T11:38:32.853Z 19/21 p6-shafts-snowfall: saved screenshots/phase-06-mac/p6-shafts-snowfall.png
+2026-10-04T11:38:35.662Z 20/21 p6-stilled-golden: saved screenshots/phase-06-mac/p6-stilled-golden.png
+2026-10-04T11:38:38.380Z 21/21 p6-restored-golden: saved screenshots/phase-06-mac/p6-restored-golden.png
+2026-10-04T11:38:38.387Z Shots done: 21/21 spot(s) (p6-*) → screenshots/phase-06-mac/.
