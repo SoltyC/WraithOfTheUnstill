@@ -102,7 +102,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   var albedo = vec3f(0.3, 0.29, 0.275);
   var rough = 0.85;
-  var emit = vec3f(0.0);
+  var emit = vec3f(0.0);       // display-referred (like the spell lights): divided by the exposure below
   var ssr = 0.0;
   var trans = 0.0;           // light through (canvas)
   var ao = 1.0;
@@ -127,7 +127,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       albedo *= 1.0 - 0.55 * gl;
       ao *= 1.0 - 0.3 * gl;
       let breath = 0.75 + 0.25 * sin(t * 1.3 + seed);
-      emit += vec3f(0.35, 0.68, 1.0) * gl * glowS.x * breath * 1.6;
+      emit += vec3f(0.3, 0.6, 0.95) * gl * glowS.x * breath * 0.55;
     }
   } else if (mid == 2) {
     // Felt and canvas: undyed wool, patched; light comes through it from the fire at night.
@@ -145,7 +145,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Embers: char and a breathing glow.
     albedo = vec3f(0.03, 0.025, 0.02);
     let flick = 0.6 + 0.25 * sin(t * 7.3 + wp.x * 9.0) + 0.15 * sin(t * 13.1 + wp.z * 7.0);
-    emit = vec3f(1.6, 0.42, 0.08) * smoothstep(0.1, 0.8, n1 * 0.5 + 0.5) * flick * glowS.y * 3.0;
+    emit = vec3f(1.0, 0.36, 0.08) * smoothstep(0.1, 0.8, n1 * 0.5 + 0.5) * flick * glowS.y * 0.9;
   } else {
     // Bronze, green with age.
     albedo = mix(vec3f(0.22, 0.14, 0.07), vec3f(0.12, 0.2, 0.17), smoothstep(-0.2, 0.6, n1 + 0.3 * N.y));
@@ -173,7 +173,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Canvas: sun through the felt, and the fire behind it.
   if (trans > 0.0) {
     col += albedo * key * clamp(-nl, 0.0, 1.0) * vis * 0.35;
-    col += vec3f(1.0, 0.55, 0.22) * albedo * glowS.y * 2.2 * (0.85 + 0.15 * sin(t * 6.1 + seed));
+    emit += vec3f(1.0, 0.55, 0.24) * albedo * glowS.y * 0.55 * (0.85 + 0.15 * sin(t * 6.1 + seed));
   }
   let H = normalize(L + V);
   let shin = mix(16.0, 140.0, 1.0 - rough);
@@ -183,11 +183,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (s0.y > 0.0 && trans == 0.0) {
     let toFire = vec3f(s0.z, 0.0, s0.w) - wp; // hearth xz in z/w (world)
     let d = length(toFire.xz);
-    col += albedo * vec3f(1.0, 0.5, 0.2) * s0.y * 3.0 * max(dot(N, normalize(toFire + vec3f(0.0, 0.6, 0.0))), 0.0) / (1.0 + d * d * 0.35);
+    emit += albedo * vec3f(1.0, 0.5, 0.2) * s0.y * 0.9 * max(dot(N, normalize(toFire + vec3f(0.0, 0.6, 0.0))), 0.0) / (1.0 + d * d * 0.35);
   }
-  col += emit;
+  let ex = uniforms.fogParams.z * atmoExposure();
+  col += emit / max(ex, 1e-6);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
-  let outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
+  let outc = displayTransform(col, ex);
   fragmentOutputs.color = vec4f(outc, ssr);
 }
 `;

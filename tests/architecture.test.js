@@ -31,7 +31,11 @@ describe('Shaper architecture', () => {
     const m = sites[0].at;
     solids.cull(m[0], m[1]);
     // On the plinth: the floor is its top, above lower terrain.
-    expect(solids.floor(m[0] + 1, m[1] + 1, 99)).toBeCloseTo(100.35, 5);
+    expect(solids.floor(m[0] + 1, m[1] + 1, 99, false, 100.2)).toBeCloseTo(100.35, 5);
+    // A top far above the feet (walking at the citadel's foot) is not stood on.
+    expect(solids.floor(m[0] + 1, m[1] + 1, 60, false, 60)).toBe(60);
+    // On the platform over a 40 m drop (the citadel's edge): still its top.
+    expect(solids.floor(m[0] + 14, m[1] + 1, 60, false, 100.35)).toBeCloseTo(100.35, 5);
     // Walk into the hall's back wall from inside: pushed back out.
     const f = sites[0].facing, fx = Math.sin(f), fz = Math.cos(f);
     const rx = Math.cos(f), rz = -Math.sin(f);

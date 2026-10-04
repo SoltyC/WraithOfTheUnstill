@@ -20,13 +20,14 @@ export function createSolids(sites, built) {
     cull(x, z) {
       for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; near[i] = !Number.isNaN(s.seat) && dx * dx + dz * dz < s.rad * s.rad ? 1 : 0; }
     },
-    /** Query fields for floorQ() (no doubles across calls on the substep path): qx, qz, qh → h. */
-    qx: 0.5, qz: 0.5, qh: 0.5, h: 0.5,
-    floorQ() { this.h = this.floor(this.qx, this.qz, this.qh, false); },
-    /** The same for anyone anywhere (the Veiled): every seated site, not just those near the player. */
-    floorAnyQ() { this.h = this.floor(this.qx, this.qz, this.qh, true); },
+    /** Query fields for floorQ() (no doubles across calls on the substep path): position qx, qz,
+     *  terrain height qh, feet height qf (a top higher than a step above the feet is not stood on) → h. */
+    qx: 0.5, qz: 0.5, qh: 0.5, qf: 0.5, h: 0.5,
+    floorQ() { this.h = this.floor(this.qx, this.qz, this.qh, false, this.qf); },
+    /** The same for anyone anywhere (the Veiled, feet, cloth): every seated site, any height. */
+    floorAnyQ() { this.h = this.floor(this.qx, this.qz, this.qh, true, Infinity); },
     /** Ground under (x, z) given the terrain height gy: the highest platform top beneath, if higher. */
-    floor(x, z, gy, any = false) {
+    floor(x, z, gy, any = false, feet = Infinity) {
       let h = gy;
       for (let i = 0; i < platforms.length; i++) {
         const p = platforms[i];
@@ -35,9 +36,32 @@ export function createSolids(sites, built) {
         const lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
         if (lx < -p.hx || lx > p.hx || lz < -p.hz || lz > p.hz) continue;
         const top = S[p.site].seat + p.top;
-        if (top > h && top - gy < 4) h = top;
+        if (top > h && top <= feet + 0.7) h = top;
       }
       return h;
+    },
+    /** Point query fields for insideQ() (the camera): px, py, pz. */
+    px: 0.5, py: 0.5, pz: 0.5,
+    /** True when (px, py, pz) is inside a solid or under a platform's top (any seated site). */
+    insideQ() {
+      const x = this.px, y = this.py, z = this.pz, m = 0.25;
+      for (let i = 0; i < blockers.length; i++) {
+        const b = blockers[i], seat = S[b.site].seat;
+        if (Number.isNaN(seat) || y > seat + b.y1 + m || y < seat + b.y0 - m) continue;
+        const dx = x - b.x, dz = z - b.z;
+        if (b.kind === 'circle') { if (dx * dx + dz * dz < (b.r + m) * (b.r + m)) return true; }
+        else {
+          const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
+          if (lx > -b.hx - m && lx < b.hx + m && lz > -b.hz - m && lz < b.hz + m) return true;
+        }
+      }
+      for (let i = 0; i < platforms.length; i++) {
+        const p = platforms[i], seat = S[p.site].seat;
+        if (Number.isNaN(seat) || y > seat + p.top + m) continue;
+        const dx = x - p.x, dz = z - p.z, lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
+        if (lx > -p.hx && lx < p.hx && lz > -p.hz && lz < p.hz) return true;
+      }
+      return false;
     },
     /** Push position p (x, y, z) out of every solid it overlaps at its height; v loses its into-wall part. */
     push(p, v) {

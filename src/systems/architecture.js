@@ -21,22 +21,33 @@ export function addArchitectureSystem(g) {
   g.props = {};
   sites.forEach((s, i) => { if (s.prop) g.props[s.npc] = { index: i, kind: s.kind }; });
   controller.solids = solids;
+  // The camera keeps out of walls, columns and plinths (with the Warden's own occluder).
+  const wardenOcc = g.arm.occluder;
+  g.arm.occluder = {
+    qx: 0.5, qy: 0.5, qz: 0.5,
+    probe() {
+      if (wardenOcc !== null) { wardenOcc.qx = this.qx; wardenOcc.qy = this.qy; wardenOcc.qz = this.qz; if (wardenOcc.probe()) return true; }
+      solids.px = this.qx; solids.py = this.qy; solids.pz = this.qz;
+      return solids.insideQ();
+    },
+  };
   g.wraithGround.solids = solids;
   // Ground anchors for every site (indices after the NPCs' 1..5).
   sites.forEach((s, i) => { if (!s.prop) streamer.setAnchor(8 + i, s.at[0], s.at[1]); });
   const camp = sites.findIndex((s) => s.id === 'camp-frost');
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
 
-  /** Seat: the lowest ground over the site's footprint (9 samples), or NaN until known. */
+  /** Seat: the lowest ground over the site's footprint (9 samples) — or the highest for a site
+   *  built up from a peak (seatAt 'top', foundations running down) — or NaN until known. */
   function seat(s) {
-    let lo = Infinity;
+    let lo = Infinity, hi = -Infinity;
     for (let k = 0; k < 9; k++) {
       const a = (k / 8) * Math.PI * 2, r = k === 8 ? 0 : s.footprint;
       ground.qx = s.at[0] + Math.cos(a) * r; ground.qz = s.at[1] + Math.sin(a) * r;
       if (!ground.covers()) return NaN;
-      ground.sample(); lo = Math.min(lo, ground.h);
+      ground.sample(); lo = Math.min(lo, ground.h); hi = Math.max(hi, ground.h);
     }
-    return lo;
+    return s.seatAt === 'top' ? hi : lo;
   }
   let frame = 0;
   loop.add({ name: 'architecture', update: () => {

@@ -175,7 +175,7 @@ export class CapsuleController {
     g.qx = p.x; g.qz = p.z;
     g.sample();
     let gy = g.h;
-    if (this.solids !== null) { const so = this.solids; so.qx = p.x; so.qz = p.z; so.qh = gy; so.floorQ(); gy = so.h; }
+    if (this.solids !== null) { const so = this.solids; so.qx = p.x; so.qz = p.z; so.qh = gy; so.qf = p.y; so.floorQ(); gy = so.h; }
     if (this.grounded) {
       // Stay glued to the ground over crests unless the drop exceeds snap distance.
       if (p.y - gy <= T.snapDistance) { p.y = gy; v.y = 0; }

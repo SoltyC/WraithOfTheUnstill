@@ -1631,19 +1631,19 @@
   {
    "id": "p7-monastery-approach",
    "biome": "frost",
-   "label": "The Shapers' monastery on the summit, from the descent: colonnade, bell arch, the hall's broken east wall (stilled, golden hour)",
+   "label": "The Shapers' monastery from the head of its steps: bell arch, cloister, the hall's broken east wall (stilled, golden hour)",
    "time": 16.8,
    "weather": "clear",
    "player": [
-    -482.8,
-    3173
+    -500.4,
+    3194.7
    ],
    "restoration": "stilled",
    "camera": {
     "mode": "follow",
     "yaw": -0.68,
-    "pitch": 0.2,
-    "dist": 9
+    "pitch": 0.22,
+    "dist": 8
    }
   },
   {
@@ -1698,6 +1698,30 @@
     "yaw": 0,
     "pitch": 0.12,
     "dist": 7
+   }
+  },
+  {
+   "id": "p7-monastery-aerial",
+   "biome": "frost",
+   "label": "The monastery crowning its peak: the citadel platform and its foundations down the slopes (stilled, golden hour)",
+   "time": 16.8,
+   "weather": "clear",
+   "player": [
+    -500.4,
+    3194.7
+   ],
+   "hidePlayer": true,
+   "restoration": "stilled",
+   "camera": {
+    "mode": "free",
+    "pos": [
+     -463.9,
+     1578,
+     3149.7
+    ],
+    "yaw": -0.68,
+    "pitch": 0.38,
+    "fov": 1.0
    }
   }
  ]

@@ -100,13 +100,22 @@ class Builder {
   }
 }
 
-/** Shaper monastery: a cloister on the summit where the last Shaper died. */
+/** Shaper monastery: a cloister crowning the summit where the last Shaper died. The peak is
+ *  sharp (the ground falls ~40 m inside the cloister's footprint), so the platform is a citadel:
+ *  seated at the summit, its ashlar foundations run 45 m down the slopes. */
+const CITADEL = 45;
 function monastery(b, facing, R) {
   const fx = Math.sin(facing), fz = Math.cos(facing), rx = Math.cos(facing), rz = -Math.sin(facing);
   const at = (s, f) => [rx * s + fx * f, rz * s + fz * f];
   // Platform: a stepped plinth (walkable), foundations into the slope.
-  b.box(0, 0, -FOUND, 0.35, 15, 15, facing, MAT.STONE, 1, { solid: false, platform: true });
-  b.box(...at(0, 15.6), -FOUND, 0.17, 5, 0.6, facing, MAT.STONE, 2, { solid: false, platform: true });
+  b.box(0, 0, -CITADEL, 0.35, 15, 15, facing, MAT.STONE, 1, { solid: false, platform: true });
+  b.box(...at(0, 15.6), -CITADEL, 0.17, 5, 0.6, facing, MAT.STONE, 2, { solid: false, platform: true });
+  // A parapet round the platform's edge, open toward the descent.
+  for (let k = 0; k < 4; k++) {
+    const yaw = facing + k * Math.PI / 2, ex = Math.sin(yaw) * 14.6, ez = Math.cos(yaw) * 14.6;
+    if (k === 0) { for (const s of [-1, 1]) { const ox = Math.cos(facing) * s * 9.5, oz = -Math.sin(facing) * s * 9.5; b.box(ex + ox, ez + oz, 0.35, 1.25, 5.2, 0.35, yaw, MAT.STONE, 120 + s); } }
+    else b.box(ex, ez, 0.35, 1.25, 14.6, 0.35, yaw, MAT.STONE, 110 + k);
+  }
   // The hall: 14 × 10 m, walls 0.9 m thick and ~6 m tall, a doorway facing the descent, the roof
   // half fallen in.
   const H = 6.2, T = 0.45;
@@ -139,7 +148,7 @@ function monastery(b, facing, R) {
     b.box(cx, cz, 5.4, 6.1, 3.2, 0.5, facing, MAT.GLYPH, 92, { carve: 1, solid: false });
     b.drum(cx, cz, 3.6, 5.3, 0.62, 0.32, 14, MAT.METAL, 93, { solid: false }); }
   // Steles flanking the approach.
-  for (const s of [-1, 1]) { const [x, z] = at(s * 4.2, 17.5); b.box(x, z, -0.5, 3.6, 0.55, 0.28, facing, MAT.GLYPH, 95 + s, { carve: 1 }); }
+  for (const s of [-1, 1]) { const [x, z] = at(s * 4.2, 13.6); b.box(x, z, 0.35, 4.1, 0.55, 0.28, facing, MAT.GLYPH, 95 + s, { carve: 1 }); }
 }
 
 /** A frost shrine: five standing stones round a low altar, a glyph ring, an open gate. */
@@ -210,7 +219,7 @@ export function frostSites(table) {
   const mon = P('monastery'), camp0 = P('camp-frost');
   const toward = (a, b) => Math.atan2(b[0] - a[0], b[1] - a[1]);
   const sites = [
-    { id: 'monastery', at: mon, facing: toward(mon, camp0), build: monastery, footprint: 16 },
+    { id: 'monastery', at: mon, facing: toward(mon, camp0), build: monastery, footprint: 16, seatAt: 'top' },
     { id: 'camp-frost', at: camp0, facing: toward(camp0, P('warden-frost')), build: camp, footprint: 12 },
     { id: 'spring-frost', at: P('spring-frost'), facing: 0, build: spring, footprint: 7.5 },
     { id: 'varo-rise', at: P('varo-rise'), facing: toward(P('varo-rise'), P('warden-frost')), build: watchingStone, footprint: 1.5 },

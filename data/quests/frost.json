@@ -5,7 +5,7 @@
 
   "places": {
     "camp-frost": { "pos": [80, 2480], "name": "The Pilgrims' Fire" },
-    "spring-frost": { "pos": [-300, 2350], "name": "The Sleeping Spring" },
+    "spring-frost": { "pos": [-460, 2380], "name": "The Sleeping Spring" },
     "varo-rise": { "pos": [860, 2380], "name": "The Watching Stone" }
   },
 
