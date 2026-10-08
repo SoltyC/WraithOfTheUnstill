@@ -228,6 +228,13 @@ The bundled Chromium needs libgbm, libasound and libwayland-server. On this box 
 without root into `~/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`, and the harness picks that
 up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwright install-deps chromium`.
 
+### Session — 2026-10-08 — Flow, navigation and quests (Phase 7 follow-up, user request)
+
+- Compact story layout in the bake (monastery on a shoulder above the Warden's arena; the Shapers' Run, a graded banked 493 m chute with nine gates; camp/spring/watching stone/5 shrines/6 Echo stones/den within ~1 km). `npm run bake:verify` byte-identical.
+- Navigation: `game/nav.js` registry, `ui/hud/compass.js` strip + waypoint, `systems/nav.js`; T cycles the tracked goal; Compass setting. Logged in DECISIONS.md (deviation from §12).
+- Quests: graph gained optional objectives, variables, reveal and goals; `frost.json` rewritten (3 main + 5 side); `systems/trials.js` supplies the Run gates, verb stones, Echo stones, braziers, encounters and last-shrine respawn.
+- To verify on the GPU: ride the Run (all nine gates light), wake the three hall stones, the hounds at the watching stone and the den, the compass at 2560×1440. Not built yet: light beacons, lantern, bell, robes.
+
 ## Session log
 
 ### Session — 2026-10-04 — Phase 6 (post, weather and time polish, frost)
