@@ -27,6 +27,11 @@ export function createCombat(ctx) {
   const warden = ctx.warden || null;
   const T = combatTuning;
   const sweepSeen = new Uint32Array(4 * MAX_SHAPED);   // last sweep id that hit each slot, per sweep slot
+  /** Seconds until the Ribbon may strike each slot again (it strikes in ticks, not per frame: a
+   *  per-frame strike on a frozen Shaped re-armed the shatter hit-stop every frame, and with the
+   *  clock stopped the stream did no damage — the game froze while the camera punch piled up). */
+  const ribbonCd = new Float64Array(MAX_SHAPED);
+  const RIBBON_TICK = 0.18;
   const self = {
     health: T.health, focus: T.focus,
     /** 0..1 eased "low health" for the robe frost, cowl gutter and vignette. */
@@ -98,11 +103,15 @@ export function createCombat(ctx) {
           const dx = n[k] - cx, dy = n[k + 1] - b.sy[1], dz = n[k + 2] - cz;
           if (dx * dx + dy * dy + dz * dz < 0.5) { touch = true; break; }
         }
+        ribbonCd[i] = Math.max(0, ribbonCd[i] - dt);
         if (touch) {
           s.wet = 2.5;
-          const ux = cx - controller.pos.x, uz = cz - controller.pos.z, ul = Math.hypot(ux, uz) || 1;
-          strike(i, T.ribbonDps * dt, ux / ul, uz / ul, false);
-          if (!shaped.isLive(i)) continue;
+          if (ribbonCd[i] <= 0) {
+            ribbonCd[i] = RIBBON_TICK;
+            const ux = cx - controller.pos.x, uz = cz - controller.pos.z, ul = Math.hypot(ux, uz) || 1;
+            strike(i, T.ribbonDps * RIBBON_TICK, ux / ul, uz / ul, false);
+            if (!shaped.isLive(i)) continue;
+          }
         }
       }
       // Crystallize: the formation freezes what it catches.
@@ -185,14 +194,17 @@ export function createCombat(ctx) {
   function strike(i, dmg, dx, dz, heavy) {
     const frozen = shaped.isFrozen(i);
     const amount = frozen ? dmg * T.shatterMul : dmg;
-    shaped.chip(i, dx, dz, frozen ? 40 : heavy ? 24 : 3);
-    const sx = self.sfx;
-    if (sx && (frozen || heavy || ribbonTick <= 0)) {
-      const b = shaped.slots[i].body; sx.x = b.sx[1]; sx.y = b.sy[1]; sx.z = b.sz[1]; sx.gain = frozen ? 1.2 : heavy ? 1 : 0.5;
-      sx.play(frozen ? SFX.SHATTER : heavy ? SFX.THUD : SFX.CRUNCH);
+    const b = shaped.slots[i].body, bx = b.sx[1], by = b.sy[1], bz = b.sz[1];
+    shaped.chip(i, dx, dz, frozen && heavy ? 40 : heavy ? 24 : frozen ? 10 : 3);
+    const killed = shaped.damage(i, amount, true, dx * 3, dz * 3);
+    const sx = self.sfx, big = frozen && (heavy || killed);
+    if (sx && (big || heavy || ribbonTick <= 0)) {
+      sx.x = bx; sx.y = by; sx.z = bz; sx.gain = big ? 1.2 : heavy ? 1 : 0.5;
+      sx.play(big ? SFX.SHATTER : heavy ? SFX.THUD : SFX.CRUNCH);
     }
-    shaped.damage(i, amount, true, dx * 3, dz * 3);
-    if (frozen) { clock.hitStop = Math.max(clock.hitStop, T.hitStopShatter); self.shake += 0.02; self.kick += T.kickShatter; }
+    // The big shatter stop for a heavy blow or the blow that breaks it; a Ribbon tick on the ice is a light one.
+    if (frozen && (heavy || killed)) { clock.hitStop = Math.max(clock.hitStop, T.hitStopShatter); self.shake += 0.02; self.kick += T.kickShatter; }
+    else if (frozen) { clock.hitStop = Math.max(clock.hitStop, T.hitStopLight); self.kick += T.kickHit * 0.3; }
     else if (heavy) { clock.hitStop = Math.max(clock.hitStop, T.hitStopHit); self.shake += 0.008; self.kick += T.kickHit; }
     else if (ribbonTick <= 0) { clock.hitStop = Math.max(clock.hitStop, T.hitStopLight); ribbonTick = 0.18; self.kick += T.kickHit * 0.3; }
   }

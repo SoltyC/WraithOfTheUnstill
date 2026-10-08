@@ -120,3 +120,36 @@ describe('combat', () => {
     expect(w.combat.health).toBe(combatTuning.health);
   });
 });
+
+describe('the Ribbon on a frozen Shaped (user bug 2026-10-09: the game froze, the camera spun)', () => {
+  it('breaks it within a few seconds and never holds the clock stopped', async () => {
+    const { createShaped } = await import('../src/game/shaped/shaped.js');
+    const { createCombat } = await import('../src/game/combat/combat.js');
+    const flat = { qx: 0, qz: 0, h: 0, sample() { this.h = 0; } };
+    const shaped = createShaped({ ts: { stamp() {} }, fx: { emit() {} }, ground: flat });
+    const nodes = new Float32Array(16 * 4);
+    const frost = { sweepActive: [false, false, false, false], sweepHW: [0, 0, 0, 0], sweepId: [0, 0, 0, 0], sweepFX: [0, 0, 0, 0], sweepFZ: [0, 0, 0, 0], sweepDX: [0, 0, 0, 0], sweepDZ: [0, 0, 0, 0],
+      ribbonStrength: 1, ribbonNodes: nodes, crystalEvent: false, crystalX: 0, crystalZ: 0 };
+    const controller = { pos: { x: 0, y: 0, z: -4 }, vel: { x: 0, y: 0, z: 0 }, surf: { active: false }, dodgeT: 0 };
+    const clock = { hitStop: 0 };
+    const combat = createCombat({ shaped, frost, controller, ts: { stamp() {} }, clock, teleport() {} });
+    shaped.px = 0; shaped.pz = -4;
+    const k = shaped.spawn('hound', 0, 0);
+    for (let f = 0; f < 240; f++) { shaped.dt = 1 / 60; shaped.update(); }
+    shaped.freeze(k, 30);
+    let stoppedRun = 0, worst = 0, kick = 0;
+    for (let f = 0; f < 60 * 6 && shaped.isLive(k); f++) {
+      const b = shaped.slots[k].body;
+      for (let n = 0; n < 16; n++) { nodes[n * 4] = b.sx[1]; nodes[n * 4 + 1] = b.sy[1]; nodes[n * 4 + 2] = b.sz[1]; nodes[n * 4 + 3] = 1; }
+      // The clock: a hit-stop holds the simulation (dt 0) while real time passes.
+      const r = 1 / 60, dt = clock.hitStop > 0 ? 0 : r;
+      clock.hitStop = Math.max(0, clock.hitStop - r);
+      combat.dt = dt; combat.update(); kick += combat.kick;
+      shaped.dt = dt; shaped.update();
+      stoppedRun = dt === 0 ? stoppedRun + 1 : 0; worst = Math.max(worst, stoppedRun);
+    }
+    expect(shaped.isLive(k)).toBe(false);
+    expect(worst).toBeLessThan(20);          // never more than a third of a second held
+    expect(kick).toBeLessThan(1);
+  });
+});
