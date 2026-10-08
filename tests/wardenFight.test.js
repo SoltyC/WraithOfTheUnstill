@@ -14,11 +14,11 @@ function setup() {
   const warden = createWarden({ ts, fx, ground: flat });
   warden.place(0, 0, 0); warden.dt = 1 / 30;
   const spikes = createSpikes({ ground: flat, ts, fx, blocker: noWall });
-  const pillars = { n: 6, x: new Float64Array(8), z: new Float64Array(8), y0: new Float64Array(8), up: new Float64Array(8), H: 9, r: 1.25 };
+  const pillars = { n: 6, x: new Float64Array(8), z: new Float64Array(8), y0: new Float64Array(8), up: new Float64Array(8), h: new Float64Array(8).fill(9), r: 1.25 };
   const live = new Map();
   let nextSlot = 0;
   const fight = createFight({
-    warden, spikes, pillars, ground: flat,
+    warden, spikes, pillars, count: 6, ground: flat,
     spawn: (name) => { const s = nextSlot++; live.set(s, name); return s; },
     alive: (s) => live.has(s), kill: (s) => live.delete(s),
   });

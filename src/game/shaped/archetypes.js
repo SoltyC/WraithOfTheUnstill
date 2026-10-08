@@ -55,3 +55,23 @@ export const ARCHETYPES = {
     role: 'ranged', keep: 11, shardDamage: 10, knock: 1.4,
   },
 };
+
+// The den mother (side quest "The Den Mother"): an old drift brute grown huge in the hounds' den,
+// crusted in a rime armour that turns most of a blow aside — freeze her, and the armour is only
+// ice. The brute's shape scaled up a third; slower, heavier, a wider slam.
+{
+  const B = ARCHETYPES.brute, k = 1.32;
+  const sh = B.shape;
+  ARCHETYPES.denmother = {
+    shape: {
+      ...sh, spacing: sh.spacing * k, hip: sh.hip * k,
+      legs: sh.legs.map((l) => ({ ...l, upper: l.upper * k, lower: l.lower * k, reach: l.reach * k })),
+      headUp: sh.headUp * k, stride: sh.stride * k, swing: sh.swing * k, lift: sh.lift * k, maxSpeed: 3.0, accel: 4, turnRate: 1.2,
+    },
+    health: 420, chunks: 96, rig: { ...B.rig, shards: 3 },
+    role: 'advance', poise: 70, slamRadius: 4.2, slamDamage: 36, knock: 0.25,
+    /** Unfrozen, blows do this fraction of their damage (the rime armour). */
+    armour: 0.3,
+  };
+}
+

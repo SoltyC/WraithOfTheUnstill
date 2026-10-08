@@ -1,27 +1,21 @@
-// The things to do on the frost steppe (user decision 2026-10-08, DECISIONS.md): the Shapers' Run
-// (nine gates down the chute, timed), the verb stones in the monastery hall (cast the verb at the
-// stone), Echo stones (listen: lore, a step toward an Echo), braziers (light them), Shaped
-// encounters armed by the quest step that wants them, and death re-forming at the last shrine.
-// The quests read all of it as events (`use:<id>`, `run:done`, `encounter:<id>:clear`), flags
-// (`used:<id>`, `lit:<site>`) and variables (`run.gates`, `run.fast`, `stones`); the compass reads the
-// dynamic goals registered here. No story lives here — it is data/quests/frost.json.
+// The things to do on the frost steppe that are not fights (encounters.js), Echo-stone gestures
+// (echoTrials.js) or the carried flame (flame.js): the Shapers' Run (nine gates down the chute,
+// timed; best time kept for its medals; the Warden first seen from gate five), the verb stones in
+// the monastery hall (cast the stone's verb so it lands on the stone), the overturned sled and the
+// hound tracks from it to the den, and the monastery bell. The quests read all of it as events
+// (`use:<id>`, `run:done`), flags (`used:<id>`, `lit:<site>`) and variables (`run.gates`,
+// `run.best`, `verbStones`); the compass reads the dynamic goals registered here. No story lives
+// here — it is data/quests/frost.json.
 
-/** Encounters: the quest step that arms one, where, and what rises (world offsets from the site). */
-const ENCOUNTERS = {
-  'varo-hounds': { quest: 'held-snow', step: 'ridge', at: 'varo-rise', name: 'Hounds on the ridge',
-    spawn: [['hound', -12, 10], ['hound', 12, 12], ['hound', 0, 18]] },
-  den: { quest: 'hounds-of-the-ridge', step: 'hunt', at: 'den-frost', name: 'The den',
-    spawn: [['hound', -8, 8], ['hound', 8, 9], ['hound', 0, -10], ['brute', 0, 14]] },
-};
-const FAST_RUN_SECONDS = 38;
 const dist2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
 
 /** @param {any} g  shared boot context */
 export function addTrialsSystem(g) {
-  const { loop, controller, chapter, nav, hud, music, shaped, shapedMod, frost, combat, clock, capture } = g;
-  const graph = chapter.graph, flags = graph.flags, vars = graph.vars;
+  const { loop, controller, chapter, nav, hud, music, frost, clock, footprints, sfx, SFX, capture } = g;
+  const graph = chapter.graph, flags = graph.flags, vars = graph.vars, table = chapter.table;
   const siteById = new Map((g.archSites || []).map((s) => [s.id, s]));
   const gate = { x: 0.5, z: 0.5, name: '' };
+  const targets = g.interactables;
 
   // ── The Shapers' Run ───────────────────────────────────────────────────────────────────────
   const run = (g.routes || []).find((r) => r.id === 'shapers-run');
@@ -31,24 +25,26 @@ export function addTrialsSystem(g) {
     if (gates.length === 0) return;
     if (g.musicState) g.musicState.run = gi > 0;
     const gt = gates[gi];
+    if (gi > 0 && !capture) hud.line('run', 'Gate ' + (gi + 1) + ' of ' + gates.length + ' · ' + (clock.simTime - t0).toFixed(1) + ' s');
     if (dist2(p.x, p.z, gt.pos[0], gt.pos[1]) < 64) {
       if (gi === 0) t0 = clock.simTime;
       flags.add('lit:run-gate-' + (gi + 1));
       gi++;
       vars['run.gates'] = Math.max(vars['run.gates'] || 0, gi);
       if (gi >= gates.length) {
-        const secs = clock.simTime - t0;
-        vars['run.time'] = Math.round(secs);
-        if (secs <= FAST_RUN_SECONDS) vars['run.fast'] = 1;
+        const secs = clock.simTime - t0, prev = vars['run.best'];
+        vars['run.time'] = Math.round(secs * 10) / 10;
+        if (prev === undefined || secs < prev) vars['run.best'] = Math.round(secs * 10) / 10;
         gi = 0;
         chapter.raise('run:done');
-        if (!capture) hud.notice('The Shapers\' Run', Math.round(secs) + ' seconds', secs <= FAST_RUN_SECONDS ? 'Every gate. The snow remembers the line.' : 'Every gate. Faster is possible.', 6);
+        hud.line('run', '');
+        if (!capture) hud.notice('The Shapers\' Run', secs.toFixed(1) + ' seconds', prev === undefined || secs < prev ? 'Your best. Gold is under 34, silver under 40, bronze under 48.' : 'Best: ' + prev.toFixed(1) + ' s', 6);
       }
-    } else if (gi > 1 && dist2(p.x, p.z, gates[0].pos[0], gates[0].pos[1]) < 100) gi = 1;           // back at the top: begin again
-    else if (gi > 0 && dist2(p.x, p.z, gates[gi - 1].pos[0], gates[gi - 1].pos[1]) > 150 * 150) gi = 0; // lost the line (died, walked off)
+    } else if (gi > 1 && dist2(p.x, p.z, gates[0].pos[0], gates[0].pos[1]) < 100) { gi = 1; t0 = clock.simTime; } // back at the top: begin again
+    else if (gi > 0 && dist2(p.x, p.z, gates[gi - 1].pos[0], gates[gi - 1].pos[1]) > 150 * 150) { gi = 0; hud.line('run', ''); } // lost the line
   }
   g.navDynamic['next-gate'] = () => {
-    if (gates.length === 0 || (flags.has('lit:run-gate-' + gates.length) && !flags.has('run-again'))) return null;
+    if (gates.length === 0) return null;
     const gt = gates[gi]; gate.x = gt.pos[0]; gate.z = gt.pos[1]; gate.name = 'Gate ' + (gi + 1) + ' of ' + gates.length; return gate;
   };
 
@@ -59,120 +55,119 @@ export function addTrialsSystem(g) {
     if (k < 0) { if (!arena) return null; wj.x = arena.x; wj.z = arena.z; wj.name = 'The Held Snow'; return wj; }
     wj.x = w.jx[k]; wj.z = w.jz[k]; wj.name = 'The Warden\'s ' + w.jointName(k); return wj;
   };
+  // Quest places that are not baked POIs (data/quests/frost.json `places`).
+  for (const id of ['sled-wreck', 'seedling', 'tarn-crossing', 'warden-brazier']) {
+    const pl = table[id]; if (!pl) continue;
+    const goal = { x: pl.pos[0], z: pl.pos[1], name: pl.name || '' };
+    g.navDynamic['place:' + id] = () => goal;
+  }
 
-  // ── Interactables ──────────────────────────────────────────────────────────────────────────
-  const targets = g.interactables;
-  const stones = [], braziers = [];
-  let loreN = 0;
-  for (const pl of nav.places) {
-    if (pl.kind !== 'echo-stone') continue;
-    const t = { kind: 'stone', id: pl.id, verb: 'Listen', name: 'Echo stone', x: pl.x, y: pl.y, z: pl.z, r: 3.6, h: 1.2, hidden: true, place: pl, n: ++loreN,
-      onUse: () => {
-        if (flags.has('visited:' + pl.id)) { hud.notice('Echo stone', 'Quiet now', null, 3); return; }
-        nav.visit(pl.id); flags.add('lit:' + pl.id); flags.add('used:' + pl.id);
-        vars.stones = (vars.stones || 0) + 1;
-        chapter.do({ lore: 'lore-' + pl.id });
-        chapter.raise('use:' + pl.id);
-        music.sting('echo');
-      } };
-    stones.push(t); targets.push(t);
-  }
-  for (const id of ['brazier-1', 'brazier-2', 'brazier-3']) {
-    const s = siteById.get(id); if (!s) continue;
-    const t = { kind: 'brazier', id, verb: 'Light', name: 'Brazier', x: s.at[0], y: 0, z: s.at[1], r: 3.2, h: 1.1,
-      onUse: () => {
-        if (flags.has('lit:' + id)) return;
-        flags.add('lit:' + id); flags.add('used:' + id); vars.braziers = (vars.braziers || 0) + 1;
-        chapter.raise('use:' + id); music.sting('echo');
-        hud.notice('Brazier', 'The flame leans toward the Warden', vars.braziers + ' of 3 lit', 4);
-      } };
-    braziers.push(t);
-  }
-  // Brazier and stone heights come from the ground (set once the site is seated).
-  function seatHeights() {
-    for (const t of braziers) if (!t.y) { const o = g.archSites.indexOf(siteById.get(t.id)); const y = g.architecture.sites[o * 4 + 1]; if (g.architecture.sites[o * 4 + 3] > 0.5) { t.y = y; targets.push(t); } }
-  }
-  // Stones that nearest-first hint: the closest unvisited, within sensing of the quest's compass.
-  const hint = { x: 0.5, z: 0.5, name: 'An Echo Stone' };
-  g.navDynamic['stone-hint'] = () => {
-    let best = 1e18, b = null;
-    for (const t of stones) { if (flags.has('visited:' + t.id)) continue; const d = dist2(t.x, t.z, nav.px, nav.pz); if (d < best) { best = d; b = t; } }
-    if (!b || best > 700 * 700) return null;
-    hint.x = b.x; hint.z = b.z; return hint;
-  };
-  const bz = { x: 0.5, z: 0.5, name: 'A brazier' };
-  g.navDynamic.brazier = () => {
-    let best = 1e18, b = null;
-    for (const t of braziers) { if (flags.has('lit:' + t.id)) continue; const d = dist2(t.x, t.z, nav.px, nav.pz); if (d < best) { best = d; b = t; } }
-    if (!b) return null; bz.x = b.x; bz.z = b.z; return bz;
-  };
-
-  // ── Verb stones ────────────────────────────────────────────────────────────────────────────
+  // ── Verb stones: cast the stone's verb so that it lands on the stone ───────────────────────
   const verbStones = ['crystal', 'sweep', 'ribbon'].map((v) => ({ id: 'gesture-' + v, verb: v, site: siteById.get('gesture-' + v) })).filter((v) => v.site);
   const gz = { x: 0.5, z: 0.5, name: 'A verb stone' };
   g.navDynamic.gesture = () => {
-    for (const v of verbStones) if (!flags.has('used:' + v.id)) { gz.x = v.site.at[0]; gz.z = v.site.at[1]; gz.name = 'The ' + v.verb + ' stone'; return gz; }
+    for (const v of verbStones) if (!flags.has('used:' + v.id)) { gz.x = v.site.at[0]; gz.z = v.site.at[1]; gz.name = 'The ' + (v.verb === 'crystal' ? 'Crystallize' : v.verb === 'sweep' ? 'Sweep' : 'Ribbon') + ' stone'; return gz; }
     return null;
   };
-  function verbActive(v) {
-    if (v === 'crystal') return frost.crystalEvent;
-    if (v === 'ribbon') return frost.ribbonHeld;
-    for (let k = 0; k < frost.sweepActive.length; k++) if (frost.sweepActive[k]) return true;
+  function verbOn(v) {
+    const sx = v.site.at[0], sz = v.site.at[1];
+    if (v.verb === 'crystal') return frost.crystalEvent && dist2(frost.crystalX, frost.crystalZ, sx, sz) < 4.5 * 4.5;
+    if (v.verb === 'ribbon') {
+      if (!frost.ribbonHeld) return false;
+      const n = frost.ribbonNodes;
+      for (let k = 0; k < n.length; k += 4) if (n[k + 3] > 0.05 && dist2(n[k], n[k + 2], sx, sz) < 1.6 * 1.6) return true;
+      return false;
+    }
+    for (let k = 0; k < frost.sweepActive.length; k++) {
+      if (!frost.sweepActive[k]) continue;
+      if (dist2(frost.sweepFX[k], frost.sweepFZ[k], sx, sz) < (frost.sweepHW[k] + 1.4) * (frost.sweepHW[k] + 1.4)) return true;
+    }
     return false;
   }
+  let stoneHint = 0;
   function verbTick(p) {
+    let near = null;
     for (const v of verbStones) {
       if (flags.has('used:' + v.id)) continue;
-      if (dist2(p.x, p.z, v.site.at[0], v.site.at[1]) > 14 * 14 || !verbActive(v.verb)) continue;
+      if (dist2(p.x, p.z, v.site.at[0], v.site.at[1]) > 16 * 16) continue;
+      near = v;
+      if (!verbOn(v)) continue;
       flags.add('used:' + v.id); flags.add('lit:' + v.id);
       vars.verbStones = (vars.verbStones || 0) + 1;
       chapter.raise('use:' + v.id); music.sting('echo');
       hud.notice('The stone answers', v.verb === 'crystal' ? 'Crystallize' : v.verb === 'sweep' ? 'Sweep' : 'Ribbon', vars.verbStones + ' of 3 woken', 5);
     }
+    // While one is in reach: what it wants, once (then only the line).
+    if (!capture) hud.line('verb', near ? (near.verb === 'crystal' ? 'Crystallize (F) aimed at the stone' : near.verb === 'sweep' ? 'Sweep (click) through the stone' : 'Ribbon (hold click) onto the stone') : '');
+    if (near && stoneHint === 0) stoneHint = 1;
   }
 
-  // ── Encounters ─────────────────────────────────────────────────────────────────────────────
-  for (const id in ENCOUNTERS) Object.assign(ENCOUNTERS[id], { id, slots: [], spawned: false, force: false });
-  g.startEncounter = (id) => { if (ENCOUNTERS[id]) ENCOUNTERS[id].force = true; };
-  function stepOf(q) { const st = graph.quests[q]; if (!st || st.state !== 'active') return null; return graph.byId.get(q).steps[st.step]?.id ?? null; }
-  function encounterTick(p) {
-    for (const id in ENCOUNTERS) {
-      const e = ENCOUNTERS[id];
-      if (flags.has('cleared:' + id)) continue;
-      const pl = nav.byId.get(e.at); if (!pl) continue;
-      if (!e.spawned) {
-        if (!(e.force || stepOf(e.quest) === e.step)) continue;
-        if (dist2(p.x, p.z, pl.x, pl.z) > 70 * 70) continue;
-        for (const [name, dx, dz] of e.spawn) { const k = shaped.spawn(name, pl.x + dx, pl.z + dz); if (k >= 0) e.slots.push(k); }
-        e.spawned = e.slots.length > 0;
-        if (e.spawned && !capture) { hud.notice('Shaped', e.name, 'Freeze them, sweep them, or lose them in the snow.', 5); music.sting('echo'); }
-        continue;
+  // ── The overturned sled, and the hounds' tracks from it to the den ─────────────────────────
+  const sled = table['sled-wreck'], den = table['den-frost'];
+  let sledT = null;
+  if (sled) {
+    targets.push(sledT = { kind: 'sled', id: 'sled-wreck', verb: 'Examine', name: 'Overturned sled', x: sled.pos[0], y: sled.h ?? 0, z: sled.pos[1], r: 3.6, h: 0.8,
+      onUse: () => {
+        if (flags.has('used:sled-wreck')) { hud.notice('The sled', 'Torn felt, spilled wood', 'The tracks lead east, up the ridge.', 4); return; }
+        flags.add('used:sled-wreck'); chapter.raise('use:sled-wreck');
+        nav.visit?.('sled-wreck');
+      } });
+  }
+  // Paired hound prints, a stretch at a time as the Wraith comes near (as the child's trail).
+  const SEGS = 14, segPts = [], segFlag = [];
+  if (sled && den) {
+    for (let k = 0; k < SEGS; k++) {
+      const pts = [];
+      for (let q = 0; q <= 5; q++) {
+        const t = (k + q / 5) / SEGS, dx = den.pos[0] - sled.pos[0], dz = den.pos[1] - sled.pos[1], L = Math.hypot(dx, dz);
+        const wob = Math.sin(t * 17) * 9 + Math.sin(t * 41 + 2) * 3;
+        pts.push([sled.pos[0] + dx * t - dz / L * wob, sled.pos[1] + dz * t + dx / L * wob]);
       }
-      for (let i = e.slots.length - 1; i >= 0; i--) {
-        const st = shaped.slots[e.slots[i]].state;
-        if (st === shapedMod.S.EMPTY || st === shapedMod.S.FALLING) e.slots.splice(i, 1);
-      }
-      if (e.slots.length === 0) {
-        flags.add('cleared:' + id); e.spawned = false; e.force = false;
-        chapter.raise('encounter:' + id + ':clear');
-        if (!capture) hud.notice('Quiet', e.name + ' cleared', null, 4);
-      }
+      segPts.push(pts); segFlag.push('hound-trail-' + k);
+    }
+  }
+  function trailTick(p) {
+    if (!flags.has('used:sled-wreck') || flags.has('cleared:den')) return;
+    for (let k = 0; k < segPts.length; k++) {
+      if (flags.has(segFlag[k])) continue;
+      const a = segPts[k][0], b = segPts[k][5];
+      if (dist2((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, p.x, p.z) > 32 * 32) continue;
+      footprints.size = 0.42; footprints.stampTrail(segPts[k]); footprints.stampTrail(segPts[k].map((q) => [q[0] + 0.5, q[1] + 0.3]));
+      footprints.size = 1;
+      flags.add(segFlag[k]);
     }
   }
 
-  // ── Death re-forms at the last shrine ──────────────────────────────────────────────────────
-  g.setRespawn = (t) => { combat.shrineX = t.x + 2.5; combat.shrineZ = t.z - 2.5; };
-  const syncRespawn = () => { const k = vars.lastShrine; const pl = k && nav.byId.get('shrine-frost-' + k); if (pl) g.setRespawn({ x: pl.x, z: pl.z }); };
-  const navSync = g.navSync;
-  g.navSync = () => { navSync?.(); syncRespawn(); gi = 0; for (const id in ENCOUNTERS) { ENCOUNTERS[id].slots.length = 0; ENCOUNTERS[id].spawned = false; ENCOUNTERS[id].force = false; } };
+  // ── The bell before the monastery's door ───────────────────────────────────────────────────
+  const mon = table.monastery;
+  if (mon) {
+    const f = mon.facing ?? 0, bx = mon.pos[0] + Math.sin(f) * 10.5, bz = mon.pos[1] + Math.cos(f) * 10.5;
+    const bell = { kind: 'bell', id: 'bell', verb: 'Ring', name: 'The bell', x: bx, y: 0, z: bz, r: 3.4, h: 2.2,
+      onUse: () => {
+        sfx.x = bx; sfx.y = bell.y + 4; sfx.z = bz; sfx.gain = 2;
+        sfx.play(SFX.BOOM); sfx.play(SFX.CHIME); sfx.play(SFX.CHIME);
+        g.arm.shake += 0.01;
+        flags.add('used:bell'); chapter.raise('use:bell');
+      } };
+    targets.push(bell);
+    const bellGoal = { x: bx, z: bz, name: 'The bell' };
+    g.navDynamic.bell = () => bellGoal;
+    // Its height comes from the monastery's seat.
+    const mi = (g.archSites || []).findIndex((s) => s.id === 'monastery');
+    const si = (g.archSites || []).findIndex((s) => s.id === 'sled-wreck'), A = g.architecture.sites;
+    loop.add({ name: 'seats', update: () => {
+      if (mi >= 0 && A[mi * 4 + 3] > 0.5) bell.y = A[mi * 4 + 1] + 0.35;
+      if (sledT && si >= 0 && A[si * 4 + 3] > 0.5) sledT.y = A[si * 4 + 1];
+    } });
+  }
 
-  let seated = false;
+  const navSync = g.navSync;
+  g.navSync = () => { navSync?.(); gi = 0; };
+
   loop.add({ name: 'trials', update: () => {
     const p = controller.pos;
     runTick(p);
     verbTick(p);
-    encounterTick(p);
-    for (const t of stones) t.hidden = !t.place.known;
-    if (!seated || (clock.frame & 63) === 0) { seatHeights(); seated = braziers.every((t) => t.y); }
+    if (!capture && (clock.frame & 15) === 0) trailTick(p);
   } });
 }

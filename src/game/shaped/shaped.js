@@ -87,6 +87,9 @@ export function createShaped(ctx) {
       const s = slots[i];
       if (s.state === S.EMPTY || s.state === S.FALLING) return false;
       if (s.state === S.RISING && amount < 1e8) return false;
+      // Armour (the den mother's rime) turns most of a blow aside unless she is frozen.
+      const armour = ARCHETYPES[s.arch].armour;
+      if (armour && s.state !== S.FROZEN && amount < 1e8) amount *= armour;
       s.hp -= amount;
       s.hurt = 1;
       if (s.hp <= 0) {

@@ -39,7 +39,7 @@ export function addNpcSystems(g) {
     const n = {
       id, name, archetype, A, view, xf, home, x: home[0], z: home[1], y: 0, yaw: rnd() * 6.28,
       shown: false, placed: false, shiftT: A.shift[0] + rnd() * (A.shift[1] - A.shift[0]), offX: 0.5 - 0.5, offZ: 0.5 - 0.5,
-      lod: 0.5 - 0.5, path: null, pathT: 0.5 - 0.5, at: null,
+      lod: 0.5 - 0.5, path: null, pathT: 0.5 - 0.5, at: null, vx: 0.5 - 0.5, vz: 0.5 - 0.5,
       target: name ? { kind: 'npc', id, verb: 'Speak', name, x: 0.5, y: 0.5, z: 0.5, r: TALK_R, h: 0.25, hidden: true } : null,
     };
     if (n.target) g.interactables.push(n.target);
@@ -64,10 +64,53 @@ export function addNpcSystems(g) {
   const tobinLost = place(data.npcs.find((d) => d.id === 'tobin').lost);
   function station(n) {
     if (n.id === 'tobin') {
-      const q = chapter.graph.quests['trail-in-snow'];
-      if (q && q.state === 'active' && !chapter.graph.flags.has('tobin-found')) return tobinLost;
+      const q = chapter.graph.quests['trail-in-snow'], fl = chapter.graph.flags;
+      if (q && q.state === 'active' && !fl.has('tobin-found')) return tobinLost;
+      // Let him listen: he stays at the spring until the steppe moves again.
+      if (fl.has('tobin-listened') && !chapter.facts.restored.has('frost')) return tobinLost;
     }
     return n.home;
+  }
+
+  // The escort ("A Trail in the Snow", user request 2026-10-09): led home, Tobin follows a few
+  // steps behind the Wraith at a child's pace; too far ahead and he stops and waits. At the fire he
+  // is home (a flag and an event for the quest) and walks back to his place.
+  const FOLLOW = { gap: 2.6, run: 2.6, wait: 24, home: 14 };
+  const campPos = table['camp-frost'].pos;
+  let tobinWaiting = false;
+  /** Move n toward (tx, tz), stopping `gap` short, at up to `top` m/s; returns its speed. */
+  function walkTo(n, tx, tz, gap, top, dt) {
+    const dx = tx - n.x, dz = tz - n.z, d = Math.hypot(dx, dz);
+    if (d <= gap + 0.05) { n.vx = 0; n.vz = 0; return 0; }
+    const sp = Math.min(top, (d - gap) * 1.4), ux = dx / d, uz = dz / d;
+    n.vx = ux * sp; n.vz = uz * sp; n.x += n.vx * dt; n.z += n.vz * dt; n.yaw = Math.atan2(ux, uz);
+    return sp;
+  }
+  let tobinStart = true;
+  function tobinTick(n, dt) {
+    const fl = chapter.graph.flags, p = controller.pos;
+    if (fl.has('escorting') && !fl.has('tobin-home')) {
+      // A load mid-escort: he starts again from the spring (not already home at the fire).
+      if (tobinStart) { tobinStart = false; if (Math.hypot(n.x - campPos[0], n.z - campPos[1]) < FOLLOW.home + 4) { n.x = tobinLost[0]; n.z = tobinLost[1]; n.xf.ox = n.x; n.xf.oz = n.z; n.placed = false; } }
+      const d = Math.hypot(p.x - n.x, p.z - n.z);
+      tobinWaiting = d > FOLLOW.wait;
+      if (tobinWaiting) { n.vx = 0; n.vz = 0; n.yaw = Math.atan2(p.x - n.x, p.z - n.z); }
+      else walkTo(n, p.x, p.z, FOLLOW.gap, FOLLOW.run, dt);
+      if (Math.hypot(n.x - campPos[0], n.z - campPos[1]) < FOLLOW.home) {
+        fl.add('tobin-home'); fl.delete('escorting'); chapter.raise('tobin:home');
+        if (!capture) g.hud.notice('A Trail in the Snow', 'Tobin is home', 'Maren is by the fire.', 5);
+      }
+      n.at = null;
+      return true;
+    }
+    tobinWaiting = false;
+    if (fl.has('tobin-home') && Math.hypot(n.x - n.home[0], n.z - n.home[1]) > 0.6) {
+      walkTo(n, n.home[0], n.home[1], 0, 1.2, dt);
+      if (Math.hypot(n.x - n.home[0], n.z - n.home[1]) <= 0.65) n.at = n.home;
+      return true;
+    }
+    n.vx = 0; n.vz = 0;
+    return false;
   }
 
   /** Point along the walker's path (ping-pong), into out[0..1], heading into out[2]. */
@@ -131,6 +174,8 @@ export function addNpcSystems(g) {
         n.pathT += dt * 1.05;
         pathPoint(n, n.pathT, pp);
         n.x = pp[0]; n.z = pp[1]; n.yaw = pp[2];
+      } else if (n.id === 'tobin' && tobinTick(n, dt)) {
+        // walking with the Wraith (or home)
       } else {
         const st = station(n);
         if (n.at !== st) {
@@ -154,7 +199,7 @@ export function addNpcSystems(g) {
       if (g.solids) { const so = g.solids; so.qx = n.x; so.qz = n.z; so.qh = n.y; so.floorAnyQ(); n.y = so.h; }
       if (!n.placed) { xf.oy = n.y; n.placed = true; }
       // Idle life: shift weight now and then (a small corrective step), turn toward the Wraith.
-      if (!n.path) {
+      if (!n.path && !n.vx && !n.vz) {
         n.shiftT -= dt;
         if (n.shiftT <= 0) { n.shiftT = n.A.shift[0] + rnd() * (n.A.shift[1] - n.A.shift[0]); n.offX = (rnd() - 0.5) * 0.16; n.offZ = (rnd() - 0.5) * 0.16; }
         const tx = p.x - n.x, tz = p.z - n.z;
@@ -167,7 +212,7 @@ export function addNpcSystems(g) {
       // Inputs in simulation space.
       sim[0] = xf.ox + (n.x + n.offX - xf.ox) / xf.s; sim[2] = xf.oz + (n.z + n.offZ - xf.oz) / xf.s; sim[1] = xf.oy + (n.y - xf.oy) / xf.s;
       w.bx = sim[0]; w.by = sim[1]; w.bz = sim[2];
-      w.vx = n.path ? Math.sin(n.yaw) * 1.05 / xf.s : 0; w.vz = n.path ? Math.cos(n.yaw) * 1.05 / xf.s : 0;
+      w.vx = n.path ? Math.sin(n.yaw) * 1.05 / xf.s : (n.vx || 0) / xf.s; w.vz = n.path ? Math.cos(n.yaw) * 1.05 / xf.s : (n.vz || 0) / xf.s;
       w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1); w.time = clock.simTime;
       w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ;
       n.view.time = clock.simTime;
@@ -193,6 +238,7 @@ export function addNpcSystems(g) {
       if (n.target) { const h = w.body.head; n.target.x = xf.ox + (h[0] - xf.ox) * xf.s; n.target.y = xf.oy + (h[1] - xf.oy) * xf.s; n.target.z = xf.oz + (h[2] - xf.oz) * xf.s; }
     }
     if (!capture && frame % 15 === 0) pressTrail();
+    if (!capture) g.hud.line('tobin', chapter.graph.flags.has('escorting') ? (tobinWaiting ? 'Tobin has stopped. Go back for him.' : 'Lead Tobin home to the fire') : '', tobinWaiting);
     if (changed) engine.snapshotRenderingReset();
   } });
 }

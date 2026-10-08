@@ -12,6 +12,10 @@ export function createHud() {
   el('div', 'mark', glyph);
   const label = el('div', 'label', glyph);
   const notices = el('div', 'notices', document.body);
+  // One quiet line under the compass for what is happening now (a challenge's clock, the child
+  // waiting, the flame guttering); the owner calls line() each frame — it redraws only on change.
+  const taskEl = el('div', 'task-line', document.body);
+  let taskText = '', taskAlarm = false, taskOwner = null;
   let ver = -1, glyphKey = null, glyphOn = false, gx = 0, gy = 0;
 
   const held = [];
@@ -63,6 +67,14 @@ export function createHud() {
       el('div', 'rule', n);
       requestAnimationFrame(() => n.classList.add('on'));
       setTimeout(() => { n.classList.remove('on'); setTimeout(() => n.remove(), 1300); }, secs * 1000);
+    },
+    /** The task line: `owner` claims it while it has something to say (text '' releases it). */
+    line(owner, text, alarm = false) {
+      if (taskOwner !== null && taskOwner !== owner) { if (!text) return; }
+      taskOwner = text ? owner : null;
+      if (text === taskText && alarm === taskAlarm) return;
+      taskText = text; taskAlarm = alarm;
+      taskEl.textContent = text; taskEl.classList.toggle('on', !!text); taskEl.classList.toggle('alarm', alarm);
     },
     /** True while the title is up: notices wait, then show together when play begins. */
     hold: titleUp,

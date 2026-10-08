@@ -12,7 +12,7 @@ export function addArchitectureSystem(g) {
   const { loop, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
   const sites = frostSites(chapter.table, g.routes);
   // Pillars start sunk below the snow (the Warden's fight raises them).
-  for (const s of sites) if (s.pillar) s.sink = ARENA.pillarH + 1.2;
+  for (const s of sites) if (s.pillar) s.sink = (s.pillarH || ARENA.pillarH) + 1.2;
   const built = buildArchitecture(sites);
   const view = g.architecture = createArchitectureView(scene, atmosphere, built);
   g.archSites = sites;

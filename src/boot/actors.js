@@ -86,8 +86,8 @@ export async function createActors(g) {
   // The fight's pillars (filled from the arena's sites by systems/wardenFight.js), their crystals
   // (the Crystallize renderer, its own records) and the spike barrage (the Shaped's shard shader).
   const { ARENA } = await import('../world/architecture.js');
-  const pillars = { n: ARENA.pillars, x: new Float64Array(8), z: new Float64Array(8), y0: new Float64Array(8).fill(-1e4), up: new Float64Array(8), H: ARENA.pillarH, r: ARENA.pillarShaft };
-  const pillarCrystals = createCrystals(scene, atmosphere, new Float32Array(ARENA.pillars * 8 * 12));
+  const pillars = { n: ARENA.pillars + 1, x: new Float64Array(8), z: new Float64Array(8), y0: new Float64Array(8).fill(-1e4), up: new Float64Array(8), h: new Float64Array(8).fill(ARENA.pillarH), r: ARENA.pillarShaft };   // the arena's six, then the seedling
+  const pillarCrystals = createCrystals(scene, atmosphere, new Float32Array((ARENA.pillars + 1) * 8 * 12));
   bindShadows(pillarCrystals.material, shadows);
   shadows.addCaster(pillarCrystals.mesh, pillarCrystals.makeShadowMaterial, 2);
   pillarCrystals.freeze();

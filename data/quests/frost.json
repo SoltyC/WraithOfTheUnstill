@@ -1,5 +1,5 @@
 {
-  "_review": "DRAFT for the user's review (story: Claude drafts, the user reviews). Every line of text here is a proposal.",
+  "_review": "DRAFT for the user's review (story: Claude drafts, the user reviews). Every line of text here is a proposal. Rewritten 2026-10-09: quests built on gameplay (fights in waves, an escort, a practice pillar, Echo-stone gestures, a carried flame, Run medals), with consequences in the Warden fight.",
   "chapter": "frost",
   "title": "The Snow That Would Not Fall",
   "npcs": [
@@ -64,6 +64,36 @@
       "about": "A staff-bearer who walked out to watch the Warden and did not come back."
     }
   ],
+  "places": {
+    "sled-wreck": {
+      "pos": [
+        1210,
+        2505
+      ],
+      "name": "The Overturned Sled"
+    },
+    "seedling": {
+      "pos": [
+        946,
+        2368
+      ],
+      "name": "The Seedling"
+    },
+    "tarn-crossing": {
+      "pos": [
+        740,
+        2462
+      ],
+      "name": "The Tarn"
+    },
+    "warden-brazier": {
+      "pos": [
+        1047,
+        2313
+      ],
+      "name": "The Arena Brazier"
+    }
+  },
   "talk": {
     "aud": [
       {
@@ -74,9 +104,29 @@
       },
       {
         "when": {
+          "flag": "cleared:cloister",
+          "notFlag": "aud-cloister"
+        },
+        "say": "aud.cloister"
+      },
+      {
+        "when": {
+          "restored": "frost",
+          "flag": "used:bell"
+        },
+        "say": "aud.bell"
+      },
+      {
+        "when": {
           "restored": "frost"
         },
         "say": "aud.after"
+      },
+      {
+        "when": {
+          "flag": "cleared:cloister"
+        },
+        "say": "aud.go"
       },
       {
         "say": "aud.again"
@@ -85,9 +135,23 @@
     "maren": [
       {
         "when": {
-          "notFlag": "met-maren"
+          "notFlag": "met-maren",
+          "flag": "cleared:camp-raid"
         },
         "say": "maren.first"
+      },
+      {
+        "when": {
+          "notFlag": "met-maren"
+        },
+        "say": "maren.raid"
+      },
+      {
+        "when": {
+          "flag": "tobin-home",
+          "notFlag": "thanked-tobin"
+        },
+        "say": "maren.tobin"
       },
       {
         "when": {
@@ -98,25 +162,24 @@
       },
       {
         "when": {
-          "flag": "tobin-found",
-          "notFlag": [
-            "thanked-tobin",
-            "tobin-listened"
-          ]
-        },
-        "say": "maren.tobin"
-      },
-      {
-        "when": {
-          "restored": "frost"
+          "restored": "frost",
+          "notFlag": "maren-after"
         },
         "say": "maren.after"
       },
       {
         "when": {
-          "night": true
+          "night": true,
+          "notFlag": "heard-maren-night"
         },
         "say": "maren.night"
+      },
+      {
+        "when": {
+          "flag": "used:sled-wreck",
+          "notFlag": "cleared:den"
+        },
+        "say": "maren.sled"
       },
       {
         "say": "maren.again"
@@ -132,9 +195,21 @@
       },
       {
         "when": {
+          "flag": "escorting"
+        },
+        "say": "tobin.walking"
+      },
+      {
+        "when": {
           "restored": "frost"
         },
         "say": "tobin.after"
+      },
+      {
+        "when": {
+          "flag": "tobin-listened"
+        },
+        "say": "tobin.listening"
       },
       {
         "say": "tobin.again"
@@ -146,10 +221,29 @@
           "night": true,
           "var": {
             "name": "braziers",
-            "gte": 3
-          }
+            "gte": 4
+          },
+          "notFlag": "isolde-sang"
         },
         "say": "isolde.song"
+      },
+      {
+        "when": {
+          "night": true,
+          "flag": [
+            "met-isolde",
+            "flame-out"
+          ]
+        },
+        "say": "isolde.relight"
+      },
+      {
+        "when": {
+          "night": true,
+          "flag": "met-isolde",
+          "notFlag": "flame-carried"
+        },
+        "say": "isolde.flame"
       },
       {
         "when": {
@@ -176,9 +270,22 @@
       },
       {
         "when": {
+          "flag": "seedling-broken",
+          "notFlag": "varo-taught"
+        },
+        "say": "varo.seedling"
+      },
+      {
+        "when": {
           "restored": "frost"
         },
         "say": "varo.after"
+      },
+      {
+        "when": {
+          "flag": "varo-taught"
+        },
+        "say": "varo.ready"
       },
       {
         "say": "varo.again"
@@ -191,8 +298,8 @@
       "lines": [
         "You stood up out of his robe.",
         "Nine winters I swept around him. I thought the cloth would rot before it moved.",
-        "The hall's three stones still remember a Shaper's hands. Wake one: freeze, sweep or ribbon, as he did.",
-        "Then rest at the shrine by the east wall, and take the Run down to the pilgrims' fire. It is the way the Shapers went."
+        "The hall's three stones still remember a Shaper's hands. Give one its gesture back: freeze it, sweep it or pour the ribbon onto it.",
+        "Go carefully when you do. Something has been listening at the bottom of the steps."
       ],
       "then": [
         {
@@ -200,25 +307,58 @@
         }
       ]
     },
+    "aud.cloister": {
+      "speaker": "aud",
+      "lines": [
+        "So they come up the steps now. They never did, while he lay here.",
+        "Rest at the shrine by the east wall. If you fall, that is where you will stand up again.",
+        "Then take the Run down to the pilgrims' fire. The Shapers went that way. Lean, and the slope will carry you."
+      ],
+      "then": [
+        {
+          "setFlag": "aud-cloister"
+        }
+      ]
+    },
+    "aud.go": {
+      "speaker": "aud",
+      "lines": [
+        "The shrine, then the Run. Lean into it. The slope remembers how they rode it."
+      ]
+    },
     "aud.again": {
       "speaker": "aud",
       "lines": [
-        "The stones, the shrine, then the Run. The slope will carry you; lean into it."
+        "The stones first. They have waited longer than I have."
       ]
     },
     "aud.after": {
       "speaker": "aud",
       "lines": [
-        "I heard the wind on the bell this morning. I had forgotten the note it makes."
+        "I heard snow land on the roof this morning. I had forgotten that it makes a sound.",
+        "Ring the bell for me. My arms are too old, and it should be rung by the one who did this."
+      ]
+    },
+    "aud.bell": {
+      "speaker": "aud",
+      "lines": [
+        "Nine winters it hung there. Now it will not stop humming. Neither will I."
+      ]
+    },
+    "maren.raid": {
+      "speaker": "maren",
+      "lines": [
+        "Not now — the hounds! Drive them off the fire, and then we will talk."
       ]
     },
     "maren.first": {
       "speaker": "maren",
       "lines": [
-        "A robe with no one in it. The stories said you would come like this.",
-        "Out past the stone, something old lies across the steppe and holds the snow in the air.",
-        "Varo went to watch it. Hounds have been circling his stone since. And the boy has wandered again; small tracks, west.",
-        "Their den is in the ridge to the east, if you can spare the time. Isolde has her own errand for the dark hours."
+        "You came down the Run like the stories said, and you came down fighting. Good.",
+        "Out past the watching stone something old lies across the steppe and holds the snow in the air. A Warden.",
+        "Varo went to watch it, and the hounds have him pinned at his stone. The boy has wandered again; small tracks, west to the spring.",
+        "And a sled went out to the east ridge for wood yesterday. It has not come back. Isolde has her own errand, for the dark hours.",
+        "Sleep by our fire when you need to. If you fall out there, you will wake beside it."
       ],
       "then": [
         {
@@ -227,8 +367,7 @@
         {
           "reveal": [
             "varo-rise",
-            "spring-frost",
-            "den-frost"
+            "spring-frost"
           ]
         }
       ]
@@ -236,13 +375,20 @@
     "maren.again": {
       "speaker": "maren",
       "lines": [
-        "Varo is at the watching stone, east. Go quietly. It sleeps lightly."
+        "Varo first. He is stubborn, but he is not foolish, and he has watched that thing longer than anyone."
+      ]
+    },
+    "maren.sled": {
+      "speaker": "maren",
+      "lines": [
+        "Torn felt and no driver. Follow the prints to the ridge, then. And if what made them is bigger than a hound, come back and tell me."
       ]
     },
     "maren.tobin": {
       "speaker": "maren",
       "lines": [
-        "You brought him back. Take this. It was a Shaper's, before it was ours."
+        "You brought him back. He says you walk without a sound and he had to listen for you.",
+        "Take this. It was a Shaper's before it was ours, and it never fit any of our hands."
       ],
       "then": [
         {
@@ -250,6 +396,18 @@
         },
         {
           "echo": "echo-frost-reach"
+        }
+      ]
+    },
+    "maren.hounds": {
+      "speaker": "maren",
+      "lines": [
+        "An old one, in the den? Then that is why they kept coming. She was feeding them.",
+        "The children walked to the water-hole this morning and no one followed them. If the Warden calls its Shaped to it, fewer will come now."
+      ],
+      "then": [
+        {
+          "setFlag": "told-hounds"
         }
       ]
     },
@@ -261,6 +419,9 @@
       ],
       "then": [
         {
+          "setFlag": "heard-maren-night"
+        },
+        {
           "lore": "lore-shapers-walked"
         }
       ]
@@ -268,22 +429,32 @@
     "maren.after": {
       "speaker": "maren",
       "lines": [
-        "Listen. Snow is falling on the tents. I am too old to cry about weather, and I am crying about weather."
+        "Listen. Snow is falling on the tents. I am too old to cry about weather, and I am crying about weather.",
+        "Aud will want the bell rung. Go up, before the snow fills the Run."
+      ],
+      "then": [
+        {
+          "setFlag": "maren-after"
+        }
       ]
     },
     "tobin.found": {
       "speaker": "tobin",
       "lines": [
-        "There's water under the ice. It's not moving either.",
+        "They went away. Were they yours? They didn't look like anybody's.",
+        "There's water under the ice. It's not moving either. But it's talking, if you're quiet.",
         "I'm not lost. I was following the quiet."
       ],
       "choice": {
         "options": [
           {
-            "text": "Lead him back.",
+            "text": "Lead him back to the fire.",
             "then": [
               {
                 "setFlag": "tobin-found"
+              },
+              {
+                "setFlag": "escorting"
               }
             ]
           },
@@ -310,6 +481,19 @@
         ]
       }
     },
+    "tobin.walking": {
+      "speaker": "tobin",
+      "lines": [
+        "Your feet don't make the same sound mine do. They don't make any."
+      ]
+    },
+    "tobin.listening": {
+      "speaker": "tobin",
+      "lines": [
+        "It's singing about the big ridge. There are lots of voices, up on stone posts, and one of them is cracked. You can hear it if you listen.",
+        "The cracked one will break first. I think it wants to."
+      ]
+    },
     "tobin.again": {
       "speaker": "tobin",
       "lines": [
@@ -325,8 +509,9 @@
     "isolde.day": {
       "speaker": "isolde",
       "lines": [
-        "The lantern was lit at the monastery. I carry it so the fire never has to start from nothing.",
-        "The old braziers beside the shrines have been cold for nine winters. Light them, and I will play you something worth the walk."
+        "The lantern was lit at the monastery, nine winters ago. I carry it so the fire never has to start from nothing.",
+        "There are braziers by three of the shrines, and one at the edge of the Warden's ground. Cold since the snow stopped falling.",
+        "Come back after dark. I will put the flame in your lantern, if you can keep it alive that far."
       ],
       "then": [
         {
@@ -341,6 +526,30 @@
         }
       ]
     },
+    "isolde.flame": {
+      "speaker": "isolde",
+      "lines": [
+        "Hold the lantern still. There.",
+        "Walk, don't run. Don't let anything strike you, and don't stand in the snow longer than you must. It is an old flame; it tires.",
+        "And it will be seen. Things that are cold come to look at warm things."
+      ],
+      "then": [
+        {
+          "setFlag": "flame-given"
+        }
+      ]
+    },
+    "isolde.relight": {
+      "speaker": "isolde",
+      "lines": [
+        "Gone out? It does that. It went out on me twice in the first winter. Hold still."
+      ],
+      "then": [
+        {
+          "setFlag": "flame-given"
+        }
+      ]
+    },
     "isolde.night": {
       "speaker": "isolde",
       "lines": [
@@ -349,6 +558,18 @@
       "then": [
         {
           "setFlag": "met-isolde"
+        }
+      ]
+    },
+    "isolde.song": {
+      "speaker": "isolde",
+      "lines": [
+        "Four flames, and all of them leaning the same way. Sit.",
+        "This one is older than the camp. It is about a stone that listens, past the far ridge, and another below the tarn. I never went."
+      ],
+      "then": [
+        {
+          "setFlag": "isolde-sang"
         }
       ]
     },
@@ -361,20 +582,47 @@
     "varo.first": {
       "speaker": "varo",
       "lines": [
-        "Good. The hounds have gone. Do you see it? I thought it was a ridge for three days.",
-        "It breathes once an hour. Its knees are water, held still.",
-        "Freeze what moves in it, and break what you freeze. Then let it lie down."
+        "Good. I was running out of ways to be still. Do you see it? I thought it was a ridge for three days.",
+        "When it wakes, pillars come up out of the snow round it with crystals on them. The crystals feed it. You cannot hurt it while they stand.",
+        "And when it stops moving and lifts its head, it is not resting. It throws its spines, everywhere, at once. Nothing stops them but stone.",
+        "There is a small one here, a seedling, by my stone. Learn on that one. Climb it, break it, and when it stills, put my stone between you."
       ],
       "then": [
         {
           "setFlag": "met-varo"
+        },
+        {
+          "reveal": [
+            "warden-frost"
+          ]
         }
       ]
     },
     "varo.again": {
       "speaker": "varo",
       "lines": [
-        "Its knees. Then its hips. Do not stand where it is looking."
+        "The seedling. Climb, break, and get behind the stone when it brightens. Better to learn it here than out there."
+      ]
+    },
+    "varo.seedling": {
+      "speaker": "varo",
+      "lines": [
+        "You hid well. Most things that live out here learned to hide the hard way.",
+        "Six pillars round the big one. Break them all, then its seams: freeze them, then break them. Take this; it will hold the ice in its joints a little longer."
+      ],
+      "then": [
+        {
+          "setFlag": "varo-taught"
+        },
+        {
+          "echo": "echo-frost-hold"
+        }
+      ]
+    },
+    "varo.ready": {
+      "speaker": "varo",
+      "lines": [
+        "Six crystals, then its seams. And stone between you whenever it stills."
       ]
     },
     "varo.after": {
@@ -383,32 +631,20 @@
         "It is a hill now. A good hill. I will tell them it lay down on its own; they would not believe the rest."
       ]
     },
+    "bark.first-sight": {
+      "lines": [
+        "Far below, a long white ridge breathes once, slowly, and is still."
+      ]
+    },
     "bark.snow-returns": {
-      "speaker": null,
       "lines": [
         "Far off, the first snow in nine winters reaches the ground."
       ]
     },
-    "maren.hounds": {
-      "speaker": "maren",
+    "bark.bell": {
       "lines": [
-        "The hounds are quiet. The children walked to the water-hole this morning, and no one stopped them.",
-        "That is worth more than a Shaper's trinket."
-      ],
-      "then": [
-        {
-          "setFlag": "told-hounds"
-        }
+        "The note goes out over the steppe, and the snow carries it a long way."
       ]
-    },
-    "isolde.song": {
-      "speaker": "isolde",
-      "lines": [
-        "Three flames, and all leaning the same way. Sit.",
-        "This one is older than the camp. It is about a stone that listens.",
-        "Past the far ridge, there is one. I never went."
-      ],
-      "then": []
     }
   },
   "quests": [
@@ -431,7 +667,7 @@
         },
         {
           "id": "stones",
-          "journal": "Aud: the hall's stones remember a Shaper's hands. Cast Crystallize, Sweep or Ribbon beside one.",
+          "journal": "The hall's three stones remember a Shaper's hands. Cast a stone's own gesture onto it — Crystallize, Sweep or Ribbon.",
           "when": {
             "var": {
               "name": "verbStones",
@@ -444,8 +680,27 @@
           }
         },
         {
+          "id": "cloister",
+          "journal": "The stone woke something at the bottom of the steps. Shaped, rising out of the snow.",
+          "when": {
+            "any": [
+              {
+                "event": "encounter:cloister:clear"
+              },
+              {
+                "flag": "cleared:cloister"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "monastery",
+            "label": "Below the steps",
+            "radius": 45
+          }
+        },
+        {
           "id": "shrine",
-          "journal": "The shrine by the east wall remembers him. Rest there; it is where I will wake if I fall.",
+          "journal": "Aud: rest at the shrine by the east wall. If I fall, I will stand up there.",
           "when": {
             "event": "shrine:shrine-frost-1"
           },
@@ -468,7 +723,7 @@
         },
         {
           "id": "run",
-          "journal": "The Shapers' Run falls from the shoulder to the pilgrims' plain: nine gates, one long slope. Surf it.",
+          "journal": "The Shapers' Run falls from the shoulder to the pilgrims' plain: nine gates, one long slope. Hold right mouse to surf it.",
           "when": {
             "any": [
               {
@@ -477,7 +732,7 @@
               {
                 "near": {
                   "poi": "camp-frost",
-                  "r": 45
+                  "r": 60
                 }
               }
             ]
@@ -486,23 +741,12 @@
             "dynamic": "next-gate",
             "radius": 8
           }
-        },
-        {
-          "id": "camp",
-          "journal": "Pilgrims keep a fire on the plain below. They may know why the snow hangs.",
-          "when": {
-            "event": "talk:maren"
-          },
-          "goal": {
-            "poi": "camp-frost",
-            "label": "Old Maren"
-          }
         }
       ],
       "optional": [
         {
           "id": "all-stones",
-          "journal": "Wake all three of the hall's stones: Crystallize, Sweep, Ribbon.",
+          "journal": "Wake all three of the hall's stones.",
           "when": {
             "var": {
               "name": "verbStones",
@@ -520,23 +764,165 @@
           ]
         },
         {
-          "id": "fast-run",
-          "journal": "Run all nine gates in under 38 seconds.",
+          "id": "first-sight",
+          "journal": "Something lies across the plain below the Run.",
           "when": {
             "var": {
-              "name": "run.fast",
-              "gte": 1
+              "name": "run.gates",
+              "gte": 5
             }
-          },
-          "goal": {
-            "dynamic": "next-gate",
-            "radius": 8
           },
           "actions": [
             {
-              "lore": "lore-shapers-run"
+              "say": "bark.first-sight"
             }
           ]
+        }
+      ],
+      "onDone": [
+        {
+          "startQuest": "pilgrims-fire"
+        }
+      ]
+    },
+    {
+      "id": "pilgrims-fire",
+      "kind": "main",
+      "title": "The Pilgrims' Fire",
+      "summary": "Hounds have come down on the last pilgrims' camp.",
+      "start": {
+        "quest": "empty-robe"
+      },
+      "steps": [
+        {
+          "id": "defend",
+          "journal": "The Shaped are at the pilgrims' fire. Drive them off before they reach the tents.",
+          "when": {
+            "any": [
+              {
+                "event": "encounter:camp-raid:clear"
+              },
+              {
+                "flag": "cleared:camp-raid"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "camp-frost",
+            "label": "The fire",
+            "radius": 40
+          }
+        },
+        {
+          "id": "maren",
+          "journal": "The fire is safe. Old Maren leads the pilgrims; she will know why the snow hangs.",
+          "when": {
+            "flag": "met-maren"
+          },
+          "goal": {
+            "poi": "camp-frost",
+            "label": "Old Maren"
+          },
+          "actions": [
+            {
+              "setFlag": "camp-hearth"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ],
+      "onDone": [
+        {
+          "startQuest": "watching-stone"
+        }
+      ]
+    },
+    {
+      "id": "watching-stone",
+      "kind": "main",
+      "title": "The Watching Stone",
+      "summary": "A staff-bearer went out to watch the Warden and was trapped there.",
+      "start": {
+        "quest": "pilgrims-fire"
+      },
+      "steps": [
+        {
+          "id": "rescue",
+          "journal": "Hounds have Varo pinned at his watching stone, east of the fire. Break them.",
+          "when": {
+            "any": [
+              {
+                "event": "encounter:varo-hounds:clear"
+              },
+              {
+                "flag": "cleared:varo-hounds"
+              },
+              {
+                "restored": "frost"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "varo-rise",
+            "label": "The Watching Stone"
+          }
+        },
+        {
+          "id": "varo",
+          "journal": "Varo is free. He has watched the Warden longer than anyone.",
+          "when": {
+            "any": [
+              {
+                "flag": "met-varo"
+              },
+              {
+                "restored": "frost"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "varo-rise",
+            "label": "Varo"
+          }
+        },
+        {
+          "id": "seedling",
+          "journal": "Varo: a seedling pillar stands by his stone. Climb it (hold right mouse at its foot), break its crystal, and when it stills and brightens, put the stone between us.",
+          "when": {
+            "any": [
+              {
+                "flag": "seedling-broken"
+              },
+              {
+                "restored": "frost"
+              }
+            ]
+          },
+          "goal": {
+            "dynamic": "place:seedling",
+            "label": "The seedling",
+            "radius": 10
+          }
+        },
+        {
+          "id": "lesson",
+          "journal": "The seedling is broken. Varo saw it.",
+          "when": {
+            "any": [
+              {
+                "flag": "varo-taught"
+              },
+              {
+                "restored": "frost"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "varo-rise",
+            "label": "Varo"
+          }
         }
       ],
       "onDone": [
@@ -551,48 +937,12 @@
       "title": "The Held Snow",
       "summary": "A Warden lies across the steppe, holding its snow in the air.",
       "start": {
-        "quest": "empty-robe"
+        "quest": "watching-stone"
       },
       "steps": [
         {
-          "id": "ridge",
-          "journal": "Hounds circle Varo's watching stone. I must clear them before I can speak to him.",
-          "when": {
-            "any": [
-              {
-                "event": "encounter:varo-hounds:clear"
-              },
-              {
-                "restored": "frost"
-              }
-            ]
-          },
-          "goal": {
-            "poi": "varo-rise",
-            "label": "The Watching Stone"
-          }
-        },
-        {
-          "id": "varo",
-          "journal": "Varo waits at the watching stone, east of the fire.",
-          "when": {
-            "any": [
-              {
-                "event": "talk:varo"
-              },
-              {
-                "restored": "frost"
-              }
-            ]
-          },
-          "goal": {
-            "poi": "varo-rise",
-            "label": "Varo"
-          }
-        },
-        {
           "id": "warden",
-          "journal": "Varo: its knees are water, held still. Freeze them, break them, and let it lie down.",
+          "journal": "When it wakes, six pillars rise round it, a crystal healing it from each. Climb them and break them; then freeze its seams and break them, and wear it down. When it stills and lifts its head, get behind stone. If I fall, it lies down again and waits.",
           "when": {
             "any": [
               {
@@ -615,6 +965,15 @@
               "autosave": true
             }
           ]
+        }
+      ],
+      "optional": [
+        {
+          "id": "ward",
+          "journal": "Break all six crystals.",
+          "when": {
+            "event": "warden:ward"
+          }
         }
       ],
       "onDone": [
@@ -649,7 +1008,7 @@
           "id": "maren",
           "journal": "Snow on the tents. Maren is waiting by the fire.",
           "when": {
-            "event": "talk:maren"
+            "flag": "maren-after"
           },
           "goal": {
             "poi": "camp-frost",
@@ -657,7 +1016,33 @@
           },
           "actions": [
             {
-              "echo": "echo-frost-hold"
+              "autosave": true
+            }
+          ]
+        },
+        {
+          "id": "bell",
+          "journal": "Aud asked that the monastery bell be rung when the snow fell again, by the one who brought it down.",
+          "when": {
+            "any": [
+              {
+                "event": "use:bell"
+              },
+              {
+                "flag": "used:bell"
+              }
+            ]
+          },
+          "goal": {
+            "dynamic": "bell",
+            "radius": 5
+          },
+          "actions": [
+            {
+              "say": "bark.bell"
+            },
+            {
+              "lore": "lore-bell"
             },
             {
               "autosave": true
@@ -677,9 +1062,12 @@
       "steps": [
         {
           "id": "follow",
-          "journal": "Small footprints lead west across the frozen tarn.",
+          "journal": "Small footprints lead west across the frozen tarn. Follow them.",
           "when": {
-            "event": "talk:tobin"
+            "near": {
+              "poi": "spring-frost",
+              "r": 30
+            }
           },
           "goal": {
             "poi": "spring-frost",
@@ -687,8 +1075,37 @@
           }
         },
         {
-          "id": "return",
-          "journal": "I found Tobin at the spring. Lead him home, or let him listen a while longer.",
+          "id": "guard",
+          "journal": "Tobin is out on the spring's ice, and two hounds are circling it.",
+          "when": {
+            "any": [
+              {
+                "event": "encounter:spring-hounds:clear"
+              },
+              {
+                "flag": "cleared:spring-hounds"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "spring-frost",
+            "label": "Tobin"
+          }
+        },
+        {
+          "id": "talk",
+          "journal": "The hounds are gone. Tobin is still listening to the ice.",
+          "when": {
+            "flag": "tobin-found"
+          },
+          "goal": {
+            "poi": "spring-frost",
+            "label": "Tobin"
+          }
+        },
+        {
+          "id": "home",
+          "journal": "Lead Tobin back to the fire (he follows, if I do not leave him behind) — or leave him listening.",
           "when": {
             "any": [
               {
@@ -704,39 +1121,11 @@
             "label": "Old Maren"
           }
         }
-      ]
-    },
-    {
-      "id": "sleeping-spring",
-      "kind": "side",
-      "title": "The Sleeping Spring",
-      "summary": "Water lies still under the ice west of the camp.",
-      "start": {
-        "flag": "tobin-found"
-      },
-      "steps": [
+      ],
+      "optional": [
         {
-          "id": "freeze",
-          "journal": "Tobin says the water under the ice isn't moving. Perhaps it must be held harder before it can let go.",
-          "when": {
-            "event": "crystal",
-            "near": {
-              "poi": "spring-frost",
-              "r": 14
-            }
-          },
-          "goal": {
-            "poi": "spring-frost"
-          },
-          "actions": [
-            {
-              "lore": "lore-spring"
-            }
-          ]
-        },
-        {
-          "id": "flow",
-          "journal": "I froze the spring solid. When the steppe is released, it may run.",
+          "id": "spring-runs",
+          "journal": "When the steppe moves again, come back to the spring.",
           "when": {
             "restored": "frost",
             "near": {
@@ -749,7 +1138,73 @@
           },
           "actions": [
             {
-              "echo": "echo-frost-surf"
+              "lore": "lore-spring"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "den-mother",
+      "kind": "side",
+      "title": "The Den Mother",
+      "summary": "A wood sled went out to the east ridge and did not come back.",
+      "start": {
+        "flag": "met-maren"
+      },
+      "steps": [
+        {
+          "id": "sled",
+          "journal": "Maren: a sled went east toward the ridge for wood. Find it.",
+          "when": {
+            "flag": "used:sled-wreck"
+          },
+          "goal": {
+            "dynamic": "place:sled-wreck",
+            "label": "The sled",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "reveal": [
+                "den-frost"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "den",
+          "journal": "Hound prints, many, from the wreck up to the ridge. Follow them to the den and break what lives there.",
+          "when": {
+            "any": [
+              {
+                "event": "encounter:den:clear"
+              },
+              {
+                "flag": "cleared:den"
+              }
+            ]
+          },
+          "goal": {
+            "poi": "den-frost"
+          }
+        },
+        {
+          "id": "report",
+          "journal": "The den is empty. Maren will want to know what was in it.",
+          "when": {
+            "flag": "told-hounds"
+          },
+          "goal": {
+            "poi": "camp-frost",
+            "label": "Old Maren"
+          },
+          "actions": [
+            {
+              "lore": "lore-hounds"
+            },
+            {
+              "autosave": true
             }
           ]
         }
@@ -758,15 +1213,15 @@
     {
       "id": "stones-remember",
       "kind": "side",
-      "title": "The Stones Remember",
-      "summary": "Echo stones stand hidden across the steppe, each holding a Shaper's voice.",
+      "title": "Echoes of the Shapers",
+      "summary": "Echo stones stand hidden across the steppe. Each remembers a Shaper's gesture.",
       "start": {
         "flag": "met-aud"
       },
       "steps": [
         {
           "id": "listen",
-          "journal": "Echo stones answer only up close. Listen at three of them.",
+          "journal": "Echo stones answer only up close. Listen at one, and give it back the gesture it remembers. Three of them.",
           "when": {
             "var": {
               "name": "stones",
@@ -776,11 +1231,19 @@
           "goal": {
             "dynamic": "stone-hint",
             "radius": 20
-          }
+          },
+          "actions": [
+            {
+              "reveal": [
+                "echo-frost-3",
+                "echo-frost-6"
+              ]
+            }
+          ]
         },
         {
           "id": "six",
-          "journal": "Three heard. Three more stand farther out.",
+          "journal": "Three have answered. The rest stand farther out, higher up.",
           "when": {
             "var": {
               "name": "stones",
@@ -823,61 +1286,32 @@
       ]
     },
     {
-      "id": "hounds-of-the-ridge",
-      "kind": "side",
-      "title": "Hounds of the Ridge",
-      "summary": "Shaped hounds have made a den east of the fire, and they hunt the camp's edges.",
-      "start": {
-        "flag": "met-maren"
-      },
-      "steps": [
-        {
-          "id": "hunt",
-          "journal": "The hounds' den lies east on the ridge. Freeze them, sweep them, or lose them in the snow.",
-          "when": {
-            "event": "encounter:den:clear"
-          },
-          "goal": {
-            "poi": "den-frost"
-          }
-        },
-        {
-          "id": "report",
-          "journal": "The den is quiet. Maren will want to know.",
-          "when": {
-            "flag": "told-hounds"
-          },
-          "goal": {
-            "poi": "camp-frost",
-            "label": "Old Maren"
-          },
-          "actions": [
-            {
-              "lore": "lore-hounds"
-            },
-            {
-              "autosave": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "slow-songs",
       "kind": "side",
-      "title": "The Slow Songs",
-      "summary": "Isolde will play for whoever lights the cold braziers.",
+      "title": "Carry the Flame",
+      "summary": "Isolde keeps the last flame from the monastery. The braziers have been cold for nine winters.",
       "start": {
         "flag": "met-isolde"
       },
       "steps": [
         {
+          "id": "take",
+          "journal": "Isolde will light my lantern from hers, after dark.",
+          "when": {
+            "flag": "flame-carried"
+          },
+          "goal": {
+            "poi": "camp-frost",
+            "label": "Isolde"
+          }
+        },
+        {
           "id": "light",
-          "journal": "Three cold braziers stand beside the shrines. Light them.",
+          "journal": "Carry the flame to the four cold braziers — three by the shrines, one at the edge of the Warden's ground. It gutters if I hurry and dies if I am struck. If it dies, Isolde will light it again.",
           "when": {
             "var": {
               "name": "braziers",
-              "gte": 3
+              "gte": 4
             }
           },
           "goal": {
@@ -887,10 +1321,9 @@
         },
         {
           "id": "listen",
-          "journal": "All three burn, leaning one way. Isolde will play tonight.",
+          "journal": "All four burn, leaning one way. Isolde will play, after dark.",
           "when": {
-            "event": "talk:isolde",
-            "night": true
+            "flag": "isolde-sang"
           },
           "goal": {
             "poi": "camp-frost",
@@ -903,8 +1336,74 @@
             {
               "reveal": [
                 "echo-frost-5",
-                "echo-frost-6"
+                "echo-frost-1"
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shapers-run",
+      "kind": "side",
+      "title": "The Shapers' Run",
+      "summary": "The Shapers rode the long chute faster than anyone has since.",
+      "start": {
+        "quest": "empty-robe"
+      },
+      "steps": [
+        {
+          "id": "bronze",
+          "journal": "Ride all nine gates in under 48 seconds.",
+          "when": {
+            "var": {
+              "name": "run.best",
+              "gte": 1,
+              "lte": 48
+            }
+          },
+          "goal": {
+            "dynamic": "next-gate",
+            "radius": 8
+          }
+        },
+        {
+          "id": "silver",
+          "journal": "Under 40 seconds.",
+          "when": {
+            "var": {
+              "name": "run.best",
+              "gte": 1,
+              "lte": 40
+            }
+          },
+          "goal": {
+            "dynamic": "next-gate",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "lore": "lore-shapers-run"
+            }
+          ]
+        },
+        {
+          "id": "gold",
+          "journal": "Under 34 seconds — the way they rode it.",
+          "when": {
+            "var": {
+              "name": "run.best",
+              "gte": 1,
+              "lte": 34
+            }
+          },
+          "goal": {
+            "dynamic": "next-gate",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "echo": "echo-frost-surf"
             }
           ]
         }
@@ -968,8 +1467,8 @@
       "text": "Six stones, six Shapers who stopped to speak where no one would pass. Together they say: we left the snow to you."
     },
     "lore-hounds": {
-      "title": "Hounds Made of Held Snow",
-      "text": "The Shaped are what a stilled place dreams of itself: hungry because everything is still, quick because nothing else is."
+      "title": "The Den Mother",
+      "text": "The Shaped are what a stilled place dreams of itself: hungry because everything is still, quick because nothing else is. The old ones grow a rime that turns blows aside; cold is the only thing that reaches them."
     },
     "lore-echo-frost-1": {
       "title": "Echo Stone 1",
@@ -994,6 +1493,10 @@
     "lore-echo-frost-6": {
       "title": "Echo Stone 6",
       "text": "The last of us wrote nothing. This stone is the note."
+    },
+    "lore-bell": {
+      "title": "The Bell",
+      "text": "The bell was cast to be rung once each winter, when the first snow reached the monastery steps. It was rung for the last time the winter before the last Shaper died, and then it hung, waiting, with the snow."
     }
   },
   "names": {
@@ -1007,6 +1510,8 @@
     "shrine-frost-2": "Shrine of the Long Slope",
     "shrine-frost-3": "Shrine of the Tarn",
     "shrine-frost-4": "Shrine of the Quiet Wind",
-    "shrine-frost-5": "Shrine of the Far Ridge"
+    "shrine-frost-5": "Shrine of the Far Ridge",
+    "sled-wreck": "The Overturned Sled",
+    "seedling": "The Seedling"
   }
 }

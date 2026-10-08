@@ -37,8 +37,8 @@ export function createClimb(ctx) {
   const { warden } = ctx;
   /** Ground query (optional): climbing down to the ground steps off rather than sinking in. */
   const ground = ctx.ground || null;
-  /** The arena's crystal pillars (optional): { n, x, z, y0 (base, sinks with it), up (0..1 risen),
-   *  H, r } — static columns climbed the same hold-to-hold way; the top is a floor to mantle onto. */
+  /** Crystal pillars (optional): { n, x, z, y0 (base, sinks with it), up (0..1 risen), h (height
+   *  each), r } — static columns climbed the same hold-to-hold way; the top is a floor to mantle onto. */
   const pillars = ctx.pillars || null;
   /** evalSurface: true → the crust's real bumps (hands), false → the smooth tube (the body). */
   let bumps = false;
@@ -255,7 +255,7 @@ export function createClimb(ctx) {
       if (pillars.up[k] < 1) continue;
       const dx = cx - pillars.x[k], dz = cz - pillars.z[k], d = Math.hypot(dx, dz) - pillars.r;
       const h = cy - pillars.y0[k];
-      if (d > T.reach || h < 0 || h > pillars.H - 0.6) continue;
+      if (d > T.reach || h < 0 || h > pillars.h[k] - 0.6) continue;
       c.mode = PILLAR; c.pillar = k; c.th = Math.atan2(dz, dx); c.s = Math.max(1, c.py + 0.85 - pillars.y0[k]); c.phase = 0;
       if (ground !== null) for (let q = 0; q < 20; q++) { surface(c); if (!feetBelowGround(c)) break; c.s += 0.1; }
       regrip(c);
@@ -398,9 +398,9 @@ export function createClimb(ctx) {
   function transitions(c) {
     if (c.mode === PILLAR) {
       // At the capital: mantle onto the top (the owner stands the Wraith there).
-      if (c.s >= pillars.H - 1.05) {
+      if (c.s >= pillars.h[c.pillar] - 1.05) {
         const k = c.pillar, ct = Math.cos(c.th), st = Math.sin(c.th);
-        c.topX = pillars.x[k] + ct * 1.2; c.topY = pillars.y0[k] + pillars.H; c.topZ = pillars.z[k] + st * 1.2;
+        c.topX = pillars.x[k] + ct * 1.2; c.topY = pillars.y0[k] + pillars.h[k]; c.topZ = pillars.z[k] + st * 1.2;
         c.vx = 0; c.vy = 0; c.vz = 0;
         c.mode = 0; c.fell = 4; c.nearJoint = -1; c._cx = 0; c._cy = 0; c._cz = 0;
         return;

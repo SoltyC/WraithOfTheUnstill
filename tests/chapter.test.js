@@ -40,80 +40,141 @@ describe('frost chapter data', () => {
 });
 
 describe('frost chapter flow', () => {
-  it('plays from waking to the Warden release and first snow', () => {
+  /** An encounter broken (what systems/encounters.js does). */
+  const clear = (ch, id) => { ch.graph.flags.add('cleared:' + id); ch.raise('encounter:' + id + ':clear'); };
+
+  it('plays from waking to the Warden release, first snow and the bell', () => {
     const { ch, got, at, finish, tick } = setup();
     tick();
     expect(ch.graph.quests['empty-robe'].state).toBe('active');
     at('monastery'); ch.talk('aud'); tick(); finish();
     expect(ch.graph.flags.has('met-aud')).toBe(true);
-    ch.graph.vars.verbStones = 1; tick();                      // a verb stone woken
+    ch.graph.vars.verbStones = 1; tick();
+    expect(ch.graph.quests['empty-robe'].step).toBe(2);              // the cloister fight
+    clear(ch, 'cloister'); tick();
     at('shrine-frost-1'); ch.raise('shrine:shrine-frost-1'); tick();
     expect(got.shrine).toContain('shrine-frost-1');
-    expect(got.autosave).toBe(1);
     expect(ch.graph.flags.has('known:camp-frost')).toBe(true);
-    ch.raise('run:done'); tick();
-    at('camp-frost'); ch.talk('maren'); tick(); finish(); tick();
-    expect(ch.graph.quests['empty-robe'].state).toBe('done');
-    expect(ch.graph.quests['held-snow'].state).toBe('active');
+    ch.raise('run:done'); tick(); tick();
+    expect(ch.graph.quests['pilgrims-fire'].state).toBe('active');
+    // Maren will not talk of the Warden while the hounds are at the fire.
+    at('camp-frost'); ch.talk('maren'); tick(); finish();
+    expect(ch.graph.flags.has('met-maren')).toBe(false);
+    clear(ch, 'camp-raid'); tick();
+    ch.talk('maren'); tick(); finish(); tick(); tick();
+    expect(ch.graph.flags.has('camp-hearth')).toBe(true);
+    expect(ch.graph.quests['watching-stone'].state).toBe('active');
     expect(ch.graph.quests['trail-in-snow'].state).toBe('active');
-    expect(ch.graph.quests['hounds-of-the-ridge'].state).toBe('active');
-    expect(ch.graph.flags.has('known:den-frost')).toBe(true);
-    ch.raise('encounter:varo-hounds:clear'); tick();
-    at('varo-rise'); ch.talk('varo'); tick(); finish();
+    expect(ch.graph.quests['den-mother'].state).toBe('active');
+    clear(ch, 'varo-hounds'); tick();
+    at('varo-rise'); ch.talk('varo'); tick(); finish(); tick();
+    expect(ch.graph.flags.has('known:warden-frost')).toBe(true);
+    expect(ch.graph.quests['watching-stone'].step).toBe(2);          // the seedling
+    ch.graph.flags.add('seedling-broken'); tick();
+    ch.talk('varo'); tick(); finish(); tick(); tick();
+    expect(got.echo).toContain('echo-frost-hold');
+    expect(ch.graph.quests['held-snow'].state).toBe('active');
     ch.raise('warden:released'); tick();
     expect(ch.graph.quests['held-snow'].state).toBe('done');
     expect(ch.current.text).toMatch(/first snow/);
     finish();
     ch.facts.restored.add('frost');
-    at('camp-frost'); tick();
-    ch.talk('maren'); tick(); finish();
+    at('camp-frost'); tick(); tick();
+    ch.talk('maren'); tick(); finish(); tick();
+    expect(ch.graph.quests['first-snow'].step).toBe(2);              // the bell
+    ch.raise('use:bell'); tick();
     expect(ch.graph.quests['first-snow'].state).toBe('done');
-    expect(got.echo).toContain('echo-frost-hold');
+    expect(got.lore).toContain('lore-bell');
   });
 
   it('pays the optional objectives of the first quest', () => {
     const { ch, got, tick } = setup();
     tick();
-    ch.graph.vars.verbStones = 3; ch.graph.vars['run.fast'] = 1; tick();
+    ch.graph.vars.verbStones = 3; ch.graph.vars['run.gates'] = 5; tick();
     expect(got.echo).toContain('echo-frost-sweep');
-    expect(got.lore).toContain('lore-shapers-run');
+    expect(ch.current?.text).toMatch(/ridge breathes/);
   });
 
-  it('never stalls when the Warden is released before Varo is met', () => {
+  it('never stalls when the Warden is released early', () => {
     const { ch, at, finish, tick } = setup();
     tick();
     at('monastery'); ch.talk('aud'); tick(); finish();
     ch.graph.vars.verbStones = 1; tick();
+    ch.graph.flags.add('cleared:cloister'); tick();
     at('shrine-frost-1'); ch.raise('shrine:shrine-frost-1'); tick();
-    ch.raise('warden:released'); ch.facts.restored.add('frost'); tick();
-    at('camp-frost'); tick(); ch.talk('maren'); tick(); finish(); tick(4); finish(); tick(4);
+    ch.raise('run:done'); tick(); tick();
+    ch.graph.flags.add('cleared:camp-raid'); tick();
+    at('camp-frost'); ch.talk('maren'); tick(); finish(); tick(); tick();
+    ch.facts.restored.add('frost'); tick(); tick(); tick(); tick(); tick(); tick();
+    expect(ch.graph.quests['watching-stone'].state).toBe('done');
     expect(ch.graph.quests['held-snow'].state).toBe('done');
-    expect(ch.graph.quests['first-snow'].state).not.toBe('locked');
+    expect(ch.graph.quests['first-snow'].state).toBe('active');
   });
 
-  it('the child: leading him home earns the Echo; letting him listen reveals stones instead', () => {
+  it('the child: led home (escorted) earns the Echo; left listening reveals stones instead', () => {
     const lead = setup();
     lead.ch.graph.flags.add('met-maren'); lead.tick();
-    lead.at('spring-frost'); lead.ch.talk('tobin'); lead.tick(); lead.finish(0);
-    lead.at('camp-frost'); lead.ch.talk('maren'); lead.tick(); lead.finish(); lead.tick();
+    lead.at('spring-frost'); lead.tick();
+    clear(lead.ch, 'spring-hounds'); lead.tick();
+    lead.ch.talk('tobin'); lead.tick(); lead.finish(0); lead.tick();
+    expect(lead.ch.graph.flags.has('escorting')).toBe(true);
+    // Maren has nothing for him until he is home (the escort sets this in play).
+    lead.at('camp-frost'); lead.ch.talk('maren'); lead.tick(); lead.finish();
+    expect(lead.got.echo).not.toContain('echo-frost-reach');
+    lead.ch.graph.flags.add('tobin-home'); lead.ch.graph.flags.delete('escorting');
+    lead.ch.talk('maren'); lead.tick(); lead.finish(); lead.tick();
     expect(lead.got.echo).toContain('echo-frost-reach');
     expect(lead.ch.graph.quests['trail-in-snow'].state).toBe('done');
     const listen = setup();
     listen.ch.graph.flags.add('met-maren'); listen.tick();
-    listen.at('spring-frost'); listen.ch.talk('tobin'); listen.tick(); listen.finish(1);
+    listen.at('spring-frost'); listen.tick();
+    clear(listen.ch, 'spring-hounds'); listen.tick();
+    listen.ch.talk('tobin'); listen.tick(); listen.finish(1); listen.tick(); listen.tick();
     expect(listen.ch.graph.flags.has('tobin-listened')).toBe(true);
     expect(listen.ch.graph.flags.has('known:echo-frost-4')).toBe(true);
-    listen.at('camp-frost'); listen.ch.talk('maren'); listen.tick(); listen.finish(); listen.tick();
     expect(listen.got.echo).not.toContain('echo-frost-reach');
     expect(listen.ch.graph.quests['trail-in-snow'].state).toBe('done');
   });
 
-  it('echo stones and braziers pay out through variables', () => {
+  it('the den mother: the sled reveals the den; breaking it and telling Maren pays out', () => {
+    const { ch, got, at, finish, tick } = setup();
+    ch.graph.flags.add('met-maren'); tick();
+    ch.graph.flags.add('used:sled-wreck'); tick();
+    expect(ch.graph.flags.has('known:den-frost')).toBe(true);
+    clear(ch, 'den'); tick();
+    at('camp-frost'); ch.talk('maren'); tick(); finish(); tick();
+    expect(ch.graph.quests['den-mother'].state).toBe('done');
+    expect(got.lore).toContain('lore-hounds');
+  });
+
+  it('the Run pays its medals on the best time', () => {
     const { ch, got, tick } = setup();
+    tick(); ch.graph.quests['empty-robe'].state = 'done'; tick();
+    expect(ch.graph.quests['shapers-run'].state).toBe('active');
+    ch.graph.vars['run.best'] = 52; tick(4);
+    expect(ch.graph.quests['shapers-run'].step).toBe(0);
+    ch.graph.vars['run.best'] = 39; tick(4);
+    expect(got.lore).toContain('lore-shapers-run');
+    expect(got.echo).not.toContain('echo-frost-surf');
+    ch.graph.vars['run.best'] = 33.4; tick(4);
+    expect(got.echo).toContain('echo-frost-surf');
+  });
+
+  it('echo stones and the carried flame pay out through variables and flags', () => {
+    const { ch, got, finish, tick } = setup();
     ch.graph.flags.add('met-aud'); ch.graph.flags.add('met-isolde'); tick();
-    ch.graph.vars.stones = 6; ch.graph.vars.braziers = 3; tick();
+    ch.graph.vars.stones = 3; tick();
+    expect(ch.graph.flags.has('known:echo-frost-6')).toBe(true);
+    ch.graph.vars.stones = 6; tick();
     expect(got.echo).toContain('echo-frost-still');
-    ch.facts.night = true; ch.talk('isolde'); tick(); 
+    // The flame: Isolde gives it only after dark.
+    ch.facts.night = false; ch.talk('isolde'); tick(); finish();
+    expect(ch.graph.flags.has('flame-given')).toBe(false);
+    ch.facts.night = true; ch.talk('isolde'); tick(); finish();
+    expect(ch.graph.flags.has('flame-given')).toBe(true);
+    ch.graph.flags.add('flame-carried'); tick();
+    ch.graph.vars.braziers = 4; tick();
+    ch.talk('isolde'); tick(); finish(); tick();
     expect(ch.graph.quests['slow-songs'].state).toBe('done');
     expect(ch.graph.flags.has('known:echo-frost-5')).toBe(true);
   });

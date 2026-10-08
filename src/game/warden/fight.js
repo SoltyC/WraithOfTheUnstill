@@ -33,14 +33,14 @@ export const fightTuning = {
 export const EV = { RISE: 1, CRYSTAL_HIT: 2, CRYSTAL_BROKEN: 4, WARD_BROKEN: 8, CHARGE: 16, BARRAGE: 32, SUMMON: 64, RESET: 128, RELEASED: 256 };
 
 /**
- * @param {{ warden: any, spikes: any, pillars: { n: number, up: Float64Array },
+ * @param {{ warden: any, spikes: any, pillars: { up: Float64Array }, count: number,
  *   spawn: (name: string, x: number, z: number) => number, alive: (slot: number) => boolean, kill: (slot: number) => void,
  *   ground: { qx: number, qz: number, h: number, sample: () => void } }} ctx
  */
 export function createFight(ctx) {
   const { warden, spikes, pillars, spawn, alive, kill, ground } = ctx;
   const T = fightTuning;
-  const N = pillars.n;
+  const N = ctx.count;   // the arena's pillars (the first `count` of the pillar arrays)
   const crystal = new Float64Array(8);     // strikes left per crystal (0 broken)
   const slots = new Int16Array(8).fill(-1); // Shaped it called up
   let seed = 31;

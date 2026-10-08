@@ -92,7 +92,10 @@ async function boot() {
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);
+  (await import('./systems/encounters.js')).addEncounterSystem(g);
+  (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
+  (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/audio.js')).addAudioSystem(g);
   if (!capture && !qs.get('bench')) (await import('./systems/titleCam.js')).addTitleCamSystem(g);
 

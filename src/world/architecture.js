@@ -278,6 +278,23 @@ function brazier(b, facing, R) {
   b.drum(0, 0, 1.22, 1.3, 0.64, 0.6, 12, MAT.EMBER, 3, { solid: false });
 }
 
+/** A pilgrims' sled, overturned and broken where the hounds caught it: runners in the air, the
+ *  load of split wood spilled, a torn felt cover. */
+function sledWreck(b, facing, R) {
+  const cy = Math.cos(facing), sy = Math.sin(facing);
+  const P = (u, f) => [cy * u + Math.sin(facing) * f, -sy * u + Math.cos(facing) * f];
+  // The bed, on its side.
+  b.box(0, 0, 0, 0.75, 0.08, 1.2, facing, MAT.WOOD, 1, { roll: 1.35 });
+  for (const s of [-1, 1]) { const [x, z] = P(s * 0.45, 0); b.box(x, z, 0.1, 0.9 + 0.05 * s, 0.05, 1.35, facing, MAT.WOOD, 2 + s, { roll: 1.2, tilt: 0.1 * s, solid: false }); }
+  // The felt cover, torn off and lying in the snow.
+  { const [x, z] = P(1.4, 0.6); b.box(x, z, 0, 0.06, 0.8, 0.95, facing + 0.4, MAT.CANVAS, 6, { tilt: 0.05, solid: false }); }
+  // Split wood, spilled.
+  for (let k = 0; k < 9; k++) {
+    const [x, z] = P(-1.2 - R() * 1.6, (R() - 0.5) * 2.6);
+    b.drum(x, z, 0, 0.6 + R() * 0.4, 0.07 + R() * 0.04, 0.07, 6, MAT.WOOD, 10 + k, { lie: 1, yaw: facing + R() * 3, solid: false });
+  }
+}
+
 /** Props the Veiled carry: drawn with the architecture, each its own site that the NPC system
  *  moves to the figure's hand every frame (local origin: the staff's foot, the lantern's ring). */
 function staff(len) { return (b) => { b.drum(0, 0, 0, len, 0.032, 0.026, 6, MAT.WOOD, 1, { solid: false }); b.drum(0, 0, len - 0.02, len + 0.06, 0.05, 0.02, 6, MAT.WOOD, 2, { solid: false }); }; }
@@ -291,6 +308,8 @@ export const PROPS = [
   { id: 'prop-maren', npc: 'maren', kind: 'staff', build: staff(1.05) },
   { id: 'prop-pilgrim-1', npc: 'pilgrim-1', kind: 'staff', build: staff(1.75) },
   { id: 'prop-isolde', npc: 'isolde', kind: 'lantern', build: lantern },
+  // The Wraith's own (Carry the Flame): placed at its hand by systems/flame.js while it carries.
+  { id: 'prop-wraith', npc: 'wraith', kind: 'lantern', build: lantern },
 ];
 
 /** Where a verb stone stands in the monastery (local right, forward): a ring round the hall. */
@@ -299,11 +318,13 @@ export const GESTURE_STONES = [
   { id: 'gesture-sweep', verb: 'sweep', at: [-11, 2.5] },
   { id: 'gesture-ribbon', verb: 'ribbon', at: [0, -9.6] },
 ];
-/** Braziers: beside shrines 2, 3 and 4 (world offsets from the shrine). */
+/** Braziers: beside shrines 2, 3 and 4 (world offsets from the shrine), and one at the edge of the
+ *  Warden's arena (lit, the Wraith re-forms beside it). */
 export const BRAZIERS = [
   { id: 'brazier-1', shrine: 'shrine-frost-2', off: [6.5, 3.5] },
   { id: 'brazier-2', shrine: 'shrine-frost-3', off: [6.5, 3.5] },
   { id: 'brazier-3', shrine: 'shrine-frost-4', off: [6.5, 3.5] },
+  { id: 'brazier-4', shrine: 'warden-brazier', off: [0, 0] },
 ];
 
 /** The Warden's arena (user design 2026-10-09): six crystal pillars that rise out of the snow when
@@ -337,8 +358,12 @@ export function arenaLayout(centre, heading) {
 /** A crystal pillar: a Shaper column of stacked drums with carved glyph bands (the holds the
  *  Wraith climbs by) under a broad capital whose top is a floor. Built from far below its seat:
  *  the arena lowers it into the snow until the Warden wakes. */
-function wardenPillar(b, facing, R) {
-  const H = ARENA.pillarH, rs = ARENA.pillarShaft;
+function wardenPillar(b, facing, R) { pillarOf(ARENA.pillarH)(b, facing, R); }
+/** The seedling by the watching stone: a shorter pillar of the same make (Varo's lesson). */
+export const SEEDLING_H = 6;
+function seedlingPillar(b, facing, R) { pillarOf(SEEDLING_H)(b, facing, R); }
+const pillarOf = (H) => (b, facing, R) => {
+  const rs = ARENA.pillarShaft;
   b.drum(0, 0, -H - 1.5, 0.9, 1.75, 1.7, 16, MAT.STONE, 1, { solid: false });
   let y = 0.9;
   for (let k = 0; y < H - 0.75; k++) {
@@ -352,7 +377,7 @@ function wardenPillar(b, facing, R) {
   b.drum(0, 0, H, H + 0.06, 0.9, 0.82, 12, MAT.ICE, 32, { solid: false });
   b.blockers.push({ site: b.site, kind: 'circle', x: 0, z: 0, r: rs + 0.1, y0: -H - 1.5, y1: H - 0.15 });
   b.platforms.push({ site: b.site, x: 0, z: 0, hx: ARENA.pillarCap * 0.72, hz: ARENA.pillarCap * 0.72, cos: 1, sin: 0, top: H });
-}
+};
 
 /** A broken Shaper wall in the arena: two or three heavy courses, the top one broken off, a
  *  fallen block at its foot. Broad enough to shelter behind (its face toward the Warden). */
@@ -399,6 +424,17 @@ export function frostSites(table, routes = []) {
   // The Run's gates: arches across the chute (seated on its floor).
   const run = routes.find((r) => r.id === 'shapers-run');
   if (run) run.gates.forEach((gt, i) => sites.push({ id: 'run-gate-' + (i + 1), at: gt.pos, facing: Math.atan2(gt.dir[0], gt.dir[1]), build: gate, footprint: 3, seatAt: 'center' }));
+  // Quest places (data/quests/frost.json `places`): the sled the hounds caught; the seedling pillar
+  // by the watching stone with two broken walls to shelter behind from it.
+  if (table['sled-wreck']) sites.push({ id: 'sled-wreck', at: P('sled-wreck'), facing: 0.7, build: sledWreck, footprint: 1.2, seatAt: 'center' });
+  if (table.seedling) {
+    const sp = P('seedling');
+    sites.push({ id: 'seedling', at: sp, facing: 0, build: seedlingPillar, footprint: 1.8, seatAt: 'center', pillar: true, pillarH: SEEDLING_H });
+    for (let k = 0; k < 2; k++) {
+      const a = toward(sp, P('varo-rise')) + (k ? 1.1 : -1.1), r = 9.5;
+      sites.push({ id: 'seedling-cover-' + (k + 1), at: [sp[0] + Math.sin(a) * r, sp[1] + Math.cos(a) * r], facing: a, build: wardenCover, footprint: 2.6, seatAt: 'center' });
+    }
+  }
   // The Warden's arena: pillars and cover walls, facing as the Warden waits (toward the monastery).
   if (table['warden-frost']) {
     const ac = P('warden-frost'), lay = arenaLayout(ac, toward(ac, mon));

@@ -5,10 +5,13 @@
 // one line of what to do) and its reset when the Wraith dies or walks away.
 
 import { createFight, FIGHT, EV, fightTuning } from '../game/warden/fight.js';
-import { ARENA } from '../world/architecture.js';
+import { ARENA, SEEDLING_H } from '../world/architecture.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 const PER = 8;   // crystal prisms per pillar (a centre and seven satellites)
+const SEED = ARENA.pillars;   // the seedling's pillar index (after the arena's six)
+/** The seedling (Varo's lesson): a small crystal that stills and sheds spikes of its own. */
+const seedTuning = { rise: 3, wait: 7, charge: 2.5, fire: 1.3, aimedEvery: 0.32, wildPerSecond: 10, wildR: 16, near: 45 };
 
 /** @param {any} g  shared boot context */
 export function addWardenFightSystem(g) {
@@ -18,13 +21,18 @@ export function addWardenFightSystem(g) {
   const sites = g.archSites;
   const pSite = [];
   for (let k = 1; k <= ARENA.pillars; k++) pSite.push(sites.findIndex((s) => s.id === 'warden-pillar-' + k));
+  pSite.push(sites.findIndex((s) => s.id === 'seedling'));
+  const NP = pSite[SEED] >= 0 ? ARENA.pillars + 1 : ARENA.pillars;
+  pillars.n = NP; pillars.h[SEED] = SEEDLING_H;
   const arena = g.pois.find((p) => p.id === 'warden-frost');
-  if (!arena || pSite.some((i) => i < 0)) return;
+  if (!arena || pSite.slice(0, ARENA.pillars).some((i) => i < 0)) return;
+  const graph = chapter.graph;
+  function stepOf(q) { const st = graph.quests[q]; if (!st || st.state !== 'active') return null; return graph.byId.get(q).steps[st.step]?.id ?? null; }
   g.losBlocker.solids = g.solids;
   spikes.sfx = sfx;
 
   const fight = g.fight = createFight({
-    warden, spikes, pillars, ground,
+    warden, spikes, pillars, count: ARENA.pillars, ground,
     spawn: (name, x, z) => shaped.spawn(name, x, z),
     alive: (i) => shaped.isLive(i) || shaped.slots[i].state === shapedMod.S.RISING,
     kill: (i) => shaped.damage(i, 1e9, false, 0, 0),
@@ -44,9 +52,9 @@ export function addWardenFightSystem(g) {
   const cx = new Float64Array(8), cy = new Float64Array(8), cz = new Float64Array(8);
   const data = pillarCrystals.data;
   const shape = new Float64Array(ARENA.pillars * PER * 4);   // per prism: dx, dz, axis angle, tilt (fixed)
-  let seed = 4711;
-  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  for (let k = 0; k < ARENA.pillars * PER; k++) {
+  let rs = 4711;
+  const rnd = () => { rs = (rs * 1664525 + 1013904223) >>> 0; return rs / 4294967296; };
+  for (let k = 0; k < NP * PER; k++) {
     const centre = k % PER === 0, a = rnd() * Math.PI * 2, r = centre ? 0 : 0.22 + 0.3 * rnd();
     shape[k * 4] = Math.cos(a) * r; shape[k * 4 + 1] = Math.sin(a) * r; shape[k * 4 + 2] = centre ? rnd() * 6.28 : a + (rnd() - 0.5) * 0.5; shape[k * 4 + 3] = centre ? 0.05 : 0.25 + 0.4 * rnd();
   }
@@ -123,16 +131,16 @@ export function addWardenFightSystem(g) {
   // ── Pillars: rise (snow sheeting off, a berm thrown up round the foot), stand, sink ─────────
   const lastUp = new Float64Array(8);
   function pillarsTick(dt) {
-    for (let k = 0; k < ARENA.pillars; k++) {
-      const s = sites[pSite[k]];
+    for (let k = 0; k < NP; k++) {
+      const s = sites[pSite[k]], H = pillars.h[k], crystalLeft = k === SEED ? seed.crystal : fight.crystal[k];
       pillars.x[k] = s.at[0]; pillars.z[k] = s.at[1];
       if (s.seatY === undefined) { pillars.up[k] = Math.min(pillars.up[k], 0); continue; }
       const u = pillars.up[k], e = u * u * (3 - 2 * u);
-      s.sink = (1 - e) * (ARENA.pillarH + 1.2);
+      s.sink = (1 - e) * (H + 1.2);
       pillars.y0[k] = s.seatY - s.sink;
-      cx[k] = s.at[0]; cy[k] = s.seatY - s.sink + ARENA.pillarH; cz[k] = s.at[1];
+      cx[k] = s.at[0]; cy[k] = s.seatY - s.sink + H; cz[k] = s.at[1];
       // Glyph light: the ward's cold glow while its crystal stands.
-      s.glow = u <= 0 ? 0 : fight.crystal[k] > 0 ? 0.9 : 0.12;
+      s.glow = u <= 0 ? 0 : crystalLeft > 0 ? 0.9 : 0.12;
       if (u > lastUp[k] && u < 1) {
         // Breaking out of the snow: powder thrown off, the ground heaving round it.
         if (lastUp[k] === 0) {
@@ -156,7 +164,7 @@ export function addWardenFightSystem(g) {
       }
       lastUp[k] = u;
       // The crystal: grows once its pillar stands, whole until struck; gone with the fight.
-      const want = u >= 1 ? fight.crystal[k] : 0;
+      const want = u >= 1 ? crystalLeft : 0;
       if (want !== shown[k]) {
         if (want < shown[k] && shown[k] > 0) {
           burst(cx[k], cy[k], cz[k], want === 0 ? 70 : 26, want === 0 ? 9 : 5);
@@ -189,6 +197,52 @@ export function addWardenFightSystem(g) {
   }
   g.resetWardenFight = doReset;
 
+  // ── The seedling ──────────────────────────────────────────────────────────────────────────
+  const seed = { crystal: 0, t: 0.5 - 0.5, phase: 0, aimT: 0.5 - 0.5, wild: 0.5 - 0.5, risen: false };
+  function seedlingTick(dt) {
+    if (NP === ARENA.pillars) return;
+    const flags = graph.flags, p = controller.pos;
+    if (flags.has('seedling-broken') || stepOf('watching-stone') !== 'seedling') {
+      // Broken (or not its time): it goes back into the snow, slowly.
+      seed.crystal = 0; seed.phase = 0;
+      pillars.up[SEED] = Math.max(0, pillars.up[SEED] - dt / 8);
+      return;
+    }
+    const dx = p.x - cx[SEED], dz = p.z - cz[SEED];
+    if (!seed.risen && dx * dx + dz * dz > seedTuning.near * seedTuning.near) return;
+    if (!seed.risen) { seed.risen = true; seed.crystal = fightTuning.crystalHits; seed.t = 0; seed.phase = 0; }
+    pillars.up[SEED] = Math.min(1, pillars.up[SEED] + dt / seedTuning.rise);
+    if (pillars.up[SEED] < 1 || seed.crystal <= 0) return;
+    seed.t += dt;
+    const T = seedTuning;
+    if (seed.phase === 0 && seed.t >= T.wait) { seed.phase = 1; seed.t = 0; sfx.x = cx[SEED]; sfx.y = cy[SEED] + 1; sfx.z = cz[SEED]; sfx.gain = 1.6; sfx.play(SFX.CHARGE); }
+    else if (seed.phase === 1) {
+      // Gathering: light motes stream up off it, faster and faster.
+      const n = 1 + Math.floor(4 * seed.t / T.charge);
+      for (let q = 0; q < n; q++) { wraithView.ex = cx[SEED] + (rnd() - 0.5) * 1.2; wraithView.ey = cy[SEED] + rnd() * 2.2; wraithView.ez = cz[SEED] + (rnd() - 0.5) * 1.2; wraithView.evx = (rnd() - 0.5) * 0.5; wraithView.evy = 1 + 2 * rnd(); wraithView.evz = (rnd() - 0.5) * 0.5; wraithView.esize = 0.05 + 0.05 * rnd(); wraithView.emit(); }
+      if (seed.t >= T.charge) { seed.phase = 2; seed.t = 0; seed.aimT = 0; seed.wild = 0; sfx.x = cx[SEED]; sfx.y = cy[SEED]; sfx.z = cz[SEED]; sfx.gain = 1.2; sfx.play(SFX.WHOOSH); }
+    } else if (seed.phase === 2) {
+      spikes.fx0 = cx[SEED]; spikes.fy0 = cy[SEED] + 2.2; spikes.fz0 = cz[SEED];
+      seed.aimT -= dt;
+      if (seed.aimT <= 0) { seed.aimT += T.aimedEvery; spikes.px = p.x; spikes.py = p.y; spikes.pz = p.z; spikes.fireAimed(); }
+      seed.wild += T.wildPerSecond * dt;
+      while (seed.wild >= 1) {
+        seed.wild -= 1;
+        const a = rnd() * Math.PI * 2, r = 3 + Math.sqrt(rnd()) * (T.wildR - 3);
+        spikes.tx = cx[SEED] + Math.cos(a) * r; spikes.tz = cz[SEED] + Math.sin(a) * r;
+        ground.qx = spikes.tx; ground.qz = spikes.tz; ground.sample(); spikes.ty = ground.h;
+        spikes.fireWild();
+      }
+      if (seed.t >= T.fire) { seed.phase = 0; seed.t = 0; }
+    }
+  }
+  /** The seedling's crystal within reach of the Wraith on its top? */
+  function seedReach(x, y, z) {
+    if (NP === ARENA.pillars || seed.crystal <= 0 || pillars.up[SEED] < 1) return false;
+    const dx = x - cx[SEED], dz = z - cz[SEED];
+    return dx * dx + dz * dz < fightTuning.reach * fightTuning.reach && y > cy[SEED] - 1.2 && y < cy[SEED] + 2.5;
+  }
+
   let striking = -1, firstCharge = true;
   loop.add({ name: 'wardenFight', update: () => {
     const dt = clock.dt;
@@ -202,14 +256,31 @@ export function addWardenFightSystem(g) {
       fight.px = controller.pos.x; fight.py = controller.pos.y; fight.pz = controller.pos.z; fight.dt = dt;
       fight.update();
     }
+    seedlingTick(dt);
     pillarsTick(dt);
     // Striking a crystal from the pillar's top: Primary strikes (no Sweep is cast there).
     const p = controller.pos;
     striking = home ? fight.reachable(p.x, p.y, p.z, cx, cy, cz) : -1;
+    if (striking < 0 && seedReach(p.x, p.y, p.z)) striking = SEED;
     g.verbBlock = striking >= 0;
-    if (striking >= 0 && input.pressed[Action.Primary] && combat.dying === 0 && fight.strike(striking)) {
-      clock.hitStop = Math.max(clock.hitStop, 0.09); arm.shake += 0.02; arm.kick += 0.04; g.castFlash.v = 1;
-      controller.yaw = Math.atan2(cx[striking] - p.x, cz[striking] - p.z);
+    if (striking >= 0 && input.pressed[Action.Primary] && combat.dying === 0) {
+      let hit = false;
+      if (striking === SEED) {
+        seed.crystal--; hit = true;
+        if (seed.crystal <= 0) {
+          graph.flags.add('seedling-broken'); chapter.raise('seedling:broken');
+          if (!capture) hud.notice('The Watching Stone', 'The seedling breaks', 'Varo will want to hear it.', 6);
+        }
+      } else hit = fight.strike(striking);
+      if (hit) {
+        clock.hitStop = Math.max(clock.hitStop, 0.09); arm.shake += 0.02; arm.kick += 0.04; g.castFlash.v = 1;
+        controller.yaw = Math.atan2(cx[striking] - p.x, cz[striking] - p.z);
+      }
+    }
+    // The seedling's line.
+    if (!capture && NP > ARENA.pillars) {
+      const active = seed.risen && seed.crystal > 0 && stepOf('watching-stone') === 'seedling';
+      hud.line('seedling', !active ? '' : seed.phase >= 1 ? 'Put the stone between you' : striking === SEED ? 'Strike the crystal (click)' : climb.climbing ? 'Climb (W) to the top' : 'Climb the seedling (hold right mouse at its foot) and break its crystal', active && seed.phase >= 1);
     }
     if (home && fight.phase === FIGHT.WARD) healStreams();
     // Spikes: they strike through a bend-step; only stone stops them.
@@ -221,6 +292,8 @@ export function addWardenFightSystem(g) {
     // Events: sound and notices.
     const ev = fight.ev;
     if (!capture) {
+      if (ev & EV.RISE) chapter.raise('warden:awake');
+      if (ev & EV.WARD_BROKEN) chapter.raise('warden:ward');
       if (ev & EV.RISE) hud.notice('The Held Snow', 'Pillars rise out of the snow', 'A crystal burns on each. While they stand, they heal it.', 7);
       if (ev & EV.CHARGE) {
         const b = warden.body; sfx.x = b.sx[2]; sfx.y = b.sy[2] + 4; sfx.z = b.sz[2]; sfx.gain = 2.2; sfx.play(SFX.CHARGE);
