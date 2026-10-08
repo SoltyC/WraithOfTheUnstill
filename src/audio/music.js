@@ -1,6 +1,7 @@
-// Music (BRIEF §13): sparse and atmospheric — the title, the waking, shrines, the Warden fight and
-// its release, death, an Echo found, and a pilgrim's lyre at the camp. Silence and wind are the
-// default; nothing plays while exploring. Tracks are the user's own (assets/audio/music, encoded
+// Music (BRIEF §13, deviated from by the user 2026-10-08, DECISIONS.md): the title, the waking,
+// shrines, the Warden fight and its release, death, an Echo found, a pilgrim's lyre at the camp —
+// and now a travelling score for the steppe (day, night, the Run, restored) so exploring is never
+// bare. The wind still sits under it all; the score is quiet and slow, never a fight cue. Tracks are the user's own (assets/audio/music, encoded
 // by tools/audio/encode-music.sh to data/audio/music/*.m4a).
 //
 // Beds (long cues) stream from media elements into the WebAudio graph (decoding all of them would
@@ -16,6 +17,11 @@ export const BEDS = {
   shrine: { file: 'shrine', loop: [1.5, 173], xfade: 5, gain: 0.7, fadeIn: 4, fadeOut: 4 },
   fight: { file: 'warden-fight', loop: [5, 178], xfade: 3, gain: 0.85, fadeIn: 2, fadeOut: 1.5 },
   release: { file: 'release', loop: null, gain: 1, fadeIn: 0.3, fadeOut: 6 },
+  // The travelling score: loop [0, 0] = the whole file (its length is read once loaded).
+  'steppe-day': { file: 'steppe-day', loop: [0, 0], xfade: 6, gain: 0.55, fadeIn: 6, fadeOut: 6 },
+  'steppe-night': { file: 'steppe-night', loop: [0, 0], xfade: 6, gain: 0.55, fadeIn: 6, fadeOut: 6 },
+  'steppe-restored': { file: 'steppe-restored', loop: [0, 0], xfade: 6, gain: 0.6, fadeIn: 6, fadeOut: 6 },
+  run: { file: 'the-run', loop: null, gain: 0.8, fadeIn: 1.5, fadeOut: 3 },
   camp: { file: 'camp-lyre', loop: [0, 170], xfade: 4, gain: 0.8, fadeIn: 3, fadeOut: 3, spatial: true },
 };
 /** Stingers: short, decoded, played over whatever bed is on. */
@@ -121,11 +127,12 @@ export function createMusic(audio) {
         const el = b.els[b.cur];
         if (def.loop) {
           // Crossfade back to the loop start before the end (equal-length linear ramps).
-          if (!b.xfading && el.currentTime >= def.loop[1] - def.xfade) {
+          const end = def.loop[1] || (el.duration > 0 ? el.duration : 1e9);
+          if (!b.xfading && el.currentTime >= end - def.xfade) {
             const o = 1 - b.cur;
             startEl(b, o, def.loop[0], def.xfade); fadeEl(b, b.cur, def.xfade);
             b.xfading = true; b.prev = b.cur; b.cur = o;
-          } else if (b.xfading && b.els[b.prev].currentTime >= def.loop[1]) { b.els[b.prev].pause(); b.xfading = false; }
+          } else if (b.xfading && b.els[b.prev].currentTime >= (def.loop[1] || b.els[b.prev].duration || 1e9) - 0.05) { b.els[b.prev].pause(); b.xfading = false; }
         } else if (el.ended || (el.duration > 0 && el.currentTime >= el.duration - 0.05)) {
           b.playing = false; b.done = true; this.finished = id;
         }

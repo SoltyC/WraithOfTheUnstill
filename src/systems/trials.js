@@ -29,9 +29,10 @@ export function addTrialsSystem(g) {
   let gi = 0, t0 = 0;
   function runTick(p) {
     if (gates.length === 0) return;
+    if (g.musicState) g.musicState.run = gi > 0;
     const gt = gates[gi];
     if (dist2(p.x, p.z, gt.pos[0], gt.pos[1]) < 64) {
-      if (gi === 0) t0 = clock.simTime;
+      if (gi === 0) { t0 = clock.simTime; g.music.rearm('run'); }
       flags.add('lit:run-gate-' + (gi + 1));
       gi++;
       vars['run.gates'] = Math.max(vars['run.gates'] || 0, gi);

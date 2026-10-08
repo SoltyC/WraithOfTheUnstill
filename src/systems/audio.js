@@ -1,15 +1,18 @@
 // The music director (BRIEF §13): decides which bed plays, by priority — the release, the Warden
 // fight, the title, the waking, a shrine, the camp's lyre — and fires the stingers (the Warden
-// waking, death, an Echo). Silence otherwise: exploring the steppe has only the wind.
+// waking, death, an Echo). Between them the travelling score plays (user decision 2026-10-08):
+// the Run's cue while descending, then steppe day / night, or the restored steppe's.
+
+const ws0 = (g) => g.ws.restoration.frost === 'restored';
 
 /** @param {any} g  shared boot context */
 export function addAudioSystem(g) {
-  const { loop, music, warden, wardenMod, combat, controller, camera, arm, pois } = g;
+  const { loop, music, warden, wardenMod, combat, controller, camera, arm, pois, params, ws } = g;
   const W = wardenMod.W;
   const shrines = pois.filter((p) => p.kind === 'shrine');
   const SHRINE_R = 30, FIGHT_R = 190;
   /** Set by the game: the waking cue on a new game, the title screen, the camp's fire (x, y, z). */
-  const state = g.musicState = { waking: false, title: false, camp: null };
+  const state = g.musicState = { waking: false, title: false, camp: null, run: false };
   let lastWarden = -1, lastDying = false;
 
   loop.add({ name: 'music', update: () => {
@@ -38,6 +41,11 @@ export function addAudioSystem(g) {
     if (want === null && state.camp) {
       const c = state.camp, dx = c[0] - p.x, dz = c[2] - p.z;
       if (dx * dx + dz * dz < 90 * 90) { want = 'camp'; music.sx = c[0]; music.sy = c[1]; music.sz = c[2]; }
+    }
+    if (want === null && state.run) want = 'run';
+    if (want === null && !state.title) {
+      const tod = params.v.timeOfDay;
+      want = ws0(g) ? 'steppe-restored' : tod < 5.5 || tod > 19.5 ? 'steppe-night' : 'steppe-day';
     }
     if (music.finished === 'waking') { state.waking = false; music.finished = null; }
     music.want = want;
