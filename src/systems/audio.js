@@ -9,16 +9,25 @@ export function addAudioSystem(g) {
   const spring = pois.find((q) => q.id === 'spring-frost');
   let storm = false, fast = false;
   /** The travelling score: the Run or a fast surf, a storm, the spring's ice and the night, the heights, dusk and dawn, else the plains. Latches stop a bed flapping at its threshold. */
-  function travel(p) {
+  let cur = 'plains-wanderer', held = 99, high = false;
+  function pick(p) {
     const sp = Math.hypot(controller.vel.x, controller.vel.z), tod = params.v.timeOfDay;
     fast = controller.surf.active ? (fast ? sp > 7 : sp > 13) : false;
     storm = weather.snow > (storm ? 0.55 : 0.75);
+    high = p.y > (high ? 790 : 840);
     if (state.run || fast) return 'plains-herd';
     if (storm) return 'frost-blizzard';
     if (tod < 5.5 || tod > 19.5 || (spring && (spring.pos[0] - p.x) ** 2 + (spring.pos[1] - p.z) ** 2 < 70 * 70)) return 'frost-ice-caves';
-    if (p.y > 820) return 'frost-highlands';
+    if (high) return 'frost-highlands';
     if (tod < 8.5 || tod > 16.5) return 'plains-dusk';
     return 'plains-wanderer';
+  }
+  /** A bed, once chosen, plays for at least 45 s (20 s for the surf cue) before another replaces it: no restarts, no swells every few seconds. */
+  function travel(p) {
+    held += g.clock.realDt;
+    const want = pick(p);
+    if (want !== cur && held > (cur === 'plains-herd' ? 20 : 45)) { cur = want; held = 0; }
+    return cur;
   }
   const W = wardenMod.W;
   const shrines = pois.filter((p) => p.kind === 'shrine');
