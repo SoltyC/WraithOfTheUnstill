@@ -29,12 +29,34 @@ export function addTitleCamSystem(g) {
   const black = mk('intro-black');
   let cardShown = false, cardSpec = null;
 
+  /** Top of any built structure (walls, roofs, columns) within 3 m of (x, z), or −∞. */
+  function structTop(x, z) {
+    const so = g.solids; if (!so) return -Infinity;
+    let top = -Infinity;
+    for (const b of so.blockers) {
+      const seat = so.sites[b.site].seat; if (Number.isNaN(seat)) continue;
+      const dx = x - b.x, dz = z - b.z;
+      if (b.kind === 'circle') { if (dx * dx + dz * dz > (b.r + 3) * (b.r + 3)) continue; }
+      else { const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos; if (Math.abs(lx) > b.hx + 3 || Math.abs(lz) > b.hz + 3) continue; }
+      if (seat + b.y1 > top) top = seat + b.y1;
+    }
+    for (const p of so.platforms) {
+      const seat = so.sites[p.site].seat; if (Number.isNaN(seat)) continue;
+      const dx = x - p.x, dz = z - p.z, lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
+      if (Math.abs(lx) > p.hx + 3 || Math.abs(lz) > p.hz + 3) continue;
+      if (seat + p.top > top) top = seat + p.top;
+    }
+    return top;
+  }
   function floorAt(x, z) {
     ground.qx = x; ground.qz = z;
-    if (!ground.covers()) return -Infinity;
+    const st = structTop(x, z);
+    if (!ground.covers()) return st;
     ground.sample();
-    return ground.h;
+    return ground.h > st ? ground.h : st;
   }
+  function inside(x, y, z) { const so = g.solids; if (!so) return false; so.px = x; so.py = y; so.pz = z; return so.insideQ(); }
+
   /** Lift needed over the planned height: the highest ground under here and 30 / 90 / 180 m ahead. */
   function need(x, y, z, dx, dz) {
     let top = floorAt(x, z);
@@ -69,11 +91,24 @@ export function addTitleCamSystem(g) {
     out.yaw = arm.yaw; out.pitch = arm.pitch; out.fov = arm.fov;
   }
 
+  /** The approach's last control point: back along the follow camera's line and up, as far as it stays clear of the built stone. */
+  const A = { x: 0, y: 0, z: 0 };
+  function chooseApproach() {
+    const bx = -Math.sin(E.yaw), bz = -Math.cos(E.yaw);
+    for (let L = 40; L >= 4; L -= 4) {
+      A.x = E.x + bx * L * 0.8; A.z = E.z + bz * L * 0.8; A.y = E.y + L * 0.7;
+      let clear = true;
+      for (let k = 1; k <= 12 && clear; k++) { const u = k / 12; if (inside(E.x + (A.x - E.x) * u, E.y + (A.y - E.y) * u, E.z + (A.z - E.z) * u) || floorAt(E.x + (A.x - E.x) * u, E.z + (A.z - E.z) * u) + 1 > E.y + (A.y - E.y) * u) { if (u > 0.08) clear = false; } }
+      if (clear) return;
+    }
+    A.x = E.x; A.z = E.z; A.y = E.y + 6;
+  }
+
   function bezier(s, out) {
     // Start high and away, glide toward the monastery keeping height, then come down onto the end.
     const dx = E.x - S.x, dz = E.z - S.z, dist = Math.sqrt(dx * dx + dz * dz) || 1;
     const p1x = S.x + dx * 0.45, p1z = S.z + dz * 0.45, p1y = S.y * 0.9 + E.y * 0.1;
-    const p2x = E.x - dx * 0.12, p2z = E.z - dz * 0.12, p2y = E.y + 30 + dist * 0.07;
+    const p2x = A.x, p2z = A.z, p2y = A.y;
     const u = 1 - s, b0 = u * u * u, b1 = 3 * u * u * s, b2 = 3 * u * s * s, b3 = s * s * s;
     out.x = b0 * S.x + b1 * p1x + b2 * p2x + b3 * E.x;
     out.y = b0 * S.y + b1 * p1y + b2 * p2y + b3 * E.y;
@@ -123,6 +158,7 @@ export function addTitleCamSystem(g) {
       const ready = !pendingTp.active && streamer.arrived.length === 0 && streamer.pendingNear(controller.pos.x, controller.pos.z) === 0;
       if (!ready && waited < 6) return;
       followPose(E);
+      chooseApproach();
       arm.setPose(S.x, S.y, S.z, S.yaw, S.pitch, S.fov);
       mode = 'dive'; diveT = 0;
       bars.classList.add('on');
@@ -144,8 +180,11 @@ export function addTitleCamSystem(g) {
     pose.pitch = pose.pitch + (E.pitch - pose.pitch) * w;
     pose.fov = S.fov + (E.fov - S.fov) * s;
     const sx = Math.sin(pose.yaw), sz = Math.cos(pose.yaw);
-    const wanted = need(pose.x, pose.y, pose.z, sx, sz) * (1 - w);   // over the last stretch the follow camera's own collision rules
-    applyLift(dt, wanted);
+    const dE = Math.sqrt((pose.x - E.x) ** 2 + (pose.y - E.y) ** 2 + (pose.z - E.z) ** 2);
+    const away = Math.min(1, Math.max(0, (dE - 5) / 25));            // near the end the approach line itself is clear
+    applyLift(dt, need(pose.x, pose.y, pose.z, sx, sz) * away);
+    let guard = 0;
+    while (guard++ < 30 && inside(pose.x, pose.y + lift, pose.z)) lift += 0.5;   // never inside stone
     put(pose);
     // Depth of field: focus on the Wraith, loose at height, tight as the camera arrives.
     const dxw = tx - pose.x, dyw = ty - pose.y - lift, dzw = tz - pose.z;

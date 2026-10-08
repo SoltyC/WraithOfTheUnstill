@@ -21,7 +21,8 @@ try {
     const w = window.__wraith, g = w.game, log = (window.__clear = []);
     const hook = () => {
       const c = g.camera.position; g.ground.qx = c.x; g.ground.qz = c.z;
-      if (g.ground.covers()) { g.ground.sample(); log.push([+c.x.toFixed(1), +c.y.toFixed(1), +c.z.toFixed(1), +(c.y - g.ground.h).toFixed(1)]); }
+      const so = g.controller.solids; let ins = 0; if (so) { so.px = c.x; so.py = c.y; so.pz = c.z; ins = so.insideQ() ? 1 : 0; }
+      if (g.ground.covers()) { g.ground.sample(); log.push([ins, +c.x.toFixed(1), +c.y.toFixed(1), +c.z.toFixed(1), +(c.y - g.ground.h).toFixed(1)]); }
       if (!window.__done) requestAnimationFrame(hook);
     };
     requestAnimationFrame(hook);
@@ -31,7 +32,8 @@ try {
   await page.waitForFunction(() => !window.__wraith.titleCam?.active, null, { timeout: 900000 });
   await page.evaluate(() => { window.__done = true; });
   const log = await page.evaluate(() => window.__clear);
-  const min = log.reduce((m, r) => Math.min(m, r[3]), Infinity);
+  const min = log.reduce((m, r) => Math.min(m, r[4]), Infinity);
+  console.log('frames inside stone:', log.filter((r) => r[0]).length);
   console.log('samples', log.length, 'min clearance m', min);
   console.log(log.filter((_, i) => i % Math.max(1, Math.floor(log.length / 12)) === 0).map((r) => r.join(',')).join('\n'));
   await page.waitForTimeout(1500);
