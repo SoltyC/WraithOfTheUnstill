@@ -6,32 +6,29 @@
 /** @param {any} g  shared boot context */
 export function addAudioSystem(g) {
   const { loop, music, warden, wardenMod, combat, controller, camera, arm, pois, params, weather } = g;
-  const spring = pois.find((q) => q.id === 'spring-frost');
-  let storm = false, fast = false;
-  /** The travelling score: the Run or a fast surf, a storm, the spring's ice and the night, the heights, dusk and dawn, else the plains. Latches stop a bed flapping at its threshold. */
-  let cur = 'plains-wanderer', held = 99, high = false;
-  function pick(p) {
-    const sp = Math.hypot(controller.vel.x, controller.vel.z), tod = params.v.timeOfDay;
-    fast = controller.surf.active ? (fast ? sp > 7 : sp > 13) : false;
-    storm = weather.snow > (storm ? 0.55 : 0.75);
-    high = p.y > (high ? 790 : 840);
-    if (state.run || fast) return 'plains-herd';
+  let storm = false;
+  // Immersion first (user, 2026-10-08): the travel music changes rarely. Only the time of day and a
+  // real storm change it — not height, speed, places or the Run — and a change waits for the new
+  // condition to hold for 20 s, and for the current track to have played for 3 minutes.
+  let cur = 'plains-wanderer', held = 999, cand = cur, candFor = 0;
+  function pick() {
+    const tod = params.v.timeOfDay;
+    storm = weather.snow > (storm ? 0.6 : 0.8);
     if (storm) return 'frost-blizzard';
-    if (tod < 5.5 || tod > 19.5 || (spring && (spring.pos[0] - p.x) ** 2 + (spring.pos[1] - p.z) ** 2 < 70 * 70)) return 'frost-ice-caves';
-    if (high) return 'frost-highlands';
-    if (tod < 8.5 || tod > 16.5) return 'plains-dusk';
+    if (tod < 5.5 || tod > 19.5) return 'frost-ice-caves';
+    if (tod < 8 || tod > 17) return 'plains-dusk';
     return 'plains-wanderer';
   }
-  /** A bed, once chosen, plays for at least 45 s (20 s for the surf cue) before another replaces it: no restarts, no swells every few seconds. */
-  function travel(p) {
-    held += g.clock.realDt;
-    const want = pick(p);
-    if (want !== cur && held > (cur === 'plains-herd' ? 20 : 45)) { cur = want; held = 0; }
+  function travel() {
+    const dt = g.clock.realDt, want = pick();
+    held += dt;
+    if (want === cand) candFor += dt; else { cand = want; candFor = 0; }
+    if (cand !== cur && candFor > 20 && held > 180) { cur = cand; held = 0; }
     return cur;
   }
   const W = wardenMod.W;
   const shrines = pois.filter((p) => p.kind === 'shrine');
-  const SHRINE_R = 30, FIGHT_R = 190;
+  const SHRINE_R = 14, FIGHT_R = 190;
   /** Set by the game: the waking cue on a new game, the title screen, the camp's fire (x, y, z). */
   const state = g.musicState = { waking: false, title: false, camp: null, run: false };
   let lastWarden = -1, lastDying = false;
@@ -63,7 +60,7 @@ export function addAudioSystem(g) {
       const c = state.camp, dx = c[0] - p.x, dz = c[2] - p.z;
       if (dx * dx + dz * dz < 90 * 90) { want = 'camp'; music.sx = c[0]; music.sy = c[1]; music.sz = c[2]; }
     }
-    if (want === null && !state.title) want = travel(p);
+    if (want === null && !state.title) want = travel();
     if (music.finished === 'waking') { state.waking = false; music.finished = null; }
     music.want = want;
     const cp = camera.position;
