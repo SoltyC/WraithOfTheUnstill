@@ -43,7 +43,7 @@ export function addTrialsSystem(g) {
         gi = 0;
         chapter.raise('run:done');
         if (!capture) hud.notice('The Shapers\' Run', Math.round(secs) + ' seconds', secs <= FAST_RUN_SECONDS ? 'Every gate. The snow remembers the line.' : 'Every gate. Faster is possible.', 6);
-      } else if (!capture) music.sting('echo');
+      }
     } else if (gi > 1 && dist2(p.x, p.z, gates[0].pos[0], gates[0].pos[1]) < 100) gi = 1;           // back at the top: begin again
     else if (gi > 0 && dist2(p.x, p.z, gates[gi - 1].pos[0], gates[gi - 1].pos[1]) > 150 * 150) gi = 0; // lost the line (died, walked off)
   }
