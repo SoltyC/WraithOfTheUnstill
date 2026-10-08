@@ -237,6 +237,16 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 
 ## Session log
 
+### Session — 2026-10-09 — Hybrid Warden fight and quest rework (user request)
+
+- **Warden fight** (commit ca2ea6e; DECISIONS.md "Hybrid Warden fight"): crystal pillars that heal it (climb, strike), then seams and chips; a 15 s ice-spike barrage only stone stops (cover walls, pillars, its belly); frenzy at 30 % calls brutes, hounds and ≤ 2 seers; dying resets the fight to the dormant Warden. Tests: `tests/wardenFight.test.js`.
+- **Quests** (commit 110af3c; DECISIONS.md "Quests rebuilt around play"): `data/quests/frost.json` rewritten (5 main incl. epilogue, 5 side; every line a draft for review); new systems `encounters.js`, `echoTrials.js`, `flame.js`, Tobin's escort in `npcs.js`, the seedling in `wardenFight.js`; the den mother archetype. Tests: `tests/chapter.test.js` rewritten (9).
+- **Verified in Windows Chrome (real GPU) via `tools/winchrome/`:** pillars rise, climb + mantle + strikes break the ward; barrage: 0 damage behind a wall, ~45 in the open; frenzy summons; death resets; seedling: 0 damage behind the watching stone, 25 in the open; camp raid waves; escort to the fire → Echo; Echo stones 1, 2, 4, 5; sled → hound tracks → den waves → den mother armour; flame → four braziers → Isolde's song; re-forming at the arena brazier; save/load keeps quest state. 0 late pipelines. Shots: `screenshots/phase-07-fight-quests/`.
+- **Not verified by play:** Echo stones 3 (surf a circle) and 6 (Ribbon reach), the Run medal times (34/40/48 s are guesses — the user should ride it), the feel of the fight at full speed with a human player.
+- **Known rough edges:** the cover walls and the sled are plain block geometry (readable, but simpler than the monastery); the Warden looks glassy-blue while its glow is up (existing shading); a load mid-escort restarts Tobin at the spring only on a fresh page.
+
+
+
 ### Session — 2026-10-04 — Phase 6 (post, weather and time polish, frost)
 
 **Machine:** a cloud container (4 cores, no GPU) — not T. Headless Chromium 1194 on SwiftShader via
