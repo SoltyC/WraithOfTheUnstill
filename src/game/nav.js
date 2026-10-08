@@ -90,9 +90,9 @@ export function createNav({ pois, names = {}, graph, dynamic = {}, onDiscover })
         p.dist = Math.sqrt(dx * dx + dz * dz);
         p.bearing = bearing(px, pz, p.x, p.z);
         p.rel = angleDiff(p.bearing, h);
-        if (!p.known && p.dist < p.sight) {
-          if (graph.flags.has('known:' + p.id)) p.known = true;
-          else { p.known = true; graph.flags.add('known:' + p.id); onDiscover?.(p); }
+        if (!p.known) {
+          if (graph.flags.has('known:' + p.id)) p.known = true;            // revealed by a quest
+          else if (p.dist < p.sight) { p.known = true; graph.flags.add('known:' + p.id); onDiscover?.(p); }
         }
       }
       sinceGoals += dt;

@@ -13,10 +13,11 @@ export function createMenus(g) {
   const { chapter, game, clock, input, music, sfx, params, controller, arm } = g;
   const el = (tag, cls, parent, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; if (parent) parent.append(e); return e; };
   const map = createMap();
-  const settings = { music: 0.8, sfx: 1, subtitles: 1 };
+  const settings = { music: 0.8, sfx: 1, subtitles: 1, compass: 'fade' };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { /* private window */ }
   const applySettings = () => {
     music.volume = settings.music; sfx.setVolume(settings.sfx);
+    if (g.compass) g.compass.mode = settings.compass;
     document.documentElement.style.setProperty('--sub-scale', String(settings.subtitles));
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
   };
@@ -172,6 +173,11 @@ export function createMenus(g) {
     row('Music', 'music', 0, 1, 0.05, pct);
     row('Sounds', 'sfx', 0, 1, 0.05, pct);
     row('Subtitle size', 'subtitles', 0.8, 1.5, 0.05, pct);
+    const cr = el('div', 'codex-setting', body); el('span', null, cr, 'Compass');
+    const cw = el('div', 'codex-actions', cr);
+    const MODES = [['fade', 'Fades when idle'], ['always', 'Always shown'], ['off', 'Hidden']];
+    const cb = el('button', null, cw, MODES.find((m) => m[0] === settings.compass)[1]);
+    cb.onclick = () => { const i = MODES.findIndex((m) => m[0] === settings.compass); settings.compass = MODES[(i + 1) % 3][0]; cb.textContent = MODES[(i + 1) % 3][1]; applySettings(); };
     foot([['Esc', 'back']]);
   }
 

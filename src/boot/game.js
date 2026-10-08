@@ -129,6 +129,7 @@ async function createSaves(g) {
       weather.snap = true;
       if (g.quests) g.quests.restore(s.quests);
       if (g.progress) g.progress.apply(s);
+      g.navSync?.();
       // Saved game times (pages, formations) move onto this session's clock.
       const shift = clock.simTime - s.playSeconds;
       terrainState.restore(s.terrainPages.map((p) => ({ key: p.key, savedAt: p.savedAt + shift, data: p.data })));
