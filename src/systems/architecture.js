@@ -13,6 +13,7 @@ export function addArchitectureSystem(g) {
   const sites = frostSites(chapter.table, g.routes);
   const built = buildArchitecture(sites);
   const view = g.architecture = createArchitectureView(scene, atmosphere, built);
+  g.archSites = sites;
   bindShadows(view.material, shadows);
   shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
   view.freeze();
@@ -87,7 +88,7 @@ export function addArchitectureSystem(g) {
     // Glyph light: shrines rested at; the monastery once the steppe is restored.
     for (let i = 0; i < sites.length; i++) {
       const id = sites[i].id;
-      const want = id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : 0;
+      const want = id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
       view.glow[i * 4] += (want - view.glow[i * 4]) * Math.min(1, clock.realDt * 0.8);
     }
     const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5 ? 1 : tod < 7 || tod > 17.5 ? 0.5 : 0.2;

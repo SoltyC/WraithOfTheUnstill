@@ -30,6 +30,8 @@ export function createChapter({ data, pois, hooks = {} }) {
     if (a.shrine && !shrines.has(a.shrine)) { shrines.add(a.shrine); graph.flags.add(a.shrine); hooks.shrine?.(a.shrine); }
     if (a.autosave) hooks.autosave?.();
     if (a.journal) hooks.journal?.(a.journal);
+    if (a.encounter) hooks.encounter?.(a.encounter);
+    if (a.robe) hooks.robe?.(a.robe);
     if (a.say) self.say(a.say);
     if (a.questStarted) hooks.questStarted?.(graph.byId.get(a.questStarted));
     if (a.questDone) hooks.questDone?.(graph.byId.get(a.questDone));
@@ -40,6 +42,8 @@ export function createChapter({ data, pois, hooks = {} }) {
     data, graph, facts, echoes, lore, shrines, table,
     /** Bumped whenever the line on screen changes (the subtitles UI redraws only then). */
     ver: 0,
+    /** Apply one quest action now (a discovery or a puzzle paying out). */
+    do(a) { effect(graph.perform(a)); },
     /** Raise an event for the next tick. */
     raise(e) { facts.events.add(e); },
     /** Advance quests on this frame's facts and events, then forget the events. */

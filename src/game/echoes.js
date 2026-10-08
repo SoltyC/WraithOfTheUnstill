@@ -10,6 +10,8 @@ export const ECHO_EFFECTS = {
   'echo-frost-hold': (g) => { g.warden.thawTime *= 1.4; g.combatTuning.freezeTime *= 1.4; },
   // Snow-surf keeps its speed on flats: less snow friction and drag.
   'echo-frost-surf': (g) => { g.surfTuning.friction *= 0.6; g.surfTuning.drag *= 0.85; g.surfTuning.cruise *= 1.12; },
+  // Sweep reaches 20 % farther along the ground.
+  'echo-frost-sweep': (g) => { g.frostMod.sweepTuning.range *= 1.2; },
   // Focus returns faster while standing still.
   'echo-frost-still': (g) => { g.combatTuning.focusIdle *= 2.2; },
 };

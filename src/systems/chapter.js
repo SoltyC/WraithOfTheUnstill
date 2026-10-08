@@ -26,6 +26,7 @@ export function addChapterSystem(g) {
       lore: (id, l) => hud.notice('Lore', l?.title || id, null, 6),
       shrine: () => {},
       autosave: () => { if (!capture) game.saves.requestAutosave(); },
+      encounter: (id) => g.startEncounter?.(id),
       questStarted: (q) => hud.notice(q.kind === 'main' ? 'Journey' : 'Errand', q.title, q.summary, 7),
       questDone: (q) => { if (q.kind === 'side') music.sting('echo'); hud.notice('Completed', q.title, null, 6); },
     },
@@ -65,6 +66,11 @@ export function addChapterSystem(g) {
   function useShrine(t) {
     chapter.raise('shrine:' + t.id);
     chapter.graph.flags.add(t.id);
+    // Death re-forms at the last shrine rested at (BRIEF §2.3).
+    g.nav?.visit(t.id);
+    const k = +t.id.slice(t.id.lastIndexOf('-') + 1);
+    chapter.graph.vars.lastShrine = k;
+    g.setRespawn?.(t);
     if (!chapter.shrines.has(t.id)) { chapter.shrines.add(t.id); hud.notice('Shrine', 'The stones remember', 'Rested. The way back here is open.', 6); }
     else hud.notice('Shrine', 'Rested', null, 3);
     if (!capture) game.saves.requestAutosave();
@@ -116,6 +122,7 @@ export function addChapterSystem(g) {
     if (near && !talking && input.pressed[Action.Interact]) {
       if (near.kind === 'npc') { chapter.talk(near.id); near.onTalk?.(); }
       else if (near.kind === 'shrine') useShrine(near);
+      else near.onUse?.(near);
     }
   } });
 }

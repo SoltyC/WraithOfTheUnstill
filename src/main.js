@@ -91,6 +91,7 @@ async function boot() {
   (await import('./systems/architecture.js')).addArchitectureSystem(g);
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
+  (await import('./systems/trials.js')).addTrialsSystem(g);
   (await import('./systems/audio.js')).addAudioSystem(g);
 
   const overlay = new overlayMod.DevOverlay(game);
