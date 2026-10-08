@@ -50,6 +50,36 @@ export function addChapterSystem(g) {
   const targets = g.interactables = [];
   for (const p of g.pois) if (p.kind === 'shrine' && p.biome === 'frost') targets.push({ kind: 'shrine', id: p.id, verb: 'Rest', name: 'Shrine', x: p.pos[0], y: p.h, z: p.pos[1], r: 4.5, h: 1.4 });
   let near = null;
+  // The Warden's weak points, shown while it fights: four seams, the one to work next pulsing, and one line saying what to do.
+  const wp = document.createElement('div'); wp.className = 'warden-pips';
+  const pipEls = [0, 1, 2, 3].map(() => { const e = document.createElement('i'); wp.append(e); return e; });
+  const hintEl = document.createElement('div'); hintEl.className = 'hint'; wp.append(hintEl);
+  document.body.append(wp);
+  let pipKey = '', lastRem = 4;
+  function target() {
+    let best = -1, bd = 1e18;
+    for (let k = 0; k < 4; k++) {
+      if (warden.joint[k] === 2 || !warden.exposed(k)) continue;
+      const d = (warden.jx[k] - controller.pos.x) ** 2 + (warden.jz[k] - controller.pos.z) ** 2;
+      if (d < bd) { bd = d; best = k; }
+    }
+    return best;
+  }
+  g.wardenTarget = target;
+  function wardenHud(fighting) {
+    const t = fighting ? target() : -1;
+    const key = fighting ? [0, 1, 2, 3].map((k) => warden.joint[k] + (k === t ? 'x' : warden.exposed(k) ? 'o' : 's')).join('') : '';
+    if (key === pipKey) return;
+    pipKey = key;
+    wp.classList.toggle('on', fighting);
+    for (let k = 0; k < 4; k++) {
+      const st = warden.joint[k];
+      pipEls[k].className = (st === 2 ? 'broken' : st === 1 ? 'frozen' : 'liquid') + (k === t ? ' next' : '') + (!warden.exposed(k) && st !== 2 ? ' sealed' : '');
+      pipEls[k].title = warden.jointName(k);
+    }
+    if (t < 0) hintEl.textContent = '';
+    else hintEl.textContent = warden.joint[t] === 1 ? 'Frozen: Sweep through the ' + warden.jointName(t) : 'Crystallize (F) beside the ' + warden.jointName(t) + ', then Sweep through the ice';
+  }
   let lastWarden = -1, wasCrystal = false;
   const vp = [0, 0];
 
@@ -90,9 +120,18 @@ export function addChapterSystem(g) {
     // The first time it wakes: one quiet line on how to break it (then never again).
     if (wst === wardenMod.W.AWAKE && lastWarden === wardenMod.W.DORMANT && !chapter.graph.flags.has('hint:warden') && !capture) {
       chapter.graph.flags.add('hint:warden');
-      hud.notice('The Held Snow', 'Its knees are water, held still', 'F: Crystallize at a knee · then click: Sweep through the ice · hold right mouse on its body to climb to the back joints', 12);
+      hud.notice('The Held Snow', 'Its knees are water, held still', 'F: Crystallize beside a knee · then click: Sweep through the ice · when both knees break it sags, and its shoulder and hip seams open to reach', 12);
     }
     lastWarden = wst;
+    const fighting = wst >= 1 && wst !== wardenMod.W.RELEASE && wst !== wardenMod.W.RESTED && !capture;
+    wardenHud(fighting);
+    const rem = warden.active ? warden.remaining : 4;
+    if (rem < lastRem && rem > 0 && !capture) {
+      const k = target();
+      hud.notice('The Held Snow', rem === 3 || rem === 2 ? (rem === 2 && !warden.exposed(2) ? 'The other knee' : 'It buckles') : 'The last seam opens',
+        rem <= 2 && k >= 2 ? 'It sags onto its forelegs. The ' + warden.jointName(k) + ' is low enough to reach.' : 'Freeze the next seam, then Sweep through it.', 7);
+    }
+    lastRem = rem;
     if (frost.crystalEvent && !wasCrystal) chapter.raise('crystal');
     wasCrystal = frost.crystalEvent;
     chapter.tick();

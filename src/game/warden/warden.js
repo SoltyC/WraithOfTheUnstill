@@ -55,6 +55,7 @@ export function createWarden(ctx) {
   const joint = new Uint8Array(JOINTS);
   const jointT = new Float64Array(JOINTS);       // seconds frozen
   // Joint world positions (refreshed each frame).
+  const openK = new Float64Array(JOINTS);
   const jx = new Float64Array(JOINTS), jy = new Float64Array(JOINTS), jz = new Float64Array(JOINTS);
   let seed = 7;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
@@ -64,7 +65,7 @@ export function createWarden(ctx) {
     /** Set when nbr has been (re)computed; the view uploads it and clears the flag. */
     nbrDirty: false, nbrReady: false,
     /** Seconds a frozen joint holds before it thaws (an Echo lengthens it). */
-    thawTime: 12,
+    thawTime: 18,
     active: false, state: W.DORMANT, t: 0.5, glow: 0.5 - 0.5, stompLeg: 0,
     /** Climbed (set by the climb system); while climbed it bucks every few seconds. */
     climbed: false, shaking: false, shakeCool: 0.5, shakeT: 0.5 - 0.5,
@@ -175,10 +176,18 @@ export function createWarden(ctx) {
       this.hurt = 0; this.ringR = -1; this.cool = 3; this.flinch = 0;
       this.nbrReady = false;
       this.climbed = false; this.shaking = false; this.shakeCool = 4; this.shakeT = 0;
-      joint.fill(JOINT.LIQUID); jointT.fill(0);
+      joint.fill(JOINT.LIQUID); jointT.fill(0); openK.fill(0);
     },
     /** Joints still unbroken. */
     get remaining() { let n = 0; for (let k = 0; k < JOINTS; k++) if (joint[k] !== JOINT.SHATTERED) n++; return n; },
+    /**
+     * Whether joint k can be worked from the ground. The knees always; the shoulder seam once both
+     * knees are broken (the Warden sags onto its forelegs, lowering it to reach); the hip seam once
+     * the shoulder is. Climbing reaches any joint at any time.
+     */
+    exposed(k) { return k < 2 || (k === 2 ? joint[0] === JOINT.SHATTERED && joint[1] === JOINT.SHATTERED : joint[2] === JOINT.SHATTERED); },
+    /** Name of joint k for the interface. */
+    jointName(k) { return k === 0 ? 'left knee' : k === 1 ? 'right knee' : k === 2 ? 'shoulder seam' : 'hip seam'; },
     /** Freeze joint k (Crystallize, a soaked Ribbon). */
     freezeJoint(k) { if (joint[k] === JOINT.LIQUID) { joint[k] = JOINT.FROZEN; jointT[k] = 0; } },
     /** Strike joint k: a frozen joint shatters; returns true if it broke. */
@@ -306,8 +315,16 @@ export function createWarden(ctx) {
         const l = k, side = l === 0 ? -1 : 1;
         jx[k] = body.kx[l] + Math.cos(body.heading) * side * 0.6; jy[k] = body.ky[l]; jz[k] = body.kz[l] - Math.sin(body.heading) * side * 0.6;
       } else {
-        const i = k === 2 ? 1 : 5;
-        jx[k] = body.sx[i]; jy[k] = body.sy[i] + WARDEN_SHAPE.hip * 0.42 * (1 - 0.75 * W0.settle); jz[k] = body.sz[i];
+        // The back seams sit low on the flanks (shoulder left, hip right) and, once exposed, sink to
+        // a height the Wraith can reach from the snow.
+        const i = k === 2 ? 1 : 5, side = k === 2 ? -1 : 1, h = body.heading;
+        jx[k] = body.sx[i] + Math.cos(h) * side * 5; jz[k] = body.sz[i] - Math.sin(h) * side * 5;
+        const nat = body.sy[i] + WARDEN_SHAPE.hip * 0.42 * (1 - 0.75 * W0.settle);
+        const want = joint[k] !== JOINT.SHATTERED && W0.exposed(k) ? 1 : 0;
+        openK[k] += (want - openK[k]) * Math.min(1, (W0.dt || 0.016) * 0.8);
+        ground.qx = jx[k]; ground.qz = jz[k]; ground.sample();
+        const lowY = ground.h + 2.6, e = openK[k] * openK[k] * (3 - 2 * openK[k]);
+        jy[k] = Math.max(ground.h + 2.2, nat + (Math.min(nat, lowY) - nat) * e);
       }
       const o = (WARDEN_CHUNKS + k) * CHUNK_FLOATS, sz = k < 2 ? 1.3 : 1.7;
       chunks[o] = jx[k]; chunks[o + 1] = jy[k]; chunks[o + 2] = jz[k]; chunks[o + 3] = sz;
@@ -334,7 +351,7 @@ export function createWarden(ctx) {
         const fury = 1 + 0.25 * W0.rage;
         const sp = (Math.abs(want) > 0.5 ? 0.6 : dist > 18 ? WARDEN_SHAPE.maxSpeed : 0) * fury;
         body.wantVx = dx / dist * sp; body.wantVz = dz / dist * sp;
-        body.crouch += (0 - body.crouch) * Math.min(1, dt);
+        body.crouch += (0.1 * (JOINTS - W0.remaining) - body.crouch) * Math.min(1, dt);   // it sags as it breaks
         W0.cool -= dt * fury;
         if (W0.cool > 0 || W0.climbed) break;
         // Pick an attack by where the Wraith is: at a front foot → stomp; behind → tail; far → shards.
@@ -415,8 +432,8 @@ export function createWarden(ctx) {
       case W.KNEEL:
         // A joint broke: it buckles to its knees, then rises again.
         body.wantVx = 0; body.wantVz = 0; W0.glow += (0 - W0.glow) * Math.min(1, dt * 2);
-        body.crouch += ((W0.t < 4 ? 0.85 : 0) - body.crouch) * Math.min(1, dt * (W0.t < 4 ? 2.5 : 0.8));
-        if (W0.t >= 6) { W0.state = W.AWAKE; W0.t = 0; }
+        body.crouch += (((W0.t < 5.5 ? 0.85 : 0.1 * (JOINTS - W0.remaining))) - body.crouch) * Math.min(1, dt * (W0.t < 5.5 ? 2.5 : 0.8));
+        if (W0.t >= 8) { W0.state = W.AWAKE; W0.t = 0; W0.cool = 4.5; }
         break;
       case W.RELEASE: release(W0, dt); break;
     }

@@ -52,6 +52,14 @@ export function addTrialsSystem(g) {
     const gt = gates[gi]; gate.x = gt.pos[0]; gate.z = gt.pos[1]; gate.name = 'Gate ' + (gi + 1) + ' of ' + gates.length; return gate;
   };
 
+  // ── The Warden's next weak point (the compass follows it during the fight) ─────────────────
+  const arena = nav.byId.get('warden-frost'), wj = { x: 0.5, z: 0.5, name: 'The Held Snow' };
+  g.navDynamic['warden-joint'] = () => {
+    const w = g.warden, k = w.active && w.state > 0 ? g.wardenTarget?.() ?? -1 : -1;
+    if (k < 0) { if (!arena) return null; wj.x = arena.x; wj.z = arena.z; wj.name = 'The Held Snow'; return wj; }
+    wj.x = w.jx[k]; wj.z = w.jz[k]; wj.name = 'The Warden\'s ' + w.jointName(k); return wj;
+  };
+
   // ── Interactables ──────────────────────────────────────────────────────────────────────────
   const targets = g.interactables;
   const stones = [], braziers = [];

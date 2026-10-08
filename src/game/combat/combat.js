@@ -112,21 +112,23 @@ export function createCombat(ctx) {
     }
   }
 
-  /** Verbs → the Warden's knee joints: Crystallize freezes a joint near the formation; a Sweep
-   *  crescent through a frozen joint shatters it (the back joints are reached by climbing). */
-  const wardenSweepSeen = new Uint32Array(4 * 2);
+  /** Verbs → the Warden's joints: Crystallize freezes a joint near the formation; a Sweep through a
+   *  liquid joint chills it, through a frozen one shatters it. The knees are always in reach; the
+   *  shoulder and hip seams open as it sags (warden.exposed); climbing reaches the rest. */
+  const wardenSweepSeen = new Uint32Array(4 * 4);
   function wardenHits() {
-    for (let k = 0; k < 2; k++) {
-      if (warden.joint[k] === 2) continue;
+    for (let k = 0; k < 4; k++) {
+      if (warden.joint[k] === 2 || !warden.exposed(k)) continue;
       const jx = warden.jx[k], jz = warden.jz[k];
-      if (frost.crystalEvent && Math.hypot(frost.crystalX - jx, frost.crystalZ - jz) < 7) warden.freezeJoint(k);
+      if (frost.crystalEvent && Math.hypot(frost.crystalX - jx, frost.crystalZ - jz) < 9) warden.freezeJoint(k);
       for (let q = 0; q < 4; q++) {
-        if (!frost.sweepActive[q] || frost.sweepHW[q] <= 0.05 || wardenSweepSeen[q * 2 + k] === frost.sweepId[q]) continue;
+        if (!frost.sweepActive[q] || frost.sweepHW[q] <= 0.05 || wardenSweepSeen[q * 4 + k] === frost.sweepId[q]) continue;
         const ex = jx - frost.sweepFX[q], ez = jz - frost.sweepFZ[q];
         const along = ex * frost.sweepDX[q] + ez * frost.sweepDZ[q], across = Math.abs(-ex * frost.sweepDZ[q] + ez * frost.sweepDX[q]);
-        if (along < 1.5 && along > -2 && across < frost.sweepHW[q] + 1.6) {
-          wardenSweepSeen[q * 2 + k] = frost.sweepId[q];
-          if (warden.strikeJoint(k)) breakJoint();
+        if (along < 2.4 && along > -2.8 && across < frost.sweepHW[q] + 2.4) {
+          wardenSweepSeen[q * 4 + k] = frost.sweepId[q];
+          if (warden.joint[k] === 0) warden.freezeJoint(k);        // a cold crescent chills the water: a second one breaks it
+          else if (warden.strikeJoint(k)) breakJoint();
         }
       }
     }
