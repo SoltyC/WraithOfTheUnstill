@@ -12,7 +12,7 @@ export function addNavSystem(g) {
   const dynamic = g.navDynamic = {};
   const nav = g.nav = createNav({
     pois: g.pois, names: chapter.data.names || {}, graph: chapter.graph, dynamic,
-    onDiscover: (p) => { if (!capture) { hud.notice('Discovered', p.name, null, 5); music.sting('echo'); } },
+    onDiscover: (p) => { if (!capture) { hud.notice('Discovered', p.name, null, 5); } },
   });
   const compass = g.compass = createCompass();
   const sp = [0, 0];
