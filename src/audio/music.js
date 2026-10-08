@@ -119,8 +119,10 @@ export function createMusic(audio) {
         if (on && !b.playing) { b.playing = true; b.cur = 0; b.xfading = false; startEl(b, 0, def.loop ? def.loop[0] : 0, def.fadeIn); }
         else if (!on && b.playing) {
           b.playing = false;
-          for (let k = 0; k < b.els.length; k++) fadeEl(b, k, def.fadeOut);
-          b.stopAt = ac.currentTime + def.fadeOut + 0.1;
+          // The fight and the release take over quickly: whatever played gives way in 1.5 s.
+          const out = want === 'fight' || want === 'release' ? Math.min(def.fadeOut, 1.5) : def.fadeOut;
+          for (let k = 0; k < b.els.length; k++) fadeEl(b, k, out);
+          b.stopAt = ac.currentTime + out + 0.1;
         }
         if (!b.playing) {
           if (b.stopAt > 0 && ac.currentTime > b.stopAt) { for (let k = 0; k < b.els.length; k++) b.els[k].pause(); b.stopAt = 0; }
