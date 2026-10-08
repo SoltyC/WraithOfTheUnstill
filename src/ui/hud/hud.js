@@ -14,6 +14,9 @@ export function createHud() {
   const notices = el('div', 'notices', document.body);
   let ver = -1, glyphKey = null, glyphOn = false, gx = 0, gy = 0;
 
+  const held = [];
+  const q = new URLSearchParams(location.search);
+  const titleUp = !(q.get('title') === '0' || q.get('capture') === '1' || q.get('shots') || q.get('bench'));
   const self = {
     /** Choice picked by a click (index), consumed by the chapter system. */
     clicked: -1,
@@ -52,6 +55,7 @@ export function createHud() {
     },
     /** A notice: kind (small caps), title, optional subtitle; fades after `secs`. */
     notice(kind, title, subText, secs = 6) {
+      if (self.hold) { held.push([kind, title, subText, secs]); return; }
       const n = el('div', 'notice', notices);
       el('div', 'kind', n).textContent = kind;
       el('div', 'title', n).textContent = title;
@@ -60,6 +64,9 @@ export function createHud() {
       requestAnimationFrame(() => n.classList.add('on'));
       setTimeout(() => { n.classList.remove('on'); setTimeout(() => n.remove(), 1300); }, secs * 1000);
     },
+    /** True while the title is up: notices wait, then show together when play begins. */
+    hold: titleUp,
+    release() { self.hold = false; for (const n of held.splice(0)) self.notice(n[0], n[1], n[2], n[3]); },
   };
   return self;
 }

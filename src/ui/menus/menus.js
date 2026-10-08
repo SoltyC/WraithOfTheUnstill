@@ -239,18 +239,32 @@ export function createMenus(g) {
 
   // ---- Title screen.
   const title = el('div', 'title-screen', document.body);
-  el('div', 'mark', title);
-  const nm = el('div', 'name', title); el('small', null, nm, 'A Shaper’s robe, waking'); nm.append('The Wraith', el('br'), 'of the Unstill');
-  const titleActions = el('div', null, title);
+  el('div', 'bar top', title); el('div', 'bar bottom', title);
+  const card = el('div', 'card', title);
+  el('div', 'mark', card);
+  const nm = el('div', 'name', card); el('small', null, nm, 'A Shaper’s robe, waking'); nm.append('The Wraith', el('br'), 'of the Unstill');
+  el('div', 'rule', card);
+  const titleActions = el('div', 'menu', card);
+  el('div', 'credit', title, 'Frost Steppe · Chapter One');
   let started = false;
   async function showTitle() {
     title.classList.add('on'); g.musicState.title = true; input.gameHasFocus = false; // the world keeps living behind it
+    g.hud.hold = true;                       // no quest notices over the title
+    g.titleCam?.start();                     // the slow bird's-eye orbit over the frost mountains
     const list = await game.saves.list().catch(() => []);
     titleActions.replaceChildren();
-    const begin = () => { title.classList.remove('on'); g.musicState.title = false; input.gameHasFocus = true; started = true; g.canvas?.focus(); };
+    // Begin / Continue: the title lifts, the camera swoops from the heights down to the Wraith in the
+    // monastery, and only then does play (and the HUD) begin.
+    const begin = async (pre) => {
+      title.classList.remove('on'); title.classList.add('leaving'); g.musicState.title = false;
+      if (pre) await pre();
+      await g.titleCam?.dive();
+      title.classList.remove('leaving');
+      input.gameHasFocus = true; started = true; g.hud.release(); g.canvas?.focus();
+    };
     actions(titleActions, [
-      ['Continue', async () => { begin(); await loadSlot(list[0].slot); }, !list.length],
-      ['Begin', () => { begin(); g.musicState.waking = true; }],
+      ['Continue', () => begin(() => loadSlot(list[0].slot)), !list.length],
+      ['Begin', () => { g.musicState.waking = true; begin(); }],
       ['Settings', () => { open('settings'); }],
     ]);
   }

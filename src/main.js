@@ -93,6 +93,7 @@ async function boot() {
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);
   (await import('./systems/audio.js')).addAudioSystem(g);
+  if (!capture && !qs.get('bench')) (await import('./systems/titleCam.js')).addTitleCamSystem(g);
 
   const overlay = new overlayMod.DevOverlay(game);
   overlay.refreshToggles();
@@ -151,7 +152,7 @@ async function boot() {
   if (menus && qs.get('title') !== '0') menus.showTitle(); else if (menus) menus.started = true;
 
   window.__wraith = Object.assign(window.__wraith, {
-    ready: true, game, shadows: g.shadows, terrainState: g.terrainState, wraithView: g.wraithView, frost: g.frost, shaped: g.shaped,
+    ready: true, game, titleCam: g.titleCam, shadows: g.shadows, terrainState: g.terrainState, wraithView: g.wraithView, frost: g.frost, shaped: g.shaped,
     combat: g.combat, warden: g.warden, climb: g.climb, env: env.env,
     /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
     inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,

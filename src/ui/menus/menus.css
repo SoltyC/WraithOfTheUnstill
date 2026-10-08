@@ -91,16 +91,28 @@
 .codex-map { flex: 1; min-height: 0; position: relative; z-index: 1; display: grid; place-items: center; }
 .codex-map canvas { max-width: 100%; max-height: 100%; mix-blend-mode: multiply; }
 
-/* Title screen: over the living world, no parchment. */
+/* Title screen: over the living world (a slow bird's-eye orbit), letterboxed, no parchment. */
 .title-screen {
-  position: fixed; inset: 0; z-index: 19; display: flex; flex-direction: column; justify-content: center;
-  padding-left: 9vw; gap: 4vh; color: #ece6da;
-  background: linear-gradient(90deg, rgba(4, 6, 10, 0.78) 0%, rgba(4, 6, 10, 0.35) 45%, transparent 75%);
-  opacity: 0; pointer-events: none; transition: opacity 1.6s ease;
+  position: fixed; inset: 0; z-index: 19; color: #ece6da; pointer-events: none; opacity: 0; transition: opacity 1.8s ease;
+  background:
+    radial-gradient(ellipse at 28% 62%, rgba(3, 6, 12, 0.62) 0%, rgba(3, 6, 12, 0.18) 48%, transparent 72%),
+    radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
 }
 .title-screen.on { opacity: 1; pointer-events: auto; }
-.title-screen .name { font-family: var(--ink-font); font-size: clamp(38px, 4.4vw, 82px); line-height: 1.02; letter-spacing: 0.01em; text-shadow: 0 0 30px rgba(0, 0, 0, 0.6); }
-.title-screen .name small { display: block; font-family: var(--text); font-size: 0.26em; letter-spacing: 0.5em; text-transform: uppercase; color: #b8c8d8; margin-bottom: 1.2em; }
-.title-screen .codex-actions button { color: #ece6da; font-size: clamp(20px, 1.6vw, 28px); }
+.title-screen.leaving { opacity: 0; transition: opacity 1.4s ease; }
+.title-screen .bar { position: absolute; left: 0; right: 0; height: 9vh; background: #000; }
+.title-screen .bar.top { top: 0; } .title-screen .bar.bottom { bottom: 0; }
+.title-screen .card { position: absolute; left: 8vw; bottom: 17vh; display: flex; flex-direction: column; gap: 3.2vh; }
+.title-screen.on .card > * { animation: titleRise 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.title-screen.on .card > .name { animation-delay: 0.5s; }
+.title-screen.on .card > .rule { animation-delay: 1s; }
+.title-screen.on .card > .menu { animation-delay: 1.5s; }
+@keyframes titleRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.title-screen .name { font-family: var(--ink-font); font-size: clamp(40px, 4.8vw, 92px); line-height: 1.0; letter-spacing: 0.012em; text-shadow: 0 2px 40px rgba(0, 0, 0, 0.7); }
+.title-screen .name small { display: block; font-family: var(--text); font-size: 0.25em; letter-spacing: 0.55em; text-transform: uppercase; color: #b8c8d8; margin-bottom: 1.3em; }
+.title-screen .rule { width: clamp(180px, 22vw, 420px); height: 1px; background: linear-gradient(90deg, rgba(207, 228, 255, 0.8), transparent); }
+.title-screen .menu .codex-actions { gap: 6px; }
+.title-screen .codex-actions button { color: #ece6da; font-size: clamp(20px, 1.6vw, 29px); letter-spacing: 0.04em; text-shadow: 0 1px 14px rgba(0, 0, 0, 0.8); }
 .title-screen .codex-actions .note { color: #9aa6b2; }
+.title-screen .credit { position: absolute; right: 4vw; bottom: calc(9vh + 2.4vh); font-family: var(--text); font-size: 12px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(184, 200, 216, 0.7); }
 .title-screen .mark { width: 9px; height: 9px; border-radius: 50%; background: #cfe4ff; box-shadow: 0 0 18px 6px rgba(160, 200, 255, 0.35); animation: breathe 4.5s ease-in-out infinite; }
