@@ -1,13 +1,25 @@
 // The music director (BRIEF §13): decides which bed plays, by priority — the release, the Warden
 // fight, the title, the waking, a shrine, the camp's lyre — and fires the stingers (the Warden
 // waking, death, an Echo). Between them the travelling score plays (user decision 2026-10-08):
-// the Run's cue while descending, then steppe day / night, or the restored steppe's.
-
-const ws0 = (g) => g.ws.restoration.frost === 'restored';
+// see travel().
 
 /** @param {any} g  shared boot context */
 export function addAudioSystem(g) {
-  const { loop, music, warden, wardenMod, combat, controller, camera, arm, pois, params, ws } = g;
+  const { loop, music, warden, wardenMod, combat, controller, camera, arm, pois, params, weather } = g;
+  const spring = pois.find((q) => q.id === 'spring-frost');
+  let storm = false, fast = false;
+  /** The travelling score: the Run or a fast surf, a storm, the spring's ice and the night, the heights, dusk and dawn, else the plains. Latches stop a bed flapping at its threshold. */
+  function travel(p) {
+    const sp = Math.hypot(controller.vel.x, controller.vel.z), tod = params.v.timeOfDay;
+    fast = controller.surf.active ? (fast ? sp > 7 : sp > 13) : false;
+    storm = weather.snow > (storm ? 0.55 : 0.75);
+    if (state.run || fast) return 'plains-herd';
+    if (storm) return 'frost-blizzard';
+    if (tod < 5.5 || tod > 19.5 || (spring && (spring.pos[0] - p.x) ** 2 + (spring.pos[1] - p.z) ** 2 < 70 * 70)) return 'frost-ice-caves';
+    if (p.y > 820) return 'frost-highlands';
+    if (tod < 8.5 || tod > 16.5) return 'plains-dusk';
+    return 'plains-wanderer';
+  }
   const W = wardenMod.W;
   const shrines = pois.filter((p) => p.kind === 'shrine');
   const SHRINE_R = 30, FIGHT_R = 190;
@@ -42,11 +54,7 @@ export function addAudioSystem(g) {
       const c = state.camp, dx = c[0] - p.x, dz = c[2] - p.z;
       if (dx * dx + dz * dz < 90 * 90) { want = 'camp'; music.sx = c[0]; music.sy = c[1]; music.sz = c[2]; }
     }
-    if (want === null && state.run) want = 'run';
-    if (want === null && !state.title) {
-      const tod = params.v.timeOfDay;
-      want = ws0(g) ? 'steppe-restored' : tod < 5.5 || tod > 19.5 ? 'steppe-night' : 'steppe-day';
-    }
+    if (want === null && !state.title) want = travel(p);
     if (music.finished === 'waking') { state.waking = false; music.finished = null; }
     music.want = want;
     const cp = camera.position;

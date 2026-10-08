@@ -1,6 +1,6 @@
 // Music (BRIEF §13, deviated from by the user 2026-10-08, DECISIONS.md): the title, the waking,
 // shrines, the Warden fight and its release, death, an Echo found, a pilgrim's lyre at the camp —
-// and now a travelling score for the steppe (day, night, the Run, restored) so exploring is never
+// and now a travelling score for the frost and plains (day, dusk, night, storm, height, the Run) so exploring is never
 // bare. The wind still sits under it all; the score is quiet and slow, never a fight cue. Tracks are the user's own (assets/audio/music, encoded
 // by tools/audio/encode-music.sh to data/audio/music/*.m4a).
 //
@@ -17,11 +17,13 @@ export const BEDS = {
   shrine: { file: 'shrine', loop: [1.5, 173], xfade: 5, gain: 0.7, fadeIn: 4, fadeOut: 4 },
   fight: { file: 'warden-fight', loop: [5, 178], xfade: 3, gain: 0.85, fadeIn: 2, fadeOut: 1.5 },
   release: { file: 'release', loop: null, gain: 1, fadeIn: 0.3, fadeOut: 6 },
-  // The travelling score: loop [0, 0] = the whole file (its length is read once loaded).
-  'steppe-day': { file: 'steppe-day', loop: [0, 0], xfade: 6, gain: 0.55, fadeIn: 6, fadeOut: 6 },
-  'steppe-night': { file: 'steppe-night', loop: [0, 0], xfade: 6, gain: 0.55, fadeIn: 6, fadeOut: 6 },
-  'steppe-restored': { file: 'steppe-restored', loop: [0, 0], xfade: 6, gain: 0.6, fadeIn: 6, fadeOut: 6 },
-  run: { file: 'the-run', loop: null, gain: 0.8, fadeIn: 1.5, fadeOut: 3 },
+  // The travelling score (whole-file loops: loop [0, 0] reads the length once loaded).
+  'plains-wanderer': { file: 'plains-wanderer', loop: [0, 0], xfade: 6, gain: 0.6, fadeIn: 6, fadeOut: 6 },
+  'plains-dusk': { file: 'plains-dusk', loop: [0, 0], xfade: 6, gain: 0.6, fadeIn: 6, fadeOut: 6 },
+  'plains-herd': { file: 'plains-herd', loop: [0, 0], xfade: 4, gain: 0.65, fadeIn: 3, fadeOut: 4 },
+  'frost-highlands': { file: 'frost-highlands', loop: [0, 0], xfade: 6, gain: 0.6, fadeIn: 6, fadeOut: 6 },
+  'frost-blizzard': { file: 'frost-blizzard', loop: [0, 0], xfade: 6, gain: 0.65, fadeIn: 5, fadeOut: 6 },
+  'frost-ice-caves': { file: 'frost-ice-caves', loop: [0, 0], xfade: 6, gain: 0.55, fadeIn: 6, fadeOut: 6 },
   camp: { file: 'camp-lyre', loop: [0, 170], xfade: 4, gain: 0.8, fadeIn: 3, fadeOut: 3, spatial: true },
 };
 /** Stingers: short, decoded, played over whatever bed is on. */

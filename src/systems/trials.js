@@ -32,7 +32,7 @@ export function addTrialsSystem(g) {
     if (g.musicState) g.musicState.run = gi > 0;
     const gt = gates[gi];
     if (dist2(p.x, p.z, gt.pos[0], gt.pos[1]) < 64) {
-      if (gi === 0) { t0 = clock.simTime; g.music.rearm('run'); }
+      if (gi === 0) t0 = clock.simTime;
       flags.add('lit:run-gate-' + (gi + 1));
       gi++;
       vars['run.gates'] = Math.max(vars['run.gates'] || 0, gi);
