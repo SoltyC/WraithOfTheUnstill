@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createWarden, W, WARDEN_FIGHT } from '../src/game/warden/warden.js';
 import { createFight, FIGHT, fightTuning } from '../src/game/warden/fight.js';
 import { createSpikes } from '../src/game/warden/spikes.js';
+import { createShaped } from '../src/game/shaped/shaped.js';
 import { createSolids } from '../src/world/solids.js';
 import { frostSites, buildArchitecture, ARENA } from '../src/world/architecture.js';
 
@@ -51,17 +52,17 @@ describe('the Warden fight', () => {
     expect(warden.state).toBe(W.ROAR);
     expect(warden.exposed(0)).toBe(true);
   });
-  it('gathers a barrage every fifteen seconds once the pillars stand', () => {
+  it('gathers a barrage every twenty-five seconds once the pillars stand', () => {
     const { warden, step } = setup();
     let charges = 0, last = -1;
     for (let k = 0; k < 30 * 60; k++) { step(1 / 30); if (warden.state === W.CHARGE && last !== W.CHARGE) charges++; last = warden.state; }
-    // Rise (≈ 5.7 s) + 15 s to the first (≈ 21 s), then every 15 s: 36, 51 — three in a minute.
-    expect(charges).toBe(3);
+    // Rise (≈ 5.7 s) + 20 s to the first (≈ 26 s), then every 25 s (≈ 51 s): two in a minute.
+    expect(charges).toBe(2);
   });
   it('a barrage in the open wounds the Wraith, and no dodge helps', () => {
     const { warden, spikes, step } = setup();
     let dmg = 0;
-    for (let k = 0; k < 30 * 30; k++) { step(1 / 30); dmg += spikes.hitDamage; }
+    for (let k = 0; k < 30 * 36; k++) { step(1 / 30); dmg += spikes.hitDamage; }   // the first barrage fires ≈ 29–31 s
     expect(dmg).toBeGreaterThan(30);
   });
   it('at 30 % it calls up the Shaped: never more than one seer at a time, two over the fight', () => {
@@ -127,6 +128,28 @@ describe('cover against the spikes', () => {
     expect(ray(cover.at[0] + ux * 1.8, cover.at[1] + uz * 1.8)).toBe(true);      // right behind it
     expect(ray(cover.at[0] + ux * 3.5, cover.at[1] + uz * 3.5)).toBe(true);      // a step or two back
     expect(ray(cover.at[0] - ux * 2, cover.at[1] - uz * 2)).toBe(false);         // in front of it
+    // A risen pillar shelters whoever stands behind it, too.
+    const pil = sites.find((s) => s.id === 'warden-pillar-1');
+    const pd = Math.hypot(pil.at[0], pil.at[1]), px = pil.at[0] / pd, pz = pil.at[1] / pd;
+    expect(ray(pil.at[0] + px * 2, pil.at[1] + pz * 2)).toBe(true);
+    expect(ray(pil.at[0] + px * 4, pil.at[1] + pz * 4)).toBe(true);
+    // And the Shaped's shards (the Warden's volleys): a wall stops one thrown at the Wraith behind it.
+    {
+      const blocker = { ax: 0, ay: 0, az: 0, bx: 0, by: 0, bz: 0, t: 2, segBlocked() { Object.assign(solids, { ax: this.ax, ay: this.ay, az: this.az, bx: this.bx, by: this.by, bz: this.bz }); const b = solids.segBlocked(); this.t = solids.t; return b; } };
+      const sh = createShaped({ ts: { stamp() {} }, fx: { emit() {} }, ground: { qx: 0, qz: 0, h: 0, sample() { this.h = 0; } } });
+      sh.blocker = blocker;
+      const behind = [cover.at[0] + ux * 1.8, cover.at[1] + uz * 1.8];
+      sh.px = behind[0]; sh.pz = behind[1];
+      sh.sx = 0; sh.sy = 10; sh.sz = 0; sh.tx = behind[0]; sh.ty = 0.8; sh.tz = behind[1]; sh.shotSpeed = 15; sh.shotDmg = 14; sh.shoot();
+      let hits = 0;
+      for (let k = 0; k < 300; k++) { sh.dt = 1 / 60; sh.update(); hits += sh.hits; }
+      expect(hits).toBe(0);
+      // In the open the same throw lands.
+      const open = [cover.at[0] - ux * 3, cover.at[1] - uz * 3];
+      sh.px = open[0]; sh.pz = open[1]; sh.tx = open[0]; sh.tz = open[1]; sh.shoot();
+      for (let k = 0; k < 300; k++) { sh.dt = 1 / 60; sh.update(); hits += sh.hits; }
+      expect(hits).toBe(1);
+    }
     // Every point on the ring the Wraith fights on has cover within an easy run.
     let worst = 0;
     // (Closer in than 10 m the Wraith is under the Warden, whose own bulk shelters it from an

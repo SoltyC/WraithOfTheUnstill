@@ -13,9 +13,17 @@ export function createSolids(sites, built) {
   for (const b of blockers) { const s = S[b.site]; s.rad = Math.max(s.rad, Math.hypot(b.x - s.x, b.z - s.z) + (b.r || Math.hypot(b.hx, b.hz)) + 2); }
   for (const p of platforms) { const s = S[p.site]; s.rad = Math.max(s.rad, Math.hypot(p.x - s.x, p.z - s.z) + Math.hypot(p.hx, p.hz) + 2); }
   const near = new Uint8Array(S.length);
+  // Rocks near the Wraith (systems/rockSolids.js fills them): an ellipse (half-extents rx, rz in
+  // the rock's yawed frame: local x = wx·cos + wz·sin, z = −wx·sin + wz·cos) from its seat y0 to
+  // its top y1 (a dome over the ellipse for standing on).
+  const MAXR = 96;
+  const rk = { n: 0, x: new Float64Array(MAXR), z: new Float64Array(MAXR), c: new Float64Array(MAXR), s: new Float64Array(MAXR),
+    rx: new Float64Array(MAXR), rz: new Float64Array(MAXR), y0: new Float64Array(MAXR), y1: new Float64Array(MAXR) };
+  /** A rock taller than this above the feet blocks; lower ones are stepped onto (m). */
+  const ROCK_STEP = 0.55;
 
   return {
-    sites: S, blockers, platforms,
+    sites: S, blockers, platforms, rocks: rk,
     /** False while a site whose footprint covers (x, z) has no seat yet (a landing would miss its floors). */
     seatedNear(x, z) {
       for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; if (s.rad > 0 && dx * dx + dz * dz < s.rad * s.rad && Number.isNaN(s.seat)) return false; }
@@ -41,6 +49,13 @@ export function createSolids(sites, built) {
         const lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
         if (lx < -p.hx || lx > p.hx || lz < -p.hz || lz > p.hz) continue;
         const top = S[p.site].seat + p.top;
+        if (top > h && top <= feet + 0.7) h = top;
+      }
+      for (let k = 0; k < rk.n; k++) {
+        const dx = x - rk.x[k], dz = z - rk.z[k];
+        const lx = (dx * rk.c[k] + dz * rk.s[k]) / rk.rx[k], lz = (-dx * rk.s[k] + dz * rk.c[k]) / rk.rz[k], q = lx * lx + lz * lz;
+        if (q >= 1) continue;
+        const top = rk.y0[k] + (rk.y1[k] - rk.y0[k]) * Math.sqrt(1 - q);
         if (top > h && top <= feet + 0.7) h = top;
       }
       return h;
@@ -116,6 +131,19 @@ export function createSolids(sites, built) {
     },
     /** Push position p (x, y, z) out of every solid it overlaps at its height; v loses its into-wall part. */
     push(p, v) {
+      // Rocks: too tall to step onto → pushed out of the ellipse grown by the capsule's radius.
+      for (let k = 0; k < rk.n; k++) {
+        if (rk.y1[k] - p.y < ROCK_STEP || p.y + 1.7 < rk.y0[k]) continue;
+        const dx = p.x - rk.x[k], dz = p.z - rk.z[k], c = rk.c[k], s = rk.s[k], a = rk.rx[k] + R, b = rk.rz[k] + R;
+        const lx = dx * c + dz * s, lz = -dx * s + dz * c, q = (lx / a) * (lx / a) + (lz / b) * (lz / b);
+        if (q >= 1) continue;
+        // Onto the boundary along the ray from the centre; the normal of the ellipse there.
+        const f = 1 / Math.sqrt(Math.max(q, 1e-6)), ex = lx * f, ez = lz * f;
+        p.x = rk.x[k] + ex * c - ez * s; p.z = rk.z[k] + ex * s + ez * c;
+        let nx = ex / (a * a), nz = ez / (b * b); const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
+        const wx = nx * c - nz * s, wz = nx * s + nz * c;
+        const into = v.x * wx + v.z * wz; if (into < 0) { v.x -= into * wx; v.z -= into * wz; }
+      }
       for (let i = 0; i < blockers.length; i++) {
         const b = blockers[i];
         if (!near[b.site]) continue;

@@ -89,6 +89,7 @@ async function boot() {
   await sysEnv.addEnvironmentSystems(g);
   (await import('./systems/chapter.js')).addChapterSystem(g);
   (await import('./systems/architecture.js')).addArchitectureSystem(g);
+  (await import('./systems/rockSolids.js')).addRockSolidSystem(g);
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);

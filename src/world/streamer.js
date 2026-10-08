@@ -122,6 +122,8 @@ export class WorldStreamer {
       resident: sb(resident, 'world-resident'),
       residentData: resident,
     };
+    // CPU copy of the biome weights (frost, meadow, mire, dunes; rgba8, row 0 = north): where rocks stand.
+    this.biomeA = m.biomeA;
     // CPU copy of the surface material map (byte 0 of rgba8, row 0 = north) for gameplay queries.
     this.surfaceData = m.surface;
     this.surfaceN = m.manifest.surface.size; this.surfaceTexel = m.manifest.surface.texel;

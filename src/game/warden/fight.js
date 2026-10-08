@@ -18,8 +18,8 @@ export const fightTuning = {
   riseTime: 4.5,            // s for the pillars to rise
   crystalHits: 3,           // strikes to break a crystal (1 if it starts cracked)
   healPerCrystal: 1.5,      // health per second per standing crystal
-  barrageEvery: 15,         // s, start to start
-  firstBarrage: 15,         // s after the pillars stand
+  barrageEvery: 25,         // s, start to start (was 15: the user found the fight too hard, 2026-10-09)
+  firstBarrage: 20,         // s after the pillars stand
   aimedEvery: 0.27,         // s between aimed spikes while it sheds
   wildPerSecond: 24,
   wildRadius: 46,           // m round it the wild spikes land within

@@ -142,9 +142,16 @@
       },
       {
         "when": {
-          "notFlag": "met-maren"
+          "notFlag": "met-maren",
+          "flag": "fighting:camp-raid"
         },
         "say": "maren.raid"
+      },
+      {
+        "when": {
+          "notFlag": "met-maren"
+        },
+        "say": "maren.early"
       },
       {
         "when": {
@@ -645,6 +652,12 @@
       "lines": [
         "The note goes out over the steppe, and the snow carries it a long way."
       ]
+    },
+    "maren.early": {
+      "speaker": "maren",
+      "lines": [
+        "A robe with no one in it. Stand by the fire, then; the hounds have been circling us since dusk, and they will come again."
+      ]
     }
   },
   "quests": [
@@ -669,10 +682,20 @@
           "id": "stones",
           "journal": "The hall's three stones remember a Shaper's hands. Cast a stone's own gesture onto it — Crystallize, Sweep or Ribbon.",
           "when": {
-            "var": {
-              "name": "verbStones",
-              "gte": 1
-            }
+            "any": [
+              {
+                "var": {
+                  "name": "verbStones",
+                  "gte": 1
+                }
+              },
+              {
+                "near": {
+                  "poi": "camp-frost",
+                  "r": 60
+                }
+              }
+            ]
           },
           "goal": {
             "dynamic": "gesture",
@@ -689,6 +712,12 @@
               },
               {
                 "flag": "cleared:cloister"
+              },
+              {
+                "near": {
+                  "poi": "camp-frost",
+                  "r": 60
+                }
               }
             ]
           },
@@ -702,7 +731,17 @@
           "id": "shrine",
           "journal": "Aud: rest at the shrine by the east wall. If I fall, I will stand up there.",
           "when": {
-            "event": "shrine:shrine-frost-1"
+            "any": [
+              {
+                "event": "shrine:shrine-frost-1"
+              },
+              {
+                "near": {
+                  "poi": "camp-frost",
+                  "r": 60
+                }
+              }
+            ]
           },
           "goal": {
             "poi": "shrine-frost-1"

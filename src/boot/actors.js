@@ -108,6 +108,7 @@ export async function createActors(g) {
     } };
   const { createSpikes } = await import('../game/warden/spikes.js');
   const spikes = createSpikes({ ground, ts: terrainState, fx: wraithView, blocker });
+  shaped.blocker = blocker;
   const spikesView = createShapedView(scene, atmosphere, spikes.chunks, { name: 'spikes' });
   bindShadows(spikesView.material, shadows);
   shadows.addCaster(spikesView.mesh, spikesView.makeShadowMaterial, 2);

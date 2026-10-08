@@ -58,7 +58,9 @@ describe('frost chapter flow', () => {
     ch.raise('run:done'); tick(); tick();
     expect(ch.graph.quests['pilgrims-fire'].state).toBe('active');
     // Maren will not talk of the Warden while the hounds are at the fire.
+    ch.graph.flags.add('fighting:camp-raid');
     at('camp-frost'); ch.talk('maren'); tick(); finish();
+    ch.graph.flags.delete('fighting:camp-raid');
     expect(ch.graph.flags.has('met-maren')).toBe(false);
     clear(ch, 'camp-raid'); tick();
     ch.talk('maren'); tick(); finish(); tick(); tick();
@@ -85,6 +87,18 @@ describe('frost chapter flow', () => {
     ch.raise('use:bell'); tick();
     expect(ch.graph.quests['first-snow'].state).toBe('done');
     expect(got.lore).toContain('lore-bell');
+  });
+
+  it('reaching the fire early finishes the opening and starts the raid (Maren only speaks of hounds that are there)', () => {
+    const { ch, at, finish, tick } = setup();
+    tick();
+    at('monastery'); ch.talk('aud'); tick(); finish();
+    at('camp-frost'); tick(6);
+    expect(ch.graph.quests['empty-robe'].state).toBe('done');
+    expect(ch.graph.quests['pilgrims-fire'].state).toBe('active');
+    ch.talk('maren'); expect(ch.current.text).toMatch(/come again/); finish();
+    ch.graph.flags.add('fighting:camp-raid');
+    ch.talk('maren'); expect(ch.current.text).toMatch(/Not now/); finish();
   });
 
   it('pays the optional objectives of the first quest', () => {

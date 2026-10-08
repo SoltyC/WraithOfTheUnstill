@@ -207,6 +207,9 @@ export function createShaped(ctx) {
     /** Throw a shard from (sx, sy, sz) at (tx, ty, tz) at shotSpeed, wounding shotDmg (fields in;
      *  the Warden's volley uses the same pool). */
     sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, shotSpeed: 14.5, shotDmg: 12.5,
+    /** Line-of-sight test against built stone (fields ax…bz → t; segBlocked()), or null: shards
+     *  (the Warden's volleys, the seers') break on walls and pillars instead of passing through. */
+    blocker: null,
     shoot() {
       throwShard(this.sx, this.sy, this.sz, this.tx, this.ty, this.tz, this.shotSpeed, this.shotDmg);
       if (this.sfx) { this.sfx.x = this.sx; this.sfx.y = this.sy; this.sfx.z = this.sz; this.sfx.gain = 1; this.sfx.play(SFX.SHARD); }
@@ -222,8 +225,19 @@ export function createShaped(ctx) {
       const o = (base + k) * CHUNK_FLOATS;
       if (!shot.live[k]) { chunks[o + 15] = 0; continue; }
       shot.vy[k] -= 3 * dt;
-      const ox = shot.x[k], oz = shot.z[k];
+      const ox = shot.x[k], oy = shot.y[k], oz = shot.z[k];
       shot.x[k] += shot.vx[k] * dt; shot.y[k] += shot.vy[k] * dt; shot.z[k] += shot.vz[k] * dt;
+      // Into stone (a wall, a pillar): it shatters there.
+      const bl = self.blocker;
+      if (bl !== null) {
+        bl.ax = ox; bl.ay = oy; bl.az = oz; bl.bx = shot.x[k]; bl.by = shot.y[k]; bl.bz = shot.z[k];
+        if (bl.segBlocked()) {
+          const t = bl.t, hx = ox + (shot.x[k] - ox) * t, hy = oy + (shot.y[k] - oy) * t, hz = oz + (shot.z[k] - oz) * t;
+          for (let q = 0; q < 10; q++) { fx.ex = hx; fx.ey = hy; fx.ez = hz; fx.evx = -shot.vx[k] * 0.08 + (rnd() - 0.5) * 3; fx.evy = 0.5 + rnd() * 2; fx.evz = -shot.vz[k] * 0.08 + (rnd() - 0.5) * 3; fx.esize = 0.04 + 0.06 * rnd(); fx.emit(); }
+          if (P.sfx) { P.sfx.x = hx; P.sfx.y = hy; P.sfx.z = hz; P.sfx.gain = 0.7; P.sfx.play(SFX.SHATTER); }
+          shot.live[k] = 0; chunks[o + 15] = 0; continue;
+        }
+      }
       const dx = shot.x[k] - P.px, dz = shot.z[k] - P.pz;
       ground.qx = shot.x[k]; ground.qz = shot.z[k]; ground.sample();
       if (dx * dx + dz * dz < 0.36 && shot.y[k] - ground.h < 1.9) { P.hits++; P.hitDamage += shot.dmg[k]; shot.live[k] = 0; chunks[o + 15] = 0; continue; }
@@ -248,6 +262,13 @@ export function createShaped(ctx) {
     }
   }
   function throwShard(x, y, z, tx, ty, tz, speed, dmg) {
+    // Lobbed shards would otherwise drop over a wall onto whoever shelters behind it: if stone
+    // stands on the straight line to the target (aimed at the chest), it is thrown into the stone.
+    const bl = self.blocker;
+    if (bl !== null) {
+      bl.ax = x; bl.ay = y; bl.az = z; bl.bx = tx; bl.by = ty + 0.4; bl.bz = tz;
+      if (bl.segBlocked()) { const t = Math.max(0, bl.t - 0.02); tx = x + (tx - x) * t; ty = y + (ty + 0.4 - y) * t; tz = z + (tz - z) * t; }
+    }
     const k = shot.next; shot.next = (shot.next + 1) % MAX_SHOTS;
     const dx = tx - x, dz = tz - z, d = Math.hypot(dx, dz) || 1, t = d / speed;
     shot.x[k] = x; shot.y[k] = y; shot.z[k] = z;

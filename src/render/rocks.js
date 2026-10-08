@@ -49,6 +49,53 @@ function icosphere(level) {
 
 const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z, 0x165667b1) ^ s)) >>> 0) / 4294967296;
 
+/** One rock's placement (the same on the GPU path and the CPU collision path). */
+const R = { x: 0.5, z: 0.5, size: 0.5, yaw: 0.5, seed: 0.5, aspect: 0.5, burial: 0.5, kind: 0 };
+/** Outcrop in cell (gx, gz) into R, or false. */
+function outcropAt(gx, gz) {
+  if (h01(gx, gz, SEED + 1) > 0.24) return false;
+  R.x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * OUTCROP_CELL; R.z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 3)) * OUTCROP_CELL;
+  R.size = 3.5 + 8 * Math.pow(h01(gx, gz, SEED + 4), 2); R.yaw = h01(gx, gz, SEED + 5) * 6.283; R.seed = h01(gx, gz, SEED + 6) * 97;
+  R.aspect = 0.3 + 0.5 * h01(gx, gz, SEED + 7); R.burial = 0.35 + 0.25 * h01(gx, gz, SEED + 8); R.kind = 1;
+  return true;
+}
+/** Boulder in cell (gx, gz) into R, or false. */
+function boulderAt(gx, gz) {
+  const dens = 0.04 + 0.34 * Math.max(0, valueNoise(gx / 22, gz / 22, SEED + 9) * 0.5 + 0.5 - 0.3) / 0.7;
+  if (h01(gx, gz, SEED + 10) > dens) return false;
+  R.x = (gx + h01(gx, gz, SEED + 11)) * BOULDER_CELL; R.z = (gz + h01(gx, gz, SEED + 12)) * BOULDER_CELL;
+  R.size = 0.45 + 2.4 * Math.pow(h01(gx, gz, SEED + 13), 2); R.yaw = h01(gx, gz, SEED + 14) * 6.283; R.seed = h01(gx, gz, SEED + 15) * 97;
+  R.aspect = 0.4 + 0.6 * h01(gx, gz, SEED + 16); R.burial = 0.2 + 0.25 * h01(gx, gz, SEED + 17); R.kind = 0;
+  return true;
+}
+const fract = (v) => v - Math.floor(v);
+/**
+ * Rocks for collision (CPU): every rock whose centre lies within `radius` of (px, pz), outside the
+ * exclusions, called back with the shape the vertex shader gives it — an ellipse of half-extents
+ * (rx, rz) in its yawed frame, and its height above the ground it is seated on (`up`, after burial).
+ */
+let qx = 0, qz = 0, qr = 0, qex = [], qcb = null;
+function nearOk() {
+  for (let k = 0; k < qex.length; k++) { const e = qex[k], ex = R.x - e[0], ez = R.z - e[1], r = e[2] + R.size; if (ex * ex + ez * ez < r * r) return false; }
+  const dx = R.x - qx, dz = R.z - qz, r = qr + R.size * 1.5;
+  return dx * dx + dz * dz < r * r;
+}
+function nearEmit() {
+  // shaders/rocks.wgsl.js: aspect = (1 + 0.35 fract(seed·3.1), 0.55 + 0.35 a, 1 − 0.2 fract(seed·5.3)), mean radius ≈ 0.9 of size
+  const ax = 1 + 0.35 * fract(R.seed * 3.1), ay = 0.55 + 0.35 * R.aspect, az = 1 - 0.2 * fract(R.seed * 5.3);
+  qcb(R.x, R.z, R.yaw, R.size * 0.88 * ax, R.size * 0.88 * az, R.size * ay * (0.95 - R.burial), R.size);
+}
+export function rocksNear(px, pz, radius, exclude, cb) {
+  qx = px; qz = pz; qr = radius; qex = exclude; qcb = cb;
+  const ox0 = Math.floor((px - radius - 12) / OUTCROP_CELL), ox1 = Math.floor((px + radius + 12) / OUTCROP_CELL);
+  const oz0 = Math.floor((pz - radius - 12) / OUTCROP_CELL), oz1 = Math.floor((pz + radius + 12) / OUTCROP_CELL);
+  for (let gz = oz0; gz <= oz1; gz++) for (let gx = ox0; gx <= ox1; gx++) if (outcropAt(gx, gz) && nearOk()) nearEmit();
+  const bx0 = Math.floor((px - radius - 3) / BOULDER_CELL), bx1 = Math.floor((px + radius + 3) / BOULDER_CELL);
+  const bz0 = Math.floor((pz - radius - 3) / BOULDER_CELL), bz1 = Math.floor((pz + radius + 3) / BOULDER_CELL);
+  for (let gz = bz0; gz <= bz1; gz++) for (let gx = bx0; gx <= bx1; gx++) if (boulderAt(gx, gz) && nearOk()) nearEmit();
+  qcb = null;
+}
+
 /**
  * @param {import('@babylonjs/core').Scene} scene
  * @param {any} clipmap
@@ -120,20 +167,11 @@ export function createRocks(scene, clipmap, atmo) {
     // Outcrops: large, half buried, sparse.
     const ox = Math.floor(cx * BOULDER_CELL / OUTCROP_CELL), oz = Math.floor(cz * BOULDER_CELL / OUTCROP_CELL);
     for (let j = -OUTCROP_R; j <= OUTCROP_R; j++) for (let i = -OUTCROP_R; i <= OUTCROP_R; i++) {
-      const gx = ox + i, gz = oz + j;
-      if (h01(gx, gz, SEED + 1) > 0.24) continue;
-      const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * OUTCROP_CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 3)) * OUTCROP_CELL;
-      const s = 3.5 + 8 * Math.pow(h01(gx, gz, SEED + 4), 2);
-      put(n++, x, z, s, h01(gx, gz, SEED + 5) * 6.283, h01(gx, gz, SEED + 6) * 97, 0.3 + 0.5 * h01(gx, gz, SEED + 7), 0.35 + 0.25 * h01(gx, gz, SEED + 8), 1);
+      if (outcropAt(ox + i, oz + j)) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 1);
     }
     // Boulders: clustered fields (a low-frequency density), a power law of sizes.
     for (let j = -BOULDER_R; j <= BOULDER_R; j++) for (let i = -BOULDER_R; i <= BOULDER_R; i++) {
-      const gx = cx + i, gz = cz + j;
-      const dens = 0.04 + 0.34 * Math.max(0, valueNoise(gx / 22, gz / 22, SEED + 9) * 0.5 + 0.5 - 0.3) / 0.7;
-      if (h01(gx, gz, SEED + 10) > dens) continue;
-      const x = (gx + h01(gx, gz, SEED + 11)) * BOULDER_CELL, z = (gz + h01(gx, gz, SEED + 12)) * BOULDER_CELL;
-      const s = 0.45 + 2.4 * Math.pow(h01(gx, gz, SEED + 13), 2);
-      put(n++, x, z, s, h01(gx, gz, SEED + 14) * 6.283, h01(gx, gz, SEED + 15) * 97, 0.4 + 0.6 * h01(gx, gz, SEED + 16), 0.2 + 0.25 * h01(gx, gz, SEED + 17), 0);
+      if (boulderAt(cx + i, cz + j)) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 0);
     }
     // Unused slots: size 0 (discarded in the vertex shader; the draw count never changes).
     for (const t of [near, far]) {
@@ -167,6 +205,8 @@ export function createRocks(scene, clipmap, atmo) {
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
     /** Keep rocks out of these circles ([x, z, r]: the camp, the monastery, shrines…). */
     setExclusions(list) { exclude = list; cellX = NaN; },
+    /** The exclusions (the CPU collision path keeps the same clear circles). */
+    get exclusions() { return exclude; },
     /** The terrain state the rocks sit on (deformed snow); shadow casters made later bind it too. */
     bindState(ts) { stateBound = ts; for (const m of vertexMats) bindStateTo(m, ts); },
   };

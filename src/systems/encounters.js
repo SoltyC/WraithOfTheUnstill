@@ -51,7 +51,7 @@ export function addEncounterSystem(g) {
       if (e.wave < 0) {
         if (!(e.force || (stepOf(e.quest) === e.step && (!e.flag || flags.has(e.flag))))) continue;
         if (dist2(p.x, p.z, pl.pos[0], pl.pos[1]) > e.near * e.near) continue;
-        e.wave = 0; spawnWave(e, p);
+        e.wave = 0; spawnWave(e, p); flags.add('fighting:' + id);
         if (!capture) { hud.notice('Shaped', e.name, 'Freeze them, Sweep them, or lose them in the snow.', 5); music.sting('echo'); }
         continue;
       }
@@ -69,7 +69,7 @@ export function addEncounterSystem(g) {
         }
         continue;
       }
-      flags.add('cleared:' + id); e.wave = -1; e.force = false;
+      flags.add('cleared:' + id); flags.delete('fighting:' + id); e.wave = -1; e.force = false;
       chapter.raise('encounter:' + id + ':clear');
       if (!capture) hud.notice('Quiet', e.name + ' cleared', null, 4);
     }
@@ -96,7 +96,7 @@ export function addEncounterSystem(g) {
   }
 
   const navSync = g.navSync;
-  g.navSync = () => { navSync?.(); for (const id in ENCOUNTERS) { ENCOUNTERS[id].slots.length = 0; ENCOUNTERS[id].wave = -1; ENCOUNTERS[id].force = false; } };
+  g.navSync = () => { navSync?.(); for (const id in ENCOUNTERS) { ENCOUNTERS[id].slots.length = 0; ENCOUNTERS[id].wave = -1; ENCOUNTERS[id].force = false; flags.delete('fighting:' + id); } };
   g.encounters = ENCOUNTERS;
 
   loop.add({ name: 'encounters', update: () => { tick(clock.dt); respawnTick(); } });

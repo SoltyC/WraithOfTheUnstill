@@ -401,3 +401,10 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Den mother:** a new elite archetype (`denmother`: the brute ×1.32, 420 health, rime armour — unfrozen blows do 30 %).
 - **Task line (HUD):** one quiet line under the compass for what is happening now (a challenge's clock, the child waiting, the flame, the Run's gate and time); owners claim it and release it.
 - **Testing in the real browser:** `tools/winchrome/` drives the user's Windows Chrome (real GPU, headless) from WSL over the DevTools protocol through a reverse tunnel (WSL cannot reach Windows localhost; PowerShell dials back in per connection).
+
+### After the user's play (2026-10-09)
+
+- **Easier fight:** the barrage comes every 25 s (was 15), the first 20 s after the pillars stand.
+- **Stone stops the small volleys too:** the Shaped's shard pool (the Warden's volleys, the seers') tests each flight step against the built solids and shatters on walls and pillars; a shard whose straight line to its target is blocked is thrown into the stone (a lob would otherwise drop over a wall). Measured: 28 damage in 20 s in the open, 0 behind a wall, 0 behind a pillar through a barrage.
+- **The camp raid always starts:** reaching the fire completes the opening quest's remaining steps (stone, cloister, shrine) so the raid arms at once; Maren's "not now, the hounds" only plays while the raid is on (`fighting:<id>` flag), otherwise she says they will come again.
+- **Rock collision:** `render/rocks.js` exposes the same deterministic placement on the CPU (`rocksNear`); `systems/rockSolids.js` rebuilds the rocks within 26 m every 4 m of travel into `solids.rocks` (an ellipse and a seated height, the shader's seating and frost/slope culling repeated). Rocks taller than 0.55 m above the feet block; lower ones are stood on (a dome). Camera and NPC floors use the same domes.
