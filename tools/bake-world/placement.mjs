@@ -11,8 +11,10 @@ const dist = (ax, az, bx, bz) => Math.sqrt((ax - bx) * (ax - bx) + (az - bz) * (
  * @param {{ sample: (x: number, z: number) => { h: number, slope: number, biome: number, river: number, lake: number } }} world
  * @param {number} seed
  */
-export function placePOIs(world, seed) {
-  const pois = [];
+export function placePOIs(world, seed, fixed = []) {
+  // The frost chapter's sites are laid out by hand (story.mjs): the monastery, its camp, shrines,
+  // Echo stones and the Warden's arena. Everything else is placed by the rules below.
+  const pois = fixed.slice();
   const best = (filter, score, near) => {
     let top = null, topScore = -Infinity;
     for (let z = -3900; z <= 3900; z += 32) for (let x = -3900; x <= 3900; x += 32) {
@@ -27,17 +29,18 @@ export function placePOIs(world, seed) {
   const flat = (s) => s.slope < 0.12 && s.h > 2 && s.river === 0 && s.lake === 0;
   const add = (id, kind, biome, p) => { if (p) pois.push({ id, kind, biome, pos: [p.x, p.z], h: Math.round(p.h * 10) / 10 }); };
 
-  // The Shapers' monastery: high on the frost plateau, flat, near the ranges, overlooking south.
-  add('monastery', 'monastery', 'frost', best((s) => flat(s) && s.biome === 0 && s.h > 500, (s, x, z) => s.h * 0.01 + z * 0.001 - Math.abs(x) * 0.0006));
+  // (The Shapers' monastery and the frost sites: story.mjs.)
   // Hub settlement of the Veiled: centre of the meadow, near water.
   add('hub', 'settlement', 'meadow', best((s) => flat(s) && s.biome === 1, (s, x, z) => -dist(x, z, -200, 200) * 0.001 + s.riverNear * 2));
   // Warden arenas: a large flat-ish site deep in each biome.
   const BIOME_NAMES = ['frost', 'meadow', 'mire', 'dunes', 'ember', 'coast'];
   for (let b = 0; b < 6; b++) {
+    if (b === 0) continue; // frost: story.mjs
     add('warden-' + BIOME_NAMES[b], 'warden-arena', BIOME_NAMES[b], best((s) => s.slope < 0.25 && s.biomeWeight[b] > 0.85 && (b === 5 ? s.h > -2 && s.h < 6 : s.h > 2), (s) => s.biomeWeight[b] - s.slope));
   }
   // Shrines: 5 per biome, spread out (greedy farthest-point over scored candidates).
   for (let b = 0; b < 6; b++) {
+    if (b === 0) continue; // frost: story.mjs
     const chosen = [];
     for (let k = 0; k < 5; k++) {
       const p = best((s, x, z) => flat(s) && s.biomeWeight[b] > 0.6 && chosen.every((c) => dist(c.x, c.z, x, z) > 700) && pois.every((q) => dist(q.pos[0], q.pos[1], x, z) > 300), (s, x, z) => {

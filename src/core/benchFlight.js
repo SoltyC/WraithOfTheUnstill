@@ -11,7 +11,7 @@ import { clock } from './clock.js';
 import { streaming } from './streaming.js';
 
 /** Waypoints (x, z): south coast → mire → hub → dune basin → frost plateau → monastery. */
-const PATH = [[-956, -2908], [-1212, -668], [-220, 580], [2436, 1124], [1092, 2276], [-508, 3204]];
+const PATH = [[-956, -2908], [-1212, -668], [-220, 580], [2436, 1124], [1092, 2276], [1125, 2750]];
 export const FLIGHT_PHASES = [
   { name: 'surf', speed: 20, height: 12 },
   { name: 'glide', speed: 40, height: 45 },

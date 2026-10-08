@@ -16,6 +16,7 @@ import { macroHeight, coastDistance, regions, HALF, WORLD_SIZE } from './geograp
 import { hydrology } from './hydrology.mjs';
 import { biomeWeights, material, wind, BIOMES, MATERIALS } from './climate.mjs';
 import { placePOIs } from './placement.mjs';
+import { carveStory, storyPOIs } from './story.mjs';
 import { gfbm } from '../../src/terrain/gnoise.js';
 import { encodePng } from './png.mjs';
 
@@ -90,6 +91,11 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     },
   });
   log('hydrology', Date.now() - t0, 'ms');
+
+  // 2b. The frost chapter's layout: levelled pads for its sites and the Shapers' Run, carved after
+  // hydrology so the chute is a route, not a river (story.mjs).
+  const run = carveStory(h4, n4, c4, HALF);
+  log('story', run.length, 'm run,', run.drop, 'm drop', Date.now() - t0, 'ms');
 
   // Shared lookups on the 4 m grid.
   const at4 = (arr, x, z) => arr[clamp(Math.floor((HALF - z) / c4), 0, n4 - 1) * n4 + clamp(Math.floor((x + HALF) / c4), 0, n4 - 1)];
@@ -179,7 +185,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
       return { h: h4[c4i], slope: surface[c4i * 4 + 2] / 128, biome, biomeWeight: weights, river: hy.river[c4i], lake: hy.lake[c4i], riverNear };
     },
   };
-  const pois = placePOIs(world, seed);
+  const pois = placePOIs(world, seed, storyPOIs(h4, n4, c4, HALF));
   log('pois', pois.length, Date.now() - t0, 'ms');
 
   // 9. Write.
@@ -204,7 +210,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   write('hydro.rgba8', hydro);
   write('lake_level.u16', lakeLevel);
   write('wind.rg8', windMap);
-  write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois }, null, 2) + '\n'));
+  write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run] }, null, 2) + '\n'));
   const manifest = {
     version: BAKE_VERSION, seed, worldSize: WORLD_SIZE, origin: 'centre; x east, z north; row 0 = north edge; cell-centred texels',
     height: { texel: c2, size: n2, tile: TILE, tiles, encoding: 'u16le: h = v / 32 - 128 (m)', overview: { file: 'height_overview.u16', texel: c8, size: n8 } },
@@ -242,7 +248,7 @@ function writePreview(file, ov, n, biomeA, biomeB, hydro, n4, pois, cell) {
   }
   for (const p of pois) {
     const pi = Math.floor((p.pos[0] + HALF) / cell), pj = Math.floor((HALF - p.pos[1]) / cell);
-    const col = p.kind === 'shrine' ? [255, 230, 120] : p.kind === 'warden-arena' ? [255, 80, 60] : [255, 255, 255];
+    const col = p.kind === 'shrine' ? [255, 230, 120] : p.kind === 'warden-arena' ? [255, 80, 60] : p.kind === 'echo-stone' ? [160, 220, 255] : [255, 255, 255];
     for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) {
       if (Math.abs(di) + Math.abs(dj) > 4) continue;
       const ii = clamp(pi + di, 0, n - 1), jj = clamp(pj + dj, 0, n - 1);

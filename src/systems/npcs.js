@@ -48,17 +48,17 @@ export function addNpcSystems(g) {
   }
 
   for (const d of data.npcs) makeNpc(d.id, d.name, d.archetype, place(d.home));
-  // Ambient pilgrim: walks between the fire and the shrine below the cliffs, and back.
-  const camp = table['camp-frost'].pos, shrine = table['shrine-frost-2'].pos;
+  // Ambient pilgrim: walks from the fire across the frozen tarn to the shrine on its far shore, and back.
+  const camp = table['camp-frost'].pos, shrine = table['shrine-frost-3'].pos;
   const walker = makeNpc('pilgrim-1', null, 'pilgrim', [camp[0] - 6, camp[1] - 6]);
-  walker.path = [[camp[0] - 6, camp[1] - 6], [camp[0] - 160, camp[1] - 70], [(camp[0] + shrine[0]) / 2, (camp[1] + shrine[1]) / 2 + 30], [shrine[0] + 12, shrine[1] + 10]];
+  walker.path = [[camp[0] - 6, camp[1] - 6], [camp[0] - 70, camp[1] - 24], [(camp[0] + shrine[0]) / 2, (camp[1] + shrine[1]) / 2 - 8], [shrine[0] + 24, shrine[1] + 6], [shrine[0] + 9, shrine[1] + 8]];
   walker.pathLen = 0;
   for (let k = 1; k < walker.path.length; k++) walker.pathLen += Math.hypot(walker.path[k][0] - walker.path[k - 1][0], walker.path[k][1] - walker.path[k - 1][1]);
   walker.pathT = rnd() * walker.pathLen * 2;
 
   // Keep the ground known where they live (anchor patches 1…).
   const anchors = [camp, table['spring-frost'].pos, table['varo-rise'].pos, table.monastery.pos, [(camp[0] + shrine[0]) / 2, (camp[1] + shrine[1]) / 2]];
-  if (!capture) anchors.forEach((p, i) => streamer.setAnchor(1 + i, p[0], p[1]));
+  if (!capture) anchors.forEach((p) => streamer.addAnchor(p[0], p[1]));
 
   /** Where an NPC should be now (quest state moves some: the lost child). */
   const tobinLost = place(data.npcs.find((d) => d.id === 'tobin').lost);

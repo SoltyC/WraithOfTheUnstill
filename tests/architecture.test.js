@@ -3,18 +3,20 @@ import fs from 'node:fs';
 import { frostSites, buildArchitecture, MAT } from '../src/world/architecture.js';
 import { createSolids } from '../src/world/solids.js';
 
-const pois = JSON.parse(fs.readFileSync('data/world/pois.json', 'utf8')).pois;
-const places = JSON.parse(fs.readFileSync('data/quests/frost.json', 'utf8')).places;
+const baked = JSON.parse(fs.readFileSync('data/world/pois.json', 'utf8'));
 const table = {};
-for (const p of pois) table[p.id] = p;
-for (const id in places) table[id] = places[id];
+for (const p of baked.pois) table[p.id] = p;
 
 describe('Shaper architecture', () => {
-  const sites = frostSites(table);
+  const sites = frostSites(table, baked.routes);
   const built = buildArchitecture(sites);
   it('builds every frost site into one indexed mesh with outward normals', () => {
-    expect(sites.filter((s) => !s.prop).length).toBe(9);
-    expect(sites.length).toBeLessThanOrEqual(16); // ARCH_SITES
+    const ids = sites.filter((s) => !s.prop).map((s) => s.id);
+    // monastery, camp, spring, watching stone, den; 5 shrines; 6 Echo stones; 3 verb stones; 3 braziers; 9 gates.
+    expect(ids.length).toBe(5 + 5 + 6 + 3 + 3 + 9);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (let k = 1; k <= 9; k++) expect(ids).toContain('run-gate-' + k);
+    expect(sites.length).toBeLessThanOrEqual(64); // ARCH_SITES
     const n = built.positions.length / 3;
     expect(built.indices.length % 3).toBe(0);
     expect(Math.max(...built.indices)).toBeLessThan(n);

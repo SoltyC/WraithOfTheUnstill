@@ -9,7 +9,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
-export const ARCH_SITES = 16;
+export const ARCH_SITES = 64;
 
 const ARCH_VERTEX = /* wgsl */ `
 attribute position: vec3f;
@@ -84,6 +84,35 @@ fn glyph(uv: vec2f, seed: f32) -> f32 {
   return g;
 }
 
+// One large verb symbol on a stone's broad face (info.w = 2 crystal, 3 crescent, 4 wave), as a
+// carved groove 0..1; the face is 1.1 m wide, the symbol centred at 1.55 m.
+fn symbolGlyph(uv: vec2f, kind: f32) -> f32 {
+  let c = uv - vec2f(0.55, 1.55);
+  let w = 0.03;
+  var d = 1e3;
+  if (kind < 2.5) {
+    // Crystallize: a faceted crystal — outline, a central axis and a facet cross.
+    let q = abs(c);
+    d = abs(q.x / 0.2 + q.y / 0.46 - 1.0) * 0.17;
+    if (q.y < 0.46) { d = min(d, q.x + select(0.0, 1.0, q.y > 0.44)); }
+    d = min(d, abs(c.y + 0.02) + select(0.0, 1.0, q.x > 0.14));
+  } else if (kind < 3.5) {
+    // Sweep: a crescent, its tips trailing.
+    let a = abs(length(c) - 0.34);
+    let b = abs(length(c - vec2f(0.15, 0.0)) - 0.29);
+    let inB = length(c - vec2f(0.15, 0.0)) < 0.29;
+    let inA = length(c) < 0.34;
+    d = min(select(1e3, a, !inB), select(1e3, b, inA));
+  } else {
+    // Ribbon: three flowing lines.
+    for (var i = 0; i < 3; i++) {
+      let y = (f32(i) - 1.0) * 0.17 + 0.06 * sin(c.x * 17.0 + f32(i) * 1.7);
+      d = min(d, abs(c.y - y) + select(0.0, 1.0, abs(c.x) > 0.36));
+    }
+  }
+  return 1.0 - smoothstep(w, w + 0.025, d);
+}
+
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let wp = fragmentInputs.vWorldPos;
@@ -123,11 +152,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       // Carved bands: two registers of glyphs, the grooves dark, a cold light in them when awake.
       let v = uv.y;
       let band = step(0.35, fract(v / 1.6)) * step(fract(v / 1.6), 0.75);
-      let gl = glyph(uv, seed) * band * ar_fade(0.32, fp);
+      var gl = glyph(uv, seed) * band * ar_fade(0.32, fp);
+      var strength = 0.55;
+      if (info.w > 1.5) { gl = symbolGlyph(uv, info.w) * ar_fade(0.2, fp); strength = 1.1; }
       albedo *= 1.0 - 0.55 * gl;
       ao *= 1.0 - 0.3 * gl;
       let breath = 0.75 + 0.25 * sin(t * 1.3 + seed);
-      emit += vec3f(0.3, 0.6, 0.95) * gl * glowS.x * breath * 0.55;
+      emit += vec3f(0.3, 0.6, 0.95) * gl * glowS.x * breath * strength;
     }
   } else if (mid == 2) {
     // Felt and canvas: undyed wool, patched; light comes through it from the fire at night.

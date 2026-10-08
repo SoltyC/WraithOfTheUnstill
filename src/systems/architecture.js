@@ -10,7 +10,7 @@ import { createArchitectureView } from '../render/architecture.js';
 /** @param {any} g  shared boot context */
 export function addArchitectureSystem(g) {
   const { loop, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
-  const sites = frostSites(chapter.table);
+  const sites = frostSites(chapter.table, g.routes);
   const built = buildArchitecture(sites);
   const view = g.architecture = createArchitectureView(scene, atmosphere, built);
   bindShadows(view.material, shadows);
@@ -35,7 +35,7 @@ export function addArchitectureSystem(g) {
   };
   g.wraithGround.solids = solids;
   // Ground anchors for every site (indices after the NPCs' 1..5).
-  sites.forEach((s, i) => { if (!s.prop) streamer.setAnchor(8 + i, s.at[0], s.at[1]); });
+  sites.forEach((s) => { if (!s.prop) streamer.addAnchor(s.at[0], s.at[1]); });
   const camp = sites.findIndex((s) => s.id === 'camp-frost');
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
 
@@ -53,6 +53,11 @@ export function addArchitectureSystem(g) {
         ground.sample(); if (ground.h > top) top = ground.h;
       }
       return top;
+    }
+    if (s.seatAt === 'center') {
+      ground.qx = s.at[0]; ground.qz = s.at[1];
+      if (!ground.covers()) return NaN;
+      ground.sample(); return ground.h;
     }
     let lo = Infinity, hi = -Infinity;
     for (let k = 0; k < 9; k++) {

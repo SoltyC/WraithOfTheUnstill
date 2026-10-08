@@ -4,16 +4,16 @@
   {
    "id": "p1-monastery-golden",
    "biome": "frost",
-   "label": "Monastery ledge looking south over the frost plateau, golden hour",
+   "label": "The monastery's sill, looking down the Shapers' Run toward the camp and the Warden's tarn, golden hour",
    "time": 17.4,
    "weather": "clear",
    "player": [
-    -508,
-    3204
+    1117,
+    2725
    ],
    "camera": {
     "mode": "follow",
-    "yaw": 3,
+    "yaw": 3.45,
     "pitch": 0.14,
     "dist": 6
    }
@@ -1631,18 +1631,18 @@
   {
    "id": "p7-monastery-approach",
    "biome": "frost",
-   "label": "The Shapers' monastery from the head of its steps: bell arch, cloister, the hall's broken east wall (stilled, golden hour)",
+   "label": "The Shapers' monastery from its sill: the bell arch, the cloister, the hall's broken east wall (stilled, golden hour)",
    "time": 16.8,
    "weather": "clear",
    "player": [
-    -500.4,
-    3194.7
+    1117,
+    2722
    ],
    "restoration": "stilled",
    "camera": {
     "mode": "follow",
-    "yaw": -0.68,
-    "pitch": 0.22,
+    "yaw": 0.31,
+    "pitch": 0.2,
     "dist": 8
    }
   },
@@ -1653,13 +1653,13 @@
    "time": 10,
    "weather": "clear",
    "player": [
-    -508,
-    3204
+    1125,
+    2750
    ],
    "restoration": "stilled",
    "camera": {
     "mode": "follow",
-    "yaw": 5.6,
+    "yaw": 0.31,
     "pitch": 0.22,
     "dist": 4.5
    }
@@ -1671,8 +1671,8 @@
    "time": 18.7,
    "weather": "clear",
    "player": [
-    80,
-    2466
+    880,
+    2434
    ],
    "restoration": "stilled",
    "camera": {
@@ -1689,8 +1689,8 @@
    "time": 12.5,
    "weather": "overcast",
    "player": [
-    -508,
-    2200
+    990,
+    2498
    ],
    "restoration": "restored",
    "camera": {
@@ -1703,24 +1703,24 @@
   {
    "id": "p7-monastery-aerial",
    "biome": "frost",
-   "label": "The monastery crowning its peak: the citadel platform and its foundations down the slopes (stilled, golden hour)",
+   "label": "The monastery on its pad above the gully, the Run curving away below it (stilled, golden hour)",
    "time": 16.8,
    "weather": "clear",
    "player": [
-    -500.4,
-    3194.7
+    1117,
+    2722
    ],
    "hidePlayer": true,
    "restoration": "stilled",
    "camera": {
     "mode": "free",
     "pos": [
-     -463.9,
-     1578,
-     3149.7
+     1010,
+     792,
+     2620
     ],
-    "yaw": -0.68,
-    "pitch": 0.38,
+    "yaw": 0.72,
+    "pitch": 0.28,
     "fov": 1.0
    }
   },

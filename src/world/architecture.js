@@ -6,7 +6,8 @@
 //
 // Per vertex: position (site-local, m), normal, uv (face-planar metres), and a 4-vector
 // (site index, material, seed, carve) the shader reads. Materials: STONE (Shaper ashlar),
-// GLYPH (stone with carved, faintly lit Shaper glyph bands), CANVAS (tents), WOOD, ICE, EMBER.
+// GLYPH (stone with carved, faintly lit Shaper glyph bands, or — carve 2/3/4 — one large verb
+// symbol: crystal / crescent / wave), CANVAS (tents), WOOD, ICE, EMBER.
 // Also returns 2D collision shapes (blockers: circles and boxes; platforms: walkable tops).
 
 export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6 };
@@ -44,7 +45,7 @@ class Builder {
    * Oriented box: centre (x, z), base y0 to top y1, half extents hx (along yaw's right), hz (along
    * yaw's forward), tilt (rad, about its own x: a leaning slab). `solid` adds a blocker.
    */
-  box(x, z, y0, y1, hx, hz, yaw, mat, seed, { tilt = 0, carve = 0, solid = true, platform = false, roll = 0 } = {}) {
+  box(x, z, y0, y1, hx, hz, yaw, mat, seed, { tilt = 0, carve = 0, solid = true, platform = false, roll = 0, fb = false } = {}) {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     const ym = (y0 + y1) / 2, hy = (y1 - y0) / 2;
     const P = (lx, ly, lz) => {
@@ -54,12 +55,13 @@ class Builder {
       return [x + ax * cy + bz * sy, ym + by, z - ax * sy + bz * cy];
     };
     const c = [P(-hx, -hy, -hz), P(hx, -hy, -hz), P(hx, -hy, hz), P(-hx, -hy, hz), P(-hx, hy, -hz), P(hx, hy, -hz), P(hx, hy, hz), P(-hx, hy, hz)];
-    this.quad(c[4], c[5], c[6], c[7], mat, seed, carve);           // top
-    this.quad(c[0], c[3], c[2], c[1], mat, seed, carve);           // bottom
+    const side = fb ? 0 : carve; // fb: the symbol only on the two broad faces
+    this.quad(c[4], c[5], c[6], c[7], mat, seed, side);            // top
+    this.quad(c[0], c[3], c[2], c[1], mat, seed, side);            // bottom
     this.quad(c[0], c[1], c[5], c[4], mat, seed, carve);           // back (−z)
     this.quad(c[2], c[3], c[7], c[6], mat, seed, carve);           // front (+z)
-    this.quad(c[3], c[0], c[4], c[7], mat, seed, carve);           // left
-    this.quad(c[1], c[2], c[6], c[5], mat, seed, carve);           // right
+    this.quad(c[3], c[0], c[4], c[7], mat, seed, side);            // left
+    this.quad(c[1], c[2], c[6], c[5], mat, seed, side);            // right
     if (solid && Math.abs(tilt) < 0.6 && Math.abs(roll) < 0.6) this.blockers.push({ site: this.site, kind: 'box', x, z, hx: hx + 0.05, hz: hz + 0.05, cos: cy, sin: sy, y0, y1 });
     if (platform) this.platforms.push({ site: this.site, x, z, hx, hz, cos: cy, sin: sy, top: y1 });
   }
@@ -112,9 +114,9 @@ class Builder {
   }
 }
 
-/** Shaper monastery: a cloister crowning the summit where the last Shaper died. The peak is
- *  sharp (the ground falls ~40 m inside the cloister's footprint), so the platform is a citadel:
- *  seated at the summit, its ashlar foundations run 45 m down the slopes. */
+/** Shaper monastery: a cloister on a levelled shoulder of the frost range, above the gully the
+ *  Shapers' Run descends and facing it. The ground falls away on three sides, so the platform is a
+ *  citadel: seated on its pad, its ashlar foundations run 45 m down the slopes. */
 const CITADEL = 45;
 function monastery(b, facing, R) {
   const fx = Math.sin(facing), fz = Math.cos(facing), rx = Math.cos(facing), rz = -Math.sin(facing);
@@ -130,18 +132,14 @@ function monastery(b, facing, R) {
   for (let side = 0; side < 4; side++) {
     const yaw = facing + side * Math.PI / 2, nx = Math.sin(yaw), nz = Math.cos(yaw), tx = Math.cos(yaw), tz = -Math.sin(yaw);
     for (const t of [-9.5, 0, 9.5]) {
-      if (side === 0 && t === 0) continue; // the stair comes down this face
+      if (side === 0 && t === 0) continue; // the sill is on this face
       const bx = nx * 15.6 + tx * t, bz = nz * 15.6 + tz * t;
       b.frustum(bx + nx * 1.6, bz + nz * 1.6, -CITADEL, -20, 1.5, 3.4, 1.2, 1.2, yaw, MAT.STONE, 7 + side * 3 + t);
       b.frustum(bx + nx * 0.4, bz + nz * 0.4, -20.2, -1.5, 1.2, 1.2, 0.9, 0.5, yaw, MAT.STONE, 8 + side * 3 + t);
     }
   }
-  // The stair down the descent face: flights of steps on a ramp of masonry.
-  for (let k = 0; k < 14; k++) {
-    const f = 15.6 + k * 0.9, top = 0.17 - k * 0.55;
-    const [x, z] = at(0, f);
-    b.box(x, z, -CITADEL + k * 0.5, top, 2.6, 0.5, facing, MAT.STONE, 2 + k, { solid: false, platform: true });
-  }
+  // The sill: a low landing where the pad meets the head of the Run (the Run begins 26 m out).
+  { const [x, z] = at(0, 17.6); b.box(x, z, -CITADEL, 0.17, 4.6, 2.0, facing, MAT.STONE, 2, { solid: false, platform: true }); }
   // A parapet round the platform's edge, open toward the descent.
   for (let k = 0; k < 4; k++) {
     const yaw = facing + k * Math.PI / 2, ex = Math.sin(yaw) * 14.6, ez = Math.cos(yaw) * 14.6;
@@ -230,6 +228,56 @@ function watchingStone(b, facing) {
   b.box(1.6, 0.9, -0.5, 0.7, 0.7, 0.6, facing + 0.8, MAT.STONE, 2);
 }
 
+/** A verb stone (the monastery's three gestures): a broad carved face showing the verb's symbol
+ *  — crystal (Crystallize), crescent (Sweep), wave (Ribbon) — set in a ring of low stones. */
+function gestureStone(symbol) {
+  return (b, facing, R) => {
+    b.drum(0, 0, -FOUND, 0.1, 1.5, 1.5, 12, MAT.STONE, 1, { solid: false });
+    b.box(0, 0, 0.1, 2.7, 0.55, 0.3, facing, MAT.GLYPH, 2 + symbol, { carve: 1 + symbol, fb: true });
+    b.box(0, 0, 2.7, 2.9, 0.62, 0.36, facing, MAT.STONE, 9, { solid: false });
+    for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2 + R(); b.box(Math.cos(a) * 1.25, Math.sin(a) * 1.25, 0.1, 0.35 + R() * 0.2, 0.22, 0.16, a, MAT.STONE, 20 + k, { solid: false }); }
+  };
+}
+
+/** An Echo stone: a tall carved monolith in a ring of low stones, a pale disc of ice at its foot. */
+function echoStone(b, facing, R) {
+  b.drum(0, 0, -FOUND, 0.08, 2.1, 2.1, 16, MAT.STONE, 1, { solid: false });
+  b.drum(0, 0, 0.08, 0.14, 1.5, 1.5, 16, MAT.ICE, 2, { solid: false });
+  b.box(0, 0, 0.1, 3.1, 0.5, 0.28, facing, MAT.GLYPH, 3, { carve: 1, tilt: (R() - 0.5) * 0.08 });
+  b.box(0, 0, 3.1, 3.3, 0.4, 0.22, facing, MAT.STONE, 4, { solid: false });
+  for (let k = 0; k < 7; k++) { const a = (k / 7) * Math.PI * 2 + R() * 0.4; b.box(Math.cos(a) * 2.3, Math.sin(a) * 2.3, -0.3, 0.3 + R() * 0.55, 0.3, 0.22, a, MAT.STONE, 10 + k, { solid: false }); }
+}
+
+/** The hounds' den: a ring of jagged ice spires leaning out of a hollow in the snow. */
+function den(b, facing, R) {
+  for (let k = 0; k < 11; k++) {
+    const a = (k / 11) * Math.PI * 2 + R() * 0.3, r = 7.5 + R() * 2.4, h = 3 + R() * 4.5;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    b.box(x, z, -2.5, h, 0.55 + R() * 0.5, 0.4 + R() * 0.3, a + Math.PI / 2, MAT.ICE, 30 + k, { tilt: 0.18 + R() * 0.3, roll: (R() - 0.5) * 0.3, solid: false });
+  }
+  for (let k = 0; k < 5; k++) { const a = R() * 6.28, r = 3 + R() * 3; b.box(Math.cos(a) * r, Math.sin(a) * r, -0.4, 0.3 + R() * 0.5, 0.7, 0.5, a, MAT.STONE, 60 + k, { solid: false }); }
+}
+
+/** A gate of the Shapers' Run: an arch spanning the chute (pillars outside its floor, a glyph
+ *  lintel overhead). Local x is across the Run, forward is the way down. */
+function gate(b, facing, R) {
+  const HALFSPAN = 10.4;
+  for (const sgn of [-1, 1]) {
+    b.box(sgn * HALFSPAN, 0, -8, 7.4, 0.85, 0.7, 0, MAT.STONE, 1 + sgn);
+    b.box(sgn * HALFSPAN, 0, 7.4, 7.7, 1.05, 0.9, 0, MAT.STONE, 4 + sgn, { solid: false });
+    b.box(sgn * (HALFSPAN - 1.4), 0, 4.2, 6.0, 0.35, 0.45, 0, MAT.GLYPH, 8 + sgn, { carve: 1, solid: false });
+  }
+  b.box(0, 0, 6.3, 7.5, HALFSPAN + 0.6, 0.6, 0, MAT.GLYPH, 12, { carve: 1, solid: false });
+  b.box(0, 0, 7.5, 7.75, HALFSPAN - 0.4, 0.75, 0, MAT.STONE, 13, { solid: false });
+}
+
+/** A brazier: a stone bowl on a pedestal; its coals light when the flame is carried here. */
+function brazier(b, facing, R) {
+  b.drum(0, 0, -1, 0.9, 0.36, 0.3, 8, MAT.STONE, 1);
+  b.drum(0, 0, 0.9, 1.28, 0.36, 0.72, 12, MAT.GLYPH, 2, { carve: 1, solid: false });
+  b.drum(0, 0, 1.22, 1.3, 0.64, 0.6, 12, MAT.EMBER, 3, { solid: false });
+}
+
 /** Props the Veiled carry: drawn with the architecture, each its own site that the NPC system
  *  moves to the figure's hand every frame (local origin: the staff's foot, the lantern's ring). */
 function staff(len) { return (b) => { b.drum(0, 0, 0, len, 0.032, 0.026, 6, MAT.WOOD, 1, { solid: false }); b.drum(0, 0, len - 0.02, len + 0.06, 0.05, 0.02, 6, MAT.WOOD, 2, { solid: false }); }; }
@@ -245,18 +293,42 @@ export const PROPS = [
   { id: 'prop-isolde', npc: 'isolde', kind: 'lantern', build: lantern },
 ];
 
-/** Every site of the frost chapter: { id, x, z, facing, build, footprint (seat radius, m) }. */
-export function frostSites(table) {
+/** Where a verb stone stands in the monastery (local right, forward): a ring round the hall. */
+export const GESTURE_STONES = [
+  { id: 'gesture-crystal', verb: 'crystal', at: [11, 2.5] },
+  { id: 'gesture-sweep', verb: 'sweep', at: [-11, 2.5] },
+  { id: 'gesture-ribbon', verb: 'ribbon', at: [0, -9.6] },
+];
+/** Braziers: beside shrines 2, 3 and 4 (world offsets from the shrine). */
+export const BRAZIERS = [
+  { id: 'brazier-1', shrine: 'shrine-frost-2', off: [6.5, 3.5] },
+  { id: 'brazier-2', shrine: 'shrine-frost-3', off: [6.5, 3.5] },
+  { id: 'brazier-3', shrine: 'shrine-frost-4', off: [6.5, 3.5] },
+];
+
+/** Every site of the frost chapter: { id, at, facing, build, footprint (seat radius, m) }.
+ *  `table` is the baked POIs by id; `routes` the baked routes (the Run's gates). */
+export function frostSites(table, routes = []) {
   const P = (id) => table[id].pos;
   const mon = P('monastery'), camp0 = P('camp-frost');
   const toward = (a, b) => Math.atan2(b[0] - a[0], b[1] - a[1]);
+  const mf = table.monastery.facing ?? toward(mon, camp0);
   const sites = [
-    { id: 'monastery', at: mon, facing: toward(mon, camp0), build: monastery, footprint: 16, seatAt: 'top', box: 15 },
+    { id: 'monastery', at: mon, facing: mf, build: monastery, footprint: 16, seatAt: 'top', box: 15 },
     { id: 'camp-frost', at: camp0, facing: toward(camp0, P('warden-frost')), build: camp, footprint: 12 },
     { id: 'spring-frost', at: P('spring-frost'), facing: 0, build: spring, footprint: 7.5 },
     { id: 'varo-rise', at: P('varo-rise'), facing: toward(P('varo-rise'), P('warden-frost')), build: watchingStone, footprint: 1.5 },
+    { id: 'den-frost', at: P('den-frost'), facing: 0, build: den, footprint: 9 },
   ];
   for (let k = 1; k <= 5; k++) { const id = 'shrine-frost-' + k; sites.push({ id, at: P(id), facing: k * 1.3, build: shrine, footprint: 4.6 }); }
+  for (let k = 1; k <= 6; k++) { const id = 'echo-frost-' + k; if (table[id]) sites.push({ id, at: P(id), facing: k * 0.9, build: echoStone, footprint: 2.4 }); }
+  // The verb stones round the hall (monastery frame).
+  const fx = Math.sin(mf), fz = Math.cos(mf), rx = Math.cos(mf), rz = -Math.sin(mf);
+  GESTURE_STONES.forEach((g, i) => sites.push({ id: g.id, at: [mon[0] + rx * g.at[0] + fx * g.at[1], mon[1] + rz * g.at[0] + fz * g.at[1]], facing: toward([0, 0], [-(fx * g.at[1] + rx * g.at[0]), -(fz * g.at[1] + rz * g.at[0])]) , build: gestureStone(i), footprint: 1.6, seatAt: 'center' }));
+  for (const br of BRAZIERS) if (table[br.shrine]) sites.push({ id: br.id, at: [P(br.shrine)[0] + br.off[0], P(br.shrine)[1] + br.off[1]], facing: 0, build: brazier, footprint: 1, seatAt: 'center' });
+  // The Run's gates: arches across the chute (seated on its floor).
+  const run = routes.find((r) => r.id === 'shapers-run');
+  if (run) run.gates.forEach((gt, i) => sites.push({ id: 'run-gate-' + (i + 1), at: gt.pos, facing: Math.atan2(gt.dir[0], gt.dir[1]), build: gate, footprint: 3, seatAt: 'center' }));
   for (const p of PROPS) sites.push({ ...p, at: [0, 0], facing: 0, footprint: 0, prop: true });
   return sites;
 }

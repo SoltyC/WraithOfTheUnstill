@@ -52,6 +52,16 @@ export class WorldStreamer {
     this.worker.onmessage = (e) => this._onMessage(e.data);
   }
 
+  /** Keep the ground known around (x, z), sharing an anchor with any already within 70 m. */
+  addAnchor(x, z) {
+    for (let i = 0; i < this.anchors.length; i++) {
+      const a = this.anchors[i];
+      if (!Number.isNaN(a.x) && (a.x - x) * (a.x - x) + (a.z - z) * (a.z - z) < 70 * 70) return i;
+    }
+    this.setAnchor(this.anchors.length, x, z);
+    return this.anchors.length - 1;
+  }
+
   /** Keep the ground known around (x, z) as anchor i (refreshed as tiles arrive). */
   setAnchor(i, x, z) {
     while (this.anchors.length <= i) this.anchors.push({ x: NaN, z: NaN, version: -1 });

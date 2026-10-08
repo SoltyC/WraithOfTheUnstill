@@ -16,6 +16,8 @@ export async function createActors(g) {
   const controller = new ctl.CapsuleController(ground);
   const arm = new armMod.SpringArmCamera(camera, ground);
   const pois = worldPois.default.pois;
+  /** Baked routes (the Shapers' Run: centre line and gates). */
+  const routes = worldPois.default.routes || [];
   const monastery = pois.find((p) => p.id === 'monastery');
 
   // Deferred teleport: hold the player until a fine collision patch covers the target.
@@ -118,7 +120,7 @@ export async function createActors(g) {
   const footprints = createFootprints(terrainState, { get v() { return paramsMod.params.v.deformDepth; } });
 
   Object.assign(g, {
-    clock, ws, pois, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
+    clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
     frostMod, frost, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView,
     climb, knock, BRUSH_PLOUGH, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
