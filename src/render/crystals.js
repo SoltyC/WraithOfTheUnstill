@@ -63,7 +63,7 @@ export function createCrystals(scene, atmo, data) {
   mat.backFaceCulling = false;
   mesh.material = mat;
   return {
-    mesh, material: mat,
+    mesh, material: mat, data,
     makeShadowMaterial(name, light, origin) {
       const m = new ShaderMaterial(name, scene, { vertex: 'crystal', fragment: 'shadowDepth' }, {
         attributes: ['position'], uniforms: ['viewProjection', 'shadowLight', 'shadowOrigin', 'crystalParams'],

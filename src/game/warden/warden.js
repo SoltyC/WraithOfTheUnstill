@@ -32,7 +32,10 @@ export const JOINTS = 4;
 /** Neighbours per chunk for the renderer's smooth-mass shading (chunk indices; self = unused). */
 export const WARDEN_NBR = 16;
 export const JOINT = { LIQUID: 0, FROZEN: 1, SHATTERED: 2 };
-export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4, RESTED: 5, TAIL: 6, SHED: 7 };
+export const W = { DORMANT: 0, AWAKE: 1, STOMP: 2, KNEEL: 3, RELEASE: 4, RESTED: 5, TAIL: 6, SHED: 7, CHARGE: 8, BARRAGE: 9, ROAR: 10 };
+/** The fight's numbers (user design 2026-10-09): health, what a seam and a chip take off it, how
+ *  long the barrage gathers and fires, how far it strays from the arena's centre. */
+export const WARDEN_FIGHT = { hp: 100, seamDamage: 20, chargeTime: 3.5, barrageTime: 2, roarTime: 2.2, leash: 5 };
 /** The release, in seconds from the last joint breaking. */
 function noop() {}
 export const RELEASE_T = { rear: 1.6, slam: 2.7, impact: 3.05, rested: 15 };
@@ -92,6 +95,31 @@ export function createWarden(ctx) {
     /** Sound (audio/sfx.js), set by the owner; null = silent. */
     sfx: null,
     get rage() { return JOINTS - this.remaining; },
+    /** Health (0..WARDEN_FIGHT.hp): seams and chips take it; standing crystals heal it. 0 releases it. */
+    hp: WARDEN_FIGHT.hp,
+    /** Warded while any crystal stands on its pillars: its seams are sealed. */
+    ward: false,
+    /** Home (the arena's centre): it never strays more than WARDEN_FIGHT.leash from it. */
+    homeX: 0.5, homeZ: 0.5,
+    /** Chip damage the next bodyHit() takes (set by combat per verb). */
+    chip: 0.5 - 0.5,
+    /** Take damage (a seam, chips); at 0 it is released. */
+    damage(amount) {
+      if (!this.active || this.state === W.RELEASE || this.state === W.RESTED) return;
+      this.hp = Math.max(0, this.hp - amount);
+      if (this.hp <= 0) { joint.fill(JOINT.SHATTERED); this.state = W.RELEASE; this.t = 0; }
+    },
+    /** Rear and bellow (the ward breaking, calling up the Shaped); the owner times what follows. */
+    roar() {
+      if (!this.active || this.state === W.RELEASE || this.state === W.RESTED) return;
+      this.state = W.ROAR; this.t = 0;
+      if (this.sfx) { this.sfx.x = body.sx[0]; this.sfx.y = body.sy[0]; this.sfx.z = body.sz[0]; this.sfx.gain = 2; this.sfx.play(SFX.RUMBLE); this.sfx.play(SFX.BOOM); }
+    },
+    /** Begin gathering the barrage (only from its ordinary stance; false if busy). */
+    charge() {
+      if (this.state !== W.AWAKE || this.climbed && this.shaking) return false;
+      this.state = W.CHARGE; this.t = 0; return true;
+    },
     /** A spell struck its body at (hx, hy, hz) along (hdx, hdz): material chips off, it flinches,
      *  it turns on the Wraith. */
     hx: 0.5, hy: 0.5, hz: 0.5, hdx: 0.5, hdz: 0.5,
@@ -109,6 +137,7 @@ export function createWarden(ctx) {
       ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
       ts.stamp();
       this.flinch = 1;
+      if (this.chip > 0) { this.damage(this.chip); this.chip = 0; }
       if (this.state === W.DORMANT) { this.state = W.AWAKE; this.t = 0; }
       this.cool = Math.min(this.cool, 1.2);
     },
@@ -174,6 +203,7 @@ export function createWarden(ctx) {
       this.active = true; this.state = W.DORMANT; this.t = 0; this.settle = 0; this.restore = 0;
       this.cover = 0; this.shockR = -1; this.slam = false; this.gust = 0; this.drifts = false;
       this.hurt = 0; this.ringR = -1; this.cool = 3; this.flinch = 0;
+      this.hp = WARDEN_FIGHT.hp; this.ward = false; this.homeX = x; this.homeZ = z; this.chip = 0;
       this.nbrReady = false;
       this.climbed = false; this.shaking = false; this.shakeCool = 4; this.shakeT = 0;
       joint.fill(JOINT.LIQUID); jointT.fill(0); openK.fill(0);
@@ -185,11 +215,11 @@ export function createWarden(ctx) {
      * knees are broken (the Warden sags onto its forelegs, lowering it to reach); the hip seam once
      * the shoulder is. Climbing reaches any joint at any time.
      */
-    exposed(k) { return k < 2 || (k === 2 ? joint[0] === JOINT.SHATTERED && joint[1] === JOINT.SHATTERED : joint[2] === JOINT.SHATTERED); },
+    exposed(k) { return !this.ward && (k < 2 || (k === 2 ? joint[0] === JOINT.SHATTERED && joint[1] === JOINT.SHATTERED : joint[2] === JOINT.SHATTERED)); },
     /** Name of joint k for the interface. */
     jointName(k) { return k === 0 ? 'left knee' : k === 1 ? 'right knee' : k === 2 ? 'shoulder seam' : 'hip seam'; },
     /** Freeze joint k (Crystallize, a soaked Ribbon). */
-    freezeJoint(k) { if (joint[k] === JOINT.LIQUID) { joint[k] = JOINT.FROZEN; jointT[k] = 0; } },
+    freezeJoint(k) { if (joint[k] === JOINT.LIQUID && !this.ward) { joint[k] = JOINT.FROZEN; jointT[k] = 0; } },
     /** Strike joint k: a frozen joint shatters; returns true if it broke. */
     strikeJoint(k) {
       if (joint[k] !== JOINT.FROZEN) return false;
@@ -198,8 +228,8 @@ export function createWarden(ctx) {
         fx.ex = jx[k]; fx.ey = jy[k]; fx.ez = jz[k];
         fx.evx = (rnd() - 0.5) * 9; fx.evy = 1 + rnd() * 7; fx.evz = (rnd() - 0.5) * 9; fx.esize = 0.12 + 0.3 * rnd(); fx.emit();
       }
-      if (this.remaining === 0) { this.state = W.RELEASE; this.t = 0; }
-      else { this.state = W.KNEEL; this.t = 0; }
+      this.state = W.KNEEL; this.t = 0;
+      this.damage(WARDEN_FIGHT.seamDamage);
       return true;
     },
     /**
@@ -250,6 +280,7 @@ export function createWarden(ctx) {
         body.heading += 0.035 * Math.sin(this.shakeT * 5.5) * dt * 8;
         body.wantVx = 0; body.wantVz = 0;
       } else {
+        if (this.state !== W.CHARGE && this.state !== W.BARRAGE && this.state !== W.ROAR && this.state !== W.RELEASE && body.rear > 0) body.rear = Math.max(0, body.rear - dt * 0.6);
         think(this, dt);
         // Climbed: it plants its feet and heaves; it does not chase what is on its own back.
         if (this.climbed && (this.state === W.AWAKE || this.state === W.STOMP)) { body.wantVx = 0; body.wantVz = 0; }
@@ -351,6 +382,13 @@ export function createWarden(ctx) {
         const fury = 1 + 0.25 * W0.rage;
         const sp = (Math.abs(want) > 0.5 ? 0.6 : dist > 18 ? WARDEN_SHAPE.maxSpeed : 0) * fury;
         body.wantVx = dx / dist * sp; body.wantVz = dz / dist * sp;
+        // Held to its arena: it does not stray past the leash (it turns, but holds its ground).
+        const hx = body.x - W0.homeX, hz = body.z - W0.homeZ, hd = Math.hypot(hx, hz);
+        if (hd > WARDEN_FIGHT.leash && body.wantVx * hx + body.wantVz * hz > 0) {
+          const out = (body.wantVx * hx + body.wantVz * hz) / hd;
+          body.wantVx -= hx / hd * out; body.wantVz -= hz / hd * out;
+          if (hd > WARDEN_FIGHT.leash + 3) { body.wantVx -= hx / hd * 0.8; body.wantVz -= hz / hd * 0.8; }
+        }
         body.crouch += (0.1 * (JOINTS - W0.remaining) - body.crouch) * Math.min(1, dt);   // it sags as it breaks
         W0.cool -= dt * fury;
         if (W0.cool > 0 || W0.climbed) break;
@@ -434,6 +472,45 @@ export function createWarden(ctx) {
         body.wantVx = 0; body.wantVz = 0; W0.glow += (0 - W0.glow) * Math.min(1, dt * 2);
         body.crouch += (((W0.t < 5.5 ? 0.85 : 0.1 * (JOINTS - W0.remaining))) - body.crouch) * Math.min(1, dt * (W0.t < 5.5 ? 2.5 : 0.8));
         if (W0.t >= 8) { W0.state = W.AWAKE; W0.t = 0; W0.cool = 4.5; }
+        break;
+      case W.CHARGE: {
+        // The barrage gathers: it stops dead and lifts its head, the spires along its back burn
+        // brighter and brighter, frost breath streams off them, the snow around it shivers.
+        body.wantVx = 0; body.wantVz = 0;
+        const k = Math.min(1, W0.t / WARDEN_FIGHT.chargeTime);
+        W0.glow = 0.3 + 0.7 * k * k;
+        body.rear += (0.22 * k - body.rear) * Math.min(1, dt * 3);
+        body.crouch += (0.1 * (JOINTS - W0.remaining) - body.crouch) * Math.min(1, dt * 2);
+        W0.shake += 0.004 * k;
+        const n = 2 + Math.floor(6 * k);
+        for (let q = 0; q < n; q++) {
+          const i = 1 + Math.floor(rnd() * 4);
+          fx.ex = body.sx[i] + (rnd() - 0.5) * 4; fx.ey = body.sy[i] + WARDEN_SHAPE.hip * (0.6 + 0.4 * rnd()); fx.ez = body.sz[i] + (rnd() - 0.5) * 4;
+          fx.evx = (rnd() - 0.5) * 1.5; fx.evy = 1.5 + 2.5 * rnd() * k; fx.evz = (rnd() - 0.5) * 1.5; fx.esize = 0.06 + 0.1 * rnd(); fx.emit();
+        }
+        // A ring of powder creeping out over the snow (the warning to find cover).
+        const rr = 6 + 30 * k;
+        for (let q = 0; q < 6; q++) {
+          const a = rnd() * Math.PI * 2, x = body.x + Math.cos(a) * rr, z = body.z + Math.sin(a) * rr;
+          ground.qx = x; ground.qz = z; ground.sample();
+          fx.ex = x; fx.ey = ground.h + 0.05; fx.ez = z; fx.evx = Math.cos(a) * 2; fx.evy = 0.3 + 0.5 * rnd(); fx.evz = Math.sin(a) * 2; fx.esize = 0.12 + 0.12 * rnd(); fx.emit();
+        }
+        if (W0.t >= WARDEN_FIGHT.chargeTime) { W0.state = W.BARRAGE; W0.t = 0; }
+        break;
+      }
+      case W.BARRAGE:
+        // It throws its head back and sheds its spires as spikes (the owner fires them).
+        body.wantVx = 0; body.wantVz = 0; W0.glow = 1;
+        body.rear += (0.35 - body.rear) * Math.min(1, dt * 6);
+        W0.shake += 0.006;
+        if (W0.t >= WARDEN_FIGHT.barrageTime) { W0.state = W.AWAKE; W0.t = 0; W0.cool = 2.5; W0.glow = 0; }
+        break;
+      case W.ROAR:
+        body.wantVx = 0; body.wantVz = 0;
+        W0.glow = Math.max(W0.glow, 0.8 * Math.sin(Math.PI * Math.min(1, W0.t / WARDEN_FIGHT.roarTime)));
+        body.rear += ((W0.t < WARDEN_FIGHT.roarTime * 0.7 ? 0.6 : 0) - body.rear) * Math.min(1, dt * 3);
+        W0.shake += W0.t < 1.4 ? 0.012 : 0;
+        if (W0.t >= WARDEN_FIGHT.roarTime) { W0.state = W.AWAKE; W0.t = 0; W0.cool = 2; W0.glow = 0; body.rear = 0; }
         break;
       case W.RELEASE: release(W0, dt); break;
     }

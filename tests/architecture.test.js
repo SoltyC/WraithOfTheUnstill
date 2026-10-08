@@ -13,7 +13,7 @@ describe('Shaper architecture', () => {
   it('builds every frost site into one indexed mesh with outward normals', () => {
     const ids = sites.filter((s) => !s.prop).map((s) => s.id);
     // monastery, camp, spring, watching stone, den; 5 shrines; 6 Echo stones; 3 verb stones; 3 braziers; 9 gates.
-    expect(ids.length).toBe(5 + 5 + 6 + 3 + 3 + 9);
+    expect(ids.length).toBe(5 + 5 + 6 + 3 + 3 + 9 + 6 + 16);   // … + the arena's pillars and cover walls
     expect(new Set(ids).size).toBe(ids.length);
     for (let k = 1; k <= 9; k++) expect(ids).toContain('run-gate-' + k);
     expect(sites.length).toBeLessThanOrEqual(64); // ARCH_SITES

@@ -83,8 +83,37 @@ export async function createActors(g) {
   bindShadows(wardenView.material, shadows);
   shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 3);
   wardenView.freeze();
+  // The fight's pillars (filled from the arena's sites by systems/wardenFight.js), their crystals
+  // (the Crystallize renderer, its own records) and the spike barrage (the Shaped's shard shader).
+  const { ARENA } = await import('../world/architecture.js');
+  const pillars = { n: ARENA.pillars, x: new Float64Array(8), z: new Float64Array(8), y0: new Float64Array(8).fill(-1e4), up: new Float64Array(8), H: ARENA.pillarH, r: ARENA.pillarShaft };
+  const pillarCrystals = createCrystals(scene, atmosphere, new Float32Array(ARENA.pillars * 8 * 12));
+  bindShadows(pillarCrystals.material, shadows);
+  shadows.addCaster(pillarCrystals.mesh, pillarCrystals.makeShadowMaterial, 2);
+  pillarCrystals.freeze();
+  // Line of sight against the built solids (set by the architecture system once they exist).
+  // With `body` set (an aimed spike looking for the Wraith), the Warden's own bulk counts too:
+  // under its belly the spikes off its back cannot reach.
+  const blocker = { ax: 0.5, ay: 0.5, az: 0.5, bx: 0.5, by: 0.5, bz: 0.5, t: 0.5, solids: null, body: false,
+    segBlocked() {
+      const so = this.solids;
+      if (so !== null) { so.ax = this.ax; so.ay = this.ay; so.az = this.az; so.bx = this.bx; so.by = this.by; so.bz = this.bz; if (so.segBlocked()) { this.t = so.t; return true; } }
+      if (this.body && warden.active) {
+        for (let k = 3; k <= 9; k++) {
+          const t = k / 10; warden.qx = this.ax + (this.bx - this.ax) * t; warden.qy = this.ay + (this.by - this.ay) * t; warden.qz = this.az + (this.bz - this.az) * t;
+          if (warden.probe()) { this.t = t; return true; }
+        }
+      }
+      this.t = 2; return false;
+    } };
+  const { createSpikes } = await import('../game/warden/spikes.js');
+  const spikes = createSpikes({ ground, ts: terrainState, fx: wraithView, blocker });
+  const spikesView = createShapedView(scene, atmosphere, spikes.chunks, { name: 'spikes' });
+  bindShadows(spikesView.material, shadows);
+  shadows.addCaster(spikesView.mesh, spikesView.makeShadowMaterial, 2);
+  spikesView.freeze();
   const { createClimb } = await import('../game/warden/climb.js');
-  const climb = createClimb({ warden, ground });
+  const climb = createClimb({ warden, ground, pillars });
   arm.occluder = warden;
   // Knockdown: the release's shockwave throws the Wraith onto its back (character/knockdown.js).
   const { createKnockdown } = await import('../character/knockdown.js');
@@ -122,7 +151,7 @@ export async function createActors(g) {
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
     frostMod, frost, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView,
-    climb, knock, BRUSH_PLOUGH, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
+    climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },
   });

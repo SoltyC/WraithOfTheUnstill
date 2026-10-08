@@ -114,5 +114,18 @@
 .warden-pips i.broken { background: transparent; opacity: 0.35; border-style: dashed; }
 .warden-pips i.sealed { opacity: 0.45; }
 .warden-pips i.next { animation: seamPulse 1.1s ease-in-out infinite; }
+/* The Warden fight: its health (a thin engraved bar), the six crystals while they stand, one line. */
+.warden-fight { position: fixed; top: 132px; left: 50%; transform: translateX(-50%); z-index: 8; display: flex; flex-direction: column; align-items: center; gap: 7px; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; }
+.warden-fight.on { opacity: 1; }
+.warden-fight .bar { width: 340px; height: 5px; border: 1px solid rgba(207, 228, 255, 0.55); background: rgba(10, 18, 30, 0.45); box-shadow: 0 0 10px rgba(0, 0, 0, 0.45); }
+.warden-fight .bar b { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #8fc6ef, #e3f4ff); transition: width 0.35s ease; }
+.warden-fight .bar.warded b { background: linear-gradient(90deg, #6fb4ea, #b8e6ff); box-shadow: 0 0 8px rgba(150, 215, 255, 0.8); }
+.warden-fight .gems { display: none; }
+.warden-fight .gems.on { display: flex; }
+.warden-fight .gems i { display: inline-block; width: 9px; height: 15px; margin: 0 6px; clip-path: polygon(50% 0, 100% 35%, 50% 100%, 0 35%); background: #cfeeff; box-shadow: 0 0 8px #9fd8ff; transition: opacity 0.4s, background 0.4s; }
+.warden-fight .gems i.cracked { background: #8fbcd8; }
+.warden-fight .gems i.broken { opacity: 0.18; }
+.warden-fight .line { font-family: var(--text, serif); font-size: 15px; letter-spacing: 0.04em; color: #dbe7f3; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85); min-height: 18px; }
+.warden-fight .line.alarm { color: #fff; font-size: 17px; letter-spacing: 0.12em; text-transform: uppercase; animation: seamPulse 0.6s ease-in-out infinite; }
 @keyframes seamPulse { 50% { box-shadow: 0 0 12px 4px rgba(150, 215, 255, 0.85); } }
 .warden-pips .hint { font-family: var(--text, serif); font-size: 15px; letter-spacing: 0.04em; color: #dbe7f3; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85); }

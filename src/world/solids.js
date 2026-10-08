@@ -68,6 +68,52 @@ export function createSolids(sites, built) {
       }
       return false;
     },
+    /**
+     * Line of sight (fields in: segment from a to b; out: the first blocking point's fraction t):
+     * true when a solid stands across the segment at the height the line passes it — the Warden's
+     * spikes against cover. Every seated site within `segR` of the segment's middle is tested.
+     */
+    ax: 0.5, ay: 0.5, az: 0.5, bx: 0.5, by: 0.5, bz: 0.5, t: 0.5,
+    segBlocked() {
+      const ax = this.ax, ay = this.ay, az = this.az, dx = this.bx - ax, dy = this.by - ay, dz = this.bz - az;
+      const mx = ax + dx * 0.5, mz = az + dz * 0.5, half = Math.hypot(dx, dz) * 0.5;
+      let best = 2;
+      for (let i = 0; i < blockers.length; i++) {
+        const b = blockers[i], s = S[b.site];
+        if (Number.isNaN(s.seat)) continue;
+        const sx = s.x - mx, sz = s.z - mz;
+        if (sx * sx + sz * sz > (s.rad + half) * (s.rad + half)) continue;
+        // 2D entry/exit of the segment through the shape, then the height there.
+        let t0 = 0, t1 = 1;
+        const px = ax - b.x, pz = az - b.z;
+        if (b.kind === 'circle') {
+          const A = dx * dx + dz * dz, B = px * dx + pz * dz, C = px * px + pz * pz - b.r * b.r;
+          if (A < 1e-9) { if (C > 0) continue; } else {
+            const disc = B * B - A * C; if (disc < 0) continue;
+            const q = Math.sqrt(disc); t0 = Math.max(0, (-B - q) / A); t1 = Math.min(1, (-B + q) / A);
+          }
+        } else {
+          // Slab test in the box frame (right = (cos, −sin), forward = (sin, cos)).
+          const lx = px * b.cos - pz * b.sin, lz = px * b.sin + pz * b.cos;
+          const ux = dx * b.cos - dz * b.sin, uz = dx * b.sin + dz * b.cos;
+          let ok = true;
+          for (let k = 0; k < 2 && ok; k++) {
+            const o = k ? lz : lx, u = k ? uz : ux, h = k ? b.hz : b.hx;
+            if (Math.abs(u) < 1e-9) { if (o < -h || o > h) ok = false; continue; }
+            let e0 = (-h - o) / u, e1 = (h - o) / u; if (e0 > e1) { const tt = e0; e0 = e1; e1 = tt; }
+            if (e0 > t0) t0 = e0; if (e1 < t1) t1 = e1; if (t0 > t1) ok = false;
+          }
+          if (!ok) continue;
+        }
+        if (t0 > t1) continue;
+        // The line's lowest height over [t0, t1] against the solid's top (and above its base).
+        const y0 = ay + dy * t0, y1 = ay + dy * t1, lo = Math.min(y0, y1), hi = Math.max(y0, y1);
+        if (lo > s.seat + b.y1 || hi < s.seat + b.y0) continue;
+        if (t0 < best) best = t0;
+      }
+      this.t = best;
+      return best <= 1;
+    },
     /** Push position p (x, y, z) out of every solid it overlaps at its height; v loses its into-wall part. */
     push(p, v) {
       for (let i = 0; i < blockers.length; i++) {

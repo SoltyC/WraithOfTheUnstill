@@ -92,6 +92,7 @@ async function boot() {
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);
+  (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/audio.js')).addAudioSystem(g);
   if (!capture && !qs.get('bench')) (await import('./systems/titleCam.js')).addTitleCamSystem(g);
 
@@ -153,7 +154,7 @@ async function boot() {
 
   window.__wraith = Object.assign(window.__wraith, {
     ready: true, game, titleCam: g.titleCam, shadows: g.shadows, terrainState: g.terrainState, wraithView: g.wraithView, frost: g.frost, shaped: g.shaped,
-    combat: g.combat, warden: g.warden, climb: g.climb, env: env.env,
+    combat: g.combat, warden: g.warden, climb: g.climb, env: env.env, g,
     /** Automation: drive an action (Action name, down) as if from the keyboard/mouse. */
     inject(name, down) { inputMod.injectAction(inputMod.Action[name], down); }, gpuStats, gpuTimer, frameStats: loopMod.frameStats, params: paramsMod.params, clock,
     /** Capture hook: apply a spot, render settle frames, then resolve. */

@@ -72,7 +72,7 @@ export function addBendingSystem(g) {
     }
     const dt = clock.dt;
     // No casting mid-conversation (the mouse is still captured while someone speaks).
-    const can = !arm.free && !controller.scripted && !controller.surf.active && !(g.chapter && g.chapter.talking);
+    const can = !arm.free && !controller.scripted && !controller.surf.active && !(g.chapter && g.chapter.talking) && !g.verbBlock;
     const able = can && combat.dying === 0;
     if (able) {
       if (input.down[Action.Primary]) primaryHeld += dt;

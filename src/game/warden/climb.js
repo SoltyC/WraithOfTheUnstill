@@ -26,7 +26,8 @@ export const climbTuning = {
   footClear: 0.85,       // m: feet below the pelvis; climbing down past the ground steps off
 };
 
-const LEG = 1, BODY = 2;
+const LEG = 1, BODY = 2, PILLAR = 3;
+export const CLIMB_MODE = { LEG, BODY, PILLAR };
 const HANG = 0, REACH = 1, PULL = 2;
 
 /**
@@ -36,6 +37,9 @@ export function createClimb(ctx) {
   const { warden } = ctx;
   /** Ground query (optional): climbing down to the ground steps off rather than sinking in. */
   const ground = ctx.ground || null;
+  /** The arena's crystal pillars (optional): { n, x, z, y0 (base, sinks with it), up (0..1 risen),
+   *  H, r } — static columns climbed the same hold-to-hold way; the top is a floor to mantle onto. */
+  const pillars = ctx.pillars || null;
   /** evalSurface: true → the crust's real bumps (hands), false → the smooth tube (the body). */
   let bumps = false;
   const T = climbTuning, SH = WARDEN_SHAPE;
@@ -45,8 +49,10 @@ export function createClimb(ctx) {
   // (p1, p2) each; and their world positions out.
   const hold = new Float64Array(8), holdW = new Float64Array(12), reachFrom = new Float64Array(3);
   const self = {
-    /** 0 none, LEG, BODY. */
-    mode: 0, leg: 0, u: 0.5, a: 0.5, s: 0.5, th: 0.5,
+    /** 0 none, LEG, BODY, PILLAR. */
+    mode: 0, leg: 0, pillar: 0,
+    /** Mantled onto a pillar's top this frame (fell = 4): where to stand. */
+    topX: 0.5, topY: 0.5, topZ: 0.5, u: 0.5, a: 0.5, s: 0.5, th: 0.5,
     /** Outputs: pelvis, surface frame (right, up-the-climb, into-surface), surface velocity. */
     x: 0.5, y: 0.5, z: 0.5, rx: 0.5, ry: 0.5, rz: 0.5, ux: 0.5, uy: 0.5, uz: 0.5, fx: 0.5, fy: 0.5, fz: 0.5,
     vx: 0.5, vy: 0.5, vz: 0.5, phase: 0.5, blend: 0.5 - 0.5,
@@ -58,7 +64,7 @@ export function createClimb(ctx) {
     grabbed: false, gx: 0.5, gy: 0.5, gz: 0.5,
     /** Back joint within reach (2, 3) or −1. */
     nearJoint: -1,
-    /** Events this frame: 1 thrown off, 2 let go, 3 slipped (no focus). */
+    /** Events this frame: 1 thrown off, 2 let go, 3 slipped (no focus), 4 mantled onto a pillar's top. */
     fell: 0,
     /** Inputs (fields): grip held, move (mx right, mz up), camera right (crx, crz), feet pos, dt,
      *  focus available (the owner spends it through spend()). */
@@ -76,7 +82,9 @@ export function createClimb(ctx) {
     update() {
       const dt = this.dt;
       this.fell = 0; this.grabbed = false;
-      if (!warden.active || warden.state === 4 || warden.state === 5) { if (this.mode) letGo(this, 2); this.blend = Math.max(0, this.blend - dt * T.ease); return; }
+      const onWarden = this.mode === LEG || this.mode === BODY;
+      if (onWarden && (!warden.active || warden.state === 4 || warden.state === 5)) { letGo(this, 2); this.blend = Math.max(0, this.blend - dt * T.ease); return; }
+      if (this.mode === PILLAR && pillars.up[this.pillar] < 1) { letGo(this, 2); return; }
       if (this.mode === 0) {
         this.blend = Math.max(0, this.blend - dt * T.ease);
         if (this.grip) tryMount(this);
@@ -85,13 +93,14 @@ export function createClimb(ctx) {
       if (!this.grip) { letGo(this, 2); return; }
       // Grip costs focus; the Warden's bucking costs a great deal more. Out of focus: slip.
       const wants = Math.abs(this.mx) + Math.abs(this.mz) > 0.1;
-      const cost = (this.cycle !== HANG ? T.drainMove : T.drainIdle) + (warden.shaking ? T.drainShake : 0);
-      if (!this.spend(cost * dt)) { letGo(this, warden.shaking ? 1 : 3); return; }
+      const shaking = this.mode !== PILLAR && warden.shaking;
+      const cost = (this.cycle !== HANG ? T.drainMove : T.drainIdle) + (shaking ? T.drainShake : 0);
+      if (!this.spend(cost * dt)) { letGo(this, shaking ? 1 : 3); return; }
       const ox = this.x, oy = this.y, oz = this.z;
       this.cycleT += dt;
       if (this.cycle === HANG) {
         // Holding on: a new move starts after the beat, unless the Warden is heaving.
-        if (wants && !warden.shaking && this.cycleT >= T.beat) startMove(this);
+        if (wants && !shaking && this.cycleT >= T.beat) startMove(this);
       } else if (this.cycle === REACH) {
         if (this.cycleT >= T.reachTime) {
           // The lead hand bites into its hold; the body pulls up under it.
@@ -132,7 +141,7 @@ export function createClimb(ctx) {
       this.vx = (this.x - ox) * idt; this.vy = (this.y - oy) * idt; this.vz = (this.z - oz) * idt;
       // A back joint in reach?
       this.nearJoint = -1;
-      for (let k = 2; k < 4; k++) {
+      if (this.mode !== PILLAR) for (let k = 2; k < 4; k++) {
         if (warden.joint[k] === 2) continue;
         if (Math.hypot(warden.jx[k] - this.x, warden.jy[k] - this.y, warden.jz[k] - this.z) < T.jointReach) this.nearJoint = k;
       }
@@ -209,11 +218,13 @@ export function createClimb(ctx) {
       holdW[o + 1] = reachFrom[1] + (holdW[o + 1] - reachFrom[1]) * e + ny * lift;
       holdW[o + 2] = reachFrom[2] + (holdW[o + 2] - reachFrom[2]) * e + nz * lift;
     }
-    c.feetFree = warden.shaking;
+    c.feetFree = c.mode !== PILLAR && warden.shaking;
   }
 
   /** Grab the nearest leg within reach of the Wraith's chest. */
   function tryMount(c) {
+    if (pillars !== null && tryMountPillar(c)) return;
+    if (!warden.active || warden.state === 4 || warden.state === 5) return;
     const b = warden.body, cx = c.px, cy = c.py + 1.1, cz = c.pz;
     let best = -1, bestD = 1e9, bestU = 0, bestA = 0;
     for (let l = 0; l < SH.legs.length; l++) {
@@ -237,6 +248,23 @@ export function createClimb(ctx) {
     c.grabbed = true; c.gx = holdW[0]; c.gy = holdW[1]; c.gz = holdW[2];
   }
 
+  /** Grab a risen pillar within reach (its shaft below the capital). */
+  function tryMountPillar(c) {
+    const cx = c.px, cy = c.py + 1.1, cz = c.pz;
+    for (let k = 0; k < pillars.n; k++) {
+      if (pillars.up[k] < 1) continue;
+      const dx = cx - pillars.x[k], dz = cz - pillars.z[k], d = Math.hypot(dx, dz) - pillars.r;
+      const h = cy - pillars.y0[k];
+      if (d > T.reach || h < 0 || h > pillars.H - 0.6) continue;
+      c.mode = PILLAR; c.pillar = k; c.th = Math.atan2(dz, dx); c.s = Math.max(1, c.py + 0.85 - pillars.y0[k]); c.phase = 0;
+      if (ground !== null) for (let q = 0; q < 20; q++) { surface(c); if (!feetBelowGround(c)) break; c.s += 0.1; }
+      regrip(c);
+      c.grabbed = true; c.gx = holdW[0]; c.gy = holdW[1]; c.gz = holdW[2];
+      return true;
+    }
+    return false;
+  }
+
   function feetBelowGround(c) {
     const fx = c.x - c.ux * T.footClear, fy = c.y - c.uy * T.footClear, fz = c.z - c.uz * T.footClear;
     ground.qx = fx; ground.qz = fz; ground.sample();
@@ -248,8 +276,8 @@ export function createClimb(ctx) {
     // Thrown: flung outward and up; let go/slipped: drop away from the surface.
     const sp = why === 1 ? T.throwSpeed : T.dropSpeed;
     c.vx = -c.fx * sp + c.vx * 0.5; c.vy = (why === 1 ? 4 : 0.5) + c.vy * 0.5; c.vz = -c.fz * sp + c.vz * 0.5;
+    if (c.mode !== PILLAR) warden.climbed = false;
     c.mode = 0; c.fell = why; c.nearJoint = -1; c._cx = 0; c._cy = 0; c._cz = 0;
-    warden.climbed = false;
   }
 
   // Continuous through the knee (a step there would trap the climber: every move would project
@@ -266,6 +294,14 @@ export function createClimb(ctx) {
   /** Point and normal only → P, N. */
   function evalSurface(c) {
     const b = warden.body;
+    if (c.mode === PILLAR) {
+      // A vertical column: the carved bands stand a little proud (holds) of the smooth shaft.
+      const k = c.pillar, ct = Math.cos(c.th), st = Math.sin(c.th);
+      const R = pillars.r + (bumps ? 0.06 : 0.12);
+      P[0] = pillars.x[k] + ct * R; P[1] = pillars.y0[k] + c.s; P[2] = pillars.z[k] + st * R;
+      N[0] = ct; N[1] = 0; N[2] = st;
+      return;
+    }
     if (c.mode === LEG) {
       const l = c.leg, u = c.u;
       // Axis point along foot → knee → hip.
@@ -360,6 +396,18 @@ export function createClimb(ctx) {
 
   /** Leg → flank at the hip; flank → leg at its attachment; the ends of the climbable surface. */
   function transitions(c) {
+    if (c.mode === PILLAR) {
+      // At the capital: mantle onto the top (the owner stands the Wraith there).
+      if (c.s >= pillars.H - 1.05) {
+        const k = c.pillar, ct = Math.cos(c.th), st = Math.sin(c.th);
+        c.topX = pillars.x[k] + ct * 1.2; c.topY = pillars.y0[k] + pillars.H; c.topZ = pillars.z[k] + st * 1.2;
+        c.vx = 0; c.vy = 0; c.vz = 0;
+        c.mode = 0; c.fell = 4; c.nearJoint = -1; c._cx = 0; c._cy = 0; c._cz = 0;
+        return;
+      }
+      if (c.s < 0.6) c.s = 0.6;
+      return;
+    }
     const legs = SH.legs;
     if (c.mode === LEG) {
       if (c.u >= 1) {

@@ -15,6 +15,7 @@ export const combatTuning = {
   hitStopHit: 0.055, hitStopLight: 0.02, hitStopShatter: 0.12, hitStopHurt: 0.06,
   kickHit: 0.02, kickShatter: 0.06,      // camera punch (rad of FOV)
   lockRange: 20,
+  wardenSweepChip: 2.5, wardenRibbonChip: 0.6,   // the Warden's health per Sweep through it / per Ribbon tick (5 a second)
   deathTime: 2.4, reformTime: 1.6,
 };
 
@@ -149,7 +150,7 @@ export function createCombat(ctx) {
         if (along < 2 && along > -2.5 && across < frost.sweepHW[q] + 2) {
           wardenBodySeen[q] = frost.sweepId[q];
           warden.hx = b.kx[l]; warden.hy = b.ky[l]; warden.hz = b.kz[l]; warden.hdx = -frost.sweepDX[q]; warden.hdz = -frost.sweepDZ[q];
-          warden.bodyHit(); self.shake += 0.006; self.kick += T.kickHit * 0.6;
+          warden.chip = T.wardenSweepChip; warden.bodyHit(); self.shake += 0.006; self.kick += T.kickHit * 0.6;
           if (self.sfx) { const sx = self.sfx; sx.x = b.kx[l]; sx.y = b.ky[l]; sx.z = b.kz[l]; sx.gain = 1.3; sx.play(SFX.THUD); sx.play(SFX.CRUNCH); }
           clock.hitStop = Math.max(clock.hitStop, T.hitStopHit * 0.7);
           break;
@@ -164,7 +165,7 @@ export function createCombat(ctx) {
         if (warden.probe()) {
           const ux = n[k] - controller.pos.x, uz = n[k + 2] - controller.pos.z, ul = Math.hypot(ux, uz) || 1;
           warden.hx = n[k]; warden.hy = n[k + 1]; warden.hz = n[k + 2]; warden.hdx = -ux / ul; warden.hdz = -uz / ul;
-          warden.bodyHit(); bodyTick = 0.2; self.kick += T.kickHit * 0.25;
+          warden.chip = T.wardenRibbonChip; warden.bodyHit(); bodyTick = 0.2; self.kick += T.kickHit * 0.25;
           break;
         }
       }
@@ -208,6 +209,16 @@ export function createCombat(ctx) {
     self.shake += 0.015;
     if (self.health <= 0) { self.health = 0; self.dying = 1e-4; self.lock = -1; }
   }
+
+  /** Damage that no bend-step slips (the Warden's spikes): a blow, and death at nothing left. */
+  self.hurtRaw = (amount) => {
+    if (self.dying > 0 || amount <= 0) return;
+    self.health -= amount;
+    if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
+    clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
+    self.shake += 0.02;
+    if (self.health <= 0) { self.health = 0; self.dying = 1e-4; self.lock = -1; }
+  };
 
   /** Soft lock-on: toggle to the nearest live Shaped in front; drops when it dies or strays. */
   function lockOn() {

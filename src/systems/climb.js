@@ -115,6 +115,12 @@ export function addClimbSystem(g) {
         if (inp.pressed[A.Primary] && warden.strikeJoint(climb.nearJoint)) combat.breakJoint();
         if (inp.pressed[A.Heavy] && combat.spend(combatTuning.costCrystal)) { warden.freezeJoint(climb.nearJoint); arm.shake += 0.01; }
       }
+    } else if (was && climb.fell === 4) {
+      // Over the capital: the Wraith stands on the pillar's top.
+      controller.hold = false; controller.grounded = true;
+      controller.pos.x = climb.topX; controller.pos.y = climb.topY; controller.pos.z = climb.topZ;
+      controller.vel.x = 0; controller.vel.y = 0; controller.vel.z = 0;
+      sfx.x = climb.topX; sfx.y = climb.topY; sfx.z = climb.topZ; sfx.gain = 0.7; sfx.play(SFX.STEP);
     } else if (was) {
       // Off the Warden: real momentum from here (thrown, dropped or slipped).
       controller.hold = false; controller.grounded = false;

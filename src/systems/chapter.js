@@ -120,7 +120,7 @@ export function addChapterSystem(g) {
     // The first time it wakes: one quiet line on how to break it (then never again).
     if (wst === wardenMod.W.AWAKE && lastWarden === wardenMod.W.DORMANT && !chapter.graph.flags.has('hint:warden') && !capture) {
       chapter.graph.flags.add('hint:warden');
-      hud.notice('The Held Snow', 'Its knees are water, held still', 'F: Crystallize beside a knee · then click: Sweep through the ice · when both knees break it sags, and its shoulder and hip seams open to reach', 12);
+      hud.notice('The Held Snow', 'It wakes', 'Break the crystals on the pillars first. When it stills and gathers itself, get behind stone.', 10);
     }
     lastWarden = wst;
     const fighting = wst >= 1 && wst !== wardenMod.W.RELEASE && wst !== wardenMod.W.RESTED && !capture;

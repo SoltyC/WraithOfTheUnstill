@@ -3,7 +3,7 @@
 // Wraith has rested at keep a cold light in their glyphs; the monastery's wake when the steppe is
 // restored; the camp's fire burns brighter at night.
 
-import { frostSites, buildArchitecture } from '../world/architecture.js';
+import { frostSites, buildArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
 
@@ -11,6 +11,8 @@ import { createArchitectureView } from '../render/architecture.js';
 export function addArchitectureSystem(g) {
   const { loop, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
   const sites = frostSites(chapter.table, g.routes);
+  // Pillars start sunk below the snow (the Warden's fight raises them).
+  for (const s of sites) if (s.pillar) s.sink = ARENA.pillarH + 1.2;
   const built = buildArchitecture(sites);
   const view = g.architecture = createArchitectureView(scene, atmosphere, built);
   g.archSites = sites;
@@ -82,13 +84,20 @@ export function addArchitectureSystem(g) {
       if (view.sites[o + 3] > 0.5 && dx * dx + dz * dz < 200 * 200) continue;
       const y = seat(s);
       if (Number.isNaN(y)) continue;
-      view.sites[o] = s.at[0]; view.sites[o + 1] = y; view.sites[o + 2] = s.at[1]; view.sites[o + 3] = 1;
-      solids.sites[i].seat = y;
+      view.sites[o] = s.at[0]; view.sites[o + 1] = y - (s.sink || 0); view.sites[o + 2] = s.at[1]; view.sites[o + 3] = 1;
+      s.seatY = y; solids.sites[i].seat = y - (s.sink || 0);
+    }
+    // Moving sites (the arena's pillars rise and sink): their seat less how far they are sunk.
+    for (let i = 0; i < sites.length; i++) {
+      const s = sites[i];
+      if (!s.pillar || s.seatY === undefined) continue;
+      const y = s.seatY - s.sink;
+      view.sites[i * 4 + 1] = y; solids.sites[i].seat = y;
     }
     // Glyph light: shrines rested at; the monastery once the steppe is restored.
     for (let i = 0; i < sites.length; i++) {
       const id = sites[i].id;
-      const want = id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
+      const want = sites[i].glow !== undefined ? sites[i].glow : id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
       view.glow[i * 4] += (want - view.glow[i * 4]) * Math.min(1, clock.realDt * 0.8);
     }
     const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5 ? 1 : tod < 7 || tod > 17.5 ? 0.5 : 0.2;

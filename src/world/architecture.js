@@ -306,6 +306,76 @@ export const BRAZIERS = [
   { id: 'brazier-3', shrine: 'shrine-frost-4', off: [6.5, 3.5] },
 ];
 
+/** The Warden's arena (user design 2026-10-09): six crystal pillars that rise out of the snow when
+ *  it wakes, and a ring of broken Shaper walls to shelter behind from its ice-spike barrage. Angles
+ *  are measured from the Warden's resting heading; radii in metres from the arena's centre. */
+export const ARENA = {
+  pillars: 6, pillarR: 34, pillarH: 9, pillarShaft: 1.25, pillarCap: 1.9,
+  cover: 10, coverR: 23, coverHalfW: 2.6, coverH: 3.4, outer: 6, outerR: 41,
+};
+/** World positions of the arena's pillars and cover walls ({ id, at, facing } each). */
+export function arenaLayout(centre, heading) {
+  const out = { pillars: [], cover: [] };
+  for (let k = 0; k < ARENA.pillars; k++) {
+    const a = heading + (k + 0.5) / ARENA.pillars * Math.PI * 2;
+    out.pillars.push({ id: 'warden-pillar-' + (k + 1), at: [centre[0] + Math.sin(a) * ARENA.pillarR, centre[1] + Math.cos(a) * ARENA.pillarR], facing: a });
+  }
+  for (let k = 0; k < ARENA.cover; k++) {
+    // Alternate a little in and out so the ring reads as ruins, not a fence.
+    const a = heading + k / ARENA.cover * Math.PI * 2, r = ARENA.coverR + (k % 2 ? 2 : -1);
+    // A wall faces the centre (its broad face toward the Warden).
+    out.cover.push({ id: 'warden-cover-' + (k + 1), at: [centre[0] + Math.sin(a) * r, centre[1] + Math.cos(a) * r], facing: a });
+  }
+  // The outer ring: between the pillars, past them (cover for whoever is out by the pillars).
+  for (let k = 0; k < ARENA.outer; k++) {
+    const a = heading + k / ARENA.outer * Math.PI * 2;
+    out.cover.push({ id: 'warden-cover-' + (ARENA.cover + k + 1), at: [centre[0] + Math.sin(a) * ARENA.outerR, centre[1] + Math.cos(a) * ARENA.outerR], facing: a });
+  }
+  return out;
+}
+
+/** A crystal pillar: a Shaper column of stacked drums with carved glyph bands (the holds the
+ *  Wraith climbs by) under a broad capital whose top is a floor. Built from far below its seat:
+ *  the arena lowers it into the snow until the Warden wakes. */
+function wardenPillar(b, facing, R) {
+  const H = ARENA.pillarH, rs = ARENA.pillarShaft;
+  b.drum(0, 0, -H - 1.5, 0.9, 1.75, 1.7, 16, MAT.STONE, 1, { solid: false });
+  let y = 0.9;
+  for (let k = 0; y < H - 0.75; k++) {
+    const h = Math.min(H - 0.75 - y, 1.35 + R() * 0.35);
+    b.drum(0, 0, y, y + h, rs + 0.03 * (k % 2), rs, 14, k % 2 ? MAT.GLYPH : MAT.STONE, 10 + k, { carve: k % 2 ? 1 : 0, solid: false });
+    y += h;
+  }
+  b.drum(0, 0, H - 0.75, H - 0.15, rs + 0.1, ARENA.pillarCap, 16, MAT.STONE, 30, { solid: false });
+  b.drum(0, 0, H - 0.15, H, ARENA.pillarCap, ARENA.pillarCap - 0.06, 16, MAT.GLYPH, 31, { carve: 1, solid: false });
+  // The crystal's seat: a shallow ice basin on the capital.
+  b.drum(0, 0, H, H + 0.06, 0.9, 0.82, 12, MAT.ICE, 32, { solid: false });
+  b.blockers.push({ site: b.site, kind: 'circle', x: 0, z: 0, r: rs + 0.1, y0: -H - 1.5, y1: H - 0.15 });
+  b.platforms.push({ site: b.site, x: 0, z: 0, hx: ARENA.pillarCap * 0.72, hz: ARENA.pillarCap * 0.72, cos: 1, sin: 0, top: H });
+}
+
+/** A broken Shaper wall in the arena: two or three heavy courses, the top one broken off, a
+ *  fallen block at its foot. Broad enough to shelter behind (its face toward the Warden). */
+function wardenCover(b, facing, R) {
+  const hw = ARENA.coverHalfW, th = 0.6;
+  const yaw = facing;                   // its breadth (local x) runs across the line to the centre
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), fx = Math.sin(facing), fz = Math.cos(facing);
+  const at = (u, f) => [cy * u + fx * f, -sy * u + fz * f];   // across, outward → local x/z
+  b.box(0, 0, -FOUND, 0.45, hw + 0.3, th + 0.25, yaw, MAT.STONE, 1);
+  b.box(0, 0, 0.45, 3.0, hw, th, yaw, MAT.STONE, 2);
+  // The broken crown: a tall carved stub on one side, a lower one on the other, a gap between.
+  const s = R() > 0.5 ? 1 : -1;
+  let [x, z] = at(s * hw * 0.48, 0);
+  b.box(x, z, 3.0, ARENA.coverH + 0.4, hw * 0.52, th - 0.05, yaw + (R() - 0.5) * 0.05, MAT.GLYPH, 3, { carve: 1 });
+  [x, z] = at(-s * hw * 0.62, 0);
+  b.box(x, z, 3.0, 3.35 + R() * 0.25, hw * 0.36, th - 0.08, yaw, MAT.STONE, 4);
+  // What fell: a block at the foot behind it, a shard of the crown leaning on the wall.
+  [x, z] = at(-s * hw * 0.35, 1.5);
+  b.box(x, z, 0, 0.8, 0.85, 0.5, yaw + 0.35 * s, MAT.STONE, 5, { tilt: 0.1, roll: 0.12 * s });
+  [x, z] = at(s * hw * 1.05, 0.9);
+  b.box(x, z, 0, 1.9, 0.32, 0.28, yaw, MAT.STONE, 6, { tilt: -0.3, solid: false });
+}
+
 /** Every site of the frost chapter: { id, at, facing, build, footprint (seat radius, m) }.
  *  `table` is the baked POIs by id; `routes` the baked routes (the Run's gates). */
 export function frostSites(table, routes = []) {
@@ -329,6 +399,12 @@ export function frostSites(table, routes = []) {
   // The Run's gates: arches across the chute (seated on its floor).
   const run = routes.find((r) => r.id === 'shapers-run');
   if (run) run.gates.forEach((gt, i) => sites.push({ id: 'run-gate-' + (i + 1), at: gt.pos, facing: Math.atan2(gt.dir[0], gt.dir[1]), build: gate, footprint: 3, seatAt: 'center' }));
+  // The Warden's arena: pillars and cover walls, facing as the Warden waits (toward the monastery).
+  if (table['warden-frost']) {
+    const ac = P('warden-frost'), lay = arenaLayout(ac, toward(ac, mon));
+    for (const pl of lay.pillars) sites.push({ ...pl, build: wardenPillar, footprint: 1.8, seatAt: 'center', pillar: true });
+    for (const cv of lay.cover) sites.push({ ...cv, build: wardenCover, footprint: 2.6, seatAt: 'center' });
+  }
   for (const p of PROPS) sites.push({ ...p, at: [0, 0], facing: 0, footprint: 0, prop: true });
   return sites;
 }

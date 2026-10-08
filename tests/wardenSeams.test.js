@@ -22,6 +22,10 @@ describe('the Warden can be broken from the ground', () => {
     for (let i = 0; i < 20; i++) w.update();
     expect(w.exposed(3)).toBe(true);
     w.freezeJoint(3); expect(w.strikeJoint(3)).toBe(true);
+    // Four seams take 80 of its 100; the last of it comes off in chips (then it is released).
+    expect(w.hp).toBe(20);
+    expect(w.state).toBe(W.KNEEL);
+    w.chip = 20; w.bodyHit();
     expect(w.state).toBe(W.RELEASE);
   });
   it('a frozen seam holds long enough to line up a second Sweep', () => {

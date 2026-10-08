@@ -6,7 +6,7 @@
 // wind field: the stilled steppe is silent, the release brings the wind back. The context starts
 // on the first key or pointer press (browser autoplay rules).
 
-export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8 };
+export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9 };
 const VOICES = 20;
 
 export function createSfx() {
@@ -75,7 +75,7 @@ export function createSfx() {
       if (!ac || ac.state !== 'running' || !this.enabled) return;
       const dx = this.x - this.lx, dy = this.y - this.ly, dz = this.z - this.lz;
       const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-      const far = kind === SFX.BOOM || kind === SFX.RUMBLE ? 40 : 10;
+      const far = kind === SFX.BOOM || kind === SFX.RUMBLE || kind === SFX.CHARGE ? 40 : 10;
       const g = this.gain / (1 + d / far);
       if (g < 0.01) return;
       const v = voices[next]; next = (next + 1) % VOICES;
@@ -141,6 +141,12 @@ export function createSfx() {
           og.linearRampToValueAtTime(1.0 * g, t + 0.01); og.exponentialRampToValueAtTime(0.001, t + 0.9);
           v.filt.type = 'lowpass'; q.setValueAtTime(0.7, t); f.setValueAtTime(700, t); f.exponentialRampToValueAtTime(120, t + 0.8);
           ng.linearRampToValueAtTime(0.9 * g, t + 0.01); ng.exponentialRampToValueAtTime(0.001, t + 0.9);
+          break;
+        case SFX.CHARGE:    // the Warden gathering its barrage: a glassy whine rising over three seconds under a growing hiss
+          v.osc.type = 'triangle'; of.setValueAtTime(220, t); of.exponentialRampToValueAtTime(1320, t + 2.9);
+          og.linearRampToValueAtTime(0.06 * g, t + 0.4); og.linearRampToValueAtTime(0.42 * g, t + 2.85); og.exponentialRampToValueAtTime(0.001, t + 3.1);
+          v.filt.type = 'bandpass'; q.setValueAtTime(2.5, t); f.setValueAtTime(600, t); f.exponentialRampToValueAtTime(4800, t + 2.9);
+          ng.linearRampToValueAtTime(0.05 * g, t + 0.5); ng.linearRampToValueAtTime(0.5 * g, t + 2.85); ng.exponentialRampToValueAtTime(0.001, t + 3.1);
           break;
         case SFX.RUMBLE:    // the shockwave rolling past
           v.filt.type = 'lowpass'; q.setValueAtTime(0.6, t); f.setValueAtTime(260, t); f.linearRampToValueAtTime(900, t + 0.6); f.exponentialRampToValueAtTime(120, t + 3);
