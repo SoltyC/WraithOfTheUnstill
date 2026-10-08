@@ -9,9 +9,9 @@ export const Action = Object.freeze({
   Jump: 4, Traverse: 5, Primary: 6, Heavy: 7, Dodge: 8, LockOn: 9, Interact: 10,
   Map: 11, Journal: 12, Pause: 13,
   Element1: 14, Element2: 15, Element3: 16, Element4: 17, Element5: 18,
-  DevOverlay: 19, FreeCamUp: 20, FreeCamDown: 21, FreeCamFast: 22,
+  DevOverlay: 19, FreeCamUp: 20, FreeCamDown: 21, FreeCamFast: 22, Track: 23,
 });
-const COUNT = 23;
+const COUNT = 24;
 
 /** Default keyboard/mouse bindings: KeyboardEvent.code or 'Mouse0'/'Mouse2' → action. */
 export const defaultBindings = {
@@ -22,6 +22,7 @@ export const defaultBindings = {
   Digit1: Action.Element1, Digit2: Action.Element2, Digit3: Action.Element3, Digit4: Action.Element4, Digit5: Action.Element5,
   F1: Action.DevOverlay, Backquote: Action.DevOverlay,
   KeyQ: Action.FreeCamDown, KeyR: Action.FreeCamUp, ShiftLeft: Action.FreeCamFast,
+  KeyT: Action.Track,
 };
 
 export const input = {

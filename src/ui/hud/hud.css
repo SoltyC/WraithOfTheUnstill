@@ -70,3 +70,38 @@
 .notice .title { font-family: var(--ink-font); font-size: clamp(19px, 1.45vw, 28px); margin-top: 2px; }
 .notice .sub { font-size: clamp(14px, 1vw, 18px); font-style: italic; opacity: 0.85; margin-top: 2px; }
 .notice .rule { width: 46px; height: 1px; background: linear-gradient(90deg, rgba(200, 220, 240, 0.8), transparent); margin-top: 8px; }
+
+/* The compass (user decision 2026-10-08): an engraved strip of ink at the top, soft dark band,
+   fading at its ends; quiet when nothing changes. */
+.compass {
+  position: fixed; top: 1.6vh; left: 50%; transform: translateX(-50%); z-index: 5; pointer-events: none;
+  display: none; flex-direction: column; align-items: center; font-family: var(--ink-font);
+  transition: opacity 0.2s linear;
+}
+.compass.on { display: flex; }
+.compass canvas {
+  display: block;
+  background: linear-gradient(180deg, rgba(5, 8, 12, 0.5), rgba(5, 8, 12, 0.22) 70%, rgba(5, 8, 12, 0));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+}
+.compass-activity { margin-top: 1px; font-size: 11px; letter-spacing: 0.3em; color: rgba(236, 228, 210, 0.55); text-shadow: 0 0 6px rgba(0, 0, 0, 0.8); }
+.compass-label {
+  margin-top: 3px; min-height: 18px; font-size: clamp(13px, 0.95vw, 17px); letter-spacing: 0.14em; color: #f2dca0;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.85), 0 0 2px rgba(0, 0, 0, 0.9); opacity: 0; transition: opacity 0.5s ease;
+}
+.compass-label.on { opacity: 0.95; }
+
+/* The world waypoint over the tracked goal: a small gold diamond with its name and distance. */
+.waypoint {
+  position: fixed; left: 0; top: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity 0.4s ease;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; will-change: transform;
+}
+.waypoint.on { opacity: 0.92; }
+.waypoint .mark {
+  width: 13px; height: 13px; transform: rotate(45deg); border: 1.5px solid #f2dca0;
+  background: rgba(242, 220, 160, 0.22); box-shadow: 0 0 12px rgba(242, 220, 160, 0.65), inset 0 0 5px rgba(242, 220, 160, 0.4);
+}
+.waypoint .name, .waypoint .dist { font-family: var(--text); text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 2px rgba(0, 0, 0, 0.9); white-space: nowrap; }
+.waypoint .name { font-size: clamp(12px, 0.85vw, 15px); letter-spacing: 0.22em; text-transform: uppercase; color: #f2dca0; margin-top: 6px; }
+.waypoint .dist { font-size: clamp(12px, 0.85vw, 15px); font-style: italic; color: rgba(236, 228, 210, 0.8); }

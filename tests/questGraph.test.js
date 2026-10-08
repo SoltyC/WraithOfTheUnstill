@@ -35,7 +35,7 @@ describe('quest graph', () => {
     saved.quests.gone = { state: 'active', step: 3 };
     const h = new QuestGraph(DEFS, POIS);
     h.restore(saved);
-    expect(h.quests.wake).toEqual({ state: 'active', step: 1 });
+    expect(h.quests.wake).toEqual({ state: 'active', step: 1, opt: [] });
     expect(h.flags.has('awake')).toBe(true);
     expect(h.quests.gone).toBeUndefined();
     expect(h.journal().map((j) => j.lines.length)).toEqual([2, 1]);
@@ -54,5 +54,45 @@ describe('quest graph', () => {
     const a = g.tick(f), b = g.tick(f);
     expect(a).toBe(b);
     expect(b.length).toBe(0);
+  });
+});
+
+describe('optional objectives, variables and goals', () => {
+  const defs = [{
+    id: 'run', kind: 'main', title: 'Run', summary: '',
+    steps: [{ id: 'go', journal: 'Go down.', when: { event: 'run:done' }, goal: { poi: 'camp' } }, { id: 'talk', journal: 'Talk.', when: { event: 'talk' }, goal: { at: [5, 5], label: 'Maren' } }],
+    optional: [{ id: 'perfect', journal: 'Pass every gate.', when: { var: { name: 'run.gates', gte: 9 } }, actions: [{ echo: 'e1' }, { addVar: { name: 'bonus', by: 2 } }], goal: { dynamic: 'next-gate' } }],
+  }];
+  const pois = { camp: { pos: [0, 0] } };
+  const none = { x: 0, z: 0, events: new Set(), restored: new Set() };
+  it('runs an optional objective once, in parallel with the steps', () => {
+    const g = new QuestGraph(defs, pois);
+    g.tick(none);
+    expect(g.goals().map((x) => [x.step, x.optional])).toEqual([['go', false], ['perfect', true]]);
+    g.vars['run.gates'] = 8; g.tick(none);
+    expect(g.quests.run.opt).toEqual([]);
+    g.vars['run.gates'] = 9;
+    const out = g.tick(none).map((a) => a.echo || a.optionalDone || null).filter(Boolean);
+    expect(out).toEqual(['e1', 'run']);
+    expect(g.vars.bonus).toBe(2);
+    g.tick(none);
+    expect(g.vars.bonus).toBe(2); // not again
+    expect(g.goals().map((x) => x.step)).toEqual(['go']);
+    expect(g.journal()[0].optional).toEqual([{ id: 'perfect', line: 'Pass every gate.', done: true }]);
+  });
+  it('saves variables and optional progress, and reveals places as flags', () => {
+    const g = new QuestGraph(defs, pois);
+    g.tick(none); g.vars.x = 3; g.vars['run.gates'] = 9; g.tick(none);
+    g.perform({ reveal: ['camp', 'shrine-1'] });
+    const saved = JSON.parse(JSON.stringify(g.serialize()));
+    const h = new QuestGraph(defs, pois);
+    h.restore(saved);
+    expect(h.vars.x).toBe(3);
+    expect(h.quests.run.opt).toEqual(['perfect']);
+    expect(h.flags.has('known:camp') && h.flags.has('known:shrine-1')).toBe(true);
+  });
+  it('rejects a goal with no target and a var condition with no bound', () => {
+    expect(() => validateQuests([{ id: 'a', kind: 'side', steps: [{ id: 's', journal: 'x', when: {}, goal: {} }] }])).toThrow(/goal/);
+    expect(() => validateQuests([{ id: 'a', kind: 'side', steps: [{ id: 's', journal: 'x', when: { var: { name: 'n' } } }] }])).toThrow(/var/);
   });
 });

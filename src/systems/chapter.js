@@ -41,7 +41,7 @@ export function addChapterSystem(g) {
   };
   chapter.attuned = (id) => chapter.graph.flags.has('attuned:' + id);
   // Saves: the chapter is the quest graph and the progression (save v2).
-  game.places = frostData.places;
+  game.places = Object.fromEntries(g.pois.filter((p) => p.biome === 'frost' && ['camp', 'spring', 'overlook', 'den', 'monastery'].includes(p.kind)).map((p) => [p.id, { pos: p.pos }]));
   g.quests = chapter;
   g.progress = chapter;
 

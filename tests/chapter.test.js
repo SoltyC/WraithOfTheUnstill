@@ -21,7 +21,7 @@ function setup() {
 describe('frost chapter data', () => {
   it('references only dialogue, NPCs, places, Echoes and lore that exist', () => {
     const ids = new Set(data.npcs.map((n) => n.id));
-    const places = new Set([...pois.map((p) => p.id), ...Object.keys(data.places)]);
+    const places = new Set(pois.map((p) => p.id));
     for (const n of data.npcs) expect(places.has(n.home.poi)).toBe(true);
     for (const npc in data.talk) {
       expect(ids.has(npc)).toBe(true);
