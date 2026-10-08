@@ -41,7 +41,7 @@ export function createMenus(g) {
     if (!page) return;
     page = null; shrine = null;
     veil.classList.remove('on');
-    clock.frozen = wasFrozen; input.gameHasFocus = true; releaseAll();
+    clock.frozen = wasFrozen; input.gameHasFocus = !title.classList.contains('on'); releaseAll();
     g.canvas?.focus();
   }
   function head(title, sub) {
@@ -221,14 +221,14 @@ export function createMenus(g) {
 
   // Keys while a page is open (the game's input is off then).
   window.addEventListener('keydown', (e) => {
-    if (title.classList.contains('on')) return;
     if (!page) return;
     if (e.code === 'Escape') {
       e.preventDefault();
       // The Esc that released the pointer (and opened this page) must not close it again.
       if (performance.now() - openedAt < 400) return;
-      page === 'pause' ? close() : open('pause');
+      close();
     }
+    else if (title.classList.contains('on')) return;
     else if (e.code === 'KeyJ') page === 'journal' ? close() : open('journal');
     else if (e.code === 'KeyM') page === 'map' ? close() : open('map');
   });
@@ -255,16 +255,16 @@ export function createMenus(g) {
     titleActions.replaceChildren();
     // Begin / Continue: the title lifts, the camera swoops from the heights down to the Wraith in the
     // monastery, and only then does play (and the HUD) begin.
-    const begin = async (pre) => {
+    const begin = async (pre, card) => {
       title.classList.remove('on'); title.classList.add('leaving'); g.musicState.title = false;
       if (pre) await pre();
-      await g.titleCam?.dive();
+      await g.titleCam?.dive(card);
       title.classList.remove('leaving');
       input.gameHasFocus = true; started = true; g.hud.release(); g.canvas?.focus();
     };
     actions(titleActions, [
       ['Continue', () => begin(() => loadSlot(list[0].slot)), !list.length],
-      ['Begin', () => { g.musicState.waking = true; begin(); }],
+      ['Begin', () => { g.musicState.waking = true; begin(null, { kicker: 'The Frost Steppe', name: 'The Shapers’ Monastery' }); }],
       ['Settings', () => { open('settings'); }],
     ]);
   }

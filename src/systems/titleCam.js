@@ -5,7 +5,7 @@
 // sampled and the path is lifted (fast up, slow down) to keep clear of it.
 
 const ORBIT = { radius: 700, height: 1400, speed: 0.016, fov: 0.82, pitchLook: 700 };
-const DIVE_SECONDS = 10;
+const DIVE_SECONDS = 13;
 const CLEAR = 14;
 
 const smoother = (t) => t * t * t * (t * (t * 6 - 15) + 10);
@@ -21,6 +21,13 @@ export function addTitleCamSystem(g) {
   const S = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, fov: 0 }, E = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, fov: 0 };
   const pose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, fov: 0 };
   const ZERO = { x: 0, y: 0, z: 0 };
+  // Cinematic dressing for the swoop: letterbox bars, a place card, a depth of field that tightens on
+  // the Wraith, and a fade up from black at the very start.
+  const mk = (cls, parent = document.body) => { const e = document.createElement('div'); e.className = cls; parent.append(e); return e; };
+  const bars = mk('intro-bars'); mk('b top', bars); mk('b bottom', bars);
+  const card = mk('intro-card'); const cardKicker = mk('kicker', card), cardName = mk('name', card); mk('rule', card);
+  const black = mk('intro-black');
+  let cardShown = false, cardSpec = null;
 
   function floorAt(x, z) {
     ground.qx = x; ground.qz = z;
@@ -77,16 +84,20 @@ export function addTitleCamSystem(g) {
     get active() { return mode !== 'off'; },
     /** Tests only: run the camera faster than real time. */
     timeScale: 1,
+    /** Depth of field for the cinematic (read by the cinematic system's post settings). */
+    dof: false, focus: 50, focusRange: 50,
     /** Start the orbit (the title is up). */
     start() {
       homeYaw = arm.yaw;
       mode = 'orbit'; t = 0; lift = 0;
+      black.classList.add('show'); requestAnimationFrame(() => requestAnimationFrame(() => black.classList.remove('show')));
       orbitPose(0); put(pose);
       post.post.resetHistory = true;
     },
     /** Swoop down to the Wraith; resolves when the follow camera has taken over. */
-    dive() {
+    dive(card) {
       if (mode === 'off') return Promise.resolve();
+      cardSpec = card || null;
       mode = 'wait'; waited = 0;
       return new Promise((resolve) => { done = resolve; });
     },
@@ -114,6 +125,7 @@ export function addTitleCamSystem(g) {
       followPose(E);
       arm.setPose(S.x, S.y, S.z, S.yaw, S.pitch, S.fov);
       mode = 'dive'; diveT = 0;
+      bars.classList.add('on');
       return;
     }
     // Dive.
@@ -135,7 +147,16 @@ export function addTitleCamSystem(g) {
     const wanted = need(pose.x, pose.y, pose.z, sx, sz) * (1 - w);   // over the last stretch the follow camera's own collision rules
     applyLift(dt, wanted);
     put(pose);
+    // Depth of field: focus on the Wraith, loose at height, tight as the camera arrives.
+    const dxw = tx - pose.x, dyw = ty - pose.y - lift, dzw = tz - pose.z;
+    self.focus = Math.sqrt(dxw * dxw + dyw * dyw + dzw * dzw);
+    self.focusRange = Math.max(10, self.focus * (0.9 - 0.45 * w));
+    self.dof = k < 0.985;
+    if (cardSpec && !cardShown && k > 0.5) { cardKicker.textContent = cardSpec.kicker; cardName.textContent = cardSpec.name; card.classList.add('on'); cardShown = true; }
+    if (cardShown && k > 0.9) { card.classList.remove('on'); cardShown = false; cardSpec = null; }
+    if (k > 0.92) bars.classList.remove('on');
     if (k >= 1) {
+      self.dof = false;
       mode = 'off'; lift = 0;
       arm.setFree(false); arm.yaw = E.yaw; arm.pitch = E.pitch; arm.snap(controller.pos);
       post.post.resetHistory = true;

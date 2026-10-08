@@ -44,7 +44,9 @@ export function addCinematicSystem(g) {
     // The cinematic's restrained depth of field: focus on the Warden, the far steppe softens.
     const taa = post.taa;
     const cine = rc.active || (rc.hold && rc.bars > 0.5); // held cinematic frames (captures) too
-    taa.dofOn = cine;
+    const tc = g.titleCam;
+    taa.dofOn = cine || (tc && tc.dof);
+    if (!cine && tc && tc.dof) { taa.focus = tc.focus; taa.focusRange = tc.focusRange; }
     if (cine) {
       const dx = rc.tx - rc.x, dy = rc.ty - rc.y, dz = rc.tz - rc.z;
       taa.focus = Math.sqrt(dx * dx + dy * dy + dz * dz); taa.focusRange = Math.max(18, taa.focus * 0.55);

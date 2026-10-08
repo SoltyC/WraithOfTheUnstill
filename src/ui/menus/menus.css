@@ -116,3 +116,16 @@
 .title-screen .codex-actions .note { color: #9aa6b2; }
 .title-screen .credit { position: absolute; right: 4vw; bottom: calc(9vh + 2.4vh); font-family: var(--text); font-size: 12px; letter-spacing: 0.4em; text-transform: uppercase; color: rgba(184, 200, 216, 0.7); }
 .title-screen .mark { width: 9px; height: 9px; border-radius: 50%; background: #cfe4ff; box-shadow: 0 0 18px 6px rgba(160, 200, 255, 0.35); animation: breathe 4.5s ease-in-out infinite; }
+
+/* The intro swoop: letterbox, place card, fade from black. */
+.intro-bars { position: fixed; inset: 0; z-index: 18; pointer-events: none; }
+.intro-bars .b { position: absolute; left: 0; right: 0; height: 12vh; background: #000; transition: transform 2.2s cubic-bezier(0.5, 0, 0.2, 1); }
+.intro-bars .top { top: 0; transform: translateY(-100%); } .intro-bars .bottom { bottom: 0; transform: translateY(100%); }
+.intro-bars.on .b { transform: none; }
+.intro-card { position: fixed; left: 8vw; bottom: 17vh; z-index: 18; pointer-events: none; color: #ece6da; opacity: 0; transition: opacity 1.8s ease; }
+.intro-card.on { opacity: 1; }
+.intro-card .kicker { font-family: var(--text); font-size: clamp(11px, 0.85vw, 15px); letter-spacing: 0.55em; text-transform: uppercase; color: #b8c8d8; margin-bottom: 1.1em; }
+.intro-card .name { font-family: var(--ink-font); font-size: clamp(30px, 3vw, 58px); letter-spacing: 0.02em; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.7); }
+.intro-card .rule { width: clamp(140px, 16vw, 300px); height: 1px; margin-top: 1.4em; background: linear-gradient(90deg, rgba(207, 228, 255, 0.8), transparent); }
+.intro-black { position: fixed; inset: 0; z-index: 17; background: #000; opacity: 0; pointer-events: none; transition: opacity 4s ease; }
+.intro-black.show { opacity: 1; transition: none; }
