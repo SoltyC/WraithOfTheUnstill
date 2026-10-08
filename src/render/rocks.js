@@ -44,7 +44,9 @@ function icosphere(level) {
     for (const [a, b, c] of f) { const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a); nf.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]); }
     f = nf;
   }
-  return { positions: new Float32Array(v.flat()), indices: new Uint32Array(f.flat()) };
+  // Wound for Babylon's front faces (clockwise seen from outside): the counter-clockwise order
+  // above had every outward face culled, so each rock showed the inside of its far half.
+  return { positions: new Float32Array(v.flat()), indices: new Uint32Array(f.flatMap(([a, b, c]) => [a, c, b])) };
 }
 
 const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z, 0x165667b1) ^ s)) >>> 0) / 4294967296;
