@@ -125,7 +125,7 @@ async function createSaves(g) {
       worldState.weather = s.world.weather;
       worldState.weatherOverride = s.world.weatherOverride ?? null;
       Object.assign(worldState.restoration, s.world.restoration);
-      restoration.value = worldState.restoration.frost === 'restored' ? 1 : 0;
+      restoration.value = worldState.restoration.frost === 'restored' ? 1 : 0; restoration.snap = true;
       weather.snap = true;
       if (g.quests) g.quests.restore(s.quests);
       if (g.progress) g.progress.apply(s);

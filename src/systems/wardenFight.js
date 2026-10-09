@@ -108,6 +108,8 @@ export function addWardenFightSystem(g) {
     const ws = warden.state;
     const text = ws === W.CHARGE || ws === W.BARRAGE ? 'Get behind stone'
       : fight.phase === FIGHT.WARD ? (onTop >= 0 ? 'Strike the crystal (click)' : climb.climbing ? 'Climb (W) to the top' : 'Its crystals heal it. Climb a pillar (hold right mouse at its foot) and break them')
+      // Every seam broken (80 of its 100): the rest is worn off its body with the verbs.
+      : warden.joint[0] === 2 && warden.joint[1] === 2 && warden.joint[2] === 2 && warden.joint[3] === 2 && warden.hp > 0 ? 'Its seams are broken. Wear it down: Sweep and Ribbon against its body'
       : '';
     if (text !== lastLine) { line.textContent = text; lastLine = text; line.classList.toggle('alarm', ws === W.CHARGE || ws === W.BARRAGE); }
   }

@@ -135,6 +135,24 @@ export class WorldStreamer {
     this._initResolve(this);
   }
 
+  /** Biome weights at (mqx, mqz), bilinear on the 8 m map, normalised → bw0..bw3 (frost, meadow,
+   *  mire, dunes; the A channels — ember and coast are not kept on the CPU). */
+  sampleBiome() {
+    const d = this.biomeA; if (!d) { this.bw0 = 1; this.bw1 = this.bw2 = this.bw3 = 0; return; }
+    const N = 1024, half = this.manifest.worldSize / 2, c = this.manifest.worldSize / N;
+    const fx = (this.mqx + half) / c - 0.5, fz = (half - this.mqz) / c - 0.5;
+    const i0 = Math.max(0, Math.min(N - 2, Math.floor(fx))), j0 = Math.max(0, Math.min(N - 2, Math.floor(fz)));
+    const tx = Math.min(1, Math.max(0, fx - i0)), tz = Math.min(1, Math.max(0, fz - j0));
+    let s = 0;
+    for (let ch = 0; ch < 4; ch++) {
+      const a = d[(j0 * N + i0) * 4 + ch], b = d[(j0 * N + i0 + 1) * 4 + ch], e = d[((j0 + 1) * N + i0) * 4 + ch], f = d[((j0 + 1) * N + i0 + 1) * 4 + ch];
+      const v = (a * (1 - tx) + b * tx) * (1 - tz) + (e * (1 - tx) + f * tx) * tz;
+      if (ch === 0) this.bw0 = v; else if (ch === 1) this.bw1 = v; else if (ch === 2) this.bw2 = v; else this.bw3 = v;
+      s += v;
+    }
+    s = Math.max(s, 1e-3); this.bw0 /= s; this.bw1 /= s; this.bw2 /= s; this.bw3 /= s;
+  }
+
   /** Bake surface material id at (mqx, mqz) → mat (fields, not arguments: no boxing). 0 = snow. */
   sampleMaterial() {
     const d = this.surfaceData;

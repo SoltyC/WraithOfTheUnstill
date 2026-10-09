@@ -17,6 +17,7 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
 import { SNOW_WGSL } from './snow.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
+import { MEADOW_WGSL } from './meadow.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
 export const CLIPMAP_N = 256;     // quads per level side
@@ -341,6 +342,7 @@ ${STATE_COMPACTION_WGSL}
 ${MATERIALS_DECL}
 ${MATERIALS_WGSL}
 ${SNOW_WGSL}
+${MEADOW_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -417,6 +419,24 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       fcol += glow * fs.albedo / max(ex, 1e-6) * 0.35;
     }
     col = mix(col, fcol, wFrost);
+  }
+  // Highland meadow (Phase 8, shaders/meadow.wgsl.js) over the clay view, by meadow weight.
+  let wMeadow = smoothstep(0.3, 0.7, wA.y / max(wSum, 0.001)) * (1.0 - sea);
+  if (wMeadow > 0.001) {
+    let Ngm = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
+                              fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
+    let ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z));
+    var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w);
+    let exm = uniforms.fogParams.z * atmoExposure();
+    for (var li = 0u; li < 4u; li++) {
+      let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];
+      if (lc.w <= 0.0) { continue; }
+      let lv = lp.xyz - wp; let d = max(length(lv), 0.35);
+      if (d >= lp.w) { continue; }
+      let fall = (1.0 - d / lp.w) * (1.0 - d / lp.w) / (1.0 + d * d * 0.6);
+      mcol += ms.albedo * lc.rgb * lc.w * fall * max(dot(ms.N, lv / d), 0.0) / max(exm, 1e-6) * 0.35;
+    }
+    col = mix(col, mcol, wMeadow);
   }
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);

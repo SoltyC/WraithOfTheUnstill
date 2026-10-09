@@ -2,13 +2,138 @@
   "comment": "Scanned PBR sources (CC0, Poly Haven), packed by tools/textures/build.mjs into data/textures/<id>.{alb,nrm,hgt}.webp. `size` is the packed albedo/normal resolution (height/AO is half). `layer` is the index in the runtime texture arrays (src/materials/library.js, MAT in shaders/materials.wgsl.js) — append only.",
   "size": 2048,
   "materials": [
-    { "layer": 0, "id": "stone-pale", "source": "polyhaven", "asset": "rock_boulder_dry", "use": "Shaper ashlar — pale, weathered, chipped limestone faces" },
-    { "layer": 1, "id": "stone-dressed", "source": "polyhaven", "asset": "rock_01", "use": "Shaper ashlar — smoother dressed faces, carved parts" },
-    { "layer": 2, "id": "rock-strata", "source": "polyhaven", "asset": "dark_rock_02", "use": "outcrops and boulders — dark stratified rock" },
-    { "layer": 3, "id": "rock-lichen", "source": "polyhaven", "asset": "lichen_rock", "use": "outcrops — lichen-crusted faces (sheltered, north)" },
-    { "layer": 4, "id": "scree", "source": "polyhaven", "asset": "rock_ground_02", "use": "rubble and scree at feet of walls and rocks" },
-    { "layer": 5, "id": "timber", "source": "polyhaven", "asset": "rough_wood", "use": "weathered timber — sleds, poles, beams, staffs" },
-    { "layer": 6, "id": "wool", "source": "polyhaven", "asset": "poly_wool_herringbone", "use": "felt and wool — tents, bundles, robe detail" },
-    { "layer": 7, "id": "linen", "source": "polyhaven", "asset": "rough_linen", "use": "linen — wrappings, bier cloth" }
+    {
+      "layer": 0,
+      "id": "stone-pale",
+      "source": "polyhaven",
+      "asset": "rock_boulder_dry",
+      "use": "Shaper ashlar — pale, weathered, chipped limestone faces"
+    },
+    {
+      "layer": 1,
+      "id": "stone-dressed",
+      "source": "polyhaven",
+      "asset": "rock_01",
+      "use": "Shaper ashlar — smoother dressed faces, carved parts"
+    },
+    {
+      "layer": 2,
+      "id": "rock-strata",
+      "source": "polyhaven",
+      "asset": "dark_rock_02",
+      "use": "outcrops and boulders — dark stratified rock"
+    },
+    {
+      "layer": 3,
+      "id": "rock-lichen",
+      "source": "polyhaven",
+      "asset": "lichen_rock",
+      "use": "outcrops — lichen-crusted faces (sheltered, north)"
+    },
+    {
+      "layer": 4,
+      "id": "scree",
+      "source": "polyhaven",
+      "asset": "rock_ground_02",
+      "use": "rubble and scree at feet of walls and rocks"
+    },
+    {
+      "layer": 5,
+      "id": "timber",
+      "source": "polyhaven",
+      "asset": "rough_wood",
+      "use": "weathered timber — sleds, poles, beams, staffs"
+    },
+    {
+      "layer": 6,
+      "id": "wool",
+      "source": "polyhaven",
+      "asset": "poly_wool_herringbone",
+      "use": "felt and wool — tents, bundles, robe detail"
+    },
+    {
+      "layer": 7,
+      "id": "linen",
+      "source": "polyhaven",
+      "asset": "rough_linen",
+      "use": "linen — wrappings, bier cloth"
+    },
+    {
+      "layer": 8,
+      "id": "turf",
+      "source": "polyhaven",
+      "asset": "leafy_grass",
+      "use": "meadow ground — short green turf and leaves (close detail under the grass)"
+    },
+    {
+      "layer": 9,
+      "id": "grass-ground",
+      "source": "polyhaven",
+      "asset": "grass_ground",
+      "use": "meadow ground — dry grass, roots and dirt (worn, exposed, paths)"
+    },
+    {
+      "layer": 10,
+      "id": "forest-floor",
+      "source": "polyhaven",
+      "asset": "leaves_forest_ground",
+      "use": "forest floor — dirt with leaves and twigs (under the canopy)"
+    },
+    {
+      "layer": 11,
+      "id": "forest-litter",
+      "source": "polyhaven",
+      "asset": "forrest_ground_01",
+      "use": "forest floor — grass, twigs and fallen leaves (grove edges)"
+    },
+    {
+      "layer": 12,
+      "id": "soil",
+      "source": "polyhaven",
+      "asset": "forest_ground_06",
+      "use": "bare soil — compact, scattered leaves (banks, trampled ground)"
+    },
+    {
+      "layer": 13,
+      "id": "moss",
+      "source": "polyhaven",
+      "asset": "forest_leaves_02",
+      "use": "moss and sticks — on stone, logs and the shaded floor"
+    },
+    {
+      "layer": 14,
+      "id": "rock-mossy",
+      "source": "polyhaven",
+      "asset": "mossy_rock",
+      "use": "meadow rock — lichen and moss on striated stone"
+    },
+    {
+      "layer": 15,
+      "id": "stone-mossy",
+      "source": "polyhaven",
+      "asset": "mossy_sandstone",
+      "use": "Shaper ruins in the meadow — weathered sandstone, moss-covered"
+    },
+    {
+      "layer": 16,
+      "id": "bark-pine",
+      "source": "polyhaven",
+      "asset": "pine_bark",
+      "use": "pine bark — deep plates"
+    },
+    {
+      "layer": 17,
+      "id": "bark-oak",
+      "source": "polyhaven",
+      "asset": "bark_brown_02",
+      "use": "broadleaf bark — furrowed, knotted"
+    },
+    {
+      "layer": 18,
+      "id": "bark-smooth",
+      "source": "polyhaven",
+      "asset": "bark_platanus",
+      "use": "smooth mottled bark — birch/rowan-like trunks"
+    }
   ]
 }
