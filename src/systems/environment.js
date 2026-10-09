@@ -115,6 +115,14 @@ export async function addEnvironmentSystems(g) {
       post.post.gradeDirty = true;
     }
   } });
+  // Grass: its clock and wind (a stilled meadow stands rigid; restored, the gusts roll through).
+  loop.add({ name: 'grass', update: () => {
+    const gr = g.grass; if (!gr) return;
+    gr.time = clock.simTime;
+    gr.wind = Math.min(1.6, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.4 + 2 * warden.gust);
+    gr.density = 1;
+    gr.update();
+  } });
   loop.add({ name: 'spindrift', update: () => {
     const w = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;
     spindrift.time = clock.simTime;

@@ -11,7 +11,7 @@ export const GRADES = {
   // The meadow stilled: the green drained toward hay and slate, the air flat and close; restored:
   // full green and gold, warm light, cool shadow (reference: screenshots/reference/).
   meadowStilled: { g0: [0.45, -0.1, 0.0], g1: [0.97, 0.99, 1.03], g2: [1.0, 0.99, 0.97] },
-  meadowRestored: { g0: [-0.12, 0.35, -0.1], g1: [0.92, 0.97, 1.06], g2: [1.04, 1.01, 0.94] },
+  meadowRestored: { g0: [0.02, 0.3, -0.08], g1: [0.92, 0.97, 1.06], g2: [1.04, 1.01, 0.94] },
 };
 
 /**

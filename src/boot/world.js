@@ -76,6 +76,10 @@ export async function createWorld(g) {
   shadows.addCaster(rocks.meshes[1], rocks.makeShadowMaterial, 2, 2);
   shadows.addCaster(rocks.meshes[2], rocks.makeShadowMaterial, 2, 1);
   rocks.freeze();
+  // Grass (Phase 8): GPU-built blades over the meadow, receiving the shadow cascades.
+  const grass = (await import('../render/grass.js')).createGrass(scene, content.clipmap, atmosphere);
+  for (const m of grass.materials) bindShadows(m, shadows);
+  grass.freeze();
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
   // The Wraith's feet and hem stand on built floors too (solids arrive with the architecture).
@@ -95,6 +99,7 @@ export async function createWorld(g) {
   const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
   content.clipmap.bindState(terrainState);
   rocks.bindState(terrainState);
+  grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass });
 }
