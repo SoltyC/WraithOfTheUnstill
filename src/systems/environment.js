@@ -10,8 +10,10 @@ export async function addEnvironmentSystems(g) {
   const { loop, engine, env, atmosphere, content, camera, streamer, shadows, post, rocks, weather, ws, clock, ground, pendingTp, warden, wardenMod, restoration,
     params, spindrift, dust, snowfall, sfx, SFX, arm, frost, controller, terrainState, footprints, toggles, game, registerToggle, ring, wraithView, setRenderScale } = g;
   loop.add({ name: 'atmosphere', update: () => {
-    env.env.screenInfo.x = engine.getRenderWidth(); env.env.screenInfo.y = engine.getRenderHeight();
+    // Materials read their own pixel position in the scene target: the internal size.
+    env.env.screenInfo.x = post.post.width; env.env.screenInfo.y = post.post.height;
     env.env.screenInfo.z = 1 / env.env.screenInfo.x; env.env.screenInfo.w = 1 / env.env.screenInfo.y;
+    env.env.artParams.z = clock.frame & 63; // temporal noise index (shadow disk rotation; TAA integrates it)
     atmosphere.update();
   } });
   loop.add({ name: 'clipmap', update: () => {
@@ -149,7 +151,9 @@ export async function addEnvironmentSystems(g) {
   loop.add({ name: 'renderScale', update: () => {
     if (params.version === lastParamsVersion) return;
     lastParamsVersion = params.version;
-    setRenderScale(params.v.renderScale);
+    // Internal resolution; TAA upscales to the output. Captures (photo spots, gate shots) are
+    // stills: native.
+    post.post.renderScale = g.capture ? 1 : params.v.renderScale;
   } });
 
   // System toggles. Changing the drawn mesh set invalidates a recorded snapshot.

@@ -44,7 +44,7 @@ export function createPostChain(scene, camera, atmo, shadows) {
     post.setBloom(bloom.out);
   };
   wire();
-  post.onResize(wire);
+  post.onResizeOut(wire);
   post.onParams(() => { post.bloomOn = bloom.on; post.bloomIntensity = bloom.intensity; });
   registerToggle({ key: 'postTaa', label: 'TAA', group: 'Post', on: true, onChange: (on) => { taa.on = on; post.resetHistory = true; } });
   registerToggle({ key: 'postAo', label: 'SSAO', group: 'Post', on: true, onChange: (on) => { comp.aoOn = on; } });

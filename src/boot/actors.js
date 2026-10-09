@@ -81,8 +81,14 @@ export async function createActors(g) {
   };
   const wardenView = createShapedView(scene, atmosphere, warden.chunks, { subdivisions: 4, name: 'warden', shader: 'warden', neighbours: warden.nbr });
   bindShadows(wardenView.material, shadows);
-  shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 3);
+  shadows.addCaster(wardenView.mesh, wardenView.makeShadowMaterial, 1);
   wardenView.freeze();
+  // Its distant self (systems/visibility.js swaps them by distance): the same records on a coarse
+  // sphere (162 vertices a chunk instead of 2562), casting only into the far cascade.
+  const wardenFar = createShapedView(scene, atmosphere, warden.chunks, { subdivisions: 2, name: 'wardenFar', shader: 'warden', neighbours: warden.nbr });
+  bindShadows(wardenFar.material, shadows);
+  shadows.addCaster(wardenFar.mesh, wardenFar.makeShadowMaterial, 2, 2);
+  wardenFar.freeze();
   // The fight's pillars (filled from the arena's sites by systems/wardenFight.js), their crystals
   // (the Crystallize renderer, its own records) and the spike barrage (the Shaped's shard shader).
   const { ARENA } = await import('../world/architecture.js');
@@ -151,7 +157,7 @@ export async function createActors(g) {
 
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
-    frostMod, frost, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView,
+    frostMod, frost, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
     climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },

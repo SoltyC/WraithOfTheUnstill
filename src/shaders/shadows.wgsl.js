@@ -148,9 +148,10 @@ fn shadowVisibility(wp: vec3f, n: vec3f, camPos: vec3f, fragXY: vec2f) -> f32 {
   if (shadowData.light.w <= 0.0) { return 1.0; }
   let dist = length(wp - camPos);
   let sp = shadowData.splits;
-  // Per-pixel rotation of the Poisson disk from a white-noise hash (interleaved gradient noise
-  // leaves a diagonal hatch in wide penumbrae without TAA).
-  let hq = fract(sin(dot(floor(fragXY), vec2f(12.9898, 78.233))) * 43758.5453);
+  // Per-pixel rotation of the Poisson disk from a white-noise hash, re-drawn every frame
+  // (artParams.z = frame index mod 64) so TAA integrates the penumbra instead of freezing one
+  // pattern — a static per-pixel pattern became visible blocks once upscaled (render scale < 1).
+  let hq = fract(sin(dot(floor(fragXY) + vec2f(uniforms.artParams.z * 5.588238, uniforms.artParams.z * 3.17), vec2f(12.9898, 78.233))) * 43758.5453);
   let a = 6.2831853 * hq;
   let rot = vec2f(cos(a), sin(a));
   var c = 0u;

@@ -140,8 +140,10 @@ export function addCreatureSystems(g) {
     if (game.pendingWarden !== null) {
       if (game.worldSettled() && game.pendingTrail === null) placeWardenForSpot();
     } else if (!game.wraithHeld || !capture) { warden.dt = clock.dt; warden.update(); }
-    wardenView.update();
-    if (warden.nbrDirty) { wardenView.updateNeighbours(); warden.nbrDirty = false; }
+    // The near or the far Warden (systems/visibility.js): only the drawn one is uploaded.
+    const wv = g.wardenFar && g.wardenFar.mesh.isEnabled() ? g.wardenFar : wardenView;
+    wv.update();
+    if (warden.nbrDirty) { wardenView.updateNeighbours(); g.wardenFar?.updateNeighbours(); warden.nbrDirty = false; }
   } });
   loop.add({ name: 'combat', update: () => {
     if (input.pressed[Action.LockOn]) combat.wantLockToggle = true;

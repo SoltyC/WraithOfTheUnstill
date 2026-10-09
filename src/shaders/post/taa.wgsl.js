@@ -56,33 +56,49 @@ fn sampleHistory(uv: vec2f, size: vec4f) -> vec3f {
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
-  let sz = vec2i(P.size.xy);
+  // Temporal upscaling (PLAN.md Q6): p is an OUTPUT pixel (P.pad[2] = output size); the current
+  // frame and depth are at the internal size (P.size), rendered with a sub-pixel jitter (P.jitter,
+  // internal pixels). At render scale 1 this is ordinary TAA with jitter-aware reconstruction.
+  let osz = vec2i(P.pad[2].xy);
+  let isz = vec2i(P.size.xy);
   let p = vec2i(gid.xy);
-  if (p.x >= sz.x || p.y >= sz.y) { return; }
-  let c0 = loadCur(p, sz);
+  if (p.x >= osz.x || p.y >= osz.y) { return; }
+  let uvO = (vec2f(p) + 0.5) * P.pad[2].zw;
+  // This output pixel's centre in internal pixel units; internal pixel q's sample sits at
+  // q + 0.5 − jitter (the projection was shifted by +jitter).
+  let ip = uvO * P.size.xy;
+  let j = select(vec2f(0.0), P.jitter.xy, P.taa.z > 0.5);
+  let qc = vec2i(floor(ip + j));
+  // Reconstruct the current frame at ip from the 3×3 internal samples (a Gaussian on the distance
+  // to each sample), gather the neighbourhood's moments for clipping, and the nearest depth.
+  var m1 = vec3f(0.0); var m2 = vec3f(0.0);
+  var mn = vec3f(1e9); var mx = vec3f(-1e9);
+  var acc = vec3f(0.0); var wsum = 0.0; var wmax = 0.0;
+  var dBest = 0.0;
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      let q = clamp(qc + vec2i(x, y), vec2i(0), isz - 1);
+      let c = loadCur(q, isz);
+      let s = toYCoCg(tmap(c));
+      m1 += s; m2 += s * s; mn = min(mn, s); mx = max(mx, s);
+      let d = ip - (vec2f(q) + 0.5 - j);
+      let w = exp(-2.8 * dot(d, d));
+      acc += tmap(c) * w; wsum += w; wmax = max(wmax, w);
+      let qd = textureLoad(depthTex, q, 0);
+      if (qd > dBest) { dBest = qd; }
+    }
+  }
+  let c0 = itmap(acc / max(wsum, 1e-5));
   if (P.taa.z < 0.5) {
     textureStore(outColor, p, vec4f(c0, 1.0));
     textureStore(outHist, p, vec4f(c0, 1.0));
     return;
   }
-  // Neighbourhood: moments of the 3×3 in YCoCg (tonemapped), and the nearest depth for
-  // reprojection (reverse-Z: nearest = largest), so edges reproject with the foreground.
-  var m1 = vec3f(0.0); var m2 = vec3f(0.0);
-  var mn = vec3f(1e9); var mx = vec3f(-1e9);
-  var dBest = 0.0; var pBest = p;
-  for (var y = -1; y <= 1; y++) {
-    for (var x = -1; x <= 1; x++) {
-      let q = p + vec2i(x, y);
-      let s = toYCoCg(tmap(loadCur(q, sz)));
-      m1 += s; m2 += s * s; mn = min(mn, s); mx = max(mx, s);
-      let qd = textureLoad(depthTex, clamp(q, vec2i(0), sz - 1), 0);
-      if (qd > dBest) { dBest = qd; pBest = q; }
-    }
-  }
   m1 /= 9.0; m2 /= 9.0;
   let sigma = sqrt(max(m2 - m1 * m1, vec3f(0.0)));
-  // Reproject (homogeneous, so sky at infinite depth reprojects as a direction).
-  let ndc = texelNdc(pBest, P.size) + vec2f(p - pBest) * 2.0 * P.size.zw;
+  // Reproject this output pixel with the nearest depth around it (edges reproject with the
+  // foreground; homogeneous, so the sky at infinite depth reprojects as a direction).
+  let ndc = uvO * 2.0 - 1.0;
   let wh = P.invVP * vec4f(ndc, dBest, 1.0);
   let ph = P.prevVP * wh;
   let prevNdc = ph.xy / ph.w;
@@ -90,25 +106,26 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let valid = P.jitter.w < 0.5 && ph.w > 0.0 && all(uv > vec2f(0.0)) && all(uv < vec2f(1.0));
   var outc = c0;
   if (valid) {
-    let h = toYCoCg(tmap(sampleHistory(uv, P.size)));
-    // Variance clip: pull the history toward the mean until it lies in mean ± γσ.
-    let gamma = 1.1;
+    let h = toYCoCg(tmap(sampleHistory(uv, P.pad[2])));
+    // Variance clip toward the neighbourhood (γ wider when upscaling: fewer samples per pixel).
+    let up = P.pad[2].x * P.size.z; // output / internal (≥ 1)
+    let gamma = 1.1 + 0.35 * clamp(up - 1.0, 0.0, 1.0);
     let lo = m1 - gamma * sigma; let hi = m1 + gamma * sigma;
     let cen = (lo + hi) * 0.5; let ext = max((hi - lo) * 0.5, vec3f(1e-5));
     let v = h - cen;
     let unit = abs(v / ext);
     let vmax = max(unit.x, max(unit.y, unit.z));
     var hc = select(h, cen + v / vmax, vmax > 1.0);
-    // Also inside the neighbourhood's min/max: the variance box can reach below the darkest
-    // neighbour at a hard edge, and the Catmull-Rom undershoot there would compound frame after
-    // frame into a dark outline.
     hc = clamp(hc, mn, mx);
     let ct = toYCoCg(tmap(c0));
-    // Feedback: steady at P.taa.x; less where the history moved fast (sub-pixel blur adds up).
-    let motion = length((uv - (vec2f(p) + 0.5) * P.size.zw) * P.size.xy);
-    let fb = mix(P.taa.x, 0.8, clamp(motion / 8.0, 0.0, 1.0));
-    // Luma weights (in the compressed space) keep bright pixels from dominating the blend.
-    let wc = (1.0 - fb) / (1.0 + ct.x); let wh2 = fb / (1.0 + hc.x);
+    // Feedback: steady at P.taa.x, less where the history moved fast; the current frame counts
+    // in proportion to how near a real sample lies to this output pixel (upscaling).
+    let motion = length((uv - uvO) * P.pad[2].xy);
+    // Upscaling keeps more history (fewer real samples land on each output pixel per frame).
+    let fbBase = mix(P.taa.x, 0.95, clamp(up - 1.0, 0.0, 1.0) * 2.0);
+    let fb = mix(fbBase, 0.8, clamp(motion / 8.0, 0.0, 1.0));
+    let alpha = (1.0 - fb) * clamp(wmax, 0.35, 1.0);
+    let wc = alpha / (1.0 + ct.x); let wh2 = (1.0 - alpha) / (1.0 + hc.x);
     let r = (ct * wc + hc * wh2) / (wc + wh2);
     outc = itmap(fromYCoCg(r));
   }

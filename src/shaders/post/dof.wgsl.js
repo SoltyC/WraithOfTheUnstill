@@ -14,7 +14,8 @@ ${POST_PARAMS_WGSL}
 @group(0) @binding(3) var outColor: texture_storage_2d<rgba16float, write>;
 
 fn distAt(q: vec2i, sz: vec2i) -> f32 {
-  let c = clamp(q, vec2i(0), sz - 1);
+  // q is an output pixel; depth lives at the internal size (P.size; output size in P.pad[2]).
+  let c = clamp(vec2i(vec2f(q) * P.size.xy * P.pad[2].zw), vec2i(0), vec2i(P.size.xy) - 1);
   let d = textureLoad(depthTex, c, 0);
   if (d <= 0.0) { return 1e5; }
   return length(worldPos(texelNdc(c, P.size), d, P.invVP) - P.cam.xyz);
@@ -30,7 +31,7 @@ fn coc(dist: f32) -> f32 {
 
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
-  let sz = vec2i(P.size.xy);
+  let sz = vec2i(P.pad[2].xy);
   let p = vec2i(gid.xy);
   if (p.x >= sz.x || p.y >= sz.y) { return; }
   let c0 = textureLoad(src, p, 0).rgb;

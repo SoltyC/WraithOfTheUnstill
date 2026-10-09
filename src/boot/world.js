@@ -70,7 +70,11 @@ export async function createWorld(g) {
   const rocks = createRocks(scene, content.clipmap, atmosphere, matLib);
   bindShadows(rocks.material, shadows);
   // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).
-  for (const m of rocks.meshes) shadows.addCaster(m, rocks.makeShadowMaterial, 2);
+  // Each rock tier casts only into the cascades its distances fall in (near < 140 m: 0–1; outcrops
+  // < 420 m: 1–2; far: 2) — casters are not culled per cascade, every listed one runs its vertices.
+  shadows.addCaster(rocks.meshes[0], rocks.makeShadowMaterial, 1, 0);
+  shadows.addCaster(rocks.meshes[1], rocks.makeShadowMaterial, 2, 2);
+  shadows.addCaster(rocks.meshes[2], rocks.makeShadowMaterial, 2, 1);
   rocks.freeze();
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');

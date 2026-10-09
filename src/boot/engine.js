@@ -39,17 +39,18 @@ export async function createEngine(canvas, qs) {
   gpuTimer.init(gpuStats.device);
 
   const resMatch = /^(\d+)x(\d+)$/.exec(qs.get('res') || '');
-  let renderScale = 1;
+  // The backbuffer is always the full output size (the window, or the locked ?res); render scale
+  // is applied inside the post chain (temporal upscaling), not by shrinking the canvas.
   const applySize = () => {
-    if (resMatch) engine.setSize(Math.round(Number(resMatch[1]) * renderScale), Math.round(Number(resMatch[2]) * renderScale));
-    else engine.setHardwareScalingLevel(1 / renderScale); // resizes to window × scale
+    if (resMatch) engine.setSize(Number(resMatch[1]), Number(resMatch[2]));
+    else engine.setHardwareScalingLevel(1);
   };
   applySize();
   window.addEventListener('resize', applySize);
 
   return {
     engine, gpuTimer,
-    /** Render scale (Quality slider), applied on top of the window or the locked ?res size. */
-    setRenderScale(s) { if (s !== renderScale) { renderScale = s; applySize(); } },
+    /** Kept for callers; render scale now lives in the post chain (post.renderScale). */
+    setRenderScale() {},
   };
 }

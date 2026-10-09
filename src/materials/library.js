@@ -51,10 +51,16 @@ export async function loadMaterialLibrary(engine, scene) {
     it._useSRGBBuffer = s.key === 'alb';
     // A wrapped texture has no view yet: make the 2D-array view over every mip and layer.
     it._hardwareTexture.setUsage(0, true, true, false, false, s.size, s.size, n);
+    // The WebGPU sampler is read from the internal texture (it is the TextureSampler): trilinear,
+    // mipmapped, repeating, anisotropic. (Left at its defaults it sampled nearest — blocky texels,
+    // worst at reduced render scale where coarser mips are chosen.)
+    it.samplingMode = Constants.TEXTURE_TRILINEAR_SAMPLINGMODE;
+    it.useMipMaps = true;
+    it.wrapU = Constants.TEXTURE_WRAP_ADDRESSMODE; it.wrapV = Constants.TEXTURE_WRAP_ADDRESSMODE; it.wrapR = Constants.TEXTURE_WRAP_ADDRESSMODE;
+    it._cachedAnisotropicFilteringLevel = 8;
     const t = new BaseTexture(scene, it);
     t.wrapU = Constants.TEXTURE_WRAP_ADDRESSMODE; t.wrapV = Constants.TEXTURE_WRAP_ADDRESSMODE;
     t.anisotropicFilteringLevel = 8;
-    it.samplingMode = Constants.TEXTURE_TRILINEAR_SAMPLINGMODE;
     t.name = 'mat-' + s.key;
     return t;
   };

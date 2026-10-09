@@ -48,7 +48,7 @@ export function createBloom(post, scene, input) {
       for (let i = LEVELS - 2; i >= 0; i--) csUp[i].dispatch(groups[i * 4 + 2], groups[i * 4 + 3], 1);
     },
   };
-  build(post.width, post.height);
-  post.onResize((W, H) => build(W, H));
+  build(post.outWidth, post.outHeight);
+  post.onResizeOut((W, H) => build(W, H));
   return bloom;
 }

@@ -18,7 +18,9 @@ export const paramDefs = [
   { key: 'deformDepth', label: 'Deformation depth', group: 'Art', min: 0, max: 2, step: 0.01, value: 1 },
   { key: 'refillRate', label: 'Refill (healing) rate', group: 'Art', min: 0, max: 4, step: 0.01, value: 1 },
   { key: 'gradeStrength', label: 'Grading strength', group: 'Art', min: 0, max: 1, step: 0.01, value: 1 },
-  { key: 'renderScale', label: 'Render scale', group: 'Quality', min: 0.5, max: 1, step: 0.05, value: 1 },
+  // Internal resolution, upscaled to the output by TAA (post chain). 0.7 holds the 3060 target near
+  // 90 fps at 1440p (PERF.md); 1 = native.
+  { key: 'renderScale', label: 'Render scale', group: 'Quality', min: 0.5, max: 1, step: 0.05, value: 0.7 },
 ];
 
 /**
@@ -30,9 +32,9 @@ for (const d of paramDefs) params.v[d.key] = d.value;
 
 /** Quality presets set groups of params at once. */
 export const qualityPresets = {
-  low: { renderScale: 0.6 },
-  medium: { renderScale: 0.8 },
-  high: { renderScale: 1 },
+  low: { renderScale: 0.55 },
+  medium: { renderScale: 0.67 },
+  high: { renderScale: 0.8 },
   ultra: { renderScale: 1 },
 };
 

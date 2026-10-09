@@ -26,9 +26,11 @@ import { displayVertexWGSL, displayFragmentWGSL } from '../shaders/post/display.
 import { lutCS } from '../shaders/post/lut.wgsl.js';
 import { POST_PARAM_FLOATS } from '../shaders/post/common.wgsl.js';
 
-/** TAA jitter: Halton (2, 3), 8 samples, centred on the pixel (px). */
-const JITTER = new Float32Array(16);
-for (let k = 0; k < 8; k++) {
+/** TAA jitter: Halton (2, 3), centred on the pixel (internal px). 32 phases: when upscaling,
+ *  every output pixel needs samples from many sub-positions (≈ 8 / scale² phases, FSR2's rule). */
+const JITTER_N = 32;
+const JITTER = new Float32Array(JITTER_N * 2);
+for (let k = 0; k < JITTER_N; k++) {
   for (let d = 0; d < 2; d++) {
     const b = d === 0 ? 2 : 3;
     let f = 1, r = 0, i = k + 1;
@@ -67,7 +69,12 @@ export function computePass(engine, name, code, bind) {
  */
 export function createPost(scene, camera) {
   const engine = scene.getEngine();
-  let W = engine.getRenderWidth(), H = engine.getRenderHeight();
+  // Two sizes (temporal upscaling, PLAN.md Q6): the output (the swapchain, OW × OH) and the
+  // internal size the scene and the passes before TAA run at (W × H = output × renderScale). TAA
+  // rebuilds the output from the jittered internal frames; bloom and display run at the output.
+  let OW = engine.getRenderWidth(), OH = engine.getRenderHeight();
+  let scale = 1;
+  let W = Math.max(16, Math.round(OW * scale)), H = Math.max(16, Math.round(OH * scale));
 
   // --- Scene target: HDR colour + reverse-Z depth (sampleable). -----------------------------------
   const sceneRT = new RenderTargetTexture('sceneHDR', { width: W, height: H }, scene, {
@@ -98,7 +105,7 @@ export function createPost(scene, camera) {
     shaderLanguage: ShaderLanguage.WGSL,
   });
   const displayParams = new Vector4(1, 0.035, 0, 1);
-  const viewport = new Vector4(W, H, 1 / W, 1 / H);
+  const viewport = new Vector4(OW, OH, 1 / OW, 1 / OH);
   const displayParams2 = new Vector4(0.35, 0, 0, 0);
   /** The texture the display pass shows (the last post output; the scene target until passes exist). */
   let finalTex = sceneRT, bloomTex = lutTex;
@@ -140,23 +147,42 @@ export function createPost(scene, camera) {
     debug: Number(new URLSearchParams(location.search).get('postDebug') || 0),
     /** Set to drop the temporal history (teleports, cuts, captures). */
     resetHistory: true,
+    /** Internal (scene, pre-TAA passes) size. */
     get width() { return W; },
     get height() { return H; },
+    /** Output (TAA history, bloom, display) size. */
+    get outWidth() { return OW; },
+    get outHeight() { return OH; },
+    /** Internal resolution as a fraction of the output (Quality: render scale). */
+    renderScale: 1,
     get frame() { return frame; },
     /** Per frame, after the camera has moved and before scene.render. */
     update() {
-      const w = engine.getRenderWidth(), h = engine.getRenderHeight();
-      if (w !== W || h !== H) {
-        W = w; H = h;
+      const ow = engine.getRenderWidth(), oh = engine.getRenderHeight();
+      const sc = post.renderScale;
+      const w = Math.max(16, Math.round(ow * sc)), h = Math.max(16, Math.round(oh * sc));
+      const outChanged = ow !== OW || oh !== OH, inChanged = w !== W || h !== H;
+      if (outChanged) { OW = ow; OH = oh; viewport.x = OW; viewport.y = OH; viewport.z = 1 / OW; viewport.w = 1 / OH; }
+      if (inChanged) {
+        W = w; H = h; scale = sc;
         sceneRT.resize({ width: W, height: H });
         attachDepth();
-        viewport.x = W; viewport.y = H; viewport.z = 1 / W; viewport.w = 1 / H;
         for (const f of resizers) f(W, H);
+      }
+      if (outChanged || inChanged) {
+        for (const f of outResizers) f(OW, OH);
+        post.resetHistory = true;
         engine.snapshotRenderingReset();
       }
       // Matrices: this frame's unjittered view-projection and its inverse, last frame's, then the
       // jitter goes into the camera's projection (clip.xy += j·w) for the scene to render with.
-      camera.getViewMatrix(true).multiplyToRef(camera.getProjectionMatrix(true), vp);
+      // The jittered projection is frozen into the camera for the frame (Babylon recomputes an
+      // unfrozen one whenever its render target differs in size from the engine — at render
+      // scale < 1 the jitter written into it was lost, and the upscaler saw the same frame every
+      // time): unfreeze, recompute unjittered, jitter, freeze.
+      camera.unfreezeProjectionMatrix();
+      const pm = camera.getProjectionMatrix(true);
+      camera.getViewMatrix(true).multiplyToRef(pm, vp);
       vp.invertToRef(invVP);
       const a = invVP.m, b = (havePrev ? prevVP : vp).m;
       const v = vp.m;
@@ -164,20 +190,23 @@ export function createPost(scene, camera) {
       prevVP.copyFrom(vp); havePrev = true;
       P[32] = W; P[33] = H; P[34] = 1 / W; P[35] = 1 / H;
       if (post.resetHistory) resetFrame = frame;
-      const k = ((frame - resetFrame) % 8) * 2; // relative to the reset: captures repeat exactly
+      // Phases used: 8 at native resolution, all 32 when upscaling (relative to the reset: captures repeat).
+      const nPh = post.renderScale < 0.99 ? JITTER_N : 8;
+      const k = ((frame - resetFrame) % nPh) * 2;
       const jx = post.jitter ? JITTER[k] : 0, jy = post.jitter ? JITTER[k + 1] : 0;
       P[36] = jx; P[37] = jy; P[38] = frame - resetFrame; P[39] = post.resetHistory ? 1 : 0; // frame relative to the last reset: captures repeat exactly
       post.resetHistory = false;
       const c = camera.position;
       P[40] = c.x; P[41] = c.y; P[42] = c.z; P[43] = camera.minZ;
       P[104] = post.debug === 1 ? 1 : 0; P[105] = post.debug === 4 ? 1 : 0;
+      P[112] = OW; P[113] = OH; P[114] = 1 / OW; P[115] = 1 / OH; // output size (pad[2])
       for (let i = 0; i < pre.length; i++) pre[i](P);
       paramsBuf.update(P);
-      if (jx !== 0 || jy !== 0) {
-        const pm = camera.getProjectionMatrix();
+      {
         const m = pm._m;
         m[8] += jx * 2 / W; m[9] += jy * 2 / H;
         pm.markAsUpdated();
+        camera.freezeProjectionMatrix(pm);
       }
       if (post.gradeDirty || !lutBuilt) {
         gradeBuf.update(gradeData);
@@ -197,14 +226,16 @@ export function createPost(scene, camera) {
     addPass(fn) { passes.push(fn); },
     /** Register a parameter writer (P) run each frame before the upload. */
     onParams(fn) { pre.push(fn); },
-    /** Register a resize hook (w, h). */
+    /** Register a resize hook for the internal size (w, h). */
     onResize(fn) { resizers.push(fn); },
+    /** Register a resize hook for the output size (w, h); also called after an internal resize. */
+    onResizeOut(fn) { outResizers.push(fn); },
     /** Set the texture the display pass shows. */
     setFinal(t) { finalTex = t; },
     /** Set the bloom texture the display pass mixes in. */
     setBloom(t) { bloomTex = t; },
   };
-  const passes = [], resizers = [], pre = [];
+  const passes = [], resizers = [], outResizers = [], pre = [];
   scene.onAfterRenderObservable.add(() => post.render());
   return post;
 }

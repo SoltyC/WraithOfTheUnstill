@@ -15,6 +15,7 @@ import { dofCS } from '../shaders/post/dof.wgsl.js';
 export function createTaa(post, scene, input) {
   const engine = scene.getEngine();
   let h0, h1, out, a, b, dofA, dofB;
+  // Histories and output at the output size; the current frame (input) at the internal size.
   const build = (W, H) => {
     if (h0) { h0.dispose(); h1.dispose(); out.dispose(); }
     h0 = storageTexture(scene, W, H, 'taaHist0');
@@ -39,7 +40,7 @@ export function createTaa(post, scene, input) {
      *  dofOn runs the pass (the release cinematic). */
     dofOn: false, focus: 40, focusRange: 25, maxBlur: 9, farBlur: 1,
     run() {
-      const W = post.width, H = post.height, even = (post.frame & 1) === 0;
+      const W = post.outWidth, H = post.outHeight, even = (post.frame & 1) === 0;
       (even ? a : b).dispatch(Math.ceil(W / 8), Math.ceil(H / 8), 1);
       if (taa.dofOn || warm < 3) {
         if ((even ? dofA : dofB).dispatch(Math.ceil(W / 8), Math.ceil(H / 8), 1)) warm |= even ? 1 : 2;
@@ -47,8 +48,8 @@ export function createTaa(post, scene, input) {
     },
   };
   let warm = 0; // bits: DOF A/B have run once (during loading: no late pipeline on the first cinematic)
-  build(post.width, post.height);
-  post.onResize((W, H) => { build(W, H); post.resetHistory = true; });
+  build(post.outWidth, post.outHeight);
+  post.onResizeOut((W, H) => { build(W, H); post.resetHistory = true; });
   post.onParams((P) => {
     P[44] = taa.feedback; P[46] = taa.on ? 1 : 0; post.jitter = taa.on;
     P[76] = taa.focus; P[77] = taa.focusRange; P[78] = taa.maxBlur; P[79] = taa.dofOn ? taa.farBlur : 0;

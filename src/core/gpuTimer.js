@@ -32,6 +32,8 @@ export const gpuTimer = {
   frameOf: new Uint32Array(HISTORY),
   /** Passes timed in the last sample. */
   lastPasses: 0,
+  /** Debug only (allocates): per-pass totals by descriptor label (set debugPasses, read byLabel). */
+  debugPasses: false, byLabel: {}, _labels: [],
   count: 0,
   lastMs: 0,
   _device: null,
@@ -79,6 +81,7 @@ export const gpuTimer = {
   _tag(desc, kind) {
     if (this._sampling && this._passes < MAX_PASSES) {
       desc.timestampWrites = this._writes[this._passes];
+      if (this.debugPasses) this._labels[this._passes] = desc.label || '?';
       this._kinds[this._passes++] = kind;
     } else desc.timestampWrites = undefined;
   },
@@ -101,6 +104,7 @@ export const gpuTimer = {
     encoder.resolveQuerySet(this._querySet, 0, 2 * n, this._resolveBuf, 0);
     encoder.copyBufferToBuffer(this._resolveBuf, 0, r.buf, 0, 16 * n);
     r.busy = true; r.passes = n; r.kinds.set(this._kinds); r.frameNo = this._frame - 1;
+    if (this.debugPasses) r.labels = this._labels.slice(0, n);
     this._pendingSlot = slot;
   },
 
@@ -120,6 +124,7 @@ export const gpuTimer = {
         if (e > last) last = e;
         const ms = Number(e - b) / 1e6;
         if (r.kinds[k] === KIND_MAIN) main += ms; else if (r.kinds[k] === KIND_RTT) shadow += ms; else compute += ms;
+        if (this.debugPasses && r.labels) { const L = r.labels[k]; this.byLabel[L] = (this.byLabel[L] || 0) + ms; }
       }
       const span = Number(last - first) / 1e6;
       r.buf.unmap();
