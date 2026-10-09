@@ -119,6 +119,27 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
   return lit / taps;
 }
 
+// Trees cast into cascade 1 only (their crowns overhead would fill cascade 0's fine map many
+// layers deep): receivers within cascade 0 also take this 2×2 bilinear lookup of cascade 1, with
+// the same normal offset and slope bias as shadowCascade — the dappled light under the canopy at
+// cascade 1's ~14 cm texels.
+fn shadowTap4(c: u32, wp: vec3f, n: vec3f) -> f32 {
+  let texel = shadowData.origins[c].w;
+  let L = shadowData.light.xyz;
+  let ndl = clamp(dot(n, L), 0.05, 1.0);
+  let offsetP = wp + n * texel * (1.5 + 3.5 * (1.0 - ndl));
+  let bias = texel * (1.2 + 2.5 * sqrt(1.0 - ndl * ndl) / ndl);
+  let clip = shadowData.viewProj[c] * vec4f(offsetP, 1.0);
+  let uv = vec2f(clip.x * 0.5 + 0.5, 0.5 + clip.y * 0.5);
+  if (uv.x <= 0.0 || uv.x >= 1.0 || uv.y <= 0.0 || uv.y >= 1.0) { return 1.0; }
+  let d = dot(offsetP - shadowData.origins[c].xyz, -L) - bias;
+  let px = uv * ${SHADOW_SIZE}.0 - 0.5;
+  let b = vec2i(floor(px)); let f = px - floor(px);
+  let s00 = select(0.0, 1.0, d <= shadowLoad(c, b)); let s10 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(1, 0)));
+  let s01 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(0, 1))); let s11 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(1, 1)));
+  return mix(mix(s00, s10, f.x), mix(s01, s11, f.x), f.y);
+}
+
 // Cheap visibility for volumes (spray, mist): the cascade by distance, a 2×2 bilinear-weighted
 // lookup, no blocker search or penumbra (a cloud of grains has no contact shadows) — 4 reads
 // instead of up to 48.
@@ -140,7 +161,8 @@ fn shadowVisibilityFast(wp: vec3f, camPos: vec3f) -> f32 {
   let b = vec2i(floor(px)); let f = px - floor(px);
   let s00 = select(0.0, 1.0, d <= shadowLoad(c, b)); let s10 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(1, 0)));
   let s01 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(0, 1))); let s11 = select(0.0, 1.0, d <= shadowLoad(c, b + vec2i(1, 1)));
-  let v = mix(mix(s00, s10, f.x), mix(s01, s11, f.x), f.y);
+  var v = mix(mix(s00, s10, f.x), mix(s01, s11, f.x), f.y);
+  if (c == 0u) { v *= shadowTap4(1u, wp, -L); } // the trees (cascade 1 only)
   return mix(1.0, v, shadowData.light.w);
 }
 
@@ -160,6 +182,7 @@ fn shadowVisibility(wp: vec3f, n: vec3f, camPos: vec3f, fragXY: vec2f) -> f32 {
   if (dist > sp.z) { c = 3u; }
   if (dist > sp.w) { return 1.0; }
   var v = shadowCascade(c, wp, n, rot);
+  if (c == 0u) { v *= shadowTap4(1u, wp, n); } // the trees (cascade 1 only)
   // Blend into the next cascade over the last 15% of this one.
   let far = sp[c];
   let near = select(0.0, sp[max(c, 1u) - 1u], c > 0u);

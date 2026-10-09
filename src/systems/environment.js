@@ -123,12 +123,26 @@ export async function addEnvironmentSystems(g) {
     gr.density = 1;
     gr.update();
   } });
+  let hazeBase = 0;
+  const HAZE = 0.0032; // 1/m at the ground under a full canopy (~1 km visibility; local, 200 m)
   loop.add({ name: 'trees', update: () => {
     const tr = g.trees; if (!tr) return;
     tr.camX = camera.position.x; tr.camZ = camera.position.z; tr.time = clock.simTime;
     tr.wind = Math.min(1.5, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.2 + 2 * warden.gust);
     tr.windX = streamer.windX || 1; tr.windZ = streamer.windZ || 0;
     tr.update();
+    // Forest haze (PLAN.md M4b): thickens under the canopy around the camera.
+    const hz = post.fog.haze;
+    hz.density = HAZE * tr.canopy; // trees grow only on meadow land
+    // Its base is the ground under the camera, eased quickly (the weather fog's base eases slowly
+    // and lagged far below after a teleport).
+    ground.qx = camera.position.x; ground.qz = camera.position.z; ground.sample();
+    hazeBase += (ground.h - hazeBase) * (pendingTp.active || Math.abs(ground.h - hazeBase) > 40 ? 1 : 1 - Math.exp(-clock.realDt * 2));
+    hz.base = hazeBase;
+    // Eye adaptation under the canopy: up to +1.4 stops beyond the meter's bounded correction, so forest
+    // shade reads (in the open, 1). Scene materials and the post chain both take it.
+    const lift = 1 + 1.6 * tr.canopy;
+    env.env.fogParams.z = params.v.exposure * lift; post.post.exposureLift = lift;
   } });
   loop.add({ name: 'spindrift', update: () => {
     const w = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;

@@ -171,6 +171,20 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     dbgT = T;
     c = vec4f(c.rgb * T + ins * exposure, c.a);
   }
+  // Forest haze (PLAN.md M4b): a thin, low medium under the canopy (pad[3] = density at the base,
+  // height falloff, base level, shafts on), lit by the sun through the crowns (the quarter-res
+  // ratio: beams where the leaves let light through) and faintly by the sky — strongly forward
+  // scattering, so looking toward a low sun through the trees shows the shafts.
+  if (P.pad[3].x > 1e-6) {
+    let hazep = vec4f(P.pad[3].x, P.pad[3].y, P.pad[3].z, 0.0);
+    let Th = exp(-fogOpticalDepth(cam, dir, min(dist, 200.0), hazep)); // local: within 200 m
+    var ratioH = 1.0;
+    if (P.pad[3].w > 0.5) { ratioH = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).g; }
+    let cosT = dot(dir, P.sun.xyz);
+    let phase = mix(hgPhase(cosT, 0.72), 0.0795775, 0.25);
+    let ins = (atmoLight[0].xyz * phase * ratioH * 1.4 + atmoLight[1].xyz * 0.35) * (1.0 - Th);
+    c = vec4f(c.rgb * Th + ins * exposure, c.a);
+  }
   // Valley fog (stilled air): the cold pools in the low ground as a flat-topped layer with a soft,
   // gently undulating top (pad[1] = density inside, top level, top softness, weight). Optical
   // depth in closed form for density D·clamp((top − y)/soft, 0, 1) along the ray.

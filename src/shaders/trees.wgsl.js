@@ -108,6 +108,15 @@ fn leafUv(uv: vec2f, cellIdx: f32) -> vec2f {
 }
 `;
 
+/** Detail and edge dissolve: white noise per pixel, re-drawn each frame (TAA blends it;
+ *  interleaved gradient noise left a visible diagonal hatch). Encoding in the vertex shader. */
+const DISSOLVE = /* wgsl */ `
+fn dissolveCut(xy: vec2f, frame: f32, fv: f32) -> bool {
+  let n = fract(sin(dot(floor(xy) + vec2f(frame * 7.31, frame * 2.17), vec2f(12.9898, 78.233))) * 43758.5453);
+  return (fv >= 0.0 && n >= fv) || (fv < 0.0 && n < 1.0 + fv);
+}
+`;
+
 /** Leaves and bark are separate draws: bark has no cut-out (early depth), leaves skip the bark scan. */
 function treeFragment(leafPass) {
   return /* wgsl */ `
@@ -127,6 +136,7 @@ ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${leafPass ? LEAF_UV : MATERIALS_WGSL}
+${DISSOLVE}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -139,16 +149,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let key = atmoKeyColor();
   let ex = uniforms.fogParams.z * atmoExposure();
   var col: vec3f;
-  // Detail crossfade: white noise per pixel, re-drawn each frame (TAA blends it; interleaved
-  // gradient noise left a visible diagonal hatch).
-  let fn0 = fract(sin(dot(floor(fragmentInputs.position.xy) + vec2f(uniforms.artParams.z * 7.31, uniforms.artParams.z * 2.17), vec2f(12.9898, 78.233))) * 43758.5453);
-  let fv = fragmentInputs.vFade;
-  let cutNear = fv >= 0.0 && fn0 >= fv;
-  let cutFar = fv < 0.0 && (fn0 < (1.0 + fv));
-  if (cutNear || cutFar) { discard; }
+${leafPass ? '' : `  if (dissolveCut(fragmentInputs.position.xy, uniforms.artParams.z, fragmentInputs.vFade)) { discard; }`}
 ${leafPass ? `
+  // No cut-out here: the depth prepass (treeLeafDepth) did it, and this pass draws only where its
+  // depth is equal — each visible leaf pixel is shaded once, however many cards overlap.
   let lc = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, info.z));
-  if (lc.a < 0.5) { discard; }
   if (dot(N, V) < -0.2) { N = normalize(N + V * 0.6); }
   // Per-cluster colour: a little hue and value variation, and the tree's own (vHue).
   let h = fract(info.y * 0.0137 + fragmentInputs.vHue);
@@ -167,7 +172,7 @@ ${leafPass ? `
   col += spellLit(wp, N, albedo, 0.4, ex);` : `
   let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
   // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
-  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.42, 0.4, 0.37), uniforms.treeMat.y > 1.5), 0.6);
+  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.3, 0.29, 0.27), uniforms.treeMat.y > 1.5), 0.6);
   let moss = smoothstep(0.3, 0.0, info.w) * smoothstep(-0.2, 0.6, -bk.N.z * 0.6 + 0.2) * 0.6;
   albedo = mix(albedo, vec3f(0.06, 0.09, 0.03), moss);
   N = bk.N;
@@ -226,5 +231,27 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (shadowFadeOut(fragmentInputs.position.xy, fragmentInputs.vFade)) { discard; }
   let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
   fragmentOutputs.color = vec4f(d, 0.0, 0.0, 1.0);
+}
+`;
+
+/** Leaf depth prepass: the cut-out and the dissolve, depth only (render/trees.js draws it before
+ *  every other opaque mesh; the leaf colour pass then tests depth equal). */
+export const treeLeafDepthFragmentWGSL = /* wgsl */ `
+uniform artParams: vec4f;
+var leafAtlas: texture_2d<f32>;
+var leafAtlasSampler: sampler;
+varying vWorldPos: vec3f;
+varying vNormal: vec3f;
+varying vUv: vec2f;
+varying vInfo: vec4f;
+varying vHue: f32;
+varying vFade: f32;
+${LEAF_UV}
+${DISSOLVE}
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
+  let a = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z)).a;
+  if (a < 0.5 || dissolveCut(fragmentInputs.position.xy, uniforms.artParams.z, fragmentInputs.vFade)) { discard; }
+  fragmentOutputs.color = vec4f(0.0);
 }
 `;

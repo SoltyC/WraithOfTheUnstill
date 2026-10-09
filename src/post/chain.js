@@ -31,7 +31,7 @@ export function createPostChain(scene, camera, atmo, shadows) {
   };
   buildMeter();
   post.onResize(buildMeter);
-  post.onParams((P) => { P[71] = params.v.exposure; P[84] = meter.on ? 1 : 0; });
+  post.onParams((P) => { P[71] = params.v.exposure * (post.exposureLift || 1); P[84] = meter.on ? 1 : 0; });
   const taa = createTaa(post, scene, () => comp.out);
   post.addPass(() => fog.run());
   post.addPass(() => comp.run());

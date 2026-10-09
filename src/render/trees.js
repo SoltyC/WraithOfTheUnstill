@@ -15,16 +15,17 @@ import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { BaseTexture } from '@babylonjs/core/Materials/Textures/baseTexture.js';
 import { Constants } from '@babylonjs/core/Engines/constants.js';
+import { RenderingGroup } from '@babylonjs/core/Rendering/renderingGroup.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { SHADOW_SPLITS } from './shadows.js';
-import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL } from '../shaders/trees.wgsl.js';
+import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL, treeLeafDepthFragmentWGSL } from '../shaders/trees.wgsl.js';
 import { growTree, SPECIES } from '../world/trees/generator.js';
 import { drawLeafAtlas, ATLAS } from './leafAtlas.js';
 import { MAT, MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 import { hashU32, valueNoise } from '../terrain/noise.js';
-import { bindEnvironment } from './environment.js';
+import { bindEnvironment, env } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 
@@ -35,6 +36,7 @@ const HYST = 4, JUMP = 120;          // state hysteresis (m); a move beyond JUMP
 const MAX_NEAR = 90, MAX_FAR = 260, MAX_MID = 160;   // per variant
 const RADIUS = LOD_OUT + HYST + REPLACE + 2;
 const MID_REACH = SHADOW_SPLITS[1] + REPLACE;      // shadow-only casters for cascade 1
+const CANOPY_R = 45;                                // canopy cover around the camera (forest haze)
 const SEED = 0x7ee5;
 const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z, 0x165667b1) ^ s)) >>> 0) / 4294967296;
 
@@ -85,11 +87,15 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   const engine = scene.getEngine();
   const S = ShaderStore.ShadersStoreWGSL;
   S.treeVertexShader = treeVertexWGSL; S.treeLeafFragmentShader = treeLeafFragmentWGSL; S.treeBarkFragmentShader = treeBarkFragmentWGSL;
-  S.treeShadowFragmentShader = treeShadowFragmentWGSL; S.treeBarkShadowFragmentShader = treeBarkShadowFragmentWGSL;
+  S.treeShadowFragmentShader = treeShadowFragmentWGSL; S.treeLeafDepthFragmentShader = treeLeafDepthFragmentWGSL; S.treeBarkShadowFragmentShader = treeBarkShadowFragmentWGSL;
   const atlas = leafAtlasTexture(engine, scene);
   const params = new Vector4(0, 1, 1, 0);
   const lodV = [new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 2, 0)]; // z: 0 view, 1 shadow (no fade), 2 far shadow (edge fades only); w: clock
   const sets = [], mats = [], shadowOnly = [];
+  const envArt = env.artParams;
+  // Opaque order: the leaf depth prepass before everything else, then Babylon's default (by material).
+  const zRank = (sm) => (sm.getMesh().name.startsWith('treeZ') ? 0 : 1);
+  scene.setRenderingOrder(0, (a, b) => (zRank(a) - zRank(b)) || RenderingGroup.PainterSortCompare(a, b));
   SPECIES_IDS.forEach((sid, si) => {
     const barkLayer = MAT[SPECIES[sid].bark];
     for (let v = 0; v < VARIANTS; v++) for (const lod of [0, 1]) {
@@ -120,12 +126,35 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         mat.backFaceCulling = leaf ? false : true;
         mesh.material = mat;
         meshes.push(mesh); mats.push(mat);
+        if (!leaf) continue;
+        // Leaf depth prepass (drawn first, see the rendering order below): the colour pass then
+        // shades each visible leaf pixel once instead of once per overlapping card.
+        mat.depthFunction = Constants.EQUAL;
+        const zm = new Mesh(`treeZ-${sid}-${v}-${lod}`, scene);
+        const zd = new VertexData(); zd.positions = g.positions; zd.normals = g.normals; zd.uvs = g.uvs; zd.indices = g.indices;
+        zd.applyToMesh(zm, false);
+        zm.setVerticesData('info', g.info, false, 4);
+        zm.thinInstanceSetBuffer('matrix', buf, 16, false);
+        zm.alwaysSelectAsActiveMesh = true; zm.doNotSyncBoundingInfo = true;
+        const zmat = new ShaderMaterial(zm.name, scene, { vertex: 'tree', fragment: 'treeLeafDepth' }, {
+          attributes: ['position', 'normal', 'uv', 'info'],
+          uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'artParams'],
+          samplers: ['leafAtlas'], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
+        });
+        zmat.setArray4('levels', clipmap.levels); zmat.setStorageBuffer('levelData', clipmap.levelData);
+        zmat.setVector4('treeParams', params); zmat.setVector4('treeLod', lodV[lod]); zmat.setVector4('artParams', envArt);
+        zmat.setTexture('leafAtlas', atlas);
+        zmat.backFaceCulling = false; zmat.disableColorWrite = true;
+        zm.material = zmat;
+        meshes.push(zm); mats.push(zmat);
       }
       sets.push({ sid, si, v, lod, meshes, buf, max, n: 0 });
       // Cascade 1 (to SHADOW_SPLITS[1], 140 m): every tree within its reach casts from the far geometry — a
       // shadow does not need every twig, and the far set (out to the placement radius) would run
       // all its vertices there. Shadow-only meshes with their own instances: a layer outside the
       // view camera's mask (shadow maps draw their own render lists).
+      // Not cascade 0: receivers there read cascade 1 for the trees (shadows.wgsl.js shadowTap4) —
+      // crowns overhead filled cascade 0's fine map many layers deep (~1.4 ms in a grove).
       if (lod === 1) {
         const sbuf = new Float32Array(MAX_MID * 16), smeshes = [];
         for (const part of ['bark', 'leaf']) {
@@ -147,7 +176,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   const byKey = (si, v, lod) => sets[(si * VARIANTS + v) * 3 + lod];
 
   // ── Placement ──────────────────────────────────────────────────────────────────────────────
-  let lastX = 1e9, lastZ = 1e9, fading = false, cleanAt = 0;
+  let lastX = 1e9, lastZ = 1e9, fading = false, cleanAt = 0, canopySum = 0, canopyTarget = 0, lastNow = 0;
   /** Each placed tree's state at the last placement (cell key → 1 near, 2 far); swapped per rebuild. */
   let prev = new Map(), cur = new Map();
   const t0 = performance.now();
@@ -161,7 +190,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   }
   function rebuild(cx, cz, fresh, now) {
     for (const s of sets) s.n = 0;
-    fading = false;
+    fading = false; canopySum = 0;
     const c0x = Math.floor((cx - RADIUS) / CELL), c1x = Math.floor((cx + RADIUS) / CELL);
     const c0z = Math.floor((cz - RADIUS) / CELL), c1z = Math.floor((cz + RADIUS) / CELL);
     for (let gz = c0z; gz <= c1z; gz++) for (let gx = c0x; gx <= c1x; gx++) {
@@ -200,6 +229,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         if (was === 1) kNear = want === 2 ? 3 : 5; else if (was === 2) kFar = want === 1 ? 3 : 5;
         if (want === 1) kNear = was === 2 ? 2 : 4; else if (want === 2) kFar = was === 1 ? 2 : 4;
       }
+      if (want && d < CANOPY_R) canopySum += 1 - d / CANOPY_R;
       for (let lod = 0; lod < 3; lod++) {
         const kind = lod === 0 ? kNear : lod === 1 ? kFar : (want && d < MID_REACH ? 1 : 0);
         if (!kind) continue;
@@ -212,6 +242,9 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       }
     }
     const t = prev; prev = cur; cur = t; cur.clear();
+    // Weighted tree count within CANOPY_R: ~0–5 in the open and at grove edges, 10–22 inside groves.
+    const ck = Math.min(1, Math.max(0, (canopySum - 3) / 11));
+    canopyTarget = ck * ck * (3 - 2 * ck); api.cover = canopyTarget;
     // Draw only what was placed: an unused slot still ran the whole tree's vertices (×cascades).
     for (const s of sets) {
       for (let k = s.n; k < s.max; k++) s.buf[k * 16 + 2] = 0;
@@ -223,17 +256,22 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     engine.snapshotRenderingReset();
   }
 
-  return {
+  const api = {
     /** Drawn meshes (bark and leaves, near -0 and far -1). */
     meshes: sets.flatMap((s) => s.meshes).filter((m) => !shadowOnly.includes(m)),
-    /** Shadow casters: [mesh, minCascade, maxCascade] — cascade 1 from the shadow-only set, 2–3 from the far trees (cascade 0's 24 m holds few trees). */
-    casters: sets.flatMap((s) => s.meshes).map((m) => shadowOnly.includes(m) ? [m, 1, 1] : m.name.endsWith('-1') ? [m, 2, 3] : null).filter(Boolean), materials: mats,
+    /** Shadow casters: [mesh, minCascade, maxCascade] — cascade 1 from the shadow-only set (cascade 0 receivers read it too), 2–3 from the far trees. */
+    casters: sets.flatMap((s) => s.meshes).map((m) => shadowOnly.includes(m) ? [m, 1, 1] : m.name.startsWith('tree-') && m.name.endsWith('-1') ? [m, 2, 3] : null).filter(Boolean), materials: mats,
     /** Owner fields: camera x, z, time, wind strength and direction. */
-    camX: 0.5, camZ: 0.5, time: 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
+    camX: 0.5, camZ: 0.5, time: 0.5,
+    /** Canopy cover around the camera, 0..1, eased (out: the forest haze). */
+    canopy: 0.5 - 0.5,
+    /** Canopy cover at the last placement (unsmoothed). */
+    cover: 0.5 - 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
     update() {
       params.x = this.time; params.y = this.wind; params.z = this.windX; params.w = this.windZ;
       const now = (performance.now() - t0) * 0.001;
       for (const l of lodV) l.w = now;
+      this.canopy += (canopyTarget - this.canopy) * Math.min(1, (now - lastNow) * 0.7); lastNow = now;
       const dx = this.camX - lastX, dz = this.camZ - lastZ, m2 = dx * dx + dz * dz;
       if (m2 > REPLACE * REPLACE) {
         lastX = this.camX; lastZ = this.camZ;
@@ -253,11 +291,12 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         samplers: leaf ? ['leafAtlas'] : [], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
       });
       m.setArray4('levels', clipmap.levels); m.setStorageBuffer('levelData', clipmap.levelData);
-      m.setVector4('treeParams', params); m.setVector4('treeLod', lodV[name.includes('treeShadow-') ? 2 : 3]); if (leaf) m.setTexture('leafAtlas', atlas);
+      m.setVector4('treeParams', params); m.setVector4('treeLod', lodV[name.includes('treeShadow') ? 2 : 3]); if (leaf) m.setTexture('leafAtlas', atlas);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       m.backFaceCulling = !leaf;
       return m;
     },
     freeze() { for (const m of mats) { m.freeze(); fastFrozenIsReady(m); } },
   };
+  return api;
 }

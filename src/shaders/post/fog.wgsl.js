@@ -10,7 +10,8 @@
 //    sun in falling snow and haze. Stored as a ratio (shadowed / unshadowed in-scatter) that the
 //    compose pass applies to its full-resolution analytic fog, so silhouettes never halo.
 //
-// Out: cloudTex = (in-scattered rgb, transmittance); shaftTex.r = sun in-scatter ratio.
+// Out: cloudTex = (in-scattered rgb, transmittance); shaftTex.r = sun in-scatter ratio (weather fog),
+// .g = the same for the forest haze (PLAN.md M4b).
 
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
 import { CASCADES } from '../shadows.wgsl.js';
@@ -75,7 +76,17 @@ fn sunVis(wp: vec3f, dist: f32) -> f32 {
   let uv = vec2f(clip.x * 0.5 + 0.5, 0.5 + clip.y * 0.5);
   if (any(uv <= vec2f(0.0)) || any(uv >= vec2f(1.0))) { return 1.0; }
   let d = dot(wp - shadowData.origins[c].xyz, -L) - shadowData.origins[c].w * 1.5;
-  return select(0.0, 1.0, d <= shadowLoad(c, vec2i(uv * 2048.0)));
+  var v = select(0.0, 1.0, d <= shadowLoad(c, vec2i(uv * 2048.0)));
+  // Trees cast into cascade 1 only (shadows.wgsl.js shadowTap4): the first cascade's span reads it too.
+  if (c == 0u && v > 0.0) {
+    let clip1 = shadowData.viewProj[1] * vec4f(wp, 1.0);
+    let uv1 = vec2f(clip1.x * 0.5 + 0.5, 0.5 + clip1.y * 0.5);
+    if (all(uv1 > vec2f(0.0)) && all(uv1 < vec2f(1.0))) {
+      let d1 = dot(wp - shadowData.origins[1].xyz, -L) - shadowData.origins[1].w * 1.5;
+      v = select(0.0, 1.0, d1 <= shadowLoad(1u, vec2i(uv1 * 2048.0)));
+    }
+  }
+  return v;
 }
 
 // Cloud layer: base, top (m); coverage from the weather.
@@ -201,31 +212,42 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   }
   textureStore(cloudOut, q, cl);
 
-  // --- Light shafts: shadowed share of the weather fog's sun in-scattering --------------------
-  var ratio = 1.0;
-  if (P.fog.w > 0.5 && shadowData.light.w > 0.0) {
+  // --- Light shafts: shadowed share of the weather fog's and the forest haze's sun in-scattering
+  var ratio = 1.0; var ratioH = 1.0;
+  let hazep = vec4f(P.pad[3].x, P.pad[3].y, P.pad[3].z, 0.0);
+  let hazeOn = hazep.x > 1e-6 && P.pad[3].w > 0.5;
+  if ((P.fog.w > 0.5 || hazeOn) && shadowData.light.w > 0.0) {
     var dist = 1e5;
     if (dMax > 0.0) { dist = length(worldPos(texelNdc(pc, P.size), dMax, P.invVP) - cam); }
     let fogp = vec4f(P.fog.x, P.fog.y, P.fog.z, 0.0);
     let total = 1.0 - exp(-fogOpticalDepth(cam, dir, min(dist, 3000.0), fogp));
-    let tMax = min(dist, 300.0);
-    let N = 16;
+    let totalH = 1.0 - exp(-fogOpticalDepth(cam, dir, min(dist, 200.0), hazep));
+    // The haze lives near the ground under the crowns: a shorter march, finer steps.
+    let tMax = min(dist, select(300.0, 160.0, hazeOn));
+    let N = select(16, 24, hazeOn);
     let dt = tMax / f32(N);
     var lit = 0.0; var wsum = 0.0; var od = 0.0;
+    var litH = 0.0; var wsumH = 0.0; var odH = 0.0;
     for (var i = 0; i < N; i++) {
       let t = (f32(i) + ign) * dt;
       let p = cam + dir * t;
+      let v = sunVis(p, t);
       let dens = fogDensityAt(p, fogp);
       let w = dens * exp(-od) * dt;
       od += dens * dt;
-      lit += w * sunVis(p, t);
-      wsum += w;
+      lit += w * v; wsum += w;
+      let densH = fogDensityAt(p, hazep);
+      let wH = densH * exp(-odH) * dt;
+      odH += densH * dt;
+      litH += wH * v; wsumH += wH;
     }
     // Near segment marched; the rest (unshadowed) completes the total.
     let rest = max(total - wsum, 0.0);
     ratio = (lit + rest) / max(wsum + rest, 1e-6);
+    let restH = max(totalH - wsumH, 0.0);
+    ratioH = (litH + restH) / max(wsumH + restH, 1e-6);
   }
-  textureStore(shaftOut, q, vec4f(ratio, 0.0, 0.0, 1.0));
+  textureStore(shaftOut, q, vec4f(ratio, ratioH, 0.0, 1.0));
 }
 `;
 

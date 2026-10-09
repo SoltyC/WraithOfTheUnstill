@@ -24,7 +24,7 @@ struct PostParams {
   ssr: vec4f,         // intensity, max distance (m), thickness (m), on
   exposure: vec4f,    // meter on, adapt rate, min stops, max stops
   vp: mat4x4f,        // this frame's view-projection, unjittered (floats 88..103)
-  pad: array<vec4f, 6>,
+  pad: array<vec4f, 6>, // [0] debug, [1] valley fog, [2] output size, [3] forest haze (density, falloff, base, shafts on)
 };
 
 fn texelNdc(p: vec2i, size: vec4f) -> vec2f {

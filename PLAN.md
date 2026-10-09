@@ -391,6 +391,9 @@ placed by Q3; trunks collide (`solids.js` circles). Judged against
 - Motes and pollen drifting in the beams (GPU particles like the diamond dust, lit only where the
   sun reaches them).
 - Dappled light on the floor comes from the same tree shadows (already there).
+- **Done 2026-10-10:** the forest haze, the shaft ratio for it, the canopy measure and the shade
+  lift; photo spot `p8-forest-shafts`. **Open:** motes and pollen in the beams, a dawn/dusk
+  thickening, and a sky-occlusion term under the crowns (the near floor is still very dark).
 
 ### M5 — Rivers and water
 

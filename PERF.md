@@ -398,7 +398,10 @@ GPU frame median at 2560×1440 output, render scale 0.7, RTX 3060, Windows Chrom
 | Bark / leaf split | 21.7 ms | — |
 | Leaves: 4-tap shadow lookup | 17.1 ms | — |
 | Near trees cast from far geometry, near detail to 55 m | 15.1 ms | 15.9 ms |
-| Full cascade-1 tree shadows to 140 m, time dissolves (current) | **16.0 ms** (62 fps) | **15.9 ms** |
+| Full cascade-1 tree shadows to 140 m, time dissolves | 16.0 ms | 15.9 ms |
+| + forest haze; leaf depth prepass; no trees in cascade 0 (current) | **14.5 ms** (69 fps) | **15.0 ms** (67 fps) |
 
-- Trees now cost ~5 ms at noon: scene ~3 ms (mostly leaf overdraw, pixel-bound: the scene part fell 8.2 → 4.5 ms going from scale 0.7 to 0.45 before the split), cascade-1 shadow copies ~1 ms, far trees in cascades 2–3 ~1 ms.
+`p8-forest-shafts` (inside a grove, toward a low sun): 24.4 ms with the cascade-0 tree copies and no prepass → **16.3 ms** now. Unchanged elsewhere: `p5-steppe-stilled` 10.7 ms, `p7-monastery-approach` 12.9 ms.
+
+- Before the prepass, trees cost ~5 ms at noon: scene ~3 ms (mostly leaf overdraw, pixel-bound: the scene part fell 8.2 → 4.5 ms going from scale 0.7 to 0.45 before the split), cascade-1 shadow copies ~1 ms, far trees in cascades 2–3 ~1 ms.
 - Still over the 11.1 ms (90 fps) budget, inside 60 fps. Next levers: impostors for far trees (beyond ~150 m), fewer leaf cards on the near crowns' interior, cached far cascades.
