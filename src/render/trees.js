@@ -18,7 +18,7 @@ import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
-import { treeVertexWGSL, treeFragmentWGSL, treeShadowFragmentWGSL } from '../shaders/trees.wgsl.js';
+import { treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL } from '../shaders/trees.wgsl.js';
 import { growTree, SPECIES } from '../world/trees/generator.js';
 import { drawLeafAtlas, ATLAS } from './leafAtlas.js';
 import { MAT, MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
@@ -49,6 +49,27 @@ function leafAtlasTexture(engine, scene) {
   return new BaseTexture(scene, it);
 }
 
+/** The triangles of one kind (0 bark, 1 leaf) from a grown tree, vertices compacted. */
+function splitKind(t, kind) {
+  const remap = new Int32Array(t.positions.length / 3).fill(-1);
+  const pos = [], nrm = [], uv = [], info = [], idx = [];
+  for (let i = 0; i < t.indices.length; i += 3) {
+    if ((t.info[t.indices[i] * 4] > 0.5 ? 1 : 0) !== kind) continue;
+    for (let k = 0; k < 3; k++) {
+      const a = t.indices[i + k];
+      if (remap[a] < 0) {
+        remap[a] = pos.length / 3;
+        pos.push(t.positions[a * 3], t.positions[a * 3 + 1], t.positions[a * 3 + 2]);
+        nrm.push(t.normals[a * 3], t.normals[a * 3 + 1], t.normals[a * 3 + 2]);
+        uv.push(t.uvs[a * 2], t.uvs[a * 2 + 1]);
+        info.push(t.info[a * 4], t.info[a * 4 + 1], t.info[a * 4 + 2], t.info[a * 4 + 3]);
+      }
+      idx.push(remap[a]);
+    }
+  }
+  return { positions: new Float32Array(pos), normals: new Float32Array(nrm), uvs: new Float32Array(uv), info: new Float32Array(info), indices: new Uint32Array(idx) };
+}
+
 /**
  * @param {import('@babylonjs/core').Scene} scene
  * @param {any} clipmap
@@ -59,7 +80,8 @@ function leafAtlasTexture(engine, scene) {
 export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   const engine = scene.getEngine();
   const S = ShaderStore.ShadersStoreWGSL;
-  S.treeVertexShader = treeVertexWGSL; S.treeFragmentShader = treeFragmentWGSL; S.treeShadowFragmentShader = treeShadowFragmentWGSL;
+  S.treeVertexShader = treeVertexWGSL; S.treeLeafFragmentShader = treeLeafFragmentWGSL; S.treeBarkFragmentShader = treeBarkFragmentWGSL;
+  S.treeShadowFragmentShader = treeShadowFragmentWGSL; S.treeBarkShadowFragmentShader = treeBarkShadowFragmentWGSL;
   const atlas = leafAtlasTexture(engine, scene);
   const params = new Vector4(0, 1, 1, 0);
   const sets = [], mats = [];
@@ -67,27 +89,34 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     const barkLayer = MAT[SPECIES[sid].bark];
     for (let v = 0; v < VARIANTS; v++) for (const lod of [0, 1]) {
       const t = growTree(sid, 1000 + si * 131 + v * 17, lod);
-      const mesh = new Mesh(`tree-${sid}-${v}-${lod}`, scene);
-      const vd = new VertexData(); vd.positions = t.positions; vd.normals = t.normals; vd.uvs = t.uvs; vd.indices = t.indices;
-      vd.applyToMesh(mesh, false);
-      mesh.setVerticesData('info', t.info, false, 4);
       const max = lod ? MAX_FAR : MAX_NEAR, buf = new Float32Array(max * 16);
-      mesh.thinInstanceSetBuffer('matrix', buf, 16, false);
-      mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true;
-      const mat = new ShaderMaterial(mesh.name, scene, { vertex: 'tree', fragment: 'tree' }, {
-        attributes: ['position', 'normal', 'uv', 'info'],
-        uniforms: ['viewProjection', 'levels', 'treeParams', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
-        samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS, 'leafAtlas'],
-        storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
-        shaderLanguage: ShaderLanguage.WGSL,
-      });
-      bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
-      mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-      mat.setVector4('treeParams', params); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
-      mat.setTexture('leafAtlas', atlas); mat.setArray4('spellLights', clipmap.spellLights);
-      mat.backFaceCulling = false;
-      mesh.material = mat;
-      sets.push({ sid, si, v, lod, mesh, buf, max, n: 0 }); mats.push(mat);
+      const meshes = [];
+      for (const part of ['bark', 'leaf']) {
+        const g = splitKind(t, part === 'leaf' ? 1 : 0);
+        const mesh = new Mesh(`tree-${part}-${sid}-${v}-${lod}`, scene);
+        const vd = new VertexData(); vd.positions = g.positions; vd.normals = g.normals; vd.uvs = g.uvs; vd.indices = g.indices;
+        vd.applyToMesh(mesh, false);
+        mesh.setVerticesData('info', g.info, false, 4);
+        mesh.thinInstanceSetBuffer('matrix', buf, 16, false);
+        mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true;
+        const leaf = part === 'leaf';
+        const mat = new ShaderMaterial(mesh.name, scene, { vertex: 'tree', fragment: leaf ? 'treeLeaf' : 'treeBark' }, {
+          attributes: ['position', 'normal', 'uv', 'info'],
+          uniforms: ['viewProjection', 'levels', 'treeParams', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
+          samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas'] : MAT_SAMPLERS)],
+          storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+          shaderLanguage: ShaderLanguage.WGSL,
+        });
+        bindEnvironment(mat); bindAtmosphere(mat, atmo);
+        if (leaf) mat.setTexture('leafAtlas', atlas); else bindMaterialLibrary(mat, matLib);
+        mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
+        mat.setVector4('treeParams', params); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
+        mat.setArray4('spellLights', clipmap.spellLights);
+        mat.backFaceCulling = leaf ? false : true;
+        mesh.material = mat;
+        meshes.push(mesh); mats.push(mat);
+      }
+      sets.push({ sid, si, v, lod, meshes, buf, max, n: 0 });
     }
   });
   const byKey = (si, v, lod) => sets[(si * VARIANTS + v) * 2 + lod];
@@ -134,14 +163,16 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     // Draw only what was placed: an unused slot still ran the whole tree's vertices (×cascades).
     for (const s of sets) {
       for (let k = s.n; k < s.max; k++) s.buf[k * 16 + 2] = 0;
-      s.mesh.thinInstanceBufferUpdated('matrix');
-      s.mesh.thinInstanceCount = Math.max(1, s.n); // never 0: a mesh with no instances loses its instance attributes (and pipelines)
+      for (const m of s.meshes) {
+        m.thinInstanceBufferUpdated('matrix');
+        m.thinInstanceCount = Math.max(1, s.n); // never 0: a mesh with no instances loses its instance attributes (and pipelines)
+      }
     }
     engine.snapshotRenderingReset();
   }
 
   return {
-    meshes: sets.map((s) => s.mesh), materials: mats,
+    meshes: sets.flatMap((s) => s.meshes), materials: mats,
     /** Owner fields: camera x, z, time, wind strength and direction. */
     camX: 0.5, camZ: 0.5, time: 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
     update() {
@@ -151,15 +182,16 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     },
     setExclusions(list) { exclude = list; lastX = 1e9; },
     makeShadowMaterial(name, light, origin) {
-      const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: 'treeShadow' }, {
+      const leaf = name.includes('tree-leaf');
+      const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: leaf ? 'treeShadow' : 'treeBarkShadow' }, {
         attributes: ['position', 'normal', 'uv', 'info'],
         uniforms: ['viewProjection', 'levels', 'treeParams', 'shadowLight', 'shadowOrigin'],
-        samplers: ['leafAtlas'], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
+        samplers: leaf ? ['leafAtlas'] : [], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
       });
       m.setArray4('levels', clipmap.levels); m.setStorageBuffer('levelData', clipmap.levelData);
-      m.setVector4('treeParams', params); m.setTexture('leafAtlas', atlas);
+      m.setVector4('treeParams', params); if (leaf) m.setTexture('leafAtlas', atlas);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
-      m.backFaceCulling = false;
+      m.backFaceCulling = !leaf;
       return m;
     },
     freeze() { for (const m of mats) { m.freeze(); fastFrozenIsReady(m); } },

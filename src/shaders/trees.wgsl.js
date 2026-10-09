@@ -92,24 +92,24 @@ fn leafUv(uv: vec2f, cellIdx: f32) -> vec2f {
 }
 `;
 
-export const treeFragmentWGSL = /* wgsl */ `
+/** Leaves and bark are separate draws: bark has no cut-out (early depth), leaves skip the bark scan. */
+function treeFragment(leafPass) {
+  return /* wgsl */ `
 ${ENV_DECL}
 ${SPELL_LIGHT_DECL}
 uniform treeMat: vec4f;              // x = bark layer, y = species tint (0 pine, 1 oak, 2 birch)
-var leafAtlas: texture_2d<f32>;
-var leafAtlasSampler: sampler;
+${leafPass ? 'var leafAtlas: texture_2d<f32>;\nvar leafAtlasSampler: sampler;' : ''}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
 varying vInfo: vec4f;
 varying vHue: f32;
-${MATERIALS_DECL}
+${leafPass ? '' : MATERIALS_DECL}
 ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
-${MATERIALS_WGSL}
-${LEAF_UV}
+${leafPass ? LEAF_UV : MATERIALS_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -118,47 +118,47 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let V = normalize(camPos - wp);
   var N = normalize(fragmentInputs.vNormal);
   let info = fragmentInputs.vInfo;
-  let leaf = info.x > 0.5;
-  // Both samples in uniform control flow (derivatives): the leaf cluster and the bark.
-  let lc = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, info.z));
-  let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
-  if (leaf && lc.a < 0.5) { discard; }
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let ex = uniforms.fogParams.z * atmoExposure();
   var col: vec3f;
-  if (leaf) {
-    if (dot(N, V) < -0.2) { N = normalize(N + V * 0.6); }
-    // Per-cluster colour: a little hue and value variation, and the tree's own (vHue).
-    let h = fract(info.y * 0.0137 + fragmentInputs.vHue);
-    var albedo = lc.rgb * mix(vec3f(0.85, 0.95, 0.8), vec3f(1.1, 1.05, 0.9), h) * (0.8 + 0.35 * fragmentInputs.vHue);
-    // Inner crown is darker (light has crossed the leaves above): height in tree and facing.
-    let inner = mix(0.55, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.75, 1.0, info.w);
-    let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
-    let nl = dot(N, L);
-    let diff = clamp((nl + 0.4) / 1.4, 0.0, 1.0);
-    let sky = shIrradiance(N) * uniforms.envMisc.w * inner;
-    col = albedo * (key * diff * vis * inner / PI + sky);
-    // Light through the leaves toward the sun.
-    let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5);
-    col += key * albedo * vec3f(0.9, 1.15, 0.55) * back * vis * 0.45;
-    col += spellLit(wp, N, albedo, 0.4, ex);
-  } else {
-    // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
-    var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.42, 0.4, 0.37), uniforms.treeMat.y > 1.5), 0.6);
-    let moss = smoothstep(0.3, 0.0, info.w) * smoothstep(-0.2, 0.6, -bk.N.z * 0.6 + 0.2) * 0.6;
-    albedo = mix(albedo, vec3f(0.06, 0.09, 0.03), moss);
-    N = bk.N;
-    let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
-    let nl = clamp(dot(N, L), 0.0, 1.0);
-    let sky = shIrradiance(N) * uniforms.envMisc.w * mix(1.0, bk.ao, 0.8);
-    col = albedo * (key * nl * vis / PI + sky);
-    col += spellLit(wp, N, albedo, 0.0, ex);
-  }
+${leafPass ? `
+  let lc = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, info.z));
+  if (lc.a < 0.5) { discard; }
+  if (dot(N, V) < -0.2) { N = normalize(N + V * 0.6); }
+  // Per-cluster colour: a little hue and value variation, and the tree's own (vHue).
+  let h = fract(info.y * 0.0137 + fragmentInputs.vHue);
+  var albedo = lc.rgb * mix(vec3f(0.85, 0.95, 0.8), vec3f(1.1, 1.05, 0.9), h) * (0.8 + 0.35 * fragmentInputs.vHue);
+  // Inner crown is darker (light has crossed the leaves above): height in tree and facing.
+  let inner = mix(0.55, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.75, 1.0, info.w);
+  // Leaves: the 4-tap lookup — the cut-out edges already break the penumbra up, TAA blends it.
+  let vis = shadowVisibilityFast(wp, camPos);
+  let nl = dot(N, L);
+  let diff = clamp((nl + 0.4) / 1.4, 0.0, 1.0);
+  let sky = shIrradiance(N) * uniforms.envMisc.w * inner;
+  col = albedo * (key * diff * vis * inner / PI + sky);
+  // Light through the leaves toward the sun.
+  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5);
+  col += key * albedo * vec3f(0.9, 1.15, 0.55) * back * vis * 0.45;
+  col += spellLit(wp, N, albedo, 0.4, ex);` : `
+  let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
+  // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
+  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.42, 0.4, 0.37), uniforms.treeMat.y > 1.5), 0.6);
+  let moss = smoothstep(0.3, 0.0, info.w) * smoothstep(-0.2, 0.6, -bk.N.z * 0.6 + 0.2) * 0.6;
+  albedo = mix(albedo, vec3f(0.06, 0.09, 0.03), moss);
+  N = bk.N;
+  let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
+  let nl = clamp(dot(N, L), 0.0, 1.0);
+  let sky = shIrradiance(N) * uniforms.envMisc.w * mix(1.0, bk.ao, 0.8);
+  col = albedo * (key * nl * vis / PI + sky);
+  col += spellLit(wp, N, albedo, 0.0, ex);`}
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);
 }
 `;
+}
+export const treeLeafFragmentWGSL = treeFragment(true);
+export const treeBarkFragmentWGSL = treeFragment(false);
 
 /** Shadow caster: depth like shadowDepth, leaves cut out by the atlas alpha. */
 export const treeShadowFragmentWGSL = /* wgsl */ `
@@ -173,7 +173,19 @@ ${LEAF_UV}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let a = textureSampleLevel(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z), 1.0).a;
-  if (fragmentInputs.vInfo.x > 0.5 && a < 0.5) { discard; }
+  if (a < 0.5) { discard; }
+  let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
+  fragmentOutputs.color = vec4f(d, 0.0, 0.0, 1.0);
+}
+`;
+
+/** Bark shadow caster: plain depth, no cut-out. */
+export const treeBarkShadowFragmentWGSL = /* wgsl */ `
+uniform shadowLight: vec4f;
+uniform shadowOrigin: vec4f;
+varying vWorldPos: vec3f;
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
   let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
   fragmentOutputs.color = vec4f(d, 0.0, 0.0, 1.0);
 }
