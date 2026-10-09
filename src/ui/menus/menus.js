@@ -6,6 +6,7 @@ import './menus.css';
 import { createMap } from './map.js';
 import { releaseAll } from '../../input/actions.js';
 import { ownedRobes, wornRobe } from '../../game/robes.js';
+import { BEASTS, sketchSvg } from '../../game/bestiary.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
@@ -87,7 +88,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['robes', 'Robes']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes']], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -98,6 +99,14 @@ export function createMenus(g) {
       }, 'Nothing yet. The robe is still learning to move.');
     } else if (tab === 'lore') {
       listPage([['Fragments', j.lore]], (pg, l) => { el('h2', null, pg, l.title); el('p', null, pg, l.text); }, 'No fragments found.');
+    } else if (tab === 'beasts') {
+      const vars = chapter.graph.vars;
+      listPage([['Seen', BEASTS.filter((b) => vars['sketch:' + b.id]).map((b) => ({ ...b, title: b.name }))]], (pg, b) => {
+        el('h2', null, pg, b.name);
+        const fig = el('div', 'sketch-plate', pg);
+        fig.innerHTML = sketchSvg(vars['sketch:' + b.id]);
+        el('p', null, pg, b.text);
+      }, 'Nothing sketched yet. The Shaped rise out of the snow; look at them long enough to draw.');
     } else if (tab === 'robes') {
       const flags = chapter.graph.flags, vars = chapter.graph.vars;
       const worn = wornRobe(flags, vars).id;

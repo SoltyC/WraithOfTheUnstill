@@ -99,6 +99,7 @@ async function boot() {
   (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/robes.js')).addRobesSystem(g);
   (await import('./systems/barks.js')).addBarksSystem(g);
+  (await import('./systems/bestiary.js')).addBestiarySystem(g);
   (await import('./systems/visibility.js')).addVisibilitySystem(g);
   (await import('./systems/audio.js')).addAudioSystem(g);
   if (!capture && !qs.get('bench')) (await import('./systems/titleCam.js')).addTitleCamSystem(g);

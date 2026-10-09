@@ -11,7 +11,14 @@ export function addVisibilitySystem(g) {
   const S = shapedMod.S;
   const WARDEN_R = 1400, WARDEN_NEAR = 180, PILLAR_R = 300;
   let shapedHold = 0;
-  const set = (mesh, on) => { if (mesh.isEnabled() !== on) { mesh.setEnabled(on); engine.snapshotRenderingReset(); } };
+  // A mesh is only ever culled once it has drawn for a while: every pipeline (colour and each
+  // shadow cascade) is created while the loading screen is up, never mid-game (BRIEF §15).
+  const drawn = new Map();
+  const set = (mesh, on) => {
+    if (mesh.isEnabled()) drawn.set(mesh, (drawn.get(mesh) || 0) + 1);
+    if (!on && (drawn.get(mesh) || 0) < 30) return;
+    if (mesh.isEnabled() !== on) { mesh.setEnabled(on); engine.snapshotRenderingReset(); }
+  };
   loop.add({ name: 'visibility', update: () => {
     const cx = camera.position.x, cz = camera.position.z;
     // The Warden: near the camera, or awake.
