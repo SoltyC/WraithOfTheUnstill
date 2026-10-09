@@ -237,6 +237,14 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 
 ## Session log
 
+### Session — 2026-10-09 → 10 — Phase 8 begins (Highland Meadow), branch `claude/wraithoftheunstill-phase-7`
+
+- **Biome under the camera (M0):** the streamer samples the four biome weights at the camera; restoration and the grade blend by them (meadow stilled / restored looks). Meadow ground from eleven new CC0 scans, near and far samples, height-blended layers by landform. Photo spots `p8-meadow-golden`, `p8-meadow-noon`, `p8-meadow-stilled`, `p8-border`.
+- **GPU grass (M3):** stateless blades built in the vertex shader in three camera-centred rings, placed by meadow weight, patches and slope, bent by travelling gusts, laid down by pressed ground.
+- **Grown trees (M4):** pine, oak and birch from a seeded generator, eight variants each at two levels of detail, a leaf atlas drawn at load, scanned bark, translucent backlit leaves.
+- **Tree cost (this session's last step):** meadow noon at render scale 0.7 went from 23.4 → 16.0 ms. Bark and leaves are separate draws (the leaf pass uses the 4-tap shadow lookup). Detail switches at 55 m. Shadows: cascade 1 gets shadow-only far-geometry copies of every tree within 155 m, which also fixed trees 80–140 m casting nothing there. A tree that changes detail, or enters or leaves the 365 m edge, dissolves over 0.6 s. No dither remains at rest, and nothing pops.
+- **Next step:** god rays through the canopy (PLAN.md M4b). The under-canopy is still near black at noon against the reference (needs sky light under crowns, forest haze). Then understory (ferns, shrubs, flowers, logs), trunk collision, the frost↔meadow border, far-tree impostors if the budget needs them.
+
 ### Session — 2026-10-09 — Phase 7 visual pass (user: "extremely high graphics quality"), branch `claude/wraithoftheunstill-phase-7`
 
 - **Plan:** `PLAN.md` (art bar from the user's reference `screenshots/reference/forest-ruins-target.webp`, the quality foundation Q1–Q6, the frost visual pass V1–V9, the Phase 7 close-out, Phase 8 milestones with the reworked meadow Shaped). Audit shots before the pass: `screenshots/phase-07-audit/`.

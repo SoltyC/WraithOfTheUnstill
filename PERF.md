@@ -386,3 +386,19 @@ GPU frame median at 2560×1440 output, RTX 3060, Windows Chrome headless:
 - Culling: the dormant Warden was drawn at full detail into every cascade from anywhere (≈ 2 ms) — now a coarse copy beyond 180 m (far cascade only), nothing beyond 1.4 km; the Shaped and spike pools draw only while used; rock tiers cast only into the cascades their distances reach.
 - 60 fps floor met everywhere measured; 90 fps on the open steppe, 76–85 fps at the monastery, camp, Warden and pack. Further: cached far cascades, terrain shadow LOD (Phase 14 hardening).
 - 0 late pipelines (culled meshes draw 30 frames first, so their pipelines exist from loading).
+
+### Phase 8 meadow trees — 2026-10-10
+
+GPU frame median at 2560×1440 output, render scale 0.7, RTX 3060, Windows Chrome headless:
+
+| Step | `p8-meadow-noon` | `p8-meadow-golden` |
+|---|---|---|
+| Grass only (before trees) | 11.1 ms | — |
+| Dense mature trees, first cut | 23.4 ms | — |
+| Bark / leaf split | 21.7 ms | — |
+| Leaves: 4-tap shadow lookup | 17.1 ms | — |
+| Near trees cast from far geometry, near detail to 55 m | 15.1 ms | 15.9 ms |
+| Full cascade-1 tree shadows to 140 m, time dissolves (current) | **16.0 ms** (62 fps) | **15.9 ms** |
+
+- Trees now cost ~5 ms at noon: scene ~3 ms (mostly leaf overdraw, pixel-bound: the scene part fell 8.2 → 4.5 ms going from scale 0.7 to 0.45 before the split), cascade-1 shadow copies ~1 ms, far trees in cascades 2–3 ~1 ms.
+- Still over the 11.1 ms (90 fps) budget, inside 60 fps. Next levers: impostors for far trees (beyond ~150 m), fewer leaf cards on the near crowns' interior, cached far cascades.

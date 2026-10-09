@@ -12,6 +12,10 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
+/** Near detail within LOD_NEAR m, trees end at LOD_OUT; a change dissolves over FADE s (render/trees.js).
+ *  Fade kinds (world2.y): 1 plain, 2 detail in, 3 detail out, 4 edge in, 5 edge out. */
+export const LOD_NEAR = 55, LOD_OUT = 365, FADE = 0.6;
+
 const VERTEX = /* wgsl */ `
 attribute position: vec3f;
 attribute normal: vec3f;
@@ -20,16 +24,18 @@ attribute info: vec4f;               // kind (0 bark, 1 leaf), cluster seed, atl
 attribute world0: vec4f;
 attribute world1: vec4f;
 attribute world2: vec4f;
-attribute world3: vec4f;
+attribute world3: vec4f;           // world2 = (fade start, fade kind, -, -)
 uniform viewProjection: mat4x4f;
 uniform levels: array<vec4f,16>;
 uniform treeParams: vec4f;           // x = time, y = wind strength, z = wind dir x, w = wind dir z
+uniform treeLod: vec4f;              // z = pass (0 view, 1 shadow: no fade, 2 far shadow: edge fades only), w = clock (s)
 var<storage, read> levelData: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
 varying vInfo: vec4f;
 varying vHue: f32;
+varying vFade: f32;
 
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
@@ -52,9 +58,19 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let x = w0.x; let z = w0.y; let sc = w0.z; let yaw = w0.w;
   if (sc <= 0.0) {
     vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0);
-    vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vUv = vec2f(0.0); vertexOutputs.vInfo = vec4f(0.0); vertexOutputs.vHue = 0.0;
+    vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vUv = vec2f(0.0); vertexOutputs.vInfo = vec4f(0.0); vertexOutputs.vHue = 0.0; vertexOutputs.vFade = 0.0;
     return vertexOutputs;
   }
+  // Dissolve (dithered in the fragment): in-kinds keep noise ≥ 1 − k (stored −k), out-kinds keep
+  // noise < 1 − k, so a detail swap's two copies are complementary — no gap, no double.
+  let w2 = vertexInputs.world2;
+  let fk = clamp((uniforms.treeLod.w - w2.x) / ${FADE}, 0.0, 1.0);
+  let kind = u32(w2.y + 0.5);
+  var fade = 1.0;
+  if (kind == 2u || kind == 4u) { fade = -fk; } else if (kind == 3u || kind == 5u) { fade = 1.0 - fk; }
+  if (uniforms.treeLod.z > 1.5 && (kind == 2u || kind == 3u)) { fade = 1.0; }
+  else if (uniforms.treeLod.z > 0.5 && uniforms.treeLod.z < 1.5) { fade = 1.0; }
+  vertexOutputs.vFade = fade;
   let cy = cos(yaw); let sy = sin(yaw);
   var lp = vertexInputs.position * sc;
   let hf = vertexInputs.info.w;
@@ -104,6 +120,7 @@ varying vNormal: vec3f;
 varying vUv: vec2f;
 varying vInfo: vec4f;
 varying vHue: f32;
+varying vFade: f32;
 ${leafPass ? '' : MATERIALS_DECL}
 ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
@@ -122,6 +139,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let key = atmoKeyColor();
   let ex = uniforms.fogParams.z * atmoExposure();
   var col: vec3f;
+  // Detail crossfade: white noise per pixel, re-drawn each frame (TAA blends it; interleaved
+  // gradient noise left a visible diagonal hatch).
+  let fn0 = fract(sin(dot(floor(fragmentInputs.position.xy) + vec2f(uniforms.artParams.z * 7.31, uniforms.artParams.z * 2.17), vec2f(12.9898, 78.233))) * 43758.5453);
+  let fv = fragmentInputs.vFade;
+  let cutNear = fv >= 0.0 && fn0 >= fv;
+  let cutFar = fv < 0.0 && (fn0 < (1.0 + fv));
+  if (cutNear || cutFar) { discard; }
 ${leafPass ? `
   let lc = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, info.z));
   if (lc.a < 0.5) { discard; }
@@ -160,6 +184,14 @@ ${leafPass ? `
 export const treeLeafFragmentWGSL = treeFragment(true);
 export const treeBarkFragmentWGSL = treeFragment(false);
 
+/** Far trees' shadows dissolve in and out with them at the edge (same encoding as the view). */
+const SHADOW_FADE = /* wgsl */ `
+fn shadowFadeOut(xy: vec2f, fv: f32) -> bool {
+  let n = fract(sin(dot(floor(xy), vec2f(12.9898, 78.233))) * 43758.5453);
+  return (fv >= 0.0 && n >= fv) || (fv < 0.0 && n < 1.0 + fv);
+}
+`;
+
 /** Shadow caster: depth like shadowDepth, leaves cut out by the atlas alpha. */
 export const treeShadowFragmentWGSL = /* wgsl */ `
 uniform shadowLight: vec4f;
@@ -169,9 +201,12 @@ var leafAtlasSampler: sampler;
 varying vWorldPos: vec3f;
 varying vUv: vec2f;
 varying vInfo: vec4f;
+varying vFade: f32;
 ${LEAF_UV}
+${SHADOW_FADE}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
+  if (shadowFadeOut(fragmentInputs.position.xy, fragmentInputs.vFade)) { discard; }
   let a = textureSampleLevel(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z), 1.0).a;
   if (a < 0.5) { discard; }
   let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
@@ -184,8 +219,11 @@ export const treeBarkShadowFragmentWGSL = /* wgsl */ `
 uniform shadowLight: vec4f;
 uniform shadowOrigin: vec4f;
 varying vWorldPos: vec3f;
+varying vFade: f32;
+${SHADOW_FADE}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
+  if (shadowFadeOut(fragmentInputs.position.xy, fragmentInputs.vFade)) { discard; }
   let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
   fragmentOutputs.color = vec4f(d, 0.0, 0.0, 1.0);
 }

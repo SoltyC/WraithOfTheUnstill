@@ -83,7 +83,7 @@ export async function createWorld(g) {
   // Trees (Phase 8): grown variants in groves; near ones shadow the near cascades, far the far.
   const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer);
   for (const m of trees.materials) bindShadows(m, shadows);
-  for (const m of trees.meshes) { const far = m.name.endsWith('-1'); shadows.addCaster(m, trees.makeShadowMaterial, far ? 3 : 2, far ? 2 : 1); } // not cascade 0: its 24 m reach holds few trees, and every caster costs there
+  for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0); // not cascade 0: its 24 m reach holds few trees, and every caster costs there
   trees.freeze();
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');

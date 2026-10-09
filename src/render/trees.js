@@ -18,7 +18,8 @@ import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
-import { treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL } from '../shaders/trees.wgsl.js';
+import { SHADOW_SPLITS } from './shadows.js';
+import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL } from '../shaders/trees.wgsl.js';
 import { growTree, SPECIES } from '../world/trees/generator.js';
 import { drawLeafAtlas, ATLAS } from './leafAtlas.js';
 import { MAT, MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
@@ -29,8 +30,11 @@ import { fastFrozenIsReady } from './babylonTweaks.js';
 
 const VARIANTS = 8;
 const SPECIES_IDS = ['pine', 'oak', 'birch'];
-const CELL = 9, RADIUS = 380, NEAR = 80;
-const MAX_NEAR = 90, MAX_FAR = 260;   // per variant
+const CELL = 9, REPLACE = 20;       // placement rebuilds after the camera moves REPLACE m
+const HYST = 4, JUMP = 120;          // state hysteresis (m); a move beyond JUMP is a fresh placement (no fades)
+const MAX_NEAR = 90, MAX_FAR = 260, MAX_MID = 160;   // per variant
+const RADIUS = LOD_OUT + HYST + REPLACE + 2;
+const MID_REACH = SHADOW_SPLITS[1] + REPLACE;      // shadow-only casters for cascade 1
 const SEED = 0x7ee5;
 const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z, 0x165667b1) ^ s)) >>> 0) / 4294967296;
 
@@ -84,7 +88,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   S.treeShadowFragmentShader = treeShadowFragmentWGSL; S.treeBarkShadowFragmentShader = treeBarkShadowFragmentWGSL;
   const atlas = leafAtlasTexture(engine, scene);
   const params = new Vector4(0, 1, 1, 0);
-  const sets = [], mats = [];
+  const lodV = [new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 2, 0)]; // z: 0 view, 1 shadow (no fade), 2 far shadow (edge fades only); w: clock
+  const sets = [], mats = [], shadowOnly = [];
   SPECIES_IDS.forEach((sid, si) => {
     const barkLayer = MAT[SPECIES[sid].bark];
     for (let v = 0; v < VARIANTS; v++) for (const lod of [0, 1]) {
@@ -102,7 +107,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         const leaf = part === 'leaf';
         const mat = new ShaderMaterial(mesh.name, scene, { vertex: 'tree', fragment: leaf ? 'treeLeaf' : 'treeBark' }, {
           attributes: ['position', 'normal', 'uv', 'info'],
-          uniforms: ['viewProjection', 'levels', 'treeParams', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
+          uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
           samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas'] : MAT_SAMPLERS)],
           storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
           shaderLanguage: ShaderLanguage.WGSL,
@@ -110,19 +115,42 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         bindEnvironment(mat); bindAtmosphere(mat, atmo);
         if (leaf) mat.setTexture('leafAtlas', atlas); else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-        mat.setVector4('treeParams', params); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
+        mat.setVector4('treeParams', params); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
         mat.setArray4('spellLights', clipmap.spellLights);
         mat.backFaceCulling = leaf ? false : true;
         mesh.material = mat;
         meshes.push(mesh); mats.push(mat);
       }
       sets.push({ sid, si, v, lod, meshes, buf, max, n: 0 });
+      // Cascade 1 (to SHADOW_SPLITS[1], 140 m): every tree within its reach casts from the far geometry — a
+      // shadow does not need every twig, and the far set (out to the placement radius) would run
+      // all its vertices there. Shadow-only meshes with their own instances: a layer outside the
+      // view camera's mask (shadow maps draw their own render lists).
+      if (lod === 1) {
+        const sbuf = new Float32Array(MAX_MID * 16), smeshes = [];
+        for (const part of ['bark', 'leaf']) {
+          const g = splitKind(t, part === 'leaf' ? 1 : 0);
+          const mesh = new Mesh(`treeShadow-${part}-${sid}-${v}`, scene);
+          const vd = new VertexData(); vd.positions = g.positions; vd.normals = g.normals; vd.uvs = g.uvs; vd.indices = g.indices;
+          vd.applyToMesh(mesh, false);
+          mesh.setVerticesData('info', g.info, false, 4);
+          mesh.thinInstanceSetBuffer('matrix', sbuf, 16, false);
+          mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true;
+          mesh.layerMask = 0x10000000;
+          mesh.material = meshes[part === 'leaf' ? 1 : 0].material; // never drawn by the view; avoids a default material
+          smeshes.push(mesh); shadowOnly.push(mesh);
+        }
+        sets.push({ sid, si, v, lod: 2, meshes: smeshes, buf: sbuf, max: MAX_MID, n: 0 });
+      }
     }
   });
-  const byKey = (si, v, lod) => sets[(si * VARIANTS + v) * 2 + lod];
+  const byKey = (si, v, lod) => sets[(si * VARIANTS + v) * 3 + lod];
 
   // ── Placement ──────────────────────────────────────────────────────────────────────────────
-  let lastX = 1e9, lastZ = 1e9;
+  let lastX = 1e9, lastZ = 1e9, fading = false, cleanAt = 0;
+  /** Each placed tree's state at the last placement (cell key → 1 near, 2 far); swapped per rebuild. */
+  let prev = new Map(), cur = new Map();
+  const t0 = performance.now();
   /** Places with no trees ([x, z, r]): built sites, paths. */
   let exclude = [];
   function meadowAt(x, z) { streamer.mqx = x; streamer.mqz = z; streamer.sampleBiome(); return streamer.bw1; }
@@ -131,8 +159,9 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     const i = Math.max(0, Math.min(n - 1, Math.floor((x + 4096) / 8))), j = Math.max(0, Math.min(n - 1, Math.floor((4096 - z) / 8)));
     return ov[j * n + i] / 32 - 128;
   }
-  function rebuild(cx, cz) {
+  function rebuild(cx, cz, fresh, now) {
     for (const s of sets) s.n = 0;
+    fading = false;
     const c0x = Math.floor((cx - RADIUS) / CELL), c1x = Math.floor((cx + RADIUS) / CELL);
     const c0z = Math.floor((cz - RADIUS) / CELL), c1z = Math.floor((cz + RADIUS) / CELL);
     for (let gz = c0z; gz <= c1z; gz++) for (let gx = c0x; gx <= c1x; gx++) {
@@ -153,13 +182,36 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       const hs = h01(gx, gz, SEED + 6), alt = Math.max(0, Math.min(1, (h - 280) / 120));
       const si = hs < alt * 0.85 ? 0 : grove > 0.3 ? (hs < 0.65 ? 1 : 2) : (hs < 0.5 ? 2 : 1);
       const v = Math.floor(h01(gx, gz, SEED + 7) * VARIANTS);
-      const lod = d2 < NEAR * NEAR ? 0 : 1;
-      const set = byKey(si, v, lod);
-      if (set.n >= set.max) continue;
-      const o = set.n++ * 16, b = set.buf;
-      b[o] = x; b[o + 1] = z; b[o + 2] = 0.75 + 0.5 * h01(gx, gz, SEED + 8); b[o + 3] = h01(gx, gz, SEED + 9) * 6.283;
-      b[o + 4] = h01(gx, gz, SEED + 10); b[o + 5] = h01(gx, gz, SEED + 11); b[o + 6] = (h01(gx, gz, SEED + 12) - 0.5) * 2; b[o + 7] = (h01(gx, gz, SEED + 13) - 0.5) * 2;
+      // Detail and presence by distance (with hysteresis against the last placement). A tree whose
+      // state changed since the last placement dissolves across over FADE s (the vertex shader
+      // reads the start time and kind from world2), drawn in both sets meanwhile; a tree that keeps
+      // its state is drawn plainly. A fresh placement (load, teleport) does not fade.
+      const d = Math.sqrt(d2), key = (gx + 32768) * 65536 + (gz + 32768), was = fresh ? 0 : prev.get(key) ?? 0;
+      const want = d > LOD_OUT + (was ? HYST : -HYST) ? 0 : d < LOD_NEAR + (was === 1 ? HYST : -HYST) ? 1 : 2;
+      if (want) cur.set(key, want);
+      if (!want && !was) continue;
+      const sc = 0.75 + 0.5 * h01(gx, gz, SEED + 8), yaw = h01(gx, gz, SEED + 9) * 6.283;
+      const w4 = h01(gx, gz, SEED + 10), w5 = h01(gx, gz, SEED + 11), w6 = (h01(gx, gz, SEED + 12) - 0.5) * 2, w7 = (h01(gx, gz, SEED + 13) - 0.5) * 2;
+      // Per set: 0 not drawn, else the fade kind (FADE_* in shaders/trees.wgsl.js).
+      let kNear = 0, kFar = 0;
+      if (was === want || fresh) { if (want === 1) kNear = 1; else if (want === 2) kFar = 1; }
+      else {
+        fading = true;
+        if (was === 1) kNear = want === 2 ? 3 : 5; else if (was === 2) kFar = want === 1 ? 3 : 5;
+        if (want === 1) kNear = was === 2 ? 2 : 4; else if (want === 2) kFar = was === 1 ? 2 : 4;
+      }
+      for (let lod = 0; lod < 3; lod++) {
+        const kind = lod === 0 ? kNear : lod === 1 ? kFar : (want && d < MID_REACH ? 1 : 0);
+        if (!kind) continue;
+        const set = byKey(si, v, lod);
+        if (set.n >= set.max) continue;
+        const o = set.n++ * 16, b = set.buf;
+        b[o] = x; b[o + 1] = z; b[o + 2] = sc; b[o + 3] = yaw;
+        b[o + 4] = w4; b[o + 5] = w5; b[o + 6] = w6; b[o + 7] = w7;
+        b[o + 8] = now; b[o + 9] = kind;
+      }
     }
+    const t = prev; prev = cur; cur = t; cur.clear();
     // Draw only what was placed: an unused slot still ran the whole tree's vertices (×cascades).
     for (const s of sets) {
       for (let k = s.n; k < s.max; k++) s.buf[k * 16 + 2] = 0;
@@ -172,24 +224,36 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   }
 
   return {
-    meshes: sets.flatMap((s) => s.meshes), materials: mats,
+    /** Drawn meshes (bark and leaves, near -0 and far -1). */
+    meshes: sets.flatMap((s) => s.meshes).filter((m) => !shadowOnly.includes(m)),
+    /** Shadow casters: [mesh, minCascade, maxCascade] — cascade 1 from the shadow-only set, 2–3 from the far trees (cascade 0's 24 m holds few trees). */
+    casters: sets.flatMap((s) => s.meshes).map((m) => shadowOnly.includes(m) ? [m, 1, 1] : m.name.endsWith('-1') ? [m, 2, 3] : null).filter(Boolean), materials: mats,
     /** Owner fields: camera x, z, time, wind strength and direction. */
     camX: 0.5, camZ: 0.5, time: 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
     update() {
       params.x = this.time; params.y = this.wind; params.z = this.windX; params.w = this.windZ;
-      const dx = this.camX - lastX, dz = this.camZ - lastZ;
-      if (dx * dx + dz * dz > 30 * 30) { lastX = this.camX; lastZ = this.camZ; rebuild(lastX, lastZ); }
+      const now = (performance.now() - t0) * 0.001;
+      for (const l of lodV) l.w = now;
+      const dx = this.camX - lastX, dz = this.camZ - lastZ, m2 = dx * dx + dz * dz;
+      if (m2 > REPLACE * REPLACE) {
+        lastX = this.camX; lastZ = this.camZ;
+        rebuild(lastX, lastZ, m2 > JUMP * JUMP, now);
+        cleanAt = fading ? now + FADE + 0.1 : 0;
+      } else if (cleanAt && now > cleanAt) {
+        // Fades done: place again from the same spot so the faded-out copies stop drawing.
+        cleanAt = 0; rebuild(lastX, lastZ, false, now);
+      }
     },
     setExclusions(list) { exclude = list; lastX = 1e9; },
     makeShadowMaterial(name, light, origin) {
-      const leaf = name.includes('tree-leaf');
+      const leaf = name.includes('-leaf-');
       const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: leaf ? 'treeShadow' : 'treeBarkShadow' }, {
         attributes: ['position', 'normal', 'uv', 'info'],
-        uniforms: ['viewProjection', 'levels', 'treeParams', 'shadowLight', 'shadowOrigin'],
+        uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'shadowLight', 'shadowOrigin'],
         samplers: leaf ? ['leafAtlas'] : [], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
       });
       m.setArray4('levels', clipmap.levels); m.setStorageBuffer('levelData', clipmap.levelData);
-      m.setVector4('treeParams', params); if (leaf) m.setTexture('leafAtlas', atlas);
+      m.setVector4('treeParams', params); m.setVector4('treeLod', lodV[name.includes('treeShadow-') ? 2 : 3]); if (leaf) m.setTexture('leafAtlas', atlas);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       m.backFaceCulling = !leaf;
       return m;
