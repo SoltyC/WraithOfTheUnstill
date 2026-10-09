@@ -123,6 +123,13 @@ export async function addEnvironmentSystems(g) {
     gr.density = 1;
     gr.update();
   } });
+  loop.add({ name: 'trees', update: () => {
+    const tr = g.trees; if (!tr) return;
+    tr.camX = camera.position.x; tr.camZ = camera.position.z; tr.time = clock.simTime;
+    tr.wind = Math.min(1.5, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.2 + 2 * warden.gust);
+    tr.windX = streamer.windX || 1; tr.windZ = streamer.windZ || 0;
+    tr.update();
+  } });
   loop.add({ name: 'spindrift', update: () => {
     const w = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 1.2 * warden.gust;
     spindrift.time = clock.simTime;

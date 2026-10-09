@@ -193,7 +193,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Colour: dark at the root, green through the body, paler and warmer at the tip; patches of
   // dry, straw-coloured grass; per-blade variation.
   let green = mix(vec3f(0.075, 0.11, 0.03), vec3f(0.12, 0.15, 0.045), sd);
-  let dry = mix(vec3f(0.24, 0.2, 0.09), vec3f(0.3, 0.26, 0.13), sd);
+  let dry = mix(vec3f(0.2, 0.19, 0.09), vec3f(0.25, 0.23, 0.12), sd);
   var albedo = mix(green, dry, fragmentInputs.vDry * (0.25 + 0.45 * t));
   albedo *= mix(0.35, 1.0, smoothstep(0.0, 0.45, t));
   albedo = mix(albedo, albedo * vec3f(1.15, 1.1, 0.8), t * t * 0.5);

@@ -379,6 +379,19 @@ variation; ferns, shrubs, saplings, flowers, fallen logs and stumps; groves, edg
 placed by Q3; trunks collide (`solids.js` circles). Judged against
 `screenshots/reference/forest-ruins-target.webp` at the same framing.
 
+### M4b — God rays through the canopy (user, 2026-10-09: "light filtering through the leaves")
+
+- The post chain already marches the sun through the shadow cascades for light shafts, and the
+  trees cast into them; clear air has almost no haze, so the shafts never show. Add a **forest
+  haze**: a thin in-scattering medium that thickens under canopy (a coarse canopy-density field
+  from the tree placement, uploaded when it changes) and toward dawn/dusk, so sunlight broken by
+  the crowns reads as beams.
+- Shaft march: extend its reach and resolution under trees (the near-field volume), keep it
+  temporal (TAA integrates the jitter), let the beams carry the key light's warm colour.
+- Motes and pollen drifting in the beams (GPU particles like the diamond dust, lit only where the
+  sun reaches them).
+- Dappled light on the floor comes from the same tree shadows (already there).
+
 ### M5 — Rivers and water
 
 - **Water surface** from the baked hydrology (`hydro.rgba8`): a river mesh/ribbon along channels
