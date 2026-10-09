@@ -19,6 +19,8 @@ export async function createWorld(g) {
   scene.skipPointerUpPicking = true;
   scene.autoClearDepthAndStencil = true;
   const camera = new TargetCamera('camera', new Vector3(0, 10, -10), scene);
+  // Scanned PBR materials (src/materials): decoded and uploaded while the world loads.
+  const matLibP = import('../materials/library.js').then((m) => m.loadMaterialLibrary(engine, scene));
   camera.minZ = 0.1;
   camera.maxZ = 40000; // the mountain ring reaches 28 km from the centre
 
@@ -87,5 +89,6 @@ export async function createWorld(g) {
   content.clipmap.bindState(terrainState);
   rocks.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState });
+  const matLib = await matLibP;
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib });
 }

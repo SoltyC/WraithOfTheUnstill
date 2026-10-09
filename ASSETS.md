@@ -6,8 +6,26 @@ emptied in `src/main.js`.
 
 ## Art assets (textures, HDRIs, meshes, audio)
 
-Everything on screen is procedural (terrain, sky, characters, creatures). Sound effects are
-synthesised at runtime (`src/audio/sfx.js`).
+Terrain, sky, characters and creatures are procedural. Architecture and props use scanned CC0
+surfaces under procedural layers (below). Sound effects are synthesised at runtime (`src/audio/sfx.js`).
+
+### Scanned PBR materials (Phase 7 visual pass)
+
+Photo-scanned surfaces from **Poly Haven** (CC0 1.0, no attribution required; credited anyway).
+`tools/textures/build.mjs` downloads the 2K diffuse, GL normal, ARM and displacement maps to a
+local cache (outside the repository) and packs them into `data/textures/<id>.{alb,nrm,hgt}.webp`
+(albedo; normal x/y + roughness; height + AO at half size). Only the packed WebPs are vendored.
+
+| Material | Source asset | Licence | Use |
+|---|---|---|---|
+| stone-pale | [rock_boulder_dry](https://polyhaven.com/a/rock_boulder_dry) | CC0 | Shaper ashlar — pale, weathered, chipped limestone faces |
+| stone-dressed | [rock_01](https://polyhaven.com/a/rock_01) | CC0 | Shaper ashlar — smoother dressed faces, carved parts |
+| rock-strata | [dark_rock_02](https://polyhaven.com/a/dark_rock_02) | CC0 | outcrops and boulders — dark stratified rock |
+| rock-lichen | [lichen_rock](https://polyhaven.com/a/lichen_rock) | CC0 | outcrops — lichen-crusted faces (sheltered, north) |
+| scree | [rock_ground_02](https://polyhaven.com/a/rock_ground_02) | CC0 | rubble and scree at feet of walls and rocks |
+| timber | [rough_wood](https://polyhaven.com/a/rough_wood) | CC0 | weathered timber — sleds, poles, beams, staffs |
+| wool | [poly_wool_herringbone](https://polyhaven.com/a/poly_wool_herringbone) | CC0 | felt and wool — tents, bundles, robe detail |
+| linen | [rough_linen](https://polyhaven.com/a/rough_linen) | CC0 | linen — wrappings, bier cloth |
 
 ### Music (Phase 7)
 

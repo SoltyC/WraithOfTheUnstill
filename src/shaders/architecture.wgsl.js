@@ -8,6 +8,7 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
 export const ARCH_SITES = 64;
 
@@ -48,9 +49,11 @@ varying vNormal: vec3f;
 varying vUv: vec2f;
 varying vInfo: vec4f;
 varying vLocalY: f32;
+${MATERIALS_DECL}
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${MATERIALS_WGSL}
 
 fn ar_hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
 fn ar_fade(lambda: f32, fp: f32) -> f32 { return 1.0 - smoothstep(lambda * 0.15, lambda * 0.6, fp); }
@@ -129,6 +132,20 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let t = uniforms.archParams.x;
   let glowS = uniforms.siteGlow[site];
 
+  // Scanned surface (src/materials): chosen per material and per block (the seed), sampled once,
+  // here in uniform control flow (the derivatives it needs). Stone blocks show different parts of
+  // the scan and pale or dressed stone by their seed; big battered faces (carve 5) are cut into
+  // drawn cyclopean courses first, each course block offset the same way.
+  let hs = fract(sin(seed * 12.9898) * 43758.5453);
+  let drawn = info.w > 4.5;
+  let dc = ashlar(uv * vec2f(0.6, 0.58), seed);
+  let bseed = select(hs, dc.y, drawn);
+  var layer = select(MAT_STONE_PALE, MAT_STONE_DRESSED, bseed > 0.62 || mid == 1);
+  if (mid == 2) { layer = MAT_WOOL; } else if (mid == 3) { layer = MAT_TIMBER; }
+  let texScale = select(select(0.55, 1.6, mid == 2), 0.9, mid == 3);
+  let tuv = uv * texScale + vec2f(fract(bseed * 7.13), fract(bseed * 3.71)) * 7.0;
+  let ms = matUv(layer, tuv, N, wp);
+
   var albedo = vec3f(0.3, 0.29, 0.275);
   var rough = 0.85;
   var emit = vec3f(0.0);       // display-referred (like the spell lights): divided by the exposure below
@@ -140,15 +157,28 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let topFace = abs(N.y) > 0.7;
 
   if (mid <= 1) {
-    // Shaper stone: a pale, warm grey that weathers darker toward the ground and in the wet.
-    let a = ashlar(select(uv, uv * vec2f(1.0, 0.6), topFace), seed);
-    let fade = ar_fade(0.5, fp);
-    albedo = vec3f(0.33, 0.315, 0.29) * (0.86 + 0.22 * a.y) * (0.9 + 0.2 * n1);
-    albedo *= mix(1.0, 0.72, smoothstep(1.2, -0.2, fragmentInputs.vLocalY) * (0.5 + 0.5 * n2));
-    albedo *= 1.0 - 0.45 * a.x * fade;
-    ao = 1.0 - 0.35 * a.x * fade;
-    N = normalize(N + vec3f(n1, 0.0, n2) * 0.06 * a.z * fade);
-    if (mid == 1 && !topFace) {
+    // Shaper stone: the scan, each block a little warmer or cooler, lighter or darker; weathered
+    // darker toward the ground and in the wet; lichen where it is sheltered and faces north;
+    // rime in the deepest pores.
+    let tint = vec3f(1.0 + 0.08 * (hs - 0.5), 1.0, 1.0 - 0.1 * (hs - 0.5)) * (0.74 + 0.4 * fract(hs * 5.3));
+    // Pale, warm Shaper limestone (the scan's detail, the art direction's colour).
+    albedo = matRetint(ms, layer, vec3f(0.43, 0.425, 0.405), 0.3) * tint;
+    if (info.w > 5.5) { albedo *= 0.5; ao *= 0.55; } // a joint (block chamfers): recessed, shadowed
+    N = ms.N; rough = mix(0.7, 1.0, ms.rough); ao = mix(1.0, ms.ao, 0.85);
+    albedo *= mix(1.0, 0.68, smoothstep(1.2, -0.2, fragmentInputs.vLocalY) * (0.5 + 0.5 * n2));
+    // Lichen: crusts on faces that look away from the sun's arc (north) and lean out of the snow.
+    let lich = smoothstep(0.55, 0.85, -N.z * 0.35 + n2 * 0.8 + 0.4 * noised(wp.xz * 4.1 + wp.y * 3.3).x) * (1.0 - smoothstep(0.4, 0.8, N.y)) * smoothstep(0.4, 0.65, ms.h);
+    albedo = mix(albedo, mix(vec3f(0.34, 0.36, 0.26), vec3f(0.5, 0.34, 0.14), step(0.85, fract(hs * 13.0 + n1))), lich * 0.35);
+    // Rime: hoarfrost in the pores and the joints (low in the height map, low occlusion).
+    let rime = smoothstep(0.35, 0.1, ms.h) * smoothstep(0.9, 0.5, ms.ao) * 0.6;
+    albedo = mix(albedo, vec3f(0.78, 0.82, 0.88), rime);
+    if (drawn) {
+      // The drawn courses' joints (big battered faces).
+      let fade = ar_fade(0.9, fp);
+      albedo *= 1.0 - 0.5 * dc.x * fade;
+      ao *= 1.0 - 0.4 * dc.x * fade;
+    }
+    if (mid == 1 && !topFace && info.w < 5.5) {
       // Carved bands: two registers of glyphs, the grooves dark, a cold light in them when awake.
       let v = uv.y;
       let band = step(0.35, fract(v / 1.6)) * step(fract(v / 1.6), 0.75);
@@ -160,14 +190,21 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       let breath = 0.75 + 0.25 * sin(t * 1.3 + seed);
       emit += vec3f(0.3, 0.6, 0.95) * gl * glowS.x * breath * strength;
     }
+  } else if (mid == 7) {
+    // Drifted snow banked against the stone (geometry): the snow's own colour, lightly rippled.
+    albedo = vec3f(0.86, 0.88, 0.92); rough = 0.9;
+    N = normalize(N + vec3f(n1 * 0.08, 0.0, n2 * 0.08));
   } else if (mid == 2) {
     // Felt and canvas: undyed wool, patched; light comes through it from the fire at night.
     let patched = step(0.62, ar_hash(floor(uv / vec2f(0.8, 0.6)) + seed));
-    albedo = mix(vec3f(0.42, 0.36, 0.28), vec3f(0.33, 0.26, 0.2), patched) * (0.9 + 0.2 * n1);
-    albedo *= 0.93 + 0.07 * sin(uv.x * 40.0);
+    let felt = dot(ms.albedo, vec3f(0.3, 0.59, 0.11));
+    albedo = mix(vec3f(0.42, 0.36, 0.28), vec3f(0.33, 0.26, 0.2), patched) * (0.75 + 0.6 * felt) * (0.9 + 0.2 * n1);
+    N = ms.N; ao = mix(1.0, ms.ao, 0.6);
     trans = 1.0;
   } else if (mid == 3) {
-    albedo = vec3f(0.13, 0.09, 0.06) * (0.8 + 0.4 * noised(vec2f(uv.x * 30.0, uv.y * 2.0)).x);
+    // Weathered timber: the scan, silvered by the cold.
+    albedo = matRetint(ms, layer, vec3f(0.2, 0.17, 0.14), 0.5);
+    N = ms.N; rough = mix(0.6, 1.0, ms.rough); ao = mix(1.0, ms.ao, 0.8);
   } else if (mid == 4) {
     // Ice: dark, clear, glossy; the SSR pass reflects the world in it.
     albedo = vec3f(0.06, 0.1, 0.13) + vec3f(0.12, 0.18, 0.22) * smoothstep(0.2, 0.9, n1);
@@ -186,10 +223,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Snow on what faces up (not on embers or ice), heavier when it is snowing; drifts at the base.
   var snow = 0.0;
   if (mid != 5 && mid != 4) {
-    let up = smoothstep(0.55, 0.85, N.y + 0.12 * n1 + 0.1 * n2) * (0.55 + 0.45 * uniforms.archParams.y);
+    let Ng = normalize(fragmentInputs.vNormal) * sign(dot(fragmentInputs.vNormal, V));
+    let up = smoothstep(0.55, 0.85, Ng.y + 0.12 * n1 + 0.1 * n2 + 0.25 * (0.5 - ms.h)) * (0.55 + 0.45 * uniforms.archParams.y);
     let drift = (1.0 - smoothstep(0.05, 0.35 + 0.15 * n2, fragmentInputs.vLocalY)) * select(0.0, 1.0, mid <= 1);
-    snow = max(up, drift * 0.85);
+    snow = select(max(up, drift * 0.85), 1.0, mid == 7);
     albedo = mix(albedo, vec3f(0.84, 0.87, 0.92), snow);
+    N = normalize(mix(N, Ng, snow * 0.8)); rough = mix(rough, 0.9, snow);
     ssr = 0.0;
   }
 
@@ -202,7 +241,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // The cold boost is the snow's (blue in shade); stone, felt and wood keep the sky's own colour,
   // a little warmed by light bounced off the sunlit snow around them.
   let skyTint = mix(vec3f(1.04, 1.0, 0.94), cold, snow);
-  let sky = shIrradiance(N) * skyTint * uniforms.envMisc.w * ao * (0.8 + 0.2 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0));
+  // Stone in shade takes the sky's light, but not its full blue (a material, not a mirror of the sky).
+  let skyRaw = shIrradiance(N);
+  let skyCol = mix(skyRaw, vec3f(dot(skyRaw, vec3f(0.2126, 0.7152, 0.0722))), select(0.0, 0.45, snow < 0.5 && mid != 2));
+  let sky = skyCol * skyTint * uniforms.envMisc.w * ao * (0.8 + 0.2 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0));
   var col = albedo * (key * diff * vis / PI + sky);
   // Canvas: sun through the felt, and the fire behind it.
   if (trans > 0.0) {

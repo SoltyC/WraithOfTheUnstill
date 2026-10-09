@@ -15,8 +15,9 @@ import { archVertexWGSL, archFragmentWGSL, ARCH_SITES } from '../shaders/archite
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
+import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 
-export function createArchitectureView(scene, atmo, built) {
+export function createArchitectureView(scene, atmo, built, matLib) {
   const S = ShaderStore.ShadersStoreWGSL;
   S.archVertexShader = archVertexWGSL; S.archFragmentShader = archFragmentWGSL;
   const mesh = new Mesh('architecture', scene);
@@ -34,11 +35,11 @@ export function createArchitectureView(scene, atmo, built) {
   const mat = new ShaderMaterial('arch', scene, { vertex: 'arch', fragment: 'arch' }, {
     attributes: ['position', 'normal', 'uv', 'info'],
     uniforms: ['viewProjection', 'sites', 'siteGlow', 'archParams', ...ENV_UNIFORMS],
-    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
-  bindEnvironment(mat); bindAtmosphere(mat, atmo);
+  bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
   mat.setArray4('sites', sites); mat.setArray4('siteGlow', glow); mat.setVector4('archParams', params);
   mat.backFaceCulling = false;
   mesh.material = mat;

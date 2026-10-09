@@ -10,7 +10,9 @@
 // symbol: crystal / crescent / wave), CANVAS (tents), WOOD, ICE, EMBER.
 // Also returns 2D collision shapes (blockers: circles and boxes; platforms: walkable tops).
 
-export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6 };
+import { chamferBlock, layWall, columnDrums, snowDrift, h2 } from './masonry.js';
+
+export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6, SNOW: 7 };
 const FOUND = 3; // m of foundation below the seat
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -18,26 +20,47 @@ function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1
 class Builder {
   constructor() { this.pos = []; this.nrm = []; this.uv = []; this.info = []; this.idx = []; this.blockers = []; this.platforms = []; this.site = 0; }
   /** One flat quad (a, b, c, d counter-clockwise seen from outside), uv in metres along ab and ad. */
-  quad(a, b, c, d, mat, seed, carve = 0) {
+  quad(a, b, c, d, mat, seed, carve = 0, uvs = null) {
     const ux = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], vx = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
     let n = [ux[1] * vx[2] - ux[2] * vx[1], ux[2] * vx[0] - ux[0] * vx[2], ux[0] * vx[1] - ux[1] * vx[0]];
     const l = -(Math.hypot(n[0], n[1], n[2]) || 1); n = [n[0] / l, n[1] / l, n[2] / l]; // outward
     const lu = Math.hypot(...ux), lv = Math.hypot(...vx);
     const base = this.pos.length / 3;
-    for (const [p, u, v] of [[a, 0, 0], [b, lu, 0], [c, lu, lv], [d, 0, lv]]) {
+    const U = uvs || [0, 0, lu, 0, lu, lv, 0, lv];
+    for (const [p, u, v] of [[a, U[0], U[1]], [b, U[2], U[3]], [c, U[4], U[5]], [d, U[6], U[7]]]) {
       this.pos.push(p[0], p[1], p[2]); this.nrm.push(n[0], n[1], n[2]); this.uv.push(u, v);
       this.info.push(this.site, mat, seed, carve);
     }
     this.idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
   }
-  tri(a, b, c, mat, seed) {
+  /** Quad with given per-vertex normals (smooth surfaces). */
+  quadN(a, b, c, d, na, nb, nc, nd, mat, seed) {
+    const base = this.pos.length / 3;
+    for (const [p, n] of [[a, na], [b, nb], [c, nc], [d, nd]]) {
+      this.pos.push(p[0], p[1], p[2]); this.nrm.push(n[0], n[1], n[2]); this.uv.push(p[0], p[2]);
+      this.info.push(this.site, mat, seed, 0);
+    }
+    this.idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
+  }
+  /** Quad between two rings of a drum, smooth normals: a, b on the lower ring and c, d on the upper
+   *  (points [x, y, z, cos, sin, u]); ny0 / ny1 tilt the radial normal up or down at each ring. */
+  quadSmooth(a, b, c, d, ny0, ny1, mat, seed, carve = 0) {
+    const base = this.pos.length / 3;
+    for (const [p, ny] of [[a, ny0], [b, ny0], [c, ny1], [d, ny1]]) {
+      const l = Math.hypot(p[3], ny, p[4]) || 1;
+      this.pos.push(p[0], p[1], p[2]); this.nrm.push(p[3] / l, ny / l, p[4] / l); this.uv.push(p[5], p[1]);
+      this.info.push(this.site, mat, seed, carve);
+    }
+    this.idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
+  }
+  tri(a, b, c, mat, seed, carve = 0) {
     const ux = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], vx = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     let n = [ux[1] * vx[2] - ux[2] * vx[1], ux[2] * vx[0] - ux[0] * vx[2], ux[0] * vx[1] - ux[1] * vx[0]];
     const l = Math.hypot(n[0], n[1], n[2]) || 1; n = [n[0] / l, n[1] / l, n[2] / l];
     const base = this.pos.length / 3, lu = Math.hypot(...ux);
     for (const [p, u, v] of [[a, 0, 0], [b, lu, 0], [c, lu * 0.5, Math.hypot(...vx)]]) {
       this.pos.push(p[0], p[1], p[2]); this.nrm.push(n[0], n[1], n[2]); this.uv.push(u, v);
-      this.info.push(this.site, mat, seed, 0);
+      this.info.push(this.site, mat, seed, carve);
     }
     this.idx.push(base, base + 2, base + 1);
   }
@@ -45,8 +68,31 @@ class Builder {
    * Oriented box: centre (x, z), base y0 to top y1, half extents hx (along yaw's right), hz (along
    * yaw's forward), tilt (rad, about its own x: a leaning slab). `solid` adds a blocker.
    */
-  box(x, z, y0, y1, hx, hz, yaw, mat, seed, { tilt = 0, carve = 0, solid = true, platform = false, roll = 0, fb = false } = {}) {
+  box(x, z, y0, y1, hx, hz, yaw, mat, seed, { tilt = 0, carve = 0, solid = true, platform = false, roll = 0, fb = false, ruin = 0, course = 0.55, plain = false, drift = true } = {}) {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
+    // Shaper stone is laid, not boxed (world/masonry.js): plinths get walled sides and paving,
+    // walls and piers coursed blocks, everything else one chamfered block.
+    if ((mat === MAT.STONE || mat === MAT.GLYPH) && !plain) {
+      const flat = tilt === 0 && roll === 0;
+      // Snow banked against whatever stands on the ground (or on a floor) — never a hard line.
+      if (drift && flat && y0 > -FOUND - 0.5 && y0 < 0.8 && y1 > 0.3) {
+        // On a raised floor (y0 > 0.2) the drift is a small one: it must not hang past the floor's edge.
+        const big = Math.min(hx, hz) > 3, onFloor = y0 > 0.2;
+        const hgt = Math.min(onFloor ? 0.28 : 0.5, (y1 - Math.max(y0, 0)) * 0.3), reach = onFloor ? 0.55 : Math.min(1.4, 0.5 + Math.max(hx, hz));
+        snowDrift(this, x, z, Math.max(y0, 0), hx, hz, yaw, seed * 3 + 1, big ? { height: 0.3, reach: 1.6 } : { height: hgt, reach });
+      }
+      if (mat === MAT.STONE && flat && Math.min(hx, hz) > 3) this.plinth(x, z, y0, y1, hx, hz, yaw, mat, seed, course);
+      else if (mat === MAT.STONE && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) layWall(this, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin, course });
+      else {
+        // One block: axes from yaw, tilt and roll as below.
+        const R3 = (lx, ly, lz) => { const ax = lx * cr - ly * sr, ay = lx * sr + ly * cr, az = lz; const by = ay * ct - az * st, bz = ay * st + az * ct; return [ax * cy + bz * sy, by, -ax * sy + bz * cy]; };
+        const k = Math.min(0.045, hx * 0.15, hz * 0.15, (y1 - y0) * 0.1);
+        chamferBlock(this, [x, (y0 + y1) / 2, z], R3(1, 0, 0), R3(0, 1, 0), R3(0, 0, 1), hx, (y1 - y0) / 2, hz, k, 63, mat, seed, carve, fb);
+      }
+      if (solid && Math.abs(tilt) < 0.6 && Math.abs(roll) < 0.6) this.blockers.push({ site: this.site, kind: 'box', x, z, hx: hx + 0.05, hz: hz + 0.05, cos: cy, sin: sy, y0, y1 });
+      if (platform) this.platforms.push({ site: this.site, x, z, hx, hz, cos: cy, sin: sy, top: y1 });
+      return;
+    }
     const ym = (y0 + y1) / 2, hy = (y1 - y0) / 2;
     const P = (lx, ly, lz) => {
       // roll about forward (z), then tilt about right (x), then yaw.
@@ -65,20 +111,59 @@ class Builder {
     if (solid && Math.abs(tilt) < 0.6 && Math.abs(roll) < 0.6) this.blockers.push({ site: this.site, kind: 'box', x, z, hx: hx + 0.05, hz: hz + 0.05, cos: cy, sin: sy, y0, y1 });
     if (platform) this.platforms.push({ site: this.site, x, z, hx, hz, cos: cy, sin: sy, top: y1 });
   }
+  /** A plinth or platform: coursed walls round its edge (outer faces only) and a paved top of
+   *  flagstones, each its own chamfered slab, a few cracked or sunk. */
+  plinth(x, z, y0, y1, hx, hz, yaw, mat, seed, course) {
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const T = 0.5, top = y1 - 0.16;
+    for (let side = 0; side < 4; side++) {
+      const along = side % 2 ? hz : hx, out = side % 2 ? hx : hz, ya2 = side * Math.PI / 2;
+      const ox = Math.sin(ya2) * (out - T), oz = Math.cos(ya2) * (out - T);
+      layWall(this, x + ox * cy + oz * sy, z - ox * sy + oz * cy, y0, top, along, T, yaw + ya2, mat, seed * 5 + side, { course, outer: true });
+    }
+    // Paving: flagstones in rows, ~1.1 × 0.8 m, staggered.
+    const ex = [cy, 0, -sy], ez = [sy, 0, cy], up = [0, 1, 0];
+    let zz = -hz, row = 0;
+    while (zz < hz - 1e-3) {
+      const d = Math.min(hz - zz, 0.7 + 0.35 * h2(seed * 3 + row, 1));
+      let xx = -hx + (row % 2 ? 0.45 : 0), first = true;
+      if (row % 2) { this.flag(x, z, ex, ez, up, -hx, -hx + 0.45, zz, zz + d, top, y1, seed, row, -1); }
+      while (xx < hx - 1e-3) {
+        const w = Math.min(hx - xx, 0.9 + 0.5 * h2(seed * 7 + row, xx * 13 | 0));
+        this.flag(x, z, ex, ez, up, xx, xx + (hx - (xx + w) < 0.3 ? hx - xx : w), zz, zz + d, top, y1, seed, row, xx * 7 | 0);
+        xx += hx - (xx + w) < 0.3 ? hx - xx : w; first = false;
+      }
+      zz += d; row++;
+    }
+  }
+  flag(x, z, ex, ez, up, u0, u1, v0, v1, yb, yt, seed, row, col) {
+    const bs = Math.floor(h2(seed * 211 + row, col) * 65535) + 1;
+    const sink = h2(bs, 4) < 0.08 ? -0.02 - 0.03 * h2(bs, 5) : (h2(bs, 6) - 0.5) * 0.008;
+    const um = (u0 + u1) / 2, vm = (v0 + v1) / 2;
+    const o = [x + ex[0] * um + ez[0] * vm, (yb + yt) / 2 + sink, z + ex[2] * um + ez[2] * vm];
+    chamferBlock(this, o, ex, up, ez, (u1 - u0) / 2, (yt - yb) / 2, (v1 - v0) / 2, 0.022, 4, MAT.STONE, bs);
+  }
   /** Battered block: a box whose half extents go from (hx0, hz0) at y0 to (hx1, hz1) at y1
    *  (foundations, buttresses that widen toward the ground). Never solid (walls above are). */
   frustum(x, z, y0, y1, hx0, hz0, hx1, hz1, yaw, mat, seed) {
     const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    // Battered foundations stay single faces (they are big, mostly far below the player); the
+    // shader draws heavy courses on them from the same scans (carve 5: drawn cyclopean courses).
     const P = (lx, y, lz) => [x + lx * cy + lz * sy, y, z - lx * sy + lz * cy];
     const c = [P(-hx0, y0, -hz0), P(hx0, y0, -hz0), P(hx0, y0, hz0), P(-hx0, y0, hz0), P(-hx1, y1, -hz1), P(hx1, y1, -hz1), P(hx1, y1, hz1), P(-hx1, y1, hz1)];
-    this.quad(c[4], c[5], c[6], c[7], mat, seed);
-    this.quad(c[0], c[1], c[5], c[4], mat, seed);
-    this.quad(c[2], c[3], c[7], c[6], mat, seed);
-    this.quad(c[3], c[0], c[4], c[7], mat, seed);
-    this.quad(c[1], c[2], c[6], c[5], mat, seed);
+    const dc = mat === MAT.STONE ? 5 : 0;
+    this.quad(c[4], c[5], c[6], c[7], mat, seed, dc);
+    this.quad(c[0], c[1], c[5], c[4], mat, seed, dc);
+    this.quad(c[2], c[3], c[7], c[6], mat, seed, dc);
+    this.quad(c[3], c[0], c[4], c[7], mat, seed, dc);
+    this.quad(c[1], c[2], c[6], c[5], mat, seed, dc);
   }
   /** Drum (column, altar, bell): n sides, radius r0 at y0 to r1 at y1; capped. */
-  drum(x, z, y0, y1, r0, r1, n, mat, seed, { carve = 0, solid = true, lie = 0, yaw = 0 } = {}) {
+  drum(x, z, y0, y1, r0, r1, n, mat, seed, { carve = 0, solid = true, lie = 0, yaw = 0, broken = 0 } = {}) {
+    if ((mat === MAT.STONE || mat === MAT.GLYPH) && !lie) {
+      columnDrums(this, x, z, y0, y1, r0, r1, Math.max(n, Math.min(28, Math.round(Math.max(r0, r1) * 22))), mat, seed, { broken, carve, solid });
+      return;
+    }
     // lie: lying on its side (fallen column) along yaw, length = y1 − y0, resting at y0.
     const pts = (y, r) => {
       const out = [];
@@ -143,15 +228,15 @@ function monastery(b, facing, R) {
   // A parapet round the platform's edge, open toward the descent.
   for (let k = 0; k < 4; k++) {
     const yaw = facing + k * Math.PI / 2, ex = Math.sin(yaw) * 14.6, ez = Math.cos(yaw) * 14.6;
-    if (k === 0) { for (const s of [-1, 1]) { const ox = Math.cos(facing) * s * 9.5, oz = -Math.sin(facing) * s * 9.5; b.box(ex + ox, ez + oz, 0.35, 1.25, 5.2, 0.35, yaw, MAT.STONE, 120 + s); } }
-    else b.box(ex, ez, 0.35, 1.25, 14.6, 0.35, yaw, MAT.STONE, 110 + k);
+    if (k === 0) { for (const s of [-1, 1]) { const ox = Math.cos(facing) * s * 9.5, oz = -Math.sin(facing) * s * 9.5; b.box(ex + ox, ez + oz, 0.35, 1.25, 5.2, 0.35, yaw, MAT.STONE, 120 + s, { drift: false }); } }
+    else b.box(ex, ez, 0.35, 1.25, 14.6, 0.35, yaw, MAT.STONE, 110 + k, { drift: false });
   }
   // The hall: 14 × 10 m, walls 0.9 m thick and ~6 m tall, a doorway facing the descent, the roof
   // half fallen in.
   const H = 6.2, T = 0.45;
-  const wall = (s, f, hx, hz, h = H, seed = 3) => { const [x, z] = at(s, f); b.box(x, z, 0.35, 0.35 + h, hx, hz, facing, MAT.STONE, seed); };
+  const wall = (s, f, hx, hz, h = H, seed = 3, ruin = 0) => { const [x, z] = at(s, f); b.box(x, z, 0.35, 0.35 + h, hx, hz, facing, MAT.STONE, seed, { ruin }); };
   wall(0, -5, 7, T);                       // back wall
-  wall(-7, 0, T, 5, H, 4); wall(7, 0, T, 5, H * 0.72, 5); // side walls (the east one broken down)
+  wall(-7, 0, T, 5, H, 4, 0.12); wall(7, 0, T, 5, H * 0.72, 5, 0.45); // side walls (the east one broken down)
   wall(-4.6, 5, 2.4, T, H, 6); wall(4.6, 5, 2.4, T, H, 7); // front, either side of the door
   { const [x, z] = at(0, 5); b.box(x, z, 0.35 + 3.6, 0.35 + H, 2.2, T, facing, MAT.GLYPH, 8, { carve: 1, solid: false }); } // lintel
   // Roof slabs: the west half still spans; the east half lies fallen and leaning in.

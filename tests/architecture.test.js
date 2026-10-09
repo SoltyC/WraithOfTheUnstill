@@ -10,7 +10,7 @@ for (const p of baked.pois) table[p.id] = p;
 describe('Shaper architecture', () => {
   const sites = frostSites(table, baked.routes);
   const built = buildArchitecture(sites);
-  it('builds every frost site into one indexed mesh with outward normals', () => {
+  it('builds every frost site into one indexed mesh with unit normals', () => {
     const ids = sites.filter((s) => !s.prop).map((s) => s.id);
     // monastery, camp, spring, watching stone, den; 5 shrines; 6 Echo stones; 3 verb stones; 3 braziers; 9 gates.
     expect(ids.length).toBe(5 + 5 + 6 + 3 + 3 + 9 + 6 + 16);   // … + the arena's pillars and cover walls
@@ -19,11 +19,13 @@ describe('Shaper architecture', () => {
     expect(sites.length).toBeLessThanOrEqual(64); // ARCH_SITES
     const n = built.positions.length / 3;
     expect(built.indices.length % 3).toBe(0);
-    expect(Math.max(...built.indices)).toBeLessThan(n);
-    expect(n).toBeLessThan(60000);
+    let maxI = 0; for (let i = 0; i < built.indices.length; i++) if (built.indices[i] > maxI) maxI = built.indices[i];
+    expect(maxI).toBeLessThan(n);
+    // Laid masonry (world/masonry.js): block by block, but bounded (one static draw, PERF.md).
+    expect(n).toBeLessThan(700000);
     for (let i = 0; i < n; i++) expect(Number.isFinite(built.positions[i * 3 + 1])).toBe(true);
-    // Box tops face up: the first face written is the monastery plinth's top.
-    expect(built.normals[1]).toBeCloseTo(1, 5);
+    // Normals are unit length (the shader faces them to the viewer; materials are double-sided).
+    for (let i = 0; i < n; i += 97) expect(Math.hypot(built.normals[i * 3], built.normals[i * 3 + 1], built.normals[i * 3 + 2])).toBeCloseTo(1, 4);
     const mats = new Set(); for (let i = 0; i < n; i++) mats.add(built.info[i * 4 + 1]);
     for (const m of [MAT.STONE, MAT.GLYPH, MAT.CANVAS, MAT.WOOD, MAT.ICE, MAT.EMBER, MAT.METAL]) expect(mats.has(m)).toBe(true);
   });
