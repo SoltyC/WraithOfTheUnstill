@@ -81,6 +81,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   const params = new Vector4(0, 1, 1, 0);
   const lodV = [new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 2, 0)]; // z: 0 view, 1 shadow (no fade), 2 far shadow (edge fades only); w: clock
   const sets = [], mats = [], shadowOnly = [];
+  /** Trunk radius at the root per species × variant (m, at scale 1): collision. */
+  const trunkR = new Float32Array(SPECIES_IDS.length * VARIANTS);
   const envArt = env.artParams;
   // Opaque order: the leaf depth prepass before everything else, then Babylon's default (by material).
   const zRank = (sm) => (sm.getMesh().name.startsWith('treeZ') ? 0 : 1);
@@ -89,6 +91,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     const barkLayer = MAT[SPECIES[sid].bark];
     for (let v = 0; v < VARIANTS; v++) for (const lod of [0, 1]) {
       const t = growTree(sid, 1000 + si * 131 + v * 17, lod);
+      if (lod === 0) trunkR[si * VARIANTS + v] = t.trunkR;
       const max = lod ? MAX_FAR : MAX_NEAR, buf = new Float32Array(max * 16);
       const meshes = [];
       for (const part of ['bark', 'leaf']) {
@@ -307,6 +310,17 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       } else if (cleanAt && now > cleanAt) {
         // Fades done: place again from the same spot so the faded-out copies stop drawing.
         cleanAt = 0; rebuild(lastX, lastZ, false, now);
+      }
+    },
+    /** Every tree trunk within r of (x, z): cb(x, z, radius at the root) — the same deterministic
+     *  placement the renderer draws (systems/rockSolids.js gives them to the controller). */
+    trunksNear(x, z, r, cb) {
+      const g0x = Math.floor((x - r) / CELL), g1x = Math.floor((x + r) / CELL), g0z = Math.floor((z - r) / CELL), g1z = Math.floor((z + r) / CELL);
+      for (let gz = g0z; gz <= g1z; gz++) for (let gx = g0x; gx <= g1x; gx++) {
+        if (!treeAt(gx, gz)) continue;
+        const dx = T.x - x, dz = T.z - z;
+        if (dx * dx + dz * dz > r * r) continue;
+        cb(T.x, T.z, trunkR[T.si * VARIANTS + T.v] * T.sc * 1.1);
       }
     },
     setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },

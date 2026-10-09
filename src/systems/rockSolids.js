@@ -3,7 +3,8 @@
 // Wraith whenever it crosses a few metres, gives each nearby rock an ellipse and a height in the
 // controller's solids (world/solids.js). Tall rocks block; low ones are stepped onto. The seat
 // follows the vertex shader's (the lowest of the centre and four samples, eased), and rocks the
-// shader drops (off the frost steppe, on steep ground) are dropped here too.
+// shader drops (off the frost steppe, on steep ground) are dropped here too. Tree trunks join them
+// (render/trees.js trunksNear): tall circles round the root.
 
 import { rocksNear } from '../render/rocks.js';
 
@@ -35,7 +36,21 @@ export function addRockSolidSystem(g) {
     rk.x[n] = x; rk.z[n] = z; rk.c[n] = Math.cos(yaw); rk.s[n] = Math.sin(yaw);
     rk.rx[n] = rx; rk.rz[n] = rz; rk.y0[n] = seat - 0.3; rk.y1[n] = seat + up;
   }
-  function rebuild(px, pz) { rk.n = 0; pending = false; rocksNear(px, pz, RADIUS, rocks.exclusions, add); }
+  // Tree trunks (Phase 8): tall circles the Wraith walks round, seated at the root.
+  function addTrunk(x, z, r) {
+    if (rk.n >= MAX) return;
+    ground.qx = x; ground.qz = z;
+    if (!ground.covers()) { pending = true; return; }
+    ground.sample();
+    const n = rk.n++;
+    rk.x[n] = x; rk.z[n] = z; rk.c[n] = 1; rk.s[n] = 0;
+    rk.rx[n] = r; rk.rz[n] = r; rk.y0[n] = ground.h - 0.5; rk.y1[n] = ground.h + 12;
+  }
+  function rebuild(px, pz) {
+    rk.n = 0; pending = false;
+    rocksNear(px, pz, RADIUS, rocks.exclusions, add);
+    if (g.trees) g.trees.trunksNear(px, pz, RADIUS, addTrunk);
+  }
 
   loop.add({ name: 'rockSolids', update: () => {
     const p = controller.pos, nx = Math.floor(p.x / CELL), nz = Math.floor(p.z / CELL);
