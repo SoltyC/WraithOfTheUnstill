@@ -259,7 +259,17 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
   - **Grass push:** blades within 1.3 m of the Wraith, and of an 8-point trail behind it, lean away and spring back over ~2.5 s.
   - **Found:** a WGSL uniform written `array<vec4f, 8>` (with a space) silently never received data from Babylon. It must be written `array<vec4f,8>`.
   - **Perf** at 0.7: `p8-forest-floor` (new spot) 15.8 ms, `p8-forest-shafts` 16.7 ms, meadow noon 14.9 ms. The ground cover costs ~0.6 ms. The meadow ground skips the turf layers under a full canopy.
-- **Next step:** motes in the beams; shrubs and fallen logs; trunk collision; the frost↔meadow border; the terrain shader's cost (~5 ms of scene time in a grove, the largest single item).
+- **The rest of the list (user: "continue working through the list"):**
+  - **Trunk collision:** trunks, stumps and logs within 26 m join the rock solids. Logs block like low rocks, so thin ones are stepped over. Checked in the browser: the Wraith placed inside a trunk is pushed out to radius + capsule.
+  - **Shrubs and logs:** tree cells left empty may grow a shrub (several arching stems, dense leaves) or, in groves, a fallen log or a stump. Logs follow the ground under every vertex.
+  - **Motes and pollen:** 4000 stateless points that glitter only where the sun reaches them.
+  - **The frost↔meadow border:** it breaks into crisp, torn snow patches with a straw-coloured melt band, the same in the terrain, the grass and the ground cover; grass tufts come up between the patches. `p8-border` now stands on the actual border.
+  - **Perf at 0.7:** `p8-forest-shafts` 17.0 ms (just over the 60 fps floor), meadow noon 15.3 ms. Giving the terrain the cheap shadow lookup changed nothing (16.0 vs 15.8 ms), so its shadow filter is not where its ~5 ms goes; it needs a proper profile (vertex count, the material layers).
+- **Next step:**
+  - profile the terrain shader;
+  - cheap stand-ins for distant trees if the budget needs them;
+  - mossy boulders in the meadow (the rocks are frost-only);
+  - Phase 8 M1 wind field, M5 rivers, M6 Gale verbs onward (PLAN.md).
 
 ### Session — 2026-10-09 — Phase 7 visual pass (user: "extremely high graphics quality"), branch `claude/wraithoftheunstill-phase-7`
 

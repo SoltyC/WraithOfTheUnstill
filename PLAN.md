@@ -392,12 +392,11 @@ placed by Q3; trunks collide (`solids.js` circles). Judged against
   sun reaches them).
 - Dappled light on the floor comes from the same tree shadows (already there).
 - **Done 2026-10-10:** the forest haze, the shaft ratio for it, the canopy measure and the shade
-  lift; photo spot `p8-forest-shafts`. **Open:** motes and pollen in the beams, a dawn/dusk
-  thickening, and a sky-occlusion term under the crowns (the near floor is still very dark).
+  lift; photo spot `p8-forest-shafts`. **Open:** a dawn/dusk thickening of the haze. Motes and the light under the crowns are done (2026-10-10).
 
 ### M4c — Forest floor and ground cover (user, 2026-10-10)
 
-- **Done 2026-10-10:** the canopy map, light under the crowns, forest-floor scans, ground cover (leaf drifts, needles, twigs, ferns, sorrel, moss, bracken; meadow flowers, clover, plantain, pebbles), and grass and ferns parting around the Wraith. **Open:** shrubs, fallen logs and stumps, mossy boulders; ground cover casting into cascade 0.
+- **Done 2026-10-10:** the canopy map, light under the crowns, forest-floor scans, ground cover (leaf drifts, needles, twigs, ferns, sorrel, moss, bracken; meadow flowers, clover, plantain, pebbles), and grass and ferns parting around the Wraith. Shrubs, fallen logs and stumps, trunk collision and the snowline border are done too. **Open:** mossy boulders in the meadow; ground cover casting into cascade 0.
 
 ### M5 — Rivers and water
 

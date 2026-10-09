@@ -456,3 +456,9 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Light under the crowns:** the sky IBL is scaled by 1 − 0.45·canopy, plus a fill of 0.13 × key colour × canopy (green-gold, stronger on up-facing surfaces) from the sunlit leaves. The camera's +1.4-stop shade lift stays.
 - **Ground cover is stateless GPU cards like the grass**, not instanced meshes: one 564k-vertex mesh whose vertex shader picks the item for its world cell (canopy, meadow weight, noise patches, slope) and builds it from up to 8 atlas cards (flat drifts, radial arching fronds, stems with heads). Nothing is uploaded per frame; the same cell always grows the same thing. It receives shadows but does not cast them. The atlas is canvas-drawn at load (16 cells), like the leaf atlas.
 - **Grass push:** an 8-point trail (the Wraith and where it was, dropped every 0.45 m, fading at 0.4/s) in a shared uniform array that the grass (rings 0–1) and the ground cover both read.
+
+### Understory, motes and the border (2026-10-10)
+
+- **Shrubs and logs share the tree system.** They grow in the tree cells that drew no tree: shrubs in grove gaps and along edges, logs and stumps in groves. That gives them the same placement, detail switch, dissolves, shadows and collision for free. Shrubs are walked through; logs are low ellipses you step over; stumps are trunks. The birch bark tint is limited to the birch, since species indices now go to 4.
+- **Motes are stateless points** like the diamond dust: no simulation, and visible only where the shadow lookup sees sun.
+- **The border is a per-pixel decision, not a blend:** `borderSnow()` (`common.wgsl.js`) turns the frost share into snow or bare ground through layered noise down to a 0.25 m ragged edge. Terrain, grass and ground cover all call it, so they agree. At the border the grass and ground cover treat bare patches as meadow (their 8 m meadow weight alone would leave the patches bare).

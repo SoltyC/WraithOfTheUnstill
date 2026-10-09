@@ -407,3 +407,5 @@ GPU frame median at 2560×1440 output, render scale 0.7, RTX 3060, Windows Chrom
 - Still over the 11.1 ms (90 fps) budget, inside 60 fps. Next levers: impostors for far trees (beyond ~150 m), fewer leaf cards on the near crowns' interior, cached far cascades.
 
 Forest floor pass (2026-10-10, render scale 0.7): `p8-forest-floor` 15.8 ms, `p8-forest-shafts` 16.7 ms, `p8-meadow-noon` 14.9 ms. Ground cover ~0.6 ms; canopy-map build 97 ms once at load. In a grove the terrain costs ~7 ms in all (~4.9 ms of it scene shading), trees ~4.1 ms (shadows ~2.2 ms of that), grass ~0.6 ms.
+
+Understory, motes, border (2026-10-10, 0.7): `p8-forest-shafts` 17.0 ms, `p8-meadow-noon` 15.3 ms. Experiment: the terrain on the 4-tap shadow lookup instead of the full soft filter changed `p8-forest-floor` by +0.2 ms (within noise), so the terrain's shadow filter is not its cost.
