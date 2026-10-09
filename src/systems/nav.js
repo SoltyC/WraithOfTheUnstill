@@ -37,5 +37,5 @@ export function addNavSystem(g) {
     compass.update(nav, arm.yaw, p.x, p.z, clock.realDt, project);
   } });
   /** Called after a load: known/visited places come back from the world flags. */
-  g.navSync = () => nav.sync();
+  { const prev = g.navSync; g.navSync = () => { prev?.(); nav.sync(); }; } // chained: other systems hook loads too
 }

@@ -87,11 +87,22 @@ export function addNpcSystems(g) {
     return sp;
   }
   let tobinStart = true;
+  // Every load re-places him (systems chain navSync on load: game.js apply).
+  { const prev = g.navSync; g.navSync = () => { prev?.(); tobinStart = true; }; }
   function tobinTick(n, dt) {
     const fl = chapter.graph.flags, p = controller.pos;
     if (fl.has('escorting') && !fl.has('tobin-home')) {
-      // A load mid-escort: he starts again from the spring (not already home at the fire).
-      if (tobinStart) { tobinStart = false; if (Math.hypot(n.x - campPos[0], n.z - campPos[1]) < FOLLOW.home + 4) { n.x = tobinLost[0]; n.z = tobinLost[1]; n.xf.ox = n.x; n.xf.oz = n.z; n.placed = false; } }
+      // A load mid-escort (any load, not only the first): he was following the Wraith when the
+      // save was made, so once the load's teleport has landed he stands just behind it — never
+      // left at the fire (which would end the escort at once) or far behind.
+      if (tobinStart && !(g.pendingTp && g.pendingTp.active)) {
+        tobinStart = false;
+        const back = controller.yaw + Math.PI, bx = p.x + Math.sin(back) * 2.5, bz = p.z + Math.cos(back) * 2.5;
+        if (Math.hypot(n.x - p.x, n.z - p.z) > FOLLOW.wait * 0.8 || Math.hypot(n.x - campPos[0], n.z - campPos[1]) < FOLLOW.home + 4) {
+          n.x = bx; n.z = bz; n.xf.ox = n.x; n.xf.oz = n.z; n.placed = false;
+        }
+      }
+      if (tobinStart) { n.vx = 0; n.vz = 0; n.at = null; return true; }
       const d = Math.hypot(p.x - n.x, p.z - n.z);
       tobinWaiting = d > FOLLOW.wait;
       if (tobinWaiting) { n.vx = 0; n.vz = 0; n.yaw = Math.atan2(p.x - n.x, p.z - n.z); }
