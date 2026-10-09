@@ -133,3 +133,11 @@
 .warden-fight .line.alarm { color: #fff; font-size: 17px; letter-spacing: 0.12em; text-transform: uppercase; animation: seamPulse 0.6s ease-in-out infinite; }
 @keyframes seamPulse { 50% { box-shadow: 0 0 12px 4px rgba(150, 215, 255, 0.85); } }
 .warden-pips .hint { font-family: var(--text, serif); font-size: 15px; letter-spacing: 0.04em; color: #dbe7f3; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85); }
+
+/* Ambient barks: under the subtitle area, smaller and quieter than dialogue. */
+.bark { position: fixed; left: 50%; bottom: 7vh; transform: translateX(-50%); max-width: 60vw; text-align: center;
+  font-family: var(--text, 'Cormorant Garamond', serif); font-style: italic; font-size: clamp(15px, 1.15vw, 21px);
+  color: rgba(236, 232, 222, 0.88); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.75); opacity: 0; transition: opacity 0.9s ease;
+  pointer-events: none; z-index: 5; }
+.bark.on { opacity: 1; }
+.bark b { font-style: normal; font-weight: 600; letter-spacing: 0.06em; margin-right: 0.4em; color: rgba(214, 196, 160, 0.95); }

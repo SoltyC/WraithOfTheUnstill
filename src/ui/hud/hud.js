@@ -12,6 +12,9 @@ export function createHud() {
   el('div', 'mark', glyph);
   const label = el('div', 'label', glyph);
   const notices = el('div', 'notices', document.body);
+  // A passing NPC's ambient line (systems/barks.js): low, small, italic, fading on its own.
+  const barkEl = el('div', 'bark', document.body);
+  let barkTimer = 0;
   // One quiet line under the compass for what is happening now (a challenge's clock, the child
   // waiting, the flame guttering); the owner calls line() each frame — it redraws only on change.
   const taskEl = el('div', 'task-line', document.body);
@@ -80,6 +83,16 @@ export function createHud() {
       el('div', 'rule', n);
       requestAnimationFrame(() => n.classList.add('on'));
       setTimeout(() => fade(n), secs * 1000);
+    },
+    /** An ambient line from a passing NPC: "Name — line", for `secs`. */
+    bark(name, text, secs = 5) {
+      if (capture) return;
+      barkEl.textContent = '';
+      const b = el('b', null, barkEl); b.textContent = name;
+      barkEl.append(' ' + text);
+      barkEl.classList.add('on');
+      clearTimeout(barkTimer);
+      barkTimer = setTimeout(() => barkEl.classList.remove('on'), secs * 1000);
     },
     /** The task line: `owner` claims it while it has something to say (text '' releases it). */
     line(owner, text, alarm = false) {

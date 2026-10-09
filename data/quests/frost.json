@@ -1552,5 +1552,148 @@
     "shrine-frost-5": "Shrine of the Far Ridge",
     "sled-wreck": "The Overturned Sled",
     "seedling": "The Seedling"
+  },
+  "barks": {
+    "_comment": "Ambient lines a Veiled says as the Wraith passes (systems/barks.js): the first entry whose `when` matches, one per NPC every ~2 minutes. DRAFT for the user's review.",
+    "aud": [
+      {
+        "when": {
+          "restored": "frost"
+        },
+        "lines": [
+          "The wind is in the cloister again. I keep stopping to listen to it.",
+          "Nine winters of sweeping, and now the snow comes in faster than I can."
+        ]
+      },
+      {
+        "when": {
+          "flag": "cleared:cloister"
+        },
+        "lines": [
+          "The steps are clear. Go on; the bier will keep.",
+          "It wore that robe for sixty years. It never once ran."
+        ]
+      },
+      {
+        "lines": [
+          "Mind the floor. It remembers footsteps.",
+          "Still here. The robe is still here."
+        ]
+      }
+    ],
+    "maren": [
+      {
+        "when": {
+          "restored": "frost"
+        },
+        "lines": [
+          "Snow on my hood. I had forgotten the weight of it.",
+          "The children are trying to catch it on their tongues. Let them."
+        ]
+      },
+      {
+        "when": {
+          "flag": "fighting:camp-raid"
+        },
+        "lines": [
+          "Behind the fire, all of you!",
+          "Not the tents — keep them from the tents!"
+        ]
+      },
+      {
+        "when": {
+          "night": true
+        },
+        "lines": [
+          "Sit, if a robe can sit. The fire is for anyone.",
+          "Count the tents for me. My eyes go first at night."
+        ]
+      },
+      {
+        "lines": [
+          "We came for the Shaper. We stayed for the quiet.",
+          "Old knees, old snow. Neither moves."
+        ]
+      }
+    ],
+    "tobin": [
+      {
+        "when": {
+          "flag": "escorting"
+        },
+        "lines": [
+          "Is it far? It feels far.",
+          "I can walk. I just walk slow."
+        ]
+      },
+      {
+        "when": {
+          "flag": "tobin-home"
+        },
+        "lines": [
+          "I told them you'd find me. Nobody believed me.",
+          "Can I follow you again? Not far. Just to the stones."
+        ]
+      },
+      {
+        "lines": [
+          "Your hands are cold even from here.",
+          "Maren says not to stare. I'm not staring. I'm looking."
+        ]
+      }
+    ],
+    "isolde": [
+      {
+        "when": {
+          "flag": "flame-carried",
+          "notFlag": "flame-out"
+        },
+        "lines": [
+          "Keep it out of the wind. And out of a hurry.",
+          "It burns smaller in your hand than in mine. That's all right."
+        ]
+      },
+      {
+        "when": {
+          "night": true
+        },
+        "lines": [
+          "The lyre's out of tune with the cold. I play it anyway.",
+          "Every lantern is a little promise, you know."
+        ]
+      },
+      {
+        "lines": [
+          "I trim the wick every hour. Old habit, from when the wind still blew it out.",
+          "Light travels a long way here. Further than voices."
+        ]
+      }
+    ],
+    "varo": [
+      {
+        "when": {
+          "restored": "frost"
+        },
+        "lines": [
+          "It's lying down. I watched it for three years and it never once lay down.",
+          "I could walk home now. I think I'll stand a little longer."
+        ]
+      },
+      {
+        "when": {
+          "flag": "met-varo"
+        },
+        "lines": [
+          "Watch the spires on its back. They burn before it breaks loose.",
+          "Stone stops it. Nothing else I've seen does."
+        ]
+      },
+      {
+        "lines": [
+          "Don't wave. It sees movement.",
+          "Down there. The white ridge that isn't a ridge."
+        ]
+      }
+    ]
   }
 }
