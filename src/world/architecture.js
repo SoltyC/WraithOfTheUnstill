@@ -86,7 +86,7 @@ class Builder {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     // Shaper stone is laid, not boxed (world/masonry.js): plinths get walled sides and paving,
     // walls and piers coursed blocks, everything else one chamfered block.
-    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS) && !plain) {
+    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS || mat === MAT.METAL || mat === MAT.EMBER) && !plain) {
       const flat = tilt === 0 && roll === 0;
       // Snow banked against whatever stands on the ground (or on a floor) — never a hard line.
       const stone = mat === MAT.STONE || mat === MAT.GLYPH;
@@ -445,11 +445,30 @@ function sledWreck(b, facing, R) {
 
 /** Props the Veiled carry: drawn with the architecture, each its own site that the NPC system
  *  moves to the figure's hand every frame (local origin: the staff's foot, the lantern's ring). */
-function staff(len) { return (b) => { b.drum(0, 0, 0, len, 0.032, 0.026, 6, MAT.WOOD, 1, { solid: false }); b.drum(0, 0, len - 0.02, len + 0.06, 0.05, 0.02, 6, MAT.WOOD, 2, { solid: false }); }; }
+/** A pilgrim's staff: a crooked shaft of weathered wood, a knot of cord near the head, the head
+ *  bound with a ring of bronze and a carved Shaper stone lashed into its fork. */
+function staff(len) {
+  return (b) => {
+    stick(b, [0, 0, 0], [0.012, len * 0.55, 0.006], 0.026, 0.03, 8, MAT.WOOD, 1);
+    stick(b, [0.012, len * 0.55, 0.006], [-0.01, len, 0.0], 0.03, 0.034, 8, MAT.WOOD, 2);
+    stick(b, [-0.01, len - 0.24, 0], [-0.01, len - 0.18, 0], 0.04, 0.04, 8, MAT.CANVAS, 3); // cord wrapping
+    stick(b, [-0.01, len - 0.03, 0], [-0.01, len + 0.01, 0], 0.04, 0.038, 10, MAT.METAL, 4); // bronze ferrule
+    // The fork and the stone it holds.
+    stick(b, [-0.01, len, 0], [0.05, len + 0.13, 0.01], 0.022, 0.012, 6, MAT.WOOD, 5);
+    stick(b, [-0.01, len, 0], [-0.07, len + 0.12, -0.01], 0.022, 0.012, 6, MAT.WOOD, 6);
+    b.box(-0.01, 0, len + 0.04, len + 0.13, 0.035, 0.025, 0.4, MAT.GLYPH, 7, { solid: false, drift: false, cap: false, carve: 0 });
+  };
+}
+/** A lantern: a bronze cage (four posts, a domed cap, a base), a horn pane glowing in each side,
+ *  the ember inside, and the bail it hangs by. Origin: the bail's ring. */
 function lantern(b) {
-  b.box(0, 0, -0.34, -0.06, 0.085, 0.085, 0, MAT.METAL, 1, { solid: false });
-  b.box(0, 0, -0.3, -0.1, 0.07, 0.07, 0, MAT.EMBER, 2, { solid: false });
-  b.drum(0, 0, -0.06, 0, 0.012, 0.012, 4, MAT.METAL, 3, { solid: false });
+  const h0 = -0.34, h1 = -0.08, r = 0.075;
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) stick(b, [sx * r, h0, sz * r], [sx * r, h1, sz * r], 0.008, 0.008, 5, MAT.METAL, 1);
+  b.box(0, 0, h0 - 0.02, h0 + 0.012, r + 0.02, r + 0.02, 0, MAT.METAL, 2, { solid: false, drift: false, cap: false });
+  b.drum(0, 0, h1, h1 + 0.05, r + 0.015, 0.02, 10, MAT.METAL, 3, { solid: false });
+  b.box(0, 0, h0 + 0.03, h1 - 0.01, r - 0.004, r - 0.004, 0, MAT.EMBER, 4, { solid: false, drift: false, cap: false });
+  stick(b, [-0.05, h1 + 0.04, 0], [0, 0, 0], 0.004, 0.004, 4, MAT.METAL, 5);
+  stick(b, [0.05, h1 + 0.04, 0], [0, 0, 0], 0.004, 0.004, 4, MAT.METAL, 6);
 }
 export const PROPS = [
   { id: 'prop-varo', npc: 'varo', kind: 'staff', build: staff(1.95) },

@@ -20,6 +20,7 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { clipmapVertexWGSL, clipmapFragmentWGSL, CLIPMAP_N, CLIPMAP_LEVELS } from '../shaders/clipmap.wgsl.js';
 import { clipmapHeightsWGSL, clipmapNormalsWGSL, CLIPMAP_V } from '../shaders/clipmapCompute.wgsl.js';
 import { bindEnvironment } from './environment.js';
+import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
@@ -34,7 +35,7 @@ const BINDINGS = ['heights', 'overviewH', 'biomeA', 'biomeB', 'windMap', 'reside
  * @param {import('@babylonjs/core').Scene} scene
  * @param {Record<string, any>} buffers  storage buffers from WorldStreamer
  */
-export function createClipmap(scene, buffers, atmo) {
+export function createClipmap(scene, buffers, atmo, matLib) {
   const engine = scene.getEngine();
   ShaderStore.ShadersStoreWGSL.clipmapVertexShader = clipmapVertexWGSL;
   ShaderStore.ShadersStoreWGSL.clipmapFragmentShader = clipmapFragmentWGSL;
@@ -92,7 +93,7 @@ export function createClipmap(scene, buffers, atmo) {
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
     uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', ...ENV_UNIFORMS],
-    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -102,6 +103,7 @@ export function createClipmap(scene, buffers, atmo) {
   mat.setVector4('camGrid', camGrid);
   mat.setVector4('playerPos', playerPos);
   // Spell lights (written in place by the bending systems each frame).
+  bindMaterialLibrary(mat, matLib); // scanned rock on the cliffs
   const spellLights = new Float32Array(32);
   mat.setArray4('spellLights', spellLights);
   mat.setStorageBuffer('levelData', levelData);

@@ -20,8 +20,10 @@ import { hashU32, valueNoise } from '../terrain/noise.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
+import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 
-const MAX_NEAR = 700, MAX_FAR = 1700;
+const MAX_NEAR = 700, MAX_FAR = 1700, MAX_BIG = 160;
+const BIG_R = 420; // m: outcrops nearer than this use the dense (2562-vertex) mesh
 const NEAR_R = 140; // m: closer rocks use the 642-vertex mesh, farther the 162-vertex one
 const BOULDER_CELL = 8, BOULDER_R = 52;    // cells: ±52 → 840 m square
 const OUTCROP_CELL = 48, OUTCROP_R = 12;   // ±12 → 1.2 km square
@@ -103,7 +105,7 @@ export function rocksNear(px, pz, radius, exclude, cb) {
  * @param {any} clipmap
  * @param {any} atmo
  */
-export function createRocks(scene, clipmap, atmo) {
+export function createRocks(scene, clipmap, atmo, matLib) {
   ShaderStore.ShadersStoreWGSL.rocksVertexShader = rocksVertexWGSL;
   ShaderStore.ShadersStoreWGSL.rocksShadowVertexShader = rocksShadowVertexWGSL;
   ShaderStore.ShadersStoreWGSL.rocksFragmentShader = rocksFragmentWGSL;
@@ -117,7 +119,7 @@ export function createRocks(scene, clipmap, atmo) {
     m.doNotSyncBoundingInfo = true;
     return { mesh: m, buf: b, max, n: 0 };
   };
-  const near = makeMesh('rocksNear', 3, MAX_NEAR), far = makeMesh('rocksFar', 2, MAX_FAR);
+  const near = makeMesh('rocksNear', 3, MAX_NEAR), far = makeMesh('rocksFar', 2, MAX_FAR), big = makeMesh('rocksBig', 4, MAX_BIG);
 
   const common = {
     attributes: ['position'],
@@ -134,14 +136,15 @@ export function createRocks(scene, clipmap, atmo) {
   const mat = new ShaderMaterial('rocks', scene, { vertex: 'rocks', fragment: 'rocks' }, {
     ...common,
     uniforms: ['viewProjection', 'levels', ...ENV_UNIFORMS],
-    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: ['levelData', 'biomeA', ...STATE_SAMPLE_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
   });
   vertexMats.push(mat);
   bindEnvironment(mat);
   bindAtmosphere(mat, atmo);
+  bindMaterialLibrary(mat, matLib);
   bindVertex(mat);
-  near.mesh.material = mat; far.mesh.material = mat;
+  near.mesh.material = mat; far.mesh.material = mat; big.mesh.material = mat;
 
   let stateBound = null;
   function bindStateTo(m, ts) { m.setStorageBuffer('stateFine0', ts.fine[0]); m.setStorageBuffer('stateAtlas0', ts.atlas[0]); m.setStorageBuffer('stateParams', ts.params); }
@@ -156,7 +159,8 @@ export function createRocks(scene, clipmap, atmo) {
     }
     // Near or far mesh by distance from the camera cell (n counts all rocks, unused here).
     const dx = x - camCX, dz = z - camCZ;
-    const t = dx * dx + dz * dz < NEAR_R * NEAR_R && near.n < near.max ? near : far;
+    const d2 = dx * dx + dz * dz;
+    const t = kind === 1 && d2 < BIG_R * BIG_R && big.n < big.max ? big : d2 < NEAR_R * NEAR_R && near.n < near.max ? near : far;
     if (t.n >= t.max) return;
     const buf = t.buf, o = t.n++ * 16;
     buf[o] = x; buf[o + 1] = z; buf[o + 2] = size; buf[o + 3] = yaw;
@@ -164,7 +168,7 @@ export function createRocks(scene, clipmap, atmo) {
   }
   function rebuild(cx, cz) {
     let n = 0;
-    near.n = 0; far.n = 0;
+    near.n = 0; far.n = 0; big.n = 0;
     camCX = (cx + 0.5) * BOULDER_CELL; camCZ = (cz + 0.5) * BOULDER_CELL;
     // Outcrops: large, half buried, sparse.
     const ox = Math.floor(cx * BOULDER_CELL / OUTCROP_CELL), oz = Math.floor(cz * BOULDER_CELL / OUTCROP_CELL);
@@ -176,15 +180,15 @@ export function createRocks(scene, clipmap, atmo) {
       if (boulderAt(cx + i, cz + j)) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 0);
     }
     // Unused slots: size 0 (discarded in the vertex shader; the draw count never changes).
-    for (const t of [near, far]) {
+    for (const t of [near, far, big]) {
       for (let k = t.n; k < t.max; k++) t.buf[k * 16 + 2] = 0;
       t.mesh.thinInstanceBufferUpdated('matrix');
     }
-    return near.n + far.n;
+    return near.n + far.n + big.n;
   }
 
   return {
-    meshes: [near.mesh, far.mesh], material: mat, count: 0,
+    meshes: [near.mesh, far.mesh, big.mesh], material: mat, count: 0,
     /** Builds a depth material for a shadow cascade (vertex shader without normals). */
     makeShadowMaterial(name, light, origin) {
       const m = new ShaderMaterial(name, scene, { vertex: 'rocksShadow', fragment: 'shadowDepth' }, {

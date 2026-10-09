@@ -16,6 +16,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
 import { SNOW_WGSL } from './snow.wgsl.js';
+import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
 export const CLIPMAP_N = 256;     // quads per level side
@@ -337,6 +338,8 @@ ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
+${MATERIALS_DECL}
+${MATERIALS_WGSL}
 ${SNOW_WGSL}
 
 @fragment
@@ -348,6 +351,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let fp = length(fwidth(wp)) * 0.7;
   let V = normalize(camPos - wp);
   var N = normalize(fragmentInputs.vNormal);
+  matDpx = dpdx(wp); matDpy = dpdy(wp);
   let dist = length(camPos - wp);
 
   // Clay albedo tinted by biome (debug-readable, not final materials).

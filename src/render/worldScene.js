@@ -43,7 +43,7 @@ export function wgslMaterial(scene, name, attributes, extraUniforms, atmo, recei
  * @param {Record<string, any>} worldBuffers  WorldStreamer storage buffers
  * @param {ReturnType<typeof import('./atmosphere.js').createAtmosphere>} atmo
  */
-export function createWorldScene(scene, worldBuffers, atmo) {
+export function createWorldScene(scene, worldBuffers, atmo, matLib) {
   register('sky', skyVertexWGSL, skyFragmentWGSL);
   register('capsule', capsuleVertexWGSL, capsuleFragmentWGSL);
 
@@ -57,7 +57,7 @@ export function createWorldScene(scene, worldBuffers, atmo) {
   skyMat.backFaceCulling = false;
   sky.material = skyMat;
 
-  const clipmap = createClipmap(scene, worldBuffers, atmo);
+  const clipmap = createClipmap(scene, worldBuffers, atmo, matLib);
 
   const capsuleHalfHeight = 0.9;
   const capsule = CreateCapsule('player', { height: capsuleHalfHeight * 2, radius: 0.32, tessellation: 48, subdivisions: 8, capSubdivisions: 12 }, scene);

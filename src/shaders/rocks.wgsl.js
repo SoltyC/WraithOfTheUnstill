@@ -13,6 +13,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL } from './terrainState.wgsl.js';
+import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
 /** Vertex code shared by the colour pass and (with normals off) the shadow casters. */
 const ROCKS_VERTEX = /* wgsl */ `
@@ -148,9 +149,11 @@ varying vNormal: vec3f;
 varying vLocal: vec3f;
 varying vBase: f32;
 varying vSize: f32;
+${MATERIALS_DECL}
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${MATERIALS_WGSL}
 
 fn rk_fpFade(lambda: f32, fp: f32) -> f32 { return 1.0 - smoothstep(lambda * 0.12, lambda * 0.5, fp); }
 
@@ -162,26 +165,23 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let V = normalize(camPos - wp);
   let Ng = normalize(fragmentInputs.vNormal);
   let lp = fragmentInputs.vLocal;
-  // Triplanar detail bumps (local space, so they move with the rock).
-  var w = pow(abs(Ng), vec3f(4.0)); w = w / (w.x + w.y + w.z);
-  var dn = vec3f(0.0);
-  for (var k = 0; k < 2; k++) {
-    let sc = select(0.18, 0.7, k == 1);
-    let a = select(0.05, 0.22, k == 1) * rk_fpFade(sc, fp);
-    let nx = noised(lp.zy / sc); let ny = noised(lp.xz / sc + 3.0); let nz = noised(lp.xy / sc + 7.0);
-    dn += a / sc * (w.x * vec3f(0.0, nx.z, nx.y) + w.y * vec3f(ny.y, 0.0, ny.z) + w.z * vec3f(nz.y, nz.z, 0.0));
-  }
-  let Nr = normalize(Ng - dn);
-  // Strata: thin layers in the rock's frame, tilted per rock; contrast fades with distance.
-  let strata = fract(lp.y / 0.55 + 0.25 * lp.x * 0.15 + 0.3 * noised(lp.xz * 0.6).x);
-  let band = (smoothstep(0.0, 0.1, strata) * (1.0 - smoothstep(0.5, 0.65, strata)) - 0.5) * rk_fpFade(0.55, fp);
-  var albedo = vec3f(0.09, 0.095, 0.105) * (1.0 + 0.5 * band) * (0.85 + 0.3 * (0.5 + 0.5 * noised(lp.xz * 1.3 + lp.y).x));
-  // Lichen-free frost rock: a faint rusty stain in places.
-  albedo = mix(albedo, vec3f(0.12, 0.10, 0.085), 0.15 * smoothstep(0.3, 0.8, noised(lp.xz * 0.35).x));
+  // Scanned rock (src/materials), biplanar in world space (rocks never move): dark stratified frost
+  // rock, lichen-crusted where the faces lean north and out of the sun; both retinted to the
+  // steppe's cold grey (their detail, the art direction's colour). Sampled in uniform control flow.
+  let ka = 0.42;
+  let sA = matBiplanar(MAT_ROCK_STRATA, wp * ka + vec3f(lp.x * 0.0), Ng, 1.0);
+  let sB = matBiplanar(MAT_ROCK_LICHEN, wp * ka * 0.8 + vec3f(3.1, 0.0, 7.7), Ng, 1.0);
+  let lichen = smoothstep(0.1, 0.7, -Ng.z * 0.7 + 0.5 * noised(wp.xz * 0.35).x + 0.2) * (1.0 - smoothstep(0.5, 0.85, Ng.y));
+  let aA = matRetint(sA, MAT_ROCK_STRATA, vec3f(0.175, 0.178, 0.185), 0.25);
+  let aB = matRetint(sB, MAT_ROCK_LICHEN, vec3f(0.2, 0.2, 0.175), 0.7);
+  var albedo = mix(aA, aB, lichen);
+  let Nr = normalize(mix(sA.N, sB.N, lichen));
+  let rh = mix(sA.h, sB.h, lichen); let rao = mix(sA.ao, sB.ao, lichen);
   // Accumulation: snow sits on upward faces (noisy edge, more toward the top), and drifts
   // against the base up to ~0.35 m.
   let n1 = noised(wp.xz * 2.1).x; let n2 = noised(wp.xz * 0.6 + 4.0).x;
-  let up = smoothstep(0.45, 0.78, Nr.y + 0.12 * n1 + 0.1 * n2);
+  // Snow settles in the hollows first (the scan's low height), and clings to the upper faces.
+  let up = smoothstep(0.45, 0.78, Nr.y + 0.12 * n1 + 0.1 * n2 + 0.3 * (0.5 - rh));
   let drift = 1.0 - smoothstep(0.08, 0.4 + 0.15 * n2, fragmentInputs.vBase);
   let snow = max(up, drift);
   let snowAlb = vec3f(0.84, 0.87, 0.92);
@@ -196,7 +196,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let vis = shadowVisibility(wp, Ng, camPos, fragmentInputs.position.xy);
   let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
   // Cavity occlusion: crevices (low noise) and the underside see less sky.
-  let ao = (0.75 + 0.25 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * (0.85 + 0.15 * clamp(0.5 + 0.5 * n1, 0.0, 1.0));
+  let ao = (0.75 + 0.25 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(rao, 1.0, snow);
   let sky = shIrradiance(N) * cold * uniforms.envMisc.w * ao;
   var col = albedo * (key * diff * vis / PI + sky);
   // Rock: a little sheen at grazing (weathered surface); snow: soft sheen.

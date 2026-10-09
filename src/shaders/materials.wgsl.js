@@ -67,7 +67,13 @@ fn matPlane(layer: i32, uv: vec2f, dx: vec2f, dy: vec2f) -> array<vec4f, 3> {
     textureSampleGrad(matHgt, matHgtSampler, uv, layer, dx, dy));
 }
 fn matBiplanar(layer: i32, p: vec3f, N: vec3f, k: f32) -> MatS {
-  let dpx = dpdx(p); let dpy = dpdy(p);
+  return matBiplanarG(layer, p, N, k, dpdx(p), dpdy(p));
+}
+// The same with the derivatives of p given (callable in non-uniform control flow: only
+// textureSampleGrad inside). matDpx/matDpy: a shader may set them once at the top of main.
+var<private> matDpx: vec3f;
+var<private> matDpy: vec3f;
+fn matBiplanarG(layer: i32, p: vec3f, N: vec3f, k: f32, dpx: vec3f, dpy: vec3f) -> MatS {
   let a = abs(N);
   // Major (ma), minor (mi) and the remaining axis.
   var ma = vec3i(0, 1, 2); var mi = vec3i(0, 1, 2);

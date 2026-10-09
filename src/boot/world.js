@@ -40,7 +40,8 @@ export async function createWorld(g) {
   const ringData = ringMod.requestRing(streamer.manifest.seed); // builds on its own worker meanwhile
   const { createAtmosphere } = await import('../render/atmosphere.js');
   const atmosphere = createAtmosphere(scene, camera, streamer.buffers.biomeA);
-  const content = createWorldScene(scene, streamer.buffers, atmosphere);
+  const matLib = await matLibP;
+  const content = createWorldScene(scene, streamer.buffers, atmosphere, matLib);
   const [{ createShadows }, { bindShadows }] = await Promise.all([import('../render/shadows.js'), import('../render/shadowBindings.js')]);
   const shadows = createShadows(scene, camera, { clipmap: content.clipmap, capsule: content.capsule });
   bindShadows(content.clipmap.material, shadows);
@@ -64,9 +65,9 @@ export async function createWorld(g) {
   bindShadows(snowfall.material, shadows);
   // Fire: the camp's hearth and the braziers (flames, embers, smoke), after the falling snow.
   const fire = (await import('../render/fire.js')).createFire(scene, atmosphere);
-  // Rock outcrops with accumulation (frost): cast and receive shadows.
+  // Rock outcrops with accumulation (frost): cast and receive shadows; scanned rock surfaces.
   const { createRocks } = await import('../render/rocks.js');
-  const rocks = createRocks(scene, content.clipmap, atmosphere);
+  const rocks = createRocks(scene, content.clipmap, atmosphere, matLib);
   bindShadows(rocks.material, shadows);
   // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).
   for (const m of rocks.meshes) shadows.addCaster(m, rocks.makeShadowMaterial, 2);
@@ -91,6 +92,5 @@ export async function createWorld(g) {
   content.clipmap.bindState(terrainState);
   rocks.bindState(terrainState);
 
-  const matLib = await matLibP;
   Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire });
 }

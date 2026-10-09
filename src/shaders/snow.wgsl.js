@@ -89,7 +89,15 @@ fn frostSurface(wp: vec3f, Ngeo: vec3f, Nc: vec3f, wind: vec2f, lake: f32, fp: f
     let band = (0.6 * s1 + 0.4 * s2) * strength * fpFade(14.0, fp);
     // Crevices and overhangs (faces turned down or sideways in the 8 m detail) read darker.
     let crevice = smoothstep(-0.2, 0.5, Nrock.y);
-    rockAlb = vec3f(0.095, 0.10, 0.11) * (1.0 + 0.22 * band) * (0.9 + 0.2 * n2) * mix(0.55, 1.0, crevice);
+    // Scanned rock (src/materials) at two scales — the face's large jointing from afar, its grain
+    // near — retinted to the steppe's cold grey; strata and crevices from the landform on top.
+    let kf = 0.07; let kn = 0.33;
+    let rf = matBiplanarG(MAT_ROCK_STRATA, wp * kf, Nrock, 1.0, matDpx * kf, matDpy * kf);
+    let rn = matBiplanarG(MAT_ROCK_LICHEN, wp * kn + vec3f(5.3, 0.0, 1.7), Nrock, 1.0, matDpx * kn, matDpy * kn);
+    let nearW = fpFade(2.0, fp);
+    let scanAlb = matRetint(rf, MAT_ROCK_STRATA, vec3f(0.14, 0.145, 0.155), 0.2) * mix(vec3f(1.0), matRetint(rn, MAT_ROCK_LICHEN, vec3f(1.0), 0.6), nearW * 0.7);
+    Nrock = normalize(Nrock + (rf.N - Nrock) * 0.7 + (rn.N - Nrock) * 0.5 * nearW);
+    rockAlb = scanAlb * (1.0 + 0.22 * band) * (0.9 + 0.2 * n2) * mix(0.6, 1.0, crevice) * mix(0.7, 1.0, rf.ao);
   }
 
   // Blue ice: scoured out on steep windward slopes (the landform faces into the wind), in
