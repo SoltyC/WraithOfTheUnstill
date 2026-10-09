@@ -101,7 +101,7 @@ export function chamferBlock(B, o, ex, ey, ez, a, b, c, k, faces, mat, seed, car
  * opts.course: course height (m). Blocks run along the longer horizontal axis through the full
  * thickness (through-stones), ends and the top course are emitted only where exposed.
  */
-export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, course = 0.55, carve = 0, outer = false, blockLen = 1 } = {}) {
+export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, course = 0.55, carve = 0, outer = false, blockLen = 1, cap = false } = {}) {
   const cy = Math.cos(yaw), sy = Math.sin(yaw);
   const R = [cy, 0, -sy], F = [sy, 0, cy], U = [0, 1, 0];
   // The run axis is the longer one; `ex` along it, `ez` through the thickness.
@@ -115,7 +115,7 @@ export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, cou
   for (let r = 0; r < nCourses; r++) { const w = 0.55 + 0.9 * h2(seed * 53 + r, 17) + (h2(seed, r * 7 + 3) < 0.18 ? 0.7 : 0); cw.push(w); cs += w; }
   const cy0 = [y0]; for (let r = 0; r < nCourses; r++) cy0.push(cy0[r] + cw[r] / cs * H);
   const ch = H / nCourses;
-  const k = Math.min(0.045, ch * 0.08, th * 0.25);
+  const k = Math.min(0.06, ch * 0.1, th * 0.25);
   // Ruined top: per stretch along the wall, how many courses survive (stepped, never below half).
   const keepAt = (u) => {
     if (ruin <= 0) return nCourses;
@@ -140,14 +140,20 @@ export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, cou
     }
     rows.push(blocks);
   }
-  const present = (r, u0, u1) => r < keepAt((u0 + u1) / 2);
+  // Blocks missing from the body of an old wall (never the bottom two courses or the top one, never
+  // two in a row): the through-hole shows the wall's thickness.
+  const lost = (r, u0, u1) => {
+    if (r < 2 || r >= nCourses - 1 || outer || nCourses < 5) return false;
+    return h2(seed * 4099 + r, Math.floor((u0 + u1) * 7)) < 0.02;
+  };
+  const present = (r, u0, u1) => r < keepAt((u0 + u1) / 2) && !lost(r, u0, u1);
   for (let r = 0; r < nCourses; r++) {
     const yb = cy0[r], yt = cy0[r + 1];
     rows[r].forEach(([u0, u1], bi) => {
       if (!present(r, u0, u1)) return;
       const bs = Math.floor(h2(seed * 7919 + r * 97, bi) * 65535) + 1;
       // Small irregularities: each block stands a few mm proud or shy, and its height varies a hair.
-      const proud = (h2(bs, 11) - 0.5) * 0.018;
+      const proud = (h2(bs, 11) - 0.5) * 0.05;          // settled back or standing proud
       const a = (u1 - u0) / 2, b = (yt - yb) / 2, c = th + proud;
       const um = u0 + a - len / 2;
       const o = [x + ex[0] * um, (yb + yt) / 2, z + ex[2] * um];
@@ -158,7 +164,11 @@ export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, cou
       if (!above) faces |= 4;
       if (u0 <= 1e-3 || !present(r, u0 - 0.2, u0 - 0.1)) faces |= 2;
       if (u1 >= len - 1e-3 || !present(r, u1 + 0.1, u1 + 0.2)) faces |= 1;
-      chamferBlock(B, o, ex, U, ez, a, b, c, k, faces, mat, bs, carve);
+      // The block below gone: its underside shows.
+      if (r > 0 && !present(r - 1, u0, u1) && r - 1 < keepAt((u0 + u1) / 2)) faces |= 8;
+      const kb = k * (0.6 + 0.9 * h2(bs, 12));          // older stones are more rounded
+      chamferBlock(B, o, ex, U, ez, a, b, c, kb, faces, mat, bs, carve);
+      if (cap && !above && !outer) snowPillow(B, [o[0], yt, o[2]], ex, ez, a, c, bs);
     });
   }
   // Rubble at the foot of a ruined wall: a few fallen blocks, tilted.
@@ -173,6 +183,7 @@ export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, cou
       const ct = Math.cos(tilt), st = Math.sin(tilt);
       const e1 = [c2, 0, -s2], e2 = [s2 * -st, ct, c2 * -st], e3 = [s2 * ct, st, c2 * ct];
       chamferBlock(B, [ox, y0 + sa * 0.5 - 0.08, oz], e1, e2, e3, sa * (1 + h2(bs, 7)), sa * 0.5, sa * 0.7, 0.035, 63 & ~8, mat, bs);
+      if (cap && Math.abs(tilt) < 0.25) snowPillow(B, [ox + e2[0] * sa * 0.5, y0 + sa - 0.08 + 0.01, oz + e2[2] * sa * 0.5], e1, e3, sa * (1 + h2(bs, 7)), sa * 0.7, bs);
     }
   }
 }
@@ -201,6 +212,7 @@ export function columnDrums(B, x, z, y0, y1, r0, r1, n, mat, seed, { broken = 0,
     side(lo, hi, 0, 0, carve);
     side(loIn, lo, -0.7, 0); // lower bed chamfer
     side(hi, hiIn, 0, 0.7);  // upper bed chamfer
+    if (isTop && broken <= 0 && n > 0) snowPillow(B, [x, yb + 0.005, z], [1, 0, 0], [0, 0, 1], rb * 0.92, rb * 0.92, bs, { round: true });
     if (isTop) {
       // Cap (a flat top for a whole column, a jagged break for a snapped one).
       const c = [x, yb + (broken > 0 ? 0.08 * h2(seed, 77) : 0), z];
@@ -254,4 +266,38 @@ export function snowDrift(B, x, z, y0, hx, hz, yaw, seed, { height = 0.45, reach
       B.quadN(S(ua, va), S(ub, va), S(ub, vb), S(ua, vb), Nrm(ua, va), Nrm(ub, va), Nrm(ub, vb), Nrm(ua, vb), 7, seed);
     }
   }
+}
+
+/**
+ * A pillow of snow on a level top (centre o at the top surface, axes ex/ez across it, half sizes a,
+ * c): domed, a little proud of the edges and rounding down over them, its height breathing with
+ * the seed. Smooth normals, shared vertices. `round`: an elliptical footprint (column heads).
+ */
+export function snowPillow(B, o, ex, ez, a, c, seed, { round = false, height = 0 } = {}) {
+  if (a < 0.12 || c < 0.08) return;
+  const H = height || Math.min(0.24, 0.4 * Math.min(a, c) + 0.04) * (0.6 + 0.6 * h2(seed, 91));
+  const nu = Math.max(4, Math.min(10, Math.round(a * 4))), nv = Math.max(3, Math.min(6, Math.round(c * 5)));
+  const S = (u, v) => {
+    // u, v in [−1, 1]: a superellipse dome (flat-topped, steep at the rim), the rim draped 2 cm
+    // over the edge and down.
+    const r = round ? Math.hypot(u, v) : Math.pow(Math.pow(Math.abs(u), 6) + Math.pow(Math.abs(v), 6), 1 / 6);
+    const k = Math.max(0, Math.min(1, r));
+    const dome = Math.pow(Math.max(0, 1 - Math.pow(k, 4)), 0.55);
+    const wob = 0.12 * Math.sin(u * 2.3 + seed) * Math.cos(v * 1.7 + seed * 0.3);
+    const y = o[1] + H * dome * (1 + wob) - 0.035 * Math.pow(k, 8);
+    const ov = 1 + 0.03 / Math.max(a, c) * Math.pow(k, 2);
+    const ux = u * a * ov, vz = v * c * ov;
+    return [o[0] + ex[0] * ux + ez[0] * vz, y, o[2] + ex[2] * ux + ez[2] * vz];
+  };
+  const pts = [], nrm = [];
+  for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
+    const u = -1 + 2 * i / nu, v = -1 + 2 * j / nv, e = 1e-3;
+    const p = S(u, v), pu = S(u + e, v), pu2 = S(u - e, v), pv = S(u, v + e), pv2 = S(u, v - e);
+    const du = [pu[0] - pu2[0], pu[1] - pu2[1], pu[2] - pu2[2]], dv = [pv[0] - pv2[0], pv[1] - pv2[1], pv[2] - pv2[2]];
+    let n = [du[1] * dv[2] - du[2] * dv[1], du[2] * dv[0] - du[0] * dv[2], du[0] * dv[1] - du[1] * dv[0]];
+    if (n[1] < 0) n = [-n[0], -n[1], -n[2]];
+    const l = Math.hypot(n[0], n[1], n[2]) || 1;
+    pts.push(p); nrm.push([n[0] / l, n[1] / l, n[2] / l]);
+  }
+  B.grid(pts, nrm, nu, nv, 7, seed);
 }

@@ -10,7 +10,7 @@
 // symbol: crystal / crescent / wave), CANVAS (tents), WOOD, ICE, EMBER.
 // Also returns 2D collision shapes (blockers: circles and boxes; platforms: walkable tops).
 
-import { chamferBlock, layWall, columnDrums, snowDrift, h2 } from './masonry.js';
+import { chamferBlock, layWall, columnDrums, snowDrift, snowPillow, h2 } from './masonry.js';
 
 export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6, SNOW: 7 };
 const FOUND = 3; // m of foundation below the seat
@@ -32,6 +32,19 @@ class Builder {
       this.info.push(this.site, mat, seed, carve);
     }
     this.idx.push(base, base + 2, base + 1, base, base + 3, base + 2);
+  }
+  /** A smooth grid surface: (nu+1)·(nv+1) points and normals (row-major, u fastest), shared vertices. */
+  grid(pts, nrms, nu, nv, mat, seed) {
+    const base = this.pos.length / 3;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i], n = nrms[i];
+      this.pos.push(p[0], p[1], p[2]); this.nrm.push(n[0], n[1], n[2]); this.uv.push(p[0], p[2]);
+      this.info.push(this.site, mat, seed, 0);
+    }
+    for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
+      const a = base + j * (nu + 1) + i, b = a + 1, c = a + nu + 2, d = a + nu + 1;
+      this.idx.push(a, c, b, a, d, c);
+    }
   }
   /** Quad with given per-vertex normals (smooth surfaces). */
   quadN(a, b, c, d, na, nb, nc, nd, mat, seed) {
@@ -68,7 +81,7 @@ class Builder {
    * Oriented box: centre (x, z), base y0 to top y1, half extents hx (along yaw's right), hz (along
    * yaw's forward), tilt (rad, about its own x: a leaning slab). `solid` adds a blocker.
    */
-  box(x, z, y0, y1, hx, hz, yaw, mat, seed, { tilt = 0, carve = 0, solid = true, platform = false, roll = 0, fb = false, ruin = 0, course = 0.55, plain = false, drift = true } = {}) {
+  box(x, z, y0, y1, hx, hz, yaw, mat, seed, { tilt = 0, carve = 0, solid = true, platform = false, roll = 0, fb = false, ruin = 0, course = 0.78, plain = false, drift = true, cap = true } = {}) {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     // Shaper stone is laid, not boxed (world/masonry.js): plinths get walled sides and paving,
     // walls and piers coursed blocks, everything else one chamfered block.
@@ -82,12 +95,15 @@ class Builder {
         snowDrift(this, x, z, Math.max(y0, 0), hx, hz, yaw, seed * 3 + 1, big ? { height: 0.3, reach: 1.6 } : { height: hgt, reach });
       }
       if (mat === MAT.STONE && flat && Math.min(hx, hz) > 3) this.plinth(x, z, y0, y1, hx, hz, yaw, mat, seed, course);
-      else if (mat === MAT.STONE && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) layWall(this, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin, course });
+      else if (mat === MAT.STONE && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) layWall(this, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin, course, blockLen: 1.35, cap });
       else {
         // One block: axes from yaw, tilt and roll as below.
         const R3 = (lx, ly, lz) => { const ax = lx * cr - ly * sr, ay = lx * sr + ly * cr, az = lz; const by = ay * ct - az * st, bz = ay * st + az * ct; return [ax * cy + bz * sy, by, -ax * sy + bz * cy]; };
         const k = Math.min(0.045, hx * 0.15, hz * 0.15, (y1 - y0) * 0.1);
         chamferBlock(this, [x, (y0 + y1) / 2, z], R3(1, 0, 0), R3(0, 1, 0), R3(0, 0, 1), hx, (y1 - y0) / 2, hz, k, 63, mat, seed, carve, fb);
+        // Snow lies on its top when it is near level.
+        const up = R3(0, 1, 0);
+        if (cap && up[1] > 0.93 && y1 > -0.2) snowPillow(this, [x + up[0] * (y1 - y0) / 2, (y0 + y1) / 2 + up[1] * (y1 - y0) / 2, z + up[2] * (y1 - y0) / 2], R3(1, 0, 0), R3(0, 0, 1), hx, hz, seed);
       }
       if (solid && Math.abs(tilt) < 0.6 && Math.abs(roll) < 0.6) this.blockers.push({ site: this.site, kind: 'box', x, z, hx: hx + 0.05, hz: hz + 0.05, cos: cy, sin: sy, y0, y1 });
       if (platform) this.platforms.push({ site: this.site, x, z, hx, hz, cos: cy, sin: sy, top: y1 });
@@ -239,10 +255,33 @@ function monastery(b, facing, R) {
   wall(-7, 0, T, 5, H, 4, 0.12); wall(7, 0, T, 5, H * 0.72, 5, 0.45); // side walls (the east one broken down)
   wall(-4.6, 5, 2.4, T, H, 6); wall(4.6, 5, 2.4, T, H, 7); // front, either side of the door
   { const [x, z] = at(0, 5); b.box(x, z, 0.35 + 3.6, 0.35 + H, 2.2, T, facing, MAT.GLYPH, 8, { carve: 1, solid: false }); } // lintel
+  // Buttresses: stepped piers against the back and the west wall (each a block pier and a sloped
+  // weathering stone on top), and a projecting cornice along the intact back wall.
+  for (const sx of [-4.6, 0, 4.6]) {
+    const [x, z] = at(sx, -5 - T - 0.55);
+    b.box(x, z, 0.35, 0.35 + 4.4, 0.65, 0.55, facing, MAT.STONE, 140 + sx * 3);
+    const [x2, z2] = at(sx, -5 - T - 0.35);
+    b.box(x2, z2, 0.35 + 4.4, 0.35 + 4.75, 0.66, 0.42, facing, MAT.STONE, 150 + sx * 3, { tilt: 0.42, solid: false, drift: false });
+  }
+  for (const sf of [-2.6, 2.4]) {
+    const [x, z] = at(-7 - T - 0.55, sf);
+    b.box(x, z, 0.35, 0.35 + 3.8, 0.55, 0.65, facing, MAT.STONE, 160 + sf * 3);
+  }
+  { const [x, z] = at(0, -5); b.box(x, z, 0.35 + H, 0.35 + H + 0.32, 7.25, T + 0.16, facing, MAT.STONE, 170, { solid: false, drift: false, plain: false }); }
   // Roof slabs: the west half still spans; the east half lies fallen and leaning in.
   for (let k = 0; k < 4; k++) { const [x, z] = at(-3.6, -3.75 + k * 2.5); b.box(x, z, 0.35 + H, 0.35 + H + 0.4, 3.4, 1.3, facing, MAT.STONE, 20 + k, { solid: false, roll: 0.05 }); }
   { const [x, z] = at(3.6, -1); b.box(x, z, 0.35, 0.35 + 0.5, 3.2, 1.4, facing, MAT.STONE, 30, { roll: -0.55 }); }
   { const [x, z] = at(4.4, 2.6); b.box(x, z, 0.35, 0.35 + 0.45, 3.0, 1.2, facing + 0.3, MAT.STONE, 31, { roll: 0.4 }); }
+  // Under the fallen half of the roof: the old roof timbers down among the slabs, and the snow that
+  // has blown in through the gap for nine winters, heaped on the floor and against the east wall.
+  for (const [sx, sf, len, yawo, lift] of [[2.6, -3.2, 5.2, 0.35, 0.0], [4.8, 0.6, 4.4, -0.5, 0.0], [3.2, 3.4, 3.6, 1.9, 0.0]]) {
+    const [x, z] = at(sx, sf);
+    b.drum(x, z, 0.35 + lift, 0.35 + lift + len, 0.17, 0.15, 7, MAT.WOOD, 180 + sx, { lie: 1, yaw: facing + yawo, solid: false });
+  }
+  for (const [sx, sf, ra, rc, hh] of [[4.2, -2.6, 2.4, 1.8, 0.75], [5.6, 1.6, 1.3, 2.4, 0.95], [2.2, 2.2, 1.6, 1.2, 0.45]]) {
+    const [x, z] = at(sx, sf);
+    snowPillow(b, [x, 0.33, z], [rx, 0, rz], [fx, 0, fz], ra, rc, 190 + sx * 10, { round: true, height: hh });
+  }
   // The bier where the Shaper lay (the Wraith wakes beside it), a glyph band round its edge.
   { const [x, z] = at(0, -2.2); b.box(x, z, 0.35, 0.95, 1.1, 1.9, facing, MAT.GLYPH, 40, { carve: 1 }); }
   // Cloister colonnade: 14 columns on a ring, some broken, two fallen.

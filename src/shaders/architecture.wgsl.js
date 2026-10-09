@@ -162,7 +162,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // rime in the deepest pores.
     let tint = vec3f(1.0 + 0.08 * (hs - 0.5), 1.0, 1.0 - 0.1 * (hs - 0.5)) * (0.74 + 0.4 * fract(hs * 5.3));
     // Pale, warm Shaper limestone (the scan's detail, the art direction's colour).
-    albedo = matRetint(ms, layer, vec3f(0.43, 0.425, 0.405), 0.3) * tint;
+    albedo = matRetint(ms, layer, vec3f(0.34, 0.335, 0.32), 0.3) * tint;
+    albedo *= pow(max(dot(ms.albedo / matMean(layer), vec3f(0.333)), 0.05), 0.6); // the scan's own light and dark, deepened
     if (info.w > 5.5) { albedo *= 0.5; ao *= 0.55; } // a joint (block chamfers): recessed, shadowed
     N = ms.N; rough = mix(0.7, 1.0, ms.rough); ao = mix(1.0, ms.ao, 0.85);
     albedo *= mix(1.0, 0.68, smoothstep(1.2, -0.2, fragmentInputs.vLocalY) * (0.5 + 0.5 * n2));
