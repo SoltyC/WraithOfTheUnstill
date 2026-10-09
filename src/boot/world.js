@@ -62,6 +62,8 @@ export async function createWorld(g) {
   const { createSnowfall } = await import('../render/snowfall.js');
   const snowfall = createSnowfall(scene, content.clipmap, atmosphere);
   bindShadows(snowfall.material, shadows);
+  // Fire: the camp's hearth and the braziers (flames, embers, smoke), after the falling snow.
+  const fire = (await import('../render/fire.js')).createFire(scene, atmosphere);
   // Rock outcrops with accumulation (frost): cast and receive shadows.
   const { createRocks } = await import('../render/rocks.js');
   const rocks = createRocks(scene, content.clipmap, atmosphere);
@@ -90,5 +92,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
 
   const matLib = await matLibP;
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire });
 }

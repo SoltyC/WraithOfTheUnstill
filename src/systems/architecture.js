@@ -15,6 +15,7 @@ export function addArchitectureSystem(g) {
   for (const s of sites) if (s.pillar) s.sink = (s.pillarH || ARENA.pillarH) + 1.2;
   const built = buildArchitecture(sites);
   const view = g.architecture = createArchitectureView(scene, atmosphere, built, g.matLib);
+  view.material.setArray4('spellLights', g.content.clipmap.spellLights); // fire and spell light on stone and felt
   g.archSites = sites;
   bindShadows(view.material, shadows);
   shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
@@ -40,6 +41,7 @@ export function addArchitectureSystem(g) {
   // Ground anchors for every site (indices after the NPCs' 1..5).
   sites.forEach((s) => { if (!s.prop) streamer.addAnchor(s.at[0], s.at[1]); });
   const camp = sites.findIndex((s) => s.id === 'camp-frost');
+  const brazierIdx = []; sites.forEach((s, i) => { if (s.id.startsWith('brazier-')) brazierIdx.push(i); });
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
 
   /** Seat: the lowest ground over the site's footprint (9 samples) — or the highest for a site
@@ -104,6 +106,17 @@ export function addArchitectureSystem(g) {
     view.glow[camp * 4 + 1] = night;
     for (let i = 0; i < sites.length; i++) if (sites[i].kind === 'lantern') view.glow[i * 4 + 1] = 0.35 + 0.65 * night;
     view.params.x = clock.simTime; view.params.y = weather.snow; view.params.z = restoration.value;
+    // Flames: the camp's hearth always burns; a brazier once its flame is carried to it.
+    { const F = g.fire.fires, cs = view.sites, co = camp * 4;
+      F[0] = cs[co]; F[1] = cs[co + 1] + 0.08; F[2] = cs[co + 2]; F[3] = cs[co + 3] > 0.5 ? 0.95 : 0;
+      let fi = 1;
+      for (const bi of brazierIdx) {
+        if (fi >= 8) break;
+        const lit = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[bi * 4 + 3] > 0.5;
+        F[fi * 4] = cs[bi * 4]; F[fi * 4 + 1] = cs[bi * 4 + 1] + 1.26; F[fi * 4 + 2] = cs[bi * 4 + 2]; F[fi * 4 + 3] = lit ? 0.5 : 0; fi++;
+      }
+      const ft = g.fire.fireT; ft.x = clock.simTime; ft.y = streamer.windX || 1; ft.z = streamer.windZ || 0; ft.w = 0.15 + 0.85 * restoration.value;
+    }
     // The camp fire lights the snow round it (the terrain's last spell-light slot, when no verb
     // is using it; the verbs fill the slots from the first each frame).
     const L = g.content.clipmap.spellLights, cs = view.sites, co = camp * 4;
@@ -111,8 +124,8 @@ export function addArchitectureSystem(g) {
       const dx = cs[co] - p.x, dz = cs[co + 2] - p.z;
       if (dx * dx + dz * dz < 300 * 300) {
         const t = clock.simTime, flick = 0.82 + 0.1 * Math.sin(t * 7.1) + 0.08 * Math.sin(t * 12.7 + 1.3);
-        L[24] = cs[co]; L[25] = cs[co + 1] + 0.7; L[26] = cs[co + 2]; L[27] = 16;
-        L[28] = 1; L[29] = 0.5; L[30] = 0.22; L[31] = 1.4 * night * flick;
+        L[24] = cs[co]; L[25] = cs[co + 1] + 0.9; L[26] = cs[co + 2]; L[27] = 22;
+        L[28] = 1; L[29] = 0.48; L[30] = 0.2; L[31] = (0.5 + 1.9 * night) * flick;
       }
     }
   } });

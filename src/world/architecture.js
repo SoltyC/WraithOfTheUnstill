@@ -11,6 +11,7 @@
 // Also returns 2D collision shapes (blockers: circles and boxes; platforms: walkable tops).
 
 import { chamferBlock, layWall, columnDrums, snowDrift, snowPillow, h2 } from './masonry.js';
+import { feltTent, stick } from './camp.js';
 
 export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6, SNOW: 7 };
 const FOUND = 3; // m of foundation below the seat
@@ -85,20 +86,26 @@ class Builder {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     // Shaper stone is laid, not boxed (world/masonry.js): plinths get walled sides and paving,
     // walls and piers coursed blocks, everything else one chamfered block.
-    if ((mat === MAT.STONE || mat === MAT.GLYPH) && !plain) {
+    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS) && !plain) {
       const flat = tilt === 0 && roll === 0;
       // Snow banked against whatever stands on the ground (or on a floor) — never a hard line.
-      if (drift && flat && y0 > -FOUND - 0.5 && y0 < 0.8 && y1 > 0.3) {
+      const stone = mat === MAT.STONE || mat === MAT.GLYPH;
+      if (drift && stone && flat && y0 > -FOUND - 0.5 && y0 < 0.8 && y1 > 0.3) {
         // On a raised floor (y0 > 0.2) the drift is a small one: it must not hang past the floor's edge.
         const big = Math.min(hx, hz) > 3, onFloor = y0 > 0.2;
         const hgt = Math.min(onFloor ? 0.28 : 0.5, (y1 - Math.max(y0, 0)) * 0.3), reach = onFloor ? 0.55 : Math.min(1.4, 0.5 + Math.max(hx, hz));
         snowDrift(this, x, z, Math.max(y0, 0), hx, hz, yaw, seed * 3 + 1, big ? { height: 0.3, reach: 1.6 } : { height: hgt, reach });
       }
-      if (mat === MAT.STONE && flat && Math.min(hx, hz) > 3) this.plinth(x, z, y0, y1, hx, hz, yaw, mat, seed, course);
-      else if (mat === MAT.STONE && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) layWall(this, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin, course, blockLen: 1.35, cap });
-      else {
-        // One block: axes from yaw, tilt and roll as below.
-        const R3 = (lx, ly, lz) => { const ax = lx * cr - ly * sr, ay = lx * sr + ly * cr, az = lz; const by = ay * ct - az * st, bz = ay * st + az * ct; return [ax * cy + bz * sy, by, -ax * sy + bz * cy]; };
+      const R3 = (lx, ly, lz) => { const ax = lx * cr - ly * sr, ay = lx * sr + ly * cr, az = lz; const by = ay * ct - az * st, bz = ay * st + az * ct; return [ax * cy + bz * sy, by, -ax * sy + bz * cy]; };
+      if (!stone) {
+        // Timber and felt: one piece, lightly arrised.
+        chamferBlock(this, [x, (y0 + y1) / 2, z], R3(1, 0, 0), R3(0, 1, 0), R3(0, 0, 1), hx, (y1 - y0) / 2, hz, Math.min(0.02, hx * 0.2, hz * 0.2, (y1 - y0) * 0.2), 63, mat, seed, carve);
+      } else if (mat === MAT.STONE && flat && Math.min(hx, hz) > 3) {
+        this.plinth(x, z, y0, y1, hx, hz, yaw, mat, seed, course);
+      } else if (mat === MAT.STONE && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) {
+        layWall(this, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin, course, blockLen: 1.35, cap });
+      } else {
+        // One block.
         const k = Math.min(0.045, hx * 0.15, hz * 0.15, (y1 - y0) * 0.1);
         chamferBlock(this, [x, (y0 + y1) / 2, z], R3(1, 0, 0), R3(0, 1, 0), R3(0, 0, 1), hx, (y1 - y0) / 2, hz, k, 63, mat, seed, carve, fb);
         // Snow lies on its top when it is near level.
@@ -321,21 +328,38 @@ function shrine(b, facing, R) {
 function camp(b, facing, R) {
   const tents = [[-7, 3, 2.3, 3.1], [-2, 8, 2.6, 3.4], [5.5, 6, 2.1, 2.9], [8, -2, 2.4, 3.2]];
   for (const [x, z, r, h] of tents) {
-    const k = Math.floor(R() * 7);
-    b.cone(x, z, -0.1, h, r, 7, MAT.CANVAS, Math.floor(R() * 1e6), { ax: (R() - 0.5) * 0.3, az: (R() - 0.5) * 0.3, open: k });
-    b.drum(x, z, -0.1, h + 0.5, 0.05, 0.04, 5, MAT.WOOD, 5, { solid: false });
+    const seed = Math.floor(R() * 1e6);
+    feltTent(b, x, z, r, h, Math.atan2(-z, -x) + (R() - 0.5) * 0.3, seed, { ribs: 7, ax: (R() - 0.5) * 0.25, az: (R() - 0.5) * 0.25, MAT_FELT: MAT.CANVAS, MAT_WOOD: MAT.WOOD });
+    b.blockers.push({ site: b.site, kind: 'circle', x, z, r: r * 0.85, y0: -0.1, y1: h });
   }
-  // Fire ring and embers.
-  for (let k = 0; k < 9; k++) { const a = (k / 9) * Math.PI * 2; b.box(Math.cos(a) * 1.05, Math.sin(a) * 1.05, -0.1, 0.22, 0.22, 0.15, a, MAT.STONE, 40 + k, { solid: false }); }
+  // The hearth: a ring of fire-blackened stones, the embers, a stack of split logs leaning in.
+  for (let k = 0; k < 9; k++) { const a = (k / 9) * Math.PI * 2; b.box(Math.cos(a) * 1.05, Math.sin(a) * 1.05, -0.1, 0.22 + 0.06 * R(), 0.22, 0.15, a, MAT.STONE, 40 + k, { solid: false, drift: false, cap: false }); }
   b.drum(0, 0, -0.05, 0.12, 0.75, 0.6, 9, MAT.EMBER, 50, { solid: false });
-  for (let k = 0; k < 4; k++) { const a = k * 1.6; b.drum(Math.cos(a) * 0.3, Math.sin(a) * 0.3, 0.05, 0.05 + 1.1, 0.06, 0.06, 5, MAT.WOOD, 51 + k, { lie: 1, yaw: a + 0.4, solid: false }); }
-  // Lantern post.
-  b.drum(3, -3.5, -0.2, 2.6, 0.07, 0.06, 6, MAT.WOOD, 60);
-  b.box(3.35, -3.5, 2.3, 2.34, 0.4, 0.04, 0, MAT.WOOD, 61, { solid: false });
-  // Sleds and packs.
-  b.box(-5, -5, -0.1, 0.35, 0.6, 1.4, facing + 0.4, MAT.WOOD, 70);
-  b.box(-5, -5, 0.35, 0.85, 0.5, 0.8, facing + 0.4, MAT.WOOD, 71, { solid: false }); // packs (hide-wrapped)
-  b.box(-3.2, -6.4, -0.1, 0.6, 0.45, 0.45, 0.7, MAT.WOOD, 72);
+  for (let k = 0; k < 6; k++) {
+    const a = k / 6 * Math.PI * 2 + 0.3, c = Math.cos(a), s2 = Math.sin(a);
+    stick(b, [c * 0.62, 0.02, s2 * 0.62], [c * 0.08, 0.62 + 0.1 * R(), s2 * 0.08], 0.065, 0.05, 7, MAT.WOOD, 51 + k);
+  }
+  // Lantern post with its arm.
+  stick(b, [3, -0.4, -3.5], [3.02, 2.6, -3.5], 0.075, 0.06, 7, MAT.WOOD, 60);
+  stick(b, [3, 2.3, -3.5], [3.75, 2.36, -3.5], 0.035, 0.03, 6, MAT.WOOD, 61);
+  b.blockers.push({ site: b.site, kind: 'circle', x: 3, z: -3.5, r: 0.12, y0: -0.4, y1: 2.6 });
+  // A sled: two runners curled up at the front, slats across, a felt-wrapped load lashed on.
+  { const yaw = facing + 0.4, c = Math.cos(yaw), s2 = Math.sin(yaw), P = (u, f, y) => [-5 + c * u + s2 * f, y, -5 - s2 * u + c * f];
+    for (const u of [-0.42, 0.42]) {
+      stick(b, P(u, -1.3, 0.06), P(u, 1.0, 0.06), 0.04, 0.04, 6, MAT.WOOD, 70 + u * 10);
+      stick(b, P(u, 1.0, 0.06), P(u, 1.35, 0.3), 0.04, 0.035, 6, MAT.WOOD, 71 + u * 10);
+      for (const f of [-1.0, 0, 0.9]) stick(b, P(u, f, 0.06), P(u, f, 0.3), 0.025, 0.025, 5, MAT.WOOD, 72 + f + u);
+    }
+    for (let k = 0; k < 7; k++) { const f = -1.15 + k * 0.36; b.box(...P(0, f, 0).filter((_, i) => i !== 1), 0.3, 0.34, 0.5, 0.11, yaw, MAT.WOOD, 80 + k, { solid: false, cap: false, drift: false }); }
+    snowPillow(b, P(0, -0.1, 0.34), [c, 0, -s2], [s2, 0, c], 0.42, 0.9, 77, { height: 0.42, mat: MAT.CANVAS }); // the load, under felt
+    b.blockers.push({ site: b.site, kind: 'box', x: -5, z: -5, hx: 0.5, hz: 1.4, cos: c, sin: s2, y0: -0.1, y1: 0.8 });
+  }
+  // A pack and a stack of split wood by the door of the nearest tent.
+  // A felt-wrapped pack, lashed (a rounded bundle, not a box), and a second leaning on it.
+  snowPillow(b, [-3.2, -0.05, -6.4], [Math.cos(0.7), 0, -Math.sin(0.7)], [Math.sin(0.7), 0, Math.cos(0.7)], 0.45, 0.36, 72, { round: true, height: 0.55, mat: MAT.CANVAS });
+  snowPillow(b, [-2.75, -0.05, -6.0], [1, 0, 0], [0, 0, 1], 0.3, 0.26, 73, { round: true, height: 0.38, mat: MAT.CANVAS });
+  for (const dy of [0.16, 0.34]) stick(b, [-3.62, dy, -6.75], [-2.8, dy, -6.05], 0.012, 0.012, 4, MAT.WOOD, 74 + dy * 10);
+  for (let k = 0; k < 5; k++) stick(b, [-6.6 + k * 0.17, 0.1 + (k % 2) * 0.12, -2.3], [-6.6 + k * 0.17, 0.1 + (k % 2) * 0.12, -1.3], 0.075, 0.07, 7, MAT.WOOD, 90 + k);
   // A low windbreak of stacked stones on the weather side.
   for (let k = 0; k < 7; k++) { const a = facing + Math.PI + (k - 3) * 0.16; b.box(Math.sin(a) * 12, Math.cos(a) * 12, -0.4, 0.9 + R() * 0.3, 0.9, 0.35, a + Math.PI / 2, MAT.STONE, 80 + k); }
 }

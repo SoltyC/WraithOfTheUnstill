@@ -273,7 +273,7 @@ export function snowDrift(B, x, z, y0, hx, hz, yaw, seed, { height = 0.45, reach
  * c): domed, a little proud of the edges and rounding down over them, its height breathing with
  * the seed. Smooth normals, shared vertices. `round`: an elliptical footprint (column heads).
  */
-export function snowPillow(B, o, ex, ez, a, c, seed, { round = false, height = 0 } = {}) {
+export function snowPillow(B, o, ex, ez, a, c, seed, { round = false, height = 0, mat = 7 } = {}) {
   if (a < 0.12 || c < 0.08) return;
   const H = height || Math.min(0.24, 0.4 * Math.min(a, c) + 0.04) * (0.6 + 0.6 * h2(seed, 91));
   const nu = Math.max(4, Math.min(10, Math.round(a * 4))), nv = Math.max(3, Math.min(6, Math.round(c * 5)));
@@ -299,5 +299,5 @@ export function snowPillow(B, o, ex, ez, a, c, seed, { round = false, height = 0
     const l = Math.hypot(n[0], n[1], n[2]) || 1;
     pts.push(p); nrm.push([n[0] / l, n[1] / l, n[2] / l]);
   }
-  B.grid(pts, nrm, nu, nv, 7, seed);
+  B.grid(pts, nrm, nu, nv, mat, seed);
 }

@@ -5,7 +5,7 @@
 // bronze bell, a frozen pool (writes the SSR weight), and embers. Snow lies on what faces up.
 // Lit like the rocks: key light with cascaded shadows, SH sky, aerial perspective.
 
-import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
@@ -44,6 +44,7 @@ export const archFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world)
 uniform archParams: vec4f;                       // x = time, y = snow cover 0..1, z = restored 0..1
+${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -54,6 +55,7 @@ ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${MATERIALS_WGSL}
+${SPELL_LIGHT_WGSL}
 
 fn ar_hash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
 fn ar_fade(lambda: f32, fp: f32) -> f32 { return 1.0 - smoothstep(lambda * 0.15, lambda * 0.6, fp); }
@@ -264,6 +266,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   let ex = uniforms.fogParams.z * atmoExposure();
   col += emit / max(ex, 1e-6);
+  col += spellLit(wp, N, albedo, select(0.0, 0.5, trans > 0.0), ex);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   let outc = displayTransform(col, ex);
   fragmentOutputs.color = vec4f(outc, ssr);

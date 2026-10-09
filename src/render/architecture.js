@@ -34,7 +34,7 @@ export function createArchitectureView(scene, atmo, built, matLib) {
   const params = new Vector4(0, 0, 0, 0);
   const mat = new ShaderMaterial('arch', scene, { vertex: 'arch', fragment: 'arch' }, {
     attributes: ['position', 'normal', 'uv', 'info'],
-    uniforms: ['viewProjection', 'sites', 'siteGlow', 'archParams', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'sites', 'siteGlow', 'archParams', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,

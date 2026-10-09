@@ -89,7 +89,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const lit = { samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES], storage: [...ATMO_MATERIAL_BUFFERS, 'shadowData'] };
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'spellLights', ...ENV_UNIFORMS],
     samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -101,6 +101,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   mat.setVector4('clothFrost', frostCreep);
   const tint = opts.tint || [1, 1, 1];
   mat.setVector4('clothTint', new Vector4(tint[0], tint[1], tint[2], 1));
+  mat.setArray4('spellLights', clipmap.spellLights); // fire, lantern and spell light on the robe
   mat.backFaceCulling = false;
   mesh.material = mat;
 

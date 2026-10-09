@@ -7,7 +7,7 @@
 // attribute carries (particle id [+ 4096·shell for fur], u, v). Two-sided: inner faces read
 // darker and the inside of the hood is near black, lit only by the cowl light.
 
-import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
@@ -67,6 +67,7 @@ uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
 uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1)
 uniform clothTint: vec4f;            // rgb = robe dye (multiplies the outer garments), w = undyed trims kept (1)
+${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -74,6 +75,7 @@ varying vGarment: f32;
 varying vThin: f32;
 varying vOcc: f32;
 ${COMMON_WGSL}
+${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${CLOTH_COMMON}
@@ -231,6 +233,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let k = coldLight(wp, uniforms.clothHandL, 0.035) + coldLight(wp, uniforms.clothHandR, 0.035);
     glow += vec3f(0.6, 0.85, 1.0) * k * uniforms.clothParams.w * select(0.15, 0.6, g >= 5);
   }
+  // Fire and spell light on the robe (wrapped: cloth scatters past the terminator).
+  glow += spellLit(wp, N, albedo, 0.4, 1.0) * select(1.0, 0.3, inside);
   var outc = displayTransform(col + glow / max(exposure, 1e-6), exposure);
   fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }

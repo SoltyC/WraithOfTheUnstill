@@ -101,3 +101,25 @@ fn ditherNoise(fragCoord: vec2f) -> f32 {
   return fract(52.9829189 * fract(dot(fragCoord, vec2f(0.06711056, 0.00583715)))) - 0.5;
 }
 `;
+
+/** The terrain's four point lights (spells, the carried lantern, the camp fire), shared with the
+ *  materials that stand in them (render/clipmap.js owns the array). Display-referred like the
+ *  terrain's: returns light to add before the display transform (already divided by exposure). */
+export const SPELL_LIGHT_DECL = /* wgsl */ `
+uniform spellLights: array<vec4f,8>;   // 4 × (pos.xyz, radius), (colour.rgb, intensity)
+`;
+export const SPELL_LIGHT_WGSL = /* wgsl */ `
+fn spellLit(wp: vec3f, N: vec3f, albedo: vec3f, wrap: f32, ex: f32) -> vec3f {
+  var acc = vec3f(0.0);
+  for (var li = 0u; li < 4u; li++) {
+    let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];
+    if (lc.w <= 0.0) { continue; }
+    let lv = lp.xyz - wp; let d = max(length(lv), 0.35);
+    if (d >= lp.w) { continue; }
+    let fall = (1.0 - d / lp.w) * (1.0 - d / lp.w) / (1.0 + d * d * 0.35);
+    let nl = clamp((dot(N, lv / d) + wrap) / (1.0 + wrap), 0.0, 1.0);
+    acc += lc.rgb * lc.w * fall * nl;
+  }
+  return albedo * acc * 0.55 / max(ex, 1e-6);
+}
+`;
