@@ -67,7 +67,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let edge = 1.0 - smoothstep(half * 0.7, half * 0.96, dc);
 
   // What grows here.
-  let mw = gMeadow(root.x, root.y);
+  let bsn = borderSnow(root, gFrostShare(root.x, root.y));
+  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)));
   let canopy = gcCanopy(root);
   let forest = smoothstep(0.15, 0.55, canopy);
   let rim = forest * (1.0 - forest) * 4.0;               // the forest's edge
@@ -89,7 +90,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
     open * 0.012 + smoothstep(0.4, 0.65, slope) * 0.2 * (1.0 - forest), // 8 pebbles (worn, steeper ground)
   );
   var sum = 0.0;
-  for (var i = 0; i < 9; i++) { w[i] *= step(0.3, mw); sum += w[i]; }
+  w[8] = 0.0; // pebbles: off (they read as bubbles on the turf)
+  for (var i = 0; i < 9; i++) { w[i] *= step(0.3, mw) * (1.0 - bsn.x); sum += w[i]; }
   // Empty weight: the meadow's ground cover is patchy, the forest floor full.
   let r = h3 * (sum + 0.55 + 0.6 * (1.0 - forest));
   var kind = -1;

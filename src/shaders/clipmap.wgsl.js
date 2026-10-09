@@ -18,6 +18,7 @@ import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js
 import { SNOW_WGSL } from './snow.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { MEADOW_WGSL } from './meadow.wgsl.js';
+import { BORDER_WGSL } from './common.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
 export const CLIPMAP_N = 256;     // quads per level side
@@ -343,6 +344,7 @@ ${MATERIALS_DECL}
 ${MATERIALS_WGSL}
 ${SNOW_WGSL}
 ${MEADOW_WGSL}
+${BORDER_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -395,7 +397,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var col = albedo * (key * diff * cs * vis * (1.0 / PI) + sky * mix(1.0, cs, 0.5));
   // Frost Steppe material (Phase 2) over the clay view, by frost weight.
   let wSum = wA.x + wA.y + wA.z + wA.w + wB.x + wB.y;
-  let wFrost = smoothstep(0.3, 0.7, wA.x / max(wSum, 0.001)) * (1.0 - sea);
+  var wFrost = smoothstep(0.3, 0.7, wA.x / max(wSum, 0.001)) * (1.0 - sea);
+  // Frost↔meadow border: snow lingers in patches, a damp straw-coloured melt band round them.
+  var border = vec2f(0.0);
+  let shFM = (wA.x + wA.y) / max(wSum, 0.001);
+  let isBorder = wA.x > 0.02 * wSum && wA.y > 0.02 * wSum;
+  if (isBorder) {
+    border = borderSnow(wp.xz, wA.x / max(wA.x + wA.y, 0.001));
+    wFrost = border.x * smoothstep(0.3, 0.7, shFM) * (1.0 - sea);
+  }
   // Reflection weight for SSR (post chain): Fresnel × the ice/wet gloss, in the target's alpha.
   var ssrMask = 0.0;
   if (wFrost > 0.001) {
@@ -421,12 +431,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col = mix(col, fcol, wFrost);
   }
   // Highland meadow (Phase 8, shaders/meadow.wgsl.js) over the clay view, by meadow weight.
-  let wMeadow = smoothstep(0.3, 0.7, wA.y / max(wSum, 0.001)) * (1.0 - sea);
+  var wMeadow = smoothstep(0.3, 0.7, wA.y / max(wSum, 0.001)) * (1.0 - sea);
+  if (isBorder) { wMeadow = (1.0 - border.x) * smoothstep(0.3, 0.7, shFM) * (1.0 - sea); }
   if (wMeadow > 0.001) {
     let Ngm = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     let canopy = canopyAt(wp.xz);
-    let ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy);
+    var ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy);
+    // The melt band: wet, darker ground and grass bleached to straw.
+    ms.albedo = mix(ms.albedo, ms.albedo * vec3f(1.05, 0.92, 0.66) * 0.8, border.y);
     var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w, canopy);
     let exm = uniforms.fogParams.z * atmoExposure();
     for (var li = 0u; li < 4u; li++) {

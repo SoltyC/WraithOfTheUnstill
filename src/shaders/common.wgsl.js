@@ -123,3 +123,23 @@ fn spellLit(wp: vec3f, N: vec3f, albedo: vec3f, wrap: f32, ex: f32) -> vec3f {
   return albedo * acc * 0.55 / max(ex, 1e-6);
 }
 `;
+
+/** The frost↔meadow border (Phase 8): the snowline breaks into patches instead of a cross-fade.
+ *  frost = the frost share of frost + meadow (0..1, 8 m bilinear); returns (snow 0/1-ish, melt
+ *  band around the patches). Shared by the terrain, the grass and the ground cover so nothing
+ *  grows out of the snow. Self-contained (its own hash). */
+export const BORDER_WGSL = /* wgsl */ `
+fn bdHash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
+fn bdNoise(p: vec2f) -> f32 {
+  let i = floor(p); let f = p - i; let u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(bdHash(i), bdHash(i + vec2f(1.0, 0.0)), u.x), mix(bdHash(i + vec2f(0.0, 1.0)), bdHash(i + vec2f(1.0, 1.0)), u.x), u.y);
+}
+fn borderSnow(p: vec2f, frost: f32) -> vec2f {
+  // Large lobes, then ever finer raggedness at the edge (a snowline is crisp and torn, not soft).
+  let n = bdNoise(p * 0.018) * 0.5 + bdNoise(p * 0.07 + 3.1) * 0.28 + bdNoise(p * 0.31 + 7.7) * 0.14
+        + bdNoise(p * 1.3 + 1.9) * 0.06 + bdNoise(p * 4.1 + 5.3) * 0.02;
+  let v = frost + (n - 0.5) * 0.75;
+  let snow = smoothstep(0.494, 0.506, v);
+  return vec2f(snow, smoothstep(0.38, 0.494, v) * (1.0 - snow));
+}
+`;

@@ -13,7 +13,7 @@
 // glowing grass), a sheen along it, occlusion toward the root, shadows from the cascades.
 
 import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
-import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
+import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL, BORDER_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
@@ -26,6 +26,7 @@ export const vertsPerBlade = (seg) => (seg + 1) * 2;
  *  ground height, the meadow weight, the wind direction, value noise. Needs levels, levelData,
  *  biomeA and windMap declared. */
 export const FIELD_WGSL = /* wgsl */ `
+${BORDER_WGSL}
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
 const W_HALF: f32 = 4096.0;
@@ -54,6 +55,12 @@ fn gMeadow(x: f32, z: f32) -> f32 {
   let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
   let a = unpack4x8unorm(biomeA[j * N8 + i]);
   return a.y / max(a.x + a.y + a.z + a.w, 0.05);
+}
+/** Frost share of frost + meadow at (x, z) (the border's snow patches). */
+fn gFrostShare(x: f32, z: f32) -> f32 {
+  let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
+  let a = unpack4x8unorm(biomeA[j * N8 + i]);
+  return a.x / max(a.x + a.y, 0.01);
 }
 fn gWind(x: f32, z: f32) -> vec2f {
   let i = clamp(i32((x + W_HALF) / CW), 0, NW - 1); let j = clamp(i32((W_HALF - z) / CW), 0, NW - 1);
@@ -117,13 +124,16 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var keep = select(1.0, 0.0, dc < skip);
   let edge = smoothstep(half * 0.72, half * 0.95, dc);
   // Density: the meadow, patches, not on steep ground.
-  let mw = gMeadow(root.x, root.y);
+  // At the frost border the meadow is wherever the snow has gone (its patches), not the 8 m weight.
+  let bsn = borderSnow(root, gFrostShare(root.x, root.y));
+  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)));
   let patchN = vn(root * 0.05) * 0.7 + vn(root * 0.21) * 0.3;
   // Under the crowns the grass thins to a few shade-tolerant tufts (the forest floor shows).
   let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;
   let dens = smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
-  if (h3 > dens) { keep = 0.0; }
+  // No grass out of the border's snow patches; short and bleached in the melt band round them.
+  if (h3 > dens * (1.0 - bsn.x)) { keep = 0.0; }
   let gy = gGround(root.x, root.y) + stateOffset(root.x, root.y);
   let gy2 = gGround(root.x + 0.7, root.y); let gy3 = gGround(root.x, root.y + 0.7);
   let slope = length(vec2f(gy2 - gy, gy3 - gy)) / 0.7;
@@ -134,7 +144,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy);
+  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
@@ -191,7 +201,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vWorldPos = p;
   vertexOutputs.vNormal = nrm;
   vertexOutputs.vSeed = h4;
-  vertexOutputs.vDry = smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1);
+  vertexOutputs.vDry = max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y);
 }
 `;
 
