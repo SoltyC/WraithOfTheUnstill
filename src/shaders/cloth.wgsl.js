@@ -114,15 +114,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     if (edgeM < depth * t * t * t * 1.8 - 0.004) { discard; }
   }
 
-  // Base colours: a deep charcoal under-robe and sleeves; a near-black heavy wool mantle and cowl;
-  // grey, worn linen wrappings; a dark hemp cord; an oxblood sash.
-  var albedo = vec3f(0.088, 0.088, 0.096);
+  // Base colours: a slate-charcoal under-robe and sleeves; a darker heavy wool mantle and cowl;
+  // grey, worn linen wrappings; a hemp cord; an oxblood sash. (Dark, but wool, not a void: real
+  // charcoal wool is ~0.12–0.16, and the figure has to read against bright snow.)
+  var albedo = vec3f(0.135, 0.14, 0.155);
   var sheenTint = vec3f(0.22, 0.22, 0.235);
   var weaveAmp = 1.0;
-  if (g == 1 || g == 4) { albedo = vec3f(0.062, 0.059, 0.06); sheenTint = vec3f(0.24, 0.23, 0.225); }
-  else if (g >= 5 && g <= 8) { albedo = vec3f(0.2, 0.188, 0.165); sheenTint = vec3f(0.06); weaveAmp = 0.5; }
-  else if (g == 9) { albedo = vec3f(0.085, 0.07, 0.05); sheenTint = vec3f(0.05); weaveAmp = 0.0; }
-  else if (g == 10) { albedo = vec3f(0.11, 0.045, 0.038); sheenTint = vec3f(0.2, 0.12, 0.1); }
+  if (g == 1 || g == 4) { albedo = vec3f(0.098, 0.096, 0.1); sheenTint = vec3f(0.24, 0.23, 0.225); }
+  else if (g >= 5 && g <= 8) { albedo = vec3f(0.34, 0.32, 0.28); sheenTint = vec3f(0.06); weaveAmp = 0.5; }
+  else if (g == 9) { albedo = vec3f(0.17, 0.14, 0.1); sheenTint = vec3f(0.05); weaveAmp = 0.0; }
+  else if (g == 10) { albedo = vec3f(0.24, 0.075, 0.058); sheenTint = vec3f(0.2, 0.12, 0.1); }
   // The Veiled wear dyed robes (the Wraith's tint is 1).
   if (g <= 4 || g == 10) { albedo *= uniforms.clothTint.rgb; }
 
@@ -321,7 +322,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   // Dark roots, grey frost-tipped ends (a wolf-grey ruff), varying per strand.
-  var albedo = mix(vec3f(0.04, 0.037, 0.034), vec3f(0.1, 0.096, 0.09), smoothstep(0.25, 1.0, h / sl));
+  var albedo = mix(vec3f(0.07, 0.066, 0.062), vec3f(0.17, 0.162, 0.15), smoothstep(0.25, 1.0, h / sl));
   albedo *= 0.85 + 0.3 * r2;
   let selfShadow = mix(0.2, 1.0, h) * mix(0.4, 1.0, fragmentInputs.vOcc);
   let vis = shadowVisibility(wp, T, camPos, fragmentInputs.position.xy);

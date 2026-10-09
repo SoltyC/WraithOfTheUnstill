@@ -3,6 +3,8 @@
 // sound, the terrain state and its writers, render scale and the shadow strength. Also the
 // system toggles of the dev overlay.
 
+const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
+
 /** @param {any} g  shared boot context */
 export async function addEnvironmentSystems(g) {
   const { loop, engine, env, atmosphere, content, camera, streamer, shadows, post, rocks, weather, ws, clock, ground, pendingTp, warden, wardenMod, restoration,
@@ -39,7 +41,42 @@ export async function addEnvironmentSystems(g) {
     fogGroundY += (ground.h - fogGroundY) * (pendingTp.active ? 1 : 1 - Math.exp(-clock.realDt * 0.5));
     const pf = post.fog;
     pf.weather = weather; pf.groundY = fogGroundY; pf.dt = clock.dt;
+    valleyFog(pf.inv);
   } });
+  // Valley fog of still air (the stilled look, with the grade): cold air pools in the low ground as
+  // flat-topped fog lakes. Its level is the lower quartile of the land within ~500 m of the camera
+  // (8 m overview, a 17×17 sample grid, a fixed histogram — no allocation) plus a margin, refreshed
+  // once a second and eased; the release's wind tears it away (weight = 1 − restoration).
+  const VF = { margin: 20, density: 3 / 200, every: 1 }, vfHist = new Uint16Array(64);
+  let vfTarget = 0, vfTop = 0, vfClock = 1e9, vfX = 1e9, vfZ = 1e9;
+  function valleyLevel() {
+    const ov = streamer.overview, n = streamer.overviewN; if (!ov) return 0;
+    const cx = camera.position.x, cz = camera.position.z;
+    let mn = 1e9, mx = -1e9;
+    for (let pass = 0; pass < 2; pass++) {
+      if (pass === 1) vfHist.fill(0);
+      for (let b = -8; b <= 8; b++) for (let a = -8; a <= 8; a++) {
+        let i = Math.floor((cx + a * 60 + 4096) / 8), j = Math.floor((4096 - (cz + b * 60)) / 8);
+        i = i < 0 ? 0 : i >= n ? n - 1 : i; j = j < 0 ? 0 : j >= n ? n - 1 : j;
+        const h = ov[j * n + i] / 32 - 128;
+        if (pass === 0) { if (h < mn) mn = h; if (h > mx) mx = h; }
+        else vfHist[Math.min(63, Math.floor((h - mn) / Math.max(mx - mn, 1e-3) * 64))]++;
+      }
+    }
+    let acc = 0, k = 0;
+    for (; k < 64; k++) { acc += vfHist[k]; if (acc >= 289 * 0.25) break; }
+    return mn + (k + 0.5) / 64 * (mx - mn) + VF.margin;
+  }
+  function valleyFog(inv) {
+    vfClock += clock.realDt;
+    const jumped = (camera.position.x - vfX) ** 2 + (camera.position.z - vfZ) ** 2 > 300 * 300;
+    // Never over the Wraith's head: the lakes lie below where it stands (seen from above, the way
+    // still fog reads best, and the place it walks stays clear).
+    if (vfClock >= VF.every || jumped) { vfClock = 0; vfTarget = Math.min(valleyLevel(), controller.pos.y - 8); vfX = camera.position.x; vfZ = camera.position.z; if (jumped || vfTop === 0) vfTop = vfTarget; }
+    vfTop += (vfTarget - vfTop) * (1 - Math.exp(-clock.realDt / 6));
+    inv.top = vfTop; inv.density = VF.density; inv.soft = 7;
+    inv.weight = Math.max(0, 1 - restoration.value * 1.4);
+  }
   // Grades (post/grades.js): the LUT is rebuilt only when the blended grade moves.
   const { blendGrade } = await import('../post/grades.js');
   let lastGradeR = -1, lastGradeS = -1;
@@ -49,6 +86,8 @@ export async function addEnvironmentSystems(g) {
     else restoration.value += (target - restoration.value) * (1 - Math.exp(-clock.realDt * 1.5));
     if (warden.restore >= 1 && ws.restoration.frost !== 'restored') ws.restoration.frost = 'restored';
     const r = restoration.value, gs = params.v.gradeStrength;
+    // The ice halo (sky shader) belongs to the stilled air: gone with the first wind, hidden by a deck.
+    env.env.artParams.y = Math.max(0, 1 - r * 1.6) * Math.max(0, 1 - weather.cover * 1.4);
     if (Math.abs(r - lastGradeR) > 0.002 || gs !== lastGradeS) {
       lastGradeR = r; lastGradeS = gs;
       blendGrade(post.post.grade, r, gs);
@@ -74,9 +113,13 @@ export async function addEnvironmentSystems(g) {
     snowWX += (streamer.windX - snowWX) * ke; snowWZ += (streamer.windZ - snowWZ) * ke;
     const wl = Math.sqrt(snowWX * snowWX + snowWZ * snowWZ) || 1;
     snowfall.windX = snowWX / wl; snowfall.windZ = snowWZ / wl;
-    snowfall.windSpeed = 1 + 7 * Math.pow(Math.max(w, 0), 1.5);
-    snowfall.fallSpeed = 1.1 + 0.9 * weather.gust;
-    snowfall.density = weather.snow; snowfall.dt = clock.dt;
+    // Stilled overcast: snow that began to fall an age ago and stopped — flakes hanging motionless in
+    // the air. They move at the restoration's rate (the release sets them falling with the wind).
+    const held = (1 - r) * smoothstep01((weather.cover - 0.5) / 0.25) * 0.45;
+    const move = Math.min(1, r * 1.5 + 2 * warden.gust + (weather.snow > held ? 1 : 0));
+    snowfall.windSpeed = (1 + 7 * Math.pow(Math.max(w, 0), 1.5)) * move;
+    snowfall.fallSpeed = (1.1 + 0.9 * weather.gust) * move;
+    snowfall.density = Math.max(weather.snow, held); snowfall.dt = clock.dt;
     snowfall.update();
     // Sound: listener at the camera; the wind bed follows the wind (silent while stilled); the
     // Ribbon hisses while it flows; a formation chimes where it rises.

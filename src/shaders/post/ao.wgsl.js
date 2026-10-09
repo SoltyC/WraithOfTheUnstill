@@ -171,6 +171,33 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     dbgT = T;
     c = vec4f(c.rgb * T + ins * exposure, c.a);
   }
+  // Valley fog (stilled air): the cold pools in the low ground as a flat-topped layer with a soft,
+  // gently undulating top (pad[1] = density inside, top level, top softness, weight). Optical
+  // depth in closed form for density D·clamp((top − y)/soft, 0, 1) along the ray.
+  if (P.pad[1].x > 1e-7) {
+    let D = P.pad[1].x; let soft = P.pad[1].z;
+    // The top undulates a few metres (sampled where the ray meets the level, or at its end).
+    let tc = select(dist, clamp((P.pad[1].y - cam.y) / dir.y, 0.0, dist), abs(dir.y) > 1e-4);
+    let q = (cam + dir * tc).xz;
+    let top = P.pad[1].y + 3.5 * sin(q.x * 0.0123 + 1.7 * sin(q.y * 0.0071)) * cos(q.y * 0.0097 - 0.9 * sin(q.x * 0.0059));
+    let u0 = (top - cam.y) / soft;
+    let k = -dir.y / soft;
+    let u1 = u0 + k * dist;
+    var od = 0.0;
+    if (abs(k) < 1e-5) { od = clamp(u0, 0.0, 1.0) * dist; }
+    else {
+      let F0 = select(select(u0 * u0 * 0.5, u0 - 0.5, u0 > 1.0), 0.0, u0 < 0.0);
+      let F1 = select(select(u1 * u1 * 0.5, u1 - 0.5, u1 > 1.0), 0.0, u1 < 0.0);
+      od = (F1 - F0) / k;
+    }
+    let Tv = exp(-D * max(od, 0.0));
+    let keyC = atmoLight[0].xyz; let skyUp = atmoLight[1].xyz;
+    let cosT = dot(dir, P.sun.xyz);
+    let phase = mix(hgPhase(cosT, 0.6), 0.0795775, 0.5);
+    // A fog lake is bright from above (its sunlit top) and dimmer within; dense droplets: white.
+    let ins = (keyC * phase * 0.85 + skyUp * 1.05) * (1.0 - Tv);
+    c = vec4f(c.rgb * Tv + ins * exposure, c.a);
+  }
   c = vec4f(select(c.rgb, vec3f(0.0), c.rgb != c.rgb), c.a);
   // Debug (?postDebug=4): AO factor, fog transmittance, SSR weight as r, g, b; NaN shows white.
   if (P.pad[0].y > 0.5) {

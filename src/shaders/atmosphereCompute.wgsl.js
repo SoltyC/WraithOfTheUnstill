@@ -280,14 +280,17 @@ fn main() {
     }
   }
   // Night floor (misc.y): a faint deep-blue ambient so night and late dusk never go black.
-  let floorC = vec3f(0.30, 0.45, 1.0) * P.misc.y;
+  let floorC = vec3f(0.48, 0.58, 0.86) * P.misc.y;
   outLight[1] = vec4f(up / wUp + floorC, 0.0);
   outLight[2] = vec4f(side / max(wSide, 1e-4) + floorC * 0.8, 0.0);
   // Sky IBL as L2 spherical harmonics: project the sky (upper hemisphere) and a ground bounce
   // (lower hemisphere: ground lit by the key and the sky, albedo ~0.35, a little brighter on snow
   // fields is left to the materials) onto 9 coefficients.
   let keyUp = select(max(P.moonDir.y, 0.0), max(P.sunDir.y, 0.0), dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
-  let groundRad = 0.3 * (outLight[0].xyz * keyUp / PI_A * 0.6 + outLight[1].xyz);
+  // Ground albedo for the lower hemisphere: snow returns ~80 % (the bounce that lights a robe's
+  // folds, a wall's foot and a rock's underside on the steppe); bare ground ~30 %.
+  let groundAlb = mix(0.3, 0.78, smoothstep(0.3, 0.8, frostAtCamera()));
+  let groundRad = groundAlb * (outLight[0].xyz * keyUp / PI_A * 0.6 + outLight[1].xyz);
   var sh: array<vec3f, 9>;
   for (var q = 0; q < 9; q++) { sh[q] = vec3f(0.0); }
   let SA = 24; let SE = 12;

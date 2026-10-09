@@ -42,6 +42,9 @@ export function createFog(post, scene, atmo, shadows) {
     weather: null, groundY: 0.5, dt: 0.5 - 0.5,
     keyDir: null,
     offX: 0.5 - 0.5, offZ: 0.5 - 0.5,
+    /** Valley (inversion) fog of still air (owner): the level of its flat top (m), its density
+     *  inside (1/m), the softness of the top (m) and its weight (0 = none; the stilled state). */
+    inv: { top: 0.5, density: 0.5 - 0.5, soft: 6, weight: 0.5 - 0.5 },
     run() {
       if (noiseBuilt === 0) { if (csNoise.dispatch(64, 64, 1)) noiseBuilt = 1; }
       else if (noiseBuilt === 1) { if (csNoiseLo.dispatch(16, 16, 1)) noiseBuilt = 2; }
@@ -53,7 +56,7 @@ export function createFog(post, scene, atmo, shadows) {
   post.onResize((W, H) => build(W, H));
   post.onParams((P) => {
     const w = fog.weather;
-    if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; return; }
+    if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; P[108] = 0; return; }
     // Visibility: ~300 km clear haze is the atmosphere's job; overcast ~4 km, snowfall ~1 km,
     // blizzard ~150 m (σ = 3 / visibility).
     const f = Math.pow(w.fog, 2.2);
@@ -69,6 +72,8 @@ export function createFog(post, scene, atmo, shadows) {
     P[60] = w.snow; P[61] = w.cover; P[62] = fog.offX; P[63] = fog.offZ;
     const k = fog.keyDir;
     P[64] = k.x; P[65] = k.y; P[66] = k.z; P[67] = 1;
+    const iv = fog.inv;
+    P[108] = iv.density * iv.weight; P[109] = iv.top; P[110] = iv.soft; P[111] = iv.weight;
   });
   return fog;
 }

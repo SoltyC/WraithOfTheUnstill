@@ -18,9 +18,15 @@ export function createHud() {
   let taskText = '', taskAlarm = false, taskOwner = null;
   let ver = -1, glyphKey = null, glyphOn = false, gx = 0, gy = 0;
 
-  const held = [];
+  const held = [], live = [];
+  /** Fade a notice out and drop it (idempotent). */
+  const fade = (n) => {
+    const i = live.indexOf(n); if (i < 0) return;
+    live.splice(i, 1); n.classList.remove('on'); setTimeout(() => n.remove(), 1300);
+  };
   const q = new URLSearchParams(location.search);
   const titleUp = !(q.get('title') === '0' || q.get('capture') === '1' || q.get('shots') || q.get('bench'));
+  const capture = q.get('capture') === '1';
   const self = {
     /** Choice picked by a click (index), consumed by the chapter system. */
     clicked: -1,
@@ -59,14 +65,21 @@ export function createHud() {
     },
     /** A notice: kind (small caps), title, optional subtitle; fades after `secs`. */
     notice(kind, title, subText, secs = 6) {
+      if (capture) return; // photo spots and gate shots show the world only
       if (self.hold) { held.push([kind, title, subText, secs]); return; }
+      // Quiet by design (BRIEF §12): the same notice twice is one; at most two at once — a newer
+      // one sends the oldest away early.
+      for (const o of live) if (o.dataset.key === kind + '|' + title) return;
+      while (live.length >= 2) fade(live[0]);
       const n = el('div', 'notice', notices);
+      n.dataset.key = kind + '|' + title;
+      live.push(n);
       el('div', 'kind', n).textContent = kind;
       el('div', 'title', n).textContent = title;
       if (subText) el('div', 'sub', n).textContent = subText;
       el('div', 'rule', n);
       requestAnimationFrame(() => n.classList.add('on'));
-      setTimeout(() => { n.classList.remove('on'); setTimeout(() => n.remove(), 1300); }, secs * 1000);
+      setTimeout(() => fade(n), secs * 1000);
     },
     /** The task line: `owner` claims it while it has something to say (text '' releases it). */
     line(owner, text, alarm = false) {

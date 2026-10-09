@@ -122,6 +122,9 @@ export class WorldStreamer {
       resident: sb(resident, 'world-resident'),
       residentData: resident,
     };
+    // CPU copy of the 8 m overview heights (u16, h = v/32 − 128, row 0 = north): regional queries
+    // (the valley fog's level).
+    this.overview = m.overview; this.overviewN = m.manifest.height.overview.size;
     // CPU copy of the biome weights (frost, meadow, mire, dunes; rgba8, row 0 = north): where rocks stand.
     this.biomeA = m.biomeA;
     // CPU copy of the surface material map (byte 0 of rgba8, row 0 = north) for gameplay queries.
