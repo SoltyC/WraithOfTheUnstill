@@ -3,16 +3,17 @@
 // a different feat at each stone, built from the verbs and the surf:
 //   1  three marks of glossy ice round it: Crystallize on each before the echo fades
 //   2  hold the Ribbon on its face
-//   3  surf a whole circle round it
+//   3  it is guarded: break the Shaped that rise round it
 //   4  three drifts piled round it: Sweep through each
-//   5  it is guarded: break the Shaped that rise round it
+//   5  surf a whole circle round it ("where the wind turns, I turned"; stone 3 stands on bare
+//      wind-scoured ground where no surf holds, so the circle is stone 5's, on open snow)
 //   6  a mark far across the snow: reach it with the Ribbon from the stone's foot
 // Done, the stone lights and counts (`stones`); failed (time, or walking off), it can be tried again.
 
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 const dist2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
-const KIND = ['crystal', 'ribbon', 'circle', 'sweep', 'guard', 'reach'];
+const KIND = ['crystal', 'ribbon', 'guard', 'sweep', 'circle', 'reach'];
 const TIME = { crystal: 35, ribbon: 20, circle: 30, sweep: 30, guard: 999, reach: 20 };
 const WHAT = {
   crystal: 'Crystallize (F) on each mark of ice',

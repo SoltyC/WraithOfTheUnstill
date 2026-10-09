@@ -1393,12 +1393,12 @@
       "steps": [
         {
           "id": "bronze",
-          "journal": "Ride all nine gates in under 48 seconds.",
+          "journal": "Ride all nine gates in under 31 seconds.",
           "when": {
             "var": {
               "name": "run.best",
               "gte": 1,
-              "lte": 48
+              "lte": 31
             }
           },
           "goal": {
@@ -1408,12 +1408,12 @@
         },
         {
           "id": "silver",
-          "journal": "Under 40 seconds.",
+          "journal": "Under 26.5 seconds.",
           "when": {
             "var": {
               "name": "run.best",
               "gte": 1,
-              "lte": 40
+              "lte": 26.5
             }
           },
           "goal": {
@@ -1428,12 +1428,12 @@
         },
         {
           "id": "gold",
-          "journal": "Under 34 seconds — the way they rode it.",
+          "journal": "Under 23 seconds — the way they rode it.",
           "when": {
             "var": {
               "name": "run.best",
               "gte": 1,
-              "lte": 34
+              "lte": 23
             }
           },
           "goal": {

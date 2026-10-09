@@ -4,7 +4,8 @@
 // the monastery hall (cast the stone's verb so it lands on the stone), the overturned sled and the
 // hound tracks from it to the den, and the monastery bell. The quests read all of it as events
 // (`use:<id>`, `run:done`), flags (`used:<id>`, `lit:<site>`) and variables (`run.gates`,
-// `run.best`, `verbStones`); the compass reads the dynamic goals registered here. No story lives
+// `run.best`, `verbStones`; medals at 31 / 26.5 / 23 s, set from scripted rides of the chute at
+// ~21 s on the racing line, 2026-10-09); the compass reads the dynamic goals registered here. No story lives
 // here — it is data/quests/frost.json.
 
 const dist2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
@@ -38,7 +39,7 @@ export function addTrialsSystem(g) {
         gi = 0;
         chapter.raise('run:done');
         hud.line('run', '');
-        if (!capture) hud.notice('The Shapers\' Run', secs.toFixed(1) + ' seconds', prev === undefined || secs < prev ? 'Your best. Gold is under 34, silver under 40, bronze under 48.' : 'Best: ' + prev.toFixed(1) + ' s', 6);
+        if (!capture) hud.notice('The Shapers\' Run', secs.toFixed(1) + ' seconds', prev === undefined || secs < prev ? 'Your best. Gold is under 23, silver under 26.5, bronze under 31.' : 'Best: ' + prev.toFixed(1) + ' s', 6);
       }
     } else if (gi > 1 && dist2(p.x, p.z, gates[0].pos[0], gates[0].pos[1]) < 100) { gi = 1; t0 = clock.simTime; } // back at the top: begin again
     else if (gi > 0 && dist2(p.x, p.z, gates[gi - 1].pos[0], gates[gi - 1].pos[1]) > 150 * 150) { gi = 0; hud.line('run', ''); } // lost the line

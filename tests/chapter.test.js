@@ -165,12 +165,12 @@ describe('frost chapter flow', () => {
     const { ch, got, tick } = setup();
     tick(); ch.graph.quests['empty-robe'].state = 'done'; tick();
     expect(ch.graph.quests['shapers-run'].state).toBe('active');
-    ch.graph.vars['run.best'] = 52; tick(4);
+    ch.graph.vars['run.best'] = 35; tick(4);
     expect(ch.graph.quests['shapers-run'].step).toBe(0);
-    ch.graph.vars['run.best'] = 39; tick(4);
+    ch.graph.vars['run.best'] = 26; tick(4);
     expect(got.lore).toContain('lore-shapers-run');
     expect(got.echo).not.toContain('echo-frost-surf');
-    ch.graph.vars['run.best'] = 33.4; tick(4);
+    ch.graph.vars['run.best'] = 22.6; tick(4);
     expect(got.echo).toContain('echo-frost-surf');
   });
 

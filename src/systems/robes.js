@@ -11,7 +11,7 @@ export function addRobesSystem(g) {
   const flags = chapter.graph.flags, vars = chapter.graph.vars;
   const earned = {
     'rime-hide': () => flags.has('cleared:den'),
-    runner: () => typeof vars['run.best'] === 'number' && vars['run.best'] <= 34,
+    runner: () => typeof vars['run.best'] === 'number' && vars['run.best'] <= 23, // gold (systems/trials.js)
     ember: () => (vars.braziers || 0) >= BRAZIERS.length,
   };
   let wornId = null;
