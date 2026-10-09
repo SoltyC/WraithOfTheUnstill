@@ -84,6 +84,10 @@ export async function createWorld(g) {
   const groundCover = (await import('../render/groundcover.js')).createGroundCover(scene, content.clipmap, atmosphere, grass.push);
   for (const m of groundCover.materials) bindShadows(m, shadows);
   groundCover.freeze();
+  // Motes and pollen in the sunlight (Phase 8, M4b): glitter in the shafts under the canopy.
+  const motes = (await import('../render/motes.js')).createMotes(scene, content.clipmap, atmosphere);
+  bindShadows(motes.material, shadows);
+  motes.freeze();
   // Trees (Phase 8): grown variants in groves; near ones shadow the near cascades, far the far.
   const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer);
   for (const m of trees.materials) bindShadows(m, shadows);
@@ -110,5 +114,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, trees });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, motes, trees });
 }
