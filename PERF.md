@@ -369,3 +369,20 @@ Windows Chrome headless on T's RTX 3060 (driven from WSL, `tools/winchrome/`), 2
 - Disabling the architecture, the outcrop mesh, all rocks or the fire one at a time moved the frame by < 0.5 ms each: the visual pass's cost is spread (scanned materials on terrain cliffs, architecture and rocks in the shadow cascades, the valley fog term in compose).
 - Architecture: ~510k vertices / ~250k triangles in one static draw (+ the first cascade). GPU memory: the material arrays are ~380 MB (uncompressed RGBA8).
 - **Honest reading:** at native 1440p this machine was already over the 11.1 ms (90 fps) budget before this pass on these views (15–18 ms). Reaching 90 fps on the 3060 needs PLAN.md Q6: render scale ~0.7 with temporal upscaling (TAAU on the existing TAA), plus per-site LOD for the masonry and shadow LOD for outcrops. Not done yet.
+
+### Temporal upscaling and culling — target T, 2026-10-09 (later the same day)
+
+GPU frame median at 2560×1440 output, RTX 3060, Windows Chrome headless:
+
+| Spot | Render scale 1 (before) | Render scale 0.7 + culling |
+|---|---|---|
+| `p5-steppe-stilled` | 16.0 ms | **10.7 ms** (93 fps) |
+| `p5-warden-golden` | — | 11.8 ms (85 fps) |
+| `p5-pack-afternoon` | — | 12.1 ms (83 fps) |
+| `p7-camp-dusk` | 18.8 ms | 12.7 ms (79 fps) |
+| `p7-monastery-approach` | 20.7 ms | 13.2 ms (76 fps) |
+
+- Per-pass at scale 0.67 (monastery): scene 6.9 ms, shadow cascades 1.6 / 1.5 / 1.3 / 0.9 ms, compute 2.0 ms, display 0.7 ms. The terrain clipmap is the largest single cost (scene + its shadows ≈ 6.3 ms); it is unchanged by this pass.
+- Culling: the dormant Warden was drawn at full detail into every cascade from anywhere (≈ 2 ms) — now a coarse copy beyond 180 m (far cascade only), nothing beyond 1.4 km; the Shaped and spike pools draw only while used; rock tiers cast only into the cascades their distances reach.
+- 60 fps floor met everywhere measured; 90 fps on the open steppe, 76–85 fps at the monastery, camp, Warden and pack. Further: cached far cascades, terrain shadow LOD (Phase 14 hardening).
+- 0 late pipelines (culled meshes draw 30 frames first, so their pipelines exist from loading).
