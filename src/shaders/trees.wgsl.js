@@ -86,7 +86,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let fl = sin(t * 4.7 + vertexInputs.info.y * 0.37 + p.y) * 0.04 * ws * sc;
     p += vec3f(fl, fl * 0.6, -fl * 0.8);
   }
-  let base = tGround(x, z);
+  // Logs (world2.z) lie on the ground under every vertex; trees stand on the ground at the root.
+  var base = 0.0;
+  if (w2.z > 0.5) { base = tGround(x + p.x, z + p.z); } else { base = tGround(x, z); }
   let wp = vec3f(x, base, z) + p;
   let n = vertexInputs.normal;
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
@@ -122,7 +124,7 @@ function treeFragment(leafPass) {
   return /* wgsl */ `
 ${ENV_DECL}
 ${SPELL_LIGHT_DECL}
-uniform treeMat: vec4f;              // x = bark layer, y = species tint (0 pine, 1 oak, 2 birch)
+uniform treeMat: vec4f;              // x = bark layer, y = species (0 pine, 1 oak, 2 birch, 3 shrub, 4 log)
 ${leafPass ? 'var leafAtlas: texture_2d<f32>;\nvar leafAtlasSampler: sampler;' : ''}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -173,7 +175,7 @@ ${leafPass ? `
   col += spellLit(wp, N, albedo, 0.4, ex);` : `
   let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
   // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
-  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.3, 0.29, 0.27), uniforms.treeMat.y > 1.5), 0.6);
+  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.3, 0.29, 0.27), abs(uniforms.treeMat.y - 2.0) < 0.5), 0.6);
   let moss = smoothstep(0.3, 0.0, info.w) * smoothstep(-0.2, 0.6, -bk.N.z * 0.6 + 0.2) * 0.6;
   albedo = mix(albedo, vec3f(0.06, 0.09, 0.03), moss);
   N = bk.N;

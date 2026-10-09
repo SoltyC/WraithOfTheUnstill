@@ -21,7 +21,7 @@ import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { SHADOW_SPLITS } from './shadows.js';
 import { CANOPY_N } from './atmosphere.js';
 import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL, treeLeafDepthFragmentWGSL } from '../shaders/trees.wgsl.js';
-import { growTree, SPECIES } from '../world/trees/generator.js';
+import { growTree, growLog, SPECIES } from '../world/trees/generator.js';
 import { drawLeafAtlas } from './leafAtlas.js';
 import { canvasAtlasTexture } from './atlasTexture.js';
 import { MAT, MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
@@ -31,7 +31,7 @@ import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 
 const VARIANTS = 8;
-const SPECIES_IDS = ['pine', 'oak', 'birch'];
+const SPECIES_IDS = ['pine', 'oak', 'birch', 'shrub', 'log']; // shrubs and logs/stumps fill tree cells left empty
 const CELL = 9, REPLACE = 20;       // placement rebuilds after the camera moves REPLACE m
 const HYST = 4, JUMP = 120;          // state hysteresis (m); a move beyond JUMP is a fresh placement (no fades)
 const MAX_NEAR = 90, MAX_FAR = 260, MAX_MID = 160;   // per variant
@@ -82,7 +82,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   const lodV = [new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 2, 0)]; // z: 0 view, 1 shadow (no fade), 2 far shadow (edge fades only); w: clock
   const sets = [], mats = [], shadowOnly = [];
   /** Trunk radius at the root per species × variant (m, at scale 1): collision. */
-  const trunkR = new Float32Array(SPECIES_IDS.length * VARIANTS);
+  const trunkR = new Float32Array(SPECIES_IDS.length * VARIANTS), logLen = new Float32Array(SPECIES_IDS.length * VARIANTS);
   const envArt = env.artParams;
   // Opaque order: the leaf depth prepass before everything else, then Babylon's default (by material).
   const zRank = (sm) => (sm.getMesh().name.startsWith('treeZ') ? 0 : 1);
@@ -90,12 +90,13 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   SPECIES_IDS.forEach((sid, si) => {
     const barkLayer = MAT[SPECIES[sid].bark];
     for (let v = 0; v < VARIANTS; v++) for (const lod of [0, 1]) {
-      const t = growTree(sid, 1000 + si * 131 + v * 17, lod);
-      if (lod === 0) trunkR[si * VARIANTS + v] = t.trunkR;
+      const t = sid === 'log' ? growLog(1000 + v * 7, lod) : growTree(sid, 1000 + si * 131 + v * 17, lod);
+      if (lod === 0) { trunkR[si * VARIANTS + v] = t.trunkR; logLen[si * VARIANTS + v] = t.length || 0; }
       const max = lod ? MAX_FAR : MAX_NEAR, buf = new Float32Array(max * 16);
       const meshes = [];
       for (const part of ['bark', 'leaf']) {
         const g = splitKind(t, part === 'leaf' ? 1 : 0);
+        if (!g.indices.length) continue; // logs have no leaves
         const mesh = new Mesh(`tree-${part}-${sid}-${v}-${lod}`, scene);
         const vd = new VertexData(); vd.positions = g.positions; vd.normals = g.normals; vd.uvs = g.uvs; vd.indices = g.indices;
         vd.applyToMesh(mesh, false);
@@ -151,6 +152,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         const sbuf = new Float32Array(MAX_MID * 16), smeshes = [];
         for (const part of ['bark', 'leaf']) {
           const g = splitKind(t, part === 'leaf' ? 1 : 0);
+          if (!g.indices.length) continue;
           const mesh = new Mesh(`treeShadow-${part}-${sid}-${v}`, scene);
           const vd = new VertexData(); vd.positions = g.positions; vd.normals = g.normals; vd.uvs = g.uvs; vd.indices = g.indices;
           vd.applyToMesh(mesh, false);
@@ -158,7 +160,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
           mesh.thinInstanceSetBuffer('matrix', sbuf, 16, false);
           mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true;
           mesh.layerMask = 0x10000000;
-          mesh.material = meshes[part === 'leaf' ? 1 : 0].material; // never drawn by the view; avoids a default material
+          mesh.material = meshes.find((m) => m.name.startsWith(`tree-${part}-`)).material; // never drawn by the view; avoids a default material
           smeshes.push(mesh); shadowOnly.push(mesh);
         }
         sets.push({ sid, si, v, lod: 2, meshes: smeshes, buf: sbuf, max: MAX_MID, n: 0 });
@@ -187,14 +189,20 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     // Groves (slow noise), sparse singles between.
     const grove = valueNoise(x / 170, z / 170, SEED + 3) * 0.65 + valueNoise(x / 55, z / 55, SEED + 4) * 0.35;
     const p = grove > 0.12 ? 0.25 + 0.6 * Math.min(1, (grove - 0.12) / 0.3) : 0.012;
-    if (h01(gx, gz, SEED + 5) > p) return false;
+    let kind = -1;
+    if (h01(gx, gz, SEED + 5) > p) {
+      // No tree here: perhaps a shrub (in a grove's gaps, along its edge) or a fallen log / stump.
+      const hu = h01(gx, gz, SEED + 21);
+      const ps = grove > 0.12 ? 0.5 : grove > 0.0 ? 0.14 : 0, pl = grove > 0.2 ? 0.14 : 0;
+      if (hu < ps) kind = 3; else if (hu < ps + pl) kind = 4; else return false;
+    }
     if (meadowAt(x, z) < 0.6) return false;
     const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
     if (sl > 5) return false;
     for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
     // Species: pines above ~330 m and on rises; oaks in the low groves; birches at edges.
     const hs = h01(gx, gz, SEED + 6), alt = Math.max(0, Math.min(1, (h - 280) / 120));
-    T.si = hs < alt * 0.85 ? 0 : grove > 0.3 ? (hs < 0.65 ? 1 : 2) : (hs < 0.5 ? 2 : 1);
+    T.si = kind >= 0 ? kind : hs < alt * 0.85 ? 0 : grove > 0.3 ? (hs < 0.65 ? 1 : 2) : (hs < 0.5 ? 2 : 1);
     T.v = Math.floor(h01(gx, gz, SEED + 7) * VARIANTS);
     T.x = x; T.z = z; T.sc = 0.75 + 0.5 * h01(gx, gz, SEED + 8);
     return true;
@@ -204,13 +212,13 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
   // Every tree's crown splatted at 4 m over the whole world, once (and again when exclusions
   // change): the forest floor, the understory, the grass under trees and the light under the
   // crowns all follow it.
-  const CROWN_R = [3.2, 6.5, 4.2], CROWN_A = [0.85, 0.95, 0.6]; // pine, oak, birch: radius (m) at scale 1, opacity
+  const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0], CROWN_A = [0.85, 0.95, 0.6, 0.35, 0]; // pine, oak, birch, shrub, log: radius (m) at scale 1, opacity
   let canopyDirty = true;
   function buildCanopy() {
     const N = CANOPY_N, cs = 8192 / N, a = new Uint8Array(N * N);
     const g0 = Math.floor(-4096 / CELL), g1 = Math.ceil(4096 / CELL);
     for (let gz = g0; gz <= g1; gz++) for (let gx = g0; gx <= g1; gx++) {
-      if (!treeAt(gx, gz)) continue;
+      if (!treeAt(gx, gz) || CROWN_A[T.si] === 0) continue;
       const r = CROWN_R[T.si] * T.sc, op = CROWN_A[T.si];
       const i0 = Math.max(0, Math.floor((T.x - r - 2 + 4096) / cs)), i1 = Math.min(N - 1, Math.floor((T.x + r + 2 + 4096) / cs));
       const j0 = Math.max(0, Math.floor((T.z - r - 2 + 4096) / cs)), j1 = Math.min(N - 1, Math.floor((T.z + r + 2 + 4096) / cs));
@@ -267,7 +275,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         const o = set.n++ * 16, b = set.buf;
         b[o] = T.x; b[o + 1] = T.z; b[o + 2] = sc; b[o + 3] = yaw;
         b[o + 4] = w4; b[o + 5] = w5; b[o + 6] = w6; b[o + 7] = w7;
-        b[o + 8] = now; b[o + 9] = kind;
+        b[o + 8] = now; b[o + 9] = kind; b[o + 10] = si === 4 ? 1 : 0; // logs lie on the ground under every vertex
       }
     }
     const t = prev; prev = cur; cur = t; cur.clear();
@@ -312,15 +320,17 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         cleanAt = 0; rebuild(lastX, lastZ, false, now);
       }
     },
-    /** Every tree trunk within r of (x, z): cb(x, z, radius at the root) — the same deterministic
+    /** Every trunk, stump and log within r of (x, z): cb(x, z, radius, yaw, log length or 0) — the same deterministic
      *  placement the renderer draws (systems/rockSolids.js gives them to the controller). */
     trunksNear(x, z, r, cb) {
       const g0x = Math.floor((x - r) / CELL), g1x = Math.floor((x + r) / CELL), g0z = Math.floor((z - r) / CELL), g1z = Math.floor((z + r) / CELL);
       for (let gz = g0z; gz <= g1z; gz++) for (let gx = g0x; gx <= g1x; gx++) {
         if (!treeAt(gx, gz)) continue;
         const dx = T.x - x, dz = T.z - z;
-        if (dx * dx + dz * dz > r * r) continue;
-        cb(T.x, T.z, trunkR[T.si * VARIANTS + T.v] * T.sc * 1.1);
+        if (dx * dx + dz * dz > r * r || T.si === 3) continue; // shrubs are walked through
+        const k = T.si * VARIANTS + T.v;
+        if (logLen[k] > 0) cb(T.x, T.z, trunkR[k] * T.sc, h01(gx, gz, SEED + 9) * 6.283, logLen[k] * T.sc);
+        else cb(T.x, T.z, trunkR[k] * T.sc * 1.1, 0, 0);
       }
     },
     setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },

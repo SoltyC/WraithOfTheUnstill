@@ -23,6 +23,13 @@ export const SPECIES = {
   birch: { height: [13, 20], trunkR: [0.16, 0.26], trunkLean: 0.12, crownStart: [0.35, 0.5], levels: 3,
     whorl: false, branches: [10, 16], branchAngle: [0.5, 0.85], branchLen: [0.28, 0.4], droop: 0.35, up: 0.25,
     child: { count: [2, 4], angle: [0.45, 0.8], len: [0.45, 0.65] }, leafSize: [1.0, 1.5], leafDensity: 2.0, cell: 2, bark: 'bark-smooth' },
+  // Understory shrub (hazel-like): several slender stems from the ground, arching out, dense
+  // small-leaved clusters — it grows in groves' gaps and along their edges.
+  shrub: { height: [2.0, 3.6], trunkR: [0.035, 0.06], trunkLean: 0.2, crownStart: [0.2, 0.3], levels: 2, stems: [7, 12],
+    whorl: false, branches: [0, 0], branchAngle: [0.35, 0.95], branchLen: [0.75, 1.0], droop: 0.5, up: 0.15,
+    child: { count: [4, 7], angle: [0.5, 1.0], len: [0.45, 0.7] }, leafSize: [0.9, 1.3], leafDensity: 3.8, cell: 1, bark: 'bark-smooth' },
+  // A fallen trunk or a stump (growLog): bark only, mossed.
+  log: { height: [0, 0], trunkR: [0.2, 0.42], log: true, cell: 1, bark: 'bark-oak' },
 };
 export const KIND = { BARK: 0, LEAF: 1 };
 
@@ -128,6 +135,17 @@ export function growTree(speciesId, seed, lod = 0) {
       branch(nodes[ni].p, cd, L * rr(R, c.len), nodes[ni].r * 0.6, level + 1);
     }
   }
+  if (sp.stems) {
+    // Shrub: stems from a clump at the ground, each a branch of level 1 arching out.
+    const ns = Math.round(rr(R, sp.stems));
+    for (let k = 0; k < ns; k++) {
+      const a = k * 2.39996 + R() * 0.5, el = rr(R, sp.branchAngle);
+      const dir = norm([Math.cos(a) * Math.sin(el), Math.cos(el), Math.sin(a) * Math.sin(el)]);
+      const p0 = [Math.cos(a) * 0.12 * R(), -0.15, Math.sin(a) * 0.12 * R()];
+      branch(p0, dir, H * rr(R, sp.branchLen), r0 * (0.7 + 0.3 * R()), 1);
+    }
+    return finish();
+  }
   // Trunk: a slightly leaning, wandering column; a root flare at the base.
   const lean = [(R() - 0.5) * sp.trunkLean * 2, 1, (R() - 0.5) * sp.trunkLean * 2];
   const tNodes = [];
@@ -157,8 +175,83 @@ export function growTree(speciesId, seed, lod = 0) {
   }
   // The leader: a pine's top keeps going as a spire of needle clusters.
   if (sp.whorl) for (let k = 0; k < 4; k++) cluster(add(tNodes[tSegs].p, [0, -k * 0.6, 0]), [0, 1, 0], rr(R, sp.leafSize) * 0.8, k * 31);
+  return finish();
+  function finish() {
+    return {
+      positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv),
+      info: new Float32Array(out.info), indices: new Uint32Array(out.idx), height: H, trunkR: r0,
+    };
+  }
+}
+
+/**
+ * A fallen log (lying along +x, centred, resting on y = 0) or, for every third seed, a stump:
+ * bark tubes with broken branch stubs and a ragged end. info.w (height in tree) is kept low so the
+ * bark shader mosses it. Returns the arrays growTree returns, plus length (m) and radius (m).
+ */
+export function growLog(seed, lod = 0) {
+  const R = rng(seed * 2246822519 + 7);
+  const out = { pos: [], nrm: [], uv: [], info: [], idx: [] };
+  const stump = seed % 3 === 0;
+  const r0 = rr(R, SPECIES.log.trunkR) * (stump ? 1.3 : 1);
+  const L = stump ? 0.35 + 0.7 * R() : 4 + 6 * R();
+  const sides = lod ? 7 : 12, segs = stump ? 3 : (lod ? 6 : 14);
+  function ring(c, t, r, frame, vAcc, mossK) {
+    for (let k = 0; k <= sides; k++) {
+      const a = (k / sides) * TAU, ca = Math.cos(a), sa = Math.sin(a);
+      // Rot: the bark sags and splits a little; a lumpy section.
+      const lump = 1 + 0.07 * Math.sin(a * 3 + t * 9 + seed) + 0.04 * Math.sin(a * 7 - t * 13);
+      const d = [frame[0][0] * ca + frame[1][0] * sa, frame[0][1] * ca + frame[1][1] * sa, frame[0][2] * ca + frame[1][2] * sa];
+      out.pos.push(c[0] + d[0] * r * lump, c[1] + d[1] * r * lump, c[2] + d[2] * r * lump);
+      out.nrm.push(d[0], d[1], d[2]);
+      out.uv.push((k / sides) * TAU * r, vAcc / 1.6);
+      out.info.push(KIND.BARK, seed % 997, 0, mossK);
+    }
+  }
+  function strip(n) {
+    const base = out.pos.length / 3 - (n + 1) * (sides + 1);
+    for (let i = 0; i < n; i++) for (let k = 0; k < sides; k++) {
+      const a = base + i * (sides + 1) + k, b = a + sides + 1;
+      out.idx.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  if (stump) {
+    // Upright, flared at the root, sunk a little; a ragged top.
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs, flare = 1 + 0.5 * (1 - t) * (1 - t);
+      ring([0, -0.25 + t * (L + 0.25), 0], t, r0 * flare, [[1, 0, 0], [0, 0, 1]], t * L, 0.05 + 0.1 * t);
+    }
+    strip(segs);
+    // Top: a jagged disc of splinters (bark-textured; reads as broken wood).
+    const top = out.pos.length / 3;
+    out.pos.push(0, L - 0.05, 0); out.nrm.push(0, 1, 0); out.uv.push(0.5, 0.5); out.info.push(KIND.BARK, seed % 997, 0, 0.3);
+    for (let k = 0; k <= sides; k++) {
+      const a = (k / sides) * TAU, jag = (k % 2 ? 0.12 : -0.05) * r0 + R() * 0.1 * r0;
+      out.pos.push(Math.cos(a) * r0 * 0.98, L + jag, Math.sin(a) * r0 * 0.98); out.nrm.push(0, 1, 0);
+      out.uv.push(0.5 + Math.cos(a) * 0.4, 0.5 + Math.sin(a) * 0.4); out.info.push(KIND.BARK, seed % 997, 0, 0.3);
+      if (k < sides) out.idx.push(top, top + 1 + k + 1, top + 1 + k);
+    }
+  } else {
+    // Lying along x, a gentle sag, tapering; resting on the ground (centre at y = r).
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs, r = r0 * (1 - 0.35 * t);
+      const y = r * 0.85 - 0.06 * Math.sin(Math.PI * t);
+      ring([(t - 0.5) * L, y, 0.15 * Math.sin(t * 2.3 + seed)], t, r, [[0, 1, 0], [0, 0, 1]], t * L, 0.12);
+    }
+    strip(segs);
+    // Broken branch stubs.
+    const stubs = 2 + Math.floor(R() * 3);
+    for (let k = 0; k < stubs; k++) {
+      const t = 0.2 + 0.7 * R(), a = R() * TAU * 0.5 + 0.3, sr = r0 * (0.25 + 0.2 * R()), sl = 0.3 + 0.8 * R();
+      const dir = norm([0.3 * (R() - 0.5), Math.sin(a), Math.cos(a)]);
+      const c0 = [(t - 0.5) * L, r0 * 0.85, 0];
+      const u = norm(cross(dir, [1, 0, 0])), v = cross(dir, u);
+      for (let i = 0; i <= 2; i++) ring(add(c0, dir, (r0 * 0.6) + sl * i / 2), i / 2, sr * (1 - 0.4 * i / 2), [u, v], sl * i / 2, 0.15);
+      strip(2);
+    }
+  }
   return {
     positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv),
-    info: new Float32Array(out.info), indices: new Uint32Array(out.idx), height: H, trunkR: r0,
+    info: new Float32Array(out.info), indices: new Uint32Array(out.idx), height: stump ? L : r0 * 2, trunkR: r0, length: stump ? 0 : L,
   };
 }
