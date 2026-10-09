@@ -180,7 +180,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let nl = dot(N, L);
   let nv = clamp(dot(N, V), 0.0, 1.0);
   let vis = shadowVisibility(wp, normalize(fragmentInputs.vNormal), camPos, fragmentInputs.position.xy);
-  let occ = mix(0.35, 1.0, fragmentInputs.vOcc);
+  let occ = mix(0.18, 1.0, fragmentInputs.vOcc);
   let H = normalize(L + V);
   var col = vec3f(0.0);
   if (kind == 3 && !frozen) {
@@ -198,7 +198,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Large swathes: snow cover over the mass, ice where it is scoured or faces down.
     let scour = smoothstep(0.58, 0.72, vnoise3(wp * 0.045 + 7.0));
     let Ns = normalize(fragmentInputs.vNormal);
-    var snow = smoothstep(-0.35, 0.25, Ns.y + 0.25 * (vnoise3(wp * 0.07) - 0.5)) * (1.0 - scour);
+    // Snow lies on what faces up (a sharp line where the flank turns away), not over the flanks.
+    var snow = smoothstep(0.12, 0.42, Ns.y + 0.3 * (vnoise3(wp * 0.07) - 0.5)) * (1.0 - scour);
     if (kind != 0 || frozen) { snow = snow * 0.2; }
     // Lain down into the land: fresh drift snow over all of it (the spires stay ice).
     if (kind != 1) { snow = max(snow, fragmentInputs.vCover); }
@@ -212,13 +213,22 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     cs += key * glint * 3.0 * vis * dfade;
     // Glacial ice: deep blue body, light passing through it, white fracture planes, sky in it.
     let iceVar = vnoise3(wp * 0.6 + fragmentInputs.vSeed);
-    let iceAlb = mix(vec3f(0.16, 0.34, 0.48), vec3f(0.42, 0.64, 0.78), iceVar);
+    // Old glacier ice: deep and grey-blue, not candy; banded with the dirt of the land it was
+    // made from (layers in its own frame, so they ride with it), and dark moraine debris
+    // packed into the legs and the underside.
+    var iceAlb = mix(vec3f(0.1, 0.19, 0.25), vec3f(0.3, 0.43, 0.5), iceVar);
+    let lp = fragmentInputs.vLocal;
+    let band = smoothstep(0.68, 0.8, vnoise3(lp * vec3f(0.35, 2.4, 0.35) + vec3f(fragmentInputs.vSeed)));
+    let dirt = vec3f(0.11, 0.1, 0.09) * (0.7 + 0.6 * vnoise3(wp * 3.0));
+    iceAlb = mix(iceAlb, dirt, band * 0.6);
+    let moraine = smoothstep(-0.15, -0.6, Ns.y) * smoothstep(0.35, 0.65, vnoise3(wp * 1.7 + 11.0) + 0.25 * vnoise3(wp * 6.0));
+    iceAlb = mix(iceAlb, vec3f(0.07, 0.068, 0.065) * (0.8 + 0.5 * vnoise3(wp * 9.0)), moraine * 0.85);
     let frac = 1.0 - smoothstep(0.0, 0.06, abs(vnoise3(wp * vec3f(0.35, 0.9, 0.35) + 3.0) - 0.5));
     // Weathered glacier ice: rough, so the sky reflection is soft and limited.
     let F = (0.02 + 0.98 * pow(1.0 - nv, 5.0)) * 0.22;
     let R = reflect(-V, N);
     let refl = atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z)));
-    let through = vec3f(0.25, 0.55, 0.8) * (key * 0.22 * (1.0 - vis * max(nl, 0.0)) + sky * 0.5);
+    let through = vec3f(0.2, 0.42, 0.6) * (key * 0.14 * (1.0 - vis * max(nl, 0.0)) + sky * 0.28) * (1.0 - band * 0.8) * (1.0 - moraine);
     var ci = iceAlb * (key * max(nl, 0.0) * vis / PI + sky * cold * occ) + through * occ;
     ci = mix(ci, vec3f(0.85, 0.92, 1.0) * (key * max(nl * 0.5 + 0.5, 0.0) * vis / PI + sky), frac * 0.55 * dfade);
     ci = ci * (1.0 - F) + refl * F;
@@ -230,7 +240,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       // Light within: the ice fills with a cold blue glow; the fractures carry the brightest light.
       let core = 1.0 - smoothstep(0.0, 0.025, abs(vnoise3(wp * vec3f(0.35, 0.9, 0.35) + 3.0) - 0.5));
       let inner = (1.0 - snow * 0.7) * (0.25 + 0.75 * pow(1.0 - nv, 1.5));
-      col = col * (1.0 - 0.35 * g) + (vec3f(0.12, 0.42, 1.0) * (frac * 0.25 + inner * 0.8) + vec3f(0.6, 0.85, 1.0) * core * 0.2) * g / max(exposure, 1e-6) * 0.55;
+      col = col * (1.0 - 0.12 * g) + (vec3f(0.12, 0.42, 1.0) * (frac * 0.3 + inner * 0.3) + vec3f(0.6, 0.85, 1.0) * core * 0.35) * g / max(exposure, 1e-6) * 0.5;
     }
     if (frozen) { col += vec3f(0.4, 0.7, 1.0) * 0.06 / max(exposure, 1e-6); }
   }
