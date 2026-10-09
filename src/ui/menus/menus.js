@@ -5,6 +5,7 @@
 import './menus.css';
 import { createMap } from './map.js';
 import { releaseAll } from '../../input/actions.js';
+import { ownedRobes, wornRobe } from '../../game/robes.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
@@ -86,7 +87,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['robes', 'Robes']], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -97,6 +98,15 @@ export function createMenus(g) {
       }, 'Nothing yet. The robe is still learning to move.');
     } else if (tab === 'lore') {
       listPage([['Fragments', j.lore]], (pg, l) => { el('h2', null, pg, l.title); el('p', null, pg, l.text); }, 'No fragments found.');
+    } else if (tab === 'robes') {
+      const flags = chapter.graph.flags, vars = chapter.graph.vars;
+      const worn = wornRobe(flags, vars).id;
+      listPage([['Robes', ownedRobes(flags).map((r) => ({ ...r, title: r.name, done: false }))]], (pg, r) => {
+        el('h2', null, pg, r.name); el('div', 'summary', pg, r.how); el('p', null, pg, r.text);
+        if (r.effect) el('p', 'echo-effect', pg, r.effect);
+        const b = el('button', 'robe-wear', pg, r.id === worn ? 'Worn' : 'Wear');
+        if (r.id === worn) b.disabled = true; else b.onclick = () => { g.wearRobe?.(r.id); open('journal', 'robes'); };
+      }, 'Only the robe it woke in.');
     } else {
       listPage([['Echoes', j.echoes.map((e) => ({ ...e, title: e.name }))]], (pg, e) => {
         el('h2', null, pg, e.name); el('p', 'summary', pg, e.text); el('p', 'echo-effect', pg, e.effect);

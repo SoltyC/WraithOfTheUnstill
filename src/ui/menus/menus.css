@@ -65,6 +65,9 @@
 .codex-page p { margin: 0 0 12px; }
 .codex-page p.past { color: #6d5a42; }
 .codex-page .echo-effect { font-family: var(--ink-font); color: #3a5a6a; }
+.codex-page .robe-wear { margin-top: 18px; font-size: clamp(18px, 1.5vw, 26px); font-family: var(--ink-font); color: #4a3424; border-bottom: 1px solid currentColor; opacity: 0.85; }
+.codex-page .robe-wear:hover:not(:disabled) { opacity: 1; }
+.codex-page .robe-wear:disabled { opacity: 0.45; border-bottom-color: transparent; }
 .codex-empty { font-family: var(--text); font-style: italic; color: #7a6244; }
 
 .codex-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; position: relative; z-index: 1; }

@@ -215,13 +215,15 @@ export function createCombat(ctx) {
     const wh = warden && warden.active ? warden.hits : 0;
     if (shaped.hits === 0 && wh === 0) return;
     if (controller.dodgeT > 0) return;               // the bend-step slips through
-    self.health -= shaped.hitDamage + (wh ? warden.hitDamage : 0);
+    self.health -= shaped.hitDamage * self.shapedDamageMul + (wh ? warden.hitDamage : 0);
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
     self.shake += 0.015;
     if (self.health <= 0) { self.health = 0; self.dying = 1e-4; self.lock = -1; }
   }
 
+  /** The worn robe's modest guard against the Shaped's blows (game/robes.js; 1 = none). */
+  self.shapedDamageMul = 1;
   /** Damage that no bend-step slips (the Warden's spikes): a blow, and death at nothing left. */
   self.hurtRaw = (amount) => {
     if (self.dying > 0 || amount <= 0) return;

@@ -89,7 +89,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const lit = { samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES], storage: [...ATMO_MATERIAL_BUFFERS, 'shadowData'] };
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'clothRobe', 'clothBand', 'clothSash', 'spellLights', ...ENV_UNIFORMS],
     samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -100,7 +100,10 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const frostCreep = new Vector4(0, 0, 0, 0);
   mat.setVector4('clothFrost', frostCreep);
   const tint = opts.tint || [1, 1, 1];
-  mat.setVector4('clothTint', new Vector4(tint[0], tint[1], tint[2], 1));
+  const tintV = new Vector4(tint[0], tint[1], tint[2], 1);
+  // Robe look (game/robes.js): x = embroidered hem band on, y = sash re-dyed; band / sash colours.
+  const robeV = new Vector4(0, 0, 0, 0), bandV = new Vector4(0, 0, 0, 0), sashV = new Vector4(0, 0, 0, 0);
+  mat.setVector4('clothTint', tintV); mat.setVector4('clothRobe', robeV); mat.setVector4('clothBand', bandV); mat.setVector4('clothSash', sashV);
   mat.setArray4('spellLights', clipmap.spellLights); // fire, lantern and spell light on the robe
   mat.backFaceCulling = false;
   mesh.material = mat;
@@ -160,6 +163,13 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
 
   return {
     wraith, mesh, fur, fx, material: mat, clothParams,
+    /** Wear a robe's look (game/robes.js entry): dye, hem band, sash. */
+    setRobe(r) {
+      tintV.set(r.tint[0], r.tint[1], r.tint[2], 1);
+      robeV.set(r.band ? 1 : 0, r.sash ? 1 : 0, 0, 0);
+      if (r.band) bandV.set(r.band[0], r.band[1], r.band[2], 1);
+      if (r.sash) sashV.set(r.sash[0], r.sash[1], r.sash[2], 1);
+    },
     /** Element light at the fingertips (0 = none) and the cowl light (1 = full health). */
     handLight: 0.6, cowlLight: 1,
     handGlowSize: 0.035,

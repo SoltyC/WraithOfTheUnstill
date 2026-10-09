@@ -83,7 +83,8 @@ export class Surf {
     let a = 0;
     if (this.grounded) {
       // The crest: pushes toward cruise (or boost when pushing forward).
-      const cruise = this.throttle > 0 ? T.cruise + (T.boost - T.cruise) * this.throttle : T.cruise;
+      // (speedMul: the runner's robe — a modest lift to the crest; 1 otherwise.)
+      const cruise = (this.throttle > 0 ? T.cruise + (T.boost - T.cruise) * this.throttle : T.cruise) * (this.speedMul || 1);
       // It also carries the drag up to cruise, so the flat settles at cruise, not below it.
       if (!this.exiting && this.throttle >= 0) {
         const sc = Math.min(this.speed, cruise);

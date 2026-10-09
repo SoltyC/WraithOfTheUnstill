@@ -67,6 +67,9 @@ uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
 uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1)
 uniform clothTint: vec4f;            // rgb = robe dye (multiplies the outer garments), w = undyed trims kept (1)
+uniform clothRobe: vec4f;            // x = embroidered hem band, y = sash re-dyed (game/robes.js)
+uniform clothBand: vec4f;            // rgb = the band's thread
+uniform clothSash: vec4f;            // rgb = the sash's dye
 ${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -128,6 +131,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   else if (g == 10) { albedo = vec3f(0.24, 0.075, 0.058); sheenTint = vec3f(0.2, 0.12, 0.1); }
   // The Veiled wear dyed robes (the Wraith's tint is 1).
   if (g <= 4 || g == 10) { albedo *= uniforms.clothTint.rgb; }
+  if (g == 10 && uniforms.clothRobe.y > 0.5) { albedo = uniforms.clothSash.rgb; }
 
   // Large-scale wear and fading (tens of cm), and slubs in the yarn (cm).
   let wear = vn2(m * vec2f(3.1, 2.3) + vec2f(f32(g) * 7.3, 0.0));
@@ -158,6 +162,19 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     albedo *= 0.65 + 0.35 * (0.5 + 0.5 * twist);
   }
 
+  // A robe's embroidered hem band: a running lozenge between two ruled lines, a hand's breadth up
+  // from the hem (a little worn: the thread shows the wool through it).
+  if ((g == 0 || g == 1) && uniforms.clothRobe.x > 0.5) {
+    let v0 = select(0.09, 0.05, g == 1);
+    let bv = (edgeM - v0) / 0.14;
+    if (bv > 0.0 && bv < 1.0) {
+      let rule = 1.0 - smoothstep(0.06, 0.1, min(bv, 1.0 - bv));
+      let lz = abs(fract(m.x * 7.0) - 0.5) * 2.0;
+      let loz = 1.0 - smoothstep(0.0, 0.08, abs(lz * 0.5 + abs(bv - 0.5) - 0.42));
+      let thread = max(rule, loz) * (0.75 + 0.25 * slub);
+      albedo = mix(albedo, uniforms.clothBand.rgb, thread * 0.9);
+    }
+  }
   // Hem: darker where wet, dusted with snow along the very edge, patchy.
   if (g == 0 || g == 10) {
     let wet = 1.0 - smoothstep(0.0, 0.22, edgeM);

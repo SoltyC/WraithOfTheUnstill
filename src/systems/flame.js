@@ -15,7 +15,7 @@ export function addFlameSystem(g) {
   const { loop, controller, chapter, nav, hud, music, combat, clock, params, weather, shaped, sfx, SFX, wraithView, capture } = g;
   const graph = chapter.graph, flags = graph.flags, vars = graph.vars;
   const T = flameTuning;
-  const f = g.flame = { carrying: false, strength: 0.5 - 0.5, carryT: 0.5 - 0.5, drawn: false };
+  const f = g.flame = { carrying: false, strength: 0.5 - 0.5, carryT: 0.5 - 0.5, drawn: false, lifeMul: 1.5 - 0.5 };
   const sitesIdx = new Map((g.archSites || []).map((s, i) => [s.id, i]));
   const A = g.architecture.sites, glow = g.architecture.glow;
 
@@ -71,7 +71,7 @@ export function addFlameSystem(g) {
       f.carryT += dt;
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
       const rate = (controller.surf.active ? T.surf : sp > 4 ? T.run : 1) * (weather.snow > 0.5 ? T.snow : 1);
-      f.strength -= rate * dt / T.life;
+      f.strength -= rate * dt / (T.life * f.lifeMul); // lifeMul: the ember robe
       if (combat.health < lastHealth - 0.5) f.strength -= T.blow;
       if (combat.dying > 0) out('You fell, and it went with you.');
       else if (f.strength <= 0) out('It guttered and died.');
