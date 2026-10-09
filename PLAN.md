@@ -395,6 +395,10 @@ placed by Q3; trunks collide (`solids.js` circles). Judged against
   lift; photo spot `p8-forest-shafts`. **Open:** motes and pollen in the beams, a dawn/dusk
   thickening, and a sky-occlusion term under the crowns (the near floor is still very dark).
 
+### M4c — Forest floor and ground cover (user, 2026-10-10)
+
+- **Done 2026-10-10:** the canopy map, light under the crowns, forest-floor scans, ground cover (leaf drifts, needles, twigs, ferns, sorrel, moss, bracken; meadow flowers, clover, plantain, pebbles), and grass and ferns parting around the Wraith. **Open:** shrubs, fallen logs and stumps, mossy boulders; ground cover casting into cascade 0.
+
 ### M5 — Rivers and water
 
 - **Water surface** from the baked hydrology (`hydro.rgba8`): a river mesh/ribbon along channels

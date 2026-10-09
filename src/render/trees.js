@@ -13,16 +13,17 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import '@babylonjs/core/Meshes/thinInstanceMesh.js';
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
-import { BaseTexture } from '@babylonjs/core/Materials/Textures/baseTexture.js';
 import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { RenderingGroup } from '@babylonjs/core/Rendering/renderingGroup.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { SHADOW_SPLITS } from './shadows.js';
+import { CANOPY_N } from './atmosphere.js';
 import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL, treeLeafDepthFragmentWGSL } from '../shaders/trees.wgsl.js';
 import { growTree, SPECIES } from '../world/trees/generator.js';
-import { drawLeafAtlas, ATLAS } from './leafAtlas.js';
+import { drawLeafAtlas } from './leafAtlas.js';
+import { canvasAtlasTexture } from './atlasTexture.js';
 import { MAT, MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 import { hashU32, valueNoise } from '../terrain/noise.js';
 import { bindEnvironment, env } from './environment.js';
@@ -41,19 +42,7 @@ const SEED = 0x7ee5;
 const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z, 0x165667b1) ^ s)) >>> 0) / 4294967296;
 
 /** Upload the leaf atlas as a mipmapped GPU texture (wrapped for Babylon). */
-function leafAtlasTexture(engine, scene) {
-  const dev = engine._device, size = ATLAS.size, mips = Math.floor(Math.log2(size)) + 1;
-  const tex = dev.createTexture({ label: 'leaf-atlas', size: [size, size, 1], format: 'rgba8unorm-srgb', mipLevelCount: mips, usage: 0x04 | 0x02 | 0x10 });
-  dev.queue.copyExternalImageToTexture({ source: drawLeafAtlas() }, { texture: tex, premultipliedAlpha: false }, [size, size, 1]);
-  engine._textureHelper.generateMipmaps(tex, mips, 0);
-  const it = engine.wrapWebGPUTexture(tex);
-  it.generateMipMaps = true; it._useSRGBBuffer = true; it.useMipMaps = true;
-  it.samplingMode = Constants.TEXTURE_TRILINEAR_SAMPLINGMODE;
-  it.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; it.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
-  it._cachedAnisotropicFilteringLevel = 4;
-  it._hardwareTexture.setUsage(0, true, false, false, false, size, size, 1);
-  return new BaseTexture(scene, it);
-}
+const leafAtlasTexture = (engine, scene) => canvasAtlasTexture(engine, scene, drawLeafAtlas(), 'leaf-atlas');
 
 /** The triangles of one kind (0 bark, 1 leaf) from a grown tree, vertices compacted. */
 function splitKind(t, kind) {
@@ -188,6 +177,55 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
     const i = Math.max(0, Math.min(n - 1, Math.floor((x + 4096) / 8))), j = Math.max(0, Math.min(n - 1, Math.floor((4096 - z) / 8)));
     return ov[j * n + i] / 32 - 128;
   }
+  /** The tree of cell (gx, gz), if any, into T (deterministic: the same tree whenever asked). */
+  const T = { x: 0.5, z: 0.5, si: 0, v: 0, sc: 0.5 };
+  function treeAt(gx, gz) {
+    const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 1)) * CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * CELL;
+    // Groves (slow noise), sparse singles between.
+    const grove = valueNoise(x / 170, z / 170, SEED + 3) * 0.65 + valueNoise(x / 55, z / 55, SEED + 4) * 0.35;
+    const p = grove > 0.12 ? 0.25 + 0.6 * Math.min(1, (grove - 0.12) / 0.3) : 0.012;
+    if (h01(gx, gz, SEED + 5) > p) return false;
+    if (meadowAt(x, z) < 0.6) return false;
+    const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
+    if (sl > 5) return false;
+    for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
+    // Species: pines above ~330 m and on rises; oaks in the low groves; birches at edges.
+    const hs = h01(gx, gz, SEED + 6), alt = Math.max(0, Math.min(1, (h - 280) / 120));
+    T.si = hs < alt * 0.85 ? 0 : grove > 0.3 ? (hs < 0.65 ? 1 : 2) : (hs < 0.5 ? 2 : 1);
+    T.v = Math.floor(h01(gx, gz, SEED + 7) * VARIANTS);
+    T.x = x; T.z = z; T.sc = 0.75 + 0.5 * h01(gx, gz, SEED + 8);
+    return true;
+  }
+
+  // ── Crown cover (the world map shaders read: canopyAt in shaders/atmoMaterial.wgsl.js) ─────
+  // Every tree's crown splatted at 4 m over the whole world, once (and again when exclusions
+  // change): the forest floor, the understory, the grass under trees and the light under the
+  // crowns all follow it.
+  const CROWN_R = [3.2, 6.5, 4.2], CROWN_A = [0.85, 0.95, 0.6]; // pine, oak, birch: radius (m) at scale 1, opacity
+  let canopyDirty = true;
+  function buildCanopy() {
+    const N = CANOPY_N, cs = 8192 / N, a = new Uint8Array(N * N);
+    const g0 = Math.floor(-4096 / CELL), g1 = Math.ceil(4096 / CELL);
+    for (let gz = g0; gz <= g1; gz++) for (let gx = g0; gx <= g1; gx++) {
+      if (!treeAt(gx, gz)) continue;
+      const r = CROWN_R[T.si] * T.sc, op = CROWN_A[T.si];
+      const i0 = Math.max(0, Math.floor((T.x - r - 2 + 4096) / cs)), i1 = Math.min(N - 1, Math.floor((T.x + r + 2 + 4096) / cs));
+      const j0 = Math.max(0, Math.floor((T.z - r - 2 + 4096) / cs)), j1 = Math.min(N - 1, Math.floor((T.z + r + 2 + 4096) / cs));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const dx = (i + 0.5) * cs - 4096 - T.x, dz = (j + 0.5) * cs - 4096 - T.z;
+        const k = op * Math.min(1, Math.max(0, (r + 2 - Math.sqrt(dx * dx + dz * dz)) / 4));
+        if (k > 0) { const o = j * N + i; a[o] = a[o] + Math.round(k * (255 - a[o])); }
+      }
+    }
+    // A 3×3 blur: crowns merge into a canopy, edges soften.
+    const b = new Uint8Array(N * N);
+    for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+      const o = j * N + i;
+      b[o] = (a[o] * 4 + (a[o - 1] + a[o + 1] + a[o - N] + a[o + N]) * 2 + a[o - N - 1] + a[o - N + 1] + a[o + N - 1] + a[o + N + 1]) >> 4;
+    }
+    atmo.canopyTex.update(b);
+    canopyDirty = false;
+  }
   function rebuild(cx, cz, fresh, now) {
     for (const s of sets) s.n = 0;
     fading = false; canopySum = 0;
@@ -197,20 +235,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 1)) * CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * CELL;
       const dx = x - cx, dz = z - cz, d2 = dx * dx + dz * dz;
       if (d2 > RADIUS * RADIUS) continue;
-      // Groves (slow noise), sparse singles between.
-      const grove = valueNoise(x / 170, z / 170, SEED + 3) * 0.65 + valueNoise(x / 55, z / 55, SEED + 4) * 0.35;
-      const p = grove > 0.12 ? 0.25 + 0.6 * Math.min(1, (grove - 0.12) / 0.3) : 0.012;
-      if (h01(gx, gz, SEED + 5) > p) continue;
-      if (meadowAt(x, z) < 0.6) continue;
-      const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
-      if (sl > 5) continue;
-      let skip = false;
-      for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) { skip = true; break; } }
-      if (skip) continue;
-      // Species: pines above ~330 m and on rises; oaks in the low groves; birches at edges.
-      const hs = h01(gx, gz, SEED + 6), alt = Math.max(0, Math.min(1, (h - 280) / 120));
-      const si = hs < alt * 0.85 ? 0 : grove > 0.3 ? (hs < 0.65 ? 1 : 2) : (hs < 0.5 ? 2 : 1);
-      const v = Math.floor(h01(gx, gz, SEED + 7) * VARIANTS);
+      if (!treeAt(gx, gz)) continue;
+      const si = T.si, v = T.v;
       // Detail and presence by distance (with hysteresis against the last placement). A tree whose
       // state changed since the last placement dissolves across over FADE s (the vertex shader
       // reads the start time and kind from world2), drawn in both sets meanwhile; a tree that keeps
@@ -219,7 +245,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       const want = d > LOD_OUT + (was ? HYST : -HYST) ? 0 : d < LOD_NEAR + (was === 1 ? HYST : -HYST) ? 1 : 2;
       if (want) cur.set(key, want);
       if (!want && !was) continue;
-      const sc = 0.75 + 0.5 * h01(gx, gz, SEED + 8), yaw = h01(gx, gz, SEED + 9) * 6.283;
+      const sc = T.sc, yaw = h01(gx, gz, SEED + 9) * 6.283;
       const w4 = h01(gx, gz, SEED + 10), w5 = h01(gx, gz, SEED + 11), w6 = (h01(gx, gz, SEED + 12) - 0.5) * 2, w7 = (h01(gx, gz, SEED + 13) - 0.5) * 2;
       // Per set: 0 not drawn, else the fade kind (FADE_* in shaders/trees.wgsl.js).
       let kNear = 0, kFar = 0;
@@ -236,7 +262,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         const set = byKey(si, v, lod);
         if (set.n >= set.max) continue;
         const o = set.n++ * 16, b = set.buf;
-        b[o] = x; b[o + 1] = z; b[o + 2] = sc; b[o + 3] = yaw;
+        b[o] = T.x; b[o + 1] = T.z; b[o + 2] = sc; b[o + 3] = yaw;
         b[o + 4] = w4; b[o + 5] = w5; b[o + 6] = w6; b[o + 7] = w7;
         b[o + 8] = now; b[o + 9] = kind;
       }
@@ -272,6 +298,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       const now = (performance.now() - t0) * 0.001;
       for (const l of lodV) l.w = now;
       this.canopy += (canopyTarget - this.canopy) * Math.min(1, (now - lastNow) * 0.7); lastNow = now;
+      if (canopyDirty && streamer.overview) { const tc = performance.now(); buildCanopy(); api.canopyMs = performance.now() - tc; }
       const dx = this.camX - lastX, dz = this.camZ - lastZ, m2 = dx * dx + dz * dz;
       if (m2 > REPLACE * REPLACE) {
         lastX = this.camX; lastZ = this.camZ;
@@ -282,7 +309,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         cleanAt = 0; rebuild(lastX, lastZ, false, now);
       }
     },
-    setExclusions(list) { exclude = list; lastX = 1e9; },
+    setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },
     makeShadowMaterial(name, light, origin) {
       const leaf = name.includes('-leaf-');
       const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: leaf ? 'treeShadow' : 'treeBarkShadow' }, {

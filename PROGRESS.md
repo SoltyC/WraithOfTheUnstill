@@ -249,7 +249,17 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
   - A tree that changes detail, or enters or leaves the 365 m edge, dissolves over 0.6 s. Nothing pops, and no dither remains at rest.
   - Tree shadows: cascade 1 gets shadow-only far-geometry copies of every tree within 155 m. Receivers in cascade 0 read cascade 1 for the trees.
 - **God rays (M4b):** a forest haze under the canopy is lit through the crowns by the shaft march (its own ratio). Under a full canopy, exposure lifts up to +1.4 stops. Canopy cover is a weighted count of the trees within 45 m. Photo spot `p8-forest-shafts`.
-- **Next step:** motes in the beams; sky occlusion under the crowns (the near floor is very dark); the understory (ferns, shrubs, flowers, logs); trunk collision; the frost↔meadow border; far-tree impostors if the budget needs them.
+- **Forest floor, light under the crowns, ground cover, the grass parting (user: "the forest floor … is pretty vacant", "quite dark in the forest", "ground coverage of the meadow", "pushing some grass over"):**
+  - **Canopy map:** a world crown-cover map (2048² at 4 m, built once at load in 97 ms from the tree placement) feeds four things.
+    - Light: under the crowns the open sky is partly hidden and a warm-green fill comes off the sunlit leaves. This applies to the ground, the grass, the trees, the cloth and the ground cover.
+    - Ground: the forest-floor, litter and moss scans replace the turf under the crowns.
+    - Grass: it thins and shortens under the crowns.
+    - Ground cover: it picks its kinds from the map.
+  - **Ground cover:** a new stateless GPU ring of 84² cells at 0.6 m, each item built from cards on a ground-cover atlas drawn at load. It has drifts of fallen leaves, needle litter, twigs, ferns, sorrel, moss and bracken at the forest's edge. The open meadow gets daisy, buttercup and bellflower clumps, clover, plantain and pebbles, in patches. Ferns and flowers sway, and they lean away from the Wraith.
+  - **Grass push:** blades within 1.3 m of the Wraith, and of an 8-point trail behind it, lean away and spring back over ~2.5 s.
+  - **Found:** a WGSL uniform written `array<vec4f, 8>` (with a space) silently never received data from Babylon. It must be written `array<vec4f,8>`.
+  - **Perf** at 0.7: `p8-forest-floor` (new spot) 15.8 ms, `p8-forest-shafts` 16.7 ms, meadow noon 14.9 ms. The ground cover costs ~0.6 ms. The meadow ground skips the turf layers under a full canopy.
+- **Next step:** motes in the beams; shrubs and fallen logs; trunk collision; the frost↔meadow border; the terrain shader's cost (~5 ms of scene time in a grove, the largest single item).
 
 ### Session — 2026-10-09 — Phase 7 visual pass (user: "extremely high graphics quality"), branch `claude/wraithoftheunstill-phase-7`
 

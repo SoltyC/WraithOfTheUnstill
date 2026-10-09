@@ -121,7 +121,11 @@ export async function addEnvironmentSystems(g) {
     gr.time = clock.simTime;
     gr.wind = Math.min(1.6, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.4 + 2 * warden.gust);
     gr.density = 1;
+    gr.px = controller.pos.x; gr.py = controller.pos.y; gr.pz = controller.pos.z; gr.dt = clock.realDt;
+    gr.pushK = 1;
     gr.update();
+    const gc = g.groundCover;
+    if (gc) { gc.time = clock.simTime; gc.wind = gr.wind; gc.update(); }
   } });
   let hazeBase = 0;
   const HAZE = 0.0032; // 1/m at the ground under a full canopy (~1 km visibility; local, 200 m)

@@ -425,8 +425,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (wMeadow > 0.001) {
     let Ngm = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
-    let ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z));
-    var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w);
+    let canopy = canopyAt(wp.xz);
+    let ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy);
+    var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w, canopy);
     let exm = uniforms.fogParams.z * atmoExposure();
     for (var li = 0u; li < 4u; li++) {
       let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];

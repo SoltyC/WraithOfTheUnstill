@@ -80,10 +80,14 @@ export async function createWorld(g) {
   const grass = (await import('../render/grass.js')).createGrass(scene, content.clipmap, atmosphere);
   for (const m of grass.materials) bindShadows(m, shadows);
   grass.freeze();
+  // Ground cover (Phase 8): leaf drifts, ferns, flowers, clover — built on the GPU like the grass.
+  const groundCover = (await import('../render/groundcover.js')).createGroundCover(scene, content.clipmap, atmosphere, grass.push);
+  for (const m of groundCover.materials) bindShadows(m, shadows);
+  groundCover.freeze();
   // Trees (Phase 8): grown variants in groves; near ones shadow the near cascades, far the far.
   const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer);
   for (const m of trees.materials) bindShadows(m, shadows);
-  for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0); // not cascade 0: its 24 m reach holds few trees, and every caster costs there
+  for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0);
   trees.freeze();
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
@@ -106,5 +110,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, trees });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, trees });
 }

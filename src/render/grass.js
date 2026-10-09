@@ -26,6 +26,10 @@ export function createGrass(scene, clipmap, atmo) {
   ShaderStore.ShadersStoreWGSL.grassVertexShader = grassVertexWGSL;
   ShaderStore.ShadersStoreWGSL.grassFragmentShader = grassFragmentWGSL;
   const params = new Vector4(0, 1, 1, 0);
+  // Push: the Wraith parts the grass where it passes; the blades spring back over ~2.5 s. A trail
+  // of PUSH_N points (x, y, z, strength): [0] follows the Wraith, the rest are where it was.
+  const PUSH_N = 8, push = new Array(PUSH_N * 4).fill(0);
+  let trailHead = 1, lastX = 0, lastZ = 0;
   const rings = [], mats = [];
   GRASS_RINGS.forEach(([cell, n, blades, seg], ri) => {
     const vb = vertsPerBlade(seg), clumps = n * n, nv = clumps * blades * vb;
@@ -47,7 +51,7 @@ export function createGrass(scene, clipmap, atmo) {
     const rp = new Vector4(0, 1, 1, ri);
     const mat = new ShaderMaterial('grass' + ri, scene, { vertex: 'grass', fragment: 'grass' }, {
       attributes: ['position'],
-      uniforms: ['viewProjection', 'levels', 'grassRing', 'grassParams', 'spellLights', ...ENV_UNIFORMS],
+      uniforms: ['viewProjection', 'levels', 'grassRing', 'grassParams', 'grassPush', 'spellLights', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
       storageBuffers: ['levelData', 'biomeA', 'windMap', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
       shaderLanguage: ShaderLanguage.WGSL,
@@ -57,7 +61,7 @@ export function createGrass(scene, clipmap, atmo) {
     mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
     mat.setStorageBuffer('windMap', clipmap.buffers.wind);
-    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp);
+    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setArray4('grassPush', push);
     mat.setArray4('spellLights', clipmap.spellLights);
     mat.backFaceCulling = false;
     mesh.material = mat;
@@ -65,9 +69,25 @@ export function createGrass(scene, clipmap, atmo) {
   });
   return {
     meshes: rings.map((r) => r.mesh), materials: mats,
+    /** The push trail (shared with the ground cover). */
+    push,
     /** Owner fields, set before update(). */
     time: 0.5, wind: 1.5 - 0.5, density: 1.5 - 0.5,
-    update() { for (const r of rings) { r.rp.x = this.time; r.rp.y = this.wind; r.rp.z = this.density; } },
+    /** The Wraith's position (m), how much it parts the grass (0 airborne … 1), and dt (s). */
+    px: 0.5, py: 0.5, pz: 0.5, pushK: 1.5 - 0.5, dt: 0.5 - 0.5,
+    update() {
+      for (const r of rings) { r.rp.x = this.time; r.rp.y = this.wind; r.rp.z = this.density; }
+      // Trail: drop a point every 0.45 m travelled; the old ones fade.
+      for (let i = 1; i < PUSH_N; i++) push[i * 4 + 3] = Math.max(0, push[i * 4 + 3] - this.dt * 0.4);
+      const lx = this.px - lastX, lz = this.pz - lastZ;
+      if (lx * lx + lz * lz > 0.45 * 0.45 || lx * lx + lz * lz > 100) {
+        const o = trailHead * 4;
+        push[o] = lastX; push[o + 1] = this.py; push[o + 2] = lastZ; push[o + 3] = lx * lx + lz * lz > 100 ? 0 : this.pushK;
+        trailHead = trailHead + 1 >= PUSH_N ? 1 : trailHead + 1;
+        lastX = this.px; lastZ = this.pz;
+      }
+      push[0] = this.px; push[1] = this.py; push[2] = this.pz; push[3] = this.pushK;
+    },
     bindState(ts) { for (const m of mats) { m.setStorageBuffer('stateFine0', ts.fine[0]); m.setStorageBuffer('stateAtlas0', ts.atlas[0]); m.setStorageBuffer('stateParams', ts.params); m.setStorageBuffer('stateFine1', ts.fine[1]); } },
     freeze() { for (const m of mats) { m.freeze(); fastFrozenIsReady(m); } },
   };

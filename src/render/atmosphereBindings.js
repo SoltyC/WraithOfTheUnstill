@@ -4,6 +4,7 @@ export function bindAtmosphere(mat, atmo) {
   mat.setTexture('skyViewSun', atmo.skyViewSun);
   mat.setTexture('skyViewMoon', atmo.skyViewMoon);
   mat.setTexture('aerialLut', atmo.aerialLut);
+  mat.setTexture('canopyTex', atmo.canopyTex);
   mat.setStorageBuffer('atmoParams', atmo.atmoParams);
   mat.setStorageBuffer('atmoLight', atmo.atmoLight);
 }

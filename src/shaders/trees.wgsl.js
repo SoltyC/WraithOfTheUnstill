@@ -164,8 +164,9 @@ ${leafPass ? `
   let vis = shadowVisibilityFast(wp, camPos);
   let nl = dot(N, L);
   let diff = clamp((nl + 0.4) / 1.4, 0.0, 1.0);
-  let sky = shIrradiance(N) * uniforms.envMisc.w * inner;
-  col = albedo * (key * diff * vis * inner / PI + sky);
+  let canopy = canopyAt(wp.xz);
+  let sky = shIrradiance(N) * uniforms.envMisc.w * inner * mix(1.0, canopySky(canopy), 1.0 - info.w);
+  col = albedo * (key * diff * vis * inner / PI + sky + canopyFill(canopy, N) * inner * 0.6);
   // Light through the leaves toward the sun.
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5);
   col += key * albedo * vec3f(0.9, 1.15, 0.55) * back * vis * 0.45;
@@ -178,8 +179,9 @@ ${leafPass ? `
   N = bk.N;
   let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
   let nl = clamp(dot(N, L), 0.0, 1.0);
-  let sky = shIrradiance(N) * uniforms.envMisc.w * mix(1.0, bk.ao, 0.8);
-  col = albedo * (key * nl * vis / PI + sky);
+  let canopy = canopyAt(wp.xz);
+  let sky = shIrradiance(N) * uniforms.envMisc.w * mix(1.0, bk.ao, 0.8) * mix(1.0, canopySky(canopy), 1.0 - info.w);
+  col = albedo * (key * nl * vis / PI + sky + canopyFill(canopy, N) * mix(1.0, bk.ao, 0.8));
   col += spellLit(wp, N, albedo, 0.0, ex);`}
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);

@@ -4,7 +4,7 @@
 
 import { ATMO_PARAMS_WGSL, ATMO_COMMON_WGSL, AP_RES, AP_SLICES } from './atmosphere.wgsl.js';
 
-export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut'];
+export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex'];
 export const ATMO_MATERIAL_BUFFERS = ['atmoParams', 'atmoLight'];
 
 export const ATMO_MATERIAL_WGSL = /* wgsl */ `
@@ -17,6 +17,8 @@ var skyViewMoon: texture_2d<f32>;
 var skyViewMoonSampler: sampler;
 var aerialLut: texture_2d<f32>;
 var aerialLutSampler: sampler;
+var canopyTex: texture_2d<f32>;
+var canopyTexSampler: sampler;
 var<storage, read> atmoParams: AtmoParams;
 var<storage, read> atmoLight: array<vec4f,13>;
 ${ATMO_COMMON_WGSL}
@@ -34,6 +36,18 @@ fn shIrradiance(n: vec3f) -> vec3f {
         + atmoLight[10].xyz * 0.315392 * (3.0 * z * z - 1.0) + atmoLight[11].xyz * 1.092548 * x * z
         + atmoLight[12].xyz * 0.546274 * (x * x - y * y);
   return max(e / PI_A, vec3f(0.0));
+}
+/** Crown cover over a world point, 0..1 (render/trees.js builds the world map at 4 m: 0 off the
+ *  meadow and in the open, ~1 in a grove). */
+fn canopyAt(p: vec2f) -> f32 {
+  return textureSampleLevel(canopyTex, canopyTexSampler, (p + 4096.0) / 8192.0, 0.0).r;
+}
+/** Under the crowns the open sky is partly hidden (scale the sky IBL by this)… */
+fn canopySky(c: f32) -> f32 { return 1.0 - 0.45 * c; }
+/** …and the sunlit leaves above and around send down a warm-green fill: irradiance/π like the
+ *  sky term (add to it). The reference's forest is never black in the shade. */
+fn canopyFill(c: f32, N: vec3f) -> vec3f {
+  return atmoKeyColor() * c * (0.6 + 0.4 * clamp(N.y, 0.0, 1.0)) * vec3f(0.85, 1.0, 0.58) * (0.13 / PI_A);
 }
 /** Eye-adaptation exposure computed by the ambient pass (multiply with the user exposure bias). */
 fn atmoExposure() -> f32 { return atmoLight[3].w; }

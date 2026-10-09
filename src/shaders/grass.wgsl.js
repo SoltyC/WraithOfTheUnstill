@@ -22,26 +22,10 @@ import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js
 export const GRASS_RINGS = [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]];
 export const vertsPerBlade = (seg) => (seg + 1) * 2;
 
-export const grassVertexWGSL = /* wgsl */ `
-attribute position: vec3f;           // x = clump id, y = blade, z = vertex in blade (row*2 + side)
-uniform viewProjection: mat4x4f;
-uniform cameraPosition: vec3f;
-uniform levels: array<vec4f,16>;
-uniform grassRing: vec4f;            // x = cell (m), y = grid cells per side, z = inner skip half (m), w = segments
-uniform grassParams: vec4f;          // x = time (s), y = wind strength (0 stilled … 1), z = density ×, w = ring index
-var<storage, read> levelData: array<vec4f>;
-var<storage, read> biomeA: array<u32>;
-var<storage, read> windMap: array<u32>;
-varying vT: f32;                     // 0 root … 1 tip
-varying vSide: f32;                  // −1 … 1 across
-varying vWorldPos: vec3f;
-varying vNormal: vec3f;
-varying vSeed: f32;
-varying vDry: f32;
-
-${STATE_SAMPLE_WGSL}
-${STATE_COMPACTION_WGSL}
-
+/** Field lookups shared with the ground cover (shaders/groundcover.wgsl.js): hashes, the rendered
+ *  ground height, the meadow weight, the wind direction, value noise. Needs levels, levelData,
+ *  biomeA and windMap declared. */
+export const FIELD_WGSL = /* wgsl */ `
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
 const W_HALF: f32 = 4096.0;
@@ -84,6 +68,32 @@ fn vn(p: vec2f) -> f32 {
   return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
 }
 
+`;
+
+export const grassVertexWGSL = /* wgsl */ `
+attribute position: vec3f;           // x = clump id, y = blade, z = vertex in blade (row*2 + side)
+uniform viewProjection: mat4x4f;
+uniform cameraPosition: vec3f;
+uniform levels: array<vec4f,16>;
+uniform grassRing: vec4f;            // x = cell (m), y = grid cells per side, z = inner skip half (m), w = segments
+uniform grassParams: vec4f;          // x = time (s), y = wind strength (0 stilled … 1), z = density ×, w = ring index
+uniform grassPush: array<vec4f,8>;  // the Wraith and its trail: x, y, z, strength (render/grass.js)
+var<storage, read> levelData: array<vec4f>;
+var<storage, read> biomeA: array<u32>;
+var<storage, read> windMap: array<u32>;
+var canopyTex: texture_2d<f32>;
+var canopyTexSampler: sampler;
+varying vT: f32;                     // 0 root … 1 tip
+varying vSide: f32;                  // −1 … 1 across
+varying vWorldPos: vec3f;
+varying vNormal: vec3f;
+varying vSeed: f32;
+varying vDry: f32;
+
+${STATE_SAMPLE_WGSL}
+${STATE_COMPACTION_WGSL}
+
+${FIELD_WGSL}
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   let id = u32(vertexInputs.position.x + 0.5);
@@ -109,7 +119,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // Density: the meadow, patches, not on steep ground.
   let mw = gMeadow(root.x, root.y);
   let patchN = vn(root * 0.05) * 0.7 + vn(root * 0.21) * 0.3;
-  let dens = smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * uniforms.grassParams.z;
+  // Under the crowns the grass thins to a few shade-tolerant tufts (the forest floor shows).
+  let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;
+  let dens = smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * uniforms.grassParams.z
+           * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
   if (h3 > dens) { keep = 0.0; }
   let gy = gGround(root.x, root.y) + stateOffset(root.x, root.y);
   let gy2 = gGround(root.x + 0.7, root.y); let gy3 = gGround(root.x, root.y + 0.7);
@@ -121,7 +134,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat);
+  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
@@ -140,7 +153,25 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let phase = dot(root, wd) * 0.09 - time * 1.6;
   let gust = 0.55 + 0.45 * sin(phase) * sin(phase * 0.37 + 1.3) + 0.15 * sin(time * 3.1 + h1 * 6.28);
   let windAmt = uniforms.grassParams.y * gust;
-  let lean = vec2f(sin(yaw * 1.7), cos(yaw * 1.3)) * (0.15 + 0.35 * h2) + wd * windAmt * 0.9 + vec2f(face.y, -face.x) * flat * 1.6;
+  var lean = vec2f(sin(yaw * 1.7), cos(yaw * 1.3)) * (0.15 + 0.35 * h2) + wd * windAmt * 0.9 + vec2f(face.y, -face.x) * flat * 1.6;
+  // Parted by the Wraith: blades within ~1.3 m of it (and of where it just was) lean away and
+  // spring back as the trail fades.
+  if (ring < 1.5) {
+    var pv = vec2f(0.0);
+    for (var i = 0u; i < 8u; i++) {
+      let P = uniforms.grassPush[i];
+      if (P.w <= 0.0) { continue; }
+      let dv = root - P.xz; let d = length(dv);
+      if (d < 1.3 && abs(gy - P.y) < 2.5) {
+        let k = 1.0 - d / 1.3;
+        pv += dv / max(d, 0.05) * k * (0.6 + 0.4 * k) * P.w;
+      }
+    }
+    let pl = length(pv);
+    if (pl > 1.0) { pv /= pl; }
+    lean += pv * 2.2;
+    hgt *= 1.0 - 0.25 * min(length(pv), 1.0);
+  }
   // Blade spine: bend grows with t² (stiff root), length preserved roughly.
   let bend = lean * t * t;
   let up = sqrt(max(1.0 - dot(bend, bend) * 0.5, 0.15));
@@ -205,8 +236,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
   let ao = mix(0.35, 1.0, smoothstep(0.0, 0.6, t));
   let diff = clamp((nl + 0.3) / 1.3, 0.0, 1.0);
-  let sky = shIrradiance(N) * uniforms.envMisc.w * ao;
-  var col = albedo * (key * diff * vis / PI + sky);
+  let canopy = canopyAt(wp.xz);
+  let sky = shIrradiance(N) * uniforms.envMisc.w * ao * canopySky(canopy);
+  var col = albedo * (key * diff * vis / PI + sky + canopyFill(canopy, N) * ao);
   // Light through the blade: strongest looking toward the sun (the reference's glowing grass).
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 3.0) * (0.35 + 0.65 * t);
   col += key * albedo * vec3f(0.95, 1.3, 0.8) * back * vis * 0.32;

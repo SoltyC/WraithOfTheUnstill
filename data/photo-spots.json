@@ -1746,6 +1746,7 @@
     { "id": "p8-meadow-noon", "biome": "meadow", "label": "The meadow at noon from a rise", "time": 12.5, "weather": "clear", "player": [-100, 1000], "restoration": "restored", "camera": { "mode": "follow", "yaw": 2.6, "pitch": 0.12, "dist": 7 } },
     { "id": "p8-meadow-stilled", "biome": "meadow", "label": "The meadow stilled (grass rigid, the air close)", "time": 16.8, "weather": "clear", "player": [100, 800], "restoration": "stilled", "camera": { "mode": "follow", "yaw": 3.6, "pitch": 0.04, "dist": 5 } },
     { "id": "p8-border", "biome": "meadow", "label": "The snow line coming down into the meadow", "time": 15.5, "weather": "clear", "player": [300, 1450], "restoration": "restored", "camera": { "mode": "follow", "yaw": 3.3, "pitch": 0.1, "dist": 7 } },
-    { "id": "p8-forest-shafts", "biome": "meadow", "label": "In a grove toward a low sun: light through the leaves, shafts in the forest haze (PLAN.md M4b)", "time": 17.4, "weather": "clear", "player": [0, 600], "restoration": "restored", "camera": { "mode": "follow", "yaw": 4.3, "pitch": 0.1, "dist": 5 } }
+    { "id": "p8-forest-shafts", "biome": "meadow", "label": "In a grove toward a low sun: light through the leaves, shafts in the forest haze (PLAN.md M4b)", "time": 17.4, "weather": "clear", "player": [0, 600], "restoration": "restored", "camera": { "mode": "follow", "yaw": 4.3, "pitch": 0.1, "dist": 5 } },
+    { "id": "p8-forest-floor", "biome": "meadow", "label": "Deep in a grove in the afternoon: the forest floor (leaf litter, ferns, moss, sorrel) and the light under the crowns", "time": 15.2, "weather": "clear", "player": [-150, 850], "restoration": "restored", "camera": { "mode": "follow", "yaw": 2.2, "pitch": 0.28, "dist": 5 } }
 ]
 }

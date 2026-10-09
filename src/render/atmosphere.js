@@ -34,6 +34,9 @@ const vp = new Matrix();
  * @param {import('@babylonjs/core').Camera} camera
  * @param {import('@babylonjs/core').StorageBuffer} biomeA  world biome weights (exposure compensation)
  */
+/** Crown cover map: CANOPY_N² texels over the 8192 m world (4 m). */
+export const CANOPY_N = 2048;
+
 export function createAtmosphere(scene, camera, biomeA) {
   const engine = scene.getEngine();
   const tex = (w, h, name) => {
@@ -78,8 +81,14 @@ export function createAtmosphere(scene, camera, biomeA) {
   const csAerial = cs('atmoAerial', aerialCS, [P, ['outTex', 'storageTex', aerialLut], ...T, ...M]);
   const csAmbient = cs('atmoAmbient', ambientCS, [P, ['outLight', 'buffer', atmoLight], ...T, ['skySunSampler', 'sampler'], ['skySun', 'tex', skyViewSun], ['skyMoonSampler', 'sampler'], ['skyMoon', 'tex', skyViewMoon], ['biomeA', 'buffer', biomeA], ['meter', 'buffer', meterBuf]]);
 
+  // World crown cover (render/trees.js fills it once the trees are placed; empty until then).
+  const canopyTex = new RawTexture(new Uint8Array(CANOPY_N * CANOPY_N), CANOPY_N, CANOPY_N, Constants.TEXTUREFORMAT_R, scene, false, false,
+    Constants.TEXTURE_BILINEAR_SAMPLINGMODE, Constants.TEXTURETYPE_UNSIGNED_BYTE);
+  canopyTex.name = 'canopy'; canopyTex.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; canopyTex.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
+
   let builtHaze = NaN;
   return {
+    canopyTex,
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,

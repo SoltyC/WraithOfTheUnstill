@@ -215,7 +215,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let ao = mix(0.25, 1.0, occ);
   // Diffuse: wrapped (fabric scatters past the terminator).
   let diff = clamp((nl + 0.35) / 1.35, 0.0, 1.0);
-  let sky = shIrradiance(N) * uniforms.envMisc.w;
+  let canopy = canopyAt(wp.xz);
+  let sky = shIrradiance(N) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, N);
   var col = albedo * (key * diff * vis * mix(0.55, 1.0, occ) / PI + sky * ao * ambientK);
   // Sheen: fuzz at grazing view (Charlie), the fabric's defining highlight.
   let H = normalize(L + V);
@@ -353,7 +354,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let th = dot(T, Hh);
   let spec = pow(sqrt(max(1.0 - th * th, 0.0)), 60.0) * 0.05 + pow(sqrt(max(1.0 - th * th, 0.0)), 12.0) * albedo.x * 0.5;
   var col = albedo * key * diff * vis * selfShadow / PI + key * spec * vis * selfShadow
-          + albedo * shIrradiance(T) * uniforms.envMisc.w * selfShadow;
+          + albedo * (shIrradiance(T) * uniforms.envMisc.w * canopySky(canopyAt(wp.xz)) + canopyFill(canopyAt(wp.xz), T)) * selfShadow;
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
   fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)

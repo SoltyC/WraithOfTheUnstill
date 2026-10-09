@@ -405,3 +405,5 @@ GPU frame median at 2560×1440 output, render scale 0.7, RTX 3060, Windows Chrom
 
 - Before the prepass, trees cost ~5 ms at noon: scene ~3 ms (mostly leaf overdraw, pixel-bound: the scene part fell 8.2 → 4.5 ms going from scale 0.7 to 0.45 before the split), cascade-1 shadow copies ~1 ms, far trees in cascades 2–3 ~1 ms.
 - Still over the 11.1 ms (90 fps) budget, inside 60 fps. Next levers: impostors for far trees (beyond ~150 m), fewer leaf cards on the near crowns' interior, cached far cascades.
+
+Forest floor pass (2026-10-10, render scale 0.7): `p8-forest-floor` 15.8 ms, `p8-forest-shafts` 16.7 ms, `p8-meadow-noon` 14.9 ms. Ground cover ~0.6 ms; canopy-map build 97 ms once at load. In a grove the terrain costs ~7 ms in all (~4.9 ms of it scene shading), trees ~4.1 ms (shadows ~2.2 ms of that), grass ~0.6 ms.
