@@ -1,0 +1,7 @@
+2026-10-09T00:22:22.643Z 1/6 p7-monastery-approach: saved screenshots/phase-07-audit/p7-monastery-approach.png
+2026-10-09T00:22:34.139Z 2/6 p7-monastery-hall: saved screenshots/phase-07-audit/p7-monastery-hall.png
+2026-10-09T00:22:49.427Z 3/6 p7-camp-dusk: saved screenshots/phase-07-audit/p7-camp-dusk.png
+2026-10-09T00:23:00.327Z 4/6 p7-shrine-noon: saved screenshots/phase-07-audit/p7-shrine-noon.png
+2026-10-09T00:23:09.501Z 5/6 p7-monastery-aerial: saved screenshots/phase-07-audit/p7-monastery-aerial.png
+2026-10-09T00:23:18.163Z 6/6 p7-rock-outcrop: saved screenshots/phase-07-audit/p7-rock-outcrop.png
+2026-10-09T00:23:18.164Z Shots done: 6/6 spot(s) (p7-*) → screenshots/phase-07-audit/.
