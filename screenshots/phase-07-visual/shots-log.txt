@@ -1,0 +1,15 @@
+2026-10-09T07:45:56.110Z 1/6 p7-monastery-approach: saved screenshots/phase-07-visual/p7-monastery-approach.png
+2026-10-09T07:46:09.108Z 2/6 p7-monastery-hall: saved screenshots/phase-07-visual/p7-monastery-hall.png
+2026-10-09T07:46:19.828Z 3/6 p7-camp-dusk: saved screenshots/phase-07-visual/p7-camp-dusk.png
+2026-10-09T07:46:32.510Z 4/6 p7-shrine-noon: saved screenshots/phase-07-visual/p7-shrine-noon.png
+2026-10-09T07:46:42.919Z 5/6 p7-monastery-aerial: saved screenshots/phase-07-visual/p7-monastery-aerial.png
+2026-10-09T07:46:53.126Z 6/6 p7-rock-outcrop: saved screenshots/phase-07-visual/p7-rock-outcrop.png
+2026-10-09T07:46:53.168Z Shots done: 6/6 spot(s) (p7-*) → screenshots/phase-07-visual/.
+2026-10-09T07:47:00.440Z 1/1 p5-warden-golden: saved screenshots/phase-07-visual/p5-warden-golden.png
+2026-10-09T07:47:00.440Z Shots done: 1/1 spot(s) (p5-warden-golden*) → screenshots/phase-07-visual/.
+2026-10-09T07:47:07.458Z 1/1 p5-steppe-stilled: saved screenshots/phase-07-visual/p5-steppe-stilled.png
+2026-10-09T07:47:07.459Z Shots done: 1/1 spot(s) (p5-steppe-stilled*) → screenshots/phase-07-visual/.
+2026-10-09T07:47:14.631Z Shots done: 1/1 spot(s) (p5-steppe-restored*) → screenshots/phase-07-visual/.
+2026-10-09T07:47:14.631Z 1/1 p5-steppe-restored: saved screenshots/phase-07-visual/p5-steppe-restored.png
+2026-10-09T07:47:22.406Z 1/1 p5-pack-afternoon: saved screenshots/phase-07-visual/p5-pack-afternoon.png
+2026-10-09T07:47:22.407Z Shots done: 1/1 spot(s) (p5-pack-afternoon*) → screenshots/phase-07-visual/.

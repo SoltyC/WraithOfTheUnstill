@@ -354,3 +354,18 @@ budget even counting the atmosphere.
   is presented on alternating 2- and 3-refresh boundaries (11.4 / 17.1 ms), and 3–4-refresh frames
   (17–23 ms) cross the median + 4 line. The Phase 5 pack run had 12 of the same kind. A 60 Hz run is
   the gate configuration (DECISIONS, Phase 1 ruling) and should be repeated there.
+
+## Phase 7 visual pass — target T, 2026-10-09
+
+Windows Chrome headless on T's RTX 3060 (driven from WSL, `tools/winchrome/`), 2560×1440, render scale 1, GPU frame median from the timestamp queries over ~240 frames. Same spots, same build settings; "before" is commit 44b850d (before the visual pass), "after" is 2bf8f48.
+
+| Spot | Before | After | Δ |
+|---|---|---|---|
+| `p5-steppe-stilled` (open steppe) | 14.9 ms | 16.0 ms | +1.1 |
+| `p7-camp-dusk` (camp, fire) | 17.6 ms | 18.8 ms | +1.2 |
+| `p7-monastery-approach` | 18.4 ms | 20.3 ms | +1.9 |
+
+- `?bench=1&spot=p7-monastery-approach` (idle / walk / fly): GPU 21.3 / 18.9 / 13.4 ms median (run `perf/runs/2026-10-09T07-40-59-715Z.json`). 0 late pipelines in every run.
+- Disabling the architecture, the outcrop mesh, all rocks or the fire one at a time moved the frame by < 0.5 ms each: the visual pass's cost is spread (scanned materials on terrain cliffs, architecture and rocks in the shadow cascades, the valley fog term in compose).
+- Architecture: ~510k vertices / ~250k triangles in one static draw (+ the first cascade). GPU memory: the material arrays are ~380 MB (uncompressed RGBA8).
+- **Honest reading:** at native 1440p this machine was already over the 11.1 ms (90 fps) budget before this pass on these views (15–18 ms). Reaching 90 fps on the 3060 needs PLAN.md Q6: render scale ~0.7 with temporal upscaling (TAAU on the existing TAA), plus per-site LOD for the masonry and shadow LOD for outcrops. Not done yet.

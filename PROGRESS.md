@@ -4,7 +4,7 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
-- **Phase:** 7 (RPG layer), **in progress** — built and pushed, awaiting the user's play-through on T (see "Phase 7 open"). Phase 6 is closed (accepted by the user, 2026-10-04, on the MacBook re-shoot and the T bench), on condition that `src/main.js` is cut down first. Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
+- **Phase:** 7 (RPG layer), **in progress — visual pass under way on branch `claude/wraithoftheunstill-phase-7` (see Session log 2026-10-09 and PLAN.md)** — built and pushed, awaiting the user's play-through on T (see "Phase 7 open"). Phase 6 is closed (accepted by the user, 2026-10-04, on the MacBook re-shoot and the T bench), on condition that `src/main.js` is cut down first. Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 7 built** (commits 9ed68f1 …; DECISIONS.md "Phase 7"):
   - **`src/main.js` split** (1101 → ~190 lines): `src/boot/` (engine, world, actors, game facade) and `src/systems/` (one module per concern, same run order).
   - **Save v2** (`src/game/save/`): quest graph state and world flags, Echoes, shrines, lore, the explored map, ice formations, the Warden (dormant / rested where it lay down), forced weather, time, restoration, and the **dirty coarse terrain pages** — the window is written down into its pages, resident pages read back one per frame, evicted pages copied from the worker; a load hands them back to the worker's page store and they stream in as the Wraith approaches. v1 → v2 migration. `tools/capture/save-gate.mjs` automates the gate (marks → save → new page → load → check).
@@ -236,6 +236,16 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 - To verify on the GPU: ride the Run (all nine gates light), wake the three hall stones, the hounds at the watching stone and the den, the compass at 2560×1440. Not built yet: light beacons, lantern, bell, robes.
 
 ## Session log
+
+### Session — 2026-10-09 — Phase 7 visual pass (user: "extremely high graphics quality"), branch `claude/wraithoftheunstill-phase-7`
+
+- **Plan:** `PLAN.md` (art bar from the user's reference `screenshots/reference/forest-ruins-target.webp`, the quality foundation Q1–Q6, the frost visual pass V1–V9, the Phase 7 close-out, Phase 8 milestones with the reworked meadow Shaped). Audit shots before the pass: `screenshots/phase-07-audit/`.
+- **Built** (commits 981e304 … 2bf8f48; DECISIONS.md "Phase 7 visual pass"): a stilled look without the grey veil (valley fog, 22° ice halo, hanging snow, silver/steel grade); robes that read as wool and snow bounce in the sky SH; scanned CC0 PBR materials (`tools/textures/build.mjs`, `src/materials/library.js`, `shaders/materials.wgsl.js`); laid masonry with chamfered blocks, paving, drum columns, ruined tops, lost blocks, snow drifts and snow pillows (`world/masonry.js`); the monastery's buttresses, cornice and hall interior; felt tents, sleds, packs, hearth and GPU fire (`world/camp.js`, `render/fire.js`); fire and spell light on robes and stone; scanned rock on outcrops and cliffs; the Warden as an old glacier; carved staffs and lanterns; three robes with a journal page (`game/robes.js`, `systems/robes.js`).
+- **Verified on T (RTX 3060, Windows Chrome headless via `tools/winchrome/`):** every spot loads, 0 late pipelines, robes swap on the Wraith, fire burns at the hearth; shots in `screenshots/phase-07-visual/` (p7 spots, Warden, pack, steppe stilled/restored, the halo, a stilled overcast, before/after). Tests: 150 pass.
+- **Performance (PERF.md):** +1.1 to +1.9 ms on the GPU frame at 1440p; the 3060 was already at 15–18 ms native on these views — 90 fps needs render scale + TAAU (PLAN.md Q6), not built.
+- **Open (honest):** frozen ridge plumes; the far peaks' soft rock smudges; the lesser Shaped's glassy look; the monastery plinth from below; masonry/outcrop LODs; render scale + TAAU; the rest of the Phase 7 close-out (Echo stones 3 and 6, Run medal times, a load mid-escort, barks, journal sketches, story review, re-shoots of p6, the user's play-through gate).
+- **Next step:** the user reviews `screenshots/phase-07-visual/` (or plays: `npm run build && npm run preview`, `http://localhost:4173/`); then PLAN.md Q6 (render scale + TAAU, LODs) so the new look holds 90 fps, then the remaining close-out items.
+
 
 ### Session — 2026-10-09 — Hybrid Warden fight and quest rework (user request)
 
