@@ -21,8 +21,9 @@ import { fastFrozenIsReady } from './babylonTweaks.js';
  * @param {import('@babylonjs/core').Scene} scene
  * @param {any} clipmap
  * @param {any} atmo
+ * @param {any} wind  world/wind.js (its uniform block is shared)
  */
-export function createGrass(scene, clipmap, atmo) {
+export function createGrass(scene, clipmap, atmo, wind) {
   ShaderStore.ShadersStoreWGSL.grassVertexShader = grassVertexWGSL;
   ShaderStore.ShadersStoreWGSL.grassFragmentShader = grassFragmentWGSL;
   const params = new Vector4(0, 1, 1, 0);
@@ -51,7 +52,7 @@ export function createGrass(scene, clipmap, atmo) {
     const rp = new Vector4(0, 1, 1, ri);
     const mat = new ShaderMaterial('grass' + ri, scene, { vertex: 'grass', fragment: 'grass' }, {
       attributes: ['position'],
-      uniforms: ['viewProjection', 'levels', 'grassRing', 'grassParams', 'grassPush', 'spellLights', ...ENV_UNIFORMS],
+      uniforms: ['viewProjection', 'levels', 'grassRing', 'grassParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
       storageBuffers: ['levelData', 'biomeA', 'windMap', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
       shaderLanguage: ShaderLanguage.WGSL,
@@ -61,7 +62,7 @@ export function createGrass(scene, clipmap, atmo) {
     mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
     mat.setStorageBuffer('windMap', clipmap.buffers.wind);
-    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setArray4('grassPush', push);
+    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
     mat.setArray4('spellLights', clipmap.spellLights);
     mat.backFaceCulling = false;
     mesh.material = mat;

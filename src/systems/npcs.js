@@ -225,7 +225,8 @@ export function addNpcSystems(g) {
       w.bx = sim[0]; w.by = sim[1]; w.bz = sim[2];
       w.vx = n.path ? Math.sin(n.yaw) * 1.05 / xf.s : (n.vx || 0) / xf.s; w.vz = n.path ? Math.cos(n.yaw) * 1.05 / xf.s : (n.vz || 0) / xf.s;
       w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1); w.time = clock.simTime;
-      w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ;
+      if (g.wind) { g.wind.sx = n.x; g.wind.sz = n.z; g.wind.sample(); w.windStrength = g.wind.speed * 0.9; w.windX = g.wind.outX; w.windZ = g.wind.outZ; }
+      else { w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ; }
       n.view.time = clock.simTime;
       n.view.update();
       // Footprints where the feet planted (world space), sized to the figure.

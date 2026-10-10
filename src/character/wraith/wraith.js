@@ -139,8 +139,9 @@ export class Wraith {
     b.collapse = this.collapse;
     b.update(g);
     this._colliders();
-    // Wind: prevailing direction, gusting.
-    const gust = 0.6 + 0.4 * Math.sin(this.time * 1.7) * Math.sin(this.time * 0.63 + 1.3);
+    // Wind: the field's direction and strength here (systems/wraith.js samples it, gusts included);
+    // a little flutter of its own.
+    const gust = 0.9 + 0.1 * Math.sin(this.time * 2.3) * Math.sin(this.time * 0.97 + 1.3);
     const ws = this.windStrength * 4.5 * gust;
     this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz;
     this.cloth.windX = this.windX * ws; this.cloth.windZ = this.windZ * ws; this.cloth.windY = 0.4 * ws * 0.2;

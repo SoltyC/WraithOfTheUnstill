@@ -11,6 +11,7 @@ import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './com
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
+import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 
 /** Near detail within LOD_NEAR m, trees end at LOD_OUT; a change dissolves over FADE s (render/trees.js).
  *  Fade kinds (world2.y): 1 plain, 2 detail in, 3 detail out, 4 edge in, 5 edge out. */
@@ -28,7 +29,7 @@ attribute world3: vec4f;           // world2 = (fade start, fade kind, -, -)
 uniform viewProjection: mat4x4f;
 uniform levels: array<vec4f,16>;
 uniform treeParams: vec4f;           // x = time, y = wind strength, z = wind dir x, w = wind dir z
-uniform treeLod: vec4f;              // z = pass (0 view, 1 shadow: no fade, 2 far shadow: edge fades only), w = clock (s)
+${WIND_DECL}uniform treeLod: vec4f;              // z = pass (0 view, 1 shadow: no fade, 2 far shadow: edge fades only), w = clock (s)
 var<storage, read> levelData: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -39,6 +40,7 @@ varying vFade: f32;
 
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
+${WIND_WGSL}
 fn tGround(x: f32, z: f32) -> f32 {
   for (var l = 0u; l < ${CLIPMAP_LEVELS}u; l++) {
     let L = uniforms.levels[l];
@@ -77,8 +79,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // Lean (per tree) grows with height.
   lp += vec3f(w1.z, 0.0, w1.w) * lp.y * 0.05;
   // Wind: the whole tree sways with height²; leaf clusters flutter on their own phase.
-  let t = uniforms.treeParams.x; let ws = uniforms.treeParams.y;
-  let wd = vec3f(uniforms.treeParams.z, 0.0, uniforms.treeParams.w);
+  // The wind field at the tree's root (world/wind.js): the gust fronts sweep through the grove.
+  let wfT = windField(vec2f(x, z));
+  let t = uniforms.treeParams.x; let ws = min(1.5, wfT.z * 1.2);
+  let wd = vec3f(wfT.x, 0.0, wfT.y);
   let ph = dot(vec2f(x, z), vec2f(0.05, 0.07)) + w1.x * 6.28;
   let sway = (sin(t * 0.8 + ph) * 0.6 + sin(t * 1.9 + ph * 1.7) * 0.25 + 0.5) * ws * hf * hf * 0.35 * sc;
   var p = vec3f(lp.x * cy - lp.z * sy, lp.y, lp.x * sy + lp.z * cy) + wd * sway;

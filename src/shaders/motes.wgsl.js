@@ -9,6 +9,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL } from './grass.wgsl.js';
+import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 
 export const MOTE_COUNT = 4000;
 const R = 18; // m: half extent of the camera-centred volume
@@ -19,7 +20,7 @@ uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
 uniform motes: vec4f;               // x = time (s), y = density 0..1, z = wind strength
-var<storage, read> levelData: array<vec4f>;
+${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
@@ -30,6 +31,7 @@ varying vWorldPos: vec3f;
 varying vTint: f32;
 
 ${FIELD_WGSL}
+${WIND_WGSL}
 const RT: f32 = ${R}.0;
 
 @vertex
@@ -40,7 +42,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let tm = uniforms.motes.x;
   let h1 = gh(id * 7u); let h2 = gh(id * 7u + 1u); let h3 = gh(id * 7u + 2u); let h4 = gh(id * 7u + 3u);
   let h5 = gh(id * 7u + 4u); let h6 = gh(id * 7u + 5u);
-  let w0 = gWind(cam.x, cam.z);
+  let w0 = windField(cam.xz).xy;
   // Wander: each mote drifts on its own slow loop, and the breeze carries the whole field.
   let wander = vec3f(sin(tm * (0.11 + 0.1 * h3) + h1 * 6.28), sin(tm * (0.07 + 0.08 * h4) + h2 * 6.28) * 0.6,
                      cos(tm * (0.09 + 0.1 * h5) + h3 * 6.28)) * (0.8 + 1.2 * h6);

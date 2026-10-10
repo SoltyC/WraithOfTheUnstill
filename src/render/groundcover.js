@@ -25,7 +25,7 @@ import { fastFrozenIsReady } from './babylonTweaks.js';
  * @param {any} atmo
  * @param {number[]} push  the grass's push trail (8 × x, y, z, strength), shared by reference
  */
-export function createGroundCover(scene, clipmap, atmo, push) {
+export function createGroundCover(scene, clipmap, atmo, push, wind) {
   ShaderStore.ShadersStoreWGSL.groundCoverVertexShader = gcVertexWGSL;
   ShaderStore.ShadersStoreWGSL.groundCoverFragmentShader = gcFragmentWGSL;
   const { cell, n, cards, seg } = GC_RING;
@@ -46,7 +46,7 @@ export function createGroundCover(scene, clipmap, atmo, push) {
   const params = new Vector4(0, 1, cell, n);
   const mat = new ShaderMaterial('groundCover', scene, { vertex: 'groundCover', fragment: 'groundCover' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'gcParams', 'grassPush', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'gcParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, 'gcAtlas'],
     storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -56,7 +56,7 @@ export function createGroundCover(scene, clipmap, atmo, push) {
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
   mat.setStorageBuffer('windMap', clipmap.buffers.wind);
-  mat.setVector4('gcParams', params); mat.setArray4('grassPush', push);
+  mat.setVector4('gcParams', params); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
   mat.setArray4('spellLights', clipmap.spellLights);
   mat.setTexture('gcAtlas', canvasAtlasTexture(scene.getEngine(), scene, drawGroundAtlas(), 'ground-atlas'));
   mat.backFaceCulling = false;

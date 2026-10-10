@@ -265,8 +265,10 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
   - **Motes and pollen:** 4000 stateless points that glitter only where the sun reaches them.
   - **The frost↔meadow border:** it breaks into crisp, torn snow patches with a straw-coloured melt band, the same in the terrain, the grass and the ground cover; grass tufts come up between the patches. `p8-border` now stands on the actual border.
   - **Perf at 0.7:** `p8-forest-shafts` 17.0 ms (just over the 60 fps floor), meadow noon 15.3 ms. Giving the terrain the cheap shadow lookup changed nothing (16.0 vs 15.8 ms), so its shadow filter is not where its ~5 ms goes; it needs a proper profile (vertex count, the material layers).
+- **Since then:** the terrain profiled and its shadow passes slimmed (grove 15.6 ms, meadow noon 14.05 ms); mossy rocks on the meadow; **the wind field (M1)**: grass, trees, ground cover, motes, cloth and sound all read one deterministic field of travelling gust fronts plus injectable bursts; debug map toggle; tests.
 - **Next step:**
-  - profile the terrain shader;
+  - M5 rivers, M6 Gale verbs (bursts are ready for the Gust);
+  - (done) profile the terrain shader;
   - cheap stand-ins for distant trees if the budget needs them;
   - mossy boulders in the meadow (the rocks are frost-only);
   - Phase 8 M1 wind field, M5 rivers, M6 Gale verbs onward (PLAN.md).

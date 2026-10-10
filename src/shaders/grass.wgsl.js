@@ -14,6 +14,7 @@
 
 import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL, BORDER_WGSL } from './common.wgsl.js';
+import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
@@ -85,7 +86,7 @@ uniform levels: array<vec4f,16>;
 uniform grassRing: vec4f;            // x = cell (m), y = grid cells per side, z = inner skip half (m), w = segments
 uniform grassParams: vec4f;          // x = time (s), y = wind strength (0 stilled … 1), z = density ×, w = ring index
 uniform grassPush: array<vec4f,8>;  // the Wraith and its trail: x, y, z, strength (render/grass.js)
-var<storage, read> levelData: array<vec4f>;
+${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
@@ -101,6 +102,7 @@ ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
 
 ${FIELD_WGSL}
+${WIND_WGSL}
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   let id = u32(vertexInputs.position.x + 0.5);
@@ -158,11 +160,12 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // Facing and lean (each blade its own); the wind bends it further, in travelling gusts.
   let yaw = h3 * 6.2831853 + h1;
   let face = vec2f(cos(yaw), sin(yaw));
-  let wd = gWind(root.x, root.y);
+  // The wind field (world/wind.js): direction and strength here, gust fronts rolling through; each
+  // blade adds its own flutter.
+  let wf = windField(root);
+  let wd = wf.xy;
   let time = uniforms.grassParams.x;
-  let phase = dot(root, wd) * 0.09 - time * 1.6;
-  let gust = 0.55 + 0.45 * sin(phase) * sin(phase * 0.37 + 1.3) + 0.15 * sin(time * 3.1 + h1 * 6.28);
-  let windAmt = uniforms.grassParams.y * gust;
+  let windAmt = min(1.6, wf.z * 1.4) * (0.88 + 0.12 * sin(time * 3.1 + h1 * 6.28));
   var lean = vec2f(sin(yaw * 1.7), cos(yaw * 1.3)) * (0.15 + 0.35 * h2) + wd * windAmt * 0.9 + vec2f(face.y, -face.x) * flat * 1.6;
   // Parted by the Wraith: blades within ~1.3 m of it (and of where it just was) lean away and
   // spring back as the trail fades.

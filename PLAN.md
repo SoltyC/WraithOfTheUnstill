@@ -337,6 +337,7 @@ Acceptance: every existing test passes, frost shots are pixel-identical to befor
 - Gale verbs inject into it (a Gust is a short, strong local front).
 - Replaces the ad-hoc `windStrength × weather.wind` in `systems/environment.js`.
 - Acceptance: cloth and spindrift unchanged in frost; a debug view of the field in the overlay.
+- **Done 2026-10-10**, as an analytic field instead of a texture. The same function runs on the CPU (`world/wind.js`) and the GPU (`shaders/wind.wgsl.js`) from one 6×vec4 block: prevailing wind, two families of travelling gust fronts, eddies, and four injectable bursts (`wind.burst(x, z, strength)` for the Gale verbs). Grass, ground cover, motes, trees, the Wraith's and the Veiled's cloth, and the wind sound read it. Spindrift and snowfall keep the base strength (frost unchanged). The debug map is the overlay toggle "wind field (map)". Tests: `tests/wind.test.js`; zero allocations (`npm run alloc`).
 
 ### M2 — Meadow ground (terrain material)
 

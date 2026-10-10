@@ -14,6 +14,7 @@ import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './com
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL } from './grass.wgsl.js';
+import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { GC } from '../render/groundAtlas.js';
 
 /** Ring: cell (m), grid (cells per side); cards per item; segments per card. */
@@ -35,7 +36,7 @@ uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
 uniform gcParams: vec4f;             // x = time, y = wind strength, z = cell (m), w = grid
 uniform grassPush: array<vec4f,8>;
-var<storage, read> levelData: array<vec4f>;
+${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
@@ -48,6 +49,7 @@ varying vTint: vec3f;                // x = hue shift, y = value, z = translucen
 varying vAo: f32;
 
 ${FIELD_WGSL}
+${WIND_WGSL}
 
 fn gcCanopy(p: vec2f) -> f32 { return textureSampleLevel(canopyTex, canopyTexSampler, (p + 4096.0) / 8192.0, 0.0).r; }
 
@@ -210,9 +212,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
   p = vec3f(root.x, gy, root.y) + (p - vec3f(root.x, gy, root.y)) * edge;
   // Wind and the Wraith's push move the upright things (ferns, flowers).
   if (flex > 0.0) {
-    let wd = gWind(root.x, root.y);
+    let wf = windField(root);
+    let wd = wf.xy;
     let tm = uniforms.gcParams.x;
-    let sway = sin(tm * 1.7 + dot(root, wd) * 0.3 + h1 * 6.28) * 0.06 * uniforms.gcParams.y;
+    let sway = (0.5 + 0.5 * sin(tm * 1.7 + h1 * 6.28)) * 0.08 * min(1.6, wf.z * 1.4);
     var pv = vec2f(0.0);
     for (var i = 0u; i < 8u; i++) {
       let P = uniforms.grassPush[i];

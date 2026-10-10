@@ -76,20 +76,22 @@ export async function createWorld(g) {
   shadows.addCaster(rocks.meshes[1], rocks.makeShadowMaterial, 2, 2);
   shadows.addCaster(rocks.meshes[2], rocks.makeShadowMaterial, 2, 1);
   rocks.freeze();
+  // The wind field (Phase 8 M1): one function of place and time shared by the CPU and the GPU.
+  const wind = (await import('../world/wind.js')).createWind();
   // Grass (Phase 8): GPU-built blades over the meadow, receiving the shadow cascades.
-  const grass = (await import('../render/grass.js')).createGrass(scene, content.clipmap, atmosphere);
+  const grass = (await import('../render/grass.js')).createGrass(scene, content.clipmap, atmosphere, wind);
   for (const m of grass.materials) bindShadows(m, shadows);
   grass.freeze();
   // Ground cover (Phase 8): leaf drifts, ferns, flowers, clover — built on the GPU like the grass.
-  const groundCover = (await import('../render/groundcover.js')).createGroundCover(scene, content.clipmap, atmosphere, grass.push);
+  const groundCover = (await import('../render/groundcover.js')).createGroundCover(scene, content.clipmap, atmosphere, grass.push, wind);
   for (const m of groundCover.materials) bindShadows(m, shadows);
   groundCover.freeze();
   // Motes and pollen in the sunlight (Phase 8, M4b): glitter in the shafts under the canopy.
-  const motes = (await import('../render/motes.js')).createMotes(scene, content.clipmap, atmosphere);
+  const motes = (await import('../render/motes.js')).createMotes(scene, content.clipmap, atmosphere, wind);
   bindShadows(motes.material, shadows);
   motes.freeze();
   // Trees (Phase 8): grown variants in groves; near ones shadow the near cascades, far the far.
-  const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer);
+  const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer, wind);
   for (const m of trees.materials) bindShadows(m, shadows);
   for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0);
   trees.freeze();
@@ -114,5 +116,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, motes, trees });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, motes, trees, wind });
 }

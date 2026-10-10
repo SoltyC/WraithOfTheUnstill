@@ -115,7 +115,20 @@ export async function addEnvironmentSystems(g) {
       post.post.gradeDirty = true;
     }
   } });
-  // Grass: its clock and wind (a stilled meadow stands rigid; restored, the gusts roll through).
+  // The wind field (world/wind.js, PLAN.md M1): the prevailing wind at the player (climatology,
+  // eased), its strength (the weather × restoration — still air while stilled — and the Warden's
+  // gusts) and gustiness; everything that moves in the wind reads the same field.
+  let wdX = 1, wdZ = 0;
+  loop.add({ name: 'wind', update: () => {
+    const wf = g.wind; if (!wf) return;
+    const ke = 1 - Math.exp(-clock.realDt * 0.3);
+    wdX += ((streamer.windX || 1) - wdX) * ke; wdZ += ((streamer.windZ || 0) - wdZ) * ke;
+    wf.dirX = wdX; wf.dirZ = wdZ; wf.time = clock.simTime;
+    wf.strength = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 2 * warden.gust;
+    wf.gustiness = 0.35 + 0.65 * weather.gust;
+    wf.update();
+  } });
+  // Grass: its clock and the push (its wind is the field; a stilled meadow stands rigid).
   loop.add({ name: 'grass', update: () => {
     const gr = g.grass; if (!gr) return;
     gr.time = clock.simTime;
@@ -134,8 +147,6 @@ export async function addEnvironmentSystems(g) {
   loop.add({ name: 'trees', update: () => {
     const tr = g.trees; if (!tr) return;
     tr.camX = camera.position.x; tr.camZ = camera.position.z; tr.time = clock.simTime;
-    tr.wind = Math.min(1.5, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.2 + 2 * warden.gust);
-    tr.windX = streamer.windX || 1; tr.windZ = streamer.windZ || 0;
     tr.update();
     // Forest haze (PLAN.md M4b): thickens under the canopy around the camera.
     const hz = post.fog.haze;
@@ -181,7 +192,10 @@ export async function addEnvironmentSystems(g) {
     // Ribbon hisses while it flows; a formation chimes where it rises.
     const cp = camera.position;
     sfx.lx = cp.x; sfx.ly = cp.y; sfx.lz = cp.z; sfx.rx = Math.cos(arm.yaw); sfx.rz = -Math.sin(arm.yaw);
-    sfx.wind = Math.min(1, w / 1.1); sfx.hiss = Math.min(1, frost.ribbonStrength); sfx.time = clock.simTime;
+    // The wind bed swells with the gust fronts passing the camera (the field at the listener).
+    let gf = 1;
+    if (g.wind && g.wind.strength > 1e-3) { g.wind.sx = cp.x; g.wind.sz = cp.z; g.wind.sample(); gf = Math.min(1.6, Math.max(0.5, g.wind.speed / (0.66 * g.wind.strength))); }
+    sfx.wind = Math.min(1, w / 1.1 * gf); sfx.hiss = Math.min(1, frost.ribbonStrength); sfx.time = clock.simTime;
     if (frost.crystalEvent) { sfx.x = frost.crystalX; sfx.y = controller.pos.y + 0.5; sfx.z = frost.crystalZ; sfx.gain = 1.1; sfx.play(SFX.CHIME); }
     sfx.update();
   } });

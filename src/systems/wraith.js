@@ -8,7 +8,10 @@ export function addWraithSystem(g) {
     const w = wraithView.wraith, p = controller.pos;
     w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
-    w.windStrength = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
+    // The cloth feels the wind field where the Wraith stands: its direction and the gusts.
+    const wf = g.wind;
+    if (wf) { wf.sx = p.x; wf.sz = p.z; wf.sample(); w.windX = wf.outX; w.windZ = wf.outZ; w.windStrength = wf.speed * 0.9; } // ×0.9: the old frost cloth strength on average
+    else w.windStrength = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
     knockCtl.feedOverride(w);
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);

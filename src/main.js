@@ -90,6 +90,7 @@ async function boot() {
   (await import('./systems/chapter.js')).addChapterSystem(g);
   (await import('./systems/architecture.js')).addArchitectureSystem(g);
   (await import('./systems/rockSolids.js')).addRockSolidSystem(g);
+  if (!capture) (await import('./ui/windView.js')).addWindView(g); // dev: overlay toggle 'wind field (map)'
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);

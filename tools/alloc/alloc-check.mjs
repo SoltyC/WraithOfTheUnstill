@@ -15,6 +15,7 @@ import { updateEnvironment } from '../../src/render/environment.js';
 import { params } from '../../src/core/params.js';
 import { clock, advanceClock } from '../../src/core/clock.js';
 import { createWeather } from '../../src/world/weather.js';
+import { createWind } from '../../src/world/wind.js';
 
 let gcs = 0;
 new PerformanceObserver((list) => { gcs += list.getEntries().length; }).observe({ entryTypes: ['gc'] });
@@ -53,10 +54,16 @@ const cases = {
   'updateEnvironment (idle, clock running)': () => { clock.simTime += 0.011; updateEnvironment(); },
   'advanceClock': () => { clock.realDt = 0.0111; advanceClock(); },
   'weather.update (cycling)': () => { weather.dt = 0.9; weather.update(); },
+  'wind update + samples (with a burst)': (i) => {
+    wind.time += 0.011; wind.strength = 0.8; wind.gustiness = 0.6; wind.update();
+    if ((i & 1023) === 0) wind.burst(i & 63, 5, 2);
+    for (let k = 0; k < 4; k++) { wind.sx = (i & 255) + k * 3.1; wind.sz = k * 7.3; wind.sample(); }
+  },
   'frameStats.push': (i) => stats.push(8 + (i & 7)),
   'pool acquire/release': () => { const o = pool.acquire(); pool.release(o); },
 };
 
+const wind = createWind();
 clock.dt = 1 / 90 + Math.random() * 1e-9; // a heap double, like the real clock
 const N = 2_000_000;
 let failed = false;
