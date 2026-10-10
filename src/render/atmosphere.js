@@ -85,10 +85,14 @@ export function createAtmosphere(scene, camera, biomeA) {
   const canopyTex = new RawTexture(new Uint8Array(CANOPY_N * CANOPY_N), CANOPY_N, CANOPY_N, Constants.TEXTUREFORMAT_R, scene, false, false,
     Constants.TEXTURE_BILINEAR_SAMPLINGMODE, Constants.TEXTURETYPE_UNSIGNED_BYTE);
   canopyTex.name = 'canopy'; canopyTex.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; canopyTex.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
+  // World water levels (render/water.js fills it; −1e4: no water), read with textureLoad (nearest).
+  const waterTex = new RawTexture(new Float32Array(CANOPY_N * CANOPY_N).fill(-1e4), CANOPY_N, CANOPY_N, Constants.TEXTUREFORMAT_R, scene, false, false,
+    Constants.TEXTURE_NEAREST_SAMPLINGMODE, Constants.TEXTURETYPE_FLOAT);
+  waterTex.name = 'waterLevel';
 
   let builtHaze = NaN;
   return {
-    canopyTex,
+    canopyTex, waterTex,
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,

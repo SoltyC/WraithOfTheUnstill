@@ -88,6 +88,9 @@ ${POST_PARAMS_WGSL}
 @group(0) @binding(9) var ssrSampler: sampler;
 @group(0) @binding(10) var ssrTex: texture_2d<f32>;
 @group(0) @binding(11) var outColor: texture_storage_2d<rgba16float, write>;
+@group(0) @binding(12) var canopySampler: sampler;
+@group(0) @binding(13) var canopyTex: texture_2d<f32>;
+fn canopyC(p: vec2f) -> f32 { return textureSampleLevel(canopyTex, canopySampler, (p + 4096.0) / 8192.0, 0.0).r; }
 ${WEATHER_FOG_WGSL}
 
 @compute @workgroup_size(8, 8, 1)
@@ -147,7 +150,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let exposure = P.keyCol.w * atmoLight[3].w;
   let uv = (vec2f(p) + 0.5) * P.size.zw;
   // Screen-space reflections on ice and wet slush (premultiplied, half resolution).
-  if (P.ssr.w > 0.5 && c.a > 0.03) {
+  if (P.ssr.w > 0.5 && abs(c.a) > 0.03) { // negative: water (shaders/water.wgsl.js)
     let r = textureSampleLevel(ssrTex, ssrSampler, uv, 0.0);
     dbgSsr = r.a;
     c = vec4f(c.rgb * (1.0 - r.a) + r.rgb, c.a);
@@ -177,7 +180,14 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   // scattering, so looking toward a low sun through the trees shows the shafts.
   if (P.pad[3].x > 1e-6) {
     let hazep = vec4f(P.pad[3].x, P.pad[3].y, P.pad[3].z, 0.0);
-    let Th = exp(-fogOpticalDepth(cam, dir, min(dist, 200.0), hazep)); // local: within 200 m
+    // The haze lives under the crowns: along the ray, weight it by the canopy it actually passes
+    // through (four samples), relative to the canopy at the camera that set its density — looking
+    // out of a grove across an open lake, the haze thins to the grove's edge.
+    let dh = min(dist, 200.0);
+    let cAvg = (canopyC(cam.xz + dir.xz * min(dh, 6.0)) + canopyC(cam.xz + dir.xz * min(dh, 25.0))
+              + canopyC(cam.xz + dir.xz * min(dh, 70.0)) + canopyC(cam.xz + dir.xz * dh)) * 0.25;
+    let cK = clamp(cAvg / max(canopyC(cam.xz), 0.15), 0.0, 1.3);
+    let Th = exp(-fogOpticalDepth(cam, dir, dh, hazep) * cK); // local: within 200 m
     var ratioH = 1.0;
     if (P.pad[3].w > 0.5) { ratioH = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).g; }
     let cosT = dot(dir, P.sun.xyz);

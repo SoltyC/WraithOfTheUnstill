@@ -95,6 +95,13 @@ export async function createWorld(g) {
   for (const m of trees.materials) bindShadows(m, shadows);
   for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0);
   trees.freeze();
+  // Water (Phase 8): the bake's unfrozen lakes, flat at their levels; absorb + surface passes, the
+  // post chain's SSR reflects on them (waves and ripples shared through the wind block and a buffer).
+  const water = await (await import('../render/water.js')).createWater(scene, content.clipmap, atmosphere, wind, streamer, post.post.waterRipples, import.meta.env.BASE_URL + 'world/');
+  bindShadows(water.materials[1], shadows); // the surface pass (the absorb pass reads no shadows)
+  water.freeze();
+  trees.setWater((x, z) => water.levelAt(x, z));
+  post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
   // The Wraith's feet and hem stand on built floors too (solids arrive with the architecture).
@@ -116,5 +123,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, motes, trees, wind });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, motes, trees, wind, water });
 }

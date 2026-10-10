@@ -5,6 +5,8 @@ import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { storageTexture, computePass } from './post.js';
 import { aoCS, composeCS } from '../shaders/post/ao.wgsl.js';
 import { ssrCS } from '../shaders/post/ssr.wgsl.js';
+import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
+import { WATER_RIPPLES } from '../shaders/water.wgsl.js';
 
 /**
  * @param {ReturnType<typeof import('./post.js').createPost>} post
@@ -16,17 +18,22 @@ import { ssrCS } from '../shaders/post/ssr.wgsl.js';
 export function createCompose(post, scene, camera, atmo, fog) {
   const engine = scene.getEngine();
   let aoTex, ssrTex, out, csAo, csSsr, csCompose;
+  // The Wraith's ripples on water (render/water.js writes them): the SSR bends water reflections by them too.
+  post.waterRipples = new StorageBuffer(engine, WATER_RIPPLES * 16, undefined, 'water-ripples');
+  post.waterRipples.update(new Float32Array(WATER_RIPPLES * 4));
   const build = (W, H) => {
     if (aoTex) { aoTex.dispose(); ssrTex.dispose(); out.dispose(); }
     aoTex = storageTexture(scene, Math.ceil(W / 2), Math.ceil(H / 2), 'ssao', Constants.TEXTURE_NEAREST_SAMPLINGMODE);
     ssrTex = storageTexture(scene, Math.ceil(W / 2), Math.ceil(H / 2), 'ssr');
-    csSsr = computePass(engine, 'ssr', ssrCS, [['P', 'buffer', post.paramsBuf], ['sceneTex', 'tex', post.sceneRT], ['depthTex', 'tex', post.depthTex], ['outSsr', 'storageTex', ssrTex]]);
+    csSsr = computePass(engine, 'ssr', ssrCS, [['P', 'buffer', post.paramsBuf], ['sceneTex', 'tex', post.sceneRT], ['depthTex', 'tex', post.depthTex], ['outSsr', 'storageTex', ssrTex],
+      ['waterRipples', 'buffer', post.waterRipples], ['cloudSampler', 'sampler'], ['cloudTex', 'stex', fog.cloudTex], ['atmoLight', 'buffer', atmo.atmoLight]]);
     out = storageTexture(scene, W, H, 'composed', Constants.TEXTURE_NEAREST_SAMPLINGMODE);
     csAo = computePass(engine, 'ssao', aoCS, [['P', 'buffer', post.paramsBuf], ['depthTex', 'tex', post.depthTex], ['outAo', 'storageTex', aoTex]]);
     csCompose = computePass(engine, 'compose', composeCS, [['P', 'buffer', post.paramsBuf], ['sceneTex', 'tex', post.sceneRT],
       ['depthTex', 'tex', post.depthTex], ['aoTex', 'tex', aoTex], ['cloudSampler', 'sampler'], ['cloudTex', 'stex', fog.cloudTex],
       ['shaftSampler', 'sampler'], ['shaftTex', 'stex', fog.shaftTex], ['atmoLight', 'buffer', atmo.atmoLight],
-      ['ssrSampler', 'sampler'], ['ssrTex', 'stex', ssrTex], ['outColor', 'storageTex', out]]);
+      ['ssrSampler', 'sampler'], ['ssrTex', 'stex', ssrTex], ['outColor', 'storageTex', out],
+      ['canopySampler', 'sampler'], ['canopyTex', 'stex', atmo.canopyTex]]);
     comp.out = out;
   };
   const comp = {

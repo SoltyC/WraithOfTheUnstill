@@ -15,6 +15,7 @@
 import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL, BORDER_WGSL } from './common.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
+import { WATER_LEVEL_DECL } from './atmoMaterial.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
@@ -91,7 +92,7 @@ var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
-varying vT: f32;                     // 0 root … 1 tip
+${WATER_LEVEL_DECL}varying vT: f32;                     // 0 root … 1 tip
 varying vSide: f32;                  // −1 … 1 across
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -140,6 +141,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let gy2 = gGround(root.x + 0.7, root.y); let gy3 = gGround(root.x, root.y + 0.7);
   let slope = length(vec2f(gy2 - gy, gy3 - gy)) / 0.7;
   keep *= 1.0 - smoothstep(0.55, 0.8, slope);
+  if (gy < waterLevelV(root) + 0.04) { keep = 0.0; } // not under water
   // Pressed and ploughed ground lays the grass down (footprints, the surf's groove, compaction).
   let st = stateSurface(root.x, root.y);
   let dep = stateHeights(root.x, root.y).x;

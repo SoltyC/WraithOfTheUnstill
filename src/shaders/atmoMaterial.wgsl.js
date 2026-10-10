@@ -4,7 +4,7 @@
 
 import { ATMO_PARAMS_WGSL, ATMO_COMMON_WGSL, AP_RES, AP_SLICES } from './atmosphere.wgsl.js';
 
-export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex'];
+export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex', 'waterTex'];
 export const ATMO_MATERIAL_BUFFERS = ['atmoParams', 'atmoLight'];
 
 export const ATMO_MATERIAL_WGSL = /* wgsl */ `
@@ -19,6 +19,8 @@ var aerialLut: texture_2d<f32>;
 var aerialLutSampler: sampler;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
+var waterTex: texture_2d<f32>;
+var waterTexSampler: sampler;
 var<storage, read> atmoParams: AtmoParams;
 var<storage, read> atmoLight: array<vec4f,13>;
 ${ATMO_COMMON_WGSL}
@@ -41,6 +43,11 @@ fn shIrradiance(n: vec3f) -> vec3f {
  *  meadow and in the open, ~1 in a grove). */
 fn canopyAt(p: vec2f) -> f32 {
   return textureSampleLevel(canopyTex, canopyTexSampler, (p + 4096.0) / 8192.0, 0.0).r;
+}
+/** Water surface level at a world point (m; −1e4 where there is none): render/water.js fills the
+ *  world map at 4 m (WATER_LEVEL_WGSL is the same for vertex stages, which bind it themselves). */
+fn waterLevelAt(p: vec2f) -> f32 {
+  return textureLoad(waterTex, vec2i(i32(clamp((p.x + 4096.0) / 4.0, 0.0, 2047.0)), i32(clamp((4096.0 - p.y) / 4.0, 0.0, 2047.0))), 0).r;
 }
 /** Under the crowns the open sky is partly hidden (scale the sky IBL by this)… */
 fn canopySky(c: f32) -> f32 { return 1.0 - 0.45 * c; }
@@ -101,5 +108,14 @@ fn atmoAerial(uv: vec2f, distKm: f32) -> vec4f {
 fn atmoApply(col: vec3f, uv: vec2f, distKm: f32) -> vec3f {
   let ap = atmoAerial(uv, distKm);
   return col * ap.a + ap.rgb;
+}
+`;
+
+/** Vertex-stage water level lookup (bind 'waterTex' in the material's samplers). */
+export const WATER_LEVEL_DECL = /* wgsl */ `
+var waterTex: texture_2d<f32>;
+var waterTexSampler: sampler;
+fn waterLevelV(p: vec2f) -> f32 {
+  return textureLoad(waterTex, vec2i(i32(clamp((p.x + 4096.0) / 4.0, 0.0, 2047.0)), i32(clamp((4096.0 - p.y) / 4.0, 0.0, 2047.0))), 0).r;
 }
 `;

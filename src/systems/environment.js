@@ -128,6 +128,13 @@ export async function addEnvironmentSystems(g) {
     wf.gustiness = 0.35 + 0.65 * weather.gust;
     wf.update();
   } });
+  // Water: its clock and the Wraith wading (ripples, the splash going in).
+  loop.add({ name: 'water', update: () => {
+    const wa = g.water; if (!wa) return;
+    wa.time = clock.simTime; wa.px = controller.pos.x; wa.py = controller.pos.y; wa.pz = controller.pos.z;
+    wa.speed = Math.sqrt(controller.vel.x * controller.vel.x + controller.vel.z * controller.vel.z);
+    wa.update();
+  } });
   // Grass: its clock and the push (its wind is the field; a stilled meadow stands rigid).
   loop.add({ name: 'grass', update: () => {
     const gr = g.grass; if (!gr) return;

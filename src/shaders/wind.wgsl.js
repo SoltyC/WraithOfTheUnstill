@@ -5,18 +5,28 @@ export const WIND_DECL = /* wgsl */ `
 uniform windField: array<vec4f,6>;  // world/wind.js block: [0] dir, base, time; [1] gustiness, front speed; [2..5] bursts
 `;
 
-export const WIND_WGSL = /* wgsl */ `
+/** The field from its first two block entries (fronts and eddies; no bursts) — usable anywhere,
+ *  e.g. the post chain's SSR, given the two vec4s. */
+export const WIND_CORE_WGSL = /* wgsl */ `
 fn wfFront(ph: f32) -> f32 { let s = 0.5 + 0.5 * sin(ph); return s * s * s * s; }
-/** The wind at (x, z): xy = direction (unit), z = speed factor (≈ strength × gusts; 0 when still). */
-fn windField(p: vec2f) -> vec3f {
-  let W0 = uniforms.windField[0]; let W1 = uniforms.windField[1];
+fn windCore(p: vec2f, W0: vec4f, W1: vec4f) -> vec2f {
   let d = W0.xy; let base = W0.z; let t = W0.w; let c = W1.y;
   let along = dot(p, d); let across = -p.x * d.y + p.y * d.x;
   let f1 = wfFront((along - c * t) * 0.045 + sin(across * 0.013 + t * 0.05) * 1.2);
   let f2 = wfFront((along - c * 1.2 * t) * 0.11 + 1.7 + sin(across * 0.031 - t * 0.07) * 0.9);
   let eddy = 0.12 * sin(p.x * 0.21 + t * 1.3) * sin(p.y * 0.17 - t * 1.1);
   let g = 0.55 + W1.x * (0.9 * f1 + 0.5 * f2) + eddy;
-  var v = d * base * g;
+  return d * base * g;
+}
+`;
+
+export const WIND_WGSL = /* wgsl */ `
+${WIND_CORE_WGSL}
+/** The wind at (x, z): xy = direction (unit), z = speed factor (≈ strength × gusts; 0 when still). */
+fn windField(p: vec2f) -> vec3f {
+  let W0 = uniforms.windField[0]; let W1 = uniforms.windField[1];
+  let d = W0.xy; let t = W0.w;
+  var v = windCore(p, W0, W1);
   for (var i = 2u; i < 6u; i++) {
     let B = uniforms.windField[i];
     if (B.w <= 0.0) { continue; }

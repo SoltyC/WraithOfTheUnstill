@@ -90,11 +90,14 @@ export function addWraithSystem(g) {
     const v = new Float64Array(n);
     let dist = 0;
     for (let i = 0; i < n; i++) { v[i] = walk.speed * Math.min(1, (i + 1) * dt / 0.6); dist += v[i] * dt; }
-    let s = -dist;
+    let s = -dist, lastRip = -1e9;
     for (let i = 0; i < n; i++) {
       s += v[i] * dt;
       const x = p.x + dx * s, z = p.z + dz * s;
       ground.qx = x; ground.qz = z; ground.sample();
+      // Wading: the wake it leaves (water ripples at the times they were made).
+      const tw = clock.simTime - (n - 1 - i) * dt, lv = g.water ? g.water.levelAt(x, z) : NaN;
+      if (lv === lv && ground.h < lv && tw - lastRip > 0.25) { g.water.ripple(x, z, tw, Math.min(1.2, 0.35 + 0.35 * v[i])); lastRip = tw; }
       w.bx = x; w.by = ground.h; w.bz = z; w.vx = dx * v[i]; w.vz = dz * v[i];
       w.yaw = f; w.grounded = true; w.dt = dt; w.time = clock.simTime - (n - 1 - i) * dt;
       wraithView.time = w.time;

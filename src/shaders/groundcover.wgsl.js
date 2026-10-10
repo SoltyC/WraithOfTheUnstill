@@ -15,6 +15,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL } from './grass.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
+import { WATER_LEVEL_DECL } from './atmoMaterial.wgsl.js';
 import { GC } from '../render/groundAtlas.js';
 
 /** Ring: cell (m), grid (cells per side); cards per item; segments per card. */
@@ -41,7 +42,7 @@ var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
-varying vUv: vec2f;
+${WATER_LEVEL_DECL}varying vUv: vec2f;
 varying vCell: f32;
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -99,7 +100,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var kind = -1;
   var acc = 0.0;
   for (var i = 0; i < 9; i++) { acc += w[i]; if (kind < 0 && r < acc) { kind = i; } }
-  if (slope > 1.2) { kind = -1; }
+  if (slope > 1.2 || gy < waterLevelV(root) + 0.2) { kind = -1; } // not on steep ground, not under water
 
   // The card: base, along (spine direction per segment), across, size, atlas cell, curve.
   let S = 4.0;
@@ -177,6 +178,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
       let fwd = vec3f(cos(yaw), 0.0, sin(yaw));
       let lean = vec3f(sin(hs2 * 6.0), 0.0, cos(hs2 * 6.0)) * 0.12;
       let bgy = gGround(base.x, base.y);
+      if (bgy < waterLevelV(base) + 0.25) { used = false; } // no stem standing in water (the heads read as floating)
       if (species > 1.5) {
         // Bellflower: the whole spray on one card.
         if ((card & 1u) == 0u) {
