@@ -409,3 +409,9 @@ GPU frame median at 2560×1440 output, render scale 0.7, RTX 3060, Windows Chrom
 Forest floor pass (2026-10-10, render scale 0.7): `p8-forest-floor` 15.8 ms, `p8-forest-shafts` 16.7 ms, `p8-meadow-noon` 14.9 ms. Ground cover ~0.6 ms; canopy-map build 97 ms once at load. In a grove the terrain costs ~7 ms in all (~4.9 ms of it scene shading), trees ~4.1 ms (shadows ~2.2 ms of that), grass ~0.6 ms.
 
 Understory, motes, border (2026-10-10, 0.7): `p8-forest-shafts` 17.0 ms, `p8-meadow-noon` 15.3 ms. Experiment: the terrain on the 4-tap shadow lookup instead of the full soft filter changed `p8-forest-floor` by +0.2 ms (within noise), so the terrain's shadow filter is not its cost.
+
+Terrain profile (2026-10-10, `p8-forest-floor`, 0.7): toggling the terrain at render scales 0.7 and 0.4 splits it into pixel shading ~2.6 ms, geometry ~0.8 ms and shadow casting ~2.1 ms (4 cascades, nearly all vertex work).
+- **Shadow-only terrain vertex shader** (position only: no normals, biome, wind, lake or footprints): shadows ~2.2 → ~1.75 ms.
+- **Per-cascade levels** (cascade 0 levels 0–6, cascade 2 levels 4–11, cascade 3 levels 7–11; skipped levels exit before any data read): ~1.5 ms.
+- **Meadow layers skipped where their landform mask is ~0.**
+- **Result:** `p8-forest-floor` 16.4 → 15.6 ms, `p8-meadow-noon` 15.3 → 14.05 ms.

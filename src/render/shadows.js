@@ -15,10 +15,14 @@ import { Matrix, Vector3, Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { Color4 } from '@babylonjs/core/Maths/math.color.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { shadowDepthFragmentWGSL, CASCADES, SHADOW_SIZE } from '../shaders/shadows.wgsl.js';
-import { STATE_SAMPLE_BUFFERS } from '../shaders/terrainState.wgsl.js';
+import { clipmapShadowVertexWGSL } from '../shaders/clipmap.wgsl.js';
 import { env } from './environment.js';
 
 export const SHADOW_SPLITS = [24, 140, 800, 4500];
+/** Terrain levels drawn into each cascade (level l spans ±8·2^l m). Cascade 0 keeps the fine
+ *  levels to ~512 m (its receivers also read cascade 1, which holds the distant ridges);
+ *  cascades 2 and 3 skip the levels wholly inside their near distance. */
+const SHADOW_LEVELS = [[0, 6], [0, 11], [4, 11], [7, 11]];
 const BACKOFF = 4000;   // m toward the light: distant ranges still cast into the cascades
 
 const vp = new Matrix();
@@ -32,6 +36,7 @@ const CLEAR_FAR = new Color4(1e6, 0, 0, 1);
 export function createShadows(scene, viewCamera, casters) {
   const engine = scene.getEngine();
   ShaderStore.ShadersStoreWGSL.shadowDepthFragmentShader = shadowDepthFragmentWGSL;
+  ShaderStore.ShadersStoreWGSL.clipmapShadowVertexShader = clipmapShadowVertexWGSL;
 
   const data = new Float32Array(88);
   const shadowData = new StorageBuffer(engine, data.byteLength, undefined, 'shadow-data');
@@ -51,23 +56,19 @@ export function createShadows(scene, viewCamera, casters) {
     rtt.renderList = [clip.mesh, casters.capsule];
     rtt.renderParticles = false; rtt.renderSprites = false;
     const light = new Vector4(0, 1, 0, 0), origin = new Vector4(0, 0, 0, 0);
-    // Clipmap depth: same vertex shader and bindings as the terrain, depth fragment.
-    const cm = new ShaderMaterial('clipmapShadow' + c, scene, { vertex: 'clipmap', fragment: 'shadowDepth' }, {
+    // Clipmap depth: the terrain's position only (clipmapShadowVertexWGSL), depth fragment.
+    const cm = new ShaderMaterial('clipmapShadow' + c, scene, { vertex: 'clipmapShadow', fragment: 'shadowDepth' }, {
       attributes: ['position'],
-      uniforms: ['viewProjection', 'levels', 'camGrid', 'shadowLight', 'shadowOrigin'],
-      storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...STATE_SAMPLE_BUFFERS],
+      uniforms: ['viewProjection', 'levels', 'camGrid', 'shadowLevels', 'shadowLight', 'shadowOrigin'],
+      storageBuffers: ['levelData'],
       shaderLanguage: ShaderLanguage.WGSL,
     });
     cm.setArray4('levels', clip.levels);
     cm.setVector4('camGrid', clip.camGrid);
+    cm.setVector4('shadowLevels', new Vector4(SHADOW_LEVELS[c][0], SHADOW_LEVELS[c][1], 0, 0));
     cm.setStorageBuffer('levelData', clip.levelData);
-    cm.setStorageBuffer('biomeA', clip.buffers.biomeA);
-    cm.setStorageBuffer('biomeB', clip.buffers.biomeB);
-    cm.setStorageBuffer('windMap', clip.buffers.wind);
-    cm.setStorageBuffer('hydro', clip.buffers.hydro);
     cm.setVector4('shadowLight', light); cm.setVector4('shadowOrigin', origin);
     cm.backFaceCulling = false;
-    clip.stateBound.push(cm);
     const pm = new ShaderMaterial('capsuleShadow' + c, scene, { vertex: 'capsule', fragment: 'shadowDepth' }, {
       attributes: ['position', 'normal'],
       uniforms: ['world', 'viewProjection', 'shadowLight', 'shadowOrigin'],

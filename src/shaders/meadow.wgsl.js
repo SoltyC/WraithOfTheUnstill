@@ -69,13 +69,15 @@ fn meadowSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, canopy:
   var th = 0.5;
   if (wF0 < 0.995) {
     // Layers (art-directed bases; each scan keeps its own detail).
-    let turf = mdLayer(MAT_TURF, p, 0.42, Ng, fp, vec3f(0.095, 0.12, 0.055), 0.35);
-    let dry = mdLayer(MAT_GRASS_GROUND, p + vec2f(31.0, 5.0), 0.38, Ng, fp, vec3f(0.24, 0.21, 0.12), 0.6);
-    let soil = mdLayer(MAT_SOIL, p + vec2f(-13.0, 41.0), 0.33, Ng, fp, vec3f(0.12, 0.09, 0.06), 0.6);
-    // Height-blended weights: the layer whose texel stands higher wins near the boundary.
+    // Height-blended weights: the layer whose texel stands higher wins near the boundary. A layer
+    // whose landform mask is ~0 here is not sampled at all (turf wins outright there).
     var wT = 1.0;
     var wD = rise * 0.8 + 0.25 * smoothstep(0.2, 0.7, n3);
     var wS = max(damp * 0.7, smoothstep(0.32, 0.5, slope)) + state.y * 0.8; // wet state: bared, muddy
+    let turf = mdLayer(MAT_TURF, p, 0.42, Ng, fp, vec3f(0.095, 0.12, 0.055), 0.35);
+    var dry = turf; var soil = turf;
+    if (wD > 0.04) { dry = mdLayer(MAT_GRASS_GROUND, p + vec2f(31.0, 5.0), 0.38, Ng, fp, vec3f(0.24, 0.21, 0.12), 0.6); } else { wD = 0.0; }
+    if (wS > 0.04) { soil = mdLayer(MAT_SOIL, p + vec2f(-13.0, 41.0), 0.33, Ng, fp, vec3f(0.12, 0.09, 0.06), 0.6); } else { wS = 0.0; }
     wT *= 0.6 + turf.h; wD *= 0.6 + dry.h; wS *= 0.6 + soil.h;
     wT = pow(wT, k); wD = pow(wD, k); wS = pow(wS, k);
     let ws = max(wT + wD + wS, 1e-5);

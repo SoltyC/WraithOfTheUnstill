@@ -266,7 +266,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
         if (was === 1) kNear = want === 2 ? 3 : 5; else if (was === 2) kFar = want === 1 ? 3 : 5;
         if (want === 1) kNear = was === 2 ? 2 : 4; else if (want === 2) kFar = was === 1 ? 2 : 4;
       }
-      if (want && d < CANOPY_R) canopySum += 1 - d / CANOPY_R;
+      if (want && si < 3 && d < CANOPY_R) canopySum += 1 - d / CANOPY_R; // trees only (not shrubs, logs)
       for (let lod = 0; lod < 3; lod++) {
         const kind = lod === 0 ? kNear : lod === 1 ? kFar : (want && d < MID_REACH ? 1 : 0);
         if (!kind) continue;
@@ -313,7 +313,9 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer) {
       const dx = this.camX - lastX, dz = this.camZ - lastZ, m2 = dx * dx + dz * dz;
       if (m2 > REPLACE * REPLACE) {
         lastX = this.camX; lastZ = this.camZ;
-        rebuild(lastX, lastZ, m2 > JUMP * JUMP, now);
+        const jump = m2 > JUMP * JUMP;
+        rebuild(lastX, lastZ, jump, now);
+        if (jump) this.canopy = canopyTarget; // a load or teleport: no easing in from where we were
         cleanAt = fading ? now + FADE + 0.1 : 0;
       } else if (cleanAt && now > cleanAt) {
         // Fades done: place again from the same spot so the faded-out copies stop drawing.

@@ -458,3 +458,66 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   fragmentOutputs.color = vec4f(outc, ssrMask);
 }
 `;
+
+/** Shadow-pass vertex shader (render/shadows.js): only the position — the same height, geomorph
+ *  and finer-level sinking as clipmapVertexWGSL, none of the normals, biome, wind or lake work a
+ *  depth map never reads (the terrain was ~2 ms of the four cascades in a grove, nearly all vertex
+ *  work), and only the levels the cascade needs (render/shadows.js SHADOW_LEVELS). The
+ *  terrain-state offsets (footprints, centimetres) are left out too. */
+export const clipmapShadowVertexWGSL = /* wgsl */ `
+attribute position: vec3f;
+attribute world0: vec4f;
+attribute world1: vec4f;
+attribute world2: vec4f;
+attribute world3: vec4f;
+uniform viewProjection: mat4x4f;
+uniform levels: array<vec4f,16>;
+uniform camGrid: vec4f;
+uniform shadowLevels: vec4f;          // x, y = the levels this cascade draws (first, last)
+var<storage, read> levelData: array<vec4f>;
+varying vWorldPos: vec3f;
+
+const V: u32 = ${CLIPMAP_N + 1}u;
+const HALF: f32 = ${CLIPMAP_N / 2}.0;
+fn levelSample(level: u32, i: u32, j: u32) -> vec4f { return levelData[(level * V + j) * V + i]; }
+
+@vertex
+fn main(input: VertexInputs) -> FragmentInputs {
+  let level = u32(vertexInputs.world3.x + 0.5);
+  // Levels this cascade does not need: out before any data is read.
+  if (f32(level) < uniforms.shadowLevels.x - 0.5 || f32(level) > uniforms.shadowLevels.y + 0.5) {
+    vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0);
+    vertexOutputs.vWorldPos = vec3f(0.0);
+    return vertexOutputs;
+  }
+  let L = uniforms.levels[level];
+  let s = L.z;
+  let i = u32(vertexInputs.position.x + HALF);
+  let j = u32(vertexInputs.position.z + HALF);
+  var p = L.xy + vertexInputs.position.xz * s;
+  var h = levelSample(level, i, j).x;
+  let cam = uniforms.camGrid.xz;
+  let dist = max(abs(p.x - cam.x), abs(p.y - cam.y)) / s;
+  let band = 24.0;
+  var alpha = clamp((dist - (HALF - 1.0 - band)) / band, 0.0, 1.0);
+  if (level == ${CLIPMAP_LEVELS - 1}u) { alpha = 0.0; }
+  if (alpha > 0.0) {
+    let ti = i - (i & 1u);
+    let tj = j - (j & 1u);
+    let t = L.xy + (vec2f(f32(ti), f32(tj)) - HALF) * s;
+    let P = uniforms.levels[level + 1u];
+    let pi = u32((t.x - P.x) / P.z + HALF + 0.5);
+    let pj = u32((t.y - P.y) / P.z + HALF + 0.5);
+    p = mix(p, t, alpha);
+    h = mix(h, levelSample(level + 1u, pi, pj).x, alpha);
+  }
+  if (level > 0u) {
+    let F = uniforms.levels[level - 1u];
+    let ext = F.z * HALF - F.z * 0.5;
+    if (abs(p.x - F.x) < ext && abs(p.y - F.y) < ext) { h -= 200.0; }
+  }
+  let wp = vec3f(p.x, h, p.y);
+  vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
+  vertexOutputs.vWorldPos = wp;
+}
+`;
