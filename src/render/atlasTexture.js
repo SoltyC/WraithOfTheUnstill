@@ -9,14 +9,15 @@ import { Constants } from '@babylonjs/core/Engines/constants.js';
  * @param {import('@babylonjs/core').Scene} scene
  * @param {OffscreenCanvas} canvas  square, power of two
  * @param {string} label
+ * @param {boolean} [srgb]  colour (true) or data such as normals (false)
  */
-export function canvasAtlasTexture(engine, scene, canvas, label) {
+export function canvasAtlasTexture(engine, scene, canvas, label, srgb = true) {
   const dev = engine._device, size = canvas.width, mips = Math.floor(Math.log2(size)) + 1;
-  const tex = dev.createTexture({ label, size: [size, size, 1], format: 'rgba8unorm-srgb', mipLevelCount: mips, usage: 0x04 | 0x02 | 0x10 });
+  const tex = dev.createTexture({ label, size: [size, size, 1], format: srgb ? 'rgba8unorm-srgb' : 'rgba8unorm', mipLevelCount: mips, usage: 0x04 | 0x02 | 0x10 });
   dev.queue.copyExternalImageToTexture({ source: canvas }, { texture: tex, premultipliedAlpha: false }, [size, size, 1]);
   engine._textureHelper.generateMipmaps(tex, mips, 0);
   const it = engine.wrapWebGPUTexture(tex);
-  it.generateMipMaps = true; it._useSRGBBuffer = true; it.useMipMaps = true;
+  it.generateMipMaps = true; it._useSRGBBuffer = srgb; it.useMipMaps = true;
   it.samplingMode = Constants.TEXTURE_TRILINEAR_SAMPLINGMODE;
   it.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; it.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
   it._cachedAnisotropicFilteringLevel = 4;

@@ -22,7 +22,7 @@ import { SHADOW_SPLITS } from './shadows.js';
 import { CANOPY_N } from './atmosphere.js';
 import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL, treeLeafDepthFragmentWGSL } from '../shaders/trees.wgsl.js';
 import { growTree, growLog, SPECIES } from '../world/trees/generator.js';
-import { drawLeafAtlas } from './leafAtlas.js';
+import { drawLeafAtlases } from './leafAtlas.js';
 import { canvasAtlasTexture } from './atlasTexture.js';
 import { MAT, MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 import { hashU32, valueNoise } from '../terrain/noise.js';
@@ -41,8 +41,11 @@ const CANOPY_R = 45;                                // canopy cover around the c
 const SEED = 0x7ee5;
 const h01 = (x, z, s) => hashU32((Math.imul(x, 0x27d4eb2d) ^ hashU32(Math.imul(z, 0x165667b1) ^ s)) >>> 0) / 4294967296;
 
-/** Upload the leaf atlas as a mipmapped GPU texture (wrapped for Babylon). */
-const leafAtlasTexture = (engine, scene) => canvasAtlasTexture(engine, scene, drawLeafAtlas(), 'leaf-atlas');
+/** Upload the leaf atlases (colour, and the surface: normals + thickness) as mipmapped GPU textures. */
+function leafAtlasTextures(engine, scene) {
+  const a = drawLeafAtlases();
+  return { color: canvasAtlasTexture(engine, scene, a.color, 'leaf-atlas'), surface: canvasAtlasTexture(engine, scene, a.surface, 'leaf-surface', false) };
+}
 
 /** The triangles of one kind (0 bark, 1 leaf) from a grown tree, vertices compacted. */
 function splitKind(t, kind) {
@@ -77,7 +80,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   const S = ShaderStore.ShadersStoreWGSL;
   S.treeVertexShader = treeVertexWGSL; S.treeLeafFragmentShader = treeLeafFragmentWGSL; S.treeBarkFragmentShader = treeBarkFragmentWGSL;
   S.treeShadowFragmentShader = treeShadowFragmentWGSL; S.treeLeafDepthFragmentShader = treeLeafDepthFragmentWGSL; S.treeBarkShadowFragmentShader = treeBarkShadowFragmentWGSL;
-  const atlas = leafAtlasTexture(engine, scene);
+  const atlases = leafAtlasTextures(engine, scene), atlas = atlases.color;
   const params = new Vector4(0, 1, 1, 0);
   const lodV = [new Vector4(0, 0, 0, 0), new Vector4(0, 0, 0, 0), new Vector4(0, 0, 1, 0), new Vector4(0, 0, 2, 0)]; // z: 0 view, 1 shadow (no fade), 2 far shadow (edge fades only); w: clock
   const sets = [], mats = [], shadowOnly = [];
@@ -107,12 +110,12 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         const mat = new ShaderMaterial(mesh.name, scene, { vertex: 'tree', fragment: leaf ? 'treeLeaf' : 'treeBark' }, {
           attributes: ['position', 'normal', 'uv', 'info'],
           uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
-          samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas'] : MAT_SAMPLERS)],
+          samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas', 'leafSurface'] : MAT_SAMPLERS)],
           storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
           shaderLanguage: ShaderLanguage.WGSL,
         });
         bindEnvironment(mat); bindAtmosphere(mat, atmo);
-        if (leaf) mat.setTexture('leafAtlas', atlas); else bindMaterialLibrary(mat, matLib);
+        if (leaf) { mat.setTexture('leafAtlas', atlas); mat.setTexture('leafSurface', atlases.surface); } else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
         mat.setVector4('treeParams', params); mat.setArray4('windField', wind.block); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
         mat.setArray4('spellLights', clipmap.spellLights);
@@ -131,7 +134,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         zm.alwaysSelectAsActiveMesh = true; zm.doNotSyncBoundingInfo = true;
         const zmat = new ShaderMaterial(zm.name, scene, { vertex: 'tree', fragment: 'treeLeafDepth' }, {
           attributes: ['position', 'normal', 'uv', 'info'],
-          uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'artParams'],
+          uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'artParams', 'cameraPosition'],
           samplers: ['leafAtlas'], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
         });
         zmat.setArray4('levels', clipmap.levels); zmat.setStorageBuffer('levelData', clipmap.levelData);

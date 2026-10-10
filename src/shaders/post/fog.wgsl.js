@@ -215,7 +215,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   // --- Light shafts: shadowed share of the weather fog's and the forest haze's sun in-scattering
   var ratio = 1.0; var ratioH = 1.0;
   let hazep = vec4f(P.pad[3].x, P.pad[3].y, P.pad[3].z, 0.0);
-  let hazeOn = hazep.x > 1e-6 && P.pad[3].w > 0.5;
+  let hazeOn = false; // the forest haze's shafts have their own half-resolution pass (hazeShaftCS)
   if ((P.fog.w > 0.5 || hazeOn) && shadowData.light.w > 0.0) {
     var dist = 1e5;
     if (dMax > 0.0) { dist = length(worldPos(texelNdc(pc, P.size), dMax, P.invVP) - cam); }
@@ -309,5 +309,102 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     acc += textureLoad(src, vec2u(gid.x * 4u + i, gid.y * 4u + j), 0);
   } }
   textureStore(outTex, gid.xy, acc / 16.0);
+}
+`;
+
+/** Forest-haze shafts at half resolution (post/fog.js): the haze's sun in-scatter ratio marched
+ *  through the shadow maps in 40 jittered steps over the first 120 m — fine enough that the beams
+ *  between the crowns read as beams (the quarter-resolution, 24-step march smeared them into a
+ *  glow). Out: r = shadowed share of the haze's in-scatter (1 = unshadowed). */
+export const hazeShaftCS = /* wgsl */ `
+${POST_PARAMS_WGSL}
+struct ShadowData {
+  viewProj: array<mat4x4f, ${CASCADES}>,
+  splits: vec4f,
+  origins: array<vec4f, ${CASCADES}>,
+  light: vec4f,
+};
+@group(0) @binding(0) var<storage, read> P: PostParams;
+@group(0) @binding(1) var depthTex: texture_depth_2d;
+@group(0) @binding(2) var<storage, read> shadowData: ShadowData;
+@group(0) @binding(3) var shadowMap0: texture_2d<f32>;
+@group(0) @binding(4) var shadowMap1: texture_2d<f32>;
+@group(0) @binding(5) var shadowMap2: texture_2d<f32>;
+@group(0) @binding(6) var hazeOut: texture_storage_2d<rgba16float, write>;
+${WEATHER_FOG_WGSL}
+fn shadowLoad(c: u32, p: vec2i) -> f32 {
+  let q = clamp(p, vec2i(0), vec2i(2047));
+  switch c {
+    case 0u: { return textureLoad(shadowMap0, q, 0).r; }
+    case 1u: { return textureLoad(shadowMap1, q, 0).r; }
+    default: { return textureLoad(shadowMap2, q, 0).r; }
+  }
+}
+fn sunVis(wp: vec3f, dist: f32) -> f32 {
+  let sp = shadowData.splits;
+  var c = 0u;
+  if (dist > sp.x) { c = 1u; }
+  if (dist > sp.y) { c = 2u; }
+  if (dist > sp.z) { return 1.0; }
+  let L = shadowData.light.xyz;
+  let clip = shadowData.viewProj[c] * vec4f(wp, 1.0);
+  let uv = vec2f(clip.x * 0.5 + 0.5, 0.5 + clip.y * 0.5);
+  if (any(uv <= vec2f(0.0)) || any(uv >= vec2f(1.0))) { return 1.0; }
+  let d = dot(wp - shadowData.origins[c].xyz, -L) - shadowData.origins[c].w * 1.5;
+  var v = select(0.0, 1.0, d <= shadowLoad(c, vec2i(uv * 2048.0)));
+  // Trees cast into cascade 1 only (shadows.wgsl.js shadowTap4): the first cascade's span reads it too.
+  if (c == 0u && v > 0.0) {
+    let clip1 = shadowData.viewProj[1] * vec4f(wp, 1.0);
+    let uv1 = vec2f(clip1.x * 0.5 + 0.5, 0.5 + clip1.y * 0.5);
+    if (all(uv1 > vec2f(0.0)) && all(uv1 < vec2f(1.0))) {
+      let d1 = dot(wp - shadowData.origins[1].xyz, -L) - shadowData.origins[1].w * 1.5;
+      v = select(0.0, 1.0, d1 <= shadowLoad(1u, vec2i(uv1 * 2048.0)));
+    }
+  }
+  return v;
+}
+
+@compute @workgroup_size(8, 8, 1)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+  let fsz = vec2i(P.size.xy);
+  let hsz = (fsz + 1) / 2;
+  let q = vec2i(gid.xy);
+  if (q.x >= hsz.x || q.y >= hsz.y) { return; }
+  var ratio = 1.0;
+  let hazep = vec4f(P.pad[3].x, P.pad[3].y, P.pad[3].z, 0.0);
+  if (hazep.x > 1e-6 && P.pad[3].w > 0.5 && shadowData.light.w > 0.0) {
+    // Nearest surface in the 2×2 block (reverse-Z: the largest depth).
+    var dMax = 0.0;
+    for (var j = 0; j < 2; j += 1) { for (var i = 0; i < 2; i += 1) { dMax = max(dMax, textureLoad(depthTex, min(q * 2 + vec2i(i, j), fsz - 1), 0)); } }
+    let pc = q * 2 + 1;
+    let ndc = texelNdc(pc, P.size);
+    let farH = P.invVP * vec4f(ndc, 1e-7, 1.0);
+    let cam = P.cam.xyz;
+    let dir = normalize(farH.xyz / farH.w - cam);
+    var dist = 1e5;
+    if (dMax > 0.0) { dist = length(worldPos(ndc, dMax, P.invVP) - cam); }
+    let totalH = 1.0 - exp(-fogOpticalDepth(cam, dir, min(dist, 200.0), hazep));
+    let tMax = min(dist, 120.0);
+    let N = 40;
+    // Steps grow with distance (fine near, where beams are sharpest); a per-pixel, per-frame
+    // jitter (interleaved gradient noise × golden ratio over 64 frames) that TAA integrates.
+    let ign = fract(52.9829189 * fract(dot(vec2f(q), vec2f(0.06711056, 0.00583715))));
+    let jit = fract(ign + f32(i32(P.jitter.z) % 64) * 0.618034);
+    var lit = 0.0; var wsum = 0.0; var od = 0.0; var tPrev = 0.0;
+    for (var i = 0; i < N; i++) {
+      let u = (f32(i) + jit) / f32(N);
+      let t = tMax * u * u;
+      let dt = t - tPrev; tPrev = t;
+      let p = cam + dir * t;
+      let dens = fogDensityAt(p, hazep);
+      let w = dens * exp(-od) * dt;
+      od += dens * dt;
+      lit += w * sunVis(p, t);
+      wsum += w;
+    }
+    let rest = max(totalH - wsum, 0.0);
+    ratio = (lit + rest) / max(wsum + rest, 1e-6);
+  }
+  textureStore(hazeOut, q, vec4f(ratio, 0.0, 0.0, 1.0));
 }
 `;

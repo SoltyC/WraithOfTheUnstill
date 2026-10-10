@@ -243,8 +243,14 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var albedo = mix(green, dry, fragmentInputs.vDry * (0.25 + 0.45 * t));
   albedo *= mix(0.35, 1.0, smoothstep(0.0, 0.45, t));
   albedo = mix(albedo, albedo * vec3f(1.15, 1.1, 0.8), t * t * 0.5);
-  // A midrib: a little lighter along the blade's centre.
-  albedo *= 0.92 + 0.12 * (1.0 - abs(fragmentInputs.vSide));
+  // Blade texture: a lighter midrib, fine lengthwise veins, darker edges, and pale dry flecks
+  // toward the tip (grass up close is striped, not flat).
+  let sd2 = fragmentInputs.vSide;
+  albedo *= 0.9 + 0.14 * (1.0 - abs(sd2));
+  albedo *= 0.88 + 0.14 * (0.5 + 0.5 * sin(sd2 * 11.0 + sd * 40.0));
+  albedo *= 1.0 - 0.25 * smoothstep(0.75, 1.0, abs(sd2));
+  let fleck = step(0.86, fract(sin(floor(t * 28.0) * 12.9898 + sd * 78.233) * 43758.5453)) * smoothstep(0.4, 1.0, t);
+  albedo = mix(albedo, albedo * vec3f(1.5, 1.4, 0.9), fleck * 0.5);
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let nl = dot(N, L);

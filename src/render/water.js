@@ -199,10 +199,13 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
 
   // Ripples: a ring of slots (x, z, start time, strength).
   const rip = new Float32Array(WATER_RIPPLES * 4);
-  let head = 0, lastEmit = -1e9, wasIn = false, dirty = true, lastPhase = 0;
-  function emit(x, z, t, s) {
+  let head = 0, lastEmit = -1e9, wasIn = false, dirty = true, lastPhase = 0, lastX = 0, lastZ = 0;
+  /** A trail point (heading dx, dz; strength s ≤ 4) or, with dx = dz = 0, a splash. */
+  function emit(x, z, t, s, dx, dz) {
     const o = head * 4; head = (head + 1) % WATER_RIPPLES;
-    rip[o] = x; rip[o + 1] = z; rip[o + 2] = t; rip[o + 3] = s; dirty = true;
+    let bin = 64;
+    if (dx * dx + dz * dz > 1e-6) bin = ((Math.round(Math.atan2(dx, dz) / (Math.PI / 32)) % 64) + 64) % 64;
+    rip[o] = x; rip[o + 1] = z; rip[o + 2] = t; rip[o + 3] = 8 * bin + Math.min(3.9, Math.max(0.01, s)); dirty = true;
   }
 
   const water = {
@@ -235,7 +238,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       const o = j * N + i; return !Number.isNaN(wet[o]) || !Number.isNaN(rLevel[o]);
     },
     /** A ripple now (or at a past time t): the scripted walks of photo spots lay their wake with it. */
-    ripple(x, z, t, s) { emit(x, z, t, s); },
+    ripple(x, z, t, s, dx = 0, dz = 0) { emit(x, z, t, s, dx, dz); },
     /** Owner fields: time (s); the Wraith's position, horizontal speed (m/s). */
     time: 0.5, px: 0.5, py: 0.5, pz: 0.5, speed: 0.5 - 0.5,
     /** Swimming (owner): the stroke phase 0..1 — each stroke's sweep throws a ring and a little foam. */
@@ -248,18 +251,21 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       this.inWater = lv === lv && this.py < lv + 0.02;
       this.depth = this.inWater ? lv - this.py : 0;
       if (this.inWater) {
-        const t = this.time, sp = this.speed;
-        // Entering: a splash. Moving: rings every 0.25 s (a wake forms behind). Still: a slow pulse.
-        if (!wasIn) { emit(this.px, this.pz, t, 1.6); lastEmit = t; }
-        else if (this.swimming) {
-          // A ring from each stroke's sweep (the arms break the surface), and the wake between.
+        const t = this.time, sp = this.speed, dx = this.px - lastX, dz = this.pz - lastZ, moved = Math.sqrt(dx * dx + dz * dz);
+        // Deeper in the water, a bigger wake (wading shins push less than a swimming body).
+        const body = Math.min(1, 0.35 + this.depth * 0.6);
+        if (!wasIn) { emit(this.px, this.pz, t, 1.6, 0, 0); lastEmit = t; lastX = this.px; lastZ = this.pz; }
+        else if (moved > 0.14 && moved < 3) {
+          // The trail: a point every 14 cm along the path (the wake's crests and the churned lane).
+          emit(this.px, this.pz, t, body * Math.min(1.6, 0.4 + 0.45 * sp), dx, dz); lastEmit = t; lastX = this.px; lastZ = this.pz;
+        } else if (moved >= 3) { lastX = this.px; lastZ = this.pz; }
+        else if (sp < 0.2 && t - lastEmit > 1.8) { emit(this.px, this.pz, t, 0.18, 0, 0); lastEmit = t; } // standing: a slow pulse
+        if (this.swimming) {
+          // Each stroke breaks the surface: a small splash ring at the sweep.
           const ph = this.strokePhase;
-          if (lastPhase < 0.38 && ph >= 0.38) { emit(this.px, this.pz, t, 1.3); lastEmit = t; }
-          else if (t - lastEmit > 0.3) { emit(this.px, this.pz, t, 0.4 + 0.25 * Math.min(sp, 2.3)); lastEmit = t; }
+          if (lastPhase < 0.38 && ph >= 0.38) emit(this.px, this.pz, t, 0.7, 0, 0);
           lastPhase = ph;
         }
-        else if (sp > 0.25 && t - lastEmit > 0.25) { emit(this.px, this.pz, t, Math.min(1.2, 0.35 + 0.35 * sp)); lastEmit = t; }
-        else if (sp <= 0.25 && t - lastEmit > 1.6) { emit(this.px, this.pz, t, 0.22); lastEmit = t; }
       }
       wasIn = this.inWater;
       if (dirty) { ripples.update(rip); dirty = false; }

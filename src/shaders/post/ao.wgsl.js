@@ -90,6 +90,8 @@ ${POST_PARAMS_WGSL}
 @group(0) @binding(11) var outColor: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(12) var canopySampler: sampler;
 @group(0) @binding(13) var canopyTex: texture_2d<f32>;
+@group(0) @binding(14) var hazeSampler: sampler;
+@group(0) @binding(15) var hazeTex: texture_2d<f32>;
 fn canopyC(p: vec2f) -> f32 { return textureSampleLevel(canopyTex, canopySampler, (p + 4096.0) / 8192.0, 0.0).r; }
 ${WEATHER_FOG_WGSL}
 
@@ -189,7 +191,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let cK = clamp(cAvg / max(canopyC(cam.xz), 0.15), 0.0, 1.3);
     let Th = exp(-fogOpticalDepth(cam, dir, dh, hazep) * cK); // local: within 200 m
     var ratioH = 1.0;
-    if (P.pad[3].w > 0.5) { ratioH = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).g; }
+    if (P.pad[3].w > 0.5) { ratioH = textureSampleLevel(hazeTex, hazeSampler, uv, 0.0).r; }
     let cosT = dot(dir, P.sun.xyz);
     let phase = mix(hgPhase(cosT, 0.72), 0.0795775, 0.25);
     let ins = (atmoLight[0].xyz * phase * ratioH * 1.4 + atmoLight[1].xyz * 0.35) * (1.0 - Th);

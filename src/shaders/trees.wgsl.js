@@ -129,7 +129,7 @@ function treeFragment(leafPass) {
 ${ENV_DECL}
 ${SPELL_LIGHT_DECL}
 uniform treeMat: vec4f;              // x = bark layer, y = species (0 pine, 1 oak, 2 birch, 3 shrub, 4 log)
-${leafPass ? 'var leafAtlas: texture_2d<f32>;\nvar leafAtlasSampler: sampler;' : ''}
+${leafPass ? 'var leafAtlas: texture_2d<f32>;\nvar leafAtlasSampler: sampler;\nvar leafSurface: texture_2d<f32>;\nvar leafSurfaceSampler: sampler;' : ''}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -159,23 +159,43 @@ ${leafPass ? '' : `  if (dissolveCut(fragmentInputs.position.xy, uniforms.artPar
 ${leafPass ? `
   // No cut-out here: the depth prepass (treeLeafDepth) did it, and this pass draws only where its
   // depth is equal — each visible leaf pixel is shaded once, however many cards overlap.
-  let lc = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, info.z));
+  let luv = leafUv(fragmentInputs.vUv, info.z);
+  let lc = textureSample(leafAtlas, leafAtlasSampler, luv);
+  let ls = textureSample(leafSurface, leafSurfaceSampler, luv);
+  // The card's frame from screen derivatives (cards have no tangents): u right, v up the cluster.
+  let dpx = dpdx(wp); let dpy = dpdy(wp); let dux = dpdx(fragmentInputs.vUv); let duy = dpdy(fragmentInputs.vUv);
+  let Ng = normalize(cross(dpy, dpx));
+  var Tu = dpx * duy.y - dpy * dux.y; var Tv = dpy * dux.x - dpx * duy.x;
+  Tu = normalize(Tu - Ng * dot(Tu, Ng) + vec3f(1e-6)); Tv = normalize(Tv - Ng * dot(Tv, Ng) + vec3f(1e-6));
   if (dot(N, V) < -0.2) { N = normalize(N + V * 0.6); }
+  // Leaf normal: the drawn surface (blade dome, veins, midrib) on the card, blended with the
+  // crown's rounded normal (a crown still shades as a mass; each leaf breaks it up).
+  let ln = ls.xy * 2.0 - 1.0;
+  var Nc = Ng; if (dot(Nc, V) < 0.0) { Nc = -Nc; }
+  let Nleaf = normalize(Tu * ln.x + Tv * ln.y + Nc * sqrt(max(1.0 - dot(ln, ln), 0.05)));
+  N = normalize(mix(N, Nleaf, 0.55));
+  let thick = ls.z;
   // Per-cluster colour: a little hue and value variation, and the tree's own (vHue).
   let h = fract(info.y * 0.0137 + fragmentInputs.vHue);
-  var albedo = lc.rgb * mix(vec3f(0.85, 0.95, 0.8), vec3f(1.1, 1.05, 0.9), h) * (0.8 + 0.35 * fragmentInputs.vHue);
-  // Inner crown is darker (light has crossed the leaves above): height in tree and facing.
-  let inner = mix(0.55, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.75, 1.0, info.w);
+  var albedo = lc.rgb * mix(vec3f(0.85, 0.95, 0.8), vec3f(1.1, 1.05, 0.9), h) * (0.85 + 0.35 * fragmentInputs.vHue);
+  // Inner crown is darker (light has crossed the leaves above): height in tree and facing — but
+  // never black (light comes through and between the leaves).
+  let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, info.w);
   // Leaves: the 4-tap lookup — the cut-out edges already break the penumbra up, TAA blends it.
   let vis = shadowVisibilityFast(wp, camPos);
   let nl = dot(N, L);
-  let diff = clamp((nl + 0.4) / 1.4, 0.0, 1.0);
+  let diff = clamp((nl + 0.35) / 1.35, 0.0, 1.0);
   let canopy = canopyAt(wp.xz);
   let sky = shIrradiance(N) * uniforms.envMisc.w * inner * mix(1.0, canopySky(canopy), 1.0 - info.w);
-  col = albedo * (key * diff * vis * inner / PI + sky + canopyFill(canopy, N) * inner * 0.6);
-  // Light through the leaves toward the sun.
-  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5);
-  col += key * albedo * vec3f(0.9, 1.15, 0.55) * back * vis * 0.45;
+  // Transmitted sky and fill: a shaded leaf is still lit through from the leaves around it.
+  let through = (shIrradiance(-N) * uniforms.envMisc.w * 0.35 + canopyFill(canopy, N) * 0.5) * (1.0 - thick);
+  col = albedo * (key * diff * vis * inner / PI + sky + canopyFill(canopy, N) * inner * 0.6 + through);
+  // Light through the leaves toward the sun: the blade glows, the veins and twigs stay dark.
+  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * (1.0 - thick) * (0.6 + 0.4 * clamp(-nl, 0.0, 1.0));
+  col += key * albedo * vec3f(0.95, 1.2, 0.5) * back * vis * 0.7;
+  // A waxy sheen on the blades (sharp, small).
+  let Hh = normalize(L + V);
+  col += key * pow(max(dot(Nleaf, Hh), 0.0), 60.0) * 0.08 * vis * clamp(nl, 0.0, 1.0);
   col += spellLit(wp, N, albedo, 0.4, ex);` : `
   let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
   // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
@@ -246,6 +266,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
  *  every other opaque mesh; the leaf colour pass then tests depth equal). */
 export const treeLeafDepthFragmentWGSL = /* wgsl */ `
 uniform artParams: vec4f;
+uniform cameraPosition: vec3f;
 var leafAtlas: texture_2d<f32>;
 var leafAtlasSampler: sampler;
 varying vWorldPos: vec3f;
@@ -259,7 +280,13 @@ ${DISSOLVE}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let a = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z)).a;
-  if (a < 0.5 || dissolveCut(fragmentInputs.position.xy, uniforms.artParams.z, fragmentInputs.vFade)) { discard; }
+  // A card seen edge-on smears its leaves into streaks: it thins away (the crossed card facing the
+  // view carries the cluster there).
+  let wp = fragmentInputs.vWorldPos;
+  let ng = normalize(cross(dpdy(wp), dpdx(wp)));
+  let facing = abs(dot(ng, normalize(uniforms.cameraPosition - wp)));
+  let cut = mix(0.97, 0.5, smoothstep(0.12, 0.38, facing));
+  if (a < cut || dissolveCut(fragmentInputs.position.xy, uniforms.artParams.z, fragmentInputs.vFade)) { discard; }
   fragmentOutputs.color = vec4f(0.0);
 }
 `;

@@ -20,7 +20,7 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 
 /** Ripple slots (render/water.js writes them; the SSR pass reads the same buffer). */
-export const WATER_RIPPLES = 24;
+export const WATER_RIPPLES = 64;
 
 /**
  * Slope of the water surface at p (dh/dx, dh/dz) and foam, from the wind (direction × speed
@@ -58,20 +58,47 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
   let kq = 1.0 - smoothstep(0.05, 0.2, fp);
   g += (wNoised(q).yz * 0.010 + wNoised(q * 2.7 + 11.0).yz * 0.006) * calm * kq;
   lost += 0.0001 * calm * (1.0 - kq);
-  // The Wraith's ripples: rings running outward, a packet each, fading.
+  // The Wraith in the water (render/water.js writes a dense trail: x, z, time, w = 8·bin + strength
+  // with bin the heading in 64 steps, 64 = a splash). A body moving through water does not throw
+  // rings: each trail point sends one soft crest out sideways (none ahead of where the body went),
+  // and the crests of a dense trail add up to the two arms of a V wake; straight behind, the water
+  // it pushed aside churns (fine broken slopes, foam), settling over a couple of seconds. A
+  // splash (going in, a stroke breaking the surface) is the only ring.
   var foam = 0.0;
+  let fade = 1.0 - smoothstep(0.05, 0.25, fp);
   for (var i = 0u; i < ${WATER_RIPPLES}u; i++) {
     let R = waterRipples[i];
     if (R.w <= 0.0) { continue; }
     let age = t - R.z;
-    if (age < 0.0 || age > 3.5) { continue; }
+    if (age < 0.0 || age > 4.0) { continue; }
     let r = p - R.xy; let dist = length(r);
-    let x = dist - 0.08 - 0.8 * age;
-    let width = 0.08 + 0.2 * age;
-    let env = exp(-x * x / width) * exp(-age * 1.15) * R.w;
-    if (env < 1e-4) { continue; }
-    g += r / max(dist, 0.03) * (env * cos(x * 17.0) * 1.1 * (1.0 - smoothstep(0.05, 0.2, fp)));
-    foam += env * (1.0 - smoothstep(0.0, 0.7, age)) * smoothstep(0.35, 0.0, x * x);
+    let bin = floor(R.w / 8.0); let s = R.w - bin * 8.0;
+    let crestR = 0.18 + 0.62 * age;                       // the crest's distance from the point
+    if (dist > crestR + 1.2) { continue; }
+    let x = dist - crestR;
+    let width = 0.05 + 0.09 * age;
+    let decay = exp(-age * 0.9) * s;
+    let rn = r / max(dist, 0.03);
+    if (bin > 63.5) {
+      // A splash: a short packet of rings.
+      let env = exp(-x * x / width) * decay;
+      g += rn * (env * cos(x * 16.0) * 1.1 * fade);
+      foam += env * (1.0 - smoothstep(0.0, 0.6, age)) * smoothstep(0.3, 0.0, x * x);
+      continue;
+    }
+    let ang = bin * 0.09817477; let d = vec2f(sin(ang), cos(ang));   // heading (x = sin, z = cos)
+    let along = dot(r, d); let across = abs(-r.x * d.y + r.y * d.x);
+    // A crest only to the sides and behind (|across| over the distance), none ahead.
+    let side = smoothstep(0.0, 0.8, across / max(dist, 0.05)) * smoothstep(0.25, -0.15, along / max(dist, 0.05));
+    let h = exp(-x * x / width);
+    g += rn * (-2.0 * x / width * h * 0.08 * decay * side * fade);
+    // The churned lane straight behind: broken fine slopes and foam, widening and calming.
+    let lane = exp(-across * across / (0.06 + 0.05 * age)) * smoothstep(0.1, -0.3, along) * exp(-age * 1.4) * s;
+    if (lane > 1e-3) {
+      let q = p * 7.0 + vec2f(R.z * 13.1, R.z * 7.3);
+      g += wNoised(q).yz * (0.05 * lane * fade);
+      foam += lane * 0.55 * smoothstep(0.2, 0.75, wNoised(q * 0.6).x * 0.5 + 0.5);
+    }
   }
   return vec4f(g, foam, lost);
 }

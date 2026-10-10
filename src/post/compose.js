@@ -33,7 +33,8 @@ export function createCompose(post, scene, camera, atmo, fog) {
       ['depthTex', 'tex', post.depthTex], ['aoTex', 'tex', aoTex], ['cloudSampler', 'sampler'], ['cloudTex', 'stex', fog.cloudTex],
       ['shaftSampler', 'sampler'], ['shaftTex', 'stex', fog.shaftTex], ['atmoLight', 'buffer', atmo.atmoLight],
       ['ssrSampler', 'sampler'], ['ssrTex', 'stex', ssrTex], ['outColor', 'storageTex', out],
-      ['canopySampler', 'sampler'], ['canopyTex', 'stex', atmo.canopyTex]]);
+      ['canopySampler', 'sampler'], ['canopyTex', 'stex', atmo.canopyTex],
+      ['hazeSampler', 'sampler'], ['hazeTex', 'stex', fog.hazeTex]]);
     comp.out = out;
   };
   const comp = {

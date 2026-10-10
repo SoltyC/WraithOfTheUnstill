@@ -98,7 +98,7 @@ export function addWraithSystem(g) {
       ground.qx = x; ground.qz = z; ground.sample();
       // Wading: the wake it leaves (water ripples at the times they were made).
       const tw = clock.simTime - (n - 1 - i) * dt, lv = g.water ? g.water.levelAt(x, z) : NaN;
-      if (lv === lv && ground.h < lv && tw - lastRip > 0.25) { g.water.ripple(x, z, tw, Math.min(1.2, 0.35 + 0.35 * v[i])); lastRip = tw; }
+      if (lv === lv && ground.h < lv && tw - lastRip > 0.14 / Math.max(v[i], 0.1)) { g.water.ripple(x, z, tw, Math.min(1.6, 0.4 + 0.45 * v[i]) * Math.min(1, 0.35 + (lv - ground.h) * 0.6), dx, dz); lastRip = tw; }
       w.bx = x; w.by = ground.h; w.bz = z; w.vx = dx * v[i]; w.vz = dz * v[i];
       w.yaw = f; w.grounded = true; w.dt = dt; w.time = clock.simTime - (n - 1 - i) * dt;
       wraithView.time = w.time;
