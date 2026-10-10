@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wraith Playtest</title>
+<style>
+  :root { --bg: #0f1210; --card: #181d19; --ink: #e8eadf; --dim: #9aa393; --accent: #c9b77a; --line: #2a312b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 Georgia, 'Iowan Old Style', serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-weight: normal; letter-spacing: 0.04em; margin: 0 0 4px; font-size: 30px; }
+  .sub { color: var(--dim); margin: 0 0 28px; }
+  h2 { font-weight: normal; font-size: 18px; color: var(--accent); margin: 32px 0 12px; letter-spacing: 0.03em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  a.spot { display: block; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); text-decoration: none; }
+  a.spot:hover { border-color: var(--accent); }
+  a.spot b { display: block; font-weight: normal; font-size: 17px; margin-bottom: 2px; }
+  a.spot span { color: var(--dim); font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { color: var(--accent); white-space: nowrap; width: 34%; }
+  .note { color: var(--dim); font-size: 14px; margin-top: 24px; }
+  kbd { font: 13px ui-monospace, monospace; background: #232a24; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Wraith of the Unstill — playtest</h1>
+  <p class="sub">Each place starts you there, playing (the meadow restored). Playtests never autosave over your real game.</p>
+
+  <h2>Water</h2>
+  <div class="grid">
+    <a class="spot" href="./?spot=p8-lake-wade&title=0"><b>Wade the lake shallows</b><span>Walk out until you swim. Golden hour.</span></a>
+    <a class="spot" href="./?spot=p8-lake-golden&title=0"><b>Lake at golden hour</b><span>Swim toward the sun: glints, reflections, wake.</span></a>
+    <a class="spot" href="./?spot=p8-lake-noon&title=0"><b>Lake at noon</b><span>From a grove on the shore.</span></a>
+    <a class="spot" href="./?spot=p8-lake-stilled&title=0"><b>Stilled lake</b><span>No wind: a mirror. Disturb it.</span></a>
+    <a class="spot" href="./?spot=p8-river&title=0"><b>Meadow river</b><span>Follow it down to the lake; swim with the current.</span></a>
+  </div>
+
+  <h2>Meadow and forest</h2>
+  <div class="grid">
+    <a class="spot" href="./?spot=p8-meadow-golden&title=0"><b>Meadow, golden hour</b><span>Walk through the grass: it parts around you.</span></a>
+    <a class="spot" href="./?spot=p8-forest-shafts&title=0"><b>Light through the canopy</b><span>Shafts and motes in a grove.</span></a>
+    <a class="spot" href="./?spot=p8-forest-floor&title=0"><b>Forest floor</b><span>Leaf litter, ferns, moss, logs.</span></a>
+    <a class="spot" href="./?spot=p8-border&title=0"><b>The snowline</b><span>Where the frost breaks into the meadow.</span></a>
+    <a class="spot" href="./"><b>The full game</b><span>From the title (your real save).</span></a>
+  </div>
+
+  <h2>Controls</h2>
+  <table>
+    <tr><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> + mouse</td><td>Move, look (click the game first to capture the mouse)</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Jump; while swimming, a strong stroke</td></tr>
+    <tr><td>Right mouse (hold)</td><td>Surf the snow (frost only)</td></tr>
+    <tr><td><kbd>Ctrl</kbd></td><td>Dodge</td></tr>
+    <tr><td><kbd>M</kbd> / <kbd>J</kbd> / <kbd>Esc</kbd></td><td>Map / journal / pause</td></tr>
+    <tr><td><kbd>`</kbd> (backquote)</td><td>Dev overlay: toggles, frame time, the wind-field map</td></tr>
+  </table>
+  <p class="note">Needs a desktop browser with WebGPU (current Chrome or Edge). Swimming starts where the water is deeper than the Wraith's chest; walk out where the bed rises.</p>
+</main>
+</body>
+</html>

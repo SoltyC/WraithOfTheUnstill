@@ -109,7 +109,9 @@ async function boot() {
   const overlay = new overlayMod.DevOverlay(game);
   overlay.refreshToggles();
   loop.addLate(overlay);
-  loop.addLate({ name: 'saves', update: () => { if (systemsMod.toggles.on.autosave && !capture) game.saves.tick(); } });
+  // A playtest (a photo spot played live: ?spot=…&title=0, playtest.html) never autosaves over the real game.
+  const playtest = !!qs.get('spot') && !capture;
+  loop.addLate({ name: 'saves', update: () => { if (systemsMod.toggles.on.autosave && !capture && !playtest) game.saves.tick(); } });
   const bench = qs.get('bench') ? await import('./core/bench.js') : null;
   if (bench) loop.addLate(bench.benchSystem);
   // Screens (title, codex pages): live play only.

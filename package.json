@@ -15,7 +15,8 @@
     "alloc": "node --expose-gc tools/alloc/alloc-check.mjs",
     "perf": "node tools/capture/perf-run.mjs",
     "overlay-check": "node tools/capture/overlay-check.mjs",
-    "parity": "node tools/capture/parity-check.mjs"
+    "parity": "node tools/capture/parity-check.mjs",
+    "playtest": "bash tools/playtest.sh"
   },
   "dependencies": {
     "@babylonjs/core": "^9.29.0",
