@@ -32,6 +32,8 @@ export class Gait {
     // Inputs.
     this.bx = 0.5; this.by = 0.5; this.bz = 0.5; this.vx = 0.5 - 0.5; this.vz = 0.5 - 0.5; this.yaw = 0.5 - 0.5;
     this.grounded = true; this.dt = 0.5;
+    /** Swimming 0..1 and the stroke phase (inputs). */
+    this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
     // Feet: world position, state, swing from/to, swing progress and duration.
     this.fx = new Float64Array(2); this.fy = new Float64Array(2); this.fz = new Float64Array(2);
     this.state = new Uint8Array(2);
@@ -155,11 +157,16 @@ export class Gait {
         this.last = f;
       }
     } else {
-      // Airborne: feet tuck under the body (no footfalls until grounded again).
+      // Airborne: feet tuck under the body (no footfalls until grounded again). Swimming: the legs
+      // trail behind and below, drawing up and kicking out together on the stroke.
+      const sw = this.swim, fxd = Math.sin(this.yaw), fzd = Math.cos(this.yaw);
+      const kick = 0.5 - 0.5 * Math.cos(Math.PI * 2 * Math.min(1, this.swimPhase / 0.6));
       for (let f = 0; f < 2; f++) {
         this._home(f, 0);
         this.state[f] = PLANTED;
-        this.fx[f] = this._hx; this.fz[f] = this._hz; this.fy[f] = this.by - 0.05;
+        const side = f === 0 ? -1 : 1, back = (0.55 - 0.25 * kick) * sw, wide = (GAIT.hipWidth + 0.12 * kick * sw) * side;
+        this.fx[f] = this._hx - fxd * back + fzd * wide * sw; this.fz[f] = this._hz - fzd * back - fxd * wide * sw;
+        this.fy[f] = this.by - 0.05 + (0.45 - 0.15 * kick) * sw;
       }
     }
 

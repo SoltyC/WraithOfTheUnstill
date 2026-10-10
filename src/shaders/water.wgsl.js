@@ -77,6 +77,7 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
 }
 `;
 
+
 const GROUND_WGSL = /* wgsl */ `
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
@@ -96,12 +97,29 @@ fn wGround(x: f32, z: f32) -> f32 {
 
 export const waterVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
+attribute flow: vec4f;               // lakes: (0, 0, 0, −1); rivers: flow direction xz, depth, strength
 uniform viewProjection: mat4x4f;
+uniform levels: array<vec4f,16>;
+var<storage, read> levelData: array<vec4f>;
 varying vWorldPos: vec3f;
+varying vFlow: vec4f;
+${GROUND_WGSL}
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
-  vertexOutputs.position = uniforms.viewProjection * vec4f(vertexInputs.position, 1.0);
-  vertexOutputs.vWorldPos = vertexInputs.position;
+  var p = vertexInputs.position;
+  let fl = vertexInputs.flow;
+  var rapids = 0.0;
+  if (fl.w >= 0.0) {
+    // A river: its level comes from render/water.js (the channel bed on the real terrain, smoothed
+    // downstream); flow.z there is the rapids. Where the ground falls far below it (a bank on a
+    // side slope), the sheet would hang in the air: tuck that corner under the ground.
+    rapids = fl.z;
+    let gnd = wGround(p.x, p.z);
+    if (gnd < p.y - 2.2) { p.y = gnd - 0.3; }
+  }
+  vertexOutputs.position = uniforms.viewProjection * vec4f(p, 1.0);
+  vertexOutputs.vWorldPos = p;
+  vertexOutputs.vFlow = vec4f(fl.xy * (0.5 + 1.6 * max(fl.w, 0.0)), rapids, fl.w);
 }
 `;
 
@@ -120,6 +138,7 @@ uniform waterParams: vec4f;          // x = time (s), y = caustics strength, z, 
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> waterRipples: array<vec4f>;
 varying vWorldPos: vec3f;
+varying vFlow: vec4f;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${absorb ? '' : SHADOW_RECEIVE_WGSL}
@@ -128,6 +147,18 @@ ${GROUND_WGSL}
 fn wNoised(p: vec2f) -> vec3f { return noised(p); }
 ${WATER_WAVES_WGSL}
 ${OPTICS}
+/** The surface slope with the current: rivers carry their waves downstream (two phases of a flow
+ *  map, cross-faded), roughened by the current; lakes as they are. */
+fn waterSlopeF(p: vec2f, t: f32, wind: vec2f, fp: f32, fl: vec4f) -> vec4f {
+  if (fl.w < 0.0) { return waterSlope(p, t, wind, fp); }
+  let sp = length(fl.xy);
+  let w2 = wind + fl.xy * 0.9;            // the current raises its own chop
+  let ph = fract(t / 1.6); let ph2 = fract(t / 1.6 + 0.5);
+  let a = waterSlope(p - fl.xy * ph * 1.6, t, w2, fp);
+  let b = waterSlope(p - fl.xy * ph2 * 1.6 + vec2f(3.7, 1.3), t, w2, fp);
+  let k = abs(ph * 2.0 - 1.0);
+  return mix(a, b, k) * vec4f(1.0, 1.0, 1.0, 1.0) + vec4f(0.0, 0.0, 0.0, 0.002 * sp);
+}
 `;
 
 export const waterAbsorbFragmentWGSL = /* wgsl */ `
@@ -165,7 +196,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let t = uniforms.waterParams.x;
   let wf = windField(wp.xz);
   let fp = length(fwidth(wp.xz));
-  let sl = waterSlope(wp.xz, t, wf.xy * wf.z, fp);
+  let fl = fragmentInputs.vFlow;
+  let sl = waterSlopeF(wp.xz, t, wf.xy * wf.z, fp, fl);
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
   let T = exp(-W_SIGMA * wPath(depth, V));
@@ -189,7 +221,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let light = key * max(L.y, 0.0) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, vec3f(0.0, 1.0, 0.0));
   let body = W_BODY * light * (1.0 - T);
   // Foam where the ripples are young (the Wraith's splashes), lit like a rough white surface.
-  let foam = clamp(sl.z * (0.6 + 0.4 * noised(wp.xz * 9.0 + t).x), 0.0, 1.0);
+  var foam = clamp(sl.z * (0.6 + 0.4 * noised(wp.xz * 9.0 + t).x), 0.0, 1.0);
+  // Rivers: white water on the rapids, streaks of foam carried down the current.
+  if (fl.w >= 0.0) {
+    let q = wp.xz - fl.xy * t * 0.9;
+    let streak = smoothstep(0.55, 0.9, noised(q * vec2f(1.6, 1.6) + 4.0).x * 0.6 + noised(q * 5.0).x * 0.4 + 0.25);
+    foam = max(foam, clamp(fl.z * (0.5 + 0.5 * streak) + 0.08 * streak * min(length(fl.xy) / 2.0, 1.0), 0.0, 0.85));
+  }
   let foamCol = vec3f(0.8) * (key * max(L.y, 0.1) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
   var col = body * (1.0 - F) + sky * F + spec;
   col = mix(col, foamCol, foam * 0.8);

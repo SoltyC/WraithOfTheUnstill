@@ -39,6 +39,8 @@ export class SpringArmCamera {
   constructor(camera, ground) {
     this.camera = camera;
     this.ground = ground;
+    /** Water level query (render/water.js: qx, qz → levelQ() → lv), or null. */
+    this.water = null;
     this.yaw = 0;
     this.pitch = 0.28;
     this.zoomTarget = armTuning.defaultDist;
@@ -178,6 +180,9 @@ export class SpringArmCamera {
     g.qx = x; g.qz = z; g.sample();
     const gy = g.h + T.collisionClearance * 0.5;
     if (y < gy) y = gy;
+    // Water (render/water.js): the camera stays above the surface (a swimmer's eye is at it).
+    const wa = this.water;
+    if (wa !== null) { wa.qx = x; wa.qz = z; wa.levelQ(); const wl = wa.lv; if (wl === wl && y < wl + 0.35) y = wl + 0.35; }
     this._apply(x, y, z);
   }
 

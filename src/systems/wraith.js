@@ -13,6 +13,7 @@ export function addWraithSystem(g) {
     if (wf) { wf.sx = p.x; wf.sz = p.z; wf.sample(); w.windX = wf.outX; w.windZ = wf.outZ; w.windStrength = wf.speed * 0.9; } // ×0.9: the old frost cloth strength on average
     else w.windStrength = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
+    w.swimming = controller.swimming;
     knockCtl.feedOverride(w);
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0);
     wraithView.time = clock.simTime;

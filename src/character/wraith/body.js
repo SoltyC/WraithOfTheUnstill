@@ -28,6 +28,8 @@ export class Body {
     this.dt = 0.5;
     /** Surf engagement 0..1 and the carve's lean (rad, + = into a right turn): inputs. */
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
+    /** Swimming 0..1 and the breaststroke phase 0..1 (inputs). */
+    this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
     /** Bending gesture 0..1 (input): the right arm reaches out toward the verb. */
     this.cast = 0.5 - 0.5;
     /** Death: 0..1 collapse (the figure folds forward as it sinks). */
@@ -71,7 +73,10 @@ export class Body {
     // Posture (the Veiled): a standing hunch, and breathing — a slow rise and settle of the chest.
     this._bt += dt;
     const breathe = this.breath * Math.sin(this._bt * 2 * Math.PI / 4.6);
-    this.lean += (0.05 + this.hunch + breathe + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse - this.lean) * k;
+    const sw = this.swim;
+    // Swimming: the body lies forward in the water (~60°), rising and settling with each stroke.
+    const swimLean = 1.05 + 0.08 * Math.sin(Math.PI * 2 * this.swimPhase);
+    this.lean += ((0.05 + this.hunch + breathe + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse) * (1 - sw) + swimLean * sw - this.lean) * k;
     const walkBank = Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03));
     // Surfing: the whole figure leans into the carve (roll toward the inside of the turn).
     this.bank += (walkBank * (1 - sb) - this.surfLean * sb - this.bank) * (1 - Math.exp(-dt * 10));
@@ -101,7 +106,8 @@ export class Body {
     this.toWorld(0, 0.42, 0); this.chest[0] = this.out[0]; this.chest[1] = this.out[1]; this.chest[2] = this.out[2];
     this.toWorld(0, 0.74, 0.02); this.head[0] = this.out[0]; this.head[1] = this.out[1]; this.head[2] = this.out[2];
     // Head basis: half the lean, no sway (the head steadies itself).
-    const hl = this.lean * 0.5, chl = Math.cos(hl), shl = Math.sin(hl);
+    // Swimming, the head stays up out of the water, looking ahead.
+    const hl = this.lean * 0.5 * (1 - sw) + 0.15 * sw, chl = Math.cos(hl), shl = Math.sin(hl);
     this.hr[0] = cy; this.hr[1] = 0; this.hr[2] = -sy;
     this.hu[0] = shl * sy; this.hu[1] = chl; this.hu[2] = shl * cy;
     this.hf[0] = chl * sy; this.hf[1] = -shl; this.hf[2] = chl * cy;
@@ -136,6 +142,22 @@ export class Body {
       const b = a + (0.42 + 0.3 * run * (1 - sb) + 0.5 * sb) * (1 - 0.8 * cast);
       this.toWorld(side * 0.2 + ex * 1.5, 0.5 + eyl - Math.cos(b) * fa, -0.01 + ezl + Math.sin(b) * fa);
       this.ha[o] = this.out[0]; this.ha[o + 1] = this.out[1]; this.ha[o + 2] = this.out[2];
+      if (sw > 0.01 && !this.climbing) {
+        // Breaststroke, in the torso frame (y along the spine — ahead in the water —, z below the
+        // chest): reach together ahead, sweep out wide, pull in under the chest, shoot forward.
+        const ph = this.swimPhase;
+        let hx, hy, hz;
+        if (ph < 0.4) { const t = ph / 0.4, e = t * t * (3 - 2 * t); hx = 0.08 + 0.5 * e; hy = 1.05 - 0.3 * e; hz = 0.12 + 0.1 * e; }
+        else if (ph < 0.65) { const t = (ph - 0.4) / 0.25, e = t * t * (3 - 2 * t); hx = 0.58 - 0.44 * e; hy = 0.75 - 0.3 * e; hz = 0.22 + 0.08 * e; }
+        else { const t = (ph - 0.65) / 0.35, e = t * t * (3 - 2 * t); hx = 0.14 - 0.06 * e; hy = 0.45 + 0.6 * e; hz = 0.3 - 0.18 * e; }
+        this.toWorld(side * hx, hy, hz);
+        const hwx = this.out[0], hwy = this.out[1], hwz = this.out[2];
+        // Elbow: between shoulder and hand, bowed outward and down.
+        this.toWorld(side * (0.2 + hx) * 0.5 + side * 0.12, (0.5 + hy) * 0.5, hz * 0.5 + 0.1);
+        const k2 = sw;
+        this.el[o] += (this.out[0] - this.el[o]) * k2; this.el[o + 1] += (this.out[1] - this.el[o + 1]) * k2; this.el[o + 2] += (this.out[2] - this.el[o + 2]) * k2;
+        this.ha[o] += (hwx - this.ha[o]) * k2; this.ha[o + 1] += (hwy - this.ha[o + 1]) * k2; this.ha[o + 2] += (hwz - this.ha[o + 2]) * k2;
+      }
       if (this.climbing && this.gripOn && !this.knocked && this.climbBlend > 0.5) {
         // Gripping: two-bone IK from the shoulder to the hold; elbows out, down and off the surface.
         const sx = this.sh[o], sy = this.sh[o + 1], sz = this.sh[o + 2];

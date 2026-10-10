@@ -97,10 +97,10 @@ export async function createWorld(g) {
   trees.freeze();
   // Water (Phase 8): the bake's unfrozen lakes, flat at their levels; absorb + surface passes, the
   // post chain's SSR reflects on them (waves and ripples shared through the wind block and a buffer).
-  const water = await (await import('../render/water.js')).createWater(scene, content.clipmap, atmosphere, wind, streamer, post.post.waterRipples, import.meta.env.BASE_URL + 'world/');
+  const water = await (await import('../render/water.js')).createWater(scene, content.clipmap, atmosphere, wind, streamer, post.post.waterRipples, import.meta.env.BASE_URL + 'world/', ground);
   bindShadows(water.materials[1], shadows); // the surface pass (the absorb pass reads no shadows)
   water.freeze();
-  trees.setWater((x, z) => water.levelAt(x, z));
+  trees.setWater((x, z) => (water.wetAt(x, z) ? 1e9 : NaN)); // no trees in lakes, rivers or on their banks
   post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');

@@ -47,6 +47,9 @@ export class Wraith {
     /** Eased pelvis while climbing (mounting glides onto the surface instead of snapping). */
     this._cx = NaN; this._cy = 0.5; this._cz = 0.5;
     this.cr = new Float64Array(3); this.cu = new Float64Array(3); this.cf = new Float64Array(3);
+    /** Swimming (input: true while the controller swims); eased into the pose; the stroke phase
+     *  (0..1, advanced by the swim speed; read by the owner for stroke splashes). */
+    this.swimming = false; this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
     /** Bending gesture target 0..1 (input); eased into the body's arm. */
     this.cast = 0.5 - 0.5;
     /** Facing actually shown (input yaw, rate-limited). */
@@ -93,8 +96,9 @@ export class Wraith {
   _syncInputs() {
     const g = this.gait;
     g.bx = this.bx; g.by = this.by; g.bz = this.bz; g.vx = this.vx; g.vz = this.vz; g.yaw = this.facing; g.grounded = this.grounded;
-    g.surf = this.surf;
+    g.surf = this.surf; g.swim = this.swim; g.swimPhase = this.swimPhase;
     this.body.yaw = this.facing; this.body.surf = this.surf; this.body.surfLean = this.surfLean;
+    this.body.swim = this.swim; this.body.swimPhase = this.swimPhase;
   }
 
   /** Facing follows the input yaw at a bounded turn rate (a snapped heading would fling the hem). */
@@ -127,6 +131,10 @@ export class Wraith {
     if (!(jx * jx + jy * jy + jz * jz < 12)) this.teleport();
     this._lx = this.bx; this._ly = this.by; this._lz = this.bz;
     this._turn(this.dt);
+    // Swimming: ease into the pose; one breaststroke every ~1.3 s (quicker as it speeds up).
+    this.swim += ((this.swimming ? 1 : 0) - this.swim) * (1 - Math.exp(-this.dt * 4));
+    const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz);
+    if (this.swim > 0.02) this.swimPhase = (this.swimPhase + this.dt * (0.45 + 0.22 * sp)) % 1;
     this._syncInputs();
     const g = this.gait, b = this.body;
     g.dt = this.dt; g.evCount = 0; g.collapse = this.collapse;
@@ -145,6 +153,8 @@ export class Wraith {
     const ws = this.windStrength * 4.5 * gust;
     this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz;
     this.cloth.windX = this.windX * ws; this.cloth.windZ = this.windZ * ws; this.cloth.windY = 0.4 * ws * 0.2;
+    // In the water the robe nearly floats (buoyant, heavy with water: little gravity, a slow drift up).
+    this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim); this.cloth.windY += 0.6 * this.swim;
     // Substeps at 120 Hz; the first frames after a spawn settle the cloth.
     // After a teleport the cloth settles over a few frames (120 extra substeps, 24 a frame: one
     // frame of 120 was a visible hitch).

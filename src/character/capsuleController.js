@@ -28,6 +28,13 @@ export const controllerTuning = {
   dodgeTime: 0.3,       // s: the bend-step slide
   dodgeSpeed: 13,       // m/s at its start, easing off
   dodgeCool: 0.45,      // s between dodges
+  // Water (Phase 8): deeper than swimEnter at the feet → swimming, the feet floatDepth under the
+  // surface (the shoulders at it); out again where the bed comes within swimExit of the surface.
+  swimEnter: 1.2, swimExit: 0.95, floatDepth: 1.02,
+  swimSpeed: 2.3,       // m/s
+  swimAccel: 5, swimDecel: 1.6, // m/s²: strokes build speed slowly, the glide carries it
+  surge: 1.6,           // m/s added along the facing by a jump (a strong stroke)
+  buoyancy: 18, waterDrag: 6,   // the float spring (1/s²) and its damping (1/s)
 };
 
 export class CapsuleController {
@@ -61,6 +68,12 @@ export class CapsuleController {
     this.dodgeRequested = false; this.dodgeT = 0.5 - 0.5; this.dodgeX = 0.5 - 0.5; this.dodgeZ = 0.5 - 0.5; this.dodgeCd = 0.5 - 0.5;
     /** True while a script (photo-spot run) drives the controller instead of player input. */
     this.scripted = false;
+    /** Water surface level under the capsule (owner, per frame; NaN: none) and the swim state. */
+    this.waterLevel = NaN; this.swimming = false;
+    /** The current where the capsule swims (m/s, owner): a river carries the swimmer along. */
+    this.currentX = 0.5 - 0.5; this.currentZ = 0.5 - 0.5;
+    /** Water level query (render/water.js), set by the owner; the player system reads it. */
+    this.water = null;
     /** Snow-surf (traversal): the owner sets surf.want / canSurf / steer / throttle. */
     this.surf = new Surf();
   }
@@ -115,6 +128,14 @@ export class CapsuleController {
     const n = this._n;
     n.x = g.nx; n.y = g.ny; n.z = g.nz;
     const steep = n.y < T.maxSlopeCos;
+    // Water: swim where it is deep enough and the body has gone in; walk out where the bed rises.
+    const wlv = this.waterLevel;
+    if (wlv === wlv) {
+      const bed = g.h;
+      if (!this.swimming && wlv - bed > T.swimEnter && p.y < wlv - T.floatDepth + 0.05) { this.swimming = true; this.grounded = false; this.surf.want = false; }
+      else if (this.swimming && wlv - bed < T.swimExit) this.swimming = false;
+    } else this.swimming = false;
+    if (this.swimming) { this._wx = wx; this._wz = wz; this._wl = wl; this._swim(); return; }
 
     // Bend-step dodge: a short momentum-carrying slide along the wish (or backward).
     this.dodgeCd = Math.max(0, this.dodgeCd - h);
@@ -192,6 +213,29 @@ export class CapsuleController {
     if (gy !== gy) throw new Error('heightfield returned NaN');
     this._wx = wx; this._wz = wz; this._wl = wl;
     if (!surfing) this._face();
+  }
+
+  /** One substep swimming (fields in, like _step): strokes toward the wish, a glide, the float
+   *  spring at the surface, the bed and the solids below. */
+  _swim() {
+    const T = controllerTuning, h = T.substep, p = this.pos, v = this.vel, wx = this._wx, wz = this._wz, wl = this._wl;
+    const tx = wx * T.swimSpeed + this.currentX, tz = wz * T.swimSpeed + this.currentZ;
+    const rate = wl > 0.01 ? T.swimAccel : T.swimDecel;
+    let dx = tx - v.x, dz = tz - v.z;
+    const dl = Math.sqrt(dx * dx + dz * dz), maxDv = rate * h;
+    if (dl > maxDv) { dx *= maxDv / dl; dz *= maxDv / dl; }
+    v.x += dx; v.z += dz;
+    if (this.jumpRequested) { v.x += Math.sin(this.yaw) * T.surge; v.z += Math.cos(this.yaw) * T.surge; }
+    this.jumpRequested = false; this.dodgeRequested = false;
+    // Float: a damped spring to the swimming depth (a fall into deep water plunges, then rises).
+    const target = this.waterLevel - T.floatDepth;
+    v.y += ((target - p.y) * T.buoyancy - v.y * T.waterDrag) * h;
+    p.x += v.x * h; p.y += v.y * h; p.z += v.z * h;
+    if (this.solids !== null) this.solids.push(p, v);
+    const g = this.ground; g.qx = p.x; g.qz = p.z; g.sample();
+    if (p.y < g.h) { p.y = g.h; if (v.y < 0) v.y = 0; }
+    this.grounded = false;
+    this._face();
   }
 
   /** Ease facing toward the wish direction stored in _wx/_wz/_wl (fields, not args: see _step). */

@@ -115,7 +115,9 @@ fn atmoApply(col: vec3f, uv: vec2f, distKm: f32) -> vec3f {
 export const WATER_LEVEL_DECL = /* wgsl */ `
 var waterTex: texture_2d<f32>;
 var waterTexSampler: sampler;
+// Lakes and rivers alike store their level (render/water.js); −1e4: none.
 fn waterLevelV(p: vec2f) -> f32 {
-  return textureLoad(waterTex, vec2i(i32(clamp((p.x + 4096.0) / 4.0, 0.0, 2047.0)), i32(clamp((4096.0 - p.y) / 4.0, 0.0, 2047.0))), 0).r;
+  let v = textureLoad(waterTex, vec2i(i32(clamp((p.x + 4096.0) / 4.0, 0.0, 2047.0)), i32(clamp((4096.0 - p.y) / 4.0, 0.0, 2047.0))), 0).r;
+  return v;
 }
 `;
