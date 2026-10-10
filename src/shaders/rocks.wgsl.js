@@ -31,6 +31,7 @@ varying vNormal: vec3f;
 varying vLocal: vec3f;
 varying vBase: f32;          // height above the rock's ground contact (m)
 varying vSize: f32;
+varying vMeadow: f32;
 
 ${STATE_SAMPLE_WGSL}
 
@@ -80,10 +81,10 @@ fn rk_ground(x: f32, z: f32) -> f32 {
   }
   return 0.0;
 }
-fn rk_frost(x: f32, z: f32) -> f32 {
+fn rk_biome(x: f32, z: f32) -> vec2f {
   let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
   let a = unpack4x8unorm(biomeA[j * N8 + i]);
-  return a.x / max(a.x + a.y + a.z + a.w, 0.05);
+  return a.xy / max(a.x + a.y + a.z + a.w, 0.05);
 }
 
 @vertex
@@ -95,7 +96,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
     // Unused instance slot: emit a degenerate vertex (clipped) and skip all the work.
     vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0);
     vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0);
-    vertexOutputs.vLocal = vec3f(0.0); vertexOutputs.vBase = 0.0; vertexOutputs.vSize = 0.0;
+    vertexOutputs.vLocal = vec3f(0.0); vertexOutputs.vBase = 0.0; vertexOutputs.vSize = 0.0; vertexOutputs.vMeadow = 0.0;
     return vertexOutputs;
   }
   let aspect = vec3f(1.0 + 0.35 * fract(seed * 3.1), 0.55 + 0.35 * w1.y, 1.0 - 0.2 * fract(seed * 5.3));
@@ -127,8 +128,11 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let nw = vec3f(nl.x * cy - nl.z * sy, nl.y, nl.x * sy + nl.z * cy);
   let base = ground - size * aspect.y * burial;
   var wp = vec3f(x, base, z) + pw;
-  // Outside the frost steppe, or on slopes where the terrain material already shows rock: none.
-  let keep = rk_frost(x, z) > 0.55 && slope < 0.9;
+  // On the frost steppe; on the meadow, a third of them (mossed boulders and outcrops); none on
+  // slopes where the terrain material already shows rock (render systems/rockSolids.js agrees).
+  let bw = rk_biome(x, z);
+  let keep = (bw.x > 0.55 || (bw.y > 0.55 && fract(seed * 7.7) < 0.3)) && slope < 0.9;
+  vertexOutputs.vMeadow = select(0.0, 1.0, bw.x <= 0.55);
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (!keep) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
   vertexOutputs.vWorldPos = wp;
@@ -149,6 +153,7 @@ varying vNormal: vec3f;
 varying vLocal: vec3f;
 varying vBase: f32;
 varying vSize: f32;
+varying vMeadow: f32;
 ${MATERIALS_DECL}
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -183,10 +188,19 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Snow settles in the hollows first (the scan's low height), and clings to the upper faces.
   let up = smoothstep(0.45, 0.78, Nr.y + 0.12 * n1 + 0.1 * n2 + 0.3 * (0.5 - rh));
   let drift = 1.0 - smoothstep(0.08, 0.4 + 0.15 * n2, fragmentInputs.vBase);
-  let snow = max(up, drift);
+  let meadow = fragmentInputs.vMeadow;
+  // Meadow rocks: warmer stone; moss instead of snow on the upper faces and in the hollows, a
+  // skirt of earth and grass roots at the base instead of the drift.
+  albedo = mix(albedo, albedo * vec3f(1.12, 1.05, 0.9), meadow);
+  let mossCol = mix(vec3f(0.045, 0.07, 0.022), vec3f(0.1, 0.125, 0.045), n1 * 0.5 + 0.5);
+  let skirt = vec3f(0.07, 0.075, 0.035);
+  let snow = max(up, drift) * (1.0 - meadow);
+  let moss = up * meadow * 0.9;
   let snowAlb = vec3f(0.84, 0.87, 0.92);
   albedo = mix(albedo, snowAlb, snow);
-  let N = normalize(mix(Nr, Ng, snow * 0.6));
+  albedo = mix(albedo, mossCol, moss);
+  albedo = mix(albedo, skirt, drift * meadow * 0.8);
+  let N = normalize(mix(Nr, Ng, snow * 0.6 + moss * 0.3));
 
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
@@ -194,11 +208,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let wrap = 0.3 * snow;
   let diff = clamp((nl + wrap) / (1.0 + wrap), 0.0, 1.0);
   let vis = shadowVisibility(wp, Ng, camPos, fragmentInputs.position.xy);
-  let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
+  let cold = mix(vec3f(0.62, 0.86, 1.32) / 0.84, vec3f(1.0), meadow);
+  let canopy = canopyAt(wp.xz);
   // Cavity occlusion: crevices (low noise) and the underside see less sky.
   let ao = (0.75 + 0.25 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(rao, 1.0, snow);
-  let sky = shIrradiance(N) * cold * uniforms.envMisc.w * ao;
-  var col = albedo * (key * diff * vis / PI + sky);
+  let sky = shIrradiance(N) * cold * uniforms.envMisc.w * ao * canopySky(canopy);
+  var col = albedo * (key * diff * vis / PI + sky + canopyFill(canopy, N) * ao);
   // Rock: a little sheen at grazing (weathered surface); snow: soft sheen.
   let H = normalize(L + V);
   let spec = pow(max(dot(N, H), 0.0), mix(24.0, 12.0, snow)) * 0.04 * vis * clamp(nl, 0.0, 1.0);

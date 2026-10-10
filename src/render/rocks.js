@@ -87,7 +87,7 @@ function nearOk() {
 function nearEmit() {
   // shaders/rocks.wgsl.js: aspect = (1 + 0.35 fract(seed·3.1), 0.55 + 0.35 a, 1 − 0.2 fract(seed·5.3)), mean radius ≈ 0.9 of size
   const ax = 1 + 0.35 * fract(R.seed * 3.1), ay = 0.55 + 0.35 * R.aspect, az = 1 - 0.2 * fract(R.seed * 5.3);
-  qcb(R.x, R.z, R.yaw, R.size * 0.88 * ax, R.size * 0.88 * az, R.size * ay * (0.95 - R.burial), R.size);
+  qcb(R.x, R.z, R.yaw, R.size * 0.88 * ax, R.size * 0.88 * az, R.size * ay * (0.95 - R.burial), R.size, R.seed);
 }
 export function rocksNear(px, pz, radius, exclude, cb) {
   qx = px; qz = pz; qr = radius; qex = exclude; qcb = cb;
