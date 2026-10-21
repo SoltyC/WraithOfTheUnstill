@@ -1,0 +1,2 @@
+2026-10-21T19:42:30.064Z 1/1 dbg-stream: saved screenshots/dbg-stream/dbg-stream.png
+2026-10-21T19:42:30.068Z Shots done: 1/1 spot(s) (dbg-stream*) → screenshots/dbg-stream/.

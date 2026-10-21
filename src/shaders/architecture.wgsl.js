@@ -145,8 +145,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var layer = select(MAT_STONE_PALE, MAT_STONE_DRESSED, bseed > 0.62 || mid == 1);
   if (mid == 2) { layer = MAT_WOOL; } else if (mid == 3) { layer = MAT_TIMBER; }
   let texScale = select(select(0.55, 1.6, mid == 2), 0.9, mid == 3);
-  let tuv = uv * texScale + vec2f(fract(bseed * 7.13), fract(bseed * 3.71)) * 7.0;
-  let ms = matUv(layer, tuv, N, wp);
+  // Derivatives from the continuous uv: the per-block offset jumps at every block's edge.
+  let cuv = uv * texScale;
+  let tuv = cuv + vec2f(fract(bseed * 7.13), fract(bseed * 3.71)) * 7.0;
+  let ms = matUvG(layer, tuv, N, wp, dpdx(cuv), dpdy(cuv));
 
   var albedo = vec3f(0.3, 0.29, 0.275);
   var rough = 0.85;
@@ -260,6 +262,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     emit += vec3f(1.0, 0.55, 0.24) * albedo * glowS.y * 0.55 * (0.85 + 0.15 * sin(t * 6.1 + seed));
   }
   let H = normalize(L + V);
+  // Specular anti-aliasing: where the normal turns faster than a pixel can show (the scan's
+  // detail far off), the highlight widens instead of sparkling under the TAA jitter.
+  let nVar = dot(abs(dpdx(N)) + abs(dpdy(N)), vec3f(1.0));
+  rough = max(rough, clamp(nVar * 0.6, 0.0, 0.9));
   let shin = mix(16.0, 140.0, 1.0 - rough);
   col += key * pow(max(dot(N, H), 0.0), shin) * (1.0 - rough) * 0.6 * vis * clamp(nl, 0.0, 1.0);
   // Firelight on the camp's stones, packs and snow: falls off from the hearth (site origin).

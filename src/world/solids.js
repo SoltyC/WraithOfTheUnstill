@@ -146,7 +146,7 @@ export function createSolids(sites, built) {
       }
       for (let i = 0; i < blockers.length; i++) {
         const b = blockers[i];
-        if (!near[b.site]) continue;
+        if (!near[b.site] || b.cam) continue; // camera-only (roofs)
         const seat = S[b.site].seat;
         if (p.y > seat + b.y1 - 0.05 || p.y + 1.7 < seat + b.y0) continue;
         const dx = p.x - b.x, dz = p.z - b.z;

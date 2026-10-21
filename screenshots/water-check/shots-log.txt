@@ -1,0 +1,2 @@
+2026-10-21T19:43:42.112Z 1/1 rv-m14-river-above: saved screenshots/water-check/rv-m14-river-above.png
+2026-10-21T19:43:42.116Z Shots done: 1/1 spot(s) (rv-m14*) → screenshots/water-check/.

@@ -20,10 +20,13 @@ import { waterVertexWGSL, waterAbsorbFragmentWGSL, waterSurfaceFragmentWGSL, WAT
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
+import { WorldData } from '../world/worldData.js';
 
 const N = 2048, C = 4, HALF = 4096;
 /** How far (texels of C m) a lake's level may flood past the bake's mask onto lower real ground. */
 const FLOOD = 8;
+/** …only where the ground lies at most this far (m) under the level. */
+const FLOOD_DEPTH = 0.6;
 /** Rivers: how far (m) around a point the bed is sought (the channel's half-width and banks). */
 export const RIVER_R = 4;
 
@@ -87,10 +90,11 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     return t[(j & 255) * 256 + (i & 255)] / 32 - 128;
   };
   // Lakes on the real terrain: the level floods into each neighbouring texel whose lowest 2 m
-  // sample lies under it (a gentle bank stays wet well past the mask — cut there, the sheet ended
+  // sample lies just under it (a gentle bank stays wet past the mask — cut there, the sheet ended
   // on texel edges in deep water: stairs from the air, and the CPU said dry where the mesh was
-  // water). Flooded river texels become lake. Then a one-texel rim the terrain hides (not on a
-  // river: its own surface meets the lake there).
+  // water). Only a shallow margin (FLOOD_DEPTH): ground far below the level is downhill of the
+  // lake, not its shore — flooding there spilled terraces of water floating over slopes. Never
+  // into a river (it runs at its own level). Then a one-texel rim the terrain hides.
   const wet = level.slice();
   for (let pass = 0; pass < FLOOD; pass++) {
     const src = wet.slice();
@@ -101,7 +105,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       if (Number.isNaN(v)) continue;
       const x = -HALF + i * C, z = HALF - j * C;
       const g = Math.min(h2(x + 1, z - 1), h2(x + 3, z - 1), h2(x + 1, z - 3), h2(x + 3, z - 3));
-      if (g < v - 0.02) { wet[o] = v; rDepth[o] = NaN; }
+      if (g < v - 0.02 && g > v - FLOOD_DEPTH && Number.isNaN(rDepth[o])) wet[o] = v;
     }
   }
   const rim = new Uint8Array(N * N);
@@ -114,13 +118,29 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       if (!Number.isNaN(v)) { wet[o] = v; rim[o] = 1; }
     }
   }
+  // The terrain as drawn (macro + meso, world/worldData.js — the collision twin of the GPU's): the
+  // bare 2 m bake under a river is not where the meadow's ground is drawn (meso detail lowers it
+  // by tens of cm), and a level measured against it floated the stream over the grass.
+  const wd = new WorldData(streamer.manifest);
+  wd.overview = streamer.overview; wd.biomeA = streamer.biomeA;
+  wd.biomeB = new Uint8Array(wd.n8 * wd.n8 * 4); wd.wind = streamer.windData;
+  for (const [k, t] of tiles) wd.setTile(k % 16, (k / 16) | 0, t);
+  const hFull = (x, z) => { wd.qx = x; wd.qz = z; wd.sample(); return wd.h; };
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const o = j * N + i, d = rDepth[o]; if (Number.isNaN(d)) continue;
     const x = -HALF + (i + 0.5) * C, z = HALF - (j + 0.5) * C, l = Math.hypot(rFlow[o * 3], rFlow[o * 3 + 1]) || 1;
     const px = rFlow[o * 3 + 1] / l, pz = -rFlow[o * 3] / l;
-    let bed = Infinity;
-    for (let k = -3; k <= 3; k++) { const h = h2(x + px * 2 * k, z + pz * 2 * k); if (h < bed) bed = h; }
-    if (bed !== Infinity) rLevel[o] = bed + d;
+    // The bed (lowest across the channel) and the ground at the sheet's edge: where the bake's
+    // channel is shallow (the flat meadow) a depth from the strength alone floated the river over
+    // the grass in stepped texel squares.
+    let bed = Infinity, edge = Infinity;
+    for (let k = -3; k <= 3; k++) {
+      const h = hFull(x + px * 2 * k, z + pz * 2 * k); if (h < bed) bed = h;
+      if (Math.abs(k) >= 2 && h < edge) edge = h; // the ground 4–6 m out: where the sheet ends
+    }
+    // Below the ground where the sheet ends, so the terrain always covers its square edge and the
+    // shore is the smooth line where water meets the bank (a thin stream where the cut is shallow).
+    if (bed !== Infinity) rLevel[o] = Math.max(bed + 0.06, Math.min(bed + d, edge - 0.05));
   }
   // Smooth along the stream (a weighted mean with river neighbours), then make sure no texel stands
   // above the one upstream of it (water does not climb).

@@ -123,6 +123,31 @@ fn shadowCascade(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
 // layers deep): receivers within cascade 0 also take this 2×2 bilinear lookup of cascade 1, with
 // the same normal offset and slope bias as shadowCascade — the dappled light under the canopy at
 // cascade 1's ~14 cm texels.
+// The trees' shadow (cascade 1) seen from cascade 0: a rotated 8-tap disk over ~1.6 texels,
+// re-drawn each frame for TAA. The plain 4-tap below drew cascade-1 texels (tens of cm) as hard
+// blocks, and the crowns sway: blocky patches crawling over walls and roofs near a tree line.
+fn shadowTreeTap(c: u32, wp: vec3f, n: vec3f, rot: vec2f) -> f32 {
+  let texel = shadowData.origins[c].w;
+  let L = shadowData.light.xyz;
+  let ndl = clamp(dot(n, L), 0.05, 1.0);
+  let offsetP = wp + n * texel * (1.5 + 3.5 * (1.0 - ndl));
+  let bias = texel * (1.2 + 2.5 * sqrt(1.0 - ndl * ndl) / ndl);
+  let clip = shadowData.viewProj[c] * vec4f(offsetP, 1.0);
+  let uv = vec2f(clip.x * 0.5 + 0.5, 0.5 + clip.y * 0.5);
+  if (uv.x <= 0.0 || uv.x >= 1.0 || uv.y <= 0.0 || uv.y >= 1.0) { return 1.0; }
+  let d = dot(offsetP - shadowData.origins[c].xyz, -L) - bias;
+  let tanT = min(sqrt(1.0 - ndl * ndl) / ndl, 6.0) * texel;
+  let px = uv * ${SHADOW_SIZE}.0;
+  var lit = 0.0;
+  for (var i = 0; i < 8; i++) {
+    let a = f32(i) * 2.3999632 + 0.5;
+    let r = 1.6 * sqrt((f32(i) + 0.5) / 8.0);
+    let o = vec2f(cos(a), sin(a)) * r;
+    let q = vec2f(o.x * rot.x - o.y * rot.y, o.x * rot.y + o.y * rot.x);
+    lit += select(0.0, 1.0, d - r * tanT <= shadowLoad(c, vec2i(floor(px + q))));
+  }
+  return lit / 8.0;
+}
 fn shadowTap4(c: u32, wp: vec3f, n: vec3f) -> f32 {
   let texel = shadowData.origins[c].w;
   let L = shadowData.light.xyz;
@@ -182,7 +207,7 @@ fn shadowVisibility(wp: vec3f, n: vec3f, camPos: vec3f, fragXY: vec2f) -> f32 {
   if (dist > sp.z) { c = 3u; }
   if (dist > sp.w) { return 1.0; }
   var v = shadowCascade(c, wp, n, rot);
-  if (c == 0u) { v *= shadowTap4(1u, wp, n); } // the trees (cascade 1 only)
+  if (c == 0u) { v *= shadowTreeTap(1u, wp, n, rot); } // the trees (cascade 1 only), filtered soft
   // Blend into the next cascade over the last 15% of this one.
   let far = sp[c];
   let near = select(0.0, sp[max(c, 1u) - 1u], c > 0u);

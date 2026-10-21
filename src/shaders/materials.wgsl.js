@@ -58,6 +58,24 @@ fn matUv(layer: i32, uv: vec2f, N: vec3f, wp: vec3f) -> MatS {
   s.rough = n.z; s.ao = hg.y; s.h = hg.x;
   return s;
 }
+// The same with the uv derivatives given: for a uv offset per piece (each stone block shows its
+// own part of the scan), whose jump at the piece's edge would read as a huge derivative — the
+// wrong mip and a broken tangent frame along every seam, sparkling as the camera moves.
+fn matUvG(layer: i32, uv: vec2f, N: vec3f, wp: vec3f, du1: vec2f, du2: vec2f) -> MatS {
+  var s: MatS;
+  s.albedo = textureSampleGrad(matAlb, matAlbSampler, uv, layer, du1, du2).rgb;
+  let n = textureSampleGrad(matNrm, matNrmSampler, uv, layer, du1, du2);
+  let hg = textureSampleGrad(matHgt, matHgtSampler, uv, layer, du1, du2);
+  let dp1 = dpdx(wp); let dp2 = dpdy(wp);
+  let dp2p = cross(dp2, N); let dp1p = cross(N, dp1);
+  let T = dp2p * du1.x + dp1p * du2.x;
+  let B = dp2p * du1.y + dp1p * du2.y;
+  let inv = inverseSqrt(max(max(dot(T, T), dot(B, B)), 1e-20));
+  let nts = matTs(n);
+  s.N = normalize(T * inv * nts.x + B * inv * nts.y + N * nts.z);
+  s.rough = n.z; s.ao = hg.y; s.h = hg.x;
+  return s;
+}
 // Biplanar mapping: the two axes the normal leans on most; weights sharpened so the seam is
 // narrow. Each plane's tangent normal is swizzled into world space (whiteout-style blend).
 fn matPlane(layer: i32, uv: vec2f, dx: vec2f, dy: vec2f) -> array<vec4f, 3> {

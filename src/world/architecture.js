@@ -710,7 +710,7 @@ function house(v) {
     wall(-W - T, W + T, -D, y0, Hw, 11, ruin * 0.5);                       // back
     wall(-W - T, -g, D, y0, Hw, 12); wall(g, W + T, D, y0, Hw, 13);         // front, either side of the door
     { const [x, , z] = P(0, 0, D); b.box(x, z, 2.05, Hw + 0.1, g + 0.25, T + 0.04, facing, MAT.GLYPH, 14, { carve: 1, solid: false, ...NS });       // lintel
-      b.box(x, z, -0.3, 0.1, g + 0.05, T, facing, MAT.STONE, 15, { solid: false, ...NS }); }                                                              // sill
+      b.box(x, z, -0.32, 0.1, g + 0.05, T + 0.015, facing, MAT.STONE, 15, { solid: false, ...NS }); }                                                              // sill
     side(-D + T, D - T, -W, y0, Hw, 16, ruin);                              // west, the one that falls
     if (win) {                                                               // east, with a window
       const g0 = -0.5 + (v.winAt || 0), g1 = g0 + 0.85;
@@ -736,6 +736,8 @@ function house(v) {
       for (const sg of [-1, 1]) stick(b, P(sg * SX, Hw - 0.1, f + tilt), P(0, RIDGE - 0.06, f), 0.05, 0.045, 6, MAT.WOOD, 50 + k * 2 + (sg + 1) / 2);
     }
     for (const sg of [-1, 1]) for (const t of [0.4, 0.75]) stick(b, P(sg * SX * (1 - t), yu(SX * (1 - t)) - 0.04, -D - OV), P(sg * SX * (1 - t), yu(SX * (1 - t)) - 0.04, D + OV), 0.04, 0.04, 5, MAT.WOOD, 60 + (sg + 1) + Math.round(t * 10));
+    // The roof is solid to the camera only (it slid in over the wall heads into the attic).
+    { const [x, , z] = P(0, 0, 0); b.blockers.push({ site: b.site, kind: 'box', x, z, hx: SX + 0.1, hz: D + OV + 0.1, cos: Math.cos(facing), sin: Math.sin(facing), y0: Hw - 0.2, y1: RIDGE + 0.35, cam: true }); }
     // Gable ends: boards between wall head and roof.
     for (const f of [-D + 0.02, D - 0.02]) {
       const a = P(-W, Hw, f), c = P(W, Hw, f), r = P(0, RIDGE, f), a2 = P(-W, yu(W), f), c2 = P(W, yu(W), f);
@@ -835,8 +837,8 @@ function market(b, facing, R) {
 /** The meadow shrine: five standing stones round a paved ring and a carved altar with a candle,
  *  prayer ribbons tied to the stones (the Shapers' shrine, kept by pilgrims). */
 function meadowShrine(b, facing, R) {
-  for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU + 0.16; b.box(Math.sin(a) * 2.7, Math.cos(a) * 2.7, -0.5, 0.1, 0.85, 0.55, a, MAT.STONE, 5 + k, { solid: false, ...NS }); }
-  for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU + 0.5; b.box(Math.sin(a) * 1.35, Math.cos(a) * 1.35, -0.5, 0.12, 0.8, 0.5, a, MAT.STONE, 20 + k, { solid: false, ...NS }); }
+  for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU + 0.16; b.box(Math.sin(a) * 2.7, Math.cos(a) * 2.7, -0.5, 0.1 + 0.012 * (k & 1), 0.85, 0.55, a, MAT.STONE, 5 + k, { solid: false, ...NS }); }
+  for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU + 0.5; b.box(Math.sin(a) * 1.35, Math.cos(a) * 1.35, -0.5, 0.12 + 0.01 * (k % 3), 0.8, 0.5, a, MAT.STONE, 20 + k, { solid: false, ...NS }); }
   b.box(0, 0, 0.1, 0.95, 0.52, 0.52, facing, MAT.GLYPH, 30, { carve: 1, ...NS });
   b.box(0, 0, 0.95, 1.05, 0.62, 0.62, facing + 0.2, MAT.STONE, 31, { solid: false, ...NS });
   b.drum(0, 0, 1.05, 1.2, 0.05, 0.045, 6, MAT.CANVAS, 32, { solid: false });
@@ -909,9 +911,9 @@ export function meadowSites(origin = HUB.at) {
   const O = (dx, dz) => [origin[0] + dx, origin[1] + dz];
   const toward = (a, b) => Math.atan2(b[0] - a[0], b[1] - a[1]);
   const green = O(0, 0), sites = [{ id: 'hub-green', at: green, facing: 0, build: hubGreen, footprint: 9, seatAt: 'center' }];
-  [[-14, 2], [-6, -13], [10, -9], [15, 3]].forEach(([dx, dz], i) => { const at = O(dx, dz); sites.push({ id: 'hub-house-' + (i + 1), at, facing: toward(at, green), build: house(HOUSES[i]), footprint: 5.5, seatAt: 'center' }); });
+  [[-14, 2], [-6, -13], [10, -9], [15, 3]].forEach(([dx, dz], i) => { const at = O(dx, dz); sites.push({ id: 'hub-house-' + (i + 1), at, facing: toward(at, green), build: house(HOUSES[i]), footprint: 4.2, seatAt: 'top' }); });
   const mat = O(10, 14), sf = Math.sin(HUB.windYaw), cf = Math.cos(HUB.windYaw);
-  sites.push({ id: 'hub-mill', at: mat, facing: toward(mat, green), build: mill, footprint: 3.8, seatAt: 'center' });
+  sites.push({ id: 'hub-mill', at: mat, facing: toward(mat, green), build: mill, footprint: 3.4, seatAt: 'top' });
   sites.push({ id: 'hub-mill-sails', at: [mat[0] - sf * HUB.axleBack, mat[1] - cf * HUB.axleBack], facing: HUB.windYaw, build: millSails, footprint: 1, seatAt: 'center', lift: HUB.axleLift, spin: [sf, 0, cf] });
   sites.push({ id: 'hub-market', at: O(-8, 21), facing: 0, build: market, footprint: 9, seatAt: 'center' });
   sites.push({ id: 'hub-shrine', at: O(2, -27), facing: 0.4, build: meadowShrine, footprint: 4.6, seatAt: 'center', glow: 0.25 });

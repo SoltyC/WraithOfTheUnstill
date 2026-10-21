@@ -95,7 +95,7 @@ describe('The meadow hub', () => {
     expect(ids.every((i) => i.startsWith('hub-'))).toBe(true);
     for (const id of ['hub-green', 'hub-house-1', 'hub-house-2', 'hub-house-3', 'hub-house-4', 'hub-mill', 'hub-mill-sails', 'hub-market', 'hub-shrine']) expect(ids).toContain(id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const s of hub) { expect(s.at.every(Number.isFinite)).toBe(true); expect(Number.isFinite(s.facing)).toBe(true); expect(typeof s.build).toBe('function'); expect(s.footprint).toBeGreaterThan(0); expect(s.seatAt).toBe('center'); }
+    for (const s of hub) { expect(s.at.every(Number.isFinite)).toBe(true); expect(Number.isFinite(s.facing)).toBe(true); expect(typeof s.build).toBe('function'); expect(s.footprint).toBeGreaterThan(0); expect(s.seatAt).toBe(/^hub-(house|mill)$/.test(s.id.replace(/-\d+$/, '')) ? 'top' : 'center'); }
     // The sails turn about the axle: the site origin, lifted to the axle height, on the upwind side of the tower.
     const sails = hub.find((s) => s.id === 'hub-mill-sails'), mill = hub.find((s) => s.id === 'hub-mill');
     expect(sails.lift).toBe(HUB.axleLift);
