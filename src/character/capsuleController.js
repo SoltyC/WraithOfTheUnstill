@@ -18,6 +18,7 @@ export const controllerTuning = {
   decel: 30,            // m/s² when there is no input
   airControl: 0.25,     // fraction of accel available in the air
   gravity: 24,          // m/s²
+  liftMax: 13,          // m/s: the fastest an updraft carries the body up
   jumpSpeed: 7.2,       // m/s initial vertical
   maxSlopeCos: Math.cos((46 * Math.PI) / 180),
   slideAccel: 14,       // m/s² down steep slopes
@@ -58,6 +59,9 @@ export class CapsuleController {
     this.wishUp = 0;
     this.cameraYaw = 0;
     this.jumpRequested = false;
+    /** Upward acceleration from rising air (m/s², owner, per frame; the Gale's Updraft): lifts
+     *  the body off the ground when it beats gravity. */
+    this.lift = 0.5 - 0.5;
     this._acc = 0.5 - 0.5;
     /** Frame dt in seconds, set by the owner before update(). */
     this.dt = 0.5;
@@ -189,6 +193,10 @@ export class CapsuleController {
     }
     this.jumpRequested = false;
 
+    if (this.lift > 0) {
+      if (this.grounded && this.lift > T.gravity) { v.y = Math.max(v.y, 2.5); this.grounded = false; }
+      if (!this.grounded) v.y = Math.min(T.liftMax, v.y + this.lift * h);
+    }
     if (!this.grounded) v.y -= T.gravity * h;
 
     p.x += v.x * h;

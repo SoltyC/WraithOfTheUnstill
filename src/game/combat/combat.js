@@ -11,10 +11,12 @@ export const combatTuning = {
   health: 100, focus: 100,
   focusIdle: 6, focusMove: 14, focusSurf: 28,   // per second: movement and flow restore focus
   costSweep: 14, costRibbon: 16, costCrystal: 30, costDodge: 8,   // focus
+  costGust: 10, costVortex: 14, costUpdraft: 24,                  // focus (the Vortex per second)
   sweepDamage: 16, ribbonDps: 26, shatterMul: 3, freezeTime: 3,
   hitStopHit: 0.055, hitStopLight: 0.02, hitStopShatter: 0.12, hitStopHurt: 0.06,
   kickHit: 0.02, kickShatter: 0.06,      // camera punch (rad of FOV)
   lockRange: 20,
+  gustDamage: 9, gustShove: 9, vortexReach: 7, vortexBite: 2.6, vortexPull: 7, vortexDps: 12, updraftDamage: 14, updraftReach: 2.6,
   wardenSweepChip: 2.5, wardenRibbonChip: 0.6,   // the Warden's health per Sweep through it / per Ribbon tick (5 a second)
   deathTime: 2.4, reformTime: 1.6,
 };
@@ -25,8 +27,12 @@ export const combatTuning = {
 export function createCombat(ctx) {
   const { shaped, frost, controller, ts, clock, teleport } = ctx;
   const warden = ctx.warden || null;
+  const gale = ctx.gale || null;
   const T = combatTuning;
   const sweepSeen = new Uint32Array(4 * MAX_SHAPED);   // last sweep id that hit each slot, per sweep slot
+  const gustSeen = new Uint32Array(3 * MAX_SHAPED);    // the same for the Gale's gusts
+  /** Seconds until the Vortex may strike each slot again (ticks, like the Ribbon). */
+  const vortexCd = new Float64Array(MAX_SHAPED);
   /** Seconds until the Ribbon may strike each slot again (it strikes in ticks, not per frame: a
    *  per-frame strike on a frozen Shaped re-armed the shatter hit-stop every frame, and with the
    *  clock stopped the stream did no damage — the game froze while the camera punch piled up). */
@@ -61,6 +67,7 @@ export function createCombat(ctx) {
       const regen = controller.surf.active ? T.focusSurf : sp > 2 ? T.focusMove : T.focusIdle;
       this.focus = Math.min(T.focus, this.focus + regen * dt);
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * dt);
+      if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * dt);
       this.wound += ((1 - this.health / T.health) - this.wound) * (1 - Math.exp(-dt * 3));
       ribbonTick -= dt; bodyTick -= dt;
       hits(dt);
@@ -114,6 +121,7 @@ export function createCombat(ctx) {
           }
         }
       }
+      if (gale !== null) { galeHits(i, cx, cz, dt); if (!shaped.isLive(i)) continue; }
       // Crystallize: the formation freezes what it catches.
       if (frost.crystalEvent) {
         const dx = cx - frost.crystalX, dz = cz - frost.crystalZ;
@@ -188,6 +196,41 @@ export function createCombat(ctx) {
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 2; sx.z = controller.pos.z; sx.gain = 1.4; sx.play(SFX.SHATTER); sx.play(SFX.BOOM); }
   }
   self.breakJoint = breakJoint;
+
+  /** Gale → Shaped (BRIEF §10): the Gust's lance shoves what it passes (once per gust); the
+   *  Vortex drags the light in and wears at what it holds, in ticks; an Updraft rising under a
+   *  body strikes it and throws it off its feet. */
+  function galeHits(i, cx, cz, dt) {
+    const s = shaped.slots[i], b = s.body;
+    for (let k = 0; k < 3; k++) {
+      if (!gale.gustActive[k] || gale.gustHW[k] <= 0.05 || gustSeen[k * MAX_SHAPED + i] === gale.gustId[k]) continue;
+      const ex = cx - gale.gustFX[k], ez = cz - gale.gustFZ[k];
+      const along = ex * gale.gustDX[k] + ez * gale.gustDZ[k], across = Math.abs(-ex * gale.gustDZ[k] + ez * gale.gustDX[k]);
+      if (along < 1 && along > -1.4 && across < gale.gustHW[k] + 0.5) {
+        gustSeen[k * MAX_SHAPED + i] = gale.gustId[k];
+        strike(i, T.gustDamage, gale.gustDX[k], gale.gustDZ[k], true);
+        if (!shaped.isLive(i)) return;
+        b.vx += gale.gustDX[k] * T.gustShove; b.vz += gale.gustDZ[k] * T.gustShove;
+      }
+    }
+    vortexCd[i] = Math.max(0, vortexCd[i] - dt);
+    const vs = gale.vortexStrength;
+    if (vs > 0.2) {
+      const ex = gale.vortexX - cx, ez = gale.vortexZ - cz, d = Math.sqrt(ex * ex + ez * ez) || 1;
+      if (d < T.vortexReach) {
+        const pull = T.vortexPull * vs * Math.min(1, d / 2); // to the column, not through it
+        b.vx += ex / d * pull * dt * 6; b.vz += ez / d * pull * dt * 6;
+        if (d < T.vortexBite && vortexCd[i] <= 0) {
+          vortexCd[i] = RIBBON_TICK * 2;
+          strike(i, T.vortexDps * RIBBON_TICK * 2 * vs, -ez / d, ex / d, false); // round the column
+        }
+      }
+    }
+    if (gale.updraftEvent) {
+      const dx = cx - gale.updraftX, dz = cz - gale.updraftZ, d = Math.sqrt(dx * dx + dz * dz);
+      if (d < T.updraftReach) strike(i, T.updraftDamage, dx / (d || 1), dz / (d || 1), true);
+    }
+  }
 
   let ribbonTick = 0;
   /** A hit on slot i: frozen Shaped shatter (the reaction), others take damage and stagger. */

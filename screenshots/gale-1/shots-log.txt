@@ -1,0 +1,3 @@
+2026-10-21T12:00:55.375Z 1/2 p8-gale-meadow: saved screenshots/gale-1/p8-gale-meadow.png
+2026-10-21T12:01:02.726Z 2/2 p8-gale-snow: saved screenshots/gale-1/p8-gale-snow.png
+2026-10-21T12:01:02.726Z Shots done: 2/2 spot(s) (p8-gale*) → screenshots/gale-1/.

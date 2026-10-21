@@ -445,6 +445,7 @@ All read and write the terrain state, ease in and settle out (BRIEF §9.1), and 
   rime; Vortex on snow builds a drift wall; Updraft through a Ribbon carries the water up as
   falling droplets. A table in `game/combat/reactions.js` (tested, BRIEF §19).
 - Tests: every verb writes the state; reaction table; zero allocation (`npm run alloc`).
+- **Done 2026-10-21** (first pass; feel needs the user's hands on it): `game/bending/gale.js` (Gust: a FLATTEN lane that lays grass and scours powder, freezing wet slush to rime, with wind bursts along the front; Vortex: a held, drifting column stamping STRIP rings, drawing Shaped in and wearing at them in ticks; Updraft: a rising column whose `liftAt` the controller reads as `lift`, striking what it rises under). The element in hand is chosen with 1–5 (`game/elements.js`; Gale unlocked with `?gale=1` until the meadow Warden's release). Focus costs: Gust 10, Vortex 14/s, Updraft 24. The visuals are in `render/galeFx.js` (610 stateless particles: gust lines and flecks, vortex debris and swirl lines, updraft streaks, wisps and a ring puff). The reactions table is `game/combat/reactions.js` (BRIEF §4.4 as data; only Gust over slush → rime is cross-element so far). Tests: `gale.test.js`, `reactions.test.js`. Spots: `p8-gale-meadow`, `p8-gale-snow`. Not done: Vortex on snow builds a drift wall; Updraft through a Ribbon; the Updraft lifting Shaped bodily (they are struck and staggered); `npm run alloc` for the gale; saving the element.
 
 ### M7 — Glide
 

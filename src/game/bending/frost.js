@@ -97,6 +97,8 @@ export function createFrostBending(ctx) {
      *  direction (unit, horizontal), dt, time; requests set for one frame by the owner. */
     x: 0.5, y: 0.5, z: 0.5, aimX: 0.5, aimZ: 0.5, dt: 0.5, time: 0.5,
     castSweep: false,
+    /** Light slots this frame's verbs took (the Gale continues from here). */
+    lightsUsed: 0,
 
     update() {
       this.gesture = Math.max(0, this.gesture - this.dt / 0.45);
@@ -108,6 +110,7 @@ export function createFrostBending(ctx) {
       for (let k = 0; k < SWEEPS; k++) if (sw.active[k]) li = stepSweep(k, this.dt, li);
       li = stepRibbon(this, li);
       li = stepCrystals(this.dt, li);
+      this.lightsUsed = li;
     },
     /** Save: the standing formations as flat numbers (per cluster: x, y, z, age, then its
      *  prisms' 12 floats with birth times relative to `now`). Ice formations are permanent. */

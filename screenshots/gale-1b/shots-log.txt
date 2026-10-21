@@ -1,0 +1,2 @@
+2026-10-21T12:01:23.497Z 1/1 rv-m10-verbs-grass: saved screenshots/gale-1b/rv-m10-verbs-grass.png
+2026-10-21T12:01:23.498Z Shots done: 1/1 spot(s) (rv-m10*) → screenshots/gale-1b/.

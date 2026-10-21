@@ -65,6 +65,8 @@ export async function createWorld(g) {
   bindShadows(snowfall.material, shadows);
   // Fire: the camp's hearth and the braziers (flames, embers, smoke), after the falling snow.
   const fire = (await import('../render/fire.js')).createFire(scene, atmosphere);
+  // The Gale's wind made visible (Phase 8 M6): gust lines, vortex debris, updraft columns.
+  const galeFx = (await import('../render/galeFx.js')).createGaleFx(scene, atmosphere);
   // Rock outcrops with accumulation (frost): cast and receive shadows; scanned rock surfaces.
   const { createRocks } = await import('../render/rocks.js');
   const rocks = createRocks(scene, content.clipmap, atmosphere, matLib);
@@ -123,5 +125,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, grass, groundCover, motes, trees, wind, water });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, grass, groundCover, motes, trees, wind, water });
 }

@@ -11,7 +11,7 @@ export const MAX_BRUSHES = 48;
 export const MAX_IN = 4;
 export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 * 4;
 /** Brush programs (terrainState.stamp: field bk). */
-export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 5 };
+export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 5, FLATTEN: 6, STRIP: 7 };
 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
@@ -276,6 +276,31 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     t.s.y = t.s.y * (1.0 - edge);
     if (edge > 0.5 && !turf) { t.s.w = ${TRANSFORM.ICE}.0 / 255.0; }
     t.h.x = max(t.h.x, br.w * give * edge);
+  } else if (program == ${BRUSH.FLATTEN}u) {
+    // Gust's lane (BRIEF §9.2): a lance of wind lays the grass flat and scours a skin of loose
+    // powder from snow, banking it thinly along the downwind edges; wet slush in its path is
+    // blown to spray and freezes to rime (BRIEF §4.4: Gale over slush).
+    let lane = 1.0 - smoothstep(0.55, 1.15, d);
+    let edge = smoothstep(0.85, 1.1, d) * (1.0 - smoothstep(1.1, 1.6, d));
+    t.m.y = max(t.m.y, lane);
+    if (turf) { t.s.x = max(t.s.x, bd.w * lane); }
+    else {
+      t.h.x = max(t.h.x, br.w * lane * (0.8 + 0.4 * hsh));
+      t.h.y = max(t.h.y * (1.0 - lane), br.w * ex.w * edge * (0.7 + 0.6 * hsh));
+    }
+    let rime = t.s.y * lane;
+    t.s.z = max(t.s.z, rime);
+    t.s.y = t.s.y * (1.0 - lane);
+  } else if (program == ${BRUSH.STRIP}u) {
+    // Vortex: a ring scoured out of the surface where the column bites, the mass thrown to a rim
+    // outside it; the grass inside swirled flat (healing settles it back).
+    let ring = smoothstep(0.35, 0.75, d) * (1.0 - smoothstep(0.8, 1.0, d));
+    let rim = smoothstep(0.95, 1.12, d) * (1.0 - smoothstep(1.12, 1.6, d));
+    let inside = 1.0 - smoothstep(0.85, 1.05, d);
+    t.h.x = max(t.h.x, br.w * give * ring * (0.75 + 0.5 * hsh));
+    t.h.y = max(t.h.y * (1.0 - ring), br.w * give * ex.w * rim * (0.7 + 0.6 * smoothHash(p, 0.13)));
+    t.m.y = max(t.m.y, inside);
+    if (turf) { t.s.x = max(t.s.x, bd.w * inside); }
   } else if (program == ${BRUSH.MOUND}u) {
     // Mound: displaced mass heaped in a soft, lumpy dome (a Shaped collapsing back into the snow);
     // it fills any hollow under it. Heals like any displaced mass.

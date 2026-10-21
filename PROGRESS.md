@@ -239,6 +239,8 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 
 ### Session — 2026-10-21 — review board and fixes (meadow and frost), branch `claude/wraithoftheunstill-phase-7`
 
+- **Gale (Phase 8 M6, first pass): see PLAN.md M6 "Done".** Gust (tap), Vortex (hold) and Updraft (heavy) on keys 1/2 to switch elements (try `?gale=1`, then 2). New brush programs FLATTEN and STRIP; the controller's `lift` (rising air, capped at 13 m/s); combat hooks (Gust shove, Vortex pull and tick damage, Updraft strike). Shots: `screenshots/gale-2/` (meadow and steppe: the lane, the ring, the column).
+
 - **Local lights, the hall and the fire (PLAN.md V5/V6, Q5), shots in `screenshots/lights-1/` and `lights-2/`:**
   - **16 light slots** (`LIGHT_SLOTS`, shaders/common.wgsl.js; the terrain's own loops too): slots 0–3 are the verbs' and the carried lantern's (`frost.js` now clears only those), and slots 4–15 are **world lights**.
   - `systems/lights.js` fills slots 4–15 each frame with the nearest registered lights to the camera (insertion-sorted, faded over the last 25 m of a 90 m reach, flicker per kind: fire, candle, lamp, bounce). It also exports `nightAt(tod)`. Owners register once with `g.worldLights.add({…})` and move the record and set its `level`.
