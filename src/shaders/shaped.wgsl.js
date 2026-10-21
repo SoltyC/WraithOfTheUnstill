@@ -3,7 +3,8 @@
 // (seed, kind, glow, alpha). The vertex shader turns a unit icosphere into an irregular clod
 // (shards taper to a point), scales it and hangs it on its bone; facets are flat (screen-space
 // derivative normals). Readable telegraphs through material: as `glow` rises the core lights up
-// and cracks across the snow glow cold blue (BRIEF §8.3).
+// and cracks across the snow glow cold blue (BRIEF §8.3). Kinds 4+ are the meadow's materials
+// (sedge, turf, stone, reed, seed-pod, awn, root): same pipeline, lit warm, cores glow seed-amber.
 
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
@@ -33,6 +34,24 @@ fn main(input: VertexInputs) -> FragmentInputs {
   if (kind > 0.5 && kind < 1.5) {
     // Shard: a long tapered prism-like lump, pointed toward +y.
     v = vec3f(v.x * (1.0 - 0.75 * max(v.y, 0.0)), v.y, v.z * (1.0 - 0.75 * max(v.y, 0.0)));
+  }
+  // Meadow kinds (4 sedge, 5 turf, 6 stone, 7 reed, 8 pod, 9 awn, 10 root).
+  let mk = i32(floor(kind + 0.02));
+  if (mk == 4 || mk == 7) {
+    // Bundles pinch toward their ends (sedge a little, reed stalks more).
+    let pinch = select(0.3, 0.5, mk == 7);
+    v = vec3f(v.x * (1.0 - pinch * abs(v.z)), v.y * (1.0 - pinch * abs(v.z)), v.z);
+  } else if (mk == 6) {
+    // Drystone: a slab, cube-ish with chipped corners.
+    v = sign(v) * pow(abs(v), vec3f(0.6)) * 0.82 * (0.92 + 0.12 * hs(v * 2.3 + seed));
+  } else if (mk == 9) {
+    // Awn: a spike tapering to a point trailing backward (-z).
+    let t = 1.0 - 0.85 * max(-v.z, 0.0);
+    v = vec3f(v.x * t, v.y * t, v.z);
+  } else if (mk == 10) {
+    // Root strand: pointed at the bottom, hanging.
+    let t = 1.0 - 0.8 * max(-v.y, 0.0);
+    v = vec3f(v.x * t, v.y, v.z * t);
   }
   let local = v * vec3f(a.w, b.w, c.w) * 0.5;
   let f = b.xyz; let u = c.xyz; let r = cross(u, f);
@@ -84,7 +103,60 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (frozen && (kind == 0 || kind == 3)) { kind = 1; } // glazed over: all ice (a frozen joint too)
   let cold = vec3f(0.62, 0.86, 1.32) / 0.84;
   var col = vec3f(0.0);
-  if (kind == 3) {
+  let meadow = kind >= 4;
+  if (meadow) {
+    // Meadow materials (variant by chunk kind): lit by the plain sky (no frost tint).
+    let lv = fragmentInputs.vLocal; let sd = fragmentInputs.vSeed;
+    let up = clamp(N.y, 0.0, 1.0);
+    let under = mix(0.5, 1.0, smoothstep(-0.9, 0.4, lv.y));
+    var albedo = vec3f(0.4);
+    var trans = 0.0;
+    if (kind == 4 || kind == 9) {
+      // Plaited sedge / awn: fibrous stripes along the strand, straw-green into dry gold.
+      let n = noised(vec2f(lv.x * 3.0 + sd, lv.y * 2.0)).x;
+      let fib = 0.5 + 0.5 * sin((lv.x + lv.y * 0.5) * 38.0 + sd * 3.0 + n * 2.0);
+      let dry = clamp(fract(sd * 0.137) * 1.4 - 0.2 + n * 0.25, 0.0, 1.0);
+      albedo = mix(vec3f(0.30, 0.38, 0.13), vec3f(0.70, 0.55, 0.24), dry) * (0.72 + 0.4 * fib);
+      if (kind == 9) { albedo = mix(albedo, vec3f(0.80, 0.68, 0.34), 0.5); }
+      trans = 0.25;
+    } else if (kind == 5) {
+      // Turf sod: grass on top (by up-facing), soil on the sides, darker undersides.
+      let tuft = noised(wp.xz * 11.0 + vec2f(sd, 0.0)).x;
+      let grass = vec3f(0.19, 0.34, 0.09) * (0.8 + 0.3 * tuft);
+      let soil = vec3f(0.19, 0.12, 0.07) * (0.8 + 0.25 * noised(wp.xz * 7.0 + wp.y * 5.0 + vec2f(sd, 3.0)).x);
+      albedo = mix(soil, grass, smoothstep(0.35, 0.75, N.y + 0.15 * tuft));
+      trans = 0.12 * up;
+    } else if (kind == 6) {
+      // Drystone: grey slab, lichen blotches pale yellow-green, most on the up-facing sides.
+      let st = 0.9 + 0.2 * noised(lv.xy * 6.0 + vec2f(sd, 1.0)).x;
+      let lich = smoothstep(0.1, 0.45, noised(wp.xz * 3.5 + wp.y * 2.0 + vec2f(sd, 5.0)).x + 0.25 * up);
+      albedo = mix(vec3f(0.40, 0.40, 0.38) * st, vec3f(0.50, 0.54, 0.28), lich * 0.7);
+    } else if (kind == 7) {
+      // Reed: pale tan stalks, fine stripes and nodes along the bundle.
+      let fib = 0.5 + 0.5 * sin((lv.x + lv.y) * 46.0 + sd * 2.0);
+      let node = smoothstep(0.85, 1.0, sin(lv.z * 9.0 + sd));
+      albedo = mix(vec3f(0.58, 0.48, 0.30), vec3f(0.74, 0.66, 0.45), fib) * (1.0 - 0.25 * node);
+      trans = 0.2;
+    } else if (kind == 8) {
+      // Seed-pod husk around the amber light.
+      albedo = vec3f(0.50, 0.27, 0.09);
+      trans = 0.3;
+    } else {
+      // Root: thin, dark, ropy.
+      albedo = vec3f(0.11, 0.075, 0.045) * (0.7 + 0.6 * (0.5 + 0.5 * sin(lv.y * 30.0 + sd)));
+    }
+    let diff = clamp((nl + 0.25) / 1.25, 0.0, 1.0);
+    col = albedo * (key * (diff * vis + trans * pow(1.0 - nv, 2.0)) / PI + sky * under);
+    if (frozen) {
+      // Crystallize: an icy glaze over the meadow (cold tint, sky in the facets, edge glints).
+      let F = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
+      let R = reflect(-V, N);
+      let Hf = normalize(L + V);
+      let ice = vec3f(0.42, 0.68, 0.82) * (key * clamp(nl * 0.5 + 0.5, 0.0, 1.0) * vis / PI + sky * cold);
+      col = mix(col, ice, 0.6) + atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z))) * max(F, 0.1) * 0.6;
+      col += key * pow(max(dot(N, Hf), 0.0), 120.0) * 2.0 * vis;
+    }
+  } else if (kind == 3) {
     // A water joint: liquid held in the body by the Warden's stillness — churning, glossy, lit
     // from within (the target: freeze it, then break it).
     let t = fragmentInputs.vGlow * 3.0;               // the joint's pulse (the Warden's clock)
@@ -124,10 +196,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   // Telegraph: the core lights from within and cracks glow across the snow (display-referred).
   // A faint living light in the core at all times; the telegraph floods it.
-  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, kind == 2));
+  let isPod = kind == 2 || kind == 8;
+  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, isPod));
   if (g > 0.001) {
-    let glowCol = vec3f(0.45, 0.78, 1.0);
-    if (kind == 2) { col += glowCol * g * 0.9 / max(exposure, 1e-6); }
+    let glowCol = select(vec3f(0.45, 0.78, 1.0), vec3f(1.0, 0.62, 0.22), meadow); // seed-amber
+    if (isPod) { col += glowCol * g * 0.9 / max(exposure, 1e-6); }
     else {
       let n = noised(fragmentInputs.vLocal.xz * 5.0 + fragmentInputs.vLocal.y * 3.0 + vec2f(fragmentInputs.vSeed)).x;
       let crack = 1.0 - smoothstep(0.0, 0.08, abs(n));
@@ -136,8 +209,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   // Hurt flash (kind's fraction): the struck body whitens and its rim burns cold for an instant.
   if (hurt > 0.001) {
-    col = mix(col, vec3f(0.85, 0.93, 1.0) * (sky + key * 0.25), hurt * 0.55);
-    col += vec3f(0.5, 0.8, 1.0) * hurt * (0.25 + 0.75 * pow(1.0 - nv, 2.0)) * 0.35 / max(exposure, 1e-6);
+    col = mix(col, select(vec3f(0.85, 0.93, 1.0), vec3f(1.0, 0.9, 0.72), meadow) * (sky + key * 0.25), hurt * 0.55);
+    col += select(vec3f(0.5, 0.8, 1.0), vec3f(1.0, 0.68, 0.3), meadow) * hurt * (0.25 + 0.75 * pow(1.0 - nv, 2.0)) * 0.35 / max(exposure, 1e-6);
   }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, exposure);

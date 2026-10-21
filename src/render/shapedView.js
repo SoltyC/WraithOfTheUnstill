@@ -1,6 +1,7 @@
 // The Shaped's renderer: one mesh holding every chunk slot of the pool (an icosphere per chunk,
 // chunk index in uv.x), records from the Shaped system uploaded once per frame. Opaque,
-// shadow-casting. Empty slots collapse in the vertex shader (fixed draw: snapshot rendering).
+// shadow-casting. The material variant (frost / meadow kinds) rides in each chunk record's kind,
+// so one pipeline serves every Shaped. Empty slots collapse in the vertex shader (fixed draw: snapshot rendering).
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';

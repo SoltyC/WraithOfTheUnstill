@@ -75,3 +75,63 @@ export const ARCHETYPES = {
   };
 }
 
+// ---- Meadow Shaped (PLAN M8): the Shapers' field-hands, made of grass, turf, reed and stone.
+// `material: 'meadow'` (absent = 'frost') plus a `variant` select the chunk kinds in rig.js; their
+// light is a warm seed-amber. Roles borrow the nearest frost behaviour until M8's own land.
+
+/** @type {Record<string, any>} */
+export const MEADOW_ARCHETYPES = {
+  // Sedgerunner: a lean, long-legged runner of plaited sedge, a ruff of awns at the neck, a seed-pod
+  // core. Light: a Gust bowls it over.
+  sedgerunner: {
+    shape: {
+      spine: 5, spacing: 0.34, hip: 0.8,
+      legs: [
+        { at: 1, side: -1, upper: 0.46, lower: 0.5, reach: 0.15, kneeBack: false, group: 0 },
+        { at: 1, side: 1, upper: 0.46, lower: 0.5, reach: 0.15, kneeBack: false, group: 1 },
+        { at: 4, side: -1, upper: 0.48, lower: 0.5, reach: 0.15, kneeBack: true, group: 1 },
+        { at: 4, side: 1, upper: 0.48, lower: 0.5, reach: 0.15, kneeBack: true, group: 0 },
+      ],
+      tail: 3, tailSpacing: 0.14, headUp: 0.1,
+      stride: 0.8, swing: 0.2, lift: 0.14, maxSpeed: 9, accel: 18, turnRate: 6,
+    },
+    health: 28, chunks: 72, rig: { girth: 0.26, leg: 0.11, head: 0.3, variant: 'sedge' },
+    role: 'flank', knock: 3.6, material: 'meadow', variant: 'sedge',
+    behaviour: 'flush', // hidden in the grass until the flock breaks (game/shaped/behaviours.js)
+  },
+  // Hedgewarden: a hunched, broad mound of turf over drystone ribs and roots, a standing stone
+  // carried on its back, root-hands it walks on. Slow and heavy.
+  hedgewarden: {
+    shape: {
+      spine: 4, spacing: 0.66, hip: 1.3,
+      legs: [
+        { at: 0, side: -1, upper: 0.82, lower: 0.9, reach: 0.82, kneeBack: false, group: 0 },
+        { at: 0, side: 1, upper: 0.82, lower: 0.9, reach: 0.82, kneeBack: false, group: 1 },
+        { at: 3, side: -1, upper: 0.62, lower: 0.72, reach: 0.6, kneeBack: true, group: 1 },
+        { at: 3, side: 1, upper: 0.62, lower: 0.72, reach: 0.6, kneeBack: true, group: 0 },
+      ],
+      tail: 0, tailSpacing: 0.2, headUp: -0.1,
+      stride: 1.4, swing: 0.6, lift: 0.26, maxSpeed: 2.6, accel: 4, turnRate: 1.3,
+    },
+    health: 200, chunks: 96, rig: { girth: 0.5, leg: 0.2, head: 0.3, variant: 'turf' },
+    role: 'advance', poise: 40, slamRadius: 3, slamDamage: 28, knock: 0.4, material: 'meadow', variant: 'turf',
+    behaviour: 'territory', // keeps its boundary; ignores the Wraith outside it
+  },
+  // Chanter: tall and stilt-legged like a heron, a long upright neck of reed and a hollow
+  // bell-flower head. Keeps its distance; the shard attack stands in for its pollen.
+  chanter: {
+    shape: {
+      spine: 3, spacing: 0.45, hip: 2.1,
+      legs: [
+        { at: 1, side: -1, upper: 1.12, lower: 1.2, reach: 0.2, kneeBack: true, group: 0 },
+        { at: 1, side: 1, upper: 1.12, lower: 1.2, reach: 0.2, kneeBack: true, group: 1 },
+      ],
+      tail: 2, tailSpacing: 0.2, headUp: 1.05,
+      stride: 1.1, swing: 0.45, lift: 0.2, maxSpeed: 4, accel: 6, turnRate: 2.6,
+    },
+    health: 50, chunks: 64, rig: { girth: 0.17, leg: 0.035, head: 0.1, variant: 'reed' },
+    role: 'ranged', keep: 12, shardDamage: 0, knock: 1.4, material: 'meadow', variant: 'reed',
+    behaviour: 'support', // its song heals the wounded; its breath hangs pollen (no shards: pollen is its weapon)
+  },
+};
+Object.assign(ARCHETYPES, MEADOW_ARCHETYPES);

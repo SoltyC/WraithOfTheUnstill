@@ -65,7 +65,14 @@ export function createCombat(ctx) {
       // Focus: restored by movement and flow, spent by the verbs.
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
       const regen = controller.surf.active ? T.focusSurf : sp > 2 ? T.focusMove : T.focusIdle;
-      this.focus = Math.min(T.focus, this.focus + regen * dt);
+      // Inside a Chanter's pollen, focus does not return (PLAN.md M8).
+      if (!(shaped.pollenAt && shaped.pollenAt(controller.pos.x, controller.pos.z) > 0.3)) this.focus = Math.min(T.focus, this.focus + regen * dt);
+      // The Gale clears hanging pollen: a Gust's lane and an Updraft's column blow it away.
+      if (gale !== null && shaped.disperseNear) {
+        for (let k = 0; k < 3; k++) if (gale.gustActive[k] && gale.gustHW[k] > 0.05) shaped.disperseNear(gale.gustFX[k], gale.gustFZ[k], gale.gustHW[k] + 1);
+        if (gale.updraftEvent) shaped.disperseNear(gale.updraftX, gale.updraftZ, 5);
+        if (gale.vortexStrength > 0.5) shaped.disperseNear(gale.vortexX, gale.vortexZ, 3);
+      }
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * dt);
       if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * dt);
       this.wound += ((1 - this.health / T.health) - this.wound) * (1 - Math.exp(-dt * 3));

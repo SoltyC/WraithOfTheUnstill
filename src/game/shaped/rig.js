@@ -12,7 +12,9 @@ import { MAX_LEGS } from './body.js';
 // Bone kinds.
 const SPINE = 0, HEAD = 1, TAIL = 2, UPPER = 3, LOWER = 4;
 // Chunk kinds (shader): packed snow, ice shard, glowing core (telegraph light).
-export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3 };
+// Meadow kinds (4+) ride the same field: plaited sedge, turf sod, drystone, reed, seed-pod core
+// (amber), awn (thin spike trailing back), root (thin dark strand hanging down).
+export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3, SEDGE: 4, TURF: 5, STONE: 6, REED: 7, POD: 8, AWN: 9, ROOT: 10 };
 /** Floats per chunk record: (pos, sx), (fwd, sy), (up, sz), (seed, kind, glow, alpha). */
 export const CHUNK_FLOATS = 16;
 
@@ -25,6 +27,7 @@ function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5
  * @param {number} seed
  */
 export function buildRig(sh, count, seed, opt = {}) {
+  if (opt.variant) return buildMeadow(sh, count, seed, opt);
   const r = mulberry(seed);
   // Proportions per archetype: torso girth and leg thickness (fractions of hip height), head
   // size, shards per segment.
@@ -92,6 +95,157 @@ export function buildRig(sh, count, seed, opt = {}) {
     rise[c] = (b === LOWER ? 0 : b === UPPER ? 0.15 : b === TAIL ? 0.45 : 0.3) + (kind[c] === CHUNK.ICE ? 0.25 : 0) + r() * 0.2;
   }
   return { count, bone, index, kind, off, size, cseed: cseed, rise };
+}
+
+
+/** Rise order shared by the meadow rigs: feet first, then body, tall spikes and slabs last. */
+function riseOrder(count, bone, kind, r) {
+  const rise = new Float32Array(count);
+  for (let c = 0; c < count; c++) {
+    const b = bone[c], k = kind[c];
+    rise[c] = (b === LOWER ? 0 : b === UPPER ? 0.15 : b === TAIL ? 0.45 : 0.3) + (k === CHUNK.AWN || k === CHUNK.STONE ? 0.25 : 0) + r() * 0.2;
+  }
+  return rise;
+}
+
+/**
+ * Meadow chunk layouts (opt.variant: 'sedge' | 'turf' | 'reed'), same record as the frost rig.
+ * Spine chunks sit mid-segment (oz 0.5 × spacing toward the front joint). `needed` counts what
+ * the design wanted; anything past `count` is dropped (tests keep needed ≤ count).
+ */
+function buildMeadow(sh, count, seed, opt) {
+  const r = mulberry(seed);
+  const bone = new Uint8Array(count), index = new Uint8Array(count), kind = new Uint8Array(count);
+  const off = new Float32Array(count * 3), size = new Float32Array(count * 3), cseed = new Float32Array(count);
+  let n = 0, needed = 0;
+  const add = (b, i, ox, oy, oz, sx, sy, sz, k) => {
+    needed++;
+    if (n >= count) return;
+    bone[n] = b; index[n] = i; kind[n] = k;
+    off[n * 3] = ox; off[n * 3 + 1] = oy; off[n * 3 + 2] = oz;
+    size[n * 3] = sx; size[n * 3 + 1] = sy; size[n * 3 + 2] = sz;
+    cseed[n] = r() * 1000; n++;
+  };
+  const S = sh.spine, sp = sh.spacing, hip = sh.hip, v = opt.variant;
+  const G = opt.girth ?? 0.3, girth = hip * G, hs = hip * (opt.head ?? 0.3), w = hip * (opt.leg ?? 0.1);
+  const neck = Math.hypot(0.9 * sp, sh.headUp);   // the head bone's length
+  const J = (a) => (r() - 0.5) * a;
+  const legs = (upperKind, lowerKind, un, ln, foot) => {
+    for (let l = 0; l < sh.legs.length; l++) {
+      const leg = sh.legs[l], lw = w * (opt.legScale?.[leg.at === 0 ? 0 : 1] ?? 1);
+      for (let k = 0; k < un; k++) {
+        const f = (k + 0.5) / un;
+        add(UPPER, l, J(lw * 0.3), J(lw * 0.3), leg.upper * f, lw * (1.2 - 0.3 * f) * (0.9 + 0.2 * r()), lw * (1.05 - 0.3 * f) * (0.9 + 0.2 * r()), leg.upper * 2.2 / un, upperKind);
+      }
+      for (let k = 0; k < ln; k++) {
+        const f = (k + 0.5) / ln;
+        add(LOWER, l, J(lw * 0.25), J(lw * 0.25), leg.lower * f, lw * 0.8 * (0.9 + 0.2 * r()), lw * 0.75 * (0.9 + 0.2 * r()), leg.lower * 2.0 / ln, lowerKind);
+      }
+      foot(l, leg, lw);
+    }
+  };
+
+  if (v === 'sedge') {
+    // Plaited sedge: long thin strands along the body, a ruff of awns at the neck, a pod core.
+    for (let i = 0; i < S - 1; i++) {
+      for (let k = 0; k < 3; k++) {
+        const a = (k / 3) * Math.PI * 2 + 0.5 + r() * 0.4;
+        add(SPINE, i, Math.cos(a) * girth * 0.35, Math.sin(a) * girth * 0.3 + girth * 0.1, sp * 0.5 + J(sp * 0.2), girth * (0.7 + 0.2 * r()), girth * (0.6 + 0.2 * r()), sp * (1.9 + 0.4 * r()), CHUNK.SEDGE);
+      }
+      add(SPINE, i, 0, -girth * 0.35, sp * 0.5, girth * 0.9, girth * 0.5, sp * 1.6, CHUNK.SEDGE);
+      add(SPINE, i, 0, girth * 0.05, sp * 0.5, girth * 0.55, girth * 0.55, sp * 0.5, CHUNK.POD);
+      add(SPINE, i, J(girth * 0.5), girth * 0.75, sp * 0.5 + J(sp * 0.4), girth * 0.14, girth * (1 + 0.8 * r()), girth * 0.14, CHUNK.SEDGE);   // seed-head
+    }
+    for (let k = 0; k < 8; k++) {   // the ruff
+      const a = (k / 8) * Math.PI * 2 + J(0.3);
+      add(SPINE, 0, Math.cos(a) * girth * 0.65, Math.sin(a) * girth * 0.65, sp * 0.85, 0.05, 0.05, sp * (1.0 + 0.3 * r()), CHUNK.AWN);
+    }
+    add(HEAD, 0, 0, 0, neck * 0.3, girth * 0.65, girth * 0.6, neck * 0.7, CHUNK.SEDGE);
+    add(HEAD, 0, 0, 0, neck * 0.75, girth * 0.6, girth * 0.55, neck * 0.7, CHUNK.SEDGE);
+    add(HEAD, 0, 0, 0, neck + hs * 0.2, hs * 0.8, hs * 0.7, hs * 1.1, CHUNK.SEDGE);
+    add(HEAD, 0, 0, -hs * 0.1, neck + hs * 0.85, hs * 0.5, hs * 0.4, hs * 0.9, CHUNK.SEDGE);
+    add(HEAD, 0, 0, hs * 0.2, neck + hs * 0.3, hs * 0.3, hs * 0.3, hs * 0.3, CHUNK.POD);
+    for (let k = 0; k < 2; k++) add(HEAD, 0, (k ? 1 : -1) * hs * 0.25, hs * 0.35, neck, 0.04, 0.04, hs * 1.2, CHUNK.AWN);
+    for (let i = 0; i < sh.tail; i++) {
+      const t = 1 - i / sh.tail, s = hip * 0.11 * (0.4 + 0.6 * t);
+      add(TAIL, i, 0, 0, sh.tailSpacing * 0.4, s, s * 0.9, sh.tailSpacing * 1.4, CHUNK.SEDGE);
+    }
+    for (let k = 0; k < 2; k++) add(TAIL, sh.tail - 1, (k ? 1 : -1) * 0.02, 0.02, 0.05, 0.04, 0.04, 0.26, CHUNK.AWN);
+    legs(CHUNK.SEDGE, CHUNK.SEDGE, 2, 2, (l, leg, lw) => add(LOWER, l, 0, 0, leg.lower * 0.98, lw, lw * 0.5, lw * 1.8, CHUNK.SEDGE));
+    while (n < count) {
+      const i = Math.floor(r() * (S - 1)), a = r() * Math.PI * 2;
+      add(SPINE, i, Math.cos(a) * girth * 0.4, Math.sin(a) * girth * 0.35, sp * 0.5 + J(sp * 0.6), girth * (0.4 + 0.2 * r()), girth * (0.35 + 0.2 * r()), sp * (1.4 + 0.5 * r()), CHUNK.SEDGE);
+    }
+  } else if (v === 'turf') {
+    // Turf mound: sods over drystone ribs and roots, a standing stone on the back, root-hands.
+    for (let i = 0; i < S - 1; i++) {
+      for (let k = 0; k < 3; k++) {
+        const a = (k / 3) * Math.PI * 2 + 0.5 + r() * 0.5;
+        add(SPINE, i, Math.cos(a) * girth * 0.32, Math.sin(a) * girth * 0.28 + girth * 0.1, sp * 0.5 + J(sp * 0.4), girth * (1.15 + 0.3 * r()), girth * (1.0 + 0.25 * r()), sp * (1.3 + 0.4 * r()), CHUNK.TURF);
+      }
+      add(SPINE, i, 0, -girth * 0.35, sp * 0.5, girth * 1.05, girth * 0.7, sp * 1.2, CHUNK.TURF);
+      add(SPINE, i, 0, girth * 0.1, sp * 0.5, girth * 0.6, girth * 0.55, sp * 0.6, CHUNK.POD);
+      for (let q = 0; q < 2; q++) add(SPINE, i, (q ? 1 : -1) * girth * 0.55, -girth * 0.15, sp * 0.5, girth * 0.3, girth * 0.7, sp * 0.4, CHUNK.STONE);   // ribs
+      for (let q = 0; q < 2; q++) add(SPINE, i, J(girth * 0.8), -girth * 0.75, sp * 0.5 + J(sp * 0.6), 0.06, 0.55 + 0.4 * r(), 0.06, CHUNK.ROOT);
+    }
+    add(SPINE, 0, 0, girth * 0.6, sp * 0.5, girth * 1.3, girth * 0.8, sp * 1.3, CHUNK.TURF);   // the hunch
+    // The standing stone: a tall slab, buttress stones at its foot, a sod round the base.
+    add(SPINE, 1, 0, girth * 1.2, sp * 0.5, girth * 1.0, girth * 1.7, girth * 0.5, CHUNK.STONE);
+    for (let q = 0; q < 2; q++) add(SPINE, 1, (q ? 1 : -1) * girth * 0.45, girth * 0.75, sp * 0.5 + J(sp * 0.2), girth * 0.4, girth * 0.6, girth * 0.5, CHUNK.STONE);
+    add(SPINE, 1, 0, girth * 0.85, sp * 0.5, girth * 1.3, girth * 0.3, girth * 0.9, CHUNK.TURF);
+    add(SPINE, 1, girth * 0.1, girth * 2.0, sp * 0.5, girth * 0.5, girth * 0.3, girth * 0.35, CHUNK.STONE);   // leaning cap
+    // Head: low, heavy, brow of root.
+    add(HEAD, 0, 0, 0, neck * 0.4, girth * 0.8, girth * 0.7, neck * 0.9, CHUNK.TURF);
+    add(HEAD, 0, 0, hs * 0.05, neck + hs * 0.1, hs * 1.3, hs * 1.0, hs * 1.3, CHUNK.TURF);
+    add(HEAD, 0, 0, -hs * 0.4, neck + hs * 0.3, hs * 0.8, hs * 0.4, hs * 0.8, CHUNK.STONE);
+    add(HEAD, 0, 0, hs * 0.1, neck + hs * 0.55, hs * 0.4, hs * 0.4, hs * 0.4, CHUNK.POD);
+    for (let k = 0; k < 2; k++) add(HEAD, 0, (k ? 1 : -1) * hs * 0.45, hs * 0.2, neck + hs * 0.2, 0.07, hs * 0.9, 0.07, CHUNK.ROOT);
+    legs(CHUNK.TURF, CHUNK.ROOT, 3, 2, (l, leg, lw) => {
+      add(LOWER, l, 0, 0, leg.lower * 0.98, lw * 1.5, lw * 1.0, lw * 1.5, CHUNK.TURF);   // the fist
+      const fingers = leg.at === 0 ? 3 : 2;
+      for (let q = 0; q < fingers; q++) add(LOWER, l, (q - (fingers - 1) / 2) * lw * 0.55, -lw * 0.5, leg.lower * 1.0, lw * 0.2, lw * 0.9, lw * 0.2, CHUNK.ROOT);
+    });
+    for (let q = 0; n < count; q++) {   // remainder: sods on the back, hanging roots, rubble
+      const i = Math.floor(r() * (S - 1)), a = r() * Math.PI * 2, m = q % 3;
+      if (m === 0) add(SPINE, i, Math.cos(a) * girth * 0.45, Math.sin(a) * girth * 0.4 + girth * 0.1, sp * 0.5 + J(sp), girth * (0.5 + 0.3 * r()), girth * (0.45 + 0.3 * r()), girth * (0.6 + 0.3 * r()), CHUNK.TURF);
+      else if (m === 1) add(SPINE, i, J(girth * 1.4), -girth * 0.6, sp * 0.5 + J(sp), 0.05, 0.5 + 0.5 * r(), 0.05, CHUNK.ROOT);
+      else add(SPINE, i, Math.cos(a) * girth * 0.6, -girth * 0.1 + Math.sin(a) * girth * 0.2, sp * 0.5 + J(sp), girth * 0.3, girth * 0.3, girth * 0.35, CHUNK.STONE);
+    }
+  } else {
+    // Reed: bundled stalks, a long upright neck with pods, a hollow bell-flower head.
+    for (let i = 0; i < S - 1; i++) {
+      for (let k = 0; k < 4; k++) {
+        const a = (k / 4) * Math.PI * 2 + 0.4 + r() * 0.4;
+        add(SPINE, i, Math.cos(a) * girth * 0.35, Math.sin(a) * girth * 0.3 + girth * 0.1, sp * 0.5 + J(sp * 0.2), girth * (0.8 + 0.3 * r()), girth * (0.7 + 0.2 * r()), sp * (1.8 + 0.4 * r()), CHUNK.REED);
+      }
+      add(SPINE, i, 0, -girth * 0.35, sp * 0.5, girth * 0.9, girth * 0.55, sp * 1.5, CHUNK.REED);
+      add(SPINE, i, 0, girth * 0.05, sp * 0.5, girth * 0.6, girth * 0.6, sp * 0.5, CHUNK.POD);
+    }
+    for (let i = 0; i < sh.tail; i++) add(TAIL, i, 0, 0, sh.tailSpacing * 0.5, 0.07, 0.07, 0.5, CHUNK.REED);
+    for (let k = 0; k < 4; k++) for (let q = 0; q < 2; q++) {
+      add(HEAD, 0, (q ? 1 : -1) * 0.035, 0, neck * (k + 0.5 + 0.25 * q) / 4, 0.13, 0.13, neck * 0.55, CHUNK.REED);
+    }
+    for (let k = 0; k < 3; k++) add(HEAD, 0, 0, 0.05, neck * (0.3 + 0.25 * k), 0.11, 0.11, 0.11, CHUNK.POD);
+    // The bell: a pod at its throat, a narrow ring of petals and a flared one above.
+    add(HEAD, 0, 0, 0, neck + 0.1, 0.2, 0.2, 0.2, CHUNK.POD);
+    for (let k = 0; k < 6; k++) {
+      const a = (k / 6) * Math.PI * 2;
+      add(HEAD, 0, Math.cos(a) * 0.1, Math.sin(a) * 0.1, neck + 0.08, 0.12, 0.12, 0.34, CHUNK.REED);
+    }
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2 + 0.2;
+      add(HEAD, 0, Math.cos(a) * 0.24, Math.sin(a) * 0.24, neck + 0.3, 0.16, 0.16, 0.3, CHUNK.REED);
+    }
+    legs(CHUNK.REED, CHUNK.REED, 4, 4, (l, leg, lw) => {
+      add(LOWER, l, 0, lw * 1.2, leg.lower * 0.99, lw * 1.0, lw * 4, lw * 0.8, CHUNK.REED);
+      for (let q = 0; q < 2; q++) add(LOWER, l, (q ? 1 : -1) * lw * 1.5, lw * 1.2, leg.lower * 0.99, lw * 0.9, lw * 3.5, lw * 0.8, CHUNK.REED);
+    });
+    while (n < count) {
+      const i = Math.floor(r() * (S - 1)), a = r() * Math.PI * 2;
+      add(SPINE, i, Math.cos(a) * girth * 0.4, Math.sin(a) * girth * 0.35, sp * 0.5 + J(sp * 0.6), girth * 0.5, girth * 0.45, sp * 1.2, CHUNK.REED);
+    }
+  }
+  return { count, bone, index, kind, off, size, cseed, rise: riseOrder(count, bone, kind, r), needed };
 }
 
 /**

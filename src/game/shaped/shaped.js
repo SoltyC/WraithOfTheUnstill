@@ -9,13 +9,16 @@ import { ARCHETYPES } from './archetypes.js';
 import { buildRig, createRigState, writeAlive, writeFall, writeHidden, startFall, CHUNK_FLOATS } from './rig.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
+import * as BH from './behaviours.js';
 
 export const MAX_SHAPED = 8;
 /** Chunk records per slot (the largest archetype). */
 export const CHUNKS_PER = 96;
 
 // States.
-export const S = { EMPTY: 0, RISING: 1, STALK: 2, TELEGRAPH: 3, LUNGE: 4, RECOVER: 5, STAGGER: 6, FROZEN: 7, FALLING: 8, SLAM: 9, CAST: 10 };
+export const S = { EMPTY: 0, RISING: 1, STALK: 2, TELEGRAPH: 3, LUNGE: 4, RECOVER: 5, STAGGER: 6, FROZEN: 7, FALLING: 8, SLAM: 9, CAST: 10,
+  /** Meadow behaviours: crouched hidden (flush), broken out of the flock, a sweeping pass, singing (support). */
+  STILLED: 11, FLUSH: 12, PASS: 13, SING: 14 };
 /** Thrown ice shards in flight (their chunk records follow the creatures'). */
 export const MAX_SHOTS = 12;
 
@@ -30,13 +33,24 @@ export function createShaped(ctx) {
   for (const k in ARCHETYPES) rigs[k] = buildRig(ARCHETYPES[k].shape, Math.min(CHUNKS_PER, ARCHETYPES[k].chunks), 1234 + k.length * 77, ARCHETYPES[k].rig);
   const slots = [];
   for (let i = 0; i < MAX_SHAPED; i++) slots.push({ idx: i, arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
-    cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0, hurt: 0, flinch: 0 });
+    cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0, hurt: 0, flinch: 0,
+    // Behaviours: flush (flock, flushed, pass, side), territory (home, bound, aggro, away), support (songCool, pollenCool).
+    flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
   const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS) * CHUNK_FLOATS);
   // Shards: position, velocity, alive.
   const shot = { x: new Float64Array(MAX_SHOTS), y: new Float64Array(MAX_SHOTS), z: new Float64Array(MAX_SHOTS),
     vx: new Float64Array(MAX_SHOTS), vy: new Float64Array(MAX_SHOTS), vz: new Float64Array(MAX_SHOTS),
     live: new Uint8Array(MAX_SHOTS), dmg: new Float64Array(MAX_SHOTS), next: 0 };
+  // Pollen curtains (support): a fixed pool, published as (x, z, radius, strength) × POLLEN_MAX.
+  const PM = BH.POLLEN_MAX;
+  const pl = { x: new Float64Array(PM), z: new Float64Array(PM), r: new Float64Array(PM), age: new Float64Array(PM),
+    life: new Float64Array(PM), fout: new Float64Array(PM), owner: new Int8Array(PM).fill(-1) };
+  const pollen = new Float32Array(PM * 4);
+  // Scratch for the behaviours (no per-frame allocation).
+  const sc = { x: 0, z: 0 }, sc2 = { x: 0, z: 0 };
+  const fkFlocks = new Int32Array(MAX_SHAPED), fkFlushed = new Uint8Array(MAX_SHAPED), fkLive = new Uint8Array(MAX_SHAPED);
+  let frame = 0, nextFlock = 1;
   let seed = 99;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
@@ -51,6 +65,8 @@ export function createShaped(ctx) {
 
   const self = {
     slots, chunks,
+    /** Pollen curtains (support): up to 8 × (x, z, radius, strength 0..1), zeros when free. */
+    pollen,
     /** Player (fields): position, velocity. Events out: hits on the player this frame. */
     px: 0.5, pz: 0.5, pvx: 0.5, pvz: 0.5, dt: 0.5, time: 0.5,
     hits: 0, hitDamage: 0.5 - 0.5,
@@ -64,8 +80,9 @@ export function createShaped(ctx) {
     sfx: null,
     /** Ground slams this frame (camera shake), and the strongest one's distance to the Wraith. */
     slams: 0, slamDist: 0.5,
-    /** Spawn an archetype at (x, z): it rises out of the snow. Returns the slot or −1. */
-    spawn(name, x, z) {
+    /** Spawn an archetype at (x, z): it rises out of the snow. Returns the slot or −1. `o` (optional):
+     *  { flock } for 'flush'; { homeX, homeZ, bound } for 'territory'. */
+    spawn(name, x, z, o) {
       let i = 0;
       for (; i < MAX_SHAPED; i++) if (slots[i].state === S.EMPTY) break;
       if (i === MAX_SHAPED) return -1;
@@ -80,7 +97,52 @@ export function createShaped(ctx) {
       ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = A.shape.spacing * A.shape.spine * 0.55; ts.bd = 0.22; ts.bc = 0.3;
       ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.9;
       ts.stamp();
+      s.flock = -1; s.flushed = false; s.pass = 0; s.side = 1; s.spawnFrame = frame; s.aggro = false; s.away = 0;
+      s.homeX = x; s.homeZ = z; s.bound = 0; s.songCool = 0; s.pollenCool = 0;
+      switch (A.behaviour) {
+        case 'flush': {
+          // Stilled: crouched, motionless, unlit, until the flock flushes. A flock: given, else those spawned together.
+          s.state = S.STILLED; s.t = 0; b.crouch = 1;
+          if (o && o.flock !== undefined) s.flock = o.flock;
+          else {
+            for (let j = 0; j < MAX_SHAPED && s.flock < 0; j++) {
+              const q = slots[j];
+              if (j !== i && q.state === S.STILLED && q.spawnFrame === frame && q.flock >= 0 && ARCHETYPES[q.arch].behaviour === 'flush' &&
+                Math.hypot(q.body.x - x, q.body.z - z) < (A.flockJoin ?? BH.FLOCK_JOIN)) s.flock = q.flock;
+            }
+            if (s.flock < 0) s.flock = nextFlock++;
+          }
+          break;
+        }
+        case 'territory':
+          s.bound = o && o.bound !== undefined ? o.bound : (A.bound ?? BH.TERR_BOUND);
+          if (o && o.homeX !== undefined) s.homeX = o.homeX;
+          if (o && o.homeZ !== undefined) s.homeZ = o.homeZ;
+          break;
+        case 'support': s.songCool = A.songEvery ?? BH.SONG_EVERY; s.pollenCool = (A.pollenEvery ?? BH.POLLEN_EVERY) * 0.5; break;
+      }
       return i;
+    },
+    /** Pollen strength 0..1 at (x, z): the strongest curtain over it. */
+    pollenAt(x, z) {
+      let m = 0;
+      for (let k = 0; k < PM; k++) {
+        if (pl.owner[k] < 0) continue;
+        const v = BH.curtainAt(x, z, pl.x[k], pl.z[k], pl.r[k], BH.curtainStrength(pl.age[k], pl.life[k], 1, pl.fout[k]));
+        if (v > m) m = v;
+      }
+      return m;
+    },
+    /** A gale hit at (x, z) within r: curtains it touches fade out over 0.5 s. Returns how many. */
+    disperseNear(x, z, r) {
+      let n = 0;
+      for (let k = 0; k < PM; k++) {
+        if (pl.owner[k] < 0) continue;
+        const rr = r + pl.r[k];
+        if ((pl.x[k] - x) * (pl.x[k] - x) + (pl.z[k] - z) * (pl.z[k] - z) > rr * rr) continue;
+        if (pl.life[k] - pl.age[k] > BH.DISPERSE_TIME) { pl.life[k] = pl.age[k] + BH.DISPERSE_TIME; pl.fout[k] = BH.DISPERSE_TIME; n++; }
+      }
+      return n;
     },
     /** Damage slot i; stagger knocks it back along (kx, kz). Returns true if it died. */
     damage(i, amount, stagger, kx, kz) {
@@ -92,6 +154,7 @@ export function createShaped(ctx) {
       if (armour && s.state !== S.FROZEN && amount < 1e8) amount *= armour;
       s.hp -= amount;
       s.hurt = 1;
+      if (s.state === S.STILLED && s.hp > 0) flushFlock(s.idx);           // struck: the flock breaks cover
       if (s.hp <= 0) {
         const shatter = s.state === S.FROZEN;
         if (shatter) { this.shattered++; this.bx = s.body.sx[1]; this.by = s.body.sy[1]; this.bz = s.body.sz[1]; }
@@ -99,7 +162,8 @@ export function createShaped(ctx) {
         return true;
       }
       const A = ARCHETYPES[s.arch], poise = A.poise || 0, b = s.body;
-      if (stagger && amount >= poise && s.state !== S.FROZEN) {
+      // A blow in the middle of the Chanter's song breaks it, whatever its poise.
+      if ((stagger && amount >= poise || s.state === S.SING) && s.state !== S.FROZEN) {
         s.state = S.STAGGER; s.t = 0; b.vx = kx * A.knock; b.vz = kz * A.knock; b.crouch = 0; b.lift = 0;
         if (this.lungeToken === s.idx) this.lungeToken = -1;
       } else if (s.state !== S.FROZEN && amount > 1) {
@@ -138,6 +202,7 @@ export function createShaped(ctx) {
     update() {
       const dt = this.dt;
       this.hits = 0; this.hitDamage = 0; this.slams = 0; this.slamDist = 1e9; this.shattered = 0;
+      stepPollen(dt);
       if (this.lungeToken >= 0) { const ts0 = slots[this.lungeToken].state; if (ts0 !== S.TELEGRAPH && ts0 !== S.LUNGE) this.lungeToken = -1; }
       stepShots(this, dt);
       for (let i = 0; i < MAX_SHAPED; i++) {
@@ -174,12 +239,13 @@ export function createShaped(ctx) {
         const ri = ARCHETYPES[s.arch].shape.hip * 0.9;
         for (let j = 0; j < MAX_SHAPED; j++) {
           const o = slots[j];
-          if (j === i || o.state === S.EMPTY || o.state === S.FALLING) continue;
+          if (j === i || o.state === S.EMPTY || o.state === S.FALLING || s.state === S.STILLED) continue;
           const ex = b.x - o.body.x, ez = b.z - o.body.z, d = Math.sqrt(ex * ex + ez * ez) || 1e-3;
           const min = ri + ARCHETYPES[o.arch].shape.hip * 0.9;
           if (d < min) { const push = (min - d) / min * 4; b.wantVx += ex / d * push; b.wantVz += ez / d * push; }
         }
         b.dt = dt; b.update();
+        if (s.bound > 0) leashPos(s, b);
         // Prints where it steps.
         for (let e = 0; e < b.evCount; e++) {
           const o = e * 5;
@@ -203,6 +269,12 @@ export function createShaped(ctx) {
           }
         }
       }
+      for (let k = 0; k < PM; k++) {
+        const o = k * 4, a = pl.owner[k] >= 0;
+        pollen[o] = a ? pl.x[k] : 0; pollen[o + 1] = a ? pl.z[k] : 0; pollen[o + 2] = a ? pl.r[k] : 0;
+        pollen[o + 3] = a ? BH.curtainStrength(pl.age[k], pl.life[k], 1, pl.fout[k]) : 0;
+      }
+      frame++;
     },
     /** Throw a shard from (sx, sy, sz) at (tx, ty, tz) at shotSpeed, wounding shotDmg (fields in;
      *  the Warden's volley uses the same pool). */
@@ -293,6 +365,12 @@ export function createShaped(ctx) {
   }
 
   function think(s, P, dt) {
+    const bh = ARCHETYPES[s.arch].behaviour;
+    if (bh !== undefined) {
+      if (bh === 'flush') return thinkFlush(s, P, dt);
+      if (bh === 'territory') return thinkTerritory(s, P, dt);
+      if (bh === 'support' && thinkSupport(s, P, dt)) return;
+    }
     const role = ARCHETYPES[s.arch].role;
     if (role === 'advance') thinkBrute(s, P, dt);
     else if (role === 'ranged') thinkSeer(s, P, dt);
@@ -391,7 +469,7 @@ export function createShaped(ctx) {
         const wl = Math.hypot(b.wantVx, b.wantVz), mx = A.shape.maxSpeed;
         if (wl > mx) { b.wantVx *= mx / wl; b.wantVz *= mx / wl; }
         s.cool -= dt;
-        if (s.cool <= 0 && dist > 5 && dist < 20) { s.state = S.TELEGRAPH; s.t = 0; }
+        if (s.cool <= 0 && dist > 5 && dist < 20 && A.shardDamage !== 0) { s.state = S.TELEGRAPH; s.t = 0; }
         break;
       }
       case S.TELEGRAPH:
@@ -423,6 +501,155 @@ export function createShaped(ctx) {
         b.frozen = true; b.wantVx = 0; b.wantVz = 0;
         if (s.t >= s.frozenFor) { s.state = S.STALK; s.t = 0; b.frozen = false; s.cool = 1; }
         break;
+    }
+  }
+
+  // ---- Meadow behaviours (behaviours.js) ----
+  /** The flock of slot `seed` breaks cover: every stilled member runs out in its own direction. */
+  function flushFlock(seed) {
+    for (let j = 0; j < MAX_SHAPED; j++) {
+      const q = slots[j];
+      fkFlocks[j] = q.flock; fkLive[j] = q.state === S.STILLED ? 1 : 0; fkFlushed[j] = j === seed ? 1 : 0;
+    }
+    BH.flockPropagate(fkFlocks, fkFlushed, fkLive, MAX_SHAPED);
+    let n = 0, first = -1;
+    for (let j = 0; j < MAX_SHAPED; j++) if (fkFlushed[j]) { n++; if (first < 0) first = j; }
+    const f = slots[first].body, away = Math.atan2(f.x - self.px, f.z - self.pz);
+    let k = 0;
+    for (let j = 0; j < MAX_SHAPED; j++) {
+      if (!fkFlushed[j]) continue;
+      const q = slots[j], a = BH.flushAngle(k, n, away);
+      q.lungeX = Math.sin(a); q.lungeZ = Math.cos(a); q.state = S.FLUSH; q.t = 0; q.flushed = true; q.pass = 0; q.hitDone = false;
+      q.side = (k & 1) ? 1 : -1; k++;
+    }
+  }
+
+  /** Sedgerunner: stilled until the flock flushes; break out ~1 s; then sweeping passes (arc in,
+   *  slash across, carry on past, loop back). */
+  function thinkFlush(s, P, dt) {
+    const b = s.body, A = ARCHETYPES[s.arch], sp = A.shape.maxSpeed;
+    const dx = P.px - b.x, dz = P.pz - b.z;
+    s.glow = 0;
+    switch (s.state) {
+      case S.RISING: b.wantVx = 0; b.wantVz = 0; if (s.t >= RISE_TIME) { s.state = S.STILLED; s.t = 0; } break;
+      case S.STILLED:
+        b.wantVx = 0; b.wantVz = 0; b.crouch += (1 - b.crouch) * Math.min(1, dt * 8);
+        if (BH.flushDue(dx, dz, A.flushRadius ?? BH.FLUSH_RADIUS)) flushFlock(s.idx);
+        break;
+      case S.FLUSH:
+        b.crouch += (0 - b.crouch) * Math.min(1, dt * 8);
+        b.wantVx = s.lungeX * sp * 0.85; b.wantVz = s.lungeZ * sp * 0.85;
+        if (s.t >= (A.flushTime ?? BH.FLUSH_TIME)) { s.state = S.PASS; s.t = 0; s.pass = 0; s.hitDone = false; }
+        break;
+      case S.PASS: {
+        b.crouch += (0 - b.crouch) * Math.min(1, dt * 8);
+        const dist = Math.sqrt(dx * dx + dz * dz) || 1e-3;
+        if (s.pass === 0) {
+          BH.passSteer(sc, b.x, b.z, P.px, P.pz, s.side);
+          b.wantVx = sc.x * sp; b.wantVz = sc.z * sp;
+          if (BH.slashHit(dist, s.hitDone)) { s.hitDone = true; P.hits++; P.hitDamage += A.slashDamage ?? 10; }
+          if (BH.passCrossed(dist, b.vx, b.vz, dx, dz)) {
+            // Over the Wraith: carry on along the line it crossed on.
+            const vl = Math.sqrt(b.vx * b.vx + b.vz * b.vz);
+            if (vl > 0.5) { s.lungeX = b.vx / vl; s.lungeZ = b.vz / vl; } else { s.lungeX = sc.x; s.lungeZ = sc.z; }
+            s.pass = 1; s.t = 0;
+          }
+        } else {
+          // Carry on past, curving back round toward the next pass.
+          const a = s.side * 1.1 * dt, c = Math.cos(a), sn = Math.sin(a), lx = s.lungeX, lz = s.lungeZ;
+          s.lungeX = lx * c - lz * sn; s.lungeZ = lz * c + lx * sn;
+          b.wantVx = s.lungeX * sp; b.wantVz = s.lungeZ * sp;
+          if (BH.carryDone(dist, s.t)) { s.pass = 0; s.t = 0; s.side = -s.side; s.hitDone = false; }
+        }
+        break;
+      }
+      case S.STAGGER:
+        b.wantVx = 0; b.wantVz = 0; b.lift = 0;
+        if (s.t >= 0.6) { s.state = S.PASS; s.t = 0; s.pass = 0; s.hitDone = false; }
+        break;
+      case S.FROZEN:
+        b.frozen = true; b.wantVx = 0; b.wantVz = 0;
+        if (s.t >= s.frozenFor) { s.state = s.flushed ? S.PASS : S.STILLED; s.t = 0; s.pass = 0; s.hitDone = false; b.frozen = false; }
+        break;
+    }
+  }
+
+  /** Hedgewarden: patrols its boundary ignoring the Wraith; inside the line it is the relentless
+   *  brute; it gives up ~1.5 s after the Wraith leaves, and never follows past bound + 1. */
+  function thinkTerritory(s, P, dt) {
+    const b = s.body, A = ARCHETYPES[s.arch], bound = s.bound;
+    BH.territoryGate(s, Math.hypot(P.px - s.homeX, P.pz - s.homeZ), bound, dt, A.giveUp);
+    if (s.aggro || s.state !== S.STALK) thinkBrute(s, P, dt);
+    else {
+      // Walk the edge (or back to it): aim a little way round the circle.
+      s.glow += (0 - s.glow) * (1 - Math.exp(-dt * 4));
+      b.crouch += (0 - b.crouch) * Math.min(1, dt * 4);
+      BH.patrolPoint(sc, b.x, b.z, s.homeX, s.homeZ, bound, 2.5);
+      const wx = sc.x - b.x, wz = sc.z - b.z, wl = Math.sqrt(wx * wx + wz * wz) || 1;
+      const off = Math.abs(Math.hypot(b.x - s.homeX, b.z - s.homeZ) - bound);
+      const spd = Math.min(A.shape.maxSpeed, BH.PATROL_SPEED + off * 0.5);
+      b.wantVx = wx / wl * spd; b.wantVz = wz / wl * spd;
+    }
+    if (BH.leash(sc2, b.x, b.z, s.homeX, s.homeZ, bound, b.wantVx, b.wantVz)) { b.wantVx = sc2.x; b.wantVz = sc2.z; }
+  }
+  /** Hard stop at bound + 1: whatever shoved it (a blow, momentum), it is put back on the line. */
+  function leashPos(s, b) {
+    const dx = b.x - s.homeX, dz = b.z - s.homeZ, d = Math.sqrt(dx * dx + dz * dz), lim = s.bound + BH.TERR_LEASH;
+    if (d <= lim) return;
+    b.x = s.homeX + dx / d * lim; b.z = s.homeZ + dz / d * lim;
+    const o = (b.vx * dx + b.vz * dz) / d;
+    if (o > 0) { b.vx -= dx / d * o; b.vz -= dz / d * o; }
+  }
+
+  /** Chanter: the song (heals wounded Shaped near it) and the pollen curtain, on top of the
+   *  seer's keep-away. Returns true when it handled this frame. */
+  function thinkSupport(s, P, dt) {
+    const b = s.body, A = ARCHETYPES[s.arch], range = A.songRange ?? BH.SONG_RANGE;
+    if (s.state === S.SING) {
+      const hum = A.songHum ?? BH.SONG_HUM;
+      const dx = P.px - b.x, dz = P.pz - b.z, dist = Math.sqrt(dx * dx + dz * dz) || 1e-3;
+      s.glow += ((s.t < hum ? 1 : 0.8) - s.glow) * (1 - Math.exp(-dt * 3));
+      const back = Math.min(0, (dist - A.keep) * 0.4);
+      b.wantVx = dx / dist * back; b.wantVz = dz / dist * back;
+      if (s.t >= hum) {
+        for (let j = 0; j < MAX_SHAPED; j++) {
+          const o = slots[j];
+          if (j === s.idx || o.state === S.EMPTY || o.state === S.FALLING || o.state === S.RISING) continue;
+          o.hp = BH.songHeal(o.hp, ARCHETYPES[o.arch].health, Math.hypot(o.body.x - b.x, o.body.z - b.z), range, A.songRate ?? BH.SONG_RATE, dt);
+        }
+      }
+      if (s.t >= hum + (A.songTime ?? BH.SONG_TIME)) { s.state = S.STALK; s.t = 0; s.cool = 1; }
+      return true;
+    }
+    if (s.state !== S.STALK) return false;
+    s.songCool -= dt; s.pollenCool -= dt;
+    const dist = Math.hypot(P.px - b.x, P.pz - b.z);
+    if (s.pollenCool <= 0 && dist < 24) {
+      let own = 0, free = -1;
+      for (let k = 0; k < PM; k++) { if (pl.owner[k] === s.idx) own++; else if (pl.owner[k] < 0 && free < 0) free = k; }
+      if (own < BH.POLLEN_CAP && free >= 0) {
+        BH.curtainPos(sc, b.x, b.z, P.px, P.pz, A.pollenReach ?? 5);
+        pl.x[free] = sc.x; pl.z[free] = sc.z; pl.r[free] = A.pollenRadius ?? BH.POLLEN_RADIUS; pl.age[free] = 0;
+        pl.life[free] = A.pollenLife ?? BH.POLLEN_LIFE; pl.fout[free] = 1; pl.owner[free] = s.idx;
+        s.pollenCool = A.pollenEvery ?? BH.POLLEN_EVERY;
+      } else s.pollenCool = 1;
+    }
+    if (s.songCool <= 0) {
+      let wounded = 0;
+      for (let j = 0; j < MAX_SHAPED; j++) {
+        const o = slots[j];
+        if (j === s.idx || o.state === S.EMPTY || o.state === S.FALLING || o.state === S.RISING) continue;
+        if (o.hp < ARCHETYPES[o.arch].health && Math.hypot(o.body.x - b.x, o.body.z - b.z) <= range) wounded++;
+      }
+      if (BH.songEligible(s.songCool, wounded)) { s.state = S.SING; s.t = 0; s.songCool = A.songEvery ?? BH.SONG_EVERY; return true; }
+    }
+    return false;
+  }
+  function stepPollen(dt) {
+    for (let k = 0; k < PM; k++) {
+      if (pl.owner[k] < 0) continue;
+      pl.age[k] += dt;
+      if (pl.age[k] >= pl.life[k]) pl.owner[k] = -1;
     }
   }
 
