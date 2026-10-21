@@ -67,7 +67,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
     p += vec3f((h4 - 0.5) * 0.4 * S, (0.9 + life * 5.0) * S, (h5 - 0.5) * 0.4 * S) + wind * life * (2.5 + 2.0 * h3) * S;
     p += vec3f(sin(t * 0.5 + h1 * 6.28), 0.0, cos(t * 0.4 + h3 * 6.28)) * life * 0.6 * S;
     size = S * (0.35 + life * 1.7) * (0.8 + 0.4 * h3);
-    alpha = smoothstep(0.0, 0.25, life) * (1.0 - life) * 0.32;
+    alpha = smoothstep(0.0, 0.25, life) * (1.0 - life) * 0.2 / (1.0 + life * 1.5); // thins as it spreads
     kind = 2.0;
   }
   if (S <= 0.0) { alpha = 0.0; }
@@ -125,14 +125,17 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let lit = vec3f(1.0, 0.38, 0.08) * a * 5.0 / max(ex, 1e-6);
     outc = vec4f(displayTransform(lit, ex), 0.0);
   } else {
-    // Smoke: a soft, lumpy puff, grey, lit by the sky and (young, low) by the fire under it.
+    // Smoke: a soft, lumpy puff of pale wood smoke, lit by the sky, by the sun (bright against it:
+    // smoke scatters forward) and, young and low, by the fire under it.
     let r = length(uv);
     let n = noised(uv * 1.7 + wp.xz * 0.7 + vec2f(t * 0.1)).x;
     let d = smoothstep(1.0, 0.2, r + 0.3 * n);
     if (d <= 0.001) { discard; }
     let sky = shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w;
     let glow = vec3f(1.0, 0.45, 0.15) * (1.0 - smoothstep(0.0, 0.3, life)) * 0.6 / max(ex, 1e-6);
-    let col = vec3f(0.2, 0.19, 0.18) * (sky + atmoKeyColor() * max(uniforms.keyDir.y, 0.0) * 0.15) + glow;
+    let cosT = dot(normalize(wp - uniforms.cameraPosition), uniforms.keyDir);
+    let phase = 0.3 + 1.6 * pow(max(cosT, 0.0), 4.0);
+    let col = vec3f(0.5, 0.52, 0.55) * (sky + atmoKeyColor() * max(uniforms.keyDir.y + 0.1, 0.0) * phase / PI) + glow;
     let a = d * fragmentInputs.vAlpha;
     let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
     outc = vec4f(displayTransform(lit, ex) * a, a);

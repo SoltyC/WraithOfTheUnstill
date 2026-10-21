@@ -16,7 +16,7 @@ import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
 import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js'; // side effect: compute on WebGPUEngine
-import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
+import { ENV_UNIFORMS, LIGHT_SLOTS } from '../shaders/common.wgsl.js';
 import { clipmapVertexWGSL, clipmapFragmentWGSL, CLIPMAP_N, CLIPMAP_LEVELS } from '../shaders/clipmap.wgsl.js';
 import { clipmapHeightsWGSL, clipmapNormalsWGSL, CLIPMAP_V } from '../shaders/clipmapCompute.wgsl.js';
 import { bindEnvironment } from './environment.js';
@@ -104,7 +104,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   mat.setVector4('playerPos', playerPos);
   // Spell lights (written in place by the bending systems each frame).
   bindMaterialLibrary(mat, matLib); // scanned rock on the cliffs
-  const spellLights = new Float32Array(32);
+  const spellLights = new Float32Array(LIGHT_SLOTS * 8);
   mat.setArray4('spellLights', spellLights);
   mat.setStorageBuffer('levelData', levelData);
   mat.setStorageBuffer('biomeA', buffers.biomeA);

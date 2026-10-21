@@ -103,7 +103,7 @@ export function createFrostBending(ctx) {
       this.crystalEvent = false;
       if (this.castSweep) { this.castSweep = false; startSweep(this); this.gesture = 1; }
       if (this.castCrystal) { this.castCrystal = false; startCrystals(this); this.gesture = 1; }
-      lights.fill(0);
+      lights.fill(0, 0, SPELL_LIGHTS * 8); // the verbs' slots only (world lights follow: systems/lights.js)
       let li = 0;
       for (let k = 0; k < SWEEPS; k++) if (sw.active[k]) li = stepSweep(k, this.dt, li);
       li = stepRibbon(this, li);

@@ -42,7 +42,7 @@ export const archVertexWGSL = ARCH_VERTEX;
 
 export const archFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
-uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world)
+uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world); w = embers 0..1 where y = 0
 uniform archParams: vec4f;                       // x = time, y = snow cover 0..1, z = restored 0..1
 ${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -216,7 +216,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Embers: char and a breathing glow.
     albedo = vec3f(0.03, 0.025, 0.02);
     let flick = 0.6 + 0.25 * sin(t * 7.3 + wp.x * 9.0) + 0.15 * sin(t * 13.1 + wp.z * 7.0);
-    emit = vec3f(1.0, 0.36, 0.08) * smoothstep(0.1, 0.8, n1 * 0.5 + 0.5) * flick * glowS.y * 0.9;
+    // Lit by the site's fire (y), or — a site with no hearth (y = 0) — by w: candles and the
+    // vigil brazier in the hall burn without lighting its felt from within.
+    let emberK = max(glowS.y, select(0.0, glowS.w, glowS.y <= 0.0));
+    emit = vec3f(1.0, 0.36, 0.08) * smoothstep(0.1, 0.8, n1 * 0.5 + 0.5) * flick * emberK * 0.9;
   } else {
     // Bronze, green with age.
     albedo = mix(vec3f(0.22, 0.14, 0.07), vec3f(0.12, 0.2, 0.17), smoothstep(-0.2, 0.6, n1 + 0.3 * N.y));

@@ -8,7 +8,8 @@
 // (site index, material, seed, carve) the shader reads. Materials: STONE (Shaper ashlar),
 // GLYPH (stone with carved, faintly lit Shaper glyph bands, or — carve 2/3/4 — one large verb
 // symbol: crystal / crescent / wave), CANVAS (tents), WOOD, ICE, EMBER.
-// Also returns 2D collision shapes (blockers: circles and boxes; platforms: walkable tops).
+// Also returns 2D collision shapes (blockers: circles and boxes; platforms: walkable tops), and
+// point lights (lights: { site, x, y, z, radius, color, intensity, kind } site-local, kind fire / candle / bounce / lamp).
 
 import { chamferBlock, layWall, columnDrums, snowDrift, snowPillow, h2 } from './masonry.js';
 import { feltTent, stick } from './camp.js';
@@ -19,7 +20,10 @@ const FOUND = 3; // m of foundation below the seat
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
 
 class Builder {
-  constructor() { this.pos = []; this.nrm = []; this.uv = []; this.info = []; this.idx = []; this.blockers = []; this.platforms = []; this.site = 0; }
+  constructor() { this.pos = []; this.nrm = []; this.uv = []; this.info = []; this.idx = []; this.blockers = []; this.platforms = []; this.lights = []; this.site = 0; }
+  /** A point light in site-local metres (data only; the renderer picks the nearest few). kind: 'fire' (warm, flickers),
+   *  'candle' (small, warm, gentle flicker), 'bounce' (steady, night only), 'lamp' (steady). */
+  light(x, y, z, radius, r, g, b, intensity, kind) { this.lights.push({ site: this.site, x, y, z, radius, color: [r, g, b], intensity, kind }); }
   /** One flat quad (a, b, c, d counter-clockwise seen from outside), uv in metres along ab and ad. */
   quad(a, b, c, d, mat, seed, carve = 0, uvs = null) {
     const ux = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], vx = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
@@ -310,6 +314,44 @@ function monastery(b, facing, R) {
     b.drum(cx, cz, 3.6, 5.3, 0.62, 0.32, 14, MAT.METAL, 93, { solid: false }); }
   // Steles flanking the approach.
   for (const s of [-1, 1]) { const [x, z] = at(s * 4.2, 13.6); b.box(x, z, 0.35, 4.1, 0.55, 0.28, facing, MAT.GLYPH, 95 + s, { carve: 1 }); }
+
+  // Within the hall (after the colonnade, so its dice are unchanged): where Aud keeps vigil.
+  // A vigil brazier west of the bier, 1.6 m clear of its long side: an iron-black stone pedestal,
+  // a glyph-carved bowl, coals (blocks but for the bowl's rim).
+  { const [x, z] = at(-2.7, -2.2), cy = 1.32;
+    b.drum(x, z, 0.35, 1.0, 0.28, 0.24, 8, MAT.STONE, 300);
+    b.drum(x, z, 1.0, 1.3, 0.24, 0.42, 12, MAT.GLYPH, 301, { carve: 1, solid: false });
+    b.drum(x, z, 1.24, cy, 0.38, 0.36, 12, MAT.EMBER, 302, { solid: false });
+    b.light(x, cy + 0.35, z, 9, 1.0, 0.55, 0.25, 1.6, 'fire'); }
+  // Candle ledges on the back wall's inner face: a thumb of shelf, two or three stubs, a flame each.
+  [[-4.9, 1.5], [-2.3, 2.1], [1.9, 1.3], [4.4, 1.8]].forEach(([ls, ly], k) => {
+    const [x, z] = at(ls, -5 + T + 0.07);
+    b.box(x, z, ly - 0.08, ly, 0.25, 0.07, facing, MAT.STONE, 310 + k, { solid: false, drift: false, cap: false });
+    const n = 2 + (R() < 0.5 ? 1 : 0);
+    for (let c = 0; c < n; c++) {
+      const cs = ls + (c - (n - 1) / 2) * 0.17 + (R() - 0.5) * 0.04, h = 0.06 + R() * 0.12, r = 0.025 + R() * 0.015;
+      const [cx, cz] = at(cs, -5 + T + 0.07);
+      b.drum(cx, cz, ly, ly + h, r, r * 0.92, 6, MAT.CANVAS, 320 + k * 4 + c, { solid: false });
+      b.drum(cx, cz, ly + h, ly + h + 0.05, 0.02, 0.006, 5, MAT.EMBER, 340 + k * 4 + c, { solid: false });
+    }
+    const [lx, lz] = at(ls, -5 + T + 0.12);
+    b.light(lx, ly + 0.3, lz, 4.2, 1.0, 0.62, 0.32, 2.2, 'candle');
+  });
+  // The shroud-cloth left on the bier: a thin sheet a hand inside the top's edge, a fold hanging
+  // over each long side (the glyph band below stays clear).
+  { const [x, z] = at(0, -2.2);
+    b.box(x, z, 0.95, 0.97, 1.0, 1.8, facing, MAT.CANVAS, 360, { solid: false });
+    for (const sg of [-1, 1]) {
+      const [hx2, hz2] = at(sg * 1.0746, -2.2);
+      b.box(hx2, hz2, 0.856, 0.876, 0.12, 1.7, facing, MAT.CANVAS, 361 + (sg > 0 ? 1 : 0), { solid: false, roll: -sg * 0.9 });
+    } }
+  // Slates fallen from the roof, strewn under the broken half among the timbers.
+  for (let k = 0; k < 8; k++) {
+    const [x, z] = at(1.5 + R() * 4.5, -4 + R() * 8), lift = 0.03;
+    b.box(x, z, 0.35 + lift, 0.4 + lift, 0.3, 0.2, R() * Math.PI * 2, MAT.STONE, 370 + k, { solid: false, drift: false, cap: false, roll: (R() - 0.5) * 0.3, tilt: (R() - 0.5) * 0.3 });
+  }
+  // The cold light that falls through the gap in the roof and up off the drifted snow.
+  { const [x, z] = at(3.8, 0); b.light(x, 0.35 + 4.5, z, 10, 0.55, 0.65, 0.85, 0.9, 'bounce'); }
 }
 
 /** A frost shrine: five standing stones round a low altar, a glyph ring, an open gate. */
@@ -618,6 +660,6 @@ export function buildArchitecture(sites) {
   sites.forEach((s, i) => { b.site = i; s.build(b, s.facing, rng(0x5a17 + i * 977)); });
   return {
     positions: new Float32Array(b.pos), normals: new Float32Array(b.nrm), uvs: new Float32Array(b.uv),
-    info: new Float32Array(b.info), indices: new Uint32Array(b.idx), blockers: b.blockers, platforms: b.platforms,
+    info: new Float32Array(b.info), indices: new Uint32Array(b.idx), blockers: b.blockers, platforms: b.platforms, lights: b.lights,
   };
 }

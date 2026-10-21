@@ -1,0 +1,2 @@
+2026-10-21T11:51:21.485Z 1/1 rv-f04-hall-night: saved screenshots/lights-2/rv-f04-hall-night.png
+2026-10-21T11:51:21.489Z Shots done: 1/1 spot(s) (rv-f04*) → screenshots/lights-2/.

@@ -30,6 +30,8 @@ launch() { # $1 = first spot id, $2 = its index
 
 killChrome
 mkdir -p "screenshots/$dir"
+# A log from an earlier run into the same dir would read as this run's (its "Shots done").
+[ -f "$log" ] && mv "$log" "$log.prev"
 attempts=0; shown=0
 while :; do
   # Resume at the first spot without a saved shot.

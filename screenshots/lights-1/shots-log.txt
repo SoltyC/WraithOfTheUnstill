@@ -1,0 +1,14 @@
+2026-10-21T11:46:29.154Z 1/9 rv-f01-wraith-face-noon: saved screenshots/lights-1/rv-f01-wraith-face-noon.png
+2026-10-21T11:46:35.560Z 2/9 rv-f02-camp-noon: saved screenshots/lights-1/rv-f02-camp-noon.png
+2026-10-21T11:46:41.885Z 3/9 rv-f03-camp-npc-close: saved screenshots/lights-1/rv-f03-camp-npc-close.png
+2026-10-21T11:46:53.643Z 4/9 rv-f04-hall-night: saved screenshots/lights-1/rv-f04-hall-night.png
+2026-10-21T11:47:05.489Z 5/9 rv-f05-shrine-dusk-close: saved screenshots/lights-1/rv-f05-shrine-dusk-close.png
+2026-10-21T11:47:15.588Z 6/9 rv-f06-pack-blizzard: saved screenshots/lights-1/rv-f06-pack-blizzard.png
+2026-10-21T11:47:24.867Z 7/9 rv-f07-pack-night: saved screenshots/lights-1/rv-f07-pack-night.png
+2026-10-21T11:47:34.476Z 8/9 rv-f08-warden-wide: saved screenshots/lights-1/rv-f08-warden-wide.png
+2026-10-21T11:47:46.250Z 9/9 rv-f09-monastery-wide-noon: saved screenshots/lights-1/rv-f09-monastery-wide-noon.png
+2026-10-21T11:47:46.251Z Shots done: 9/9 spot(s) (rv-f0*) → screenshots/lights-1/.
+2026-10-21T11:48:10.094Z 1/3 p7-monastery-approach: saved screenshots/lights-1/p7-monastery-approach.png
+2026-10-21T11:48:33.305Z 2/3 p7-monastery-hall: saved screenshots/lights-1/p7-monastery-hall.png
+2026-10-21T11:48:55.863Z 3/3 p7-monastery-aerial: saved screenshots/lights-1/p7-monastery-aerial.png
+2026-10-21T11:48:55.867Z Shots done: 3/3 spot(s) (p7-m*) → screenshots/lights-1/.

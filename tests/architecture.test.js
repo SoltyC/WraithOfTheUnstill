@@ -52,4 +52,25 @@ describe('Shaper architecture', () => {
     solids.sites[0].seat = NaN; solids.cull(m[0], m[1]);
     expect(solids.floor(m[0], m[1], 5)).toBe(5);
   });
+  it('returns point lights: the monastery hall has a brazier, four candles and the moon bounce', () => {
+    expect(Array.isArray(built.lights)).toBe(true);
+    const mi = sites.findIndex((s) => s.id === 'monastery');
+    const ls = built.lights.filter((l) => l.site === mi);
+    expect(ls.length).toBe(6);
+    const kinds = (k) => ls.filter((l) => l.kind === k).length;
+    expect([kinds('fire'), kinds('candle'), kinds('bounce')]).toEqual([1, 4, 1]);
+    for (const l of ls) {
+      expect(l.radius).toBeGreaterThan(0);
+      expect(l.intensity).toBeGreaterThan(0);
+      expect(l.color.length).toBe(3);
+      expect(Math.hypot(l.x, l.z)).toBeLessThan(9);
+      expect(l.y).toBeGreaterThan(0.35);
+    }
+  });
+  it('builds deterministically', () => {
+    const again = buildArchitecture(frostSites(table, baked.routes));
+    expect(again.positions.length).toBe(built.positions.length);
+    expect(Array.from(again.positions)).toEqual(Array.from(built.positions));
+    expect(again.lights).toEqual(built.lights);
+  });
 });

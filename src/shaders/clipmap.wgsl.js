@@ -11,7 +11,7 @@
 //
 // Phase 1 "clay" shading: wrapped diffuse + sky ambient + aerial perspective, tinted by biome.
 
-import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
+import { ENV_DECL, COMMON_WGSL, LIGHT_SLOTS } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
@@ -326,7 +326,7 @@ export const clipmapFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform levels: array<vec4f,16>;
 uniform playerPos: vec4f;
-uniform spellLights: array<vec4f,8>;   // 4 × (pos.xyz, radius), (colour.rgb, intensity)
+uniform spellLights: array<vec4f,${LIGHT_SLOTS * 2}>;   // LIGHT_SLOTS × (pos.xyz, radius), (colour.rgb, intensity)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vLevel: f32;
@@ -418,7 +418,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Spell lights (BRIEF §5.3): display-referred, and mostly from within — the drift glows
     // around the light (subsurface), ice and slush catch it on the surface.
     let ex = uniforms.fogParams.z * atmoExposure();
-    for (var li = 0u; li < 4u; li++) {
+    for (var li = 0u; li < ${LIGHT_SLOTS}u; li++) {
       let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];
       if (lc.w <= 0.0) { continue; }
       let lv = lp.xyz - wp; let d = length(lv);
@@ -442,7 +442,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     ms.albedo = mix(ms.albedo, ms.albedo * vec3f(1.05, 0.92, 0.66) * 0.8, border.y);
     var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w, canopy);
     let exm = uniforms.fogParams.z * atmoExposure();
-    for (var li = 0u; li < 4u; li++) {
+    for (var li = 0u; li < ${LIGHT_SLOTS}u; li++) {
       let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];
       if (lc.w <= 0.0) { continue; }
       let lv = lp.xyz - wp; let d = max(length(lv), 0.35);

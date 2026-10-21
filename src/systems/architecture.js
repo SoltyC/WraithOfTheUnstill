@@ -6,6 +6,7 @@
 import { frostSites, buildArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
+import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 /** @param {any} g  shared boot context */
 export function addArchitectureSystem(g) {
@@ -43,6 +44,17 @@ export function addArchitectureSystem(g) {
   const camp = sites.findIndex((s) => s.id === 'camp-frost');
   const brazierIdx = []; sites.forEach((s, i) => { if (s.id.startsWith('brazier-')) brazierIdx.push(i); });
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
+  // The hall's candles and vigil brazier burn (embers on a site without a hearth: render/architecture).
+  view.glow[sites.findIndex((s) => s.id === 'monastery') * 4 + 3] = 1;
+  // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
+  // brazier, the moon under its fallen roof), the camp's hearth, each brazier once lit, and the
+  // lanterns the Veiled carry — placed once their site is seated.
+  const WL = g.worldLights;
+  const builtLights = built.lights.map((l) => ({ l, r: WL.add({ x: NaN, y: NaN, z: NaN, radius: l.radius, color: l.color, intensity: l.intensity, kind: l.kind, level: 0 }) }));
+  const hearth = WL.add({ x: NaN, y: NaN, z: NaN, radius: 16, color: [1, 0.5, 0.2], intensity: 1, kind: 'fire', level: 0 });
+  const brazierLights = brazierIdx.map(() => WL.add({ x: NaN, y: NaN, z: NaN, radius: 10, color: [1, 0.52, 0.22], intensity: 1.6, kind: 'fire', level: 0 }));
+  const lanternLights = [];
+  sites.forEach((s, i) => { if (s.kind === 'lantern' && s.npc !== 'wraith') lanternLights.push({ i, r: WL.add({ x: NaN, y: NaN, z: NaN, radius: 7, color: [1, 0.6, 0.28], intensity: 0.7, kind: 'lamp', level: 0 }) }); });
 
   /** Seat: the lowest ground over the site's footprint (9 samples) — or the highest for a site
    *  built up from a peak (seatAt 'top', foundations running down) — or NaN until known. */
@@ -108,24 +120,50 @@ export function addArchitectureSystem(g) {
     view.params.x = clock.simTime; view.params.y = weather.snow; view.params.z = restoration.value;
     // Flames: the camp's hearth always burns; a brazier once its flame is carried to it.
     { const F = g.fire.fires, cs = view.sites, co = camp * 4;
-      F[0] = cs[co]; F[1] = cs[co + 1] + 0.08; F[2] = cs[co + 2]; F[3] = cs[co + 3] > 0.5 ? 0.95 : 0;
+      F[0] = cs[co]; F[1] = cs[co + 1] + 0.08; F[2] = cs[co + 2]; F[3] = cs[co + 3] > 0.5 ? 1.25 : 0;
       let fi = 1;
       for (const bi of brazierIdx) {
         if (fi >= 8) break;
         const lit = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[bi * 4 + 3] > 0.5;
         F[fi * 4] = cs[bi * 4]; F[fi * 4 + 1] = cs[bi * 4 + 1] + 1.26; F[fi * 4 + 2] = cs[bi * 4 + 2]; F[fi * 4 + 3] = lit ? 0.5 : 0; fi++;
       }
+      // Fires built into the places (the hall's vigil brazier): flames on their coals.
+      for (const b of builtLights) {
+        if (b.l.kind !== 'fire' || fi >= 8) continue;
+        F[fi * 4] = b.r.x; F[fi * 4 + 1] = b.r.y - 0.35; F[fi * 4 + 2] = b.r.z; F[fi * 4 + 3] = b.r.x === b.r.x ? 0.38 : 0; fi++;
+      }
       const ft = g.fire.fireT; ft.x = clock.simTime; ft.y = streamer.windX || 1; ft.z = streamer.windZ || 0; ft.w = 0.15 + 0.85 * restoration.value;
     }
-    // The camp fire lights the snow round it (the terrain's last spell-light slot, when no verb
-    // is using it; the verbs fill the slots from the first each frame).
-    const L = g.content.clipmap.spellLights, cs = view.sites, co = camp * 4;
-    if (L[31] <= 0 && cs[co + 3] > 0.5) {
-      const dx = cs[co] - p.x, dz = cs[co + 2] - p.z;
-      if (dx * dx + dz * dz < 300 * 300) {
-        const t = clock.simTime, flick = 0.82 + 0.1 * Math.sin(t * 7.1) + 0.08 * Math.sin(t * 12.7 + 1.3);
-        L[24] = cs[co]; L[25] = cs[co + 1] + 0.9; L[26] = cs[co + 2]; L[27] = 22;
-        L[28] = 1; L[29] = 0.48; L[30] = 0.2; L[31] = (0.5 + 1.9 * night) * flick;
+    // World lights follow their seated sites.
+    { const cs = view.sites, wn = WL.night;
+      for (const b of builtLights) {
+        const o = b.l.site * 4; if (cs[o + 3] <= 0.5) continue;
+        b.r.x = cs[o] + b.l.x; b.r.y = cs[o + 1] + b.l.y; b.r.z = cs[o + 2] + b.l.z;
+        // The moon under the roof only by night; candles and the brazier always (Aud keeps them).
+        b.r.level = b.l.kind === 'bounce' ? wn : 1;
+      }
+      const co = camp * 4;
+      if (cs[co + 3] > 0.5) {
+        hearth.x = cs[co]; hearth.y = cs[co + 1] + 0.7; hearth.z = cs[co + 2]; hearth.level = 1; hearth.intensity = 1.2 + 3.2 * wn;
+        // The hearth has melted a wet hollow round itself (pressed again now and then so it never
+        // heals while the Wraith is near; brushes keep the deeper mark, so repeats are free).
+        const dx = cs[co] - p.x, dz = cs[co + 2] - p.z;
+        if (frame % 240 === 1 && dx * dx + dz * dz < 60 * 60) {
+          const ts = g.terrainState;
+          ts.bx = cs[co]; ts.bz = cs[co + 2]; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 1.7; ts.bd = 0.12; ts.bc = 0.8;
+          ts.bk = BRUSH.PRESS; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
+          ts.bw = 2.4; ts.bd = 0; ts.bk = BRUSH.WET; ts.bwet = 0.9; ts.stamp();
+        }
+      }
+      brazierIdx.forEach((bi, k) => {
+        const r = brazierLights[k], o = bi * 4;
+        r.level = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[o + 3] > 0.5 ? 1 : 0;
+        r.x = cs[o]; r.y = cs[o + 1] + 1.6; r.z = cs[o + 2];
+      });
+      for (const ll of lanternLights) {
+        const o = ll.i * 4;
+        ll.r.level = cs[o + 3] > 0.5 ? 0.35 + 0.65 * wn : 0;
+        ll.r.x = cs[o]; ll.r.y = cs[o + 1] - 0.2; ll.r.z = cs[o + 2];
       }
     }
   } });

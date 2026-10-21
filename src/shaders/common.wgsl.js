@@ -102,16 +102,19 @@ fn ditherNoise(fragCoord: vec2f) -> f32 {
 }
 `;
 
-/** The terrain's four point lights (spells, the carried lantern, the camp fire), shared with the
- *  materials that stand in them (render/clipmap.js owns the array). Display-referred like the
- *  terrain's: returns light to add before the display transform (already divided by exposure). */
+/** Point lights: LIGHT_SLOTS of them, shared by the terrain and every material that stands in them
+ *  (render/clipmap.js owns the array). Slots 0–3 are the verbs' and the carried lantern's; the rest
+ *  are world lights (fires, candles, lanterns, braziers) chosen near the camera each frame by
+ *  systems/lights.js. Display-referred like the terrain's: returns light to add before the display
+ *  transform (already divided by exposure). */
+export const LIGHT_SLOTS = 16;
 export const SPELL_LIGHT_DECL = /* wgsl */ `
-uniform spellLights: array<vec4f,8>;   // 4 × (pos.xyz, radius), (colour.rgb, intensity)
+uniform spellLights: array<vec4f,${LIGHT_SLOTS * 2}>;   // LIGHT_SLOTS × (pos.xyz, radius), (colour.rgb, intensity)
 `;
 export const SPELL_LIGHT_WGSL = /* wgsl */ `
 fn spellLit(wp: vec3f, N: vec3f, albedo: vec3f, wrap: f32, ex: f32) -> vec3f {
   var acc = vec3f(0.0);
-  for (var li = 0u; li < 4u; li++) {
+  for (var li = 0u; li < ${LIGHT_SLOTS}u; li++) {
     let lp = uniforms.spellLights[li * 2u]; let lc = uniforms.spellLights[li * 2u + 1u];
     if (lc.w <= 0.0) { continue; }
     let lv = lp.xyz - wp; let d = max(length(lv), 0.35);
