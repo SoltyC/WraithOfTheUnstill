@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const ARCH_SITES = 64;
+export const ARCH_SITES = 96; // frost 58 (incl. 5 NPC props) + meadow hub 9 + room for the meadow shrines
 
 const ARCH_VERTEX = /* wgsl */ `
 attribute position: vec3f;
@@ -42,7 +42,7 @@ export const archVertexWGSL = ARCH_VERTEX;
 
 export const archFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
-uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world); w = embers 0..1 where y = 0
+uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world); where y = 0: z = 1 no snow (the meadow), w = embers 0..1
 uniform archParams: vec4f;                       // x = time, y = snow cover 0..1, z = restored 0..1
 ${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -228,7 +228,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // Snow on what faces up (not on embers or ice), heavier when it is snowing; drifts at the base.
   var snow = 0.0;
-  if (mid != 5 && mid != 4) {
+  // A site with no hearth (y = 0) and z = 1 lies below the snowline (the meadow's): no snow.
+  let snowless = glowS.y <= 0.0 && glowS.z > 0.5;
+  if (mid != 5 && mid != 4 && !snowless) {
     let Ng = normalize(fragmentInputs.vNormal) * sign(dot(fragmentInputs.vNormal, V));
     let up = smoothstep(0.55, 0.85, Ng.y + 0.12 * n1 + 0.1 * n2 + 0.25 * (0.5 - ms.h)) * (0.55 + 0.45 * uniforms.archParams.y);
     let drift = (1.0 - smoothstep(0.05, 0.35 + 0.15 * n2, fragmentInputs.vLocalY)) * select(0.0, 1.0, mid <= 1);

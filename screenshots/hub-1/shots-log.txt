@@ -1,0 +1,4 @@
+2026-10-21T19:00:13.550Z 1/3 p8-hub-golden: saved screenshots/hub-1/p8-hub-golden.png
+2026-10-21T19:00:25.650Z 2/3 p8-hub-dusk: saved screenshots/hub-1/p8-hub-dusk.png
+2026-10-21T19:00:34.226Z 3/3 p8-hub-from-border: saved screenshots/hub-1/p8-hub-from-border.png
+2026-10-21T19:00:34.226Z Shots done: 3/3 spot(s) (p8-hub*) → screenshots/hub-1/.

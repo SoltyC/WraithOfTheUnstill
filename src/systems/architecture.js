@@ -3,7 +3,7 @@
 // Wraith has rested at keep a cold light in their glyphs; the monastery's wake when the steppe is
 // restored; the camp's fire burns brighter at night.
 
-import { frostSites, buildArchitecture, ARENA } from '../world/architecture.js';
+import { frostSites, meadowSites, buildArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
@@ -11,7 +11,8 @@ import { BRUSH } from '../shaders/terrainState.wgsl.js';
 /** @param {any} g  shared boot context */
 export function addArchitectureSystem(g) {
   const { loop, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
-  const sites = frostSites(chapter.table, g.routes);
+  // The frost chapter's sites, then the meadow hub's (appended: the frost indices never change).
+  const sites = [...frostSites(chapter.table, g.routes), ...meadowSites()];
   // Pillars start sunk below the snow (the Warden's fight raises them).
   for (const s of sites) if (s.pillar) s.sink = (s.pillarH || ARENA.pillarH) + 1.2;
   const built = buildArchitecture(sites);
@@ -46,6 +47,9 @@ export function addArchitectureSystem(g) {
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
   // The hall's candles and vigil brazier burn (embers on a site without a hearth: render/architecture).
   view.glow[sites.findIndex((s) => s.id === 'monastery') * 4 + 3] = 1;
+  // The meadow's places: no snow on them, and the hub's hearth burns.
+  sites.forEach((s, i) => { if (s.id.startsWith('hub-')) view.glow[i * 4 + 2] = 1; });
+  view.glow[sites.findIndex((s) => s.id === 'hub-green') * 4 + 3] = 1;
   // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
   // brazier, the moon under its fallen roof), the camp's hearth, each brazier once lit, and the
   // lanterns the Veiled carry — placed once their site is seated.
@@ -98,7 +102,7 @@ export function addArchitectureSystem(g) {
       if (view.sites[o + 3] > 0.5 && dx * dx + dz * dz < 200 * 200) continue;
       const y = seat(s);
       if (Number.isNaN(y)) continue;
-      view.sites[o] = s.at[0]; view.sites[o + 1] = y - (s.sink || 0); view.sites[o + 2] = s.at[1]; view.sites[o + 3] = 1;
+      view.sites[o] = s.at[0]; view.sites[o + 1] = y - (s.sink || 0) + (s.lift || 0); view.sites[o + 2] = s.at[1]; view.sites[o + 3] = 1;
       s.seatY = y; solids.sites[i].seat = y - (s.sink || 0);
     }
     // Moving sites (the arena's pillars rise and sink): their seat less how far they are sunk.
@@ -140,7 +144,7 @@ export function addArchitectureSystem(g) {
         const o = b.l.site * 4; if (cs[o + 3] <= 0.5) continue;
         b.r.x = cs[o] + b.l.x; b.r.y = cs[o + 1] + b.l.y; b.r.z = cs[o + 2] + b.l.z;
         // The moon under the roof only by night; candles and the brazier always (Aud keeps them).
-        b.r.level = b.l.kind === 'bounce' ? wn : 1;
+        b.r.level = b.l.kind === 'bounce' ? wn : b.l.kind === 'lamp' ? 0.35 + 0.65 * wn : 1;
       }
       const co = camp * 4;
       if (cs[co + 3] > 0.5) {

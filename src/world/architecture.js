@@ -654,6 +654,270 @@ export function frostSites(table, routes = []) {
   return sites;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// The meadow hub (PLAN.md M10): a pilgrims' hamlet on a river terrace, built from Shaper stone the
+// Veiled have reused — drystone houses with turf roofs round a green and a hearth, a stilled mill,
+// a market of felt awnings, a small shrine. No snow here: every stone box passes `drift: false,
+// cap: false` (the builder's own snow), and nothing uses columnDrums except the mill tower, whose
+// only snow pillow is hidden under its cap. Turf is MAT.CANVAS for now (see the report: a MAT.TURF
+// and a per-site snow switch in the shader are the proper fix).
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+const NS = { drift: false, cap: false };
+const TAU = Math.PI * 2;
+/** Site-local point from (s right, y up, f forward) under a yaw. */
+const rot = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, y, f) => [u * c + f * s, y, -u * s + f * c]; };
+
+/** A smooth cloth surface from f(u, v) → [x, y, z] over u, v ∈ [0, 1] (normals by differences, up-facing). */
+function cloth(b, f, nu, nv, mat, seed) {
+  const pts = [], nrm = [], e = 1e-3;
+  for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
+    const u = i / nu, v = j / nv, p = f(u, v), u0 = Math.min(u, 1 - e), v0 = Math.min(v, 1 - e);   // differences stay inside [0, 1]
+    const pa = f(u0, v0), pu = f(u0 + e, v0), pv = f(u0, v0 + e);
+    const du = [pu[0] - pa[0], pu[1] - pa[1], pu[2] - pa[2]], dv = [pv[0] - pa[0], pv[1] - pa[1], pv[2] - pa[2]];
+    let n = [du[1] * dv[2] - du[2] * dv[1], du[2] * dv[0] - du[0] * dv[2], du[0] * dv[1] - du[1] * dv[0]];
+    if (n[1] < 0) n = [-n[0], -n[1], -n[2]];
+    const l = Math.hypot(n[0], n[1], n[2]) || 1;
+    pts.push(p); nrm.push([n[0] / l, n[1] / l, n[2] / l]);
+  }
+  b.grid(pts, nrm, nu, nv, mat, seed);
+}
+
+/** A lantern post (the camp's: a timber post, an arm, a bronze cage with an ember in it) with its
+ *  lamp light. `dir` (rad) is the way the arm points, in the xz plane. */
+function lampPost(b, x, z, h, dir, seed) {
+  const cx = Math.cos(dir), cz = Math.sin(dir), ax = x + cx * 0.7, az = z + cz * 0.7, ly = h - 0.55;
+  stick(b, [x, -0.4, z], [x, h, z], 0.075, 0.06, 6, MAT.WOOD, seed);
+  stick(b, [x, h - 0.12, z], [ax, h - 0.08, az], 0.035, 0.028, 5, MAT.WOOD, seed + 1);
+  stick(b, [x, h - 0.62, z], [x + cx * 0.4, h - 0.1, z + cz * 0.4], 0.02, 0.018, 5, MAT.WOOD, seed + 2);
+  stick(b, [ax, h - 0.1, az], [ax, ly + 0.2, az], 0.006, 0.006, 4, MAT.METAL, seed + 3);
+  for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) stick(b, [ax + sx * 0.07, ly - 0.17, az + sz * 0.07], [ax + sx * 0.07, ly + 0.17, az + sz * 0.07], 0.008, 0.008, 5, MAT.METAL, seed + 4);
+  b.box(ax, az, ly - 0.2, ly - 0.17, 0.09, 0.09, 0, MAT.METAL, seed + 5, { solid: false, ...NS });
+  b.box(ax, az, ly - 0.15, ly + 0.14, 0.06, 0.06, 0, MAT.EMBER, seed + 6, { solid: false, ...NS });
+  b.drum(ax, az, ly + 0.17, ly + 0.23, 0.095, 0.02, 10, MAT.METAL, seed + 7, { solid: false });
+  b.blockers.push({ site: b.site, kind: 'circle', x, z, r: 0.12, y0: -0.4, y1: h });
+  b.light(ax, ly, az, 7, 1.0, 0.6, 0.28, 0.7, 'lamp');
+}
+
+/** A pilgrims' house: drystone walls of reused Shaper blocks (a door gap under a carved lintel, a
+ *  window, a corner or a wall fallen in), a timber roof frame and a thick turf roof, a chimney, a
+ *  lamp at the door. v: W, D (half width / depth, m), Hw (wall height), ruin, win, porch. */
+function house(v) {
+  return (b, facing, R) => {
+    const P = rot(facing), { W, D, Hw, ruin = 0, win = 1, porch = false } = v;
+    const T = 0.42, y0 = -1.2, g = 0.55, TP = 0.6, PITCH = Math.atan(TP), OV = 0.6, SX = W + OV;
+    const wall = (sa, sb, f, ya, yb, seed, rn = 0) => { if (sb - sa < 0.05 || yb - ya < 0.05) return; const [x, , z] = P((sa + sb) / 2, 0, f); b.box(x, z, ya, yb, (sb - sa) / 2, T, facing, MAT.STONE, seed, { ruin: rn, ...NS }); };
+    const side = (fa, fb, s, ya, yb, seed, rn = 0) => { if (fb - fa < 0.05 || yb - ya < 0.05) return; const [x, , z] = P(s, 0, (fa + fb) / 2); b.box(x, z, ya, yb, T, (fb - fa) / 2, facing, MAT.STONE, seed, { ruin: rn, ...NS }); };
+    wall(-W - T, W + T, -D, y0, Hw, 11, ruin * 0.5);                       // back
+    wall(-W - T, -g, D, y0, Hw, 12); wall(g, W + T, D, y0, Hw, 13);         // front, either side of the door
+    { const [x, , z] = P(0, 0, D); b.box(x, z, 2.05, Hw + 0.1, g + 0.25, T + 0.04, facing, MAT.GLYPH, 14, { carve: 1, solid: false, ...NS });       // lintel
+      b.box(x, z, -0.3, 0.1, g + 0.05, T, facing, MAT.STONE, 15, { solid: false, ...NS }); }                                                              // sill
+    side(-D + T, D - T, -W, y0, Hw, 16, ruin);                              // west, the one that falls
+    if (win) {                                                               // east, with a window
+      const g0 = -0.5 + (v.winAt || 0), g1 = g0 + 0.85;
+      side(-D + T, g0, W, y0, Hw, 17); side(g1, D - T, W, y0, Hw, 18);
+      side(g0, g1, W, 1.7, Hw, 19); side(g0, g1, W, y0, 0.95, 20);
+      const [x, , z] = P(W, 0, (g0 + g1) / 2);
+      b.box(x, z, 0.9, 0.97, T + 0.12, (g1 - g0) / 2 + 0.1, facing, MAT.WOOD, 21, { solid: false, ...NS });   // sill board
+      b.box(x, z, 1.68, 1.76, T + 0.05, (g1 - g0) / 2 + 0.08, facing, MAT.WOOD, 22, { solid: false, ...NS }); // lintel board
+    } else side(-D + T, D - T, W, y0, Hw, 17);
+    // Floor (boards; walkable), a bed, a table and a stool inside.
+    { const [x, , z] = P(0, 0, 0); b.box(x, z, -0.3, 0.07, W, D, facing, MAT.WOOD, 30, { solid: false, platform: true, ...NS }); }
+    { const [x, , z] = P(-W + 0.85, 0, -D + 1.15); b.box(x, z, 0.07, 0.42, 0.5, 1.0, facing, MAT.WOOD, 31, { ...NS });
+      b.box(x, z, 0.42, 0.5, 0.46, 0.92, facing + 0.03, MAT.CANVAS, 32, { solid: false, ...NS }); }
+    { const [x, , z] = P(W - 1.0, 0, -D + 0.7); b.box(x, z, 0.07, 0.8, 0.5, 0.35, facing, MAT.WOOD, 33, { ...NS }); }
+    { const [x, , z] = P(0.3, 0, -0.2); b.drum(x, z, 0.07, 0.45, 0.2, 0.18, 7, MAT.WOOD, 34, { solid: false }); }
+    // Roof frame (timber): wall plates, tie beams, rafters in pairs, ridge and purlins.
+    const yu = (s) => Hw - 0.1 + (SX - Math.abs(s)) * TP, RIDGE = yu(0);
+    for (const s of [-W, W]) stick(b, P(s, Hw + 0.05, -D - 0.5), P(s, Hw + 0.05, D + 0.5), 0.07, 0.07, 6, MAT.WOOD, 40);
+    stick(b, P(0, RIDGE - 0.06, -D - OV), P(0, RIDGE - 0.06, D + OV), 0.08, 0.08, 7, MAT.WOOD, 41);
+    for (let k = 0; k <= 4; k++) {
+      const f = -D + (k / 4) * 2 * D, tilt = (R() - 0.5) * 0.04;
+      stick(b, P(-W - 0.15, Hw + 0.1, f), P(W + 0.15, Hw + 0.1, f), 0.055, 0.055, 6, MAT.WOOD, 42 + k);
+      for (const sg of [-1, 1]) stick(b, P(sg * SX, Hw - 0.1, f + tilt), P(0, RIDGE - 0.06, f), 0.05, 0.045, 6, MAT.WOOD, 50 + k * 2 + (sg + 1) / 2);
+    }
+    for (const sg of [-1, 1]) for (const t of [0.4, 0.75]) stick(b, P(sg * SX * (1 - t), yu(SX * (1 - t)) - 0.04, -D - OV), P(sg * SX * (1 - t), yu(SX * (1 - t)) - 0.04, D + OV), 0.04, 0.04, 5, MAT.WOOD, 60 + (sg + 1) + Math.round(t * 10));
+    // Gable ends: boards between wall head and roof.
+    for (const f of [-D + 0.02, D - 0.02]) {
+      const a = P(-W, Hw, f), c = P(W, Hw, f), r = P(0, RIDGE, f), a2 = P(-W, yu(W), f), c2 = P(W, yu(W), f);
+      b.tri(a, c, r, MAT.WOOD, 70); b.tri(a, a2, r, MAT.WOOD, 71); b.tri(c, c2, r, MAT.WOOD, 72);
+    }
+    // The turf: two thick slabs on the rafters (felt for now), rolled sods along ridge and eaves.
+    const HS = SX / Math.cos(PITCH) / 2 + 0.05, TH = 0.17;
+    for (const sg of [-1, 1]) {
+      const [x, , z] = P(sg * (SX / 2 + TH * Math.sin(PITCH)), 0, 0);
+      b.box(x, z, Hw - 0.1 + SX * TP / 2 + TH * Math.cos(PITCH) - TH, Hw - 0.1 + SX * TP / 2 + TH * Math.cos(PITCH) + TH, HS, D + OV, facing, MAT.CANVAS, 80 + (sg + 1) / 2, { roll: -sg * PITCH, solid: false, ...NS });
+      stick(b, P(sg * (SX + 0.05), Hw - 0.12, -D - OV), P(sg * (SX + 0.05), Hw - 0.12, D + OV), 0.17, 0.17, 7, MAT.CANVAS, 85 + (sg + 1) / 2);
+    }
+    stick(b, P(0, RIDGE + 0.2, -D - OV - 0.05), P(0, RIDGE + 0.2, D + OV + 0.05), 0.2, 0.2, 8, MAT.CANVAS, 87);
+    // Chimney: three stacked blocks through the roof at the back.
+    { const [x, , z] = P(0.8, 0, -D + 0.5); let y = Hw - 0.2;
+      for (let k = 0; k < 3; k++) { const hh = k === 2 ? 0.7 : 1.3, s2 = 0.5 - 0.05 * k; b.box(x, z, y, y + hh, s2, s2, facing + 0.05 * k, MAT.STONE, 90 + k, { ...NS }); y += hh - 0.02; } }
+    if (porch) {  // a lean-to of felt over the door on two poles, a bench under it
+      const pr = (s, y, f) => P(s, y, f);
+      for (const s of [-1.5, 1.5]) stick(b, pr(s, -0.2, D + 1.9), pr(s, 2.1, D + 1.9), 0.05, 0.045, 6, MAT.WOOD, 95 + s);
+      cloth(b, (u, w) => pr((u - 0.5) * 3.6, 2.5 - 0.4 * w - 0.1 * Math.sin(Math.PI * u) * Math.sin(Math.PI * w), D + 0.15 + w * 2.0), 6, 3, MAT.CANVAS, 97);
+      const [x, , z] = P(1.1, 0, D + 1.0); b.box(x, z, 0, 0.45, 0.6, 0.22, facing, MAT.WOOD, 98, { ...NS });
+    }
+    // A lamp at the door.
+    { const [x, , z] = P(g + 1.3, 0, D + 0.95), d = P(-1, 0, -0.5); lampPost(b, x, z, 2.4, Math.atan2(d[2], d[0]), 300 + Math.round(v.W * 10)); }
+  };
+}
+const HOUSES = [
+  { W: 3.1, D: 2.5, Hw: 2.5 },
+  { W: 2.7, D: 2.3, Hw: 2.4, ruin: 0.3, winAt: 0.4 },
+  { W: 3.4, D: 2.6, Hw: 2.6, porch: true, win: 1 },
+  { W: 2.8, D: 2.4, Hw: 2.5, ruin: 0.12, winAt: -0.3 },
+];
+
+/** The green: the hearth (ring of blackened stones, coals, split logs, log seats) with its fire, a
+ *  half-sunk Shaper marker, lamps where the path comes in. */
+function hubGreen(b, facing, R) {
+  for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU; b.box(Math.cos(a) * 1.2, Math.sin(a) * 1.2, -0.3, 0.26 + 0.07 * R(), 0.24, 0.17, Math.PI / 2 - a, MAT.STONE, 40 + k, { solid: false, ...NS }); }
+  b.drum(0, 0, -0.1, 0.12, 0.9, 0.78, 10, MAT.EMBER, 50, { solid: false });
+  for (let k = 0; k < 7; k++) { const a = k / 7 * TAU + 0.3, c = Math.cos(a), s2 = Math.sin(a); stick(b, [c * 0.7, 0.02, s2 * 0.7], [c * 0.1, 0.7 + 0.12 * R(), s2 * 0.1], 0.07, 0.05, 7, MAT.WOOD, 51 + k); }
+  b.blockers.push({ site: b.site, kind: 'circle', x: 0, z: 0, r: 1.35, y0: -0.3, y1: 0.3 });
+  b.light(0, 0.47, 0, 13, 1.0, 0.52, 0.22, 1.7, 'fire');
+  for (let k = 0; k < 4; k++) { const a = 0.9 + k * 1.35;   // log seats round the fire, the north (the path in) left open
+    b.drum(Math.sin(a) * 3.4, Math.cos(a) * 3.4, 0, 2.3, 0.22, 0.2, 8, MAT.WOOD, 60 + k, { lie: 1, yaw: a + Math.PI / 2, solid: false }); }
+  b.box(5.2, -3.4, -0.6, 1.7, 0.5, 0.27, 0.6, MAT.GLYPH, 70, { carve: 1, tilt: 0.09, ...NS });
+  b.box(5.9, -2.6, -0.3, 0.4, 0.5, 0.35, 1.1, MAT.STONE, 71, { solid: false, ...NS });
+  lampPost(b, -2.3, 8.5, 2.5, 0, 310); lampPost(b, 2.3, 8.5, 2.5, Math.PI, 311); lampPost(b, -7.5, -6, 2.5, 0.6, 312);
+}
+
+/** One market stall: four poles, a felt awning sagging between them with a scalloped valance, a
+ *  trestle table with goods (kind 0 grain and crates, 1 bolts of cloth, 2 pots and a barrel, 3
+ *  hanging herbs), things on the ground behind. Faces +f. */
+function stall(b, cx, cz, yaw, kind, seed, R) {
+  const P = rot(yaw), at = (s, y, f) => { const p = P(s, y, f); return [cx + p[0], p[1], cz + p[2]]; };
+  const w = 3.4, d = 2.4, yTop = (v) => 2.55 - 0.62 * v;
+  for (const [s, f, h] of [[-w / 2, -d / 2, yTop(0)], [w / 2, -d / 2, yTop(0)], [-w / 2, d / 2, yTop(d / (d + 0.7))], [w / 2, d / 2, yTop(d / (d + 0.7))]])
+    stick(b, at(s, -0.25, f), at(s, h + 0.05, f), 0.05, 0.042, 6, MAT.WOOD, seed + (s > 0 ? 1 : 0) + (f > 0 ? 2 : 0));
+  cloth(b, (u, v) => at((u - 0.5) * (w + 0.4), yTop(v) - 0.13 * Math.sin(Math.PI * u) * Math.sin(Math.PI * Math.min(1, v * 1.15)), -d / 2 + v * (d + 0.7)), 8, 4, MAT.CANVAS, seed + 5);
+  for (let k = 0; k < 4; k++) {   // valance
+    const u0 = k / 4, u1 = (k + 1) / 4, f = d / 2 + 0.7, s0 = (u0 - 0.5) * (w + 0.4), s1 = (u1 - 0.5) * (w + 0.4), yv = yTop(1);
+    b.quad(at(s0, yv, f), at(s1, yv, f), at(s1, yv - 0.3 - 0.07 * R(), f - 0.03), at(s0, yv - 0.3 - 0.07 * R(), f - 0.03), MAT.CANVAS, seed + 6 + k);
+  }
+  stick(b, at(-w / 2 - 0.2, yTop(1) - 0.08, d / 2 + 0.7), at(w / 2 + 0.2, yTop(1) - 0.08, d / 2 + 0.7), 0.03, 0.03, 5, MAT.WOOD, seed + 11);
+  // Trestle table.
+  { const [tx, , tz] = at(0, 0, 0.15); b.box(tx, tz, 0.78, 0.86, 1.35, 0.42, yaw, MAT.WOOD, seed + 12, { ...NS }); }
+  for (const s of [-1, 1]) for (const f of [-0.28, 0.58]) stick(b, at(s * 1.0, -0.05, f), at(s * 1.0, 0.8, 0.15 + (f - 0.15) * 0.4), 0.035, 0.03, 5, MAT.WOOD, seed + 13);
+  const goods = (s, f, y) => at(s, y, f);
+  if (kind === 0) {
+    for (const [s, f] of [[-0.9, 0.2], [-0.25, 0.1], [0.5, 0.25]]) { const [x, , z] = at(s, 0, f); b.box(x, z, 0.86, 1.16, 0.26, 0.2, yaw + (R() - 0.5) * 0.3, MAT.WOOD, seed + 14, { solid: false, ...NS });
+      snowPillow(b, [x, 1.15, z], [Math.cos(yaw), 0, -Math.sin(yaw)], [Math.sin(yaw), 0, Math.cos(yaw)], 0.22, 0.17, seed + 15, { round: true, height: 0.14, mat: MAT.CANVAS }); }
+    snowPillow(b, goods(1.0, 0.15, 0.86), [Math.cos(yaw), 0, -Math.sin(yaw)], [Math.sin(yaw), 0, Math.cos(yaw)], 0.3, 0.26, seed + 16, { round: true, height: 0.3, mat: MAT.CANVAS });
+  } else if (kind === 1) {
+    for (const [s, y] of [[-0.55, 0.86], [0.2, 0.86], [-0.17, 1.05]]) { const [x, , z] = at(s, 0, 0.15);   // bolts of cloth, two and one on top
+      b.drum(x, z, y, y + 0.8, 0.095, 0.095, 8, MAT.CANVAS, seed + 17 + Math.round(y * 10) + Math.round(s * 10), { lie: 1, yaw: yaw + Math.PI / 2, solid: false }); }
+    snowPillow(b, goods(1.0, 0.15, 0.86), [Math.cos(yaw), 0, -Math.sin(yaw)], [Math.sin(yaw), 0, Math.cos(yaw)], 0.26, 0.2, seed + 18, { round: true, height: 0.2, mat: MAT.CANVAS });
+  } else if (kind === 2) {
+    for (let k = 0; k < 3; k++) { const [x, , z] = at(-0.9 + k * 0.7, 0, 0.1); b.drum(x, z, 0.86, 0.98, 0.17 - 0.02 * k, 0.12, 9, MAT.METAL, seed + 20 + k, { solid: false }); }
+  } else {
+    stick(b, at(-w / 2 + 0.2, yTop(0.6) - 0.1, 0.5), at(w / 2 - 0.2, yTop(0.6) - 0.1, 0.5), 0.02, 0.02, 4, MAT.WOOD, seed + 23);
+    for (let k = 0; k < 6; k++) { const s = -1.3 + k * 0.52, [x, , z] = at(s, 0, 0.5); stick(b, [x, yTop(0.6) - 0.1, z], [x + 0.02, yTop(0.6) - 0.55 - 0.1 * R(), z], 0.045, 0.02, 5, k % 2 ? MAT.CANVAS : MAT.WOOD, seed + 24 + k); }
+  }
+  // Behind and beside: crates, a barrel with hoops, sacks.
+  { const [x, , z] = at(-1.2, 0, -0.8); b.box(x, z, 0, 0.5, 0.3, 0.26, yaw + 0.2, MAT.WOOD, seed + 30, { ...NS }); b.box(x + 0.05, z, 0.5, 0.95, 0.27, 0.23, yaw - 0.3, MAT.WOOD, seed + 31, { solid: false, ...NS }); }
+  { const [x, , z] = at(1.2, 0, -0.7); b.drum(x, z, 0, 0.85, 0.3, 0.3, 10, MAT.WOOD, seed + 32);
+    for (const hy of [0.18, 0.66]) b.drum(x, z, hy, hy + 0.05, 0.315, 0.315, 10, MAT.METAL, seed + 33, { solid: false }); }
+  { const [x, , z] = at(0.4, 0, -0.9); snowPillow(b, [x, 0, z], [1, 0, 0], [0, 0, 1], 0.4, 0.3, seed + 34, { round: true, height: 0.6, mat: MAT.CANVAS });
+    b.blockers.push({ site: b.site, kind: 'circle', x: cx + P(0.4, 0, -0.9)[0], z: cz + P(0.4, 0, -0.9)[2], r: 0.35, y0: 0, y1: 0.6 }); }
+}
+
+/** The market: four stalls either side of the path in (local +z is the way to the green's far side;
+ *  the path runs down local x = 0), two lamps where it enters. Open: only tables and goods block. */
+function market(b, facing, R) {
+  [[-5.4, 3.2, Math.PI / 2, 0], [5.4, 5.4, -Math.PI / 2, 1], [-5.3, -4.0, Math.PI / 2 + 0.12, 2], [5.5, -3.2, -Math.PI / 2 - 0.1, 3]]
+    .forEach(([x, z, yaw, kind], i) => stall(b, x, z, yaw, kind, 200 + i * 40, R));
+  lampPost(b, -2.0, 9.5, 2.5, 0, 320); lampPost(b, 2.0, -9.5, 2.5, Math.PI, 321);
+}
+
+/** The meadow shrine: five standing stones round a paved ring and a carved altar with a candle,
+ *  prayer ribbons tied to the stones (the Shapers' shrine, kept by pilgrims). */
+function meadowShrine(b, facing, R) {
+  for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU + 0.16; b.box(Math.sin(a) * 2.7, Math.cos(a) * 2.7, -0.5, 0.1, 0.85, 0.55, a, MAT.STONE, 5 + k, { solid: false, ...NS }); }
+  for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU + 0.5; b.box(Math.sin(a) * 1.35, Math.cos(a) * 1.35, -0.5, 0.12, 0.8, 0.5, a, MAT.STONE, 20 + k, { solid: false, ...NS }); }
+  b.box(0, 0, 0.1, 0.95, 0.52, 0.52, facing, MAT.GLYPH, 30, { carve: 1, ...NS });
+  b.box(0, 0, 0.95, 1.05, 0.62, 0.62, facing + 0.2, MAT.STONE, 31, { solid: false, ...NS });
+  b.drum(0, 0, 1.05, 1.2, 0.05, 0.045, 6, MAT.CANVAS, 32, { solid: false });
+  b.drum(0, 0, 1.2, 1.25, 0.02, 0.006, 5, MAT.EMBER, 33, { solid: false });
+  b.light(0, 1.55, 0, 5, 1.0, 0.62, 0.32, 1.1, 'candle');
+  for (let k = 0; k < 5; k++) {
+    const a = facing + (k / 5) * TAU + Math.PI / 5, x = Math.sin(a) * 4.0, z = Math.cos(a) * 4.0, h = 2.3 + R() * 1.2;
+    b.box(x, z, -0.6, h, 0.42, 0.24, a, MAT.GLYPH, 40 + k, { carve: 1, tilt: (R() - 0.5) * 0.1, ...NS });
+    const y = h - 0.3; b.quad([x, y, z], [x + 0.11, y, z], [x + 0.55, y - 0.95, z + 0.04], [x + 0.44, y - 0.95, z - 0.07], MAT.CANVAS, 50 + k);
+  }
+}
+
+/** The stilled mill: a round tower of Shaper stone (a battered drum, ~7 m), a barred door under a
+ *  carved lintel, window slits, a timber collar and conical cap. The sails are their own site
+ *  (hub-mill-sails). `facing` is the way the door looks (toward the green). */
+const MILL = { r0: 3.4, r1: 2.75, h: 7.0 };
+function mill(b, facing, R) {
+  const rAt = (y) => MILL.r0 - (MILL.r0 - MILL.r1) * y / MILL.h, P = rot(facing);
+  b.drum(0, 0, -2.0, MILL.h, rAt(-2.0), MILL.r1, 28, MAT.STONE, 1, { solid: false });
+  b.blockers.push({ site: b.site, kind: 'circle', x: 0, z: 0, r: MILL.r0 + 0.05, y0: -2, y1: MILL.h });
+  { const [x, , z] = P(0, 0, rAt(1.1) + 0.04); b.box(x, z, 0, 2.2, 0.6, 0.12, facing, MAT.WOOD, 2, { solid: false, ...NS });
+    for (const y of [0.5, 1.6]) b.box(x, z, y, y + 0.06, 0.62, 0.15, facing, MAT.METAL, 3 + y, { solid: false, ...NS });
+    const [lx, , lz] = P(0, 0, rAt(2.3) + 0.04); b.box(lx, lz, 2.2, 2.7, 0.85, 0.22, facing, MAT.GLYPH, 5, { carve: 1, solid: false, ...NS });
+    const [sx, , sz] = P(0, 0, rAt(0.1) + 0.7); b.box(sx, sz, -0.5, 0.14, 1.0, 0.8, facing, MAT.STONE, 6, { solid: false, ...NS }); }
+  for (const [ang, y] of [[0.9, 3.0], [-0.7, 4.4], [2.6, 3.7], [-2.4, 5.4]]) {
+    const r = rAt(y) + 0.02, a = facing + ang; b.box(Math.sin(a) * r, Math.cos(a) * r, y, y + 0.95, 0.12, 0.05, a, MAT.WOOD, 10 + y * 3 | 0, { solid: false, ...NS });
+  }
+  b.drum(0, 0, MILL.h - 0.1, MILL.h + 0.12, 2.9, 2.9, 20, MAT.WOOD, 20, { solid: false });
+  b.cone(0, 0, MILL.h + 0.1, MILL.h + 2.6, 2.95, 20, MAT.WOOD, 21, { solid: false });
+  const [lpx, , lpz] = P(2.4, 0, 4.4); lampPost(b, lpx, lpz, 2.5, facing + Math.PI * 0.5, 330);
+}
+
+/** The mill's sails: four timber lattice sails on a windshaft, canvas on some bays (a stilled mill's
+ *  torn cloth). Site origin = the hub's axle; `facing` = the way the wind blows (the shaft runs along
+ *  it, the sails on the upwind side, the tower downwind). Built stopped at an angle; to turn it,
+ *  rotate the site about the axis (sin facing, 0, cos facing) through its origin. */
+function millSails(b, facing, R) {
+  const cf = Math.cos(facing), sf = Math.sin(facing);
+  const M = (u, v, w) => [u * cf + w * sf, v, -u * sf + w * cf];
+  stick(b, M(0, 0, -0.75), M(0, 0, -0.45), 0.1, 0.34, 10, MAT.WOOD, 1);
+  stick(b, M(0, 0, -0.45), M(0, 0, 0.2), 0.36, 0.34, 10, MAT.WOOD, 2);
+  stick(b, M(0, 0, -0.22), M(0, 0, -0.12), 0.39, 0.39, 10, MAT.METAL, 3);
+  stick(b, M(0, 0, 0.2), M(0, 0, 0.95), 0.26, 0.22, 8, MAT.WOOD, 4);
+  const NB = 7, r0 = 1.3, r1 = 5.2, bw = (r1 - r0) / NB, o0 = 0.14, o1 = 1.4;
+  const covered = [(i) => true, (i) => i <= 4, (i) => i <= 1 || (i >= 3 && i <= 4), (i) => i >= 1 && i <= 3];
+  for (let k = 0; k < 4; k++) {
+    const th = 0.5 + k * Math.PI / 2, c = Math.cos(th), s = Math.sin(th);
+    const S = (r, o, w) => M(r * c - o * s, r * s + o * c, w);
+    stick(b, S(0.3, 0, 0.1), S(5.3, 0, 0.1), 0.075, 0.05, 6, MAT.WOOD, 10 + k);
+    stick(b, S(r0, o1, 0), S(r1, o1, 0), 0.035, 0.035, 5, MAT.WOOD, 20 + k);
+    stick(b, S(r1, o0, 0), S(r1, o1, 0), 0.035, 0.035, 5, MAT.WOOD, 24 + k);
+    for (let i = 0; i <= NB; i++) {
+      const r = r0 + i * bw;
+      stick(b, S(r, o0, 0), S(r, o1, 0), 0.026, 0.026, 5, MAT.WOOD, 30 + k * 10 + i);
+      if (i < NB) {
+        stick(b, i % 2 ? S(r, o0, 0) : S(r, o1, 0), i % 2 ? S(r + bw, o1, 0) : S(r + bw, o0, 0), 0.016, 0.016, 4, MAT.WOOD, 70 + k * 10 + i);
+        if (covered[k](i)) b.quad(S(r + 0.03, o0 + 0.03, -0.045), S(r + bw - 0.03, o0 + 0.03, -0.05), S(r + bw - 0.03, o1 - 0.03, -0.05 - 0.03 * R()), S(r + 0.03, o1 - 0.03, -0.045), MAT.CANVAS, 120 + k * 10 + i);
+      }
+    }
+  }
+}
+
+/** Where the hub stands (a river terrace in the meadow, found in the world bake) and the way the
+ *  prevailing wind blows there (yaw, rad: atan2(x, z)). */
+export const HUB = { at: [-30, 1030], windYaw: 1.71, axleLift: 6.6, axleBack: 3.25 };
+
+/** The meadow hub's sites: { id, at, facing, build, footprint, seatAt } like the frost ones.
+ *  `origin` moves the whole hamlet (the layout is relative to it). */
+export function meadowSites(origin = HUB.at) {
+  const O = (dx, dz) => [origin[0] + dx, origin[1] + dz];
+  const toward = (a, b) => Math.atan2(b[0] - a[0], b[1] - a[1]);
+  const green = O(0, 0), sites = [{ id: 'hub-green', at: green, facing: 0, build: hubGreen, footprint: 9, seatAt: 'center' }];
+  [[-14, 2], [-6, -13], [10, -9], [15, 3]].forEach(([dx, dz], i) => { const at = O(dx, dz); sites.push({ id: 'hub-house-' + (i + 1), at, facing: toward(at, green), build: house(HOUSES[i]), footprint: 5.5, seatAt: 'center' }); });
+  const mat = O(10, 14), sf = Math.sin(HUB.windYaw), cf = Math.cos(HUB.windYaw);
+  sites.push({ id: 'hub-mill', at: mat, facing: toward(mat, green), build: mill, footprint: 3.8, seatAt: 'center' });
+  sites.push({ id: 'hub-mill-sails', at: [mat[0] - sf * HUB.axleBack, mat[1] - cf * HUB.axleBack], facing: HUB.windYaw, build: millSails, footprint: 1, seatAt: 'center', lift: HUB.axleLift, spin: [sf, 0, cf] });
+  sites.push({ id: 'hub-market', at: O(-8, 21), facing: 0, build: market, footprint: 9, seatAt: 'center' });
+  sites.push({ id: 'hub-shrine', at: O(2, -27), facing: 0.4, build: meadowShrine, footprint: 4.6, seatAt: 'center', glow: 0.25 });
+  return sites;
+}
+
 /** Build all sites into one geometry (site-local positions) plus collision shapes. */
 export function buildArchitecture(sites) {
   const b = new Builder();
