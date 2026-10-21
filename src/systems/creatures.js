@@ -102,6 +102,14 @@ export function addCreatureSystems(g) {
   }
 
   loop.add({ name: 'shaped', update: () => {
+    // The Chanters' curtains (render/pollenFx.js): the pool, the ground under each, the time.
+    if (g.pollenFx && shaped.pollen) {
+      const pf = g.pollenFx, P = shaped.pollen, gr = g.ground;
+      pf.pollen.set(P);
+      for (let i = 0; i < 8; i++) if (P[i * 4 + 3] > 0) { gr.qx = P[i * 4]; gr.qz = P[i * 4 + 1]; gr.sample(); pf.pollenY[i] = gr.h; }
+      const pt = pf.pollenT; pt.x = clock.simTime; pt.y = g.wind.block[0]; pt.z = g.wind.block[1];
+      pf.update();
+    }
     shaped.px = controller.pos.x; shaped.pz = controller.pos.z; shaped.pvx = controller.vel.x; shaped.pvz = controller.vel.z;
     shaped.pgrounded = controller.grounded && controller.dodgeT <= 0;
     if (game.pendingShaped !== null) {

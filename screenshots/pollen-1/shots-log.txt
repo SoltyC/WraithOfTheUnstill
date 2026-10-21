@@ -1,0 +1,2 @@
+2026-10-21T16:01:00.234Z 1/1 p8-shaped-pollen: saved screenshots/pollen-1/p8-shaped-pollen.png
+2026-10-21T16:01:00.238Z Shots done: 1/1 spot(s) (p8-shaped-pollen*) → screenshots/pollen-1/.
