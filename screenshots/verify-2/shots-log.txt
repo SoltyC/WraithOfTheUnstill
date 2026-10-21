@@ -1,0 +1,26 @@
+2026-10-21T11:24:52.918Z 1/25 rv-m01-walk-noon: saved screenshots/verify-2/rv-m01-walk-noon.png
+2026-10-21T11:25:00.954Z 2/25 rv-m02-wraith-face-golden: saved screenshots/verify-2/rv-m02-wraith-face-golden.png
+2026-10-21T11:25:10.038Z 3/25 rv-m03-aerial-noon: saved screenshots/verify-2/rv-m03-aerial-noon.png
+2026-10-21T11:25:17.692Z 4/25 rv-m04-horizon-dusk: saved screenshots/verify-2/rv-m04-horizon-dusk.png
+2026-10-21T11:25:28.173Z 5/25 rv-m05-night: saved screenshots/verify-2/rv-m05-night.png
+2026-10-21T11:25:39.399Z 6/25 rv-m06-overcast-morning: saved screenshots/verify-2/rv-m06-overcast-morning.png
+2026-10-21T11:25:49.667Z 7/25 rv-m07-stilled-noon: saved screenshots/verify-2/rv-m07-stilled-noon.png
+2026-10-21T11:26:01.597Z 8/25 rv-m08-shaped-in-grass: saved screenshots/verify-2/rv-m08-shaped-in-grass.png
+2026-10-21T11:26:13.804Z 9/25 rv-m09-pack-golden: saved screenshots/verify-2/rv-m09-pack-golden.png
+2026-10-21T11:26:22.024Z 10/25 rv-m10-verbs-grass: saved screenshots/verify-2/rv-m10-verbs-grass.png
+2026-10-21T11:26:33.858Z 11/25 rv-m11-forest-edge: saved screenshots/verify-2/rv-m11-forest-edge.png
+2026-10-21T11:26:43.938Z 12/25 rv-m12-lake-above: saved screenshots/verify-2/rv-m12-lake-above.png
+2026-10-21T11:26:52.626Z 13/25 rv-m13-swim: saved screenshots/verify-2/rv-m13-swim.png
+2026-10-21T11:27:03.294Z 14/25 rv-m14-river-above: saved screenshots/verify-2/rv-m14-river-above.png
+2026-10-21T11:27:09.400Z 15/25 rv-f01-wraith-face-noon: saved screenshots/verify-2/rv-f01-wraith-face-noon.png
+2026-10-21T11:27:15.901Z 16/25 rv-f02-camp-noon: saved screenshots/verify-2/rv-f02-camp-noon.png
+2026-10-21T11:27:22.360Z 17/25 rv-f03-camp-npc-close: saved screenshots/verify-2/rv-f03-camp-npc-close.png
+2026-10-21T11:27:34.203Z 18/25 rv-f04-hall-night: saved screenshots/verify-2/rv-f04-hall-night.png
+2026-10-21T11:27:46.224Z 19/25 rv-f05-shrine-dusk-close: saved screenshots/verify-2/rv-f05-shrine-dusk-close.png
+2026-10-21T11:27:55.606Z 20/25 rv-f06-pack-blizzard: saved screenshots/verify-2/rv-f06-pack-blizzard.png
+2026-10-21T11:28:04.523Z 21/25 rv-f07-pack-night: saved screenshots/verify-2/rv-f07-pack-night.png
+2026-10-21T11:28:13.205Z 22/25 rv-f08-warden-wide: saved screenshots/verify-2/rv-f08-warden-wide.png
+2026-10-21T11:28:24.833Z 23/25 rv-f09-monastery-wide-noon: saved screenshots/verify-2/rv-f09-monastery-wide-noon.png
+2026-10-21T11:28:32.884Z 24/25 rv-f10-steppe-overcast: saved screenshots/verify-2/rv-f10-steppe-overcast.png
+2026-10-21T11:28:40.695Z 25/25 rv-f11-surf-chase: saved screenshots/verify-2/rv-f11-surf-chase.png
+2026-10-21T11:28:40.696Z Shots done: 25/25 spot(s) (rv-*) → screenshots/verify-2/.

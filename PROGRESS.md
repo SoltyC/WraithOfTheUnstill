@@ -237,6 +237,25 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 
 ## Session log
 
+### Session — 2026-10-21 — review board and fixes (meadow and frost), branch `claude/wraithoftheunstill-phase-7`
+
+- **Review:** 25 new photo spots `rv-m01…14` (meadow) and `rv-f01…11` (frost), each aimed at a likely weakness: close character reads, night, blizzard and night fights, aerials, frost verbs on grass, swimming, the camp by day, the monastery wide. Shots are in `screenshots/review-2026-10-21/`. A five-member critique board (art, combat, UX, world, production) argued over them; its files were in the session scratchpad. Their consensus and the findings now open are listed below.
+- **Fixed, with shots on the 3060 (`screenshots/verify-2/` all 25, `screenshots/verify-3/` meadow after the grass fix):**
+  - **Waterline black band and the Wraith standing on a lakebed** were one bug. The lake mesh covers the bake's mask plus a border, but `levelQ()` read only the mask: on border texels (up to 2 m deep) the CPU said dry, so swimming never started and the camera clamp never ran. The camera sat under the surface, and SSAO turned the lower frame black (proved with `?postDebug=2|4`, `screenshots/debug-water-*`).
+  - **Stair-stepped lake edges from the air:** the 4 m mask is coarser than the terrain. `render/water.js` now floods each lake's level into neighbouring texels whose real 2 m ground lies under it (up to FLOOD = 8), plus a one-texel rim (`levelAt` excludes the rim). Flooded river texels become lake. `levelQ()` reads mask → river → flooded. Shore fade widened to 0.25 m, with a faint foam fringe.
+  - **Dark wedges in the mid-field grass:** the normal roll split each wide outer-ring blade into a lit half and a black half. The roll now fades past 3–15 m, and blades transmit about a third of the light on their shaded face. Root darkening, AO and edge darkening also fade with distance.
+  - **The Wraith read as a black cut-out:** robe albedo lifted (0.135 → 0.18, mantle 0.098 → 0.13), a key-light rim, and a faint display-referred cool edge for night and interiors (cloth shader: the Veiled too). The hood interior is unchanged (BRIEF §8.1).
+  - **Frost verbs on grass (BRIEF §4.4):** the brush pass now reads the bake material (`MATERIAL_AT` shared with healing). On turf, depth ×0.25, thrown mass ×0.06, Sweep and Ribbon leave frozen (rime), not wetness, and Crystallize frosts the turf without the permanent ice transform. Grass blades whiten with the frozen channel and thaw with it. Spawn craters on grass are now shallow (no black pits).
+  - **Photo spots in a lake:** `p8-meadow-noon`, `rv-m01/03/04/07` moved from (−100, 1000) to (−10, 970), a dry rise.
+  - **web-ocean (Noniv, MIT, cloned at `~/web-ocean`):** slope-derivative specular AA, distance roughness and the grazing reflection tilt in the water surface (ASSETS.md). It barely changes the look. The lake stripes from height are the beat of the analytic wave set (PLAN.md M5).
+- **Tooling:** `tools/capture/win-shots.sh <prefix> <dir> [s]` takes supervised shots on the Windows GPU. It runs headless (works with the PC locked), uses a fresh profile per run, relaunches on no-start or stall, resumes at the first missing PNG, and closes its Chrome at the end. The first load after a rebuild is slow (shader compile).
+- **Findings that stand (not fixed):**
+  - The hall at night (`rv-f04`) is still mostly black and needs a light source.
+  - Outer-ring grass blades are wide wedges (a geometry LOD issue).
+  - Frost Shaped never spawn in the meadow in play (all encounters are frost-anchored): the meadow simply has no enemies yet (M8).
+  - From the board: the meadow has no destination or landmark (hub M10, standing stones); no onboarding or controls page; no remapping or accessibility settings; telegraphs fail in blizzard and at night; the monastery reads as box primitives; the camp fire is a small white cone under black smoke.
+  - Meadow perf on the 3060 is unmeasured at 1440p (bench with the user at the PC; locked-PC numbers are suspect).
+
 ### Session — 2026-10-09 → 10 — Phase 8 begins (Highland Meadow), branch `claude/wraithoftheunstill-phase-7`
 
 - **Biome under the camera (M0):** the streamer samples the four biome weights at the camera; restoration and the grade blend by them (meadow stilled / restored looks). Meadow ground from eleven new CC0 scans, near and far samples, height-blended layers by landform. Photo spots `p8-meadow-golden`, `p8-meadow-noon`, `p8-meadow-stilled`, `p8-border`.

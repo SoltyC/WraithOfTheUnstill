@@ -1,0 +1,26 @@
+2026-10-21T10:27:46.068Z 1/25 rv-m01-walk-noon: saved screenshots/review-2026-10-21/rv-m01-walk-noon.png
+2026-10-21T10:27:53.460Z 2/25 rv-m02-wraith-face-golden: saved screenshots/review-2026-10-21/rv-m02-wraith-face-golden.png
+2026-10-21T10:28:04.548Z 3/25 rv-m03-aerial-noon: saved screenshots/review-2026-10-21/rv-m03-aerial-noon.png
+2026-10-21T10:28:14.359Z 4/25 rv-m04-horizon-dusk: saved screenshots/review-2026-10-21/rv-m04-horizon-dusk.png
+2026-10-21T10:28:23.969Z 5/25 rv-m05-night: saved screenshots/review-2026-10-21/rv-m05-night.png
+2026-10-21T10:28:34.051Z 6/25 rv-m06-overcast-morning: saved screenshots/review-2026-10-21/rv-m06-overcast-morning.png
+2026-10-21T10:28:44.861Z 7/25 rv-m07-stilled-noon: saved screenshots/review-2026-10-21/rv-m07-stilled-noon.png
+2026-10-21T10:28:56.157Z 8/25 rv-m08-shaped-in-grass: saved screenshots/review-2026-10-21/rv-m08-shaped-in-grass.png
+2026-10-21T10:29:08.078Z 9/25 rv-m09-pack-golden: saved screenshots/review-2026-10-21/rv-m09-pack-golden.png
+2026-10-21T10:29:15.742Z 10/25 rv-m10-verbs-grass: saved screenshots/review-2026-10-21/rv-m10-verbs-grass.png
+2026-10-21T10:29:27.183Z 11/25 rv-m11-forest-edge: saved screenshots/review-2026-10-21/rv-m11-forest-edge.png
+2026-10-21T10:29:38.065Z 12/25 rv-m12-lake-above: saved screenshots/review-2026-10-21/rv-m12-lake-above.png
+2026-10-21T10:29:46.380Z 13/25 rv-m13-swim: saved screenshots/review-2026-10-21/rv-m13-swim.png
+2026-10-21T10:29:57.749Z 14/25 rv-m14-river-above: saved screenshots/review-2026-10-21/rv-m14-river-above.png
+2026-10-21T10:30:03.485Z 15/25 rv-f01-wraith-face-noon: saved screenshots/review-2026-10-21/rv-f01-wraith-face-noon.png
+2026-10-21T10:30:09.532Z 16/25 rv-f02-camp-noon: saved screenshots/review-2026-10-21/rv-f02-camp-noon.png
+2026-10-21T10:30:15.674Z 17/25 rv-f03-camp-npc-close: saved screenshots/review-2026-10-21/rv-f03-camp-npc-close.png
+2026-10-21T10:30:27.327Z 18/25 rv-f04-hall-night: saved screenshots/review-2026-10-21/rv-f04-hall-night.png
+2026-10-21T10:30:38.929Z 19/25 rv-f05-shrine-dusk-close: saved screenshots/review-2026-10-21/rv-f05-shrine-dusk-close.png
+2026-10-21T10:30:47.043Z 20/25 rv-f06-pack-blizzard: saved screenshots/review-2026-10-21/rv-f06-pack-blizzard.png
+2026-10-21T10:30:56.528Z 21/25 rv-f07-pack-night: saved screenshots/review-2026-10-21/rv-f07-pack-night.png
+2026-10-21T10:31:05.082Z 22/25 rv-f08-warden-wide: saved screenshots/review-2026-10-21/rv-f08-warden-wide.png
+2026-10-21T10:31:16.487Z 23/25 rv-f09-monastery-wide-noon: saved screenshots/review-2026-10-21/rv-f09-monastery-wide-noon.png
+2026-10-21T10:31:24.325Z 24/25 rv-f10-steppe-overcast: saved screenshots/review-2026-10-21/rv-f10-steppe-overcast.png
+2026-10-21T10:31:31.394Z 25/25 rv-f11-surf-chase: saved screenshots/review-2026-10-21/rv-f11-surf-chase.png
+2026-10-21T10:31:31.395Z Shots done: 25/25 spot(s) (rv-*) → screenshots/review-2026-10-21/.

@@ -63,6 +63,16 @@ fn ditherHash(i: i32, j: i32, seed: f32) -> f32 {
 
 const DECAY_WGSL = `const DECAY = array<f32, ${MATERIAL_COUNT * 6}>(${Array.from(DECAY, (v) => v.toExponential(6)).join(', ')});`;
 
+// Bake surface material at world (x, z): surface.rgba8 (4 m texels, row 0 = north), byte 0.
+// Ids: tools/bake-world/climate.mjs MATERIALS (0 snow, 1 sand, 2 mud, 3 grass, …).
+const MATERIAL_AT = /* wgsl */ `
+fn materialAt(x: f32, z: f32) -> u32 {
+  let col = u32(clamp((x + ${f(WORLD_HALF)}) * 0.25, 0.0, 2047.0));
+  let row = u32(clamp((${f(WORLD_HALF)} - z) * 0.25, 0.0, 2047.0));
+  return surface[row * 2048u + col] & 0xffu;
+}
+`;
+
 // Healing toward rest for one texel; m = bake material id.
 const HEAL_FN = /* wgsl */ `
 ${DECAY_WGSL}
@@ -75,12 +85,7 @@ fn healTexel(t: Texel, m: u32, dt: f32) -> Texel {
   r.m = vec4f(t.m.x * exp(-DECAY[o + 4u] * dt), t.m.y * exp(-DECAY[o + 5u] * dt), 0.0, 0.0);
   return r;
 }
-// Bake surface material at world (x, z): surface.rgba8 (4 m texels, row 0 = north), byte 0.
-fn materialAt(x: f32, z: f32) -> u32 {
-  let col = u32(clamp((x + ${f(WORLD_HALF)}) * 0.25, 0.0, 2047.0));
-  let row = u32(clamp((${f(WORLD_HALF)} - z) * 0.25, 0.0, 2047.0));
-  return surface[row * 2048u + col] & 0xffu;
-}
+${MATERIAL_AT}
 `;
 
 // Storage bindings by name: access and type. Each pass lists the ones it uses, in binding order.
@@ -107,7 +112,7 @@ fn coarseIdx(c: i32, d: i32) -> u32 {
 
 export const SCROLL_OUT_BINDINGS = ['fine0', 'fine1', 'fine2', 'atlas0', 'atlas1', 'atlas2', 'sp'];
 export const SCROLL_IN_BINDINGS = SCROLL_OUT_BINDINGS;
-export const BRUSH_BINDINGS = ['fine0', 'fine1', 'fine2', 'sp'];
+export const BRUSH_BINDINGS = ['fine0', 'fine1', 'fine2', 'surface', 'sp'];
 export const HEAL_FINE_BINDINGS = ['fine0', 'fine1', 'fine2', 'surface', 'sp'];
 export const HEAL_COARSE_BINDINGS = ['atlas0', 'atlas1', 'atlas2', 'surface', 'sp'];
 const RO_FINE = { fine0: 'read', fine1: 'read', fine2: 'read' };
@@ -186,6 +191,7 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
 export const stateBrushWGSL = /* wgsl */ `
 ${STATE_COMMON_WGSL}
 ${decl(BRUSH_BINDINGS)}
+${MATERIAL_AT}
 fn cellHash(p: vec2f, size: f32) -> f32 {
   let cell = vec2i(floor(p / size));
   return fract(sin(f32(cell.x) * 12.9898 + f32(cell.y) * 78.233) * 43758.5453);
@@ -217,13 +223,17 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   var t = unpackTexel(fine0[k], fine1[k], fine2[k]);
   let program = u32(ex.x + 0.5);
   let hsh = cellHash(p, 0.03);
+  // Turf (BRIEF §4.4: frost on grass = frosted, brittle): the sod barely gives — a quarter of the
+  // depth, little thrown mass — the blades are laid flat, and frost replaces slush and wetness.
+  let turf = materialAt(p.x, p.y) == 3u;
+  let give = select(1.0, 0.25, turf);
   if (program == ${BRUSH.PRESS}u) {
     // Footprint: a near-flat floor; the displaced mass rises as a granular berm (≈45 % of the
     // depth, so volume roughly balances) and any berm where the print lands is flattened.
     let inner = 1.0 - smoothstep(0.55, 1.0, d);
     let rim = smoothstep(0.8, 1.12, d) * (1.0 - smoothstep(1.12, 1.9, d));
-    t.h.x = max(t.h.x, br.w * inner);
-    t.h.y = max(t.h.y * (1.0 - inner), br.w * 0.45 * rim * (0.75 + 0.5 * hsh));
+    t.h.x = max(t.h.x, br.w * give * inner);
+    t.h.y = max(t.h.y * (1.0 - inner), br.w * give * 0.45 * rim * (0.75 + 0.5 * hsh));
     t.s.x = max(t.s.x, bd.w * inner);
     t.m.y = max(t.m.y, inner);                       // crushes vegetation
   } else if (program == ${BRUSH.PLOUGH}u) {
@@ -234,30 +244,38 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     let rim = smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.65, d));
     let bias = clamp(1.0 + ex.z * side, 0.15, 1.85);
     let clump = 0.72 + 0.4 * smoothHash(p, 0.11) + 0.18 * smoothHash(p + vec2f(3.7, 1.3), 0.045);
-    t.h.x = max(t.h.x, br.w * floorK);
+    t.h.x = max(t.h.x, br.w * give * floorK);
     // The groove's interior is ploughed clean: any berm there (the rounded front of the previous
     // frame's stamp throws one into the path ahead) is cleared, or a ghost ridge would remain at
     // every stamp boundary.
     let cleared = select(t.h.y * (1.0 - floorK), 0.0, d < 0.85);
-    t.h.y = max(cleared, br.w * ex.w * rim * bias * clump);
+    t.h.y = max(cleared, br.w * give * give * ex.w * rim * bias * clump);
     t.s.x = max(t.s.x, bd.w * floorK);
-    t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.6, 1.3, d)));
+    let lane = 1.0 - smoothstep(0.6, 1.3, d);
+    if (turf) {
+      // A lane of laid, rimed blades instead of a slush channel.
+      t.m.y = max(t.m.y, lane);
+      t.s.z = max(t.s.z, ex.y * lane * (0.8 + 0.2 * hsh));
+    } else { t.s.y = max(t.s.y, ex.y * lane); }
   } else if (program == ${BRUSH.SCORE}u) {
     // A thin scored line (Ribbon): shallow, wet, with a hairline lip.
     let inner = 1.0 - smoothstep(0.25, 1.0, d);
     let lip = smoothstep(0.9, 1.15, d) * (1.0 - smoothstep(1.15, 1.6, d));
-    t.h.x = max(t.h.x, br.w * inner);
-    t.h.y = max(t.h.y * (1.0 - inner), br.w * 0.3 * lip);
+    t.h.x = max(t.h.x, br.w * give * inner);
+    t.h.y = max(t.h.y * (1.0 - inner), br.w * give * 0.3 * lip);
     t.s.x = max(t.s.x, bd.w * inner);
-    t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.4, 1.7, d)));
+    let line = 1.0 - smoothstep(0.4, 1.7, d);
+    if (turf) { t.s.z = max(t.s.z, ex.y * line); t.m.y = max(t.m.y, inner); }
+    else { t.s.y = max(t.s.y, ex.y * line); }
   } else if (program == ${BRUSH.FREEZE}u) {
     // Crystallize: the surface turns to glossy ice for good (transform), with a ragged edge;
     // wetness freezes out.
     let edge = 1.0 - smoothstep(0.6 + 0.3 * hsh, 1.0, d);
+    // On turf the blades frost stiff instead (they thaw and stand again: no lasting ice).
     t.s.z = max(t.s.z, edge);
     t.s.y = t.s.y * (1.0 - edge);
-    if (edge > 0.5) { t.s.w = ${TRANSFORM.ICE}.0 / 255.0; }
-    t.h.x = max(t.h.x, br.w * edge);
+    if (edge > 0.5 && !turf) { t.s.w = ${TRANSFORM.ICE}.0 / 255.0; }
+    t.h.x = max(t.h.x, br.w * give * edge);
   } else if (program == ${BRUSH.MOUND}u) {
     // Mound: displaced mass heaped in a soft, lumpy dome (a Shaped collapsing back into the snow);
     // it fills any hollow under it. Heals like any displaced mass.

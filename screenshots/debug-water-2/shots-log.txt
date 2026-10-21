@@ -1,0 +1,2 @@
+2026-10-21T10:39:30.417Z 1/1 rv-m01-walk-noon: saved screenshots/debug-water-2/rv-m01-walk-noon.png
+2026-10-21T10:39:30.422Z Shots done: 1/1 spot(s) (rv-m01*) → screenshots/debug-water-2/.

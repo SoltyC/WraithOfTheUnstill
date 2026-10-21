@@ -22,6 +22,8 @@ import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 
 const N = 2048, C = 4, HALF = 4096;
+/** How far (texels of C m) a lake's level may flood past the bake's mask onto lower real ground. */
+const FLOOD = 8;
 /** Rivers: how far (m) around a point the bed is sought (the channel's half-width and banks). */
 export const RIVER_R = 4;
 
@@ -41,22 +43,14 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   const [hy, llb] = await Promise.all([
     fetch(base + 'hydro.rgba8').then((r) => r.arrayBuffer()), fetch(base + 'lake_level.u16').then((r) => r.arrayBuffer())]);
   const hydro = new Uint8Array(hy), raw = new Uint16Array(llb);
-  // Water level per texel (NaN: dry): unfrozen lakes, then a two-texel border carrying the level.
+  // Water level per texel (NaN: dry): unfrozen lakes as the bake masked them. The mask is coarser
+  // than the 2 m terrain, so `wet` (below, once the height tiles are in) floods the level on into
+  // the texels whose real ground lies under it, plus a one-texel rim the terrain hides.
   const level = new Float32Array(N * N).fill(NaN);
   const frost = (i, j) => { const A = streamer.biomeA; if (!A) return 0; const o = ((j >> 1) * 1024 + (i >> 1)) * 4; return A[o] / Math.max(A[o] + A[o + 1] + A[o + 2] + A[o + 3], 13); };
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const o = j * N + i;
     if (hydro[o * 4 + 1] > 0 && raw[o] > 0 && frost(i, j) < 0.5) level[o] = raw[o] / 32 - 128;
-  }
-  const wet = level.slice();
-  for (let pass = 0; pass < 2; pass++) {
-    const src = wet.slice();
-    for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
-      const o = j * N + i; if (!Number.isNaN(src[o])) continue;
-      let v = NaN;
-      for (let k = 0; k < 4 && Number.isNaN(v); k++) v = src[o + (k === 0 ? 1 : k === 1 ? -1 : k === 2 ? N : -N)];
-      if (!Number.isNaN(v)) wet[o] = v;
-    }
   }
   // Rivers (texels with river strength r, not lakes, not frozen). The bake carved each channel
   // (carve = 1.2 + 3.6 (r − 0.2) m); its surface here is computed once from the real 2 m terrain:
@@ -73,7 +67,15 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     rFlow[o * 3] = (hydro[o * 4 + 2] - 128) / 127; rFlow[o * 3 + 1] = (hydro[o * 4 + 3] - 128) / 127; rFlow[o * 3 + 2] = r;
     tilesNeeded.add(((j * 2) >> 8) * 16 + ((i * 2) >> 8));
   }
-  // The 2 m height tiles under the rivers (u16: h = v / 32 − 128; tile tx, tz = 512 m squares from the north-west).
+  // Lakes need the tiles their flood can reach (FLOOD texels past the mask).
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (Number.isNaN(level[j * N + i])) continue;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const ti = Math.min(4095, Math.max(0, (i + di * FLOOD) * 2)), tj = Math.min(4095, Math.max(0, (j + dj * FLOOD) * 2));
+      tilesNeeded.add((tj >> 8) * 16 + (ti >> 8));
+    }
+  }
+  // The 2 m height tiles under the water (u16: h = v / 32 − 128; tile tx, tz = 512 m squares from the north-west).
   const tiles = new Map();
   await Promise.all([...tilesNeeded].map(async (k) => {
     const tx = k % 16, tz = (k / 16) | 0;
@@ -84,6 +86,34 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     const t = tiles.get((j >> 8) * 16 + (i >> 8)); if (!t) return NaN;
     return t[(j & 255) * 256 + (i & 255)] / 32 - 128;
   };
+  // Lakes on the real terrain: the level floods into each neighbouring texel whose lowest 2 m
+  // sample lies under it (a gentle bank stays wet well past the mask — cut there, the sheet ended
+  // on texel edges in deep water: stairs from the air, and the CPU said dry where the mesh was
+  // water). Flooded river texels become lake. Then a one-texel rim the terrain hides (not on a
+  // river: its own surface meets the lake there).
+  const wet = level.slice();
+  for (let pass = 0; pass < FLOOD; pass++) {
+    const src = wet.slice();
+    for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+      const o = j * N + i; if (!Number.isNaN(src[o])) continue;
+      let v = NaN;
+      for (let k = 0; k < 4 && Number.isNaN(v); k++) v = src[o + (k === 0 ? 1 : k === 1 ? -1 : k === 2 ? N : -N)];
+      if (Number.isNaN(v)) continue;
+      const x = -HALF + i * C, z = HALF - j * C;
+      const g = Math.min(h2(x + 1, z - 1), h2(x + 3, z - 1), h2(x + 1, z - 3), h2(x + 3, z - 3));
+      if (g < v - 0.02) { wet[o] = v; rDepth[o] = NaN; }
+    }
+  }
+  const rim = new Uint8Array(N * N);
+  {
+    const src = wet.slice();
+    for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+      const o = j * N + i; if (!Number.isNaN(src[o]) || !Number.isNaN(rDepth[o])) continue;
+      let v = NaN;
+      for (let k = 0; k < 4 && Number.isNaN(v); k++) v = src[o + (k === 0 ? 1 : k === 1 ? -1 : k === 2 ? N : -N)];
+      if (!Number.isNaN(v)) { wet[o] = v; rim[o] = 1; }
+    }
+  }
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const o = j * N + i, d = rDepth[o]; if (Number.isNaN(d)) continue;
     const x = -HALF + (i + 0.5) * C, z = HALF - (j + 0.5) * C, l = Math.hypot(rFlow[o * 3], rFlow[o * 3 + 1]) || 1;
@@ -210,11 +240,12 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
 
   const water = {
     meshes: [absorb.mesh, surface.mesh], materials: [absorb.mat, surface.mat], quads: idx.length / 6, riverQuads,
-    /** Water surface level at (x, z) (m), or NaN where there is none (the border texels excluded). */
+    /** Lake level at (x, z) (m), or NaN where there is none (the rim under the shore excluded). */
     levelAt(x, z) {
       const i = Math.floor((x + HALF) / C), j = Math.floor((HALF - z) / C);
       if (i < 0 || j < 0 || i >= N || j >= N) return NaN;
-      return level[j * N + i];
+      const o = j * N + i;
+      return rim[o] ? NaN : wet[o];
     },
     /** Field query (no doubles as arguments: hot paths): qx, qz → levelQ() → lv (NaN: no water). */
     qx: 0.5, qz: 0.5, lv: 0.5, fx: 0.5 - 0.5, fz: 0.5 - 0.5,
@@ -225,7 +256,8 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       const o = j * N + i;
       this.lv = level[o];
       if (this.lv === this.lv) return;
-      const rl = rLevel[o]; if (rl !== rl) return;
+      // Not the lake's mask: a river, else the flooded shallows and rim (the mesh's own level).
+      const rl = rLevel[o]; if (rl !== rl) { this.lv = wet[o]; return; }
       // A river: its computed level; the current along the flow at the strength's speed.
       this.lv = rl;
       const sp = 0.5 + 1.6 * rFlow[o * 3 + 2];

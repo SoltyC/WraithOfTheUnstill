@@ -1,0 +1,10 @@
+2026-10-21T11:33:15.114Z 1/9 rv-m01-walk-noon: saved screenshots/verify-3/rv-m01-walk-noon.png
+2026-10-21T11:33:22.894Z 2/9 rv-m02-wraith-face-golden: saved screenshots/verify-3/rv-m02-wraith-face-golden.png
+2026-10-21T11:33:34.196Z 3/9 rv-m03-aerial-noon: saved screenshots/verify-3/rv-m03-aerial-noon.png
+2026-10-21T11:33:41.692Z 4/9 rv-m04-horizon-dusk: saved screenshots/verify-3/rv-m04-horizon-dusk.png
+2026-10-21T11:33:51.273Z 5/9 rv-m05-night: saved screenshots/verify-3/rv-m05-night.png
+2026-10-21T11:34:02.037Z 6/9 rv-m06-overcast-morning: saved screenshots/verify-3/rv-m06-overcast-morning.png
+2026-10-21T11:34:13.791Z 7/9 rv-m07-stilled-noon: saved screenshots/verify-3/rv-m07-stilled-noon.png
+2026-10-21T11:34:25.667Z 8/9 rv-m08-shaped-in-grass: saved screenshots/verify-3/rv-m08-shaped-in-grass.png
+2026-10-21T11:34:37.757Z 9/9 rv-m09-pack-golden: saved screenshots/verify-3/rv-m09-pack-golden.png
+2026-10-21T11:34:37.758Z Shots done: 9/9 spot(s) (rv-m0*) → screenshots/verify-3/.

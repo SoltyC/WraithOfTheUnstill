@@ -228,18 +228,30 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
   let T = exp(-W_SIGMA * wPath(depth, V));
-  let shore = smoothstep(0.0, 0.05, depth);
+  let shore = smoothstep(0.0, 0.25, depth);   // a believable fade-out width over a gentle bank
   let nv = max(dot(N, V), 0.0);
   let F = (0.02 + 0.98 * pow(1.0 - nv, 5.0)) * shore;
-  var R = reflect(-V, N); R.y = abs(R.y);
   let canopy = canopyAt(wp.xz);
-  let sky = atmoSky(R) * (1.0 - 0.75 * canopy);
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let vis = shadowVisibilityFast(wp, camPos);
   // Sun glints: GGX on the wave normal, rougher in the gusts; the disc itself where it is calm.
   let r0 = 0.012 + 0.03 * clamp(wf.z, 0.0, 1.6);
-  let rough = sqrt(r0 * r0 + sl.w * 2.0);
+  // Specular AA (adapted from web-ocean (Noniv, MIT) ocean.js: dpdx/dpdy of the slope widen the lobe):
+  // slope change across the pixel (box-filter variance /12, as GGX alpha² = 2·var) plus the sheen
+  // the unresolved ripples add with range. Gated on the footprint so close-up glints stay sharp.
+  let dsx = dpdx(sl.xy); let dsy = dpdy(sl.xy);
+  let aa = (dot(dsx, dsx) + dot(dsy, dsy)) * (1.0 / 6.0) * smoothstep(0.008, 0.05, fp);
+  let sheen = 0.007 * smoothstep(30.0, 400.0, dist);
+  let rough = sqrt(r0 * r0 + sl.w * 2.0 + min(aa, 0.08) + sheen);
+  // Grazing view (web-ocean (Noniv, MIT) ocean.js, reflection tilt): the facets seen lean toward the
+  // viewer, so the reflector tilts up and mirrors higher, greyer sky as the roughness grows.
+  let sigV = rough * 0.7071;
+  let aV = V.y / (max(sqrt(1.0 - V.y * V.y), 1e-3) * 1.4142 * max(sigV, 1e-3));
+  let tilt = 0.32 * sigV * (1.0 - smoothstep(0.0, 2.5, aV));
+  let nV = normalize(N + normalize(vec3f(V.x, 0.0, V.z) + vec3f(1e-5, 0.0, 0.0)) * tilt);
+  var R = reflect(-V, nV); R.y = abs(R.y);
+  let sky = atmoSky(R) * (1.0 - 0.75 * canopy);
   let H = normalize(L + V);
   let nl = max(dot(N, L), 0.0);
   let Fs = 0.02 + 0.98 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
@@ -249,6 +261,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let body = W_BODY * light * (1.0 - T);
   // Foam where the ripples are young (the Wraith's splashes), lit like a rough white surface.
   var foam = clamp(sl.z * (0.6 + 0.4 * noised(wp.xz * 9.0 + t).x), 0.0, 1.0);
+  // A soft wet fringe where the water thins to nothing (a faint foam line, broken up by noise).
+  let fringe = smoothstep(0.0, 0.03, depth) * (1.0 - smoothstep(0.03, 0.16, depth));
+  foam = max(foam, fringe * 0.3 * (0.5 + 0.5 * noised(wp.xz * 3.0 + t * 0.1).x));
   // Rivers: white water on the rapids, streaks of foam carried down the current.
   if (fl.w >= 0.0) {
     let q = wp.xz - fl.xy * t * 0.9;

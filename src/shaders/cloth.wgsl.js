@@ -120,12 +120,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
 
   // Base colours: a slate-charcoal under-robe and sleeves; a darker heavy wool mantle and cowl;
-  // grey, worn linen wrappings; a hemp cord; an oxblood sash. (Dark, but wool, not a void: real
-  // charcoal wool is ~0.12–0.16, and the figure has to read against bright snow.)
-  var albedo = vec3f(0.135, 0.14, 0.155);
+  // grey, worn linen wrappings; a hemp cord; an oxblood sash. (Dark, but wool, not a void: lifted
+  // above real charcoal (~0.12–0.16) — exposed for snow, that read as a black cut-out.)
+  var albedo = vec3f(0.18, 0.185, 0.2);
   var sheenTint = vec3f(0.22, 0.22, 0.235);
   var weaveAmp = 1.0;
-  if (g == 1 || g == 4) { albedo = vec3f(0.098, 0.096, 0.1); sheenTint = vec3f(0.24, 0.23, 0.225); }
+  if (g == 1 || g == 4) { albedo = vec3f(0.13, 0.128, 0.133); sheenTint = vec3f(0.24, 0.23, 0.225); }
   else if (g >= 5 && g <= 8) { albedo = vec3f(0.34, 0.32, 0.28); sheenTint = vec3f(0.06); weaveAmp = 0.5; }
   else if (g == 9) { albedo = vec3f(0.17, 0.14, 0.1); sheenTint = vec3f(0.05); weaveAmp = 0.0; }
   else if (g == 10) { albedo = vec3f(0.24, 0.075, 0.058); sheenTint = vec3f(0.2, 0.12, 0.1); }
@@ -229,6 +229,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Thin regions transmit backlight (hems, the mantle's edge, cuffs, the sash).
   let back = clamp(-nl, 0.0, 1.0) * pow(clamp(dot(-V, L), 0.0, 1.0), 2.0);
   col += key * albedo * vec3f(1.6, 1.35, 1.15) * back * vis * fragmentInputs.vThin * 0.8;
+  // Rim: the silhouette catches the sun or moon from behind and beside (seen from behind almost
+  // always, the shape must read in every light).
+  let rimE = pow(1.0 - nv, 3.0) * ao * ambientK;
+  col += key * sheenTint * 1.5 * rimE * clamp(dot(-V, L) * 0.6 + 0.4, 0.0, 1.0) * vis;
 
   // Frost crust: glassy glints and a cold sheen of sky.
   if (frostAmt > 0.0) {
@@ -251,6 +255,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let k = coldLight(wp, uniforms.clothHandL, 0.035) + coldLight(wp, uniforms.clothHandR, 0.035);
     glow += vec3f(0.6, 0.85, 1.0) * k * uniforms.clothParams.w * select(0.15, 0.6, g >= 5);
   }
+  // A faint cool edge at a fixed on-screen level (display-referred, like the cowl light): the
+  // figure stays apart from the dark at night and indoors without lifting the scene.
+  if (!inside) { glow += vec3f(0.5, 0.6, 0.75) * rimE * 0.035; }
   // Fire and spell light on the robe (wrapped: cloth scatters past the terminator).
   glow += spellLit(wp, N, albedo, 0.4, 1.0) * select(1.0, 0.3, inside);
   var outc = displayTransform(col + glow / max(exposure, 1e-6), exposure);

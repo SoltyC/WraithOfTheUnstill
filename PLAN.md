@@ -408,6 +408,26 @@ placed by Q3; trunks collide (`solids.js` circles). Judged against
   span (terrain-state `frozen` + a permanent ice transform); persists across saves.
 - Rivers rise at springs in the meadow; the frozen spring of the frost chapter thaws on frost
   release and feeds one — a visible link between chapters.
+- **Reference water code: web-ocean (user, 2026-10-21).** github.com/Noniv/web-ocean (MIT,
+  Maksymilian Dendura), cloned beside the repo at `~/web-ocean`, not vendored. It is a raw-WebGPU
+  open-ocean renderer: Tessendorf FFT in 6 cascades (JONSWAP + Donelan-Banner), CDLOD mesh,
+  LEAN-mapped glitter, a Hillaire sky with two cloud layers, and Jacobian whitecaps in
+  camera-centred foam maps. It costs about 6–8 ms alone on a 5070 Ti. Copy or adapt freely, but
+  credit it in ASSETS.md (licence text) for any code taken.
+  - **Now (lakes and rivers):** LEAN slope moments, i.e. mip-mapped mean and variance of the wave
+    slopes driving anisotropic roughness, plus screen-space slope AA for the sun glints. This
+    cures the ripple moiré and strobing glints seen from height (review shots rv-m03, rv-m12).
+    Also take its grazing-angle reflection tilt (the facets the viewer can actually see).
+    Source: `js/wgsl/ocean.js`, `js/wgsl/common.js`.
+    **Done 2026-10-21:** the slope-derivative specular AA, the distance roughness and the tilt
+    (credited in ASSETS.md). They barely change the look. The diagonal stripes on the lakes from
+    height (rv-m12) are not sub-pixel aliasing: they are the beat of too few, too regular analytic
+    wave components. Next: a broader, randomised wave set, or a small FFT cascade borrowed from
+    web-ocean's spectrum.
+  - **Later (Phase 12, Coast and the Sea):** the FFT sea itself, its whitecaps and foam maps,
+    backlit-crest subsurface glow and the CDLOD sheet, scaled for the 3060 (fewer and smaller
+    cascades, the far sea as a sheen). Its cloud edge AA by derivative and its cloud transmittance
+    toward the sun dimming the water are worth comparing against `post/` clouds.
 
 ### M6 — Gale verbs
 

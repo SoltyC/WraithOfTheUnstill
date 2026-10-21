@@ -1,0 +1,5 @@
+2026-10-21T10:44:52.040Z 1/1 rv-m01-walk-noon: saved screenshots/debug-water-4/rv-m01-walk-noon.png
+2026-10-21T10:44:52.041Z Shots done: 1/1 spot(s) (rv-m01*) → screenshots/debug-water-4/.
+2026-10-21T10:48:35.106Z rv-m01-walk-noon: not ready after 240 s — reloading once
+2026-10-21T10:49:08.609Z rv-m01-walk-noon: boot failed: TypeError: Failed to fetch dynamically imported module: http://localhost:4173/assets/world-C0ggyPoJ.js — SKIPPED
+2026-10-21T10:49:08.609Z Shots done: 0/1 spot(s) (rv-m01*) → screenshots/debug-water-4/. SKIPPED (failed twice): rv-m01-walk-noon

@@ -98,6 +98,8 @@ varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vSeed: f32;
 varying vDry: f32;
+varying vFar: f32;                   // 0 near … 1 far: the blade settles to the turf's colour and brightness
+varying vFrost: f32;                 // rime from the frost verbs (terrain state, frozen)
 
 ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
@@ -154,7 +156,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
   if (keep < 0.5 || wid <= 1e-4) {
     vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0);
-    vertexOutputs.vT = 0.0; vertexOutputs.vSide = 0.0; vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vSeed = 0.0; vertexOutputs.vDry = 0.0;
+    vertexOutputs.vT = 0.0; vertexOutputs.vSide = 0.0; vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vSeed = 0.0; vertexOutputs.vDry = 0.0; vertexOutputs.vFar = 0.0; vertexOutputs.vFrost = 0.0;
     return vertexOutputs;
   }
   let row = f32(vtx / 2u); let side = select(-1.0, 1.0, (vtx & 1u) == 1u);
@@ -197,8 +199,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
   p += across * side * w;
   // Normal: the blade's face, rolled across its width (a rounded blade), tilted up with distance
   // so a far field shades like the turf under it.
-  var nrm = normalize(vec3f(face.x, 0.4, face.y) + across * side * 0.6);
+  // The roll fades with distance: on the wide outer-ring blades it split each one into a lit half
+  // and a black half (dark wedges across the mid field).
   let far = smoothstep(8.0, 40.0, length(p - cam));
+  var nrm = normalize(vec3f(face.x, 0.4, face.y) + across * side * 0.6 * (1.0 - 0.8 * smoothstep(3.0, 15.0, length(p - cam))));
   nrm = normalize(mix(nrm, vec3f(0.0, 1.0, 0.0), 0.35 + 0.45 * far));
   vertexOutputs.position = uniforms.viewProjection * vec4f(p, 1.0);
   vertexOutputs.vT = t;
@@ -206,6 +210,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vWorldPos = p;
   vertexOutputs.vNormal = nrm;
   vertexOutputs.vSeed = h4;
+  vertexOutputs.vFar = far;
+  vertexOutputs.vFrost = st.z;
   vertexOutputs.vDry = max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y);
 }
 `;
@@ -219,6 +225,8 @@ varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vSeed: f32;
 varying vDry: f32;
+varying vFar: f32;                   // 0 near … 1 far: the blade settles to the turf's colour and brightness
+varying vFrost: f32;                 // rime from the frost verbs (terrain state, frozen)
 ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -233,7 +241,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Two-sided: flip toward the viewer across the blade only — a blade's normal never points into
   // the ground (seen from behind, a flipped normal faced down and the blade went black).
   if (dot(N, V) < 0.0) { N = vec3f(-N.x, N.y, -N.z); }
-  N = normalize(vec3f(N.x, max(N.y, 0.25), N.z));
+  let far = fragmentInputs.vFar;
+  N = normalize(vec3f(N.x, max(N.y, mix(0.25, 0.6, far)), N.z));
   let t = fragmentInputs.vT;
   let sd = fragmentInputs.vSeed;
   // Colour: dark at the root, green through the body, paler and warmer at the tip; patches of
@@ -241,31 +250,40 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let green = mix(vec3f(0.075, 0.11, 0.03), vec3f(0.12, 0.15, 0.045), sd);
   let dry = mix(vec3f(0.2, 0.19, 0.09), vec3f(0.25, 0.23, 0.12), sd);
   var albedo = mix(green, dry, fragmentInputs.vDry * (0.25 + 0.45 * t));
-  albedo *= mix(0.35, 1.0, smoothstep(0.0, 0.45, t));
+  // Root darkening fades with distance: a far blade is mostly its root wedge, and left dark it reads
+  // as a black spike on the (undarkened) turf; far off the blade is the turf's own tone.
+  albedo *= mix(mix(0.35, 1.0, smoothstep(0.0, 0.45, t)), 1.0, far);
   albedo = mix(albedo, albedo * vec3f(1.15, 1.1, 0.8), t * t * 0.5);
   // Blade texture: a lighter midrib, fine lengthwise veins, darker edges, and pale dry flecks
   // toward the tip (grass up close is striped, not flat).
   let sd2 = fragmentInputs.vSide;
   albedo *= 0.9 + 0.14 * (1.0 - abs(sd2));
   albedo *= 0.88 + 0.14 * (0.5 + 0.5 * sin(sd2 * 11.0 + sd * 40.0));
-  albedo *= 1.0 - 0.25 * smoothstep(0.75, 1.0, abs(sd2));
+  albedo *= 1.0 - 0.25 * (1.0 - far) * smoothstep(0.75, 1.0, abs(sd2));
   let fleck = step(0.86, fract(sin(floor(t * 28.0) * 12.9898 + sd * 78.233) * 43758.5453)) * smoothstep(0.4, 1.0, t);
   albedo = mix(albedo, albedo * vec3f(1.5, 1.4, 0.9), fleck * 0.5);
+  // Rime (frost verbs on turf, BRIEF §4.4): the blades whiten, palest toward the tips; it thaws
+  // with the frozen channel.
+  let rime = fragmentInputs.vFrost;
+  albedo = mix(albedo, vec3f(0.6, 0.66, 0.72) * (0.85 + 0.3 * fleck), rime * (0.55 + 0.45 * t));
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let nl = dot(N, L);
   let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
-  let ao = mix(0.35, 1.0, smoothstep(0.0, 0.6, t));
+  let ao = mix(mix(0.35, 1.0, smoothstep(0.0, 0.6, t)), 1.0, far);
   let diff = clamp((nl + 0.3) / 1.3, 0.0, 1.0);
   let canopy = canopyAt(wp.xz);
   let sky = shIrradiance(N) * uniforms.envMisc.w * ao * canopySky(canopy);
-  var col = albedo * (key * diff * vis / PI + sky + canopyFill(canopy, N) * ao);
+  // Transmission: a blade passes about a third of the light on it, so its shaded face glows
+  // yellow-green instead of going black.
+  let trans = clamp(-nl, 0.0, 1.0) * 0.35 * vec3f(0.9, 1.1, 0.6);
+  var col = albedo * (key * (diff + trans) * vis / PI + sky + canopyFill(canopy, N) * ao);
   // Light through the blade: strongest looking toward the sun (the reference's glowing grass).
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 3.0) * (0.35 + 0.65 * t);
   col += key * albedo * vec3f(0.95, 1.3, 0.8) * back * vis * 0.32;
   // Sheen along the blade.
   let H = normalize(L + V);
-  col += key * pow(max(dot(N, H), 0.0), 24.0) * 0.06 * vis * t;
+  col += key * pow(max(dot(N, H), 0.0), 24.0) * (0.06 + 0.3 * rime) * vis * t;
   let ex = uniforms.fogParams.z * atmoExposure();
   col += spellLit(wp, N, albedo, 0.4, ex);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
