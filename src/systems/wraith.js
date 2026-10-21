@@ -6,13 +6,14 @@ export function addWraithSystem(g) {
   const { loop, game, wraithView, controller, arm, clock, params, weather, restoration, warden, knockCtl, frost, surfWake, toggles, streamer, ground, footprints, sfx, SFX, capture } = g;
   loop.add({ name: 'wraith', update: () => {
     const w = wraithView.wraith, p = controller.pos;
-    w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
+    w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z; w.vy = controller.glide.active ? controller.vel.y : 0;
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
     // The cloth feels the wind field where the Wraith stands: its direction and the gusts.
     const wf = g.wind;
     if (wf) { wf.sx = p.x; wf.sz = p.z; wf.sample(); w.windX = wf.outX; w.windZ = wf.outZ; w.windStrength = wf.speed * 0.9; } // ×0.9: the old frost cloth strength on average
     else w.windStrength = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) + 2.2 * warden.gust;
     w.surf = Math.max(controller.surf.blend, controller.dodgeT > 0 ? 0.85 : 0); w.surfLean = controller.surf.lean;
+    w.glide = controller.glide.blend; w.glideBank = controller.glide.bank;
     w.swimming = controller.swimming;
     knockCtl.feedOverride(w);
     w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0, g.gale && (g.gale.gesture > 0 || g.gale.vortexStrength > 0.05) ? 1 : 0);
@@ -30,6 +31,7 @@ export function addWraithSystem(g) {
       if (surfRoll.active) stepSurfRoll();
       return;
     }
+    // Photo spots with a glide (`surf.glide`): launched from the air at the spot, S-turns.
     if (game.wraithHeld || game.pendingBend !== null) return;
     surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded;
     surfWake.enabled = toggles.on.footprints !== false;
@@ -42,20 +44,28 @@ export function addWraithSystem(g) {
     surfRoll.active = true; surfRoll.t = 0; surfRoll.spec = spec;
     controller.scripted = true;
     if (spec.facing !== undefined) controller.yaw = spec.facing;
+    // A glide run starts in the air above the spot, robe open, at speed along the facing.
+    if (spec.glide) {
+      const sp = spec.speed ?? 13, f = controller.yaw;
+      controller.pos.y += spec.height ?? 12; controller.grounded = false;
+      controller.vel.x = Math.sin(f) * sp; controller.vel.z = Math.cos(f) * sp; controller.vel.y = -1;
+    }
   }
   /** Scripted carve (photo spots): S-turns of the given amplitude and period; one-off code path. */
   function stepSurfRoll() {
     const spec = surfRoll.spec, sf = controller.surf, w = wraithView.wraith, p = controller.pos, dt = 1 / 60;
     for (let k = 0; k < 8 && surfRoll.t < spec.seconds; k++) {
-      sf.want = true;
+      sf.want = !spec.glide;
       streamer.mqx = p.x; streamer.mqz = p.z; streamer.sampleMaterial(); sf.canSurf = streamer.mat === 0;
       sf.steer = (spec.steer ?? 0.6) * Math.sin((2 * Math.PI * surfRoll.t) / (spec.period ?? 4));
       sf.throttle = spec.throttle ?? 0;
+      const gl = controller.glide;
+      gl.want = !!spec.glide; gl.steer = sf.steer; gl.throttle = sf.throttle; gl.rise = spec.rise ?? 0;
       controller.dt = dt; controller.update();
-      w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z;
+      w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z; w.vy = controller.glide.active ? controller.vel.y : 0;
       w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = dt;
       w.time = clock.simTime - (spec.seconds - surfRoll.t); wraithView.time = w.time;
-      w.surf = sf.blend; w.surfLean = sf.lean;
+      w.surf = sf.blend; w.surfLean = sf.lean; w.glide = gl.blend; w.glideBank = gl.bank;
       surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded; surfWake.enabled = true;
       surfWake.update();
       wraithView.update();

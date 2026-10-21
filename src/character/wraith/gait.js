@@ -49,6 +49,8 @@ export class Gait {
     this.pyOff = 0.5 - 0.5;   // eased pelvis offset (bob, running crouch)
     /** Surf engagement 0..1 (input): above ½ the feet hold a surf stance instead of stepping. */
     this.surf = 0.5 - 0.5;
+    /** Glide engagement 0..1 (input): the legs trail together behind and below, no stepping. */
+    this.glide = 0.5 - 0.5;
     this.stance = false;
     /** Death: 0..1 the figure sinks to the snow (the robe pools around it). */
     this.collapse = 0.5 - 0.5;
@@ -128,10 +130,11 @@ export class Gait {
       }
     }
 
+    const gl = this.glide * (1 - this.swim); // glide pose weight (swimming wins)
     // Lift a planted foot once it trails its home by T along the motion (or, at rest or when
     // turning, once it is off its home). Walking waits for the other foot to land; running may
     // lift while the other is still in the air (flight phase).
-    if (this.grounded) {
+    if (this.grounded && gl < 0.5) {
       let best = -1, bestScore = 0;
       for (let f = 0; f < 2; f++) {
         if (this.state[f] !== PLANTED) continue;
@@ -158,15 +161,17 @@ export class Gait {
       }
     } else {
       // Airborne: feet tuck under the body (no footfalls until grounded again). Swimming: the legs
-      // trail behind and below, drawing up and kicking out together on the stroke.
+      // trail behind and below, drawing up and kicking out together on the stroke. Gliding: they
+      // trail together, tucked up and back (under the streaming hem).
       const sw = this.swim, fxd = Math.sin(this.yaw), fzd = Math.cos(this.yaw);
       const kick = 0.5 - 0.5 * Math.cos(Math.PI * 2 * Math.min(1, this.swimPhase / 0.6));
       for (let f = 0; f < 2; f++) {
         this._home(f, 0);
         this.state[f] = PLANTED;
-        const side = f === 0 ? -1 : 1, back = (0.55 - 0.25 * kick) * sw, wide = (GAIT.hipWidth + 0.12 * kick * sw) * side;
-        this.fx[f] = this._hx - fxd * back + fzd * wide * sw; this.fz[f] = this._hz - fzd * back - fxd * wide * sw;
-        this.fy[f] = this.by - 0.05 + (0.45 - 0.15 * kick) * sw;
+        const side = f === 0 ? -1 : 1, back = (0.55 - 0.25 * kick) * sw + 0.85 * gl, wide = (GAIT.hipWidth + 0.12 * kick * sw) * side;
+        const pin = -0.6 * GAIT.hipWidth * side * gl;
+        this.fx[f] = this._hx - fxd * back + fzd * (wide * sw + pin); this.fz[f] = this._hz - fzd * back - fxd * (wide * sw + pin);
+        this.fy[f] = this.by - 0.05 + (0.45 - 0.15 * kick) * sw + 0.5 * gl;
       }
     }
 
@@ -185,6 +190,8 @@ export class Gait {
     const off = bob - Math.min(speed, 6) * 0.012;
     this.pyOff += (off - this.pyOff) * (1 - Math.exp(-dt * 20));
     this.py = Math.max(footY, this.by - 0.1) + GAIT.hipHeight + this.pyOff - this.collapse * 0.74;
+    // Gliding: the pelvis rides low, the legs hanging back from it (the body is pitched ~60°).
+    if (gl > 0) this.py += (this.by + 0.7 - this.py) * gl;
     // Knees by two-bone IK (pole forward), for the cloth colliders.
     for (let f = 0; f < 2; f++) this._knee(f);
   }

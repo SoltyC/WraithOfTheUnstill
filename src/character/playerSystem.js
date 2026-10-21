@@ -9,6 +9,10 @@ import { angleDelta } from '../core/scratch.js';
 const SURF_STEER_PER_PX = 0.0032, SURF_STEER_RETURN = 2.6, SURF_KEY_STEER = 0.75;
 /** Camera while surfing: follows the heading (1/s), banks with the lean, widens. */
 const SURF_CAM_FOLLOW = 3.2, SURF_CAM_BANK = 0.32, SURF_EXTRA_FOV = 0.1;
+/** Glide: the camera follows the heading more lazily, banks further, widens more. Ridge lift:
+ *  wind (field speed × WIND_MS m/s) blowing up the slope rises at speed × slope, fading over
+ *  RIDGE_FADE m above the ground. */
+const GLIDE_CAM_FOLLOW = 2.2, GLIDE_CAM_BANK = 0.45, GLIDE_EXTRA_FOV = 0.14, WIND_MS = 7, RIDGE_FADE = 45;
 
 /**
  * @param {{ controller: import('./capsuleController.js').CapsuleController, arm: import('../camera/springArm.js').SpringArmCamera,
@@ -16,7 +20,7 @@ const SURF_CAM_FOLLOW = 3.2, SURF_CAM_BANK = 0.32, SURF_EXTRA_FOV = 0.1;
  *           capsuleHalfHeight: number }} ctx
  */
 export function createPlayerSystem(ctx) {
-  const { controller, arm, capsule, playerPos, bodyParams, capsuleHalfHeight, material } = ctx;
+  const { controller, arm, capsule, playerPos, bodyParams, capsuleHalfHeight, material, wind } = ctx;
   let steerAcc = 0;
   return {
     name: 'player',
@@ -27,7 +31,8 @@ export function createPlayerSystem(ctx) {
       const mz = d[Action.MoveForward] - d[Action.MoveBack];
       const sf = controller.surf;
       // While surfing the mouse steers the carve (horizontal) instead of orbiting the camera.
-      const surfing = sf.active && !arm.free;
+      const gl = controller.glide;
+      const surfing = (sf.active || gl.active) && !arm.free;
       arm.look(surfing ? 0 : input.mouseDX, input.mouseDY, input.wheel);
 
       if (controller.scripted || controller.hold) {
@@ -44,13 +49,24 @@ export function createPlayerSystem(ctx) {
         sf.want = d[Action.Traverse] === 1 && !controller.swimming; // no surfing in the water
         if (material) { material.mqx = controller.pos.x; material.mqz = controller.pos.z; material.sampleMaterial(); sf.canSurf = material.mat === 0; }
         else sf.canSurf = true;
+        // Glide (hold traversal in the air): the same hold, the same steering.
+        gl.want = d[Action.Traverse] === 1 && !controller.swimming;
         if (surfing) {
           steerAcc += input.mouseDX * SURF_STEER_PER_PX;
           steerAcc *= Math.exp(-dt * SURF_STEER_RETURN);
           steerAcc = Math.max(-1.2, Math.min(1.2, steerAcc));
-          sf.steer = steerAcc + mx * SURF_KEY_STEER;
-          sf.throttle = mz;
-        } else { steerAcc = 0; sf.steer = 0; sf.throttle = 0; }
+          sf.steer = gl.steer = steerAcc + mx * SURF_KEY_STEER;
+          sf.throttle = gl.throttle = mz;
+        } else { steerAcc = 0; sf.steer = gl.steer = 0; sf.throttle = gl.throttle = 0; }
+        // Rising air for the glide: the wind blowing up the slope under the body.
+        gl.rise = 0;
+        if (wind && !controller.grounded) {
+          const p0 = controller.pos, gr = controller.ground;
+          gr.qx = p0.x; gr.qz = p0.z; gr.sampleNormal(); const above = p0.y - gr.h;
+          wind.sx = p0.x; wind.sz = p0.z; wind.sample();
+          const up = -(wind.outX * gr.nx + wind.outZ * gr.nz) / Math.max(gr.ny, 0.2); // wind · uphill slope
+          gl.rise = Math.max(0, wind.speed * WIND_MS * up) * Math.exp(-Math.max(0, above) / RIDGE_FADE);
+        }
         controller.wishX = mx;
         controller.wishZ = mz;
         controller.wishUp = d[Action.Jump] - d[Action.Dodge];
@@ -61,10 +77,11 @@ export function createPlayerSystem(ctx) {
         controller.dt = dt;
         controller.update();
         // Camera: follows the carve's heading, banks into the lean, widens with the rush.
-        const b = sf.blend;
+        const b = sf.blend, gb = gl.blend;
         if (sf.active) arm.yaw += angleDelta(arm.yaw, sf.heading) * (1 - Math.exp(-dt * SURF_CAM_FOLLOW)) * b;
-        arm.rollTarget = -sf.lean * SURF_CAM_BANK * b;
-        arm.extraFov = SURF_EXTRA_FOV * b;
+        if (gl.active) arm.yaw += angleDelta(arm.yaw, gl.heading) * (1 - Math.exp(-dt * GLIDE_CAM_FOLLOW)) * gb;
+        arm.rollTarget = -sf.lean * SURF_CAM_BANK * b - gl.bank * GLIDE_CAM_BANK * gb;
+        arm.extraFov = Math.max(SURF_EXTRA_FOV * b, GLIDE_EXTRA_FOV * gb);
         // Hard carves rattle the camera a little (grip beyond ~70 %).
         arm.shakeHold = sf.active ? Math.max(0, Math.abs(sf.latAccel) - 10.5) * 0.0012 : 0;
         arm.dt = dt;

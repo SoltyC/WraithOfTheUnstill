@@ -1,0 +1,3 @@
+2026-10-21T12:08:34.455Z 1/2 p8-glide-meadow: saved screenshots/glide-1/p8-glide-meadow.png
+2026-10-21T12:08:41.745Z 2/2 p8-glide-side: saved screenshots/glide-1/p8-glide-side.png
+2026-10-21T12:08:41.745Z Shots done: 2/2 spot(s) (p8-glide*) → screenshots/glide-1/.

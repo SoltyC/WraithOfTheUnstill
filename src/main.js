@@ -82,7 +82,7 @@ async function boot() {
   sysWorld.addWorldSystems(g);
   sysClimb.addClimbSystem(g);
   if (g.water) { g.controller.water = g.water; g.arm.water = g.water; } // swimming; the camera stays above the surface
-  loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer }));
+  loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind }));
   sysBending.addBendingSystem(g);
   sysWraith.addWraithSystem(g);
   sysCreatures.addCreatureSystems(g);

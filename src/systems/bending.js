@@ -3,6 +3,7 @@
 // point; the speed streaks; and the photo spots' scripted bending sequence.
 
 import { ELEMENTS, ELEMENT_NAMES } from '../game/elements.js';
+import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 /** @param {any} g  shared boot context */
 export function addBendingSystem(g) {
@@ -40,6 +41,15 @@ export function addBendingSystem(g) {
     gale.dt = dt; gale.time = time; gale.lightBase = frost.lightsUsed;
     gale.update();
     controller.lift = gale.liftAt(controller.pos.x, controller.pos.y, controller.pos.z);
+    // Gliding low, the robe's wind blows the ground under it: grass laid, powder scoured.
+    const gl = controller.glide;
+    if (gl.active && gl.height < 4) {
+      const k = 1 - gl.height / 4, ts = g.terrainState, sp = gl.speed || 1;
+      ts.bx = controller.pos.x; ts.bz = controller.pos.z; ts.bdx = gl.vx / sp; ts.bdz = gl.vz / sp;
+      ts.bl = 0.4; ts.bw = 0.9 + 1.2 * k; ts.bd = 0.02 * k; ts.bc = 0.5 * k;
+      ts.bk = BRUSH.FLATTEN; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.5;
+      ts.stamp();
+    }
     pushGaleFx(time);
   }
   /** The Gale's visuals (render/galeFx.js): its block, the time, the wind, and how much meadow lies
@@ -160,7 +170,7 @@ export function addBendingSystem(g) {
     crystals.time = clock.simTime;
     crystals.update();
     streaks.vx = controller.vel.x; streaks.vy = controller.vel.y; streaks.vz = controller.vel.z;
-    streaks.dt = clock.dt; streaks.engaged = controller.surf.blend;
+    streaks.dt = clock.dt; streaks.engaged = Math.max(controller.surf.blend, controller.glide.blend);
     streaks.update();
   } });
 }

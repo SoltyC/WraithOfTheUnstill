@@ -457,6 +457,7 @@ All read and write the terrain state, ease in and settle out (BRIEF §9.1), and 
   audio, FOV/streaks, ground blow when low (writes into grass/snow).
 - Tuned by hand until it feels good (BRIEF §9.3); feel targets as tests like the surf's.
 - Bench: `?bench=flight` already flies at glide speed — re-run it over the meadow with grass.
+- **Done 2026-10-21** (first pass; feel needs the user's hands on it): `character/glide.js` (best glide 13 m/s at about 7:1, a dive paid in height, a flare to a stall, coordinated banked turns, ridge lift and updrafts climb; feel targets in `tests/glide.test.js`). In the controller beside surf: the same hold (RMB) opens the robe in the air when at least 1.6 m up with speed, a fall or rising air, and landing hands the speed back (a surf if snow). Ridge lift is the wind field up the slope under the body, fading over 45 m. Camera: follows, banks, widens; speed streaks. Ground blow below 4 m (FLATTEN). The robe-as-wings pose is in `character/wraith/` (arms swept back, sleeves streaming, legs trailing, roll by bank; the cloth now gets the body's vertical speed while gliding). Spots `p8-glide-meadow`, `p8-glide-side`. Open: the feet still show below the hem from behind; roaring cloth audio; `?bench=flight` over the meadow; launching from a surf jump (a jump alone does not reach 1.6 m).
 
 ### M8 — Meadow Shaped (three archetypes + an elite)
 

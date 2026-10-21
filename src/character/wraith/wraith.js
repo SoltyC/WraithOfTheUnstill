@@ -13,7 +13,7 @@ const SUB = 1 / 120;
 const TURN_RATE = 9;
 const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
 /** Air drag on the cloth (1/s): walking, and the extra while surfing (the robe streams back). */
-const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3;
+const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3, GLIDE_AIR_DRAG = 1.6, GLIDE_WIND = 9;
 const ARM = 0.58, UPPER = 0.3;
 /** Head centre in the body frame (body.js). */
 const HEAD_Y = 0.74, HEAD_Z = 0.02;
@@ -26,10 +26,13 @@ export class Wraith {
     this.gait = new Gait(ground);
     this.body = new Body();
     // Inputs (fields).
-    this.bx = 0.5; this.by = 0.5; this.bz = 0.5; this.vx = 0.5 - 0.5; this.vz = 0.5 - 0.5; this.yaw = 0.5 - 0.5;
+    this.bx = 0.5; this.by = 0.5; this.bz = 0.5; this.vx = 0.5 - 0.5; this.vy = 0.5 - 0.5; this.vz = 0.5 - 0.5; this.yaw = 0.5 - 0.5;
     this.grounded = true; this.dt = 0.5;
     /** Surf engagement 0..1 and carve lean (rad): inputs from the controller's surf model. */
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
+    /** Glide engagement 0..1 (eased by the owner) and bank (rad, + = banking right, ±0.6): inputs
+     *  from the glide model (feed vy too while gliding: the cloth's drag is relative to the world). The robe spreads like wings and roars back; swimming wins over it. */
+    this.glide = 0.5 - 0.5; this.glideBank = 0.5 - 0.5; this._gliding = false; this._spread = 0.5 - 0.5;
     /** Death collapse 0..1 (input). */
     this.collapse = 0.5 - 0.5;
     /** Climbing (inputs): the pelvis (cpx, cpy, cpz) and surface frame (right cr, up-the-climb cu,
@@ -96,8 +99,9 @@ export class Wraith {
   _syncInputs() {
     const g = this.gait;
     g.bx = this.bx; g.by = this.by; g.bz = this.bz; g.vx = this.vx; g.vz = this.vz; g.yaw = this.facing; g.grounded = this.grounded;
-    g.surf = this.surf; g.swim = this.swim; g.swimPhase = this.swimPhase;
+    g.surf = this.surf; g.glide = this.glide; g.swim = this.swim; g.swimPhase = this.swimPhase;
     this.body.yaw = this.facing; this.body.surf = this.surf; this.body.surfLean = this.surfLean;
+    this.body.glide = this.glide; this.body.glideBank = this.glideBank;
     this.body.swim = this.swim; this.body.swimPhase = this.swimPhase;
   }
 
@@ -118,7 +122,7 @@ export class Wraith {
     this.gait.reset(); this.gait.dt = 0; this.gait.evCount = 0; this.gait.update();
     this.body.dt = 0; this.body.prevYaw = this.yaw; this.body.update(this.gait);
     for (const g of this.garments) this._place(g, true);
-    this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz;
+    this.cloth.frameVX = this.vx; this.cloth.frameVY = this.vy; this.cloth.frameVZ = this.vz;
     // Traversal: the robe whips back hard (BRIEF §9.3) — strong drag against the rush of air.
     this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this.cloth.resetFrame();
     this.settleLeft = SETTLE_STEPS;
@@ -151,10 +155,22 @@ export class Wraith {
     // a little flutter of its own.
     const gust = 0.9 + 0.1 * Math.sin(this.time * 2.3) * Math.sin(this.time * 0.97 + 1.3);
     const ws = this.windStrength * 4.5 * gust;
-    this.cloth.frameVX = this.vx; this.cloth.frameVZ = this.vz;
+    this.cloth.frameVX = this.vx; this.cloth.frameVY = this.vy; this.cloth.frameVZ = this.vz;
     this.cloth.windX = this.windX * ws; this.cloth.windZ = this.windZ * ws; this.cloth.windY = 0.4 * ws * 0.2;
     // In the water the robe nearly floats (buoyant, heavy with water: little gravity, a slow drift up).
     this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim); this.cloth.windY += 0.6 * this.swim;
+    // Gliding: the robe roars back (drag toward the surf value and a bit more); restored after.
+    if (this.glide > 0.001) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf + GLIDE_AIR_DRAG * this.glide * (1 - this.swim); this._gliding = true; }
+    else if (this._gliding) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this._gliding = false; }
+    this._spread = this.glide * (1 - this.swim);
+    if (this._spread > 0) {
+      // The rush of air: a push back along the flight line (the heading when slow), a little
+      // lift, and the robe light enough to stream rather than hang.
+      const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz), s = this._spread;
+      const dx = sp > 1 ? this.vx / sp : Math.sin(this.facing), dz = sp > 1 ? this.vz / sp : Math.cos(this.facing);
+      this.cloth.windX -= dx * GLIDE_WIND * s; this.cloth.windZ -= dz * GLIDE_WIND * s; this.cloth.windY += 2 * s;
+      this.cloth.gravity *= 1 - 0.5 * s;
+    }
     // Substeps at 120 Hz; the first frames after a spawn settle the cloth.
     // After a teleport the cloth settles over a few frames (120 extra substeps, 24 a frame: one
     // frame of 120 was a visible hitch).
@@ -296,7 +312,9 @@ export class Wraith {
     if (!all && g.pinRows === 0) return;
     const n = all ? g.rows * g.cols : Math.min(g.pinRows, g.rows) * g.cols;
     if (g.frame === 'body') {
-      for (let k = 0; k < n; k++) { b.toWorld(g.lx[k], g.ly[k], g.lz[k]); this._put(all, g.start + k, out[0], out[1], out[2]); }
+      // Gliding: the mantle's pinned shoulder rows open out (the robe spreads like wings).
+      const sp = g.id === GARMENT.MANTLE ? 1 + 0.55 * this._spread : 1;
+      for (let k = 0; k < n; k++) { b.toWorld(g.lx[k] * sp, g.ly[k], g.lz[k]); this._put(all, g.start + k, out[0], out[1], out[2]); }
       return;
     }
     if (g.frame === 'head') {

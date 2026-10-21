@@ -8,6 +8,9 @@
 
 import { GAIT } from './gait.js';
 
+/** Gliding: body pitch (rad, ~60° from vertical) and the head's (looks ahead). */
+const GLIDE_LEAN = 1.05, GLIDE_HEAD = 0.3;
+
 export class Body {
   constructor() {
     this.yaw = 0.5 - 0.5;
@@ -30,6 +33,8 @@ export class Body {
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
     /** Swimming 0..1 and the breaststroke phase 0..1 (inputs). */
     this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
+    /** Gliding 0..1 and the bank (rad, + = banking right; ±0.6) (inputs); gBank is the eased roll. */
+    this.glide = 0.5 - 0.5; this.glideBank = 0.5 - 0.5; this.gBank = 0.5 - 0.5;
     /** Bending gesture 0..1 (input): the right arm reaches out toward the verb. */
     this.cast = 0.5 - 0.5;
     /** Death: 0..1 collapse (the figure folds forward as it sinks). */
@@ -59,6 +64,15 @@ export class Body {
     o[2] = h[2] + r[2] * lx + u[2] * ly + f[2] * lz;
   }
 
+  /** Rotate v (in place) by ang about the horizontal heading (sy, 0, cy): Rodrigues, axis ⟂ y. */
+  _roll(v, sy, cy, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang), d = (sy * v[0] + cy * v[2]) * (1 - c);
+    const x = v[0], y = v[1], z = v[2];
+    v[0] = x * c - cy * y * s + sy * d;         // h × v = (−cy·y, cy·x − sy·z, sy·y)
+    v[1] = y * c + (cy * x - sy * z) * s;
+    v[2] = z * c + sy * y * s + cy * d;
+  }
+
   /** @param {import('./gait.js').Gait} g */
   update(g) {
     const dt = this.dt;
@@ -74,12 +88,16 @@ export class Body {
     this._bt += dt;
     const breathe = this.breath * Math.sin(this._bt * 2 * Math.PI / 4.6);
     const sw = this.swim;
+    const gl = this.glide * (1 - sw); // glide pose weight (swimming wins)
     // Swimming: the body lies forward in the water (~60°), rising and settling with each stroke.
     const swimLean = 1.05 + 0.08 * Math.sin(Math.PI * 2 * this.swimPhase);
-    this.lean += ((0.05 + this.hunch + breathe + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse) * (1 - sw) + swimLean * sw - this.lean) * k;
+    this.lean += ((0.05 + this.hunch + breathe + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse) * (1 - sw - gl) + swimLean * sw + GLIDE_LEAN * gl - this.lean) * k;
     const walkBank = Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03));
     // Surfing: the whole figure leans into the carve (roll toward the inside of the turn).
     this.bank += (walkBank * (1 - sb) - this.surfLean * sb - this.bank) * (1 - Math.exp(-dt * 10));
+    // Gliding: roll about the heading (not the body's own axis): the inner wing dips, the outer rises.
+    this.gBank += (-this.glideBank * gl - this.gBank) * (1 - Math.exp(-dt * 6));
+    if (gl === 0 && Math.abs(this.gBank) < 1e-4) this.gBank = 0;
     const sway = g.speed > 0.25 ? 0.035 * Math.sin(Math.PI * 2 * g.phase) : 0;
     // Torso basis: yaw, then lean (pitch forward), then bank + sway (roll).
     const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
@@ -91,6 +109,7 @@ export class Body {
     this.r[0] = r0x * cr + u0x * sr; this.r[1] = r0y * cr + u0y * sr; this.r[2] = r0z * cr + u0z * sr;
     this.u[0] = u0x * cr - r0x * sr; this.u[1] = u0y * cr - r0y * sr; this.u[2] = u0z * cr - r0z * sr;
     this.f[0] = cl * sy; this.f[1] = -sl; this.f[2] = cl * cy;
+    if (this.gBank !== 0) this._roll(this.r, sy, cy, this.gBank), this._roll(this.u, sy, cy, this.gBank), this._roll(this.f, sy, cy, this.gBank);
     if (this.climbing) {
       // Turn from upright to the surface over the mount (blend), keeping the frame orthonormal.
       const k = Math.min(1, Math.max(0, this.climbBlend));
@@ -107,7 +126,8 @@ export class Body {
     this.toWorld(0, 0.74, 0.02); this.head[0] = this.out[0]; this.head[1] = this.out[1]; this.head[2] = this.out[2];
     // Head basis: half the lean, no sway (the head steadies itself).
     // Swimming, the head stays up out of the water, looking ahead.
-    const hl = this.lean * 0.5 * (1 - sw) + 0.15 * sw, chl = Math.cos(hl), shl = Math.sin(hl);
+    // Gliding, the head lifts to look ahead.
+    const hl = (this.lean * 0.5 * (1 - sw) + 0.15 * sw) * (1 - gl) + GLIDE_HEAD * gl, chl = Math.cos(hl), shl = Math.sin(hl);
     this.hr[0] = cy; this.hr[1] = 0; this.hr[2] = -sy;
     this.hu[0] = shl * sy; this.hu[1] = chl; this.hu[2] = shl * cy;
     this.hf[0] = chl * sy; this.hf[1] = -shl; this.hf[2] = chl * cy;
@@ -157,6 +177,18 @@ export class Body {
         const k2 = sw;
         this.el[o] += (this.out[0] - this.el[o]) * k2; this.el[o + 1] += (this.out[1] - this.el[o + 1]) * k2; this.el[o + 2] += (this.out[2] - this.el[o + 2]) * k2;
         this.ha[o] += (hwx - this.ha[o]) * k2; this.ha[o + 1] += (hwy - this.ha[o + 1]) * k2; this.ha[o + 2] += (hwz - this.ha[o + 2]) * k2;
+      }
+      if (gl > 0.01 && !this.climbing) {
+        // Wings: the arms spread wide, swept back and down, the sleeves trailing. Built in
+        // the (banked) shoulder frame: out along the right axis r (the inner wing dips), back along
+        // the heading.
+        const hx = Math.sin(this.yaw), hz = Math.cos(this.yaw), r = this.r;
+        // Hand 0.4 m out from the shoulder (0.6 from the axis), swept back ~35° and down ~15°; the
+        // elbow leads it, out and a touch up, so the arm bends softly back.
+        const wx = this.sh[o] + r[0] * side * 0.4 - hx * 0.29, wy = this.sh[o + 1] + r[1] * side * 0.4 - 0.1, wz = this.sh[o + 2] + r[2] * side * 0.4 - hz * 0.29;
+        const ex = this.sh[o] + r[0] * side * 0.27 - hx * 0.08, ey = this.sh[o + 1] + r[1] * side * 0.27 + 0.06, ez = this.sh[o + 2] + r[2] * side * 0.27 - hz * 0.08;
+        this.el[o] += (ex - this.el[o]) * gl; this.el[o + 1] += (ey - this.el[o + 1]) * gl; this.el[o + 2] += (ez - this.el[o + 2]) * gl;
+        this.ha[o] += (wx - this.ha[o]) * gl; this.ha[o + 1] += (wy - this.ha[o + 1]) * gl; this.ha[o + 2] += (wz - this.ha[o + 2]) * gl;
       }
       if (this.climbing && this.gripOn && !this.knocked && this.climbBlend > 0.5) {
         // Gripping: two-bone IK from the shoulder to the hold; elbows out, down and off the surface.

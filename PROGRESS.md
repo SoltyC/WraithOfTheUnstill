@@ -239,6 +239,7 @@ up automatically (override with `WRAITH_CHROME_LIBS`). With sudo: `npx playwrigh
 
 ### Session — 2026-10-21 — review board and fixes (meadow and frost), branch `claude/wraithoftheunstill-phase-7`
 
+- **Glide (Phase 8 M7, first pass): see PLAN.md M7 "Done".** Hold RMB in the air (off a ridge or a drop, or on an Updraft). Shots: `screenshots/glide-2/`. Found by the pose agent and not changed: the surf's extra cloth drag (1.3) is only ever set in `teleport()`, so it never applies while surfing; the robe may whip back less than intended. That is a one-line change, pending a look.
 - **Gale (Phase 8 M6, first pass): see PLAN.md M6 "Done".** Gust (tap), Vortex (hold) and Updraft (heavy) on keys 1/2 to switch elements (try `?gale=1`, then 2). New brush programs FLATTEN and STRIP; the controller's `lift` (rising air, capped at 13 m/s); combat hooks (Gust shove, Vortex pull and tick damage, Updraft strike). Shots: `screenshots/gale-2/` (meadow and steppe: the lane, the ring, the column).
 
 - **Local lights, the hall and the fire (PLAN.md V5/V6, Q5), shots in `screenshots/lights-1/` and `lights-2/`:**

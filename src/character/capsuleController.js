@@ -11,6 +11,7 @@
  */
 
 import { Surf } from './surf.js';
+import { Glide } from './glide.js';
 
 export const controllerTuning = {
   walkSpeed: 5.2,       // m/s on flat ground
@@ -80,6 +81,9 @@ export class CapsuleController {
     this.water = null;
     /** Snow-surf (traversal): the owner sets surf.want / canSurf / steer / throttle. */
     this.surf = new Surf();
+    /** Glide (the Gale's traversal): the owner sets glide.want / steer / throttle / rise; the
+     *  controller sets airborne, height and lift. */
+    this.glide = new Glide();
   }
 
   teleport(x, z, y) {
@@ -193,11 +197,20 @@ export class CapsuleController {
     }
     this.jumpRequested = false;
 
-    if (this.lift > 0) {
-      if (this.grounded && this.lift > T.gravity) { v.y = Math.max(v.y, 2.5); this.grounded = false; }
-      if (!this.grounded) v.y = Math.min(T.liftMax, v.y + this.lift * h);
+    // Glide (character/glide.js): while the robe is spread it takes the whole velocity.
+    const gl = this.glide;
+    gl.airborne = !this.grounded; gl.height = p.y - g.h; gl.lift = this.lift;
+    gl.engage(v.x, v.y, v.z, this.yaw);
+    gl.step(h);
+    const gliding = gl.active;
+    if (gliding) { v.x = gl.vx; v.z = gl.vz; v.y = gl.vy; this.yaw = gl.heading; }
+    else {
+      if (this.lift > 0) {
+        if (this.grounded && this.lift > T.gravity) { v.y = Math.max(v.y, 2.5); this.grounded = false; }
+        if (!this.grounded) v.y = Math.min(T.liftMax, v.y + this.lift * h);
+      }
+      if (!this.grounded) v.y -= T.gravity * h;
     }
-    if (!this.grounded) v.y -= T.gravity * h;
 
     p.x += v.x * h;
     p.z += v.z * h;
@@ -220,7 +233,7 @@ export class CapsuleController {
     }
     if (gy !== gy) throw new Error('heightfield returned NaN');
     this._wx = wx; this._wz = wz; this._wl = wl;
-    if (!surfing) this._face();
+    if (!surfing && !gliding) this._face();
   }
 
   /** One substep swimming (fields in, like _step): strokes toward the wish, a glide, the float
