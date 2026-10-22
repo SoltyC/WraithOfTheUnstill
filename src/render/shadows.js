@@ -106,6 +106,13 @@ export function createShadows(scene, viewCamera, casters) {
         maps[c].setMaterialForRendering(mesh, makeMat('casterShadow' + mesh.name + c, lights[c], origins[c]));
       }
     },
+    /** Puts a mesh added with addCaster in or out of cascade c's render list (renderList meshes are
+     *  not frustum-culled by Babylon, only by isEnabled). The caller resets snapshot rendering. */
+    setCasterActive(mesh, c, on) {
+      const list = maps[c].renderList, i = list.indexOf(mesh);
+      if (on && i < 0) list.push(mesh);
+      else if (!on && i >= 0) list.splice(i, 1);
+    },
     /** 0 disables shadows (overlay toggle). */
     strength: 1,
     update() {

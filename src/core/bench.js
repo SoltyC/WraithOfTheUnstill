@@ -212,6 +212,7 @@ export async function runBench(game, qs) {
     // (measurement starts `settle` seconds later). Used to explain hitches.
     events, phaseSetupAtMs: phaseStarts,
   };
+  if (window.__wraith.g && window.__wraith.g.loop && window.__wraith.g.loop.prof) result.sysProf = window.__wraith.g.loop.prof.report(); result.sysProf.resets = window.__wraith.g.loop.prof.resets; result.sysProf.snapshot = window.__wraith.g.loop.prof.engine ? window.__wraith.g.loop.prof.engine.snapshotRendering : null;
   window.__wraith.benchResult = result;
   let saved = '';
   try {
@@ -242,6 +243,7 @@ async function runFlightBench(game, qs) {
     scene: { drawCalls: gpuStats.drawCallsLastFrame, pipelines: gpuStats.pipelinesTotal, latePipelines: gpuStats.late.length, gpuMB: Math.round((gpuStats.bufferBytes + gpuStats.textureBytes) / 1048576) },
     phases,
   };
+  if (window.__wraith.g && window.__wraith.g.loop && window.__wraith.g.loop.prof) result.sysProf = window.__wraith.g.loop.prof.report(); result.sysProf.resets = window.__wraith.g.loop.prof.resets; result.sysProf.snapshot = window.__wraith.g.loop.prof.engine ? window.__wraith.g.loop.prof.engine.snapshotRendering : null;
   window.__wraith.benchResult = result;
   let saved = '';
   try {

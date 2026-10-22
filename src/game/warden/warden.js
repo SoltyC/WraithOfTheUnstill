@@ -264,6 +264,13 @@ export function createWarden(ctx) {
       this.hits = 0; this.hitDamage = 0; this.shake = 0; this.slam = false;
       // Rested: it lies in the land for good — a snow-covered ridge with its spires standing.
       if (this.state === W.RESTED) { this.restore = 1; this.cover = 1; return; }
+      // Dormant and far from the Wraith (a kilometre off, in the meadow): asleep — it holds its
+      // last pose (it wakes at 45 m). Its whole body simulated every frame for nothing cost up to
+      // ~10 ms on some frames (the meadow's walking stutter). Settles for its first seconds.
+      if (this.state === W.DORMANT && !this.climbed && this.t > 4) {
+        const dx = this.px - this.homeX, dz = this.pz - this.homeZ;
+        if (dx * dx + dz * dz > 220 * 220) return;
+      }
       this.t += dt;
       // Frozen joints thaw if not broken in time.
       for (let k = 0; k < JOINTS; k++) if (joint[k] === JOINT.FROZEN && (jointT[k] += dt) > this.thawTime) joint[k] = JOINT.LIQUID;

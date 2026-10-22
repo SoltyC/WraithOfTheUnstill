@@ -64,6 +64,13 @@ async function boot() {
     import('./ui/overlay/devOverlay.js'),
   ]);
   const loop = new loopMod.Loop(engine, g.scene);
+  if (qs.get('sysprof') === '1') {
+    loop.enableProfiler(Number(qs.get('sysprofMs') || 8));
+    // Count snapshot re-records (each one rebuilds every render bundle) and who asked.
+    const r0 = engine.snapshotRenderingReset.bind(engine), resets = {};
+    engine.snapshotRenderingReset = () => { const k = (new Error().stack.split('\n')[2] || '').trim().replace(/\(.*\/([^/]+)\)/, '$1'); resets[k] = (resets[k] || 0) + 1; r0(); };
+    loop.prof.resets = resets; loop.prof.engine = engine;
+  }
   inputMod.attachInput(canvas);
   Object.assign(g, {
     loop, input: inputMod.input, Action: inputMod.Action, paramsMod, params: paramsMod.params,

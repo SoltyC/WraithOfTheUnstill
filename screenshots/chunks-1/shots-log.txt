@@ -1,0 +1,2 @@
+2026-10-22T06:34:25.412Z 1/1 p7-monastery-aerial: saved screenshots/chunks-1/p7-monastery-aerial.png
+2026-10-22T06:34:25.416Z Shots done: 1/1 spot(s) (p7-monastery-aerial*) → screenshots/chunks-1/.

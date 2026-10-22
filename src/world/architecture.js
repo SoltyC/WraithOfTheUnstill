@@ -923,9 +923,73 @@ export function meadowSites(origin = HUB.at) {
 /** Build all sites into one geometry (site-local positions) plus collision shapes. */
 export function buildArchitecture(sites) {
   const b = new Builder();
-  sites.forEach((s, i) => { b.site = i; s.build(b, s.facing, rng(0x5a17 + i * 977)); });
+  /** Per site: the vertex and index ranges it wrote (sites are built one after another, each indexing only its own vertices). */
+  const ranges = [];
+  sites.forEach((s, i) => {
+    const v0 = b.pos.length / 3, i0 = b.idx.length;
+    b.site = i; s.build(b, s.facing, rng(0x5a17 + i * 977));
+    ranges.push({ v0, v1: b.pos.length / 3, i0, i1: b.idx.length });
+  });
   return {
     positions: new Float32Array(b.pos), normals: new Float32Array(b.nrm), uvs: new Float32Array(b.uv),
     info: new Float32Array(b.info), indices: new Uint32Array(b.idx), blockers: b.blockers, platforms: b.platforms, lights: b.lights,
+    ranges,
   };
+}
+
+/** Chunk edge, metres: sites are grouped by the cell of their anchor. */
+export const ARCH_CHUNK_CELL = 128;
+
+/**
+ * Splits a build into draw chunks: sites grouped by spatial cell of `at` (props, which the NPC
+ * system moves every frame, share one chunk of their own, last). Vertex `info` keeps the global
+ * site index, so every chunk reads the same site uniform arrays. Deterministic: chunks are ordered
+ * by cell, sites by index. Each chunk carries its horizontal bounding circle (anchors + the farthest
+ * vertex from each anchor, which is exact whatever the site's facing) for distance culling.
+ * @returns {{ id: string, prop: boolean, sites: number[], cx: number, cz: number, radius: number, vertexCount: number,
+ *   positions: Float32Array, normals: Float32Array, uvs: Float32Array, info: Float32Array, indices: Uint32Array }[]}
+ */
+export function chunkArchitecture(sites, built, cell = ARCH_CHUNK_CELL) {
+  const groups = new Map();
+  sites.forEach((s, i) => {
+    const key = s.prop ? 'props' : Math.floor(s.at[0] / cell) + '_' + Math.floor(s.at[1] / cell);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(i);
+  });
+  const keys = [...groups.keys()].sort((a, b) => {
+    if (a === 'props') return 1; if (b === 'props') return -1;
+    const [ax, az] = a.split('_').map(Number), [bx, bz] = b.split('_').map(Number);
+    return ax - bx || az - bz;
+  });
+  const P = built.positions;
+  return keys.map((key) => {
+    const idxs = groups.get(key);
+    let nv = 0, ni = 0;
+    for (const i of idxs) { const r = built.ranges[i]; nv += r.v1 - r.v0; ni += r.i1 - r.i0; }
+    const positions = new Float32Array(nv * 3), normals = new Float32Array(nv * 3), uvs = new Float32Array(nv * 2),
+      info = new Float32Array(nv * 4), indices = new Uint32Array(ni);
+    let vo = 0, io = 0;
+    const ext = [];
+    for (const i of idxs) {
+      const r = built.ranges[i], n = r.v1 - r.v0;
+      positions.set(P.subarray(r.v0 * 3, r.v1 * 3), vo * 3);
+      normals.set(built.normals.subarray(r.v0 * 3, r.v1 * 3), vo * 3);
+      uvs.set(built.uvs.subarray(r.v0 * 2, r.v1 * 2), vo * 2);
+      info.set(built.info.subarray(r.v0 * 4, r.v1 * 4), vo * 4);
+      for (let k = r.i0; k < r.i1; k++) indices[io++] = built.indices[k] - r.v0 + vo;
+      let m = 0;
+      for (let k = r.v0; k < r.v1; k++) { const h = Math.hypot(P[k * 3], P[k * 3 + 2]); if (h > m) m = h; }
+      ext.push(m);
+      vo += n;
+    }
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    idxs.forEach((i, k) => {
+      const [x, z] = sites[i].at, e = ext[k];
+      x0 = Math.min(x0, x - e); x1 = Math.max(x1, x + e); z0 = Math.min(z0, z - e); z1 = Math.max(z1, z + e);
+    });
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    let radius = 0;
+    idxs.forEach((i, k) => { const [x, z] = sites[i].at; radius = Math.max(radius, Math.hypot(x - cx, z - cz) + ext[k]); });
+    return { id: 'arch-' + key, prop: key === 'props', sites: idxs, cx, cz, radius, vertexCount: nv, positions, normals, uvs, info, indices };
+  });
 }

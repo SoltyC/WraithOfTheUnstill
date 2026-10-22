@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
-import { frostSites, meadowSites, buildArchitecture, MAT, HUB } from '../src/world/architecture.js';
+import { frostSites, meadowSites, buildArchitecture, chunkArchitecture, MAT, HUB } from '../src/world/architecture.js';
 import { ARCH_SITES } from '../src/shaders/architecture.wgsl.js';
 import { createSolids } from '../src/world/solids.js';
 
@@ -161,5 +161,34 @@ describe('The meadow hub', () => {
     const again = buildArchitecture([...frostSites(table, baked.routes), ...meadowSites()]);
     expect(Array.from(again.positions)).toEqual(Array.from(built.positions));
     expect(again.lights).toEqual(built.lights);
+  });
+});
+
+describe('Architecture chunks', () => {
+  const all = [...frostSites(table, baked.routes), ...meadowSites()], built = buildArchitecture(all);
+  const chunks = chunkArchitecture(all, built);
+  it('puts every site in exactly one chunk and keeps every vertex and index', () => {
+    const seen = new Array(all.length).fill(0);
+    for (const c of chunks) for (const i of c.sites) seen[i]++;
+    expect(seen.every((n) => n === 1)).toBe(true);
+    expect(chunks.reduce((n, c) => n + c.vertexCount, 0)).toBe(built.positions.length / 3);
+    expect(chunks.reduce((n, c) => n + c.indices.length, 0)).toBe(built.indices.length);
+    for (const c of chunks) {
+      expect(c.positions.length).toBe(c.vertexCount * 3);
+      let max = 0; for (const v of c.indices) if (v > max) max = v;
+      expect(max).toBeLessThan(c.vertexCount);
+      // Vertices keep their global site index (the shared site uniforms).
+      for (let i = 0; i < c.vertexCount; i++) expect(c.sites).toContain(c.info[i * 4]);
+    }
+  });
+  it('keeps props in their own last chunk and is deterministic', () => {
+    const props = chunks.filter((c) => c.prop);
+    expect(props.length).toBeLessThanOrEqual(1);
+    if (props.length) { expect(chunks[chunks.length - 1]).toBe(props[0]); for (const i of props[0].sites) expect(all[i].prop).toBe(true); }
+    for (const c of chunks) if (!c.prop) for (const i of c.sites) expect(all[i].prop).toBeFalsy();
+    expect(chunkArchitecture(all, built).map((c) => [c.id, c.sites])).toEqual(chunks.map((c) => [c.id, c.sites]));
+  });
+  it('bounds each chunk\'s sites horizontally', () => {
+    for (const c of chunks) if (!c.prop) for (const i of c.sites) expect(Math.hypot(all[i].at[0] - c.cx, all[i].at[1] - c.cz)).toBeLessThanOrEqual(c.radius + 1e-6);
   });
 });

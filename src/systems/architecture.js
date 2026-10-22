@@ -3,24 +3,26 @@
 // Wraith has rested at keep a cold light in their glyphs; the monastery's wake when the steppe is
 // restored; the camp's fire burns brighter at night.
 
-import { frostSites, meadowSites, buildArchitecture, ARENA } from '../world/architecture.js';
+import { frostSites, meadowSites, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
+import { SHADOW_SPLITS } from '../render/shadows.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 /** @param {any} g  shared boot context */
 export function addArchitectureSystem(g) {
-  const { loop, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
+  const { loop, engine, camera, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
   // The frost chapter's sites, then the meadow hub's (appended: the frost indices never change).
   const sites = [...frostSites(chapter.table, g.routes), ...meadowSites()];
   // Pillars start sunk below the snow (the Warden's fight raises them).
   for (const s of sites) if (s.pillar) s.sink = (s.pillarH || ARENA.pillarH) + 1.2;
   const built = buildArchitecture(sites);
-  const view = g.architecture = createArchitectureView(scene, atmosphere, built, g.matLib);
+  // Drawn as chunks (a 128 m cell of sites each; the NPC-held props apart), one shared material.
+  const view = g.architecture = createArchitectureView(scene, atmosphere, chunkArchitecture(sites, built), g.matLib);
   view.material.setArray4('spellLights', g.content.clipmap.spellLights); // fire and spell light on stone and felt
   g.archSites = sites;
   bindShadows(view.material, shadows);
-  shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
+  for (const c of view.chunks) shadows.addCaster(c.mesh, view.makeShadowMaterial, 1);
   view.freeze();
   const solids = g.solids = createSolids(sites, built);
   // No boulders inside the built places (one stood beside the camp fire).
@@ -89,9 +91,32 @@ export function addArchitectureSystem(g) {
     }
     return s.seatAt === 'top' ? hi : lo;
   }
+  // Chunk culling. Snapshot rendering replays recorded bundles, so Babylon's per-frame frustum test
+  // never runs (every mesh here is alwaysSelectAsActiveMesh); chunks are switched by distance
+  // instead, with hysteresis, and snapshotRenderingReset() only when a set actually changes. Shadow
+  // render lists are not frustum-culled by Babylon either: a chunk joins cascade c's list when its
+  // edge is within SHADOW_SPLITS[c] + SHADOW_MARGIN (casters outside a slice still shade into it).
+  const DRAW_R = 800, SHADOW_MARGIN = 120, HYST = 40, WARM_FRAMES = 60;
+  const inShadow = view.chunks.map(() => [true, true]);
+  function cullChunks(px, pz) {
+    let changed = false;
+    view.chunks.forEach((c, k) => {
+      if (c.prop) return;
+      const d = Math.hypot(c.cx - px, c.cz - pz) - c.radius;
+      const on = c.mesh.isEnabled(), want = on ? d < DRAW_R + HYST : d < DRAW_R;
+      if (want !== on) { c.mesh.setEnabled(want); changed = true; }
+      for (let ci = 0; ci < 2; ci++) {
+        const r = SHADOW_SPLITS[ci] + SHADOW_MARGIN, was = inShadow[k][ci], w = was ? d < r + HYST : d < r;
+        if (w !== was) { inShadow[k][ci] = w; shadows.setCasterActive(c.mesh, ci, w); changed = true; }
+      }
+    });
+    if (changed) engine.snapshotRenderingReset();
+  }
   let frame = 0;
   loop.add({ name: 'architecture', update: () => {
     frame++;
+    // Everything draws through the loading frames (every pipeline is made then, BRIEF §15); culling starts after.
+    if (frame > WARM_FRAMES && frame % 6 === 0) cullChunks(camera.position.x, camera.position.z);
     const p = controller.pos;
     // Seat sites whose ground has come in (re-seated only while far, so nothing shifts in view).
     for (let i = 0; i < sites.length; i++) {
