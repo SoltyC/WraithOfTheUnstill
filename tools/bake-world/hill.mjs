@@ -28,7 +28,7 @@ export const HILL = {
 /** The stair: flights at this rise per run (a ceremonial ~18°), landings this long, widths. */
 export const STAIR = {
   id: 'manor-stair', slope: 0.21, landing: 30, halfFoot: 9, halfTop: 6, wall: 7,
-  /** Flights' top heights above the foot (the last runs straight up the manor's axis). */
+  /** Flights' top heights above the foot. */
   levels: [6, 30, 52, 72, 90, 106, 120, 142],
   /** The foot: angle from the centre (rad: 0 = +x, π/2 = +z). */
   footAngle: -2.45,
@@ -105,13 +105,13 @@ export function stairPath() {
   put(a, 1.12, 0, 1);
   const L = STAIR.levels;
   for (let f = 0; f < L.length; f++) {
-    const top = L[f], last = f >= L.length - 2;
+    const top = L[f];
     // Walk 2 m at a time: rise slope × 2, move toward the radius for the new height, the rest across.
     while (h < top - 1e-6) {
       const nh = Math.min(top, h + STAIR.slope * 2);
       const R0 = eScale(a) * rAt(h), R1 = eScale(a) * rAt(nh), dr = R1 - R0;
       let da = 0;
-      if (!last) { const across = Math.max(0, 4 - dr * dr); da = dir * sqrt(across) / Math.max(R1, 1); }
+      { const across = Math.max(0, 4 - dr * dr); da = dir * sqrt(across) / Math.max(R1, 1); } // every flight winds on: straight up the steep top of the dome was ~60°
       a += da; h = nh;
       put(a, rAt(h), h, 0);
     }

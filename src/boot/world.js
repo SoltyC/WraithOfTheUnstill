@@ -82,7 +82,19 @@ export async function createWorld(g) {
   const rocks = createRocks(scene, content.clipmap, atmosphere, matLib);
   // No trees or rocks on the village's plots (+2 m) or roads (half width + 2 m).
   const { villageKeepout } = await import('../world/villageKeepout.js');
-  const keepOut = village ? villageKeepout(village) : null;
+  // …nor on the summit (the manor and its forecourt) or the stair (its corridor + 3 m).
+  const pois = await fetch(import.meta.env.BASE_URL + 'world/pois.json').then((r) => r.json());
+  const manor = pois.pois.find((p) => p.id === 'manor'), stairR = pois.routes.find((r) => r.id === 'manor-stair');
+  const vk = village ? villageKeepout(village) : null;
+  const keepOut = (x, z, extra = 0) => {
+    if (vk && vk(x, z, extra)) return true;
+    if (manor) { const dx = (x - manor.pos[0]) / 85, dz = (z - manor.pos[1]) / 72; if (dx * dx + dz * dz < 1) return true; }
+    if (stairR) { const P = stairR.points, r = 12 + extra; for (let k = 1; k < P.length; k++) { // 12 m to each side of the route
+      const ax = P[k - 1][0], az = P[k - 1][1], bx = P[k][0] - ax, bz = P[k][1] - az, l2 = bx * bx + bz * bz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * bx + (z - az) * bz) / l2)), ex = x - ax - bx * t, ez = z - az - bz * t;
+      if (ex * ex + ez * ez < r * r) return true; } }
+    return false;
+  };
   if (keepOut) rocks.setKeepOut(keepOut);
   bindShadows(rocks.material, shadows);
   // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).

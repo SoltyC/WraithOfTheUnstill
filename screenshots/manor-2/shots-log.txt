@@ -1,0 +1,7 @@
+2026-10-22T21:24:24.754Z 1/6 p8-manor-approach: saved screenshots/manor-2/p8-manor-approach.png
+2026-10-22T21:24:35.576Z 2/6 p8-manor-forecourt: saved screenshots/manor-2/p8-manor-forecourt.png
+2026-10-22T21:24:47.102Z 3/6 p8-manor-hall: saved screenshots/manor-2/p8-manor-hall.png
+2026-10-22T21:25:03.224Z 4/6 p8-manor-village: saved screenshots/manor-2/p8-manor-village.png
+2026-10-22T21:25:19.790Z 5/6 p8-manor-night: saved screenshots/manor-2/p8-manor-night.png
+2026-10-22T21:25:36.414Z 6/6 p8-manor-aerial: saved screenshots/manor-2/p8-manor-aerial.png
+2026-10-22T21:25:36.417Z Shots done: 6/6 spot(s) (p8-manor*) → screenshots/manor-2/.

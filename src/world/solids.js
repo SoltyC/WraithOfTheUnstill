@@ -6,13 +6,18 @@
 
 const R = 0.38; // capsule radius (m)
 
-export function createSolids(sites, built) {
+export function createSolids(sites, built, stairRuns = null) {
   const S = sites.map((s) => ({ x: s.at[0], z: s.at[1], seat: NaN, rad: 0 }));
   const blockers = built.blockers.map((b) => ({ ...b, x: b.x + sites[b.site].at[0], z: b.z + sites[b.site].at[1] }));
   const platforms = built.platforms.map((p) => ({ ...p, x: p.x + sites[p.site].at[0], z: p.z + sites[p.site].at[1] }));
   for (const b of blockers) { const s = S[b.site]; s.rad = Math.max(s.rad, Math.hypot(b.x - s.x, b.z - s.z) + (b.r || Math.hypot(b.hx, b.hz)) + 2); }
   for (const p of platforms) { const s = S[p.site]; s.rad = Math.max(s.rad, Math.hypot(p.x - s.x, p.z - s.z) + Math.hypot(p.hx, p.hz) + 2); }
   const near = new Uint8Array(S.length);
+  // The monumental stair's runs (world/stair.js stairSegments): straight segments { x0, z0, x1, z1, halfWidth,
+  // y0, y1, tread } with a stepped floor — y0 + (y1 − y0) · ceil(d / tread) / m along the axis (d from the
+  // start, m = round(length / tread)), within halfWidth of it. Absolute heights (no site seat). Grouped
+  // (16 consecutive segments) under a bounding circle, so a query tests a few circles and one group.
+  const ST = buildStairRuns(stairRuns);
   // Rocks near the Wraith (systems/rockSolids.js fills them): an ellipse (half-extents rx, rz in
   // the rock's yawed frame: local x = wx·cos + wz·sin, z = −wx·sin + wz·cos) from its seat y0 to
   // its top y1 (a dome over the ellipse for standing on).
@@ -23,7 +28,7 @@ export function createSolids(sites, built) {
   const ROCK_STEP = 0.55;
 
   return {
-    sites: S, blockers, platforms, rocks: rk,
+    sites: S, blockers, platforms, rocks: rk, stair: ST,
     /** False while a site whose footprint covers (x, z) has no seat yet (a landing would miss its floors). */
     seatedNear(x, z) {
       for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; if (s.rad > 0 && dx * dx + dz * dz < s.rad * s.rad && Number.isNaN(s.seat)) return false; }
@@ -51,6 +56,7 @@ export function createSolids(sites, built) {
         const top = S[p.site].seat + p.top;
         if (top > h && top <= feet + 0.7) h = top;
       }
+      if (ST.n > 0) h = ST.floor(x, z, h, feet);
       for (let k = 0; k < rk.n; k++) {
         const dx = x - rk.x[k], dz = z - rk.z[k];
         const lx = (dx * rk.c[k] + dz * rk.s[k]) / rk.rx[k], lz = (-dx * rk.s[k] + dz * rk.c[k]) / rk.rz[k], q = lx * lx + lz * lz;
@@ -182,6 +188,49 @@ export function flooredGround(ground) {
       const so = this.solids;
       if (so === null) { this.h = ground.h; return; }
       so.qx = this.qx; so.qz = this.qz; so.qh = ground.h; so.floorAnyQ(); this.h = so.h;
+    },
+  };
+}
+
+/** The stair-run solid (see createSolids): arrays and groups; floor(x, z, h, feet) → the higher of h and the tread under (x, z). */
+function buildStairRuns(segs) {
+  const n = segs ? segs.length : 0;
+  const X0 = new Float64Array(n), Z0 = new Float64Array(n), FX = new Float64Array(n), FZ = new Float64Array(n), LEN = new Float64Array(n),
+    HW = new Float64Array(n), Y0 = new Float64Array(n), Y1 = new Float64Array(n), TR = new Float64Array(n), M = new Float64Array(n);
+  for (let k = 0; k < n; k++) {
+    const g = segs[k], dx = g.x1 - g.x0, dz = g.z1 - g.z0, len = Math.hypot(dx, dz) || 1e-6;
+    X0[k] = g.x0; Z0[k] = g.z0; FX[k] = dx / len; FZ[k] = dz / len; LEN[k] = len; HW[k] = g.halfWidth; Y0[k] = g.y0; Y1[k] = g.y1; TR[k] = g.tread;
+    M[k] = Math.max(1, Math.round(len / g.tread));
+  }
+  const GROUP = 16, groups = [];
+  for (let a = 0; a < n; a += GROUP) {
+    const b = Math.min(n, a + GROUP);
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, hw = 0;
+    for (let k = a; k < b; k++) {
+      x0 = Math.min(x0, X0[k], X0[k] + FX[k] * LEN[k]); x1 = Math.max(x1, X0[k], X0[k] + FX[k] * LEN[k]);
+      z0 = Math.min(z0, Z0[k], Z0[k] + FZ[k] * LEN[k]); z1 = Math.max(z1, Z0[k], Z0[k] + FZ[k] * LEN[k]); hw = Math.max(hw, HW[k]);
+    }
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    let r = 0;
+    for (let k = a; k < b; k++) r = Math.max(r, Math.hypot(X0[k] - cx, Z0[k] - cz), Math.hypot(X0[k] + FX[k] * LEN[k] - cx, Z0[k] + FZ[k] * LEN[k] - cz));
+    r += hw + 1; groups.push({ a, b, cx, cz, r2: r * r });
+  }
+  return {
+    n,
+    floor(x, z, h, feet = Infinity) {
+      for (let q = 0; q < groups.length; q++) {
+        const G = groups[q], gx = x - G.cx, gz = z - G.cz;
+        if (gx * gx + gz * gz > G.r2) continue;
+        for (let k = G.a; k < G.b; k++) {
+          const px = x - X0[k], pz = z - Z0[k], d = px * FX[k] + pz * FZ[k];
+          if (d < -0.05 || d > LEN[k] + 0.05) continue;
+          const l = px * FZ[k] - pz * FX[k];
+          if (l < -HW[k] || l > HW[k]) continue;
+          const m = M[k], i = Math.min(m, Math.max(0, Math.ceil(d / TR[k] - 1e-9))), top = Y0[k] + (Y1[k] - Y0[k]) * i / m;
+          if (top > h && top <= feet + 0.7) h = top;
+        }
+      }
+      return h;
     },
   };
 }

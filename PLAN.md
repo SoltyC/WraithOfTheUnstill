@@ -599,6 +599,16 @@ analytic solids (not 800 platforms).
    the arch bridge over the stream (the road crosses as cobbles), villagers going about their day,
    the windmill.
 4. **Stair and manor** — flights, terraces, retaining walls; the run-down manor and arena. (4–5)
+   **Stage 4 done (2026-10-23):** the stair (`src/world/stair.js`: 26 segments of real steps,
+   flagstone landings, parapets and retaining walls, stone lanterns getting more formal, a summit
+   gate; an analytic stair-run solid in `solids.js`; `seatY` sites) — the route was rebaked so
+   every flight winds (939 m, ≤ 13°, ~3 min); the manor (`src/world/manor.js`: great hall with
+   half its roof down and the ribcage trusses showing, a scorched east wing, an open west wing for
+   the neck, four towers — one leaning and roofless — a gatehouse at the stair head, a broken
+   forecourt with toppled statues and a dry fountain, one lit window); trees and rocks kept off
+   the summit and the stair. Shots `screenshots/manor-2/`. **Open: the manor cannot be seen from
+   the village** (the dome's shoulder hides the summit) — move it to the village-facing rim,
+   raise the towers, or flatten the shoulder.
 5. **Fire quest** — per-building fire states, extinguishing (Ribbon main; Sweep; Crystallize
    holds; Ribbon + Updraft rain; Gust fans), terrified NPCs, interiors and the child rescue, the
    guide NPC, char via the transform channel; plan-fire-quest.md. (4)

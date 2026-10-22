@@ -4,6 +4,8 @@
 // restored; the camp's fire burns brighter at night.
 
 import { villageSites } from '../world/villageKits.js';
+import { manorSites } from '../world/manor.js';
+import { stairSites, stairSegments, loadBakedHeight } from '../world/stair.js';
 import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
@@ -17,7 +19,11 @@ export async function addArchitectureSystem(g) {
   // indices never change).
   const village = g.village ?? await fetch(import.meta.env.BASE_URL + 'world/village.json').then((r) => r.json());
   g.village = village;
-  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village)];
+  // The monumental stair (world/stair.js), after the village's: its wall heights come from the baked ground; its
+  // segments are also the analytic stepped floor of solids.js.
+  const stairRoute = (g.routes || []).find((r) => r.id === 'manor-stair') || {};
+  const stairH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', stairRoute).catch(() => null);
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites()];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });
@@ -31,7 +37,7 @@ export async function addArchitectureSystem(g) {
   bindShadows(view.material, shadows);
   for (const c of view.chunks) shadows.addCaster(c.mesh, view.makeShadowMaterial, 1);
   view.freeze();
-  const solids = g.solids = createSolids(sites, built);
+  const solids = g.solids = createSolids(sites, built, stairSegments(stairRoute));
   // No boulders inside the built places (one stood beside the camp fire).
   g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]));
   /** Prop sites by NPC id (the NPC system places them at the hand). */
@@ -57,7 +63,7 @@ export async function addArchitectureSystem(g) {
   // The hall's candles and vigil brazier burn (embers on a site without a hearth: render/architecture).
   view.glow[sites.findIndex((s) => s.id === 'monastery') * 4 + 3] = 1;
   // The meadow's places: no snow on them, and the hub's hearth burns.
-  sites.forEach((s, i) => { if (s.id.startsWith('hub-') || s.id.startsWith('vil-')) view.glow[i * 4 + 2] = 1; });
+  sites.forEach((s, i) => { if (s.id.startsWith('hub-') || s.id.startsWith('vil-') || s.id.startsWith('stair-') || s.id.startsWith('manor-')) view.glow[i * 4 + 2] = 1; });
   // The village's lanterns burn (their ember: siteGlow.w where there is no hearth).
   sites.forEach((s, i) => { if (s.lamp || s.id.startsWith('vil-')) view.glow[i * 4 + 3] = 1; }); // door lanterns and hearths too
   // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
@@ -73,6 +79,8 @@ export async function addArchitectureSystem(g) {
   /** Seat: the lowest ground over the site's footprint (9 samples) — or the highest for a site
    *  built up from a peak (seatAt 'top', foundations running down) — or NaN until known. */
   function seat(s) {
+    // `seatY`: an absolute seat height (the stair's sites: a slope's centre height is the wrong seat for their ends).
+    if (typeof s.seatY === 'number') return s.seatY;
     if (s.box) {
       // A platform over a peak: the highest ground anywhere under its square (1.5 m grid), so
       // no rock or snow of the summit shows through its floor.
