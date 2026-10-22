@@ -46,12 +46,12 @@ export function createGroundCover(scene, clipmap, atmo, push, wind) {
   const params = new Vector4(0, 1, cell, n);
   const mat = new ShaderMaterial('groundCover', scene, { vertex: 'groundCover', fragment: 'groundCover' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'gcParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'villageBox', 'gcParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, 'gcAtlas'],
     storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
-  bindEnvironment(mat); bindAtmosphere(mat, atmo);
+  bindEnvironment(mat); bindAtmosphere(mat, atmo); mat.setVector4('villageBox', atmo.villageBox);
   mat.setArray4('levels', clipmap.levels);
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);

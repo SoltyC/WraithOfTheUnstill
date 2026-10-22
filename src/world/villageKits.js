@@ -238,7 +238,7 @@ function lantern(fr, a, y, S, withLight = true) {
   for (const [sa, sc] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) fr.tb(a + sa * 0.065 - 0.008, a + sa * 0.065 + 0.008, y - 0.08, y + 0.13, c + sc * 0.065 - 0.008, c + sc * 0.065 + 0.008, I, S(), FF | FL | FR);
   fr.tb(a - 0.012, a + 0.012, y + 0.17, y + 0.2, c - 0.012, c + 0.012, I, S(), FF | FL | FR);
   fr.tb(a - 0.045, a + 0.045, y - 0.07, y + 0.12, c - 0.045, c + 0.045, MAT.EMBER, S());
-  if (withLight) { const p = fr.pt(a, y + 0.02, c); fr.b.light(p[0], p[1], p[2], 7, 1.0, 0.6, 0.28, 0.7, 'lamp'); }
+  if (withLight) { const p = fr.pt(a, y + 0.02, c); fr.b.light(p[0], p[1], p[2], 8, 1.0, 0.6, 0.28, 2.5, 'lamp'); }
 }
 
 /** Door dressing: timber jambs and lintel beam, the stone step (walkable), the leaf (or two) left ajar,
@@ -942,7 +942,7 @@ export function villageSites(village) {
   }
   village.lights.forEach((l, i) => {
     const seed = 400 + i;
-    sites.push({ id: 'vil-lamp-' + i, at: [l.at[0], l.at[1]], facing: 0, build: (b) => lampPost(b, 0, 0, 2.6, (i * 2.399) % TAU, seed, 1.5), footprint: 0.5, seatAt: 'center', lamp: true });
+    sites.push({ id: 'vil-lamp-' + i, at: [l.at[0], l.at[1]], facing: 0, build: (b) => lampPost(b, 0, 0, 2.6, (i * 2.399) % TAU, seed, 4.5), footprint: 0.5, seatAt: 'center', lamp: true });
   });
   return sites;
 }

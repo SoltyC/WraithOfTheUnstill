@@ -39,7 +39,15 @@ export async function createWorld(g) {
   const ringMod = await import('../render/mountainRing.js');
   const ringData = ringMod.requestRing(streamer.manifest.seed); // builds on its own worker meanwhile
   const { createAtmosphere } = await import('../render/atmosphere.js');
-  const atmosphere = createAtmosphere(scene, camera, streamer.buffers.biomeA);
+  // The meadow village's layout and its ground mask (bake-world/villageMask.mjs: RGBA8, 0.5 m, box in village.json `mask`).
+  const worldBase = import.meta.env.BASE_URL + 'world/';
+  const village = g.village = await fetch(worldBase + 'village.json').then((r) => r.json()).catch(() => null);
+  let villageMask = null;
+  if (village && village.mask) {
+    const buf = await fetch(worldBase + 'village_mask.rgba8').then((r) => r.arrayBuffer()).catch(() => null);
+    if (buf && buf.byteLength === village.mask.size * village.mask.size * 4) villageMask = { ...village.mask, data: new Uint8Array(buf) };
+  }
+  const atmosphere = createAtmosphere(scene, camera, streamer.buffers.biomeA, villageMask);
   const matLib = await matLibP;
   const content = createWorldScene(scene, streamer.buffers, atmosphere, matLib);
   const [{ createShadows }, { bindShadows }] = await Promise.all([import('../render/shadows.js'), import('../render/shadowBindings.js')]);
@@ -72,6 +80,10 @@ export async function createWorld(g) {
   // Rock outcrops with accumulation (frost): cast and receive shadows; scanned rock surfaces.
   const { createRocks } = await import('../render/rocks.js');
   const rocks = createRocks(scene, content.clipmap, atmosphere, matLib);
+  // No trees or rocks on the village's plots (+2 m) or roads (half width + 2 m).
+  const { villageKeepout } = await import('../world/villageKeepout.js');
+  const keepOut = village ? villageKeepout(village) : null;
+  if (keepOut) rocks.setKeepOut(keepOut);
   bindShadows(rocks.material, shadows);
   // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).
   // Each rock tier casts only into the cascades its distances fall in (near < 140 m: 0–1; outcrops
@@ -98,6 +110,7 @@ export async function createWorld(g) {
   const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer, wind);
   for (const m of trees.materials) bindShadows(m, shadows);
   for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0);
+  if (keepOut) trees.setKeepOut(keepOut);
   trees.freeze();
   // Water (Phase 8): the bake's unfrozen lakes, flat at their levels; absorb + surface passes, the
   // post chain's SSR reflects on them (waves and ripples shared through the wind block and a buffer).

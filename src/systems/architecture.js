@@ -15,7 +15,7 @@ export async function addArchitectureSystem(g) {
   const { loop, engine, camera, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
   // The frost chapter's sites, then the meadow village's from the baked layout (appended: the frost
   // indices never change).
-  const village = await fetch(import.meta.env.BASE_URL + 'world/village.json').then((r) => r.json());
+  const village = g.village ?? await fetch(import.meta.env.BASE_URL + 'world/village.json').then((r) => r.json());
   g.village = village;
   const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
@@ -59,7 +59,7 @@ export async function addArchitectureSystem(g) {
   // The meadow's places: no snow on them, and the hub's hearth burns.
   sites.forEach((s, i) => { if (s.id.startsWith('hub-') || s.id.startsWith('vil-')) view.glow[i * 4 + 2] = 1; });
   // The village's lanterns burn (their ember: siteGlow.w where there is no hearth).
-  sites.forEach((s, i) => { if (s.lamp) view.glow[i * 4 + 3] = 1; });
+  sites.forEach((s, i) => { if (s.lamp || s.id.startsWith('vil-')) view.glow[i * 4 + 3] = 1; }); // door lanterns and hearths too
   // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
   // brazier, the moon under its fallen roof), the camp's hearth, each brazier once lit, and the
   // lanterns the Veiled carry — placed once their site is seated.

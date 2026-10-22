@@ -11,7 +11,7 @@
 // and turf scans carry on beyond it.
 
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
-import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
+import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL } from './grass.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
@@ -42,7 +42,7 @@ var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
-${WATER_LEVEL_DECL}varying vUv: vec2f;
+${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vUv: vec2f;
 varying vCell: f32;
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -94,7 +94,11 @@ fn main(input: VertexInputs) -> FragmentInputs {
   );
   var sum = 0.0;
   w[8] = 0.0; // pebbles: off (they read as bubbles on the turf)
-  for (var i = 0; i < 9; i++) { w[i] *= step(0.3, mw) * (1.0 - bsn.x); sum += w[i]; }
+  // The village's ground: nothing grows on cobbles or on the street's earth; flowers none on roads, yards bare of them.
+  let vil = villageAtV(root);
+  let vk = (1.0 - smoothstep(0.05, 0.3, vil.x)) * (1.0 - smoothstep(0.1, 0.5, vil.y));
+  w[6] *= vk * (1.0 - smoothstep(0.1, 0.5, vil.z)); w[7] *= vk * (1.0 - 0.5 * vil.z);
+  for (var i = 0; i < 9; i++) { w[i] *= step(0.3, mw) * (1.0 - bsn.x) * select(vk, 1.0, i == 6 || i == 7); sum += w[i]; }
   // Empty weight: the meadow's ground cover is patchy, the forest floor full.
   let r = h3 * (sum + 0.55 + 0.6 * (1.0 - forest));
   var kind = -1;

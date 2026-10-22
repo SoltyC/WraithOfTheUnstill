@@ -11,7 +11,7 @@ import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
 import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js';
-import { Matrix } from '@babylonjs/core/Maths/math.vector.js';
+import { Matrix, Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { transmittanceCS, multiScatCS, skyViewCS, aerialCS, ambientCS } from '../shaders/atmosphereCompute.wgsl.js';
 import { AP_RES, AP_SLICES, SKYVIEW_W, SKYVIEW_H } from '../shaders/atmosphere.wgsl.js';
 import { env } from './environment.js';
@@ -37,7 +37,7 @@ const vp = new Matrix();
 /** Crown cover map: CANOPY_N² texels over the 8192 m world (4 m). */
 export const CANOPY_N = 2048;
 
-export function createAtmosphere(scene, camera, biomeA) {
+export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   const engine = scene.getEngine();
   const tex = (w, h, name) => {
     const t = new RawTexture(null, w, h, Constants.TEXTUREFORMAT_RGBA, scene, false, false,
@@ -52,7 +52,7 @@ export function createAtmosphere(scene, camera, biomeA) {
   const skyViewMoon = tex(SKYVIEW_W, SKYVIEW_H, 'atmo-skyview-moon');
   const aerialLut = tex(AP_RES * AP_SLICES, AP_RES, 'atmo-aerial');
 
-  const paramsData = new Float32Array(36);
+  const paramsData = new Float32Array(40);
   const atmoParams = new StorageBuffer(engine, paramsData.byteLength, undefined, 'atmo-params');
   const atmoLight = new StorageBuffer(engine, 13 * 16, undefined, 'atmo-light'); // key, sky up/side, horizon+exposure, 9 SH
   // Frame meter, written by the post chain's metering pass (post/meter.js); zero = no meter yet.
@@ -90,9 +90,18 @@ export function createAtmosphere(scene, camera, biomeA) {
     Constants.TEXTURE_NEAREST_SAMPLINGMODE, Constants.TEXTURETYPE_FLOAT);
   waterTex.name = 'waterLevel';
 
+  // The village ground mask (bake-world/villageMask.mjs; RGBA8, 0.5 m): R paved, G earth, B yard, A cobble variant.
+  // villageMask = { x0, z0, size, texel, data } or null (1×1 empty: villageAt() is 0 everywhere). villageBox is the
+  // same box for the vertex stages' uniform (x0, z0, 1/extent m, 0): extent 0 = no village.
+  const vm = villageMask && villageMask.data && villageMask.data.length === villageMask.size * villageMask.size * 4 ? villageMask : null;
+  const villageTex = new RawTexture(vm ? vm.data : new Uint8Array(4), vm ? vm.size : 1, vm ? vm.size : 1, Constants.TEXTUREFORMAT_RGBA, scene, false, false,
+    Constants.TEXTURE_BILINEAR_SAMPLINGMODE, Constants.TEXTURETYPE_UNSIGNED_BYTE);
+  villageTex.name = 'villageMask'; villageTex.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; villageTex.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
+  const villageBox = vm ? new Vector4(vm.x0, vm.z0, 1 / (vm.size * vm.texel), 0) : new Vector4(0, 0, 0, 0);
+
   let builtHaze = NaN;
   return {
-    canopyTex, waterTex,
+    canopyTex, waterTex, villageTex, villageBox,
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,
@@ -128,6 +137,7 @@ export function createAtmosphere(scene, camera, biomeA) {
       const dim = 0.015 + 0.985 * (1 - cc) * (1 - cc) * (1 - cc);
       p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
       p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
+      p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = 0;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;
       p[28] = haze; p[29] = NIGHT_FLOOR * env.night; p[30] = clock.realDt; p[31] = this.snapExposure || this.alwaysSnap ? 1 : 0;

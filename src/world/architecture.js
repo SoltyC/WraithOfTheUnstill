@@ -697,7 +697,7 @@ export function lampPost(b, x, z, h, dir, seed, intensity = 0.7) {
   b.box(ax, az, ly - 0.15, ly + 0.14, 0.06, 0.06, 0, MAT.EMBER, seed + 6, { solid: false, ...NS });
   b.drum(ax, az, ly + 0.17, ly + 0.23, 0.095, 0.02, 10, MAT.METAL, seed + 7, { solid: false });
   b.blockers.push({ site: b.site, kind: 'circle', x, z, r: 0.12, y0: -0.4, y1: h });
-  b.light(ax, ly, az, 7, 1.0, 0.6, 0.28, intensity, 'lamp');
+  b.light(ax, ly, az, intensity > 1 ? 10 : 7, 1.0, 0.6, 0.28, intensity, 'lamp');
 }
 
 /** A pilgrims' house: drystone walls of reused Shaper blocks (a door gap under a carved lintel, a

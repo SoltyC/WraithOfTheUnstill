@@ -447,7 +447,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let Ngm = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     let canopy = canopyAt(wp.xz);
-    var ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy);
+    var ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy, villageAt(wp.xz));
     // The melt band: wet, darker ground and grass bleached to straw.
     ms.albedo = mix(ms.albedo, ms.albedo * vec3f(1.05, 0.92, 0.66) * 0.8, border.y);
     var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w, canopy);

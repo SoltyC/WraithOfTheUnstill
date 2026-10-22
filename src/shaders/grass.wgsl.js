@@ -16,7 +16,7 @@ import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL, BORDER_WGSL } from './common.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WATER_LEVEL_DECL } from './atmoMaterial.wgsl.js';
-import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
+import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
 
@@ -92,7 +92,7 @@ var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
-${WATER_LEVEL_DECL}varying vT: f32;                     // 0 root … 1 tip
+${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vT: f32;                     // 0 root … 1 tip
 varying vSide: f32;                  // −1 … 1 across
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -137,8 +137,15 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;
   let dens = smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
+  // The village's ground (villageAt): none on cobbles (a few tufts in the joints near the edge), sparse
+  // along the earth road's edge, short and thin trampled grass in the yards.
+  let vil = villageAtV(root);
+  let vPave = vil.x;
+  let vKeep = (1.0 - smoothstep(0.1, 0.45, vPave)) + 0.22 * smoothstep(0.1, 0.45, vPave) * (1.0 - smoothstep(0.45, 0.95, vPave));
+  let vEarth = 1.0 - 0.95 * smoothstep(0.12, 0.7, vil.y);
+  let dens2 = dens * vKeep * vEarth * (1.0 - 0.35 * vil.z);
   // No grass out of the border's snow patches; short and bleached in the melt band round them.
-  if (h3 > dens * (1.0 - bsn.x)) { keep = 0.0; }
+  if (h3 > dens2 * (1.0 - bsn.x)) { keep = 0.0; }
   let gy = gGround(root.x, root.y) + stateOffset(root.x, root.y);
   let gy2 = gGround(root.x + 0.7, root.y); let gy3 = gGround(root.x, root.y + 0.7);
   let slope = length(vec2f(gy2 - gy, gy3 - gy)) / 0.7;
@@ -150,7 +157,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y);
+  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;

@@ -18,6 +18,7 @@ import { biomeWeights, material, wind, BIOMES, MATERIALS } from './climate.mjs';
 import { placePOIs } from './placement.mjs';
 import { carveStory, storyPOIs } from './story.mjs';
 import { carveHill, HILL } from './hill.mjs';
+import { bakeVillageMask } from './villageMask.mjs';
 import { villageLayout } from '../../src/world/village.js';
 import { gfbm } from '../../src/terrain/gnoise.js';
 import { encodePng } from './png.mjs';
@@ -227,6 +228,11 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   const foot = hill.pois.find((p) => p.id === 'stair-foot').pos, hubP = hill.pois.find((p) => p.id === 'hub').pos;
   const village = villageLayout({ height: h4at, water: wetAt, isHill: hillE }, { seed: 1, foot, hub: hubP, hillCentre: HILL.centre, hillAx: HILL.ax, hillAz: HILL.az });
   log('village', village.plots.length, 'plots,', village.roads.length, 'roads,', village.lights.length, 'lamps', Date.now() - t0, 'ms');
+  // The village's ground mask (villageMask.mjs): streets, square and yards, 0.5 m per texel; its box rides in village.json.
+  const mask = bakeVillageMask(village);
+  village.mask = { x0: mask.x0, z0: mask.z0, size: mask.size, texel: mask.texel };
+  log('village mask', mask.size + '²', Date.now() - t0, 'ms');
+  write('village_mask.rgba8', Buffer.from(mask.data.buffer, mask.data.byteOffset, mask.data.byteLength));
   write('village.json', Buffer.from(JSON.stringify(village) + '\n'));
   write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run, hill.route] }, null, 2) + '\n'));
   const manifest = {

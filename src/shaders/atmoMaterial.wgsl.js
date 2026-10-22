@@ -4,7 +4,21 @@
 
 import { ATMO_PARAMS_WGSL, ATMO_COMMON_WGSL, AP_RES, AP_SLICES } from './atmosphere.wgsl.js';
 
-export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex', 'waterTex'];
+export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex', 'waterTex', 'villageTex'];
+/** The same lookup for vertex stages that bind no atmoParams (grass, ground cover): declare
+ *  VILLAGE_VERTEX_WGSL in the vertex shader, give the material the villageTex sampler (in
+ *  ATMO_MATERIAL_TEXTURES) and set the `villageBox` uniform (atmo.villageBox). */
+export const VILLAGE_VERTEX_WGSL = /* wgsl */ `
+uniform villageBox: vec4f;
+var villageTex: texture_2d<f32>;
+var villageTexSampler: sampler;
+fn villageAtV(p: vec2f) -> vec4f {
+  let b = uniforms.villageBox;
+  let uv = (p - b.xy) * b.z;
+  if (b.z <= 0.0 || uv.x <= 0.0 || uv.y <= 0.0 || uv.x >= 1.0 || uv.y >= 1.0) { return vec4f(0.0); }
+  return textureSampleLevel(villageTex, villageTexSampler, uv, 0.0);
+}
+`;
 export const ATMO_MATERIAL_BUFFERS = ['atmoParams', 'atmoLight'];
 
 export const ATMO_MATERIAL_WGSL = /* wgsl */ `
@@ -21,6 +35,8 @@ var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
 var waterTex: texture_2d<f32>;
 var waterTexSampler: sampler;
+var villageTex: texture_2d<f32>;
+var villageTexSampler: sampler;
 var<storage, read> atmoParams: AtmoParams;
 var<storage, read> atmoLight: array<vec4f,13>;
 ${ATMO_COMMON_WGSL}
@@ -43,6 +59,15 @@ fn shIrradiance(n: vec3f) -> vec3f {
  *  meadow and in the open, ~1 in a grove). */
 fn canopyAt(p: vec2f) -> f32 {
   return textureSampleLevel(canopyTex, canopyTexSampler, (p + 4096.0) / 8192.0, 0.0).r;
+}
+/** The village ground mask at a world point (bilinear; 0 outside its box): r paved (cobble), g packed
+ *  earth, b yard / trodden ground, a cobble variant ramp (0 mossy, 1/3 setts, 2/3 river, 1 flagstone).
+ *  bake-world/villageMask.mjs paints it; the box rides in atmoParams.village. */
+fn villageAt(p: vec2f) -> vec4f {
+  let b = atmoParams.village;
+  let uv = (p - b.xy) * b.z;
+  if (b.z <= 0.0 || uv.x <= 0.0 || uv.y <= 0.0 || uv.x >= 1.0 || uv.y >= 1.0) { return vec4f(0.0); }
+  return textureSampleLevel(villageTex, villageTexSampler, uv, 0.0);
 }
 /** Water surface level at a world point (m; −1e4 where there is none): render/water.js fills the
  *  world map at 4 m (WATER_LEVEL_WGSL is the same for vertex stages, which bind it themselves). */

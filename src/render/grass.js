@@ -52,12 +52,12 @@ export function createGrass(scene, clipmap, atmo, wind) {
     const rp = new Vector4(0, 1, 1, ri);
     const mat = new ShaderMaterial('grass' + ri, scene, { vertex: 'grass', fragment: 'grass' }, {
       attributes: ['position'],
-      uniforms: ['viewProjection', 'levels', 'grassRing', 'grassParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
+      uniforms: ['viewProjection', 'levels', 'villageBox', 'grassRing', 'grassParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
       storageBuffers: ['levelData', 'biomeA', 'windMap', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
       shaderLanguage: ShaderLanguage.WGSL,
     });
-    bindEnvironment(mat); bindAtmosphere(mat, atmo);
+    bindEnvironment(mat); bindAtmosphere(mat, atmo); mat.setVector4('villageBox', atmo.villageBox);
     mat.setArray4('levels', clipmap.levels);
     mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);

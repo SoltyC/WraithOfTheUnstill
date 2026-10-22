@@ -179,6 +179,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   const t0 = performance.now();
   /** Water surface level at (x, z) or NaN (render/water.js, once loaded): nothing grows in it. */
   let waterAt = null;
+  /** (x, z, extra m) → true inside the village's plots and roads (world/villageKeepout.js). */
+  let keepOut = null;
   /** Places with no trees ([x, z, r]): built sites, paths. */
   let exclude = [];
   function meadowAt(x, z) { streamer.mqx = x; streamer.mqz = z; streamer.sampleBiome(); return streamer.bw1; }
@@ -205,6 +207,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
     const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
     if (sl > 5) return false;
     for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
+    if (keepOut && keepOut(x, z, 0.6)) return false; // the village: plots (+2 m) and roads (half width + 2 m)
     if (waterAt) { const wl = waterAt(x, z); if (wl === wl && h < wl + 0.5) return false; }
     // Species: pines above ~330 m and on rises; oaks in the low groves; birches at edges.
     const hs = h01(gx, gz, SEED + 6), alt = Math.max(0, Math.min(1, (h - 280) / 120));
@@ -343,6 +346,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
     },
     /** Keep out of the water (render/water.js levelAt): re-places the trees and the canopy map. */
     setWater(fn) { waterAt = fn; lastX = 1e9; canopyDirty = true; },
+    /** Keep clear of the village's plots and roads. */
+    setKeepOut(fn) { keepOut = fn; lastX = 1e9; canopyDirty = true; },
     setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },
     makeShadowMaterial(name, light, origin) {
       const leaf = name.includes('-leaf-');

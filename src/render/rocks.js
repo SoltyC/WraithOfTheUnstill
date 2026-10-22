@@ -79,7 +79,11 @@ const fract = (v) => v - Math.floor(v);
  * (rx, rz) in its yawed frame, and its height above the ground it is seated on (`up`, after burial).
  */
 let qx = 0, qz = 0, qr = 0, qex = [], qcb = null;
+let keepOut = null;
+/** Keep rocks off the village's plots and roads (world/villageKeepout.js): (x, z, extra m) → true to skip. */
+export function setRockKeepOut(fn) { keepOut = fn; }
 function nearOk() {
+  if (keepOut && keepOut(R.x, R.z, R.size)) return false;
   for (let k = 0; k < qex.length; k++) { const e = qex[k], ex = R.x - e[0], ez = R.z - e[1], r = e[2] + R.size; if (ex * ex + ez * ez < r * r) return false; }
   const dx = R.x - qx, dz = R.z - qz, r = qr + R.size * 1.5;
   return dx * dx + dz * dz < r * r;
@@ -153,6 +157,7 @@ export function createRocks(scene, clipmap, atmo, matLib) {
   /** Places kept clear of rocks (built sites): [x, z, radius] each. */
   let exclude = [];
   function put(n, x, z, size, yaw, seed, aspect, burial, kind) {
+    if (keepOut && keepOut(x, z, size)) return;
     for (let k = 0; k < exclude.length; k++) {
       const e = exclude[k], ex = x - e[0], ez = z - e[1], r = e[2] + size;
       if (ex * ex + ez * ez < r * r) return;
@@ -211,6 +216,8 @@ export function createRocks(scene, clipmap, atmo, matLib) {
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
     /** Keep rocks out of these circles ([x, z, r]: the camp, the monastery, shrines…). */
     setExclusions(list) { exclude = list; cellX = NaN; },
+    /** The village's keep-out test (see setRockKeepOut); re-places the rocks. */
+    setKeepOut(fn) { keepOut = fn; cellX = NaN; },
     /** The exclusions (the CPU collision path keeps the same clear circles). */
     get exclusions() { return exclude; },
     /** The terrain state the rocks sit on (deformed snow); shadow casters made later bind it too. */
