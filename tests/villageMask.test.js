@@ -39,11 +39,11 @@ describe('village ground mask', () => {
     expect(maskAt(m, 60, 14)[0]).toBe(0);
   });
   it('rings the plots with trodden ground, stronger at the door', () => {
-    const front = maskAt(m, 20, -20 + 3 + 1)[2]; // facing 0: the front is +z
-    const back = maskAt(m, 20, -20 - 3 - 1)[2];
+    const front = maskAt(m, 20, -20 + 6 + 1)[2]; // facing 0: the front is +z (w, d are half-extents)
+    const back = maskAt(m, 20, -20 - 6 - 2.5)[2];
     expect(front).toBeGreaterThan(80);
     expect(front).toBeGreaterThan(back);
-    expect(maskAt(m, 20, -20 + 3 + 6)[2]).toBe(0);
+    expect(maskAt(m, 20, -20 + 6 + 8)[2]).toBe(0);
   });
   it('is zero outside the box', () => {
     expect(maskAt(m, 1e5, 1e5)).toEqual([0, 0, 0, 0]);

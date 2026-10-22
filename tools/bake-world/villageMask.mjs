@@ -5,7 +5,7 @@
 //   R  paved: cobble (roads of surface 'cobble', the square), a soft ~0.6 m worn edge, ragged border
 //   G  packed earth: earth roads (soft ~0.9 m edge), a narrow ring of earth round the cobbles,
 //      a faint track on the grass lanes
-//   B  yard / trodden: a ring of worn ground 1-3 m round every building's footprint, stronger and
+//   B  yard / trodden: a ring of worn ground 3-6.5 m round every building's footprint, stronger and
 //      wider at the front door, plus a little along the grass lanes
 //   A  surface variant as a CONTINUOUS ramp (bilinear-safe), 0..255 = t 0..3:
 //      0 mossy cobble, 1 setts, 2 river cobble, 3 flagstone. (mossy on lanes far from the market,
@@ -158,7 +158,7 @@ export function bakeVillageMask(village, opts = {}) {
     const small = p.kind === 'stall' || p.kind === 'well';
     const cf = Math.cos(p.facing), sf = Math.sin(p.facing);
     const rx = cf, rz = -sf, nx = sf, nz = cf;          // right and front-normal (village.js rectAxes)
-    const hw = p.w / 2, hd = p.d / 2, reach = (small ? 2.2 : 3.4) + 0.5;
+    const hw = p.w, hd = p.d, reach = (small ? 2.2 : 6.5) + 0.5; // w, d are half-extents already
     const [i0, i1, j0, j1] = range(p.at[0] - hw - hd - reach, p.at[1] - hw - hd - reach, p.at[0] + hw + hd + reach, p.at[1] + hw + hd + reach);
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
       const x = wx(i), z = wz(j), dx = x - p.at[0], dz = z - p.at[1];
@@ -167,7 +167,7 @@ export function bakeVillageMask(village, opts = {}) {
       if (sd > reach) continue;
       // Front weight: 1 straight in front of the door, 0 behind.
       const ahead = smooth(-0.3, 1.2, v - hd + 0.9) * (1 - smooth(hw * 0.9, hw * 1.9, Math.abs(u)) * 0.6);
-      const rad = small ? 1.4 + 0.8 * ahead : 1.0 + 2.0 * ahead;          // 1-3 m
+      const rad = small ? 1.4 + 0.8 * ahead : 3.0 + 3.5 * ahead;          // 3-6.5 m: gardens and yards, not hay
       const k = (1 - smooth(rad * 0.25, rad, Math.max(sd, 0) + border(x, z, 31) * 0.35)) * (0.5 + 0.5 * ahead) * (small ? 0.6 : 1);
       const o = j * N + i;
       if (k > B[o]) B[o] = k;

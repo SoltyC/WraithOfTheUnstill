@@ -1,0 +1,2 @@
+2026-10-22T20:40:13.275Z 1/1 p8-village-aerial: saved screenshots/village-3/p8-village-aerial.png
+2026-10-22T20:40:13.280Z Shots done: 1/1 spot(s) (p8-village-a*) → screenshots/village-3/.
