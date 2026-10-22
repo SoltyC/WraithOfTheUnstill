@@ -111,14 +111,14 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
           attributes: ['position', 'normal', 'uv', 'info'],
           uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
           samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas', 'leafSurface'] : MAT_SAMPLERS)],
-          storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+          storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
           shaderLanguage: ShaderLanguage.WGSL,
         });
         bindEnvironment(mat); bindAtmosphere(mat, atmo);
         if (leaf) { mat.setTexture('leafAtlas', atlas); mat.setTexture('leafSurface', atlases.surface); } else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
         mat.setVector4('treeParams', params); mat.setArray4('windField', wind.block); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
-        mat.setArray4('spellLights', clipmap.spellLights);
+        mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
         mat.backFaceCulling = leaf ? false : true;
         mesh.material = mat;
         meshes.push(mesh); mats.push(mat);

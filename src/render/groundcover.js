@@ -48,7 +48,7 @@ export function createGroundCover(scene, clipmap, atmo, push, wind) {
     attributes: ['position'],
     uniforms: ['viewProjection', 'levels', 'gcParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, 'gcAtlas'],
-    storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
@@ -57,7 +57,7 @@ export function createGroundCover(scene, clipmap, atmo, push, wind) {
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
   mat.setStorageBuffer('windMap', clipmap.buffers.wind);
   mat.setVector4('gcParams', params); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
-  mat.setArray4('spellLights', clipmap.spellLights);
+  mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
   mat.setTexture('gcAtlas', canvasAtlasTexture(scene.getEngine(), scene, drawGroundAtlas(), 'ground-atlas'));
   mat.backFaceCulling = false;
   mesh.material = mat;

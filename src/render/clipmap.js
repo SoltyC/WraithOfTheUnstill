@@ -19,6 +19,7 @@ import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js'; // s
 import { ENV_UNIFORMS, LIGHT_SLOTS } from '../shaders/common.wgsl.js';
 import { clipmapVertexWGSL, clipmapFragmentWGSL, CLIPMAP_N, CLIPMAP_LEVELS } from '../shaders/clipmap.wgsl.js';
 import { clipmapHeightsWGSL, clipmapNormalsWGSL, CLIPMAP_V } from '../shaders/clipmapCompute.wgsl.js';
+import { GRID_FLOATS } from './lightGrid.js';
 import { bindEnvironment } from './environment.js';
 import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
@@ -94,7 +95,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
     uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
-    storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
+    storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat);
@@ -106,6 +107,9 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   bindMaterialLibrary(mat, matLib); // scanned rock on the cliffs
   const spellLights = new Float32Array(LIGHT_SLOTS * 8);
   mat.setArray4('spellLights', spellLights);
+  // World-light grid (render/lightGrid.js): one storage buffer shared by every lit material, written by systems/lights.js.
+  const lightGrid = new StorageBuffer(engine, GRID_FLOATS * 4, undefined, 'light-grid');
+  mat.setStorageBuffer('lightGrid', lightGrid);
   mat.setStorageBuffer('levelData', levelData);
   mat.setStorageBuffer('biomeA', buffers.biomeA);
   mat.setStorageBuffer('biomeB', buffers.biomeB);
@@ -118,7 +122,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   let builtResidency = -1;
 
   return {
-    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers, spellLights,
+    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers, spellLights, lightGrid,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
     /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
     stateBound: [],

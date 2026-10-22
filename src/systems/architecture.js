@@ -19,7 +19,7 @@ export function addArchitectureSystem(g) {
   const built = buildArchitecture(sites);
   // Drawn as chunks (a 128 m cell of sites each; the NPC-held props apart), one shared material.
   const view = g.architecture = createArchitectureView(scene, atmosphere, chunkArchitecture(sites, built), g.matLib);
-  view.material.setArray4('spellLights', g.content.clipmap.spellLights); // fire and spell light on stone and felt
+  view.material.setArray4('spellLights', g.content.clipmap.spellLights); view.material.setStorageBuffer('lightGrid', g.content.clipmap.lightGrid); // fire and spell light on stone and felt
   g.archSites = sites;
   bindShadows(view.material, shadows);
   for (const c of view.chunks) shadows.addCaster(c.mesh, view.makeShadowMaterial, 1);

@@ -32,7 +32,7 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
     attributes: ['position', 'normal', 'uv', 'info'],
     uniforms: ['viewProjection', 'sites', 'siteGlow', 'archParams', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
-    storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);

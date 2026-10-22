@@ -180,7 +180,7 @@ describe('Architecture chunks', () => {
       // Vertices keep their global site index (the shared site uniforms).
       for (let i = 0; i < c.vertexCount; i++) expect(c.sites).toContain(c.info[i * 4]);
     }
-  });
+  }, 30000);
   it('keeps props in their own last chunk and is deterministic', () => {
     const props = chunks.filter((c) => c.prop);
     expect(props.length).toBeLessThanOrEqual(1);

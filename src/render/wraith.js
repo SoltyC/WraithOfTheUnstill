@@ -90,7 +90,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
     uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'clothRobe', 'clothBand', 'clothSash', 'spellLights', ...ENV_UNIFORMS],
-    samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage],
+    samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage, 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
@@ -104,6 +104,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   // Robe look (game/robes.js): x = embroidered hem band on, y = sash re-dyed; band / sash colours.
   const robeV = new Vector4(0, 0, 0, 0), bandV = new Vector4(0, 0, 0, 0), sashV = new Vector4(0, 0, 0, 0);
   mat.setVector4('clothTint', tintV); mat.setVector4('clothRobe', robeV); mat.setVector4('clothBand', bandV); mat.setVector4('clothSash', sashV);
+  mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
   mat.setArray4('spellLights', clipmap.spellLights); // fire, lantern and spell light on the robe
   mat.backFaceCulling = false;
   mesh.material = mat;
