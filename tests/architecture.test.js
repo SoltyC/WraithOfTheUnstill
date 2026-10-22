@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
-import { frostSites, meadowSites, buildArchitecture, chunkArchitecture, MAT, HUB } from '../src/world/architecture.js';
+import { frostSites, meadowSites, swatches, buildArchitecture, chunkArchitecture, MAT, HUB } from '../src/world/architecture.js';
 import { ARCH_SITES } from '../src/shaders/architecture.wgsl.js';
 import { createSolids } from '../src/world/solids.js';
 
@@ -190,5 +190,23 @@ describe('Architecture chunks', () => {
   });
   it('bounds each chunk\'s sites horizontally', () => {
     for (const c of chunks) if (!c.prop) for (const i of c.sites) expect(Math.hypot(all[i].at[0] - c.cx, all[i].at[1] - c.cz)).toBeLessThanOrEqual(c.radius + 1e-6);
+  });
+});
+
+describe('Village materials and the swatch builder', () => {
+  it('has the village MAT ids', () => {
+    expect([MAT.PLASTER, MAT.THATCH, MAT.SLATE, MAT.TILE, MAT.SHINGLE, MAT.PLANK, MAT.COBBLE, MAT.FLAG, MAT.EARTH, MAT.IRON, MAT.GLASS]).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+  });
+  it('builds the swatch site without NaN, using every new material, as single chamfered pieces', () => {
+    const b = buildArchitecture([{ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center' }]);
+    const n = b.positions.length / 3;
+    expect(n).toBeGreaterThan(100);
+    for (const a of [b.positions, b.normals, b.uvs, b.info]) for (const v of a) expect(Number.isFinite(v)).toBe(true);
+    let maxI = 0; for (const i of b.indices) if (i > maxI) maxI = i;
+    expect(maxI).toBeLessThan(n);
+    const mats = new Set(); for (let i = 0; i < n; i++) mats.add(b.info[i * 4 + 1]);
+    for (let m = MAT.PLASTER; m <= MAT.GLASS; m++) expect(mats.has(m)).toBe(true);
+    for (let i = 0; i < n; i += 13) expect(Math.hypot(b.normals[i * 3], b.normals[i * 3 + 1], b.normals[i * 3 + 2])).toBeCloseTo(1, 4);
+    expect(b.blockers.length).toBe(0);
   });
 });

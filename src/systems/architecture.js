@@ -3,7 +3,7 @@
 // Wraith has rested at keep a cold light in their glyphs; the monastery's wake when the steppe is
 // restored; the camp's fire burns brighter at night.
 
-import { frostSites, meadowSites, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
+import { frostSites, meadowSites, swatches, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
 import { SHADOW_SPLITS } from '../render/shadows.js';
@@ -14,6 +14,9 @@ export function addArchitectureSystem(g) {
   const { loop, engine, camera, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
   // The frost chapter's sites, then the meadow hub's (appended: the frost indices never change).
   const sites = [...frostSites(chapter.table, g.routes), ...meadowSites()];
+  // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
+  // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });
   // Pillars start sunk below the snow (the Warden's fight raises them).
   for (const s of sites) if (s.pillar) s.sink = (s.pillarH || ARENA.pillarH) + 1.2;
   const built = buildArchitecture(sites);
@@ -137,13 +140,15 @@ export function addArchitectureSystem(g) {
       const y = s.seatY - s.sink;
       view.sites[i * 4 + 1] = y; solids.sites[i].seat = y;
     }
-    // Glyph light: shrines rested at; the monastery once the steppe is restored.
+    // Glyph light (siteGlow.x): shrines rested at; the monastery once the steppe is restored. A site with
+    // `windows: true` (the village) uses the same channel as its night factor 0..1 for lit windows (MAT.GLASS):
+    // x is read by the shader only for MAT.GLYPH carvings, which the village does not have.
+    const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5 ? 1 : tod < 7 || tod > 17.5 ? 0.5 : 0.2;
     for (let i = 0; i < sites.length; i++) {
       const id = sites[i].id;
-      const want = sites[i].glow !== undefined ? sites[i].glow : id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
+      const want = sites[i].glow !== undefined ? sites[i].glow : sites[i].windows ? (night - 0.2) / 0.8 : id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
       view.glow[i * 4] += (want - view.glow[i * 4]) * Math.min(1, clock.realDt * 0.8);
     }
-    const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5 ? 1 : tod < 7 || tod > 17.5 ? 0.5 : 0.2;
     view.glow[camp * 4 + 1] = night;
     for (let i = 0; i < sites.length; i++) if (sites[i].kind === 'lantern') view.glow[i * 4 + 1] = 0.35 + 0.65 * night;
     view.params.x = clock.simTime; view.params.y = weather.snow; view.params.z = restoration.value;

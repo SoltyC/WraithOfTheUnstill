@@ -581,6 +581,13 @@ analytic solids (not 800 platforms).
    `p8-summit`; shots `screenshots/hill-5/`. The old hub buildings still stand at (−30, 1030).
 2. **Materials** — 11 CC0 scans (plaster, thatch, slate, terracotta, cobbles ×2, flagstones,
    earth, planks, siding, iron; plan-materials.md), new MAT ids, roads in the ground. (2–3)
+   **Stage 2 done (2026-10-22):** 12 CC0 layers (19–30: plaster, thatch, roof-slate, roof-clay,
+   siding, planks, cobble-setts/river/mossy, flagstone, earth, iron; ASSETS.md); architecture MATs
+   8–18 (PLASTER … GLASS) with retints, plaster grime and streaks, thatch scatter, iron sheen,
+   leaded windows that glow at night (per-site `windows: true`, `siteGlow.x`). Dev swatch wall:
+   `?swatches=1` with spots `dev-swatches(-night)`; shots `screenshots/swatch-1/`. Roads painted
+   into the ground move to stage 3 (they follow the street layout). Known: roof tops use plan uv
+   (a slight stretch along the slope); iron reads streaky on a big panel (fine for fittings).
 3. **Village** — ~10 house kits with real timber framing and per-instance variation, market,
    workshops, farms, chapel, bridge; glowing windows; lanterns; daytime life. (5–6)
 4. **Stair and manor** — flights, terraces, retaining walls; the run-down manor and arena. (4–5)

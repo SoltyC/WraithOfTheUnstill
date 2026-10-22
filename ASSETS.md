@@ -26,6 +26,18 @@ local cache (outside the repository) and packs them into `data/textures/<id>.{al
 | timber | [rough_wood](https://polyhaven.com/a/rough_wood) | CC0 | weathered timber — sleds, poles, beams, staffs |
 | wool | [poly_wool_herringbone](https://polyhaven.com/a/poly_wool_herringbone) | CC0 | felt and wool — tents, bundles, robe detail |
 | linen | [rough_linen](https://polyhaven.com/a/rough_linen) | CC0 | linen — wrappings, bier cloth |
+| plaster | [plastered_wall](https://polyhaven.com/a/plastered_wall) | CC0 | village walls — cream lime plaster between timber framing (retinted; stains procedural) |
+| thatch | [reed_roof_03](https://polyhaven.com/a/reed_roof_03) | CC0 | village roofs — reed thatch |
+| roof-slate | [grey_roof_tiles](https://polyhaven.com/a/grey_roof_tiles) | CC0 | village roofs — grey slate |
+| roof-clay | [clay_roof_tiles_02](https://polyhaven.com/a/clay_roof_tiles_02) | CC0 | village roofs and pots — clay tile (desaturated) |
+| siding | [weathered_plank_siding](https://polyhaven.com/a/weathered_plank_siding) | CC0 | barns and lean-tos — lapped plank siding; shingles by procedural cuts |
+| planks | [weathered_planks](https://polyhaven.com/a/weathered_planks) | CC0 | doors, shutters, crates, stalls — weathered vertical boards |
+| cobble-setts | [cobblestone_floor_03](https://polyhaven.com/a/cobblestone_floor_03) | CC0 | village streets — small cobble setts |
+| cobble-river | [cobblestone_floor_08](https://polyhaven.com/a/cobblestone_floor_08) | CC0 | courtyards, the stream edge — large rounded cobbles |
+| flagstone | [rock_path](https://polyhaven.com/a/rock_path) | CC0 | paths and the stair landings — irregular flagstones |
+| earth | [dirt_floor](https://polyhaven.com/a/dirt_floor) | CC0 | tracks and yards — packed earth |
+| cobble-mossy | [mossy_cobblestone](https://polyhaven.com/a/mossy_cobblestone) | CC0 | the bridge and old lanes — mossy cobbles |
+| iron | [rusty_metal_04](https://polyhaven.com/a/rusty_metal_04) | CC0 | fittings, sconces, railings — dark wrought iron |
 
 ### Music (Phase 7)
 

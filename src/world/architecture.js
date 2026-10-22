@@ -14,7 +14,9 @@
 import { chamferBlock, layWall, columnDrums, snowDrift, snowPillow, h2 } from './masonry.js';
 import { feltTent, stick } from './camp.js';
 
-export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6, SNOW: 7 };
+export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6, SNOW: 7,
+  // The village (docs/village/plan-materials.md): each a single chamfered piece like WOOD, no snow caps.
+  PLASTER: 8, THATCH: 9, SLATE: 10, TILE: 11, SHINGLE: 12, PLANK: 13, COBBLE: 14, FLAG: 15, EARTH: 16, IRON: 17, GLASS: 18 };
 const FOUND = 3; // m of foundation below the seat
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -90,7 +92,7 @@ class Builder {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     // Shaper stone is laid, not boxed (world/masonry.js): plinths get walled sides and paving,
     // walls and piers coursed blocks, everything else one chamfered block.
-    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS || mat === MAT.METAL || mat === MAT.EMBER) && !plain) {
+    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS || mat === MAT.METAL || mat === MAT.EMBER || (mat >= MAT.PLASTER && mat <= MAT.GLASS)) && !plain) {
       const flat = tilt === 0 && roll === 0;
       // Snow banked against whatever stands on the ground (or on a floor) — never a hard line.
       const stone = mat === MAT.STONE || mat === MAT.GLYPH;
@@ -899,6 +901,32 @@ function millSails(b, facing, R) {
       }
     }
   }
+}
+
+/** Dev swatch site (?swatches=1, systems/architecture.js): one sample of each village material in
+ *  short rows. Site-local metres; the viewer stands at z = -9 looking +z (photo spot "dev-swatches").
+ *  Labels by position (x across, z away from the viewer):
+ *   front row  z -4..0, 4 x 4 m floor slabs:  x -4 COBBLE (setts / river / mossy by seed), x 0 FLAG, x +4 EARTH
+ *   wall row   z = +4, 3 x 3 m, 0.3 m thick:  x -8 PLASTER, x -4 PLANK, x 0 SHINGLE, x +4 IRON,
+ *              x +8 GLASS: three 0.7 x 1.2 m quarry windows set into plaster (seeds 901..903)
+ *   roof row   z = +10, plaster huts under a pitched roof:  x -4 THATCH, x 0 SLATE, x +4 TILE */
+export function swatches(b) {
+  const S = (mat, x, z, y0, y1, hx, hz, seed, o = {}) => b.box(x, z, y0, y1, hx, hz, 0, mat, seed, { solid: false, ...o });
+  [[-4, MAT.COBBLE, 20], [0, MAT.FLAG, 37], [4, MAT.EARTH, 54]].forEach(([x, m, sd]) => S(m, x, -2, -0.3, 0.03, 1.95, 1.95, sd));
+  [[-8, MAT.PLASTER, 11], [-4, MAT.PLANK, 12], [0, MAT.SHINGLE, 13], [4, MAT.IRON, 14]].forEach(([x, m, sd]) => S(m, x, 4, 0, 3, 1.5, 0.15, sd));
+  const gx = 8; // sill and head strips, piers between the openings, glass in them
+  S(MAT.PLASTER, gx, 4, 0, 1.0, 1.5, 0.15, 15); S(MAT.PLASTER, gx, 4, 2.2, 3, 1.5, 0.15, 16);
+  [[-1.425, 0.075], [-0.5, 0.15], [0.5, 0.15], [1.425, 0.075]].forEach(([dx, hx], i) => S(MAT.PLASTER, gx + dx, 4, 1.0, 2.2, hx, 0.15, 17 + i));
+  [-1, 0, 1].forEach((k, i) => S(MAT.GLASS, gx + k, 4, 1.0, 2.2, 0.35, 0.05, 901 + i));
+  // Pitched roofs: two slabs tilted about their own x (the slope runs along z); eave at the wall top.
+  const th = 0.6, ct = Math.cos(th), st = Math.sin(th), run = 1.45, hy = 0.07, yw = 2.0;
+  [[-4, MAT.THATCH, 21, 0.14], [0, MAT.SLATE, 22, 0.06], [4, MAT.TILE, 23, 0.06]].forEach(([x, m, sd, hh]) => {
+    S(MAT.PLASTER, x, 10, 0, yw, 1.3, 1.0, sd + 10);
+    for (const side of [-1, 1]) {
+      const cyS = yw + 0.5 * run * Math.tan(th) - hh * ct, czS = 10 + side * (0.5 * run + hh * st); // slab centre = surface centre − normal × half-thickness
+      S(m, x, czS, cyS - hh, cyS + hh, 1.55, run / ct / 2 + 0.06, sd + side, { tilt: side * th });
+    }
+  });
 }
 
 /** Where the hub stands (a river terrace in the meadow, found in the world bake) and the way the

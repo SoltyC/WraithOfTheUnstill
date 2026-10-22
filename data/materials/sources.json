@@ -134,6 +134,90 @@
       "source": "polyhaven",
       "asset": "bark_platanus",
       "use": "smooth mottled bark — birch/rowan-like trunks"
+    },
+    {
+      "layer": 19,
+      "id": "plaster",
+      "source": "polyhaven",
+      "asset": "plastered_wall",
+      "use": "village walls — cream lime plaster between timber framing (retinted; stains procedural)"
+    },
+    {
+      "layer": 20,
+      "id": "thatch",
+      "source": "polyhaven",
+      "asset": "reed_roof_03",
+      "use": "village roofs — reed thatch"
+    },
+    {
+      "layer": 21,
+      "id": "roof-slate",
+      "source": "polyhaven",
+      "asset": "grey_roof_tiles",
+      "use": "village roofs — grey slate"
+    },
+    {
+      "layer": 22,
+      "id": "roof-clay",
+      "source": "polyhaven",
+      "asset": "clay_roof_tiles_02",
+      "use": "village roofs and pots — clay tile (desaturated)"
+    },
+    {
+      "layer": 23,
+      "id": "siding",
+      "source": "polyhaven",
+      "asset": "weathered_plank_siding",
+      "use": "barns and lean-tos — lapped plank siding; shingles by procedural cuts"
+    },
+    {
+      "layer": 24,
+      "id": "planks",
+      "source": "polyhaven",
+      "asset": "weathered_planks",
+      "use": "doors, shutters, crates, stalls — weathered vertical boards"
+    },
+    {
+      "layer": 25,
+      "id": "cobble-setts",
+      "source": "polyhaven",
+      "asset": "cobblestone_floor_03",
+      "use": "village streets — small cobble setts"
+    },
+    {
+      "layer": 26,
+      "id": "cobble-river",
+      "source": "polyhaven",
+      "asset": "cobblestone_floor_08",
+      "use": "courtyards, the stream edge — large rounded cobbles"
+    },
+    {
+      "layer": 27,
+      "id": "flagstone",
+      "source": "polyhaven",
+      "asset": "rock_path",
+      "use": "paths and the stair landings — irregular flagstones"
+    },
+    {
+      "layer": 28,
+      "id": "earth",
+      "source": "polyhaven",
+      "asset": "dirt_floor",
+      "use": "tracks and yards — packed earth"
+    },
+    {
+      "layer": 29,
+      "id": "cobble-mossy",
+      "source": "polyhaven",
+      "asset": "mossy_cobblestone",
+      "use": "the bridge and old lanes — mossy cobbles"
+    },
+    {
+      "layer": 30,
+      "id": "iron",
+      "source": "polyhaven",
+      "asset": "rusty_metal_04",
+      "use": "fittings, sconces, railings — dark wrought iron"
     }
   ]
 }

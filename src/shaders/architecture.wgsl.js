@@ -144,7 +144,25 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let bseed = select(hs, dc.y, drawn);
   var layer = select(MAT_STONE_PALE, MAT_STONE_DRESSED, bseed > 0.62 || mid == 1);
   if (mid == 2) { layer = MAT_WOOL; } else if (mid == 3) { layer = MAT_TIMBER; }
-  let texScale = select(select(0.55, 1.6, mid == 2), 0.9, mid == 3);
+  var texScale = select(select(0.55, 1.6, mid == 2), 0.9, mid == 3);
+  // The village (MAT 8..18): one scan each, chosen here before the single sample; texScale = 1 / metres per repeat.
+  if (mid >= 8) {
+    // Cobble: setts, river cobbles or mossy ones, by piece (the seed).
+    let cobble = select(select(MAT_COBBLE_RIVER, MAT_COBBLE_MOSSY, hs > 0.8), MAT_COBBLE_SETTS, hs < 0.45);
+    var tile = 1.0;
+    if (mid == 8) { layer = MAT_PLASTER; tile = 1.2; }
+    else if (mid == 9) { layer = MAT_THATCH; tile = 1.5; }
+    else if (mid == 10) { layer = MAT_ROOF_SLATE; tile = 1.0; }
+    else if (mid == 11) { layer = MAT_ROOF_CLAY; tile = 1.0; }
+    else if (mid == 12) { layer = MAT_SIDING; tile = 1.2; }
+    else if (mid == 13) { layer = MAT_PLANKS; tile = 0.9; }
+    else if (mid == 14) { layer = cobble; tile = 1.2; }
+    else if (mid == 15) { layer = MAT_FLAGSTONE; tile = 2.0; }
+    else if (mid == 16) { layer = MAT_EARTH; tile = 2.0; }
+    else if (mid == 17) { layer = MAT_IRON; tile = 0.6; }
+    else { layer = MAT_PLASTER; }   // glass: no scan of its own, the sample is unused
+    texScale = 1.0 / tile;
+  }
   // Derivatives from the continuous uv: the per-block offset jumps at every block's edge.
   let cuv = uv * texScale;
   let tuv = cuv + vec2f(fract(bseed * 7.13), fract(bseed * 3.71)) * 7.0;
@@ -156,6 +174,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var ssr = 0.0;
   var trans = 0.0;           // light through (canvas)
   var ao = 1.0;
+  var scatter = 0.0;         // light through thin reed at grazing angles (thatch)
+  var sheen = 0.0;           // a faint metallic broad highlight (iron)
   let n1 = noised(wp.xz * 1.7 + wp.y * 0.9).x;
   let n2 = noised(wp.xz * 0.35 + vec2f(seed)).x;
   let topFace = abs(N.y) > 0.7;
@@ -210,6 +230,77 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Weathered timber: the scan, silvered by the cold.
     albedo = matRetint(ms, layer, vec3f(0.2, 0.17, 0.14), 0.5);
     N = ms.N; rough = mix(0.6, 1.0, ms.rough); ao = mix(1.0, ms.ao, 0.8);
+  } else if (mid >= 8 && mid <= 17) {
+    // The village. Each: the scan retinted toward the palette (matRetint), a little variation by piece (hs).
+    let vary = vec3f(1.0 + 0.06 * (hs - 0.5), 1.0, 1.0 - 0.08 * (hs - 0.5)) * (0.9 + 0.2 * fract(hs * 5.3));
+    let lowY = fragmentInputs.vLocalY;
+    N = ms.N; ao = mix(1.0, ms.ao, 0.8);
+    if (mid == 8) {
+      // Plaster: cream, grimed toward the ground (splash-back and dirt), faint vertical streaks from sills and eaves.
+      albedo = matRetint(ms, layer, vec3f(0.7, 0.64, 0.53), 0.45) * vary;
+      let streak = noised(vec2f(uv.x * 4.5 + seed * 1.7, uv.y * 0.35)).x * 0.5 + 0.5;
+      albedo *= 1.0 - 0.2 * smoothstep(0.55, 0.9, streak) * smoothstep(0.0, 1.8, 3.2 - lowY) * ar_fade(0.6, fp);
+      albedo *= mix(1.0, 0.55, smoothstep(1.1, -0.1, lowY) * (0.55 + 0.45 * n2));
+      albedo *= 1.0 - 0.1 * smoothstep(0.4, 0.8, n1 * 0.5 + 0.5 + 0.2 * n2);
+      rough = mix(0.8, 1.0, ms.rough);
+    } else if (mid == 9) {
+      // Thatch: muted brown reed, matt; no specular, a little light through it at grazing angles.
+      albedo = matRetint(ms, layer, vec3f(0.34, 0.275, 0.17), 0.55) * vary;
+      albedo *= mix(1.0, 0.7, smoothstep(0.9, 0.0, ms.ao) * 0.6);
+      rough = 1.0; scatter = 1.0;
+    } else if (mid == 10) {
+      // Slate: cool grey, a little sheen.
+      albedo = matRetint(ms, layer, vec3f(0.2, 0.215, 0.235), 0.6) * vary;
+      rough = mix(0.4, 0.75, ms.rough);
+    } else if (mid == 11) {
+      // Clay tile: desaturated terracotta.
+      albedo = matRetint(ms, layer, vec3f(0.47, 0.27, 0.18), 0.65) * vary;
+      rough = mix(0.65, 0.95, ms.rough);
+    } else if (mid == 12) {
+      // Shingle: the lapped siding, silvered brown, cut into shingles (courses 0.18 m, joints staggered).
+      albedo = matRetint(ms, layer, vec3f(0.3, 0.245, 0.185), 0.5) * vary;
+      let row = floor(uv.y / 0.18);
+      let fx = fract((uv.x + ar_hash(vec2f(row, seed)) * 0.15) / 0.15) * 0.15;
+      let cut = max(1.0 - smoothstep(0.003, 0.011, min(fx, 0.15 - fx)), 1.0 - smoothstep(0.004, 0.016, fract(uv.y / 0.18) * 0.18));
+      albedo *= 1.0 - 0.45 * cut * ar_fade(0.15, fp) * (0.7 + 0.3 * ar_hash(vec2f(row, floor(uv.x / 0.15)) + seed));
+      rough = mix(0.65, 1.0, ms.rough);
+    } else if (mid == 13) {
+      // Planks: dark weathered oak.
+      albedo = matRetint(ms, layer, vec3f(0.16, 0.12, 0.085), 0.5) * vary;
+      rough = mix(0.6, 1.0, ms.rough);
+    } else if (mid == 14) {
+      // Cobbles: warm grey, darker in the joints (the scan's ao); mossy ones keep their own green.
+      let mossy = layer == MAT_COBBLE_MOSSY;
+      albedo = select(matRetint(ms, layer, vec3f(0.4, 0.37, 0.33), 0.7) * vary, ms.albedo * 0.85, mossy);
+      albedo *= mix(0.55, 1.0, smoothstep(0.2, 0.8, ms.ao));
+      rough = mix(0.75, 1.0, ms.rough);
+    } else if (mid == 15) {
+      albedo = matRetint(ms, layer, vec3f(0.36, 0.34, 0.31), 0.65) * vary;
+      rough = mix(0.75, 1.0, ms.rough);
+    } else if (mid == 16) {
+      albedo = matRetint(ms, layer, vec3f(0.3, 0.22, 0.15), 0.6) * vary;
+      rough = 1.0;
+    } else {
+      // Iron: dark, a faint sheen, rust left in the crevices and edges (low occlusion).
+      albedo = matRetint(ms, layer, vec3f(0.075, 0.075, 0.08), 0.25);
+      albedo = mix(albedo, vec3f(0.2, 0.09, 0.045), 0.45 * smoothstep(0.7, 0.25, ms.ao));
+      rough = mix(0.38, 0.62, ms.rough); sheen = 1.0;
+    }
+  } else if (mid == 18) {
+    // Leaded quarry glass: dim greenish panes in dark diamond cames (lattice in the quad's uv, metres);
+    // lit from inside at night (siteGlow.x = night factor of a village site), some windows left dark.
+    let dpx = uv / 0.14;                                    // pane size 0.14 m
+    let dq = vec2f(dpx.x + dpx.y, dpx.x - dpx.y);
+    let dl = min(abs(fract(dq.x + 0.5) - 0.5), abs(fract(dq.y + 0.5) - 0.5)) * 0.14 * 0.7071;
+    let lead = max(max(1.0 - smoothstep(0.004, 0.0075, dl), 1.0 - smoothstep(0.03, 0.045, min(min(uv.x, 0.7 - uv.x), min(uv.y, 1.2 - uv.y)))), step(5.5, info.w));
+    let pane = floor(dq);
+    let ph = ar_hash(pane + seed);
+    let glass = vec3f(0.03, 0.055, 0.045) * (0.8 + 0.5 * ph) + vec3f(0.02, 0.03, 0.03) * smoothstep(0.3, 0.9, n1 * 0.5 + 0.5);
+    albedo = mix(glass, vec3f(0.035, 0.033, 0.03), lead);
+    rough = mix(0.08, 0.55, lead); ao = 1.0; N = normalize(N + (ph - 0.5) * 0.015 * vec3f(1.0, 0.0, 1.0) * (1.0 - lead));
+    let lit = step(0.35, fract(seed * 0.7548776662));        // some windows stay dark
+    let flick = 0.85 + 0.15 * sin(t * (5.0 + 3.0 * fract(seed * 0.318)) + seed * 7.0) * (0.6 + 0.4 * sin(t * 2.3 + seed));
+    emit = vec3f(1.0, 0.62, 0.28) * (1.0 - lead) * (0.8 + 0.4 * ph) * flick * lit * glowS.x * 0.85 * select(0.0, 1.0, info.w < 5.5);
   } else if (mid == 4) {
     // Ice: dark, clear, glossy; the SSR pass reflects the world in it.
     albedo = vec3f(0.06, 0.1, 0.13) + vec3f(0.12, 0.18, 0.22) * smoothstep(0.2, 0.9, n1);
@@ -232,7 +323,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var snow = 0.0;
   // A site with no hearth (y = 0) and z = 1 lies below the snowline (the meadow's): no snow.
   let snowless = glowS.y <= 0.0 && glowS.z > 0.5;
-  if (mid != 5 && mid != 4 && !snowless) {
+  if (mid != 5 && mid != 4 && mid != 18 && !snowless) {
     let Ng = normalize(fragmentInputs.vNormal) * sign(dot(fragmentInputs.vNormal, V));
     let up = smoothstep(0.55, 0.85, Ng.y + 0.12 * n1 + 0.1 * n2 + 0.25 * (0.5 - ms.h)) * (0.55 + 0.45 * uniforms.archParams.y);
     let drift = (1.0 - smoothstep(0.05, 0.35 + 0.15 * n2, fragmentInputs.vLocalY)) * select(0.0, 1.0, mid <= 1);
@@ -261,6 +352,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col += albedo * key * clamp(-nl, 0.0, 1.0) * vis * 0.35;
     emit += vec3f(1.0, 0.55, 0.24) * albedo * glowS.y * 0.55 * (0.85 + 0.15 * sin(t * 6.1 + seed));
   }
+  // Thatch: forward-scattered sun through the reed at grazing views.
+  col += scatter * albedo * key * vis * pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0) * (0.3 + 0.7 * clamp(dot(-L, V), 0.0, 1.0)) * 0.3;
   let H = normalize(L + V);
   // Specular anti-aliasing: where the normal turns faster than a pixel can show (the scan's
   // detail far off), the highlight widens instead of sparkling under the TAA jitter.
@@ -268,6 +361,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   rough = max(rough, clamp(nVar * 0.6, 0.0, 0.9));
   let shin = mix(16.0, 140.0, 1.0 - rough);
   col += key * pow(max(dot(N, H), 0.0), shin) * (1.0 - rough) * 0.6 * vis * clamp(nl, 0.0, 1.0);
+  col += sheen * key * pow(max(dot(N, H), 0.0), 20.0) * vis * clamp(nl, 0.0, 1.0) * (albedo * 3.0 + 0.012);
   // Firelight on the camp's stones, packs and snow: falls off from the hearth (site origin).
   let s0 = uniforms.siteGlow[site];
   if (s0.y > 0.0 && trans == 0.0) {

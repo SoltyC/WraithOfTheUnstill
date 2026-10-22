@@ -1794,6 +1794,8 @@
     { "id": "p8-stair-foot", "biome": "meadow", "label": "The foot of the stair, looking up the first flight round the hill", "time": 15.5, "weather": "clear", "player": [150, 874], "restoration": "restored", "camera": { "mode": "follow", "yaw": 0.95, "pitch": -0.05, "dist": 5 } },
     { "id": "p8-summit", "biome": "meadow", "label": "From the summit: the village ground, the stream and the lakes far below", "time": 16.4, "weather": "clear", "player": [252, 976], "restoration": "restored", "camera": { "mode": "follow", "yaw": 4.1, "pitch": 0.3, "dist": 9 } },
     { "id": "p8-hill-aerial", "biome": "meadow", "label": "The hill and the village ground from the air", "time": 15.5, "weather": "clear", "player": [80, 900], "restoration": "restored", "camera": { "mode": "follow", "yaw": 1.2, "pitch": 0.55, "dist": 150 } },
-    { "id": "p8-stair-mid", "biome": "meadow", "label": "Halfway up the stair: the flight ahead curving round the hill, the village below", "time": 16.8, "weather": "clear", "player": [407, 1004], "restoration": "restored", "camera": { "mode": "follow", "yaw": 3.6, "pitch": 0.12, "dist": 7 } }
+    { "id": "p8-stair-mid", "biome": "meadow", "label": "Halfway up the stair: the flight ahead curving round the hill, the village below", "time": 16.8, "weather": "clear", "player": [407, 1004], "restoration": "restored", "camera": { "mode": "follow", "yaw": 3.6, "pitch": 0.12, "dist": 7 } },
+    { "id": "dev-swatches", "biome": "meadow", "label": "Dev: village material swatches (?swatches=1), day", "time": 15.5, "weather": "clear", "player": [95, 966], "restoration": "restored", "camera": { "mode": "follow", "yaw": 0, "pitch": 0.12, "dist": 9 } },
+    { "id": "dev-swatches-night", "biome": "meadow", "label": "Dev: village material swatches (?swatches=1), night windows", "time": 22.5, "weather": "clear", "player": [95, 966], "restoration": "restored", "camera": { "mode": "follow", "yaw": 0, "pitch": 0.12, "dist": 9 } }
 ]
 }
