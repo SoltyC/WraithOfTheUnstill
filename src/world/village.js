@@ -183,7 +183,7 @@ export function villageLayout(world, opts = {}) {
   }
   const Rsq = 13 + h01(seed, 11, 1) * 2.5;
   const dM = (x, z) => dist(x, z, M[0], M[1]);
-  const districtAt = (x, z) => { const d = dM(x, z); return d < 62 ? 'centre' : d < 112 ? 'lower' : d < 160 ? 'edge' : 'farm'; };
+  const districtAt = (x, z) => { const d = dM(x, z); return d < 66 ? 'centre' : d < 125 ? 'lower' : d < 165 ? 'edge' : 'farm'; };
 
   // ---- lazy cost grid for A*
   const CELL = 5, N = 110, GX = M[0] - (N * CELL) / 2, GZ = M[1] - (N * CELL) / 2;
@@ -375,6 +375,22 @@ export function villageLayout(world, opts = {}) {
     const path = route([p.x, p.z], tgt, { avoidFoot: true, slopeK: 150 });
     addRoute('street' + k, 'street', path, true);
   }
+  // two streets leaving the square sideways, so the market has real street frontage all round
+  {
+    let bi = 0, bd = 1e9;
+    for (let i = 0; i < mainR.pts.length; i++) { const d = dist(mainR.pts[i][0], mainR.pts[i][1], M[0], M[1]); if (d < bd) { bd = d; bi = i; } }
+    [1, -1].forEach((sg, k) => {
+      const p = pointAt(mainR, Math.min(mainL - 50, Math.max(5, mainR.cum[bi] + (k ? -1 : 1) * (Rsq + 6))));
+      const ang = Math.atan2(p.tz, p.tx) + sg * (PI / 2 + (hash32(seed, 47, k) / 4294967296 - 0.5) * 0.5);
+      for (let len = 80, tries = 0; tries < 6; tries++, len *= 0.85) {
+        const x = p.x + Math.cos(ang) * len, z = p.z + Math.sin(ang) * len, c = cellOf(x, z);
+        if (c >= 0 && info(c) === 1 && dist(x, z, F[0], F[1]) > 40 && !wetNear(x, z, 6)) {
+          addRoute('cstreet' + k, 'street', route([p.x, p.z], [x, z], { avoidFoot: true, slopeK: 150 }), true);
+          break;
+        }
+      }
+    });
+  }
   // cross-links between existing streets (no ring: a couple only)
   const streetsNow = routes.filter((r) => r.kind === 'street');
   for (let k = 0, made = 0; k < 8 && made < 2 && streetsNow.length > 1; k++) {
@@ -549,16 +565,16 @@ export function villageLayout(world, opts = {}) {
   };
   const sqG = greens[0];
   /** Validate a candidate; returns the plot (without id) or null. Facing snaps to the nearest road. */
-  function candidate(kind, x, z, w, d, jit, district, ignore) {
+  function candidate(kind, x, z, w, d, jit, district, o = {}) {
     const near = nearestRoad(x, z, 30);
     if (!near) return null;
     let f = Math.atan2(near.x - x, near.z - z) + jit;
-    const p = { kind, at: [x, z], facing: f, w, d, district: district || districtAt(x, z), _base: f - jit, _jit: jit };
+    const p = { kind, at: [x, z], facing: f, w, d, district: district || districtAt(x, z), row: o.row || 'u' + plots.length, _base: f - jit, _jit: jit };
     const low = LOW.has(kind);
     if (dist(x, z, F[0], F[1]) - Math.hypot(w, d) < 25) return null; // stair apron
-    for (const o of nearPlots(x, z)) if (o !== ignore && rectsOverlap(p, o, 0.5)) return null;
+    for (const q of nearPlots(x, z)) if (rectsOverlap(p, q, q.row === p.row ? 0.0005 : 0.5)) return null; // party walls only within one frontage
     const S = rectSamples(x, z, w, d, f);
-    const need = low ? 1.0 : 1.4;
+    const need = o.need ?? (low ? 1.0 : 1.4);
     let hmin = 1e9, hmax = -1e9;
     for (const [sx, sz] of S) {
       if (W.e(sx, sz) < 1.08) return null;
@@ -584,7 +600,7 @@ export function villageLayout(world, opts = {}) {
   }
   const isBuilding = (p) => !LOW.has(p.kind);
   let nBuildings = 0;
-  const cap = opts.maxBuildings ?? 88;
+  const cap = opts.maxBuildings ?? 134;
   const place = (p) => { if (!p) return null; commit(p); if (isBuilding(p)) nBuildings++; return p; };
   const SIZE = {
     house: [3.0, 4.4, 3.0, 4.0], house2: [3.6, 5.0, 3.8, 5.0], shop: [2.7, 3.6, 4.2, 5.4], workshop: [4.2, 5.8, 3.8, 5.2],
@@ -596,10 +612,29 @@ export function villageLayout(world, opts = {}) {
   {
     const rr = mulberry32(hash32(seed, 81));
     const a0 = rr() * TAU;
-    for (let k = 0; k < 72 && !plots.some((p) => p.kind === 'hall'); k++) {
+    for (let k = 0; k < 120 && !plots.some((p) => p.kind === 'hall'); k++) {
       const a = a0 + (k * TAU) / 24, w = 8, d = 5.8;
-      const rad = Rsq + d + 2.5 + Math.floor(k / 24) * 4;
+      const rad = Rsq + d + 2.5 + Math.floor(k / 24) * 3;
       place(candidate('hall', M[0] + Math.cos(a) * rad, M[1] + Math.sin(a) * rad, w, d, 0, 'centre'));
+    }
+    // market stalls: 6-10 on the square
+    const nStalls = 6 + (hash32(seed, 85) % 5);
+    let n = 0;
+    for (let k = 0; k < 260 && n < nStalls; k++) {
+      const a = k < 14 ? (k * TAU) / 14 + rr() * 0.3 + a0 : rr() * TAU, r = Rsq * (0.35 + rr() * 0.5);
+      if (place(candidate('stall', M[0] + Math.cos(a) * r, M[1] + Math.sin(a) * r, 1.3, 0.95, (rr() - 0.5) * 0.2, 'centre'))) n++;
+    }
+    // building fronts around the square: shops and tall houses shoulder to shoulder
+    for (let pass = 0; pass < 2; pass++) {
+      let a = rr() * TAU, swept = 0, guard = 0;
+      while (swept < TAU && guard++ < 120) {
+        const kind = rr() < 0.55 ? 'shop' : rr() < 0.75 ? 'house2' : 'house', [w, d] = dim(rr, kind);
+        const rad = Rsq + 1.8 + d + rr() * 0.8, da = (w * 2) / rad;
+        const ang = a + da / 2;
+        const pl = place(candidate(kind, M[0] + Math.cos(ang) * rad, M[1] + Math.sin(ang) * rad, w, d, (rr() - 0.5) * 0.08, 'centre', { row: 'sq' + pass, need: 0.35 }));
+        const adv = pl ? da + (rr() < 0.15 ? 2.2 / rad : rr() * 1.2 / rad) : 0.07;
+        a += adv; swept += adv;
+      }
     }
     // chapel: beside a street in the lower village, 45-80 m from the square
     const cands = [];
@@ -611,23 +646,16 @@ export function villageLayout(world, opts = {}) {
       const w = 4.8, d = 8.5, sb = WIDTH[r.kind] / 2 + 2.4 + d;
       if (place(candidate('chapel', q.x - q.tz * side * sb, q.z + q.tx * side * sb, w, d, 0, districtAt(q.x, q.z)))) break;
     }
-    // market stalls: 6-10 on the square
-    const nStalls = 6 + (hash32(seed, 85) % 5);
-    let n = 0;
-    for (let k = 0; k < 90 && n < nStalls; k++) {
-      const a = k < 14 ? (k * TAU) / 14 + rr() * 0.3 + a0 : rr() * TAU, r = Rsq * (0.35 + rr() * 0.5);
-      if (place(candidate('stall', M[0] + Math.cos(a) * r, M[1] + Math.sin(a) * r, 1.3, 0.95, (rr() - 0.5) * 0.2, 'centre'))) n++;
-    }
   }
 
   // frontage fill
   const order = routes.filter((r) => r.kind !== 'path');
-  const PP = { centre: 0.97, lower: 0.88, edge: 0.55 };
+  const PP = { centre: 1, lower: 1, edge: 0.55 };
   function pickKind(rr, district, rk) {
     const r = rr();
     let k;
-    if (district === 'centre') k = r < 0.3 ? 'house' : r < 0.5 ? 'house2' : r < 0.96 ? 'shop' : 'workshop';
-    else if (district === 'lower') k = r < 0.4 ? 'house' : r < 0.58 ? 'house2' : r < 0.76 ? 'shop' : r < 0.93 ? 'workshop' : 'barn';
+    if (district === 'centre') k = r < 0.12 ? 'house' : r < 0.52 ? 'house2' : r < 0.98 ? 'shop' : 'workshop';
+    else if (district === 'lower') k = r < 0.5 ? 'house' : r < 0.7 ? 'house2' : r < 0.8 ? 'shop' : r < 0.94 ? 'workshop' : 'barn';
     else k = r < 0.52 ? 'house' : r < 0.6 ? 'house2' : r < 0.74 ? 'workshop' : 'barn';
     if (rk === 'lane' && k === 'shop') k = 'house';
     return k;
@@ -643,24 +671,34 @@ export function villageLayout(world, opts = {}) {
         if (rr() > PP[district] * (rt.kind === 'lane' ? 0.9 : 1)) { s += 3 + rr() * (district === 'edge' ? 10 : 5); continue; }
         const kind = pickKind(rr, district, rt.kind);
         let placed = null, w = 0;
-        for (let att = 0; att < 4 && !placed; att++) {
-          const sc = 1 - att * 0.12;
+        const row = rt.id + ':' + side, dense = district !== 'edge';
+        for (let att = 0; att < 5 && !placed; att++) {
+          const sc = 1 - att * 0.08;
           const dm = dim(rr, kind, sc); w = dm[0]; const d = dm[1];
-          const q = pointAt(rt, Math.min(L - 1, s + w));
-          const jit = att === 0 ? (district === 'centre' ? 1.3 * vn1(seed + 17, s * 0.06) + rr() * 0.9 : district === 'lower' ? 1.8 * vn1(seed + 17, s * 0.06) + rr() * 2 : 1.5 + rr() * 6) : 0;
-          const front = (district === 'centre' ? 1.0 : district === 'lower' ? 1.6 : 2.5) + (att ? 0.3 : 0);
+          const q = pointAt(rt, Math.min(L - 1, s + w + att * 0.3));
+          // irregular frontage: a slow drift, a step forward/back of 0.3-1 m, and the odd slanted building
+          const step = (rr() < 0.5 ? -1 : 1) * (0.3 + rr() * 0.7) * (rr() < 0.6 ? 1 : 0);
+          const jit = att > 2 ? 0 : district === 'centre' ? 0.5 * vn1(seed + 17, s * 0.06) + step : district === 'lower' ? 0.9 * vn1(seed + 17, s * 0.06) + step * 1.3 : 1.5 + rr() * 6;
+          let front = district === 'centre' ? 0.5 + rr() * 1.0 : district === 'lower' ? 1.0 + rr() * 2.0 : 2.5 + rr() * 2;
+          const cd = rt.kind === 'main' ? corridorDist(q.x, q.z) : 99;
+          if (cd < 3) front = Math.max(front, 6.8 - hw); // the sightline corridor: stand back from the main road's last 120 m
+          front += att * 0.5;
           const sb = hw + front + d + Math.max(0, jit);
           const x = q.x - q.tz * side * sb, z = q.z + q.tx * side * sb;
-          placed = place(candidate(kind, x, z, w, d, (rr() - 0.5) * 0.14, district));
-          if (placed && rr() < (district === 'centre' ? 0.22 : district === 'lower' ? 0.34 : 0.18) && nBuildings < cap) {
-            const bk = district === 'centre' ? 'house' : district === 'lower' ? 'workshop' : 'barn';
-            const w2 = 2.4 + rr() * 1.4, d2 = 2.2 + rr() * 1.2, gap = 1.3 + rr() * 1.7;
-            const bx = x - q.tz * 0 + (-q.tz * side) * (d + d2 + gap), bz = z + q.tx * side * (d + d2 + gap);
-            place(candidate(bk, bx, bz, w2, d2, (rr() - 0.5) * 0.2, district));
+          const slant = dense && rr() < 0.15 ? (rr() - 0.5) * 0.3 : (rr() - 0.5) * (dense ? 0.06 : 0.14);
+          placed = place(candidate(kind, x, z, w, d, slant, district, { row, need: dense ? 0.35 : 1.4 }));
+          const pb = district === 'centre' ? 0.6 : district === 'lower' ? 0.5 : 0.18;
+          if (placed && rr() < pb && nBuildings < cap) {
+            // back lot: a second building (or yard outbuilding) behind the frontage
+            const bk = district === 'centre' ? (rr() < 0.5 ? 'house' : 'house2') : district === 'lower' ? (rr() < 0.5 ? 'house' : rr() < 0.6 ? 'workshop' : 'barn') : 'barn';
+            const w2 = Math.min(w, 2.6 + rr() * 1.6), d2 = 2.4 + rr() * 1.3, gap = 1.2 + rr() * 1.8;
+            const bx = x + (-q.tz * side) * (d + d2 + gap), bz = z + q.tx * side * (d + d2 + gap);
+            place(candidate(bk, bx, bz, w2, d2, (rr() - 0.5) * 0.2, district, { row: row + ':b', need: 0.35 }));
           }
         }
-        const gap = district === 'centre' ? 0.4 + rr() * 1.8 : district === 'lower' ? 0.8 + rr() * 3.5 : 3 + rr() * 11;
-        s += placed ? w * 2 + gap : 3;
+        const alley = dense && rr() < (district === 'centre' ? 0.12 : 0.1);
+        const gap = alley ? 2 + rr() * 1.2 : district === 'centre' ? rr() * 1.5 : district === 'lower' ? 0.3 + rr() * 2.2 : 3 + rr() * 11;
+        s += placed ? w * 2 + gap : dense ? 1.5 : 3;
       }
     }
   }
@@ -741,20 +779,20 @@ export function villageLayout(world, opts = {}) {
         const nf = base + p._jit;
         const t = { ...p, facing: nf };
         let ok = true;
-        for (const o of nearPlots(p.at[0], p.at[1])) if (o !== p && rectsOverlap(t, o, 0.5)) { ok = false; break; }
+        for (const o of nearPlots(p.at[0], p.at[1])) if (o !== p && rectsOverlap(t, o, o.row === p.row ? 0.0005 : 0.5)) { ok = false; break; }
         if (ok && corridorDist(p.at[0], p.at[1]) > 0) p.facing = nf; else continue;
       }
       kept.push(p);
     }
     plots.length = 0;
-    kept.forEach((p, i) => { p.id = 'p' + i; delete p._base; delete p._jit; p.at = [+p.at[0].toFixed(2), +p.at[1].toFixed(2)]; p.facing = +p.facing.toFixed(4); p.w = +p.w.toFixed(2); p.d = +p.d.toFixed(2); p.y = +p.y.toFixed(2); plots.push(p); });
+    kept.forEach((p, i) => { p.id = 'p' + i; delete p._base; delete p._jit; p.at = [+p.at[0].toFixed(2), +p.at[1].toFixed(2)]; p.facing = +p.facing.toFixed(4); if (/^u\d+$/.test(p.row)) p.row = p.id; p.w = +p.w.toFixed(2); p.d = +p.d.toFixed(2); p.y = +p.y.toFixed(2); plots.push(p); });
   }
 
   // ---- lights ---------------------------------------------------------------------------------
   const lights = [];
   const lampOk = (x, z) => {
     if (W.wet(x, z) || W.e(x, z) < 1.03) return false;
-    for (const p of nearPlots(x, z)) if (inRect(p, x, z, 0.7)) return false;
+    for (const p of nearPlots(x, z)) if (inRect(p, x, z, 0.1)) return false;
     return true;
   };
   for (const rt of routes) {
@@ -765,7 +803,7 @@ export function villageLayout(world, opts = {}) {
     while (s < L - 4) {
       for (const dl of [0, 2, -2]) {
         const q = pointAt(rt, s + dl);
-        const x = q.x - q.tz * side * (hw + 0.8), z = q.z + q.tx * side * (hw + 0.8);
+        const x = q.x - q.tz * side * (hw + 0.2), z = q.z + q.tx * side * (hw + 0.2);
         if (dist(x, z, F[0], F[1]) < 5) continue;
         if (lampOk(x, z)) { lights.push({ at: [+x.toFixed(2), +z.toFixed(2)], kind: 'lamp', road: rt.id, s: +(s + dl).toFixed(1) }); break; }
       }

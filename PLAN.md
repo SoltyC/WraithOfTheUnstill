@@ -590,6 +590,14 @@ analytic solids (not 800 platforms).
    (a slight stretch along the slope); iron reads streaky on a big panel (fine for fittings).
 3. **Village** — ~10 house kits with real timber framing and per-instance variation, market,
    workshops, farms, chapel, bridge; glowing windows; lanterns; daytime life. (5–6)
+   **Stage 3 mostly done (2026-10-23):** the layout is baked (`src/world/village.js` → village.json:
+   ~146 buildings in continuous, irregular frontages round a market square, streets on the
+   contours, lanes, farmsteads, ~100 street lanterns), ten timber-framed kits
+   (`src/world/villageKits.js`), streets/yards/square painted into the ground (village mask),
+   trees and rocks kept off, lanterns and lit windows at night. GPU in the village: 14.8–15.8 ms
+   (3060, 1440p output). Shots `screenshots/village-4/`, plan `docs/village/plan-map.png`. Open:
+   the arch bridge over the stream (the road crosses as cobbles), villagers going about their day,
+   the windmill.
 4. **Stair and manor** — flights, terraces, retaining walls; the run-down manor and arena. (4–5)
 5. **Fire quest** — per-building fire states, extinguishing (Ribbon main; Sweep; Crystallize
    holds; Ribbon + Updraft rain; Gust fans), terrified NPCs, interiors and the child rescue, the

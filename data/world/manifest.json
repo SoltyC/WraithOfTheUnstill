@@ -336,8 +336,8 @@
     "hydro.rgba8": "2a2f3a0438a3be44761bdba18ae6b659082c0779b3f4c40605c1c0e83a306eb5",
     "lake_level.u16": "2b97036acfa4b9f0d79f92db32eddc17b7e648f4b0dfd70b87febb71a9a75c7f",
     "wind.rg8": "58c464123bfbe6b69830f99c07b486aad2576130cfc6e19abe40d4eef5729030",
-    "village_mask.rgba8": "29a97b350f7b2bf012b7df17f344ef11ee856a536d68ea052d53233fa16494f6",
-    "village.json": "9785f47d20b3b22a301fa235c35ee1d7d26c914c081f9772e7aad23763ccbdad",
+    "village_mask.rgba8": "2164fec1445c108b1f48d55dfe6135efe9e475a590dd7cbf6cd35b9b302e14a7",
+    "village.json": "b1a2d40066822bb8fa747f6b265ae16a25d487a468b5dc92092ca986e7850e5f",
     "pois.json": "4dec1acaa8348351abb07088232e8065e75e275864822b8efece613d512c2787"
   }
 }

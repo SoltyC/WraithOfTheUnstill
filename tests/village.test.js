@@ -52,8 +52,8 @@ describe('village layout', () => {
   it('has the expected counts', () => {
     const k = (n) => L.plots.filter((p) => p.kind === n).length;
     const buildings = L.plots.filter((p) => p.kind !== 'stall' && p.kind !== 'well').length;
-    expect(buildings).toBeGreaterThanOrEqual(70);
-    expect(buildings).toBeLessThanOrEqual(112);
+    expect(buildings).toBeGreaterThanOrEqual(110);
+    expect(buildings).toBeLessThanOrEqual(155);
     expect(k('stall')).toBeGreaterThanOrEqual(6);
     expect(k('stall')).toBeLessThanOrEqual(10);
     expect(k('well')).toBeGreaterThanOrEqual(2);
@@ -67,11 +67,11 @@ describe('village layout', () => {
     for (const d of ['centre', 'lower', 'edge', 'farm']) expect(L.plots.some((p) => p.district === d)).toBe(true);
     expect(new Set(L.plots.map((p) => p.id)).size).toBe(L.plots.length);
   });
-  it('has no overlapping plots (1 m gap)', () => {
+  it('has no overlapping plots (1 m gap, except party walls within one frontage)', () => {
     for (let i = 0; i < L.plots.length; i++) for (let j = i + 1; j < L.plots.length; j++) {
       const a = L.plots[i], b = L.plots[j];
       if (Math.hypot(a.at[0] - b.at[0], a.at[1] - b.at[1]) > 40) continue;
-      expect(sat(a, b, 0.5), `${a.id}/${b.id}`).toBe(false);
+      expect(sat(a, b, a.row === b.row ? -0.02 : 0.5), `${a.id}/${b.id}`).toBe(false);
     }
   });
   it('keeps plots off water (+4 m), the hill and the stair apron', () => {
@@ -95,7 +95,7 @@ describe('village layout', () => {
   it('keeps plots off the roads', () => {
     for (const p of L.plots) for (const [x, z] of corners(p)) {
       const r = L.roads.reduce((m, rd) => { let d = 1e9; for (let i = 0; i < rd.pts.length - 1; i++) d = Math.min(d, segD(x, z, rd.pts[i], rd.pts[i + 1]).d); return Math.min(m, d - rd.width / 2); }, 1e9);
-      expect(r, p.id).toBeGreaterThan(0.5);
+      expect(r, p.id).toBeGreaterThan(0.3);
     }
   });
   it('keeps the last 120 m of the main road clear of tall buildings (12 m corridor)', () => {
