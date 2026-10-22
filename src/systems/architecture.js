@@ -3,17 +3,21 @@
 // Wraith has rested at keep a cold light in their glyphs; the monastery's wake when the steppe is
 // restored; the camp's fire burns brighter at night.
 
-import { frostSites, meadowSites, swatches, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
+import { villageSites } from '../world/villageKits.js';
+import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
 import { SHADOW_SPLITS } from '../render/shadows.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 /** @param {any} g  shared boot context */
-export function addArchitectureSystem(g) {
+export async function addArchitectureSystem(g) {
   const { loop, engine, camera, scene, atmosphere, shadows, bindShadows, ground, streamer, controller, chapter, params, weather, restoration, clock } = g;
-  // The frost chapter's sites, then the meadow hub's (appended: the frost indices never change).
-  const sites = [...frostSites(chapter.table, g.routes), ...meadowSites()];
+  // The frost chapter's sites, then the meadow village's from the baked layout (appended: the frost
+  // indices never change).
+  const village = await fetch(import.meta.env.BASE_URL + 'world/village.json').then((r) => r.json());
+  g.village = village;
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });
@@ -53,8 +57,9 @@ export function addArchitectureSystem(g) {
   // The hall's candles and vigil brazier burn (embers on a site without a hearth: render/architecture).
   view.glow[sites.findIndex((s) => s.id === 'monastery') * 4 + 3] = 1;
   // The meadow's places: no snow on them, and the hub's hearth burns.
-  sites.forEach((s, i) => { if (s.id.startsWith('hub-')) view.glow[i * 4 + 2] = 1; });
-  view.glow[sites.findIndex((s) => s.id === 'hub-green') * 4 + 3] = 1;
+  sites.forEach((s, i) => { if (s.id.startsWith('hub-') || s.id.startsWith('vil-')) view.glow[i * 4 + 2] = 1; });
+  // The village's lanterns burn (their ember: siteGlow.w where there is no hearth).
+  sites.forEach((s, i) => { if (s.lamp) view.glow[i * 4 + 3] = 1; });
   // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
   // brazier, the moon under its fallen roof), the camp's hearth, each brazier once lit, and the
   // lanterns the Veiled carry — placed once their site is seated.

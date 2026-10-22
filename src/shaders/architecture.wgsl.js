@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const ARCH_SITES = 96; // frost 58 (incl. 5 NPC props) + meadow hub 9 + room for the meadow shrines
+export const ARCH_SITES = 320; // frost 58 (incl. 5 NPC props) + the meadow village (~110 buildings, ~100 lanterns) + room for the manor and shrines
 
 const ARCH_VERTEX = /* wgsl */ `
 attribute position: vec3f;

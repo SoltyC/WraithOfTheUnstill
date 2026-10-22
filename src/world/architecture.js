@@ -21,7 +21,7 @@ const FOUND = 3; // m of foundation below the seat
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
 
-class Builder {
+export class Builder {
   constructor() { this.pos = []; this.nrm = []; this.uv = []; this.info = []; this.idx = []; this.blockers = []; this.platforms = []; this.lights = []; this.site = 0; }
   /** A point light in site-local metres (data only; the renderer picks the nearest few). kind: 'fire' (warm, flickers),
    *  'candle' (small, warm, gentle flicker), 'bounce' (steady, night only), 'lamp' (steady). */
@@ -664,13 +664,13 @@ export function frostSites(table, routes = []) {
 // only snow pillow is hidden under its cap. Turf is MAT.CANVAS for now (see the report: a MAT.TURF
 // and a per-site snow switch in the shader are the proper fix).
 // ─────────────────────────────────────────────────────────────────────────────────────────────
-const NS = { drift: false, cap: false };
+export const NS = { drift: false, cap: false };
 const TAU = Math.PI * 2;
 /** Site-local point from (s right, y up, f forward) under a yaw. */
-const rot = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, y, f) => [u * c + f * s, y, -u * s + f * c]; };
+export const rot = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, y, f) => [u * c + f * s, y, -u * s + f * c]; };
 
 /** A smooth cloth surface from f(u, v) → [x, y, z] over u, v ∈ [0, 1] (normals by differences, up-facing). */
-function cloth(b, f, nu, nv, mat, seed) {
+export function cloth(b, f, nu, nv, mat, seed) {
   const pts = [], nrm = [], e = 1e-3;
   for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
     const u = i / nu, v = j / nv, p = f(u, v), u0 = Math.min(u, 1 - e), v0 = Math.min(v, 1 - e);   // differences stay inside [0, 1]
@@ -686,7 +686,7 @@ function cloth(b, f, nu, nv, mat, seed) {
 
 /** A lantern post (the camp's: a timber post, an arm, a bronze cage with an ember in it) with its
  *  lamp light. `dir` (rad) is the way the arm points, in the xz plane. */
-function lampPost(b, x, z, h, dir, seed) {
+export function lampPost(b, x, z, h, dir, seed, intensity = 0.7) {
   const cx = Math.cos(dir), cz = Math.sin(dir), ax = x + cx * 0.7, az = z + cz * 0.7, ly = h - 0.55;
   stick(b, [x, -0.4, z], [x, h, z], 0.075, 0.06, 6, MAT.WOOD, seed);
   stick(b, [x, h - 0.12, z], [ax, h - 0.08, az], 0.035, 0.028, 5, MAT.WOOD, seed + 1);
@@ -697,7 +697,7 @@ function lampPost(b, x, z, h, dir, seed) {
   b.box(ax, az, ly - 0.15, ly + 0.14, 0.06, 0.06, 0, MAT.EMBER, seed + 6, { solid: false, ...NS });
   b.drum(ax, az, ly + 0.17, ly + 0.23, 0.095, 0.02, 10, MAT.METAL, seed + 7, { solid: false });
   b.blockers.push({ site: b.site, kind: 'circle', x, z, r: 0.12, y0: -0.4, y1: h });
-  b.light(ax, ly, az, 7, 1.0, 0.6, 0.28, 0.7, 'lamp');
+  b.light(ax, ly, az, 7, 1.0, 0.6, 0.28, intensity, 'lamp');
 }
 
 /** A pilgrims' house: drystone walls of reused Shaper blocks (a door gap under a carved lintel, a
@@ -791,7 +791,7 @@ function hubGreen(b, facing, R) {
 /** One market stall: four poles, a felt awning sagging between them with a scalloped valance, a
  *  trestle table with goods (kind 0 grain and crates, 1 bolts of cloth, 2 pots and a barrel, 3
  *  hanging herbs), things on the ground behind. Faces +f. */
-function stall(b, cx, cz, yaw, kind, seed, R) {
+export function stall(b, cx, cz, yaw, kind, seed, R) {
   const P = rot(yaw), at = (s, y, f) => { const p = P(s, y, f); return [cx + p[0], p[1], cz + p[2]]; };
   const w = 3.4, d = 2.4, yTop = (v) => 2.55 - 0.62 * v;
   for (const [s, f, h] of [[-w / 2, -d / 2, yTop(0)], [w / 2, -d / 2, yTop(0)], [-w / 2, d / 2, yTop(d / (d + 0.7))], [w / 2, d / 2, yTop(d / (d + 0.7))]])

@@ -97,7 +97,7 @@ async function boot() {
   await sysEnv.addEnvironmentSystems(g);
   (await import('./systems/chapter.js')).addChapterSystem(g);
   (await import('./systems/lights.js')).addLightSystem(g);
-  (await import('./systems/architecture.js')).addArchitectureSystem(g);
+  await (await import('./systems/architecture.js')).addArchitectureSystem(g);
   (await import('./systems/rockSolids.js')).addRockSolidSystem(g);
   if (!capture) (await import('./ui/windView.js')).addWindView(g); // dev: overlay toggle 'wind field (map)'
   (await import('./systems/npcs.js')).addNpcSystems(g);

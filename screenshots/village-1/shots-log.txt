@@ -1,0 +1,5 @@
+2026-10-22T09:30:38.829Z 1/4 p8-village-square: saved screenshots/village-1/p8-village-square.png
+2026-10-22T09:30:51.374Z 2/4 p8-village-street: saved screenshots/village-1/p8-village-street.png
+2026-10-22T09:31:03.894Z 3/4 p8-village-night: saved screenshots/village-1/p8-village-night.png
+2026-10-22T09:31:16.010Z 4/4 p8-village-aerial: saved screenshots/village-1/p8-village-aerial.png
+2026-10-22T09:31:16.011Z Shots done: 4/4 spot(s) (p8-village*) → screenshots/village-1/.

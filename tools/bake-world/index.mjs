@@ -17,7 +17,8 @@ import { hydrology } from './hydrology.mjs';
 import { biomeWeights, material, wind, BIOMES, MATERIALS } from './climate.mjs';
 import { placePOIs } from './placement.mjs';
 import { carveStory, storyPOIs } from './story.mjs';
-import { carveHill } from './hill.mjs';
+import { carveHill, HILL } from './hill.mjs';
+import { villageLayout } from '../../src/world/village.js';
 import { gfbm } from '../../src/terrain/gnoise.js';
 import { encodePng } from './png.mjs';
 
@@ -215,6 +216,18 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   write('hydro.rgba8', hydro);
   write('lake_level.u16', lakeLevel);
   write('wind.rg8', windMap);
+  // 7. The meadow village's layout (src/world/village.js) on the carved ground, beside the stream.
+  const h4at = (x, z) => {
+    const u = (x + HALF) / c4 - 0.5, v = (HALF - z) / c4 - 0.5, i = clamp(Math.floor(u), 0, n4 - 2), j = clamp(Math.floor(v), 0, n4 - 2), fu = u - i, fv = v - j;
+    const a = h4[j * n4 + i], b = h4[j * n4 + i + 1], d = h4[(j + 1) * n4 + i], e = h4[(j + 1) * n4 + i + 1];
+    return (a + (b - a) * fu) + ((d + (e - d) * fu) - (a + (b - a) * fu)) * fv;
+  };
+  const wetAt = (x, z) => { const c = clamp(Math.floor((HALF - z) / c4), 0, n4 - 1) * n4 + clamp(Math.floor((x + HALF) / c4), 0, n4 - 1); return hy.river[c] > 0.05 || hy.lake[c] > 0; };
+  const hillE = (x, z) => { const dx = (x - HILL.centre[0]) / HILL.ax, dz = (z - HILL.centre[1]) / HILL.az; return Math.sqrt(dx * dx + dz * dz); };
+  const foot = hill.pois.find((p) => p.id === 'stair-foot').pos, hubP = hill.pois.find((p) => p.id === 'hub').pos;
+  const village = villageLayout({ height: h4at, water: wetAt, isHill: hillE }, { seed: 1, foot, hub: hubP, hillCentre: HILL.centre, hillAx: HILL.ax, hillAz: HILL.az });
+  log('village', village.plots.length, 'plots,', village.roads.length, 'roads,', village.lights.length, 'lamps', Date.now() - t0, 'ms');
+  write('village.json', Buffer.from(JSON.stringify(village) + '\n'));
   write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run, hill.route] }, null, 2) + '\n'));
   const manifest = {
     version: BAKE_VERSION, seed, worldSize: WORLD_SIZE, origin: 'centre; x east, z north; row 0 = north edge; cell-centred texels',
