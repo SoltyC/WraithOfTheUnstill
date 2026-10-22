@@ -3,6 +3,9 @@
 // sound, the terrain state and its writers, render scale and the shadow strength. Also the
 // system toggles of the dev overlay.
 
+import { DynamicRes } from '../core/dynamicRes.js';
+import { gpuTimer } from '../core/gpuTimer.js';
+
 const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
 
 /** @param {any} g  shared boot context */
@@ -222,14 +225,42 @@ export async function addEnvironmentSystems(g) {
     terrainState.update();
   } });
 
-  // Render scale follows the Quality slider (checked via the integer params version).
+  // Render scale follows the Quality slider (the maximum), stepped down/up by the dynamic-res
+  // controller to hold params.v.targetMs of GPU time. Captures and benches stay fixed.
   let lastParamsVersion = -1;
+  const dyn = new DynamicRes();
+  const fixedScale = !!g.capture || !!g.qs?.get('bench') || !!g.qs?.get('shots');
+  let dynOn = false, timerOwned = false, lastGpuCount = 0, dynT = 0;
+  const applyScale = (s) => { post.post.renderScale = s; };
   loop.add({ name: 'renderScale', update: () => {
-    if (params.version === lastParamsVersion) return;
-    lastParamsVersion = params.version;
-    // Internal resolution; TAA upscales to the output. Captures (photo spots, gate shots) are
-    // stills: native.
-    post.post.renderScale = g.capture ? 1 : params.v.renderScale;
+    const wantDyn = !fixedScale && params.v.dynamicRes >= 0.5;
+    if (wantDyn !== dynOn) {
+      dynOn = wantDyn;
+      if (dynOn) { dyn.reset(params.v.renderScale, dynT); lastGpuCount = gpuTimer.count; }
+      if (!dynOn && timerOwned) { gpuTimer.setActive(false); timerOwned = false; }
+      lastParamsVersion = -1;
+    }
+    if (!dynOn) {
+      if (params.version === lastParamsVersion) return;
+      lastParamsVersion = params.version;
+      // Internal resolution; TAA upscales to the output. Captures (photo spots, gate shots) are
+      // stills: native.
+      applyScale(g.capture ? 1 : params.v.renderScale);
+      return;
+    }
+    dynT += clock.realDt;
+    let gpuTimed = gpuTimer.supported;
+    if (gpuTimed) {
+      if (!gpuTimer.active) { gpuTimer.setActive(true); timerOwned = true; }
+      // New timestamp samples since last frame (newest `count` entries of the ring).
+      const H = gpuTimer.ms.length;
+      let from = lastGpuCount;
+      if (gpuTimer.count - from > H) from = gpuTimer.count - H;
+      for (let i = from; i < gpuTimer.count; i++) dyn.push(gpuTimer.ms[i % H]);
+      lastGpuCount = gpuTimer.count;
+    } else dyn.push(clock.realDt * 1000);
+    const s = dyn.update(dynT, params.v.renderScale, params.v.targetMs, gpuTimed);
+    if (s !== post.post.renderScale) applyScale(s);
   } });
 
   // System toggles. Changing the drawn mesh set invalidates a recorded snapshot.

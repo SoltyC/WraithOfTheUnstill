@@ -561,6 +561,14 @@ analytic solids (not 800 platforms).
 0. **Foundations** — honest hitch diagnosis (no-vsync bench); architecture split into culled
    chunks (frost geometry is processed in the meadow today); a world light grid (hundreds of
    lanterns, candles, windows); dynamic render scale. (3–4 sessions)
+   **Stage 0 done (2026-10-22):** architecture chunks (800 m cull), the far dormant Warden sleeps,
+   the light grid (`render/lightGrid.js`), dynamic render scale (`core/dynamicRes.js`, target
+   14 ms, the Quality slider is its maximum), `?sysprof=1`. Measured and left: render submission
+   ~8.7 ms/frame and the Wraith's cloth ~5 ms/frame of CPU (the meadow is CPU-bound near the GPU's
+   time); the trees re-record the snapshot ~1.5×/s while walking (bucketing the instance counts
+   halves that but costs +1.7 ms GPU: collapsed instances still run their vertices × cascades —
+   needs GPU-driven counts / indirect draws). Presented-time hitches in headless no-vsync benches
+   include an artifact (idle shows them too): judge with the user at the PC.
 1. **Terrain** — the hill, summit, village ground, stream and bridge site in the bake. (3–4)
 2. **Materials** — 11 CC0 scans (plaster, thatch, slate, terracotta, cobbles ×2, flagstones,
    earth, planks, siding, iron; plan-materials.md), new MAT ids, roads in the ground. (2–3)

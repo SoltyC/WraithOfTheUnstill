@@ -21,6 +21,10 @@ export const paramDefs = [
   // Internal resolution, upscaled to the output by TAA (post chain). 0.7 holds the 3060 target near
   // 90 fps at 1440p (PERF.md); 1 = native.
   { key: 'renderScale', label: 'Render scale', group: 'Quality', min: 0.5, max: 1, step: 0.05, value: 0.7 },
+  // Dynamic resolution (core/dynamicRes.js): the slider above becomes the maximum; the scale steps
+  // down/up to hold this GPU frame time. 1 = on, 0 = off (fixed at the slider).
+  { key: 'dynamicRes', label: 'Dynamic resolution (0/1)', group: 'Quality', min: 0, max: 1, step: 1, value: 1 },
+  { key: 'targetMs', label: 'Target GPU frame (ms)', group: 'Quality', min: 8, max: 20, step: 0.5, value: 14 },
 ];
 
 /**
