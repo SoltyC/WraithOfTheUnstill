@@ -27,16 +27,16 @@ export function placePOIs(world, seed, fixed = []) {
     return top;
   };
   const flat = (s) => s.slope < 0.12 && s.h > 2 && s.river === 0 && s.lake === 0;
-  const add = (id, kind, biome, p) => { if (p) pois.push({ id, kind, biome, pos: [p.x, p.z], h: Math.round(p.h * 10) / 10 }); };
+  const add = (id, kind, biome, p) => { if (p && !pois.some((q) => q.id === id)) pois.push({ id, kind, biome, pos: [p.x, p.z], h: Math.round(p.h * 10) / 10 }); };
 
   // (The Shapers' monastery and the frost sites: story.mjs.)
   // Hub settlement of the Veiled: centre of the meadow, near water.
-  add('hub', 'settlement', 'meadow', best((s) => flat(s) && s.biome === 1, (s, x, z) => -dist(x, z, -200, 200) * 0.001 + s.riverNear * 2));
+  if (!pois.some((q) => q.id === 'hub')) add('hub', 'settlement', 'meadow', best((s) => flat(s) && s.biome === 1, (s, x, z) => -dist(x, z, -200, 200) * 0.001 + s.riverNear * 2));
   // Warden arenas: a large flat-ish site deep in each biome.
   const BIOME_NAMES = ['frost', 'meadow', 'mire', 'dunes', 'ember', 'coast'];
   for (let b = 0; b < 6; b++) {
     if (b === 0) continue; // frost: story.mjs
-    add('warden-' + BIOME_NAMES[b], 'warden-arena', BIOME_NAMES[b], best((s) => s.slope < 0.25 && s.biomeWeight[b] > 0.85 && (b === 5 ? s.h > -2 && s.h < 6 : s.h > 2), (s) => s.biomeWeight[b] - s.slope));
+    if (!pois.some((q) => q.id === 'warden-' + BIOME_NAMES[b])) add('warden-' + BIOME_NAMES[b], 'warden-arena', BIOME_NAMES[b], best((s) => s.slope < 0.25 && s.biomeWeight[b] > 0.85 && (b === 5 ? s.h > -2 && s.h < 6 : s.h > 2), (s) => s.biomeWeight[b] - s.slope));
   }
   // Shrines: 5 per biome, spread out (greedy farthest-point over scored candidates).
   for (let b = 0; b < 6; b++) {

@@ -570,6 +570,15 @@ analytic solids (not 800 platforms).
    needs GPU-driven counts / indirect draws). Presented-time hitches in headless no-vsync benches
    include an artifact (idle shows them too): judge with the user at the PC.
 1. **Terrain** — the hill, summit, village ground, stream and bridge site in the bake. (3–4)
+   **Stage 1 done (2026-10-22):** `tools/bake-world/hill.mjs` (`carveHill` after `carveStory`): the
+   hill at (300, 1000), 340 × 420 m, summit pad at 410 m (+142), a smooth dome (terraces are left to
+   retaining walls: benches in the 4 m heightfield aliased into a sawtooth); the stair route
+   `manor-stair` in pois.json (783 m wrapping once round the hill at ~12°, 30 m landings, ~2.5–3
+   min); the village ground regraded west of the hill (x ≈ 6…200), streams and lakes untouched;
+   POIs `hub` (60, 990), `manor`/`warden-meadow` (300, 1000), `stair-foot`. Deterministic
+   (`bake:verify` OK). The stair is graded terrain for now (a deep cut in places, dark under trees):
+   the steps, parapets and retaining walls are stage 4. Spots `p8-hill-*`, `p8-stair-*`,
+   `p8-summit`; shots `screenshots/hill-5/`. The old hub buildings still stand at (−30, 1030).
 2. **Materials** — 11 CC0 scans (plaster, thatch, slate, terracotta, cobbles ×2, flagstones,
    earth, planks, siding, iron; plan-materials.md), new MAT ids, roads in the ground. (2–3)
 3. **Village** — ~10 house kits with real timber framing and per-instance variation, market,

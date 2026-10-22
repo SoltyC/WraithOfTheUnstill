@@ -1,0 +1,8 @@
+2026-10-22T07:16:25.409Z 1/7 p8-shaped-trio: saved screenshots/hill-5/p8-shaped-trio.png
+2026-10-22T07:16:37.660Z 2/7 p8-shaped-close: saved screenshots/hill-5/p8-shaped-close.png
+2026-10-22T07:16:49.844Z 3/7 p8-shaped-chanter: saved screenshots/hill-5/p8-shaped-chanter.png
+2026-10-22T07:17:03.334Z 4/7 p8-shaped-pollen: saved screenshots/hill-5/p8-shaped-pollen.png
+2026-10-22T07:17:13.991Z 5/7 p8-stair-foot: saved screenshots/hill-5/p8-stair-foot.png
+2026-10-22T07:17:24.596Z 6/7 p8-summit: saved screenshots/hill-5/p8-summit.png
+2026-10-22T07:17:35.342Z 7/7 p8-stair-mid: saved screenshots/hill-5/p8-stair-mid.png
+2026-10-22T07:17:35.344Z Shots done: 7/7 spot(s) (p8-s*) → screenshots/hill-5/.

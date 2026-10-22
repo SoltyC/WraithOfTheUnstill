@@ -17,6 +17,7 @@ import { hydrology } from './hydrology.mjs';
 import { biomeWeights, material, wind, BIOMES, MATERIALS } from './climate.mjs';
 import { placePOIs } from './placement.mjs';
 import { carveStory, storyPOIs } from './story.mjs';
+import { carveHill } from './hill.mjs';
 import { gfbm } from '../../src/terrain/gnoise.js';
 import { encodePng } from './png.mjs';
 
@@ -96,6 +97,9 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   // hydrology so the chute is a route, not a river (story.mjs).
   const run = carveStory(h4, n4, c4, HALF);
   log('story', run.length, 'm run,', run.drop, 'm drop', Date.now() - t0, 'ms');
+  // 2c. The meadow's hill, its stair and the village ground (hill.mjs), clear of every river and lake.
+  const hill = carveHill(h4, n4, c4, HALF, (i, j) => { const c = j * n4 + i; return hy.river[c] > 0.05 || hy.lake[c] > 0; });
+  log('hill', hill.route.length, 'm stair,', hill.route.rise, 'm rise', Date.now() - t0, 'ms');
 
   // Shared lookups on the 4 m grid.
   const at4 = (arr, x, z) => arr[clamp(Math.floor((HALF - z) / c4), 0, n4 - 1) * n4 + clamp(Math.floor((x + HALF) / c4), 0, n4 - 1)];
@@ -185,7 +189,8 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
       return { h: h4[c4i], slope: surface[c4i * 4 + 2] / 128, biome, biomeWeight: weights, river: hy.river[c4i], lake: hy.lake[c4i], riverNear };
     },
   };
-  const pois = placePOIs(world, seed, storyPOIs(h4, n4, c4, HALF));
+  const at4h = (x, z) => Math.round(h4[clamp(Math.floor((HALF - z) / c4), 0, n4 - 1) * n4 + clamp(Math.floor((x + HALF) / c4), 0, n4 - 1)] * 10) / 10;
+  const pois = placePOIs(world, seed, [...storyPOIs(h4, n4, c4, HALF), ...hill.pois.map((p) => ({ ...p, h: at4h(p.pos[0], p.pos[1]) }))]);
   log('pois', pois.length, Date.now() - t0, 'ms');
 
   // 9. Write.
@@ -210,7 +215,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   write('hydro.rgba8', hydro);
   write('lake_level.u16', lakeLevel);
   write('wind.rg8', windMap);
-  write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run] }, null, 2) + '\n'));
+  write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run, hill.route] }, null, 2) + '\n'));
   const manifest = {
     version: BAKE_VERSION, seed, worldSize: WORLD_SIZE, origin: 'centre; x east, z north; row 0 = north edge; cell-centred texels',
     height: { texel: c2, size: n2, tile: TILE, tiles, encoding: 'u16le: h = v / 32 - 128 (m)', overview: { file: 'height_overview.u16', texel: c8, size: n8 } },
