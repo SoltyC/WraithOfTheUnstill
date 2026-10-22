@@ -526,6 +526,53 @@ grows back as the state heals). Their light is a warm seed-amber, not the frost'
   hum.
 - Tests: boundary logic, flush trigger, pollen focus rule, restored-state behaviour.
 
+### The village on the hill (user, 2026-10-22) — supersedes M9's arena and M10's hub
+
+The meadow's heart is a large medieval village round a huge central hill, a monumental stair, and
+a grand, run-down manor on the summit that the Bellwether inhabits. User's brief and five research
+plans: `docs/village/` (brief.md is "a little inaccurate": the decisions below win).
+
+**Decisions (user):**
+- The manor is **run down but very grand**: enormous, half-fallen roofs, ivy, a scorched wing, a
+  leaning tower, one lit window. The boss fight is there (the brief's "don't change the boss" and
+  "maintained manor" are overridden).
+- **The manor is the Bellwether** (docs/village/plan-manor-boss.md option A): it lay down on the
+  hill an age ago and the family built over it; the great hall is its ribcage and bellows, the
+  chimneys its turf-sealed vents, the towers its spine; its neck rises from the west wing.
+- **Hill +140 m, a ~3-minute climb** (~820 steps, eight flights with landings and terraces).
+- **No glide or Updraft up the hill:** its held breath kills the wind there; the stair must be
+  walked. The release opens glides off the summit.
+- **The fire:** meadow Shaped raid the village at night and take villagers (dark, not graphic:
+  taken off-screen, missing, mourned).
+- **Order:** the Wraith roams until a frantic villager begs for help and leads it to the
+  village, which is burning (night). Put the fires out, help the terrified, go into burning
+  houses for a trapped child. Once the fires are out the villagers let it up the hill (it has
+  proved itself). Then the climb and the Bellwether.
+- **Burnt buildings stay charred until the release** (restoration rebuilds them).
+- The hub moves into the new village; the meadow Warden's arena moves to the manor.
+- **Rework quest wording** (frost and meadow): NPC lines plain and understandable to the player.
+
+**Site and land** (plan-terrain.md): hill centred near (200, 990), ~380 × 300 m, summit pad
+~+140 m; village ground regraded round it; the stream to its west (cascades, the arch bridge).
+Built in the bake (`carveHill` after `carveStory`, 22 s), so collision and GPU agree; stairs are
+analytic solids (not 800 platforms).
+
+**Stages** (review on the 3060 at the end of each):
+0. **Foundations** — honest hitch diagnosis (no-vsync bench); architecture split into culled
+   chunks (frost geometry is processed in the meadow today); a world light grid (hundreds of
+   lanterns, candles, windows); dynamic render scale. (3–4 sessions)
+1. **Terrain** — the hill, summit, village ground, stream and bridge site in the bake. (3–4)
+2. **Materials** — 11 CC0 scans (plaster, thatch, slate, terracotta, cobbles ×2, flagstones,
+   earth, planks, siding, iron; plan-materials.md), new MAT ids, roads in the ground. (2–3)
+3. **Village** — ~10 house kits with real timber framing and per-instance variation, market,
+   workshops, farms, chapel, bridge; glowing windows; lanterns; daytime life. (5–6)
+4. **Stair and manor** — flights, terraces, retaining walls; the run-down manor and arena. (4–5)
+5. **Fire quest** — per-building fire states, extinguishing (Ribbon main; Sweep; Crystallize
+   holds; Ribbon + Updraft rain; Gust fans), terrified NPCs, interiors and the child rescue, the
+   guide NPC, char via the transform channel; plan-fire-quest.md. (4)
+6. **The Bellwether at the manor** — vents, climb, valves, gale exhale, the Shaped at 30 %, the
+   release down the stair. (5–6)
+
 ### M9 — The Meadow Warden
 
 Proposal (user to choose or replace): **the Bellwether** — a ~40 m long-necked grazer of turf
