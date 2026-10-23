@@ -31,7 +31,7 @@
 // square): 6 named + 10 others, each a full Veiled figure with a dyed robe.
 
 import { pinTime, unpinTime } from '../core/clock.js';
-import { LEAD, CHILD, makePath, pathAt, projectOnPath, newGuide, leadStep, newChild, childStep, stepToward, ringSlots, frontOf, nearestFirst, stairDir } from '../game/villagers.js';
+import { LEAD, CHILD, makePath, pathAt, projectOnPath, newGuide, leadStep, newChild, childStep, stepToward, ringSlots, frontOf, houseSpots, nearestFirst, stairDir } from '../game/villagers.js';
 
 const QUEST = 'meadow-the-burning-night';
 const NIGHT_HOUR = 22;
@@ -48,7 +48,9 @@ export function addVillagerSystem(g) {
   const pos = (id) => table[id].pos;
   const ebbPlot = plots.get(V.childPlot), well = plots.get(V.wellPlot).at;
   const motherPos = pos('meadow-mother'), hallFront = pos('meadow-hall');
-  const ebbDoor = frontOf(ebbPlot, 1.6);
+  const ebbSite = (g.archSites || []).find((s) => s.id === 'vil-' + ebbPlot.id);
+  const ebbSpots = houseSpots(ebbPlot, ebbSite && ebbSite.build && ebbSite.build.meta);
+  const ebbDoor = ebbSpots.door, ebbIn = ebbSpots.inside;
   const fireIds = V.firePlots.filter((id) => plots.has(id)), N = fireIds.length;
   const wp = controller.pos;
   const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
@@ -58,7 +60,7 @@ export function addVillagerSystem(g) {
   if (V.guideReverse) for (const l of lists) l.reverse(); // each street runs square → north in the data; the guide goes the other way
   const path = makePath(lists);
   const guide = newGuide(path);
-  const child = newChild(ebbPlot.at[0], ebbPlot.at[1]);
+  const child = newChild(ebbIn[0], ebbIn[1]);
   child.mode = 'idle';
   const route = (g.routes || []).find((r) => r.id === 'manor-stair');
   const foot = table['stair-foot'].pos, sdir = route ? stairDir(route.points) : [0.77, 0.64];
@@ -257,11 +259,11 @@ export function addVillagerSystem(g) {
       else if (flags.has('meadow:ebb-follow')) {
         st.mode = 'follow'; const b = controller.yaw + Math.PI;
         st.x = wp.x + Math.sin(b) * 2.5; st.z = wp.z + Math.cos(b) * 2.5;
-      } else if (flags.has('meadow:raid')) { st.mode = 'cower'; st.x = ebbPlot.at[0]; st.z = ebbPlot.at[1]; }
+      } else if (flags.has('meadow:raid')) { st.mode = 'cower'; st.x = ebbIn[0]; st.z = ebbIn[1]; }
       else { st.mode = 'idle'; st.x = ebbDoor[0]; st.z = ebbDoor[1]; }
       st.out = false; st.dwell = 0; api.put(n, st.x, st.z);
     }
-    childStep(st, { wx: wp.x, wz: wp.z, follow: flags.has('meadow:ebb-follow'), house: ebbPlot.at, door: ebbDoor, mother: motherPos, raid: flags.has('meadow:raid') }, dt);
+    childStep(st, { wx: wp.x, wz: wp.z, follow: flags.has('meadow:ebb-follow'), house: ebbIn, door: ebbDoor, mother: motherPos, raid: flags.has('meadow:raid') }, dt);
     n.x = st.x; n.z = st.z; n.vx = st.vx; n.vz = st.vz; n.yaw = st.yaw; n.hunch = st.hunch;
     n.noLook = st.mode === 'cower' || st.mode === 'hide' || st.mode === 'follow';
     if (st.mode === 'cower' && st.dwell > CHILD.dwell && !chapter.talking && !flags.has('meadow:ebb-follow')) { st.dwell = -4; chapter.talk(n.id); }
@@ -328,7 +330,7 @@ export function addVillagerSystem(g) {
   };
   g.navDynamic['meadow-ebb'] = () => {
     if (flags.has('meadow:ebb-follow') && !flags.has('meadow:ebb-saved')) { goals.ebb.x = motherPos[0]; goals.ebb.z = motherPos[1]; goals.ebb.name = 'Marit'; }
-    else { goals.ebb.x = ebbPlot.at[0]; goals.ebb.z = ebbPlot.at[1]; goals.ebb.name = 'Ebb'; }
+    else { goals.ebb.x = ebbIn[0]; goals.ebb.z = ebbIn[1]; goals.ebb.name = 'Ebb'; }
     return goals.ebb;
   };
 
@@ -359,7 +361,9 @@ export function addVillagerSystem(g) {
     } else if (flags.has('meadow:guide-lead') && !flags.has('meadow:arrived')) {
       text = guide.waiting ? 'Wenna has stopped. Catch up with her.' : 'Follow Wenna to Hearn'; alarm = guide.waiting;
     } else if (phase === 'raid' && flags.has('meadow:raid-lit') && !flags.has('meadow:fires-out')) {
-      text = `Put out the fires (${Math.max(0, N - burningCount())}/${N})`;
+      // Burning now, not "n of 14": the fire spreads, so a fixed total read 0/14 after a house was saved (bot playtest).
+      const b = burningCount();
+      text = b === 1 ? 'Put out the fires (1 house still burning)' : `Put out the fires (${b} houses still burning)`;
     }
     hud.line('meadow', text, alarm);
   } });

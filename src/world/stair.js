@@ -241,8 +241,11 @@ export function stairSites(route, h) {
     for (const arc of [r.s0 + 0.3, r.s1 - 0.3]) extras[chordAt(Math.min(arc, r.s1 - 1e-3))].newels.push({ arc, rank: rk });
   });
   const lastFlight = flightRuns[flightRuns.length - 1];
-  const gateChord = chordAt(lastFlight.s1 - 1e-3);
-  extras[gateChord].gate = { arc: lastFlight.s1 + 1.0 };
+  // On the flight, 6 m short of its head: spanning the stair, walked through. At the head (+1 m) it stood
+  // across the turn into the manor's gatehouse, a pillar in the passage's mouth (bot playtest 2026-10-24:
+  // the Wraith wedged between it and the west tower and could not reach the forecourt).
+  const gateArc = Math.max(lastFlight.s0 + 2, lastFlight.s1 - 6);
+  extras[chordAt(gateArc)].gate = { arc: gateArc };
 
   // Sites: consecutive chords up to SITE_LEN.
   const groups = [];

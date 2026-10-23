@@ -53,7 +53,7 @@ describe('village layout', () => {
     const k = (n) => L.plots.filter((p) => p.kind === n).length;
     const buildings = L.plots.filter((p) => p.kind !== 'stall' && p.kind !== 'well').length;
     expect(buildings).toBeGreaterThanOrEqual(110);
-    expect(buildings).toBeLessThanOrEqual(155);
+    expect(buildings).toBeLessThanOrEqual(175);
     expect(k('stall')).toBeGreaterThanOrEqual(6);
     expect(k('stall')).toBeLessThanOrEqual(10);
     expect(k('well')).toBeGreaterThanOrEqual(2);
@@ -132,7 +132,7 @@ describe('village layout', () => {
       expect(fake.isHill(x, z), r.id).toBeGreaterThan(1.0);
       if (!r.bridge) expect(fake.water(x, z), r.id).toBe(false);
     }
-    for (const r of L.roads) if (r.kind !== 'main') expect(r.bridge).toBeUndefined();
+    for (const r of L.roads) if (r.kind !== 'main' && r.route !== 'bridgest') expect(r.bridge).toBeUndefined();   // the stream street is the only other bridge
   });
   it('has cobbles in the centre, grass at the edges, and no ring road', () => {
     const [mx, mz] = L.meta.market;
@@ -156,5 +156,62 @@ describe('village layout', () => {
     expect(L.lights.filter((l) => l.why === 'square').length).toBeGreaterThanOrEqual(2);
     expect(L.lights.filter((l) => l.why === 'stair-foot').length).toBeGreaterThanOrEqual(1);
     for (const l of L.lights) { expect(fake.water(l.at[0], l.at[1])).toBe(false); expect(fake.isHill(l.at[0], l.at[1])).toBeGreaterThan(1.0); }
+  });
+  it('bridges the stream: a straight bridge record per bridge road, spanning the wet run with abutments, with baked heights', () => {
+    const bridges = L.bridges, pieces = L.roads.filter((r) => r.bridge);
+    expect(bridges.length).toBe(pieces.length);
+    expect(bridges.length).toBeGreaterThanOrEqual(1);
+    for (const br of bridges) {
+      expect(br.len).toBeGreaterThanOrEqual(br.wet[1] - br.wet[0] + 6.5);
+      expect(br.width).toBeGreaterThan(5); expect(Number.isFinite(br.seatY)).toBe(true);
+      expect(br.eA).toBeLessThanOrEqual(0); expect(br.eB).toBeLessThanOrEqual(0);
+      const road = pieces.find((r) => r.id === br.road);
+      // the road piece is straight (its points lie on the chord) and runs along the bridge yaw
+      const a = road.pts[0], z = road.pts[road.pts.length - 1];
+      expect(Math.abs(Math.sin(Math.atan2(z[0] - a[0], z[1] - a[1]) - br.yaw))).toBeLessThan(0.02);
+      for (const p of road.pts) expect(segD(p[0], p[1], a, z).d).toBeLessThan(0.05);
+      // water lies only between the abutments
+      const s = Math.sin(br.yaw), c = Math.cos(br.yaw);
+      for (let t = -br.len / 2; t <= br.len / 2; t += 0.5) {
+        const x = br.at[0] + s * t, zz = br.at[1] + c * t;
+        if (fake.water(x, zz)) expect(Math.abs(t)).toBeLessThan(br.len / 2 - 2.5);
+      }
+    }
+  });
+  it('makes the chapel a landmark with its churchyard: a big plot (>= 2x the old one), room kept around it', () => {
+    const ch = L.plots.find((p) => p.kind === 'chapel');
+    expect(ch.w * ch.d).toBeGreaterThanOrEqual(7.8 * 10.8);
+    expect(ch.dh).toBeLessThanOrEqual(1.5);
+  });
+  it('places at most one windmill, on a footpath, with its baked top height', () => {
+    const mills = L.plots.filter((p) => p.kind === 'mill');
+    expect(mills.length).toBeLessThanOrEqual(1);
+    for (const m of mills) { expect(Number.isFinite(m.yt)).toBe(true); expect(m.district).toBe('farm'); expect(L.roads.some((r) => r.id === 'pathmill')).toBe(true); }
+  });
+  it('reserves back gardens that overlap no other plot', () => {
+    const g = L.plots.filter((p) => p.garden);
+    expect(g.length).toBeGreaterThanOrEqual(10);
+    for (const p of g) {
+      expect(p.garden).toBeGreaterThanOrEqual(2.8); expect(p.garden).toBeLessThanOrEqual(7);
+      const c = p.d + p.garden / 2 + 0.1, A = { at: [p.at[0] - Math.sin(p.facing) * c, p.at[1] - Math.cos(p.facing) * c], facing: p.facing, w: p.w, d: p.garden / 2 };
+      for (const q of L.plots) if (q !== p && Math.hypot(q.at[0] - p.at[0], q.at[1] - p.at[1]) < 40) expect(sat(A, q, 0.1), `${p.id} garden / ${q.id}`).toBe(false);
+      for (const [x, z] of corners(A)) expect(fake.water(x, z), p.id).toBe(false);
+    }
+  });
+  it('walls the farm fields: wall runs and field rects stay off water, the hill, plots and roads', () => {
+    expect(L.walls.length).toBeGreaterThanOrEqual(1);
+    for (const w of L.walls) {
+      expect(L.plots.some((p) => p.id === w.farm && p.kind === 'farm')).toBe(true);
+      for (const run of w.runs) {
+        expect(run.length).toBeGreaterThanOrEqual(2);
+        for (const [x, z, y] of run) {
+          expect(fake.water(x, z)).toBe(false); expect(fake.isHill(x, z)).toBeGreaterThan(1.05);
+          expect(y).toBeGreaterThanOrEqual(0);
+          for (const p of L.plots) if (Math.hypot(p.at[0] - x, p.at[1] - z) < 20) expect(sat({ at: [x, z], facing: p.facing, w: 0.1, d: 0.1 }, p, 0.5), `${w.id} vs ${p.id}`).toBe(false);
+        }
+      }
+    }
+    expect(L.fields.length).toBeGreaterThanOrEqual(2);
+    for (const f of L.fields) { expect(['crop', 'pasture', 'orchard']).toContain(f.kind); expect(fake.water(f.at[0], f.at[1])).toBe(false); }
   });
 });

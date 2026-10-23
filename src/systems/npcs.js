@@ -4,13 +4,20 @@
 // breathing, a posture shift every few seconds (a corrective step), turning toward the Wraith when
 // it comes near, cloth in the wind, footprints where its feet plant.
 //
-// LOD: full rate within 60 m of the camera, every third frame out to 260 m, hidden beyond (or until
-// the ground there is known: anchor patches keep it known around the camp and the other places).
+// LOD (a frame budget: a figure is ~1-2 ms of cloth): the two figures nearest the camera every
+// frame at full cloth quality; the rest share BUDGET updates a frame, the longest-waiting nearest
+// first, with one coarse cloth step (dt up to 1/40 s, 4 iterations); hidden beyond 260 m (or until the
+// ground there is known: anchor patches keep it known around the camp and the other places). In the
+// burning village (22 figures) this held the npcs system to a few ms where every figure every frame
+// cost 30-75 ms (and a slow frame made each figure take more substeps: a spiral).
 
 import { createWraithView } from '../render/wraith.js';
 import { ARCHETYPES, scaledGround } from '../character/veiled.js';
 
 const NEAR = 60, FAR = 260, TALK_R = 3.2, LOOK_R = 9;
+const FULL_R = 22, BUDGET = 3;
+/** Seconds a background figure may wait between updates, by camera distance. */
+const waitFor = (d) => (d < 20 ? 0.05 : d < 40 ? 0.1 : d < NEAR ? 0.2 : 0.35);
 
 /** @param {any} g  shared boot context */
 export function addNpcSystems(g) {
@@ -187,7 +194,16 @@ export function addNpcSystems(g) {
     const cp = camera.position, p = controller.pos, dt = clock.dt;
     const wind = params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value);
     let changed = false;
+    // The two nearest shown figures (last frame's distances: allocation-free, a frame late is fine).
+    let n0 = -1, n1 = -1, d0 = 1e9, d1 = 1e9;
     for (let i = 0; i < npcs.length; i++) {
+      const d = npcs[i].dc ?? 1e9; if (!npcs[i].shown) continue;
+      if (d < d0) { n1 = n0; d1 = d0; n0 = i; d0 = d; } else if (d < d1) { n1 = i; d1 = d; }
+    }
+    let budget = BUDGET;
+    // Start at a rotating figure so the budget never favours the first in the list.
+    for (let j = 0, N = npcs.length; j < N; j++) {
+      const i = (j + frame) % N;
       const n = npcs[i], w = n.view.wraith, xf = n.xf;
       // Station (and the walker's path).
       if (n.path) {
@@ -207,6 +223,7 @@ export function addNpcSystems(g) {
         }
       }
       const dcx = n.x - cp.x, dcz = n.z - cp.z, dc = Math.sqrt(dcx * dcx + dcz * dcz);
+      n.dc = dc;
       ground.qx = n.x; ground.qz = n.z;
       const known = ground.covers();
       const show = known && dc < FAR;
@@ -227,10 +244,14 @@ export function addNpcSystems(g) {
         const tx = p.x - n.x, tz = p.z - n.z;
         if (tx * tx + tz * tz < LOOK_R * LOOK_R) n.yaw = Math.atan2(tx, tz);
       }
-      // LOD: near every frame; farther every third frame (with the time it missed).
+      // LOD: the nearest two every frame; the rest from the frame's budget (with the time they missed).
       n.lod += dt;
-      if (dc > NEAR && frame % 3 !== i % 3) continue;
+      const full = (i === n0 || i === n1) && dc < FULL_R;
+      if (!full) { if (n.lod < waitFor(dc) || budget <= 0) continue; budget--; }
       const step = n.lod; n.lod = 0;
+      { const wr = n.view.wraith, cl = wr.cloth;
+        if (full) { wr.maxSteps = 2; cl.dt = 1 / 120; cl.iterations = 6; }
+        else { wr.maxSteps = 1; cl.dt = Math.min(1 / 40, Math.max(1 / 120, step)); cl.iterations = 4; } }
       // Inputs in simulation space.
       sim[0] = xf.ox + (n.x + n.offX - xf.ox) / xf.s; sim[2] = xf.oz + (n.z + n.offZ - xf.oz) / xf.s; sim[1] = xf.oy + (n.y - xf.oy) / xf.s;
       w.bx = sim[0]; w.by = sim[1]; w.bz = sim[2];

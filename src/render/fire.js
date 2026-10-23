@@ -39,21 +39,23 @@ export function createFire(scene, atmo) {
   /** Per fire: smoke scale, flame amount (0 = smoke only), level of detail (share of particles), soot. Defaults draw a plain camp fire. */
   const fireX = new Float32Array(FIRES * 4);
   for (let i = 0; i < FIRES; i++) { fireX[i * 4] = 1; fireX[i * 4 + 1] = 1; fireX[i * 4 + 2] = 1; }
+  /** Per fire: flame line (dir x, dir z, half length m; 0 = a plain fire) and mode*10 + flicker phase. A burning building spreads many small tongues along it. */
+  const fireL = new Float32Array(FIRES * 4);
   const fireT = new Vector4(0, 1, 0, 0);
   const mat = new ShaderMaterial('fire', scene, { vertex: 'fire', fragment: 'fire' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'fires', 'fireX', 'fireT', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'fires', 'fireX', 'fireL', 'fireT', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
     needAlphaBlending: true,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
-  mat.setArray4('fires', fires); mat.setArray4('fireX', fireX); mat.setVector4('fireT', fireT);
+  mat.setArray4('fires', fires); mat.setArray4('fireX', fireX); mat.setArray4('fireL', fireL); mat.setVector4('fireT', fireT);
   mat.alphaMode = Constants.ALPHA_PREMULTIPLIED_PORTERDUFF;
   mat.disableDepthWrite = true;
   mat.backFaceCulling = false;
   mesh.material = mat;
   mat.freeze(); fastFrozenIsReady(mat);
-  return { mesh, material: mat, fires, fireX, fireT };
+  return { mesh, material: mat, fires, fireX, fireL, fireT };
 }

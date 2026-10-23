@@ -85,6 +85,9 @@ export class Wraith {
     }
     /** Packed vertex data: (pos.xyz, garment + 0.98·occlusion), (normal.xyz, thinness) per particle. */
     this.packed = new Float32Array(this.cloth.n * 8);
+    /** Most cloth substeps one update may take (the player 4; background figures fewer, so a slow frame
+     *  does not make the next one slower). */
+    this.maxSteps = 4;
     /** Extra substeps still owed to settling the cloth after a teleport. */
     this.settleLeft = 0;
     this._lx = NaN; this._ly = NaN; this._lz = NaN; // last input position (teleport detection)
@@ -174,7 +177,7 @@ export class Wraith {
     // Substeps at 120 Hz; the first frames after a spawn settle the cloth.
     // After a teleport the cloth settles over a few frames (120 extra substeps, 24 a frame: one
     // frame of 120 was a visible hitch).
-    let steps = Math.min(4, Math.max(1, Math.round(this.dt / SUB)));
+    let steps = Math.min(this.maxSteps, Math.max(1, Math.round(this.dt / SUB)));
     if (this.settleLeft > 0) { const k = Math.min(SETTLE_PER_FRAME, this.settleLeft); steps += k; this.settleLeft -= k; }
     for (let s = 0; s < steps; s++) { this._pins(); this.cloth.step(); }
     this._pack();

@@ -857,7 +857,7 @@ function meadowShrine(b, facing, R) {
  *  carved lintel, window slits, a timber collar and conical cap. The sails are their own site
  *  (hub-mill-sails). `facing` is the way the door looks (toward the green). */
 const MILL = { r0: 3.4, r1: 2.75, h: 7.0 };
-function mill(b, facing, R) {
+export function mill(b, facing, R) {
   const rAt = (y) => MILL.r0 - (MILL.r0 - MILL.r1) * y / MILL.h, P = rot(facing);
   b.drum(0, 0, -2.0, MILL.h, rAt(-2.0), MILL.r1, 28, MAT.STONE, 1, { solid: false });
   b.blockers.push({ site: b.site, kind: 'circle', x: 0, z: 0, r: MILL.r0 + 0.05, y0: -2, y1: MILL.h });
@@ -877,7 +877,7 @@ function mill(b, facing, R) {
  *  torn cloth). Site origin = the hub's axle; `facing` = the way the wind blows (the shaft runs along
  *  it, the sails on the upwind side, the tower downwind). Built stopped at an angle; to turn it,
  *  rotate the site about the axis (sin facing, 0, cos facing) through its origin. */
-function millSails(b, facing, R) {
+export function millSails(b, facing, R) {
   const cf = Math.cos(facing), sf = Math.sin(facing);
   const M = (u, v, w) => [u * cf + w * sf, v, -u * sf + w * cf];
   stick(b, M(0, 0, -0.75), M(0, 0, -0.45), 0.1, 0.34, 10, MAT.WOOD, 1);

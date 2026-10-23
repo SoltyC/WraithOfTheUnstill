@@ -40,7 +40,7 @@ describe('manor', () => {
       for (let k = r.v0; k < r.v1; k += 7) { const x = s.at[0] + P[k * 3], z = s.at[1] + P[k * 3 + 2]; if (P[k * 3 + 1] > -2) worst = Math.max(worst, Math.hypot((x - 300) / 72, (z - 1000) / 58)); }
       // The house stands at the west rim on footings into the slope (manor.js BACK): the rim pieces may
       // reach a little past the pad; the forecourt and the gate stay on it.
-      expect(worst, s.id).toBeLessThan(/hall|wing|tower/.test(s.id) ? 1.3 : 1.18);
+      expect(worst, s.id).toBeLessThan(/hall|wing|tower|vent/.test(s.id) ? 1.3 : 1.18);
     }
   });
   it('has camera-only roof blockers, a walkable hall floor, and doors a body fits through', () => {

@@ -299,9 +299,17 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let glass = vec3f(0.03, 0.055, 0.045) * (0.8 + 0.5 * ph) + vec3f(0.02, 0.03, 0.03) * smoothstep(0.3, 0.9, n1 * 0.5 + 0.5);
     albedo = mix(glass, vec3f(0.035, 0.033, 0.03), lead);
     rough = mix(0.08, 0.55, lead); ao = 1.0; N = normalize(N + (ph - 0.5) * 0.015 * vec3f(1.0, 0.0, 1.0) * (1.0 - lead));
-    let lit = step(0.35, fract(seed * 0.7548776662));        // some windows stay dark
-    let flick = 0.85 + 0.15 * sin(t * (5.0 + 3.0 * fract(seed * 0.318)) + seed * 7.0) * (0.6 + 0.4 * sin(t * 2.3 + seed));
-    emit = vec3f(1.0, 0.62, 0.28) * (1.0 - lead) * (0.8 + 0.4 * ph) * flick * lit * glowS.x * 0.85 * select(0.0, 1.0, info.w < 5.5);
+    // Some windows stay dark; late at night (archParams.w 0..1, after 23:30) more go out, each at its own hour.
+    let late = uniforms.archParams.w;
+    let lit = step(0.35, fract(seed * 0.7548776662)) * (1.0 - smoothstep(0.0, 0.08, late * 0.6 - fract(seed * 0.5698402909)));
+    // Candle windows (about 4 in 10) gutter and breathe; the rest burn steadily.
+    let gutter = step(0.6, fract(seed * 0.4142135624));
+    let fr1 = sin(t * (5.0 + 3.0 * fract(seed * 0.318)) + seed * 7.0) * (0.6 + 0.4 * sin(t * 2.3 + seed));
+    let flick = 0.9 + 0.1 * fr1 + gutter * (0.1 * sin(t * 13.0 + seed * 3.1) * sin(t * 4.1 + seed) + 0.08 * fr1);
+    // Warm amber with a soft bloom-friendly hot core in each pane's middle.
+    let core = 1.0 - smoothstep(0.0, 0.5, length(uv - vec2f(0.35, 0.6)));
+    let wcol = mix(vec3f(1.0, 0.56, 0.2), vec3f(1.0, 0.76, 0.42), core * core);
+    emit = wcol * (1.0 - lead) * (0.8 + 0.4 * ph) * (0.85 + 0.55 * core) * flick * lit * glowS.x * 1.15 * select(0.0, 1.0, info.w < 5.5);
   } else if (mid == 4) {
     // Ice: dark, clear, glossy; the SSR pass reflects the world in it.
     albedo = vec3f(0.06, 0.1, 0.13) + vec3f(0.12, 0.18, 0.22) * smoothstep(0.2, 0.9, n1);

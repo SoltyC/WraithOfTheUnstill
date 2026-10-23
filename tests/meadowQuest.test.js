@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import { createChapter, mergeChapters } from '../src/game/chapter.js';
-import { LEAD, CHILD, makePath, pathAt, newGuide, leadStep, newChild, childStep, frontOf, projectOnPath } from '../src/game/villagers.js';
+import { LEAD, CHILD, makePath, pathAt, newGuide, leadStep, newChild, childStep, frontOf, houseSpots, projectOnPath } from '../src/game/villagers.js';
 import { createSolids } from '../src/world/solids.js';
 import { clock, pinTime, unpinTime, advanceClock } from '../src/core/clock.js';
 import { params } from '../src/core/params.js';
@@ -106,6 +106,13 @@ describe('the burning night', () => {
     expect(Q().step).toBe(4);
     ch.talk('meadow-hild'); tick(); finish(); tick();
     expect(flag('meadow:stair-open')).toBe(true);
+    // The boss steps follow: the manor, the waking, the release, the way home.
+    expect(Q().state).toBe('active'); expect(Q().step).toBe(5);
+    ch.graph.flags.add('meadow:bellwether-woke'); at('manor'); tick(); tick();
+    expect(Q().step).toBeGreaterThanOrEqual(7);
+    ch.graph.flags.add('meadow:bellwether-released'); tick(); tick();
+    expect(Q().step).toBe(8);
+    ch.facts.x = 93; ch.facts.z = 926; tick(); tick();
     expect(Q().state).toBe('done');
     // The side beat stays open: Corin's brother is on the hill.
     ch.talk('meadow-corin'); tick(); finish(); tick();
@@ -177,6 +184,24 @@ describe('Ebb', () => {
     expect(c.x).toBeLessThan(96);
     expect(c.hunch).toBeLessThan(0.3);
   });
+  it('runs inside by the door when the raid starts, and hides in the house', () => {
+    const c = newChild(93, 100); c.mode = 'idle';
+    childStep(c, ctx({ wx: 60, wz: 100, raid: false }), 0.1);
+    expect(c.mode).toBe('idle');
+    let viaDoor = false;
+    for (let k = 0; k < 120 && c.mode !== 'cower'; k++) { childStep(c, ctx({ wx: 60, wz: 100 }), 0.1); if (Math.hypot(c.x - 96, c.z - 100) < 0.5) viaDoor = true; }
+    expect(viaDoor).toBe(true);
+    expect(c.mode).toBe('cower');
+    expect(Math.hypot(c.x - 100, c.z - 100)).toBeLessThan(0.3);
+  });
+  it('houseSpots: hides inside the kit\'s walls and leaves by its real door', () => {
+    const plot = { at: [0, 0], facing: 0, w: 4.2, d: 3.8 };
+    const meta = { W: 2.6, D: 2.9, ox: 0, oz: 0, door: { wall: 'front', a: 1.3 } };
+    const { inside, door } = houseSpots(plot, meta);
+    expect(Math.abs(inside[0])).toBeLessThan(2.6); expect(Math.abs(inside[1])).toBeLessThan(2.9);
+    expect(door[0]).toBeCloseTo(1.3, 5); expect(door[1]).toBeCloseTo(2.9 + 1.3, 5);
+    expect(Math.sign(inside[0])).toBe(-1);   // the corner away from the door
+  });
   it('waits when left behind, and is handed to his mother once out of the house', () => {
     const c = newChild(96, 100); c.mode = 'follow';
     childStep(c, ctx({ wx: 96 - 30, wz: 100, follow: true }), 0.1);
@@ -192,7 +217,7 @@ describe('Ebb', () => {
   });
   it('is not saved while he is still near the burning house', () => {
     const c = newChild(96, 100); c.mode = 'follow';
-    for (let k = 0; k < 50; k++) childStep(c, ctx({ wx: 90, wz: 100, follow: true, mother: [90, 100] }), 0.1);
+    for (let k = 0; k < 50; k++) childStep(c, ctx({ wx: 95.5, wz: 100, follow: true, mother: [95, 100] }), 0.1);   // within 6 m of the house
     expect(c.out).toBe(false);
     expect(c.saved).toBe(false);
   });

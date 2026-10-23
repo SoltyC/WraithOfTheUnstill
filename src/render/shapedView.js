@@ -15,6 +15,7 @@ import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMa
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { shapedVertexWGSL, shapedFragmentWGSL } from '../shaders/shaped.wgsl.js';
 import { wardenVertexWGSL, wardenFragmentWGSL } from '../shaders/warden.wgsl.js';
+import { bellwetherVertexWGSL, bellwetherFragmentWGSL } from '../shaders/bellwether.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -29,6 +30,8 @@ export function createShapedView(scene, atmo, chunks, opts = {}) {
   ShaderStore.ShadersStoreWGSL.shapedFragmentShader = shapedFragmentWGSL;
   ShaderStore.ShadersStoreWGSL.wardenVertexShader = wardenVertexWGSL;
   ShaderStore.ShadersStoreWGSL.wardenFragmentShader = wardenFragmentWGSL;
+  ShaderStore.ShadersStoreWGSL.bellwetherVertexShader = bellwetherVertexWGSL;
+  ShaderStore.ShadersStoreWGSL.bellwetherFragmentShader = bellwetherFragmentWGSL;
   const shader = opts.shader || 'shaped';
   const engine = scene.getEngine();
   const count = chunks.length / 16;

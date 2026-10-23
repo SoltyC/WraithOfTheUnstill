@@ -22,7 +22,7 @@ describe('village fire', () => {
     expect(vf.indexOf('well')).toBe(-1);
   });
 
-  it('ignites, steadies, then burns the structure down in 90-150 s', () => {
+  it('ignites, steadies, then burns the structure down in about 3-4.5 min', () => {
     const vf = createVillageFire(plots());
     const c = vf.indexOf('c');
     expect(vf.ignite('c', 0)).toBe(true);
@@ -32,8 +32,8 @@ describe('village fire', () => {
     expect(vf.heat[c]).toBeGreaterThan(0.5);
     let t = 12;
     while (vf.state[c] !== S.DEAD && t < 400) { run(vf, 1); t++; }
-    expect(t).toBeGreaterThan(85);
-    expect(t).toBeLessThan(165);
+    expect(t).toBeGreaterThan(175);
+    expect(t).toBeLessThan(290);
     expect(vf.structure[c]).toBe(0);
     expect(vf.counts.lost).toBe(1);
     const kinds = []; for (let k = 0; k < vf.evCount; k++) kinds.push(vf.evKind[k]);
@@ -76,8 +76,9 @@ describe('village fire', () => {
     const a = createVillageFire(plots()), b = createVillageFire(plots());
     for (const v of [a, b]) { v.ignite('c', 0); run(v, 20); }
     const ha = a.heat[0], hb = b.heat[0];
-    run(a, 3, CALM, (v, dt) => v.douse(0, 0, 1, fireTuning.ribbonRate * dt));
-    run(b, 3, CALM, (v, dt) => v.rain(0, 0, fireTuning.rainRadius, fireTuning.rainRate));
+    // (0.2 s: at the playtested rates both quench it within a second, which would tie)
+    run(a, 0.2, CALM, (v, dt) => v.douse(0, 0, 1, fireTuning.ribbonRate * dt));
+    run(b, 0.2, CALM, (v, dt) => v.rain(0, 0, fireTuning.rainRadius, fireTuning.rainRate));
     expect(hb - b.heat[0]).toBeGreaterThan(ha - a.heat[0]);
     // And rain reaches the roofs next door where the ribbon's footprint does not.
     const c = createVillageFire(plots());
@@ -194,5 +195,34 @@ describe('village fire', () => {
       expect(process.memoryUsage().heapUsed - m0).toBeLessThan(2e6);
     }
     expect([vf.heat, vf.state, vf.counts, vf.act, vf.structure].every((a, i) => a === refs[i])).toBe(true);
+  });
+
+  it('spreads a building emitter along its ridge, door and window segments', () => {
+    const vf = createVillageFire([{ id: 'r', kind: 'house', at: [10, 20], facing: 0.7, w: 8, d: 6, y: 0, seed: 9 }]);
+    vf.ignite(0, 0); run(vf, 20);
+    expect(vf.emitterCount(0)).toBe(3);
+    const pos = [0, 0, 0], seg = [0, 0, 0, 0];
+    for (let k = 0; k < 3; k++) {
+      const size = vf.emitter(0, k, pos); vf.emitterSegment(0, k, seg);
+      expect(size).toBeGreaterThan(0);
+      expect(Math.hypot(seg[0], seg[1])).toBeCloseTo(1, 5);
+      expect(seg[2]).toBeGreaterThan(0.3);
+      const mode = seg[3] >= 5 ? 1 : 0, phase = seg[3] - mode * 10;
+      expect(mode).toBe(k === 0 ? 0 : 1);
+      expect(phase).toBeGreaterThanOrEqual(0); expect(phase).toBeLessThan(1);
+      if (k === 0) { // the ridge runs along the width, centred on the plot, ends inside the footprint
+        expect(pos[0]).toBeCloseTo(10, 6); expect(pos[2]).toBeCloseTo(20, 6);
+        expect(seg[2]).toBeLessThanOrEqual(vf.plots[0].w * 0.7);
+        const ex = pos[0] + seg[0] * seg[2], ez = pos[2] + seg[1] * seg[2];
+        expect(Math.hypot(ex - 10, ez - 20)).toBeLessThan(vf.plots[0].w * 0.7 + 1e-6);
+      } else { // openings: flames burst away from the building centre
+        const ox = -seg[1], oz = seg[0];
+        expect((pos[0] - 10) * ox + (pos[2] - 20) * oz).toBeGreaterThan(0);
+      }
+    }
+    // a hotter fire licks along more of the ridge
+    const cool = [0, 0, 0, 0]; vf.emitterSegment(0, 0, cool);
+    vf.heat[0] = 0.2; const lo = [0, 0, 0, 0]; vf.emitterSegment(0, 0, lo);
+    expect(lo[2]).toBeLessThan(cool[2]);
   });
 });

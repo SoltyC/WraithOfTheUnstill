@@ -8,3 +8,4 @@ Thumbs.db
 .env.*
 test-results/
 playwright-report/
+screenshots/bot/

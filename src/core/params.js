@@ -24,7 +24,7 @@ export const paramDefs = [
   // Dynamic resolution (core/dynamicRes.js): the slider above becomes the maximum; the scale steps
   // down/up to hold this GPU frame time. 1 = on, 0 = off (fixed at the slider).
   { key: 'dynamicRes', label: 'Dynamic resolution (0/1)', group: 'Quality', min: 0, max: 1, step: 1, value: 1 },
-  { key: 'targetMs', label: 'Target GPU frame (ms)', group: 'Quality', min: 8, max: 20, step: 0.5, value: 14 },
+  { key: 'targetMs', label: 'Target GPU frame (ms)', group: 'Quality', min: 8, max: 20, step: 0.5, value: 15 },
 ];
 
 /**

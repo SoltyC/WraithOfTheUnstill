@@ -319,8 +319,7 @@ function hall(F) {
     F.box(u - 1.6, u + 1.6, 28.4, 33.4, FM - 1.6, FM + 1.6, S_, 1000 + i, { course: 1.4, solid: false });
     F.box(u - 1.1, u + 1.1, 33.4, 38, FM - 1.1, FM + 1.1, S_, 1010 + i, { course: 1.5, solid: false });
     F.obox(u, FM, 38, 38.6, 1.45, 1.45, 0, S_, 1020 + i, { plain: true, carve: 5 });
-    turf(F, u, 38.6, FM, 1.35, 1.1 + 0.5 * h2(i, 2), 1030 + i * 10);
-    F.obox(u + 0.5, FM - 0.3, 38.6, 39.4, 0.35, 0.35, 0.4, MAT.EARTH, 1040 + i, { plain: true });
+    // The turf cap is its own site (manor-vent-N, see ventCap / manorSites) so the fight can blow it off.
   });
   // Under the open roof: fallen slate and timbers, rubble heaps.
   for (let i = 0; i < 14; i++) {
@@ -581,10 +580,26 @@ function gatehouse(F) {
   rubble(F, 6.5, GF1 + 2.5, 3, 6, 4500, 0); rubble(F, -9, GF0 - 2.5, 3, 5, 4510, 0);
 }
 
+const fcKeep = (u, f) => Math.abs(u) < 45 && f > -11.8 && f < 52.5 && !(Math.abs(u) > 35 && f < -2) && padE(u, f) < 0.975 && !(Math.hypot(u, f - 26) < 5.6) && !(Math.abs(u) < GU + 0.5 && f > 52.5);
+const FC_PATCHES = [[-12, 8, 6], [18, 14, 7], [-26, 30, 6], [8, 38, 7], [30, 40, 5], [0, 50, 5], [-3, 3, 4], [25, 0, 5]];
+/** 0..1 how paved the forecourt is at world (x, z): 1 on whole slabs, falling to 0 in the broken patches
+ *  (turf comes through) and off the paving. The bake paints it into the village mask (paved: no grass
+ *  through the slabs; tools/bake-world/villageMask.mjs). */
+export function forecourtPaving(x, z) {
+  const dx = x - MANOR.centre[0], dz = z - MANOR.centre[1], c = Math.cos(FACING), s = Math.sin(FACING);
+  const u = dx * c - dz * s, f = dx * s + dz * c;
+  if (!fcKeep(u, f)) return 0;
+  let p = 0; for (const [pu, pf, pr] of FC_PATCHES) p = Math.max(p, 1 - Math.hypot(u - pu, f - pf) / pr);
+  return 1 - Math.min(1, Math.max(0, (p - 0.15) / 0.45));
+}
+/** The forecourt's extent in world space (for the mask's bounds). */
+export function forecourtBounds() {
+  const pts = [[-45, -12], [45, -12], [-45, 52.5], [45, 52.5]].map(([u, f]) => manorWorld(u, f));
+  return { x0: Math.min(...pts.map((q) => q[0])), x1: Math.max(...pts.map((q) => q[0])), z0: Math.min(...pts.map((q) => q[1])), z1: Math.max(...pts.map((q) => q[1])) };
+}
+
 function forecourt(F) {
-  const keep = (u, f) => Math.abs(u) < 45 && f > -11.8 && f < 52.5 && !(Math.abs(u) > 35 && f < -2) && padE(u, f) < 0.975 && !(Math.hypot(u, f - 26) < 5.6) && !(Math.abs(u) < GU + 0.5 && f > 52.5);
-  const patches = [[-12, 8, 6], [18, 14, 7], [-26, 30, 6], [8, 38, 7], [30, 40, 5], [0, 50, 5], [-3, 3, 4], [25, 0, 5]];
-  pave(F, -45, 45, -11.8, 52.5, 0.03, 2.4, 51, keep, patches);
+  pave(F, -45, 45, -11.8, 52.5, 0.03, 2.4, 51, fcKeep, FC_PATCHES);
   // A band of different slab (the processional way) is just the patches' absence: keep it plain.
   // Edge wall: a low parapet along the pad's edge with a retaining wall below, broken in places, open at the gate.
   const pts = [];
@@ -641,6 +656,15 @@ function forecourt(F) {
   rubble(F, -22, -6, 3, 6, 5800, 0); rubble(F, 10, -9, 3.5, 7, 5810, 0); rubble(F, 28, -5, 3, 5, 5820, 0);
 }
 
+/** The turf cap that seals chimney stack i (u = VENT_U[i]) in the hall's frame: a site of its own, hidden when stripped. */
+export const VENT_U = [-22, -6, 13];
+export const VENT_Y = 38.6;
+function ventCap(F, i) {
+  const u = VENT_U[i];
+  turf(F, u, VENT_Y, FM, 1.35, 1.1 + 0.5 * h2(i, 2), 1030 + i * 10);
+  F.obox(u + 0.5, FM - 0.3, VENT_Y, 39.4, 0.35, 0.35, 0.4, MAT.EARTH, 1040 + i, { plain: true });
+}
+
 // ---- the sites ------------------------------------------------------------------------------------------
 
 /** The manor's sites, to be appended after the village's (each seated at MANOR.y). */
@@ -664,5 +688,7 @@ export function manorSites() {
     mk('manor-tower-3', -46, -1,  11, (F) => tower(F, -46, -1, 5.2, 46, { seed: 13, coneH: 10.5, lay: 8, top: 5, coneGone: (i) => (i === 8 ? 2 : 0) }), { back: true, footing: (F) => F.b.drum(...F.xz(-46, -1), -40, 0.3, 6.6, 5.1, 14, MAT.STONE, 905, { solid: false }) }),
     mk('manor-tower-4', 31, -9,  11, (F) => tower(F, 31, -9, 5.2, 50, { seed: 14, coneH: 11, lay: 8, top: 5 }), { back: true, footing: (F) => F.b.drum(...F.xz(31, -9), -40, 0.3, 6.6, 5.1, 14, MAT.STONE, 906, { solid: false }) }),
     mk('manor-gate', 0, 56.6, 20, gatehouse),
+    // The three chimney turf caps (appended: the sites above keep their indices).
+    ...VENT_U.map((u, i) => mk('manor-vent-' + i, u, -26, 4, (F) => ventCap(F, i), { back: true, vent: true })),
   ];
 }

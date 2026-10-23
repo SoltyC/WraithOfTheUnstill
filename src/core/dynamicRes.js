@@ -6,12 +6,12 @@
 // presented frame time, which is capped by the display refresh, so that mode only reacts to
 // sustained overshoot of max(target, refresh floor) + 3 ms and never chases the vsync floor.
 
-export const MIN_SCALE = 0.5;
+export const MIN_SCALE = 0.6;   // below this the robe and faces go soft (user, 2026-10-24)
 export const STEP = 0.05;
 export const WINDOW = 30;
 export const MIN_SAMPLES = 15;
 const DOWN_FACTOR = 1.05, DOWN_HOLD_S = 1;
-const UP_FACTOR = 0.8, UP_HOLD_S = 3;
+const UP_FACTOR = 0.87, UP_HOLD_S = 3;   // was 0.8: at 14 ms that needed < 11.2 ms to climb back, so a busy scene left it low for good
 const MIN_INTERVAL_S = 1.5;
 const FALLBACK_MARGIN_MS = 3;
 

@@ -13,18 +13,20 @@ export const BUILDING_KINDS = ['house', 'house2', 'shop', 'workshop', 'barn', 'h
 
 export const fireTuning = {
   spreadRadius: 12,        // m between centres within which a burning building can seed a neighbour
-  spreadRate: 0.12,        // ember charge per second at heat 1, touching distance, no wind
-  burnMin: 72, burnSpan: 50, // s a building takes to burn down at full heat (+ about 8 s of ramp): ~90-145 s
+  spreadRate: 0.06,        // ember charge per second at heat 1, touching distance, no wind (0.12 burned 19 of 23 down in a bot playtest)
+  burnMin: 170, burnSpan: 90, // s a building takes to burn down at full heat (+ about 8 s of ramp): ~3-4.5 min (14 fires at ~11 s each to reach and douse)
   igniteTime: 5,           // s from first spark to a steady fire
   smoulderTime: 14,        // s of embers before a quenched building is out
   deadCool: 25,            // s for the ruin's heat to fall
   // Extinguish rates the wiring uses (heat per second unless noted):
-  ribbonRate: 0.35, sweepBurst: 0.25, rainRate: 0.6, rainRadius: 5, rainWet: 0.08,
+  ribbonRate: 0.8, sweepBurst: 0.45, rainRate: 1.6,   // (bot playtest 2026-10-24: 0.35 took ~20 s of Ribbon per house)
+  rainRadius: 5, rainWet: 0.08,
   freezeSeconds: 20, freezeRadius: 4.5,
   fanHeat: 0.5, fanBoost: 3,  // heat/s raised by a gust front; seconds a fanned building spreads as if the wind were strong
   drawRate: 0.35, drawFloor: 0.2,   // vortex/updraft: extra heat decay /s, never below this (no extinguish)
   // The Wraith:
   damagePerSec: 4, damageFloor: 0.25, damageHeat: 0.3, focusPerSec: 7, ejectHeat: 0.8, ejectDwell: 1.1,
+  burnHealDelay: 3, burnHealRate: 6,   // s out of the heat before burns heal; health per second
 };
 
 /** Per kind: ridge height (m above the seat), flame size scale, burn time multiplier. */
@@ -47,6 +49,7 @@ export function createVillageFire(plots) {
   const cx = new Float64Array(N), cz = new Float64Array(N), base = new Float64Array(N);
   const cs = new Float64Array(N), sn = new Float64Array(N);          // cos / sin of facing
   const rad = new Float64Array(N), hu = new Float64Array(N), hd = new Float64Array(N);
+  const ridgeA = new Uint8Array(N).fill(1), ridgeH = new Float64Array(N), ridgeC = new Float64Array(N);
   const roof = new Float64Array(N), kscale = new Float64Array(N), burnTime = new Float64Array(N), thr = new Float64Array(N);
   list.forEach((p, i) => {
     const k = KIND[p.kind], h = hash01((p.seed | 0) + i * 7919);
@@ -108,6 +111,18 @@ export function createVillageFire(plots) {
     /** Water (Ribbon / Sweep): `amount` heat removed at once from every building whose footprint is within r of (x, z). */
     douse(x, z, r, amount) {
       for (let i = 0; i < N; i++) { const dx = x - cx[i], dz = z - cz[i], rr = rad[i] + r; if (dx * dx + dz * dz <= rr * rr) { pCool[i] += amount; pWet[i] += amount * 0.5; hold[i] = 0; } }
+    },
+    /** Douse one building by index (the Ribbon's stream, systems/villageFire.js). */
+    douseAt(i, amount) { pCool[i] += amount; pWet[i] += amount * 0.5; hold[i] = 0; },
+    /** The burning (or smouldering) building whose footprint (+ margin m) holds (x, z), or -1. */
+    nearestBurning(x, z, margin) {
+      let b = -1, bd = 1e9;
+      for (let i = 0; i < N; i++) {
+        const st = state[i]; if (st !== S.IGNITE && st !== S.BURN && st !== S.SMOULDER) continue;
+        const dx = x - cx[i], dz = z - cz[i], d2 = dx * dx + dz * dz, rr = rad[i] + margin;
+        if (d2 <= rr * rr && d2 < bd) { bd = d2; b = i; }
+      }
+      return b;
     },
     /** A one-off burst (Sweep): douse, but each building takes it only once per cast `castId`. */
     douseBurst(x, z, r, amount, castId) {
@@ -293,12 +308,25 @@ export function createVillageFire(plots) {
       const h = heat[i]; return st === S.IGNITE || h < 0.45 ? 1 : h < 0.75 ? 2 : 3;
     },
     /** Emitter k of building i: out[0..2] = world x, height above the seat, world z; returns flame size (the fire slot's w). */
+    /** The building's real roof (its kit's meta: ridgeOf in world/villageKits.js) in place of the kind's guess. */
+    setRidge(i, ridgeY, alongA, half, c) { roof[i] = ridgeY; ridgeA[i] = alongA ? 1 : 0; ridgeH[i] = half; ridgeC[i] = c; },
     emitter(i, k, out) {
       const h = heat[i], roofY = roof[i] * (0.55 + 0.45 * structure[i]);
-      let u = 0, f = 0, y = roofY * 0.9;
-      if (k === 1) { f = hd[i] * 0.95; y = 1.3; } else if (k === 2) { u = hu[i] * 0.95; f = hd[i] * 0.1; y = 1.7; } else { u = 0.3 * hu[i]; }
+      let u = 0, f = ridgeC[i], y = roofY + 0.1;   // the ridge: on it, not inside the roof (bot playtest 2026-10-24: the flames were buried)
+      if (k === 1) { f = hd[i] * 0.95; y = 1.3; } else if (k === 2) { u = hu[i] * 0.95; f = hd[i] * 0.1; y = 1.7; } // k 0: the ridge centre
       out[0] = cx[i] + u * cs[i] + f * sn[i]; out[1] = y; out[2] = cz[i] - u * sn[i] + f * cs[i];
       return (0.8 + h * 3.4) * kscale[i] * (k === 0 ? 1 : 0.7) * (0.7 + 0.3 * structure[i]); // a burning house: flames taller than a man over the roof
+    },
+    /** The line the emitter's flames are spread along (shaders/fire.wgsl.js fireL): out[0..1] = unit direction (x, z), out[2] = half length (m),
+     *  out[3] = mode * 10 + flicker phase (0..1). Mode 0: the roof ridge, along the plot's width. Mode 1: an opening (door at the front, window in the side wall)
+     *  whose flames burst out along (-dir.z, dir.x) and climb the wall. */
+    emitterSegment(i, k, out) {
+      const h = heat[i], ph = hash01(i * 31 + k * 7 + 5);
+      if (k === 1) { out[0] = cs[i]; out[1] = -sn[i]; out[2] = Math.min(0.9, hu[i] * 0.3); out[3] = 10 + ph; }
+      else if (k === 2) { out[0] = -sn[i]; out[1] = -cs[i]; out[2] = 0.5; out[3] = 10 + ph; }
+      else if (ridgeA[i]) { out[0] = cs[i]; out[1] = -sn[i]; out[2] = Math.min(6, (ridgeH[i] || hu[i]) * (0.5 + 0.4 * h)); out[3] = ph; }
+      else { out[0] = sn[i]; out[1] = cs[i]; out[2] = Math.min(6, ridgeH[i] * (0.5 + 0.4 * h)); out[3] = ph; }   // a front-gabled roof: the ridge runs front to back
+      return out;
     },
     /** A smoke-only plume position for smouldering / ruined buildings (same out convention). */
     smokePoint(i, out) { out[0] = cx[i]; out[1] = roof[i] * 0.5 * (0.5 + 0.5 * structure[i]); out[2] = cz[i]; return 0.8 + smoke[i] * 1.2; },

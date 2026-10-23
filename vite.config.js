@@ -80,8 +80,58 @@ function shotSink() {
   };
 }
 
+/**
+ * Bot bridge (?bot=1, src/core/bot.js): lets a script play the live game. The page long-polls
+ * GET /__wraith/bot/next for a command and POSTs /__wraith/bot/reply?id=; tools/bot/bot.mjs POSTs
+ * /__wraith/bot/cmd and long-polls GET /__wraith/bot/reply?id=. In memory, local servers only.
+ */
+function botBridge() {
+  const queue = [], replies = new Map(), pageWait = [], replyWait = new Map();
+  let nextId = 1, lastSeen = 0, helloAt = 0;
+  const json = (res, code, v) => { res.statusCode = code; res.setHeader('content-type', 'application/json'); res.end(JSON.stringify(v)); };
+  const body = (req, cb) => { let b = ''; req.on('data', (c) => { b += c; if (b.length > 4 << 20) req.destroy(); }); req.on('end', () => cb(b)); };
+  const handler = (req, res, next) => {
+    if (!req.url.startsWith('/__wraith/bot/')) return next();
+    const u = new URL(req.url, 'http://x'), route = u.pathname.slice('/__wraith/bot/'.length);
+    if (route === 'cmd' && req.method === 'POST') return body(req, (b) => {
+      const id = nextId++; const cmd = { ...JSON.parse(b || '{}'), _id: id };
+      // A page that went away leaves its poll behind: hand the command only to a live one.
+      let w; while ((w = pageWait.shift()) && w.closed) clearTimeout(w.t);
+      if (w) { clearTimeout(w.t); json(w.res, 200, cmd); } else queue.push(cmd);
+      json(res, 200, { id });
+    });
+    if (route === 'next' && req.method === 'GET') {
+      lastSeen = Date.now();
+      if (queue.length) return json(res, 200, queue.shift());
+      const w = { res, closed: false, t: setTimeout(() => { const i = pageWait.indexOf(w); if (i >= 0) pageWait.splice(i, 1); res.statusCode = 204; res.end(); }, 20000) };
+      res.on('close', () => { w.closed = true; const i = pageWait.indexOf(w); if (i >= 0) { pageWait.splice(i, 1); clearTimeout(w.t); } });
+      return void pageWait.push(w);
+    }
+    if (route === 'reply' && req.method === 'POST') return body(req, (b) => {
+      const id = Number(u.searchParams.get('id')); const w = replyWait.get(id);
+      if (w) { clearTimeout(w.t); replyWait.delete(id); w.res.setHeader('content-type', 'application/json'); w.res.end(b); } else replies.set(id, b);
+      res.end('ok');
+    });
+    if (route === 'reply' && req.method === 'GET') {
+      const id = Number(u.searchParams.get('id'));
+      if (replies.has(id)) { const b = replies.get(id); replies.delete(id); res.setHeader('content-type', 'application/json'); return void res.end(b); }
+      const ms = Number(u.searchParams.get('wait') || 120000);
+      const w = { res, t: setTimeout(() => { replyWait.delete(id); json(res, 504, { error: 'no reply in ' + ms + ' ms' }); }, ms) };
+      return void replyWait.set(id, w);
+    }
+    if (route === 'status') return json(res, 200, { pageSeenMsAgo: lastSeen ? Date.now() - lastSeen : null, polling: pageWait.length, queued: queue.length, hello: helloAt });
+    if (route === 'hello') { helloAt = Date.now(); queue.length = 0; return json(res, 200, { ok: true }); }
+    return json(res, 404, { error: 'unknown bot route ' + route });
+  };
+  return {
+    name: 'wraith-bot-bridge',
+    configureServer(server) { server.middlewares.use(handler); },
+    configurePreviewServer(server) { server.middlewares.use(handler); },
+  };
+}
+
 export default defineConfig({
-  plugins: [perfSink(), shotSink()],
+  plugins: [perfSink(), shotSink(), botBridge()],
   // data/ is served at the site root (baked world at /world/…) and copied into builds.
   publicDir: 'data',
   server: { host: '127.0.0.1', port: 5173, strictPort: true },

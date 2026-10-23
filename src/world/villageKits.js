@@ -23,6 +23,8 @@
 
 import { MAT, NS, rot, stall as marketStall, cloth, lampPost } from './architecture.js';
 import { stick } from './camp.js';
+import { layWall } from './masonry.js';
+import { plotProps, bridgeSite, millSites, wallSite } from './villageProps.js';
 
 export { Builder, NS, rot, lampPost, stall, cloth } from './architecture.js';
 
@@ -56,6 +58,12 @@ class Frame {
   box(a0, a1, y0, y1, c0, c1, mat, seed, o = {}) {
     const [x, z] = this.xz((a0 + a1) / 2, (c0 + c1) / 2);
     this.b.box(x, z, y0, y1, (a1 - a0) / 2, (c1 - c0) / 2, this.yaw, mat, seed, { plain: true, solid: false, ...NS, ...o });
+  }
+  /** A laid (coursed) STONE wall box: `blockLen` m blocks, `course` m courses, solid unless o.solid === false. */
+  lay(a0, a1, y0, y1, c0, c1, seed, o = {}) {
+    const [x, z] = this.xz((a0 + a1) / 2, (c0 + c1) / 2);
+    layWall(this.b, x, z, y0, y1, (a1 - a0) / 2, (c1 - c0) / 2, this.yaw, MAT.STONE, seed, { course: o.course || 0.8, blockLen: o.blockLen || 1.35, cap: false });
+    if (o.solid !== false) this.block(a0, a1, y0, y1, c0, c1);
   }
   /** A timber box with only the faces in `faces` (FT top, FB bottom, FK back, FF front (+c), FL (-a), FR (+a)). */
   tb(a0, a1, y0, y1, c0, c1, mat, seed, faces = FALL) {
@@ -514,8 +522,15 @@ function building(b, facing, o, extras) {
   extras && extras({ b, facing, root, S, r2, gF, uF, rf, rp, g1, plateY, foot, W, D, J, o });
 }
 
+/** The roof ridge in the site frame (fires burn along it, systems/villageFire.js): height above the seat,
+ *  whether it runs across the width (a) or front to back (c), its half length, and its centre's c. */
+function ridgeOf(o) {
+  const J = o.J || 0, foot = o.foot == null ? 0.45 : o.foot, tn = Math.tan(o.pitch || 0.8);
+  const L = o.gableFront ? o.W : o.D + J / 2;
+  return { ridgeY: foot + (o.h0 || 0) + (o.h1 || 0) + L * tn, ridgeAlongA: !o.gableFront, ridgeHalf: o.gableFront ? o.D + J / 2 : o.W, ridgeC: (o.oz || 0) + J / 2 };
+}
 function finishMeta(fn, o, extra = {}) {
-  fn.meta = { kind: o.kind, W: o.W, D: o.D, J: o.J || 0, ox: o.ox || 0, oz: o.oz || 0, foot: o.foot == null ? 0.45 : o.foot, door: o.door, roofMat: o.roofMat, pitch: o.pitch, pattern: o.pattern, framed: true, ...extra };
+  fn.meta = { ...(o.h0 != null && o.pitch != null ? ridgeOf(o) : {}), kind: o.kind, W: o.W, D: o.D, J: o.J || 0, ox: o.ox || 0, oz: o.oz || 0, foot: o.foot == null ? 0.45 : o.foot, door: o.door, roofMat: o.roofMat, pitch: o.pitch, pattern: o.pattern, framed: true, shop: o.shop, lean: !!o.lean, ...extra };
   return fn;
 }
 function placeDoorLantern(o, r, always) {
@@ -733,59 +748,133 @@ function barnKit(plot) {
   return finishMeta((b, facing) => building(b, facing, o, ex), o);
 }
 
+const CH_T = 2.15;                       // the bell tower's half side (m)
 function planChapel(plot) {
   const r = seedRng(plot), foot = 0.45;
-  const W = clamp(2.5 + r() * 0.4, 2.2, Math.max(2.2, plot.w - 0.6)), D = clamp(4.6 + r() * 1.2, 3.8, Math.max(3.8, plot.d - 0.8));
+  const W = clamp(3.5 + r() * 0.45, 3.0, Math.max(3.0, plot.w - 6.6)), D = clamp(6.7 + r() * 1.0, 5.2, Math.max(5.2, plot.d - 6.0));
   const o = {
-    kind: 'chapel', seed: plot.seed, W, D, J: 0, h0: 3.75, h1: 0, foot, ground: 'stone', gMat: MAT.STONE, uMat: MAT.STONE, gableFront: true,
+    kind: 'chapel', seed: plot.seed, W, D, J: 0, h0: 4.1, h1: 0, foot, ground: 'stone', gMat: MAT.STONE, uMat: MAT.STONE, gableFront: true,
     roofMat: MAT.SLATE, pitch: 0.95 + r() * 0.1, pattern: 0, ops: mkOps(), course: 1.0, doubleDoor: true, floorMat: MAT.FLAG, noLintel: true, ove: 0.35, ovg: 0.08, doorOpen: 1.3, noBraces: true,
+    ox: -(CH_T - 0.2), oz: -plot.d + D + 4.8,           // the nave leans left, the tower stands right of it; the yard is in front, the graves behind
   };
-  addDoor(o, 0, 1.4, true, 2.45);
-  const nwin = Math.max(2, Math.round(D * 2 / 3.2));
+  addDoor(o, 0, 1.5, true, 2.6);
+  const nwin = Math.max(3, Math.round(D * 2 / 3.2));
   for (const wall of ['right', 'left']) {
     const hl = D - STONE_T;
-    for (let k = 0; k < nwin; k++) o.ops.g[wall].push(winOpen({ a: -hl + (k + 0.5) * (2 * hl) / nwin, y0: 1.3, np: 1, nv: 2, cut: true }));
+    for (let k = 0; k < nwin; k++) o.ops.g[wall].push(winOpen({ a: -hl + (k + 0.5) * (2 * hl) / nwin, y0: 1.4, np: 1, nv: 2, cut: true }));
   }
-  o.ops.g.back.push(winOpen({ a: 0, y0: 1.3, np: 1, nv: 2, cut: true }));
+  o.ops.g.back.push(winOpen({ a: 0, y0: 1.4, np: 1, nv: 2, cut: true }));
   addAttic(o, r, 'front');
   o.nwin = nwin;
-  o.lantern = 1.2;
+  o.lantern = 1.25;
   return o;
+}
+
+/** The bell tower: laid STONE walls (four, outer faces) up to a belfry with louvred openings, a cornice, pinnacles, an
+ *  octagonal slate spire and an iron finial. Root-frame (a right, c forward) at its front-right corner; ~25 m to the tip. */
+function chapelTower(c, o) {
+  const { root, S, b } = c, I = MAT.STONE, T = CH_T, ta = o.W + T - 0.35, tc = o.D - T - 0.1, H0 = -1.2, H1 = 19.0, th = 0.5;
+  const tf = { front: root.sub(ta, tc + T, 0), back: root.sub(ta, tc - T, PI), right: root.sub(ta + T, tc, PI / 2), left: root.sub(ta - T, tc, -PI / 2) };
+  for (const w of WALLS) {
+    const fb = isFB(w), A0 = fb ? -T : -(T - th), A1 = -A0;
+    tf[w].lay(A0, A1, H0, H1, -th, 0, S(), { course: 1.5, blockLen: 2.1, solid: false });
+  }
+  root.block(ta - T, ta + T, H0, H1, tc - T, tc + T);
+  // String courses, slit windows and the belfry.
+  for (const y of [5.6, 11.0, 14.6]) for (const w of WALLS) { const fb = isFB(w); tf[w].box(-(fb ? T : T - th) - 0.12, (fb ? T : T - th) + 0.12, y, y + 0.22, -th, 0.12, I, S()); }
+  for (const w of WALLS) {
+    const fr = tf[w];
+    for (const [y0, y1] of [[3.4, 4.6], [8.2, 9.4]]) { fr.face(-0.14, 0.14, y0, y1, 0.03, MAT.IRON, S()); fr.box(-0.2, 0.2, y0 - 0.1, y0, -0.05, 0.1, I, S()); }
+    // Belfry: two louvred openings per face, stone mullion between, a hood over each.
+    for (const a of [-0.95, 0.95]) {
+      fr.face(a - 0.52, a + 0.52, 15.3, 18.0, 0.03, MAT.IRON, S());
+      for (let k = 0; k < 6; k++) fr.tb(a - 0.5, a + 0.5, 15.5 + k * 0.42, 15.5 + k * 0.42 + 0.07, 0.0, 0.2, MAT.WOOD, S(), FALL & ~FB & ~FK);
+      for (const sg of [-1, 1]) fr.box(a + sg * 0.52 - 0.07, a + sg * 0.52 + 0.07, 15.2, 18.2, 0, 0.1, I, S());
+      fr.box(a - 0.62, a + 0.62, 18.0, 18.28, 0, 0.14, I, S());
+      fr.box(a - 0.62, a + 0.62, 15.1, 15.3, 0, 0.14, I, S());
+    }
+  }
+  const [bx, bz] = root.xz(ta, tc);
+  root.box(ta - T - 0.28, ta + T + 0.28, H1, H1 + 0.38, tc - T - 0.28, tc + T + 0.28, I, S());
+  for (const sa of [-1, 1]) for (const sc of [-1, 1]) {
+    root.box(ta + sa * (T + 0.05) - 0.2, ta + sa * (T + 0.05) + 0.2, H1 + 0.38, H1 + 1.5, tc + sc * (T + 0.05) - 0.2, tc + sc * (T + 0.05) + 0.2, I, S());
+    const [px, pz] = root.xz(ta + sa * (T + 0.05), tc + sc * (T + 0.05));
+    b.cone(px, pz, H1 + 1.5, H1 + 2.25, 0.3, 4, MAT.SLATE, S(), { solid: false });
+  }
+  b.cone(bx, bz, H1 + 0.38, H1 + 5.5, 3.05, 8, MAT.SLATE, S(), { solid: false });
+  root.stk([ta, H1 + 5.4, tc], [ta, H1 + 6.0, tc], 0.045, 0.03, 5, MAT.IRON, S());
+  root.stk([ta - 0.3, H1 + 5.75, tc], [ta + 0.3, H1 + 5.75, tc], 0.03, 0.03, 4, MAT.IRON, S());
+  b.drum(bx, bz, 16.2, 17.3, 0.34, 0.12, 8, MAT.METAL, S(), { solid: false });          // the bell, seen through the louvres
+}
+
+/** The churchyard: a laid STONE wall round the plot (the plot is the yard), a lychgate in line with the door, gravestones. */
+function churchyard(c, plot, o) {
+  const { b, S } = c, base = new Frame(b, c.facing, 0, 0, 0), I = MAT.STONE, r = rng(plot.seed + 41);
+  const hw = plot.w - 0.6, hd = plot.d - 0.6, gs = o.ox, gh = 1.5, wy0 = -1.9, wy1 = 1.15;
+  const run = (fr, a0, a1) => { if (a1 - a0 > 0.2) { fr.box(a0, a1, wy0, 0, -0.5, 0, I, S(), { solid: false }); fr.lay(a0, a1, 0, wy1, -0.5, 0, S(), { course: 0.6, blockLen: 2.0 }); } };
+  const front = base.sub(0, hd, 0);
+  run(front, -hw, gs - gh); run(front, gs + gh, hw);
+  run(base.sub(0, -hd, PI), -hw, hw);
+  run(base.sub(hw, 0, PI / 2), -hd, hd); run(base.sub(-hw, 0, -PI / 2), -hd, hd);
+  // Lychgate: four posts, a tie beam, a gabled SHINGLE roof, a lantern.
+  const g = base.sub(gs, hd, 0);
+  for (const sa of [-1, 1]) for (const sc of [-1, 1]) {
+    g.tb(sa * 1.2 - 0.09, sa * 1.2 + 0.09, -0.1, 2.7, sc * 0.55 - 0.09 - 0.25, sc * 0.55 + 0.09 - 0.25, MAT.WOOD, S(), FALL & ~FB);
+  }
+  for (const sc of [-1, 1]) g.tb(-1.3, 1.3, 2.35, 2.62, sc * 0.55 - 0.25 - 0.08, sc * 0.55 - 0.25 + 0.08, MAT.WOOD, S());
+  for (const sa of [-1, 1]) g.tb(sa * 1.2 - 0.06, sa * 1.2 + 0.06, 2.35, 2.62, -0.85, 0.35, MAT.WOOD, S());
+  roofGable(g, { L: 1.6, c0: -0.95, c1: 0.45, y: 2.75, pitch: 0.7, mat: MAT.SHINGLE, S, ove: 0.25, ovg: 0.25 });
+  lantern(g.sub(1.2, 0.3, 0), 0, 2.0, S);
+  g.block(-1.35, -1.05, 0, 2.5, -0.85, 0.35); g.block(1.05, 1.35, 0, 2.5, -0.85, 0.35);
+  // Gravestones: rows on the grass left of the nave and behind it, a few on the right of the tower.
+  const nl = o.ox - o.W - 1.0, back = o.oz - o.D - 1.0, stones = [];
+  const zone = [[-hw + 0.9, nl, back, hd - 3.4], [-hw + 0.9, hw - 0.9, -hd + 0.9, back], [o.ox + o.W + 2 * CH_T + 0.7, hw - 0.9, back, hd - 4.5]];
+  for (let n = 0, tries = 0; n < 13 && tries < 200; tries++) {
+    const [s0, s1, f0, f1] = zone[tries % 3];
+    if (s1 - s0 < 1.0 || f1 - f0 < 1.0) continue;
+    const a = s0 + r() * (s1 - s0), f = f0 + r() * (f1 - f0);
+    if (stones.some((q) => Math.hypot(q[0] - a, q[1] - f) < 1.5)) continue;
+    stones.push([a, f]); n++;
+    const yaw = (r() - 0.5) * 0.2, tilt = (r() - 0.5) * 0.12, kind = r(), [x, z] = base.xz(a, f);
+    if (kind < 0.55) {
+      base.box(a - 0.3, a + 0.3, 0, 0.8 + r() * 0.35, f - 0.07, f + 0.07, I, S(), { tilt });
+      base.box(a - 0.21, a + 0.21, 0.82, 0.95 + r() * 0.35, f - 0.07, f + 0.07, I, S());
+    } else if (kind < 0.8) {
+      const h = 0.9 + r() * 0.4;
+      base.box(a - 0.07, a + 0.07, 0, h, f - 0.07, f + 0.07, I, S());
+      base.box(a - 0.27, a + 0.27, h * 0.62, h * 0.62 + 0.13, f - 0.06, f + 0.06, I, S());
+    } else base.box(a - 0.4, a + 0.4, 0, 0.22, f - 0.85, f + 0.85, I, S());
+    void yaw; void x; void z;
+  }
 }
 function chapelKit(plot) {
   const o = planChapel(plot);
   const ex = (c) => {
-    const { root, S, gF, W, D, b, g1 } = c, fr = gF.front, tn = Math.tan(o.pitch), I = MAT.STONE;
+    const { root, S, gF, W, D, b, g1 } = c, fr = gF.front, I = MAT.STONE;
     // Buttresses between the windows.
     for (const wall of ['right', 'left']) {
       const sf = gF[wall], hl = D;
       for (let k = 0; k <= o.nwin; k++) {
         const a = k === 0 ? -hl + 0.3 : k === o.nwin ? hl - 0.3 : -hl + (k * 2 * hl) / o.nwin;
-        sf.box(a - 0.3, a + 0.3, -1.2, 2.7, 0, 0.62, I, S(), { solid: true, plain: false });
-        sf.box(a - 0.2, a + 0.2, 2.7, g1 - 0.25, 0, 0.36, I, S(), { solid: true });
-        sf.box(a - 0.26, a + 0.26, 2.65, 2.75, 0, 0.68, I, S());
+        if (wall === 'right' && Math.abs(a - hl) < 3.2) continue;      // the tower stands there
+        sf.box(a - 0.3, a + 0.3, -1.2, 2.9, 0, 0.62, I, S(), { solid: true, plain: false });
+        sf.box(a - 0.2, a + 0.2, 2.9, g1 - 0.25, 0, 0.36, I, S(), { solid: true });
+        sf.box(a - 0.26, a + 0.26, 2.85, 2.95, 0, 0.68, I, S());
       }
     }
     // The round-arched door: voussoirs and a planked tympanum.
-    const ri = 0.7, ro = 1.05, yc = o.door.y1, n = 9, ty = yc;
+    const ri = 0.75, ro = 1.12, yc = o.door.y1, n = 9, ty = yc;
     for (let k = 0; k < n; k++) {
       const th0 = PI - (PI * k) / n, th1 = PI - (PI * (k + 1)) / n, tm = (th0 + th1) / 2, rm = (ri + ro) / 2;
       const am = rm * Math.cos(tm), ym = yc + rm * Math.sin(tm), hy = (rm * Math.abs(th0 - th1)) / 2 * 0.96, [x, z] = fr.xz(am, 0.06);
       b.box(x, z, ym - hy, ym + hy, (ro - ri) / 2, 0.14, fr.yaw, I, S(), { plain: true, roll: tm, solid: false, ...NS });
       b.tri(fr.pt(0, ty, 0.01), fr.pt(ri * Math.cos(th0), ty + ri * Math.sin(th0), 0.01), fr.pt(ri * Math.cos(th1), ty + ri * Math.sin(th1), 0.01), MAT.PLANK, S());
     }
-    fr.box(-1.15, -ro + 0.0, yc - 0.1, yc + 0.05, 0, 0.14, I, S());
-    lantern(fr, -(o.door.w / 2 + 0.55), o.door.y1 - 0.35, S);
-    // Bell gable.
-    const yA = g1 + W * tn, [bx, bz] = fr.xz(0, -0.2);
-    fr.box(-0.8, 0.8, yA - 1.2, yA - 0.1, -0.45, 0.06, I, S());
-    for (const sx of [-1, 1]) fr.box(sx < 0 ? -0.8 : 0.5, sx < 0 ? -0.5 : 0.8, yA - 0.1, yA + 1.4, -0.45, 0.06, I, S());
-    fr.box(-0.85, 0.85, yA + 1.4, yA + 1.7, -0.5, 0.1, I, S());
-    b.cone(bx, bz, yA + 1.7, yA + 2.9, 0.78, 8, MAT.SLATE, S(), { solid: false });
-    b.drum(bx, bz, yA + 0.35, yA + 1.2, 0.3, 0.1, 8, MAT.METAL, S(), { solid: false });
-    fr.tb(-0.55, 0.55, yA + 1.2, yA + 1.3, -0.3, -0.1, MAT.WOOD, S());
+    fr.box(-1.25, -ro + 0.0, yc - 0.1, yc + 0.05, 0, 0.14, I, S());
+    lantern(fr, -(o.door.w / 2 + 0.6), o.door.y1 - 0.35, S);
+    chapelTower(c, o);
+    churchyard(c, plot, o);
     // Pews, an aisle, a chancel step and altar.
-    const r = rng(o.seed + 9);
     for (let k = 0; k < Math.floor((D * 2 - 4.5) / 1.2); k++) {
       const f = D - 2.3 - k * 1.2;
       for (const sx of [-1, 1]) {
@@ -797,9 +886,8 @@ function chapelKit(plot) {
     root.box(-W + 0.45, W - 0.45, FLOOR, FLOOR + 0.2, -D + 0.45, -D + 2.1, MAT.FLAG, S(), { platform: true });
     root.box(-0.8, 0.8, FLOOR + 0.2, FLOOR + 1.05, -D + 0.7, -D + 1.3, I, S(), { solid: true });
     root.box(-0.9, 0.9, FLOOR + 1.05, FLOOR + 1.12, -D + 0.62, -D + 1.38, I, S());
-    void r;
   };
-  return finishMeta((b, facing) => building(b, facing, o, ex), o, { lanterns: 1 });
+  return finishMeta((b, facing) => building(b, facing, o, ex), o, { lanterns: 2, tower: true });
 }
 
 function planHall(plot) {
@@ -938,11 +1026,18 @@ export function villageSites(village) {
   const sites = [];
   for (const p of village.plots) {
     if (!KITS[p.kind]) continue;
-    sites.push({ id: 'vil-' + p.id, at: [p.at[0], p.at[1]], facing: p.facing, build: KITS[p.kind](p), footprint: Math.max(1, Math.min(p.w, p.d) * 0.85), seatAt: p.kind === 'stall' || p.kind === 'well' ? 'center' : 'top', windows: true, plot: p });
+    const kit = KITS[p.kind](p), pr = plotProps(p, kit.meta);
+    const build = pr ? Object.assign((b, f, R) => { kit(b, f, R); pr(b, f); }, { meta: kit.meta }) : kit;
+    sites.push({ id: 'vil-' + p.id, at: [p.at[0], p.at[1]], facing: p.facing, build, footprint: p.kind === 'chapel' ? 5 : Math.max(1, Math.min(p.w, p.d) * 0.85), seatAt: p.kind === 'stall' || p.kind === 'well' ? 'center' : 'top', windows: true, plot: p });
   }
   village.lights.forEach((l, i) => {
     const seed = 400 + i;
     sites.push({ id: 'vil-lamp-' + i, at: [l.at[0], l.at[1]], facing: 0, build: (b) => lampPost(b, 0, 0, 2.6, (i * 2.399) % TAU, seed, 4.5), footprint: 0.5, seatAt: 'center', lamp: true });
   });
+  // The set pieces, appended after the lamps (the site order of everything above is unchanged): the stone bridge(s),
+  // the windmill (tower + turning sails) and the drystone field walls (one site per farm).
+  for (const br of village.bridges || []) sites.push(bridgeSite(br));
+  for (const p of village.plots) if (p.kind === 'mill') sites.push(...millSites(p, village.meta && village.meta.market));
+  for (const w of village.walls || []) sites.push(wallSite(w));
   return sites;
 }

@@ -201,7 +201,11 @@
         { "id": "lead", "journal": "Follow Wenna to the village of Hearn. Stay close to her.", "when": { "flag": "meadow:arrived" }, "goal": { "dynamic": "meadow-guide", "label": "Wenna", "radius": 12 } },
         { "id": "fires", "journal": "Put out the fires in Hearn. Use Ribbon or Sweep on the burning roofs.", "when": { "flag": "meadow:fires-out" }, "goal": { "dynamic": "meadow-fire", "label": "A burning house", "radius": 12 } },
         { "id": "ebb", "journal": "Bring Ebb out of the burning house. His mother, Marit, is in the square.", "when": { "flag": "meadow:ebb-saved" }, "goal": { "dynamic": "meadow-ebb", "label": "Ebb", "radius": 6 } },
-        { "id": "thanks", "journal": "Talk to Elder Hild at the hall.", "when": { "flag": "meadow:stair-open" }, "goal": { "dynamic": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "lore": "meadow-lore-raid" }, { "autosave": true }] }
+        { "id": "thanks", "journal": "Talk to Elder Hild at the hall.", "when": { "flag": "meadow:stair-open" }, "goal": { "dynamic": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "lore": "meadow-lore-raid" }, { "autosave": true }] },
+        { "id": "manor", "journal": "Climb the stair to the manor at the top of the hill.", "when": { "near": { "poi": "manor", "r": 90 } }, "goal": { "poi": "manor", "label": "The manor", "radius": 60 } },
+        { "id": "face", "journal": "Go to the manor's forecourt. Something inside it is waking up.", "when": { "flag": "meadow:bellwether-woke" }, "goal": { "poi": "manor", "label": "The manor", "radius": 40 } },
+        { "id": "release", "journal": "Free the Bellwether. Blow the turf off its three chimneys with Gust, then climb its neck and strike the three valves.", "when": { "flag": "meadow:bellwether-released" }, "goal": { "poi": "manor", "label": "The Bellwether", "radius": 40 } },
+        { "id": "return", "journal": "Go back down to Hearn. Tell Elder Hild what happened.", "when": { "flag": "meadow:bellwether-released", "near": { "x": 93, "z": 926, "r": 45 } }, "goal": { "dynamic": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "autosave": true }] }
       ],
       "optional": [
         { "id": "marit", "journal": "Talk to Marit in the square. She is calling for her son.", "when": { "event": "talk:meadow-marit" }, "goal": { "dynamic": "meadow-marit", "label": "Marit", "radius": 6 } }

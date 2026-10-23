@@ -5,7 +5,12 @@
 
 /** @param {any} g  shared boot context */
 export function addClimbSystem(g) {
-  const { loop, input, Action, climb, controller, arm, combat, combatTuning, warden, wraithView, sfx, SFX, clock, knock, releaseCam, terrainState, BRUSH_PLOUGH, capture } = g;
+  const { loop, input, Action, climb, bellClimb, bellwether, controller, arm, combat, combatTuning, warden, wraithView, sfx, SFX, clock, knock, releaseCam, terrainState, BRUSH_PLOUGH, capture } = g;
+
+  /** The climb that has the Wraith: the Warden's, or the Bellwether's neck (see pickClimb). Both expose the same fields. */
+  let cl = climb;
+  g.activeClimb = cl;
+  const NECK_NEAR = 70;   // m from the neck's base within which a grip is meant for the Bellwether
 
   const knockCtl = {
     /** Warden time of the knockdown hit (−1: none yet), for the release camera. */
@@ -17,7 +22,7 @@ export function addClimbSystem(g) {
     step() {
       const dt = knockCtl.dt;
       const p = controller.pos;
-      if (warden.active && warden.shockR > 0 && !knock.active && !climb.climbing && combat.dying === 0 && !controller.god) {
+      if (warden.active && warden.shockR > 0 && !knock.active && !cl.climbing && combat.dying === 0 && !controller.god) {
         const dx = p.x - warden.shockX, dz = p.z - warden.shockZ, d = Math.hypot(dx, dz);
         if (knockCtl.prevShockR >= 0 && knockCtl.prevShockR < d && warden.shockR >= d && d < 70) {
           knock.hx = p.x; knock.hy = p.y; knock.hz = p.z; knock.hdx = dx / (d || 1); knock.hdz = dz / (d || 1);
@@ -69,13 +74,15 @@ export function addClimbSystem(g) {
         return;
       }
       w.knocked = false;
-      w.climbing = climb.climbing; w.climbBlend = climb.blend; w.gripOn = climb.climbing;
-      if (climb.climbing) {
-        for (let i = 0; i < 12; i++) w.grip[i] = climb.holds[i];
-        w.feetFree = climb.feetFree;
-        w.cpx = climb.x; w.cpy = climb.y; w.cpz = climb.z; w.climbPhase = climb.phase;
-        w.cr[0] = climb.rx; w.cr[1] = climb.ry; w.cr[2] = climb.rz; w.cu[0] = climb.ux; w.cu[1] = climb.uy; w.cu[2] = climb.uz;
-        w.cf[0] = climb.fx; w.cf[1] = climb.fy; w.cf[2] = climb.fz;
+      // A climb that was let go of still eases its pose out (blend), so the active one is the last to have gripped.
+      const c = cl;
+      w.climbing = c.climbing; w.climbBlend = c.blend; w.gripOn = c.climbing;
+      if (c.climbing) {
+        for (let i = 0; i < 12; i++) w.grip[i] = c.holds[i];
+        w.feetFree = c.feetFree;
+        w.cpx = c.x; w.cpy = c.y; w.cpz = c.z; w.climbPhase = c.phase;
+        w.cr[0] = c.rx; w.cr[1] = c.ry; w.cr[2] = c.rz; w.cu[0] = c.ux; w.cu[1] = c.uy; w.cu[2] = c.uz;
+        w.cf[0] = c.fx; w.cf[1] = c.fy; w.cf[2] = c.fz;
       }
     },
   };
@@ -83,49 +90,57 @@ export function addClimbSystem(g) {
 
   loop.add({ name: 'climb', update: () => {
     const inp = input, A = Action, d = inp.down;
-    climb.grip = d[A.Traverse] === 1 && !controller.surf.active && !arm.free && combat.dying === 0;
-    climb.mx = d[A.MoveRight] - d[A.MoveLeft]; climb.mz = d[A.MoveForward] - d[A.MoveBack];
-    climb.crx = Math.cos(arm.yaw); climb.crz = -Math.sin(arm.yaw);
-    climb.px = controller.pos.x; climb.py = controller.pos.y; climb.pz = controller.pos.z;
-    climb.dt = clock.dt;
-    const was = climb.climbing;
-    climb.update();
+    const wantGrip = d[A.Traverse] === 1 && !controller.surf.active && !arm.free && combat.dying === 0 && !g.bellCine;
+    const mx = d[A.MoveRight] - d[A.MoveLeft], mz = d[A.MoveForward] - d[A.MoveBack];
+    const crx = Math.cos(arm.yaw), crz = -Math.sin(arm.yaw);
+    const px = controller.pos.x, py = controller.pos.y, pz = controller.pos.z;
+    // Whichever climb is gripping keeps the Wraith; a new grip goes to the Bellwether's neck within reach of its base,
+    // otherwise to the Warden (they are in different biomes, so the choice is never close).
+    const bb = bellwether.base, bdx = px - bb.x, bdz = pz - bb.z;
+    const bell = bellClimb.climbing || (!climb.climbing && bdx * bdx + bdz * bdz < NECK_NEAR * NECK_NEAR);
+    climb.grip = wantGrip && !bell; bellClimb.grip = wantGrip && bell;
+    for (const c of [climb, bellClimb]) { c.mx = mx; c.mz = mz; c.crx = crx; c.crz = crz; c.px = px; c.py = py; c.pz = pz; c.dt = clock.dt; }
+    const prev = cl, was = prev.climbing;
+    climb.update(); bellClimb.update();
+    cl = bellClimb.climbing ? bellClimb : climb.climbing ? climb : prev;
+    g.activeClimb = cl;
+    const climb_ = cl;
     // The camera's pivot stands off the climbed surface, so the Wraith is seen against it.
-    const push = climb.climbing ? 1.6 : 0;
-    arm.pushX = -climb.fx * push; arm.pushY = -climb.fy * push; arm.pushZ = -climb.fz * push;
-    if (climb.grabbed) {
+    const push = climb_.climbing ? 1.6 : 0;
+    arm.pushX = -climb_.fx * push; arm.pushY = -climb_.fy * push; arm.pushZ = -climb_.fz * push;
+    if (climb_.grabbed) {
       // A hand bites into the crust: a puff of snow knocked loose, a small jolt.
-      sfx.x = climb.gx; sfx.y = climb.gy; sfx.z = climb.gz; sfx.gain = 0.8; sfx.play(SFX.CRUNCH);
+      sfx.x = climb_.gx; sfx.y = climb_.gy; sfx.z = climb_.gz; sfx.gain = 0.8; sfx.play(SFX.CRUNCH);
       for (let q = 0; q < 10; q++) {
         const a = q * 0.618 * Math.PI * 2;
-        wraithView.ex = climb.gx; wraithView.ey = climb.gy; wraithView.ez = climb.gz;
-        wraithView.evx = -climb.fx * 0.8 + Math.cos(a) * 0.5; wraithView.evy = -0.4 + (q % 3) * 0.3; wraithView.evz = -climb.fz * 0.8 + Math.sin(a) * 0.5;
+        wraithView.ex = climb_.gx; wraithView.ey = climb_.gy; wraithView.ez = climb_.gz;
+        wraithView.evx = -climb_.fx * 0.8 + Math.cos(a) * 0.5; wraithView.evy = -0.4 + (q % 3) * 0.3; wraithView.evz = -climb_.fz * 0.8 + Math.sin(a) * 0.5;
         wraithView.esize = 0.03 + 0.015 * (q % 3); wraithView.emit();
       }
       arm.shake += 0.0035;
     }
-    if (climb.climbing) {
+    if (climb_.climbing) {
       // Held to the surface: the feet point sits below the pelvis along the climb.
       controller.hold = true;
-      controller.pos.x = climb.x - climb.ux * 0.85; controller.pos.y = climb.y - climb.uy * 0.85; controller.pos.z = climb.z - climb.uz * 0.85;
-      controller.vel.x = climb.vx; controller.vel.y = climb.vy; controller.vel.z = climb.vz;
+      controller.pos.x = climb_.x - climb_.ux * 0.85; controller.pos.y = climb_.y - climb_.uy * 0.85; controller.pos.z = climb_.z - climb_.uz * 0.85;
+      controller.vel.x = climb_.vx; controller.vel.y = climb_.vy; controller.vel.z = climb_.vz;
       controller.grounded = false;
-      // Strike or freeze a back joint within reach (the verbs, at hand).
-      if (climb.nearJoint >= 0) {
+      // Strike or freeze a back joint within reach (the verbs, at hand) — the Warden's; the neck's valves are the fight's (bellwetherFight.js).
+      if (climb_ === climb && climb.nearJoint >= 0) {
         if (inp.pressed[A.Primary] && warden.strikeJoint(climb.nearJoint)) combat.breakJoint();
         if (inp.pressed[A.Heavy] && combat.spend(combatTuning.costCrystal)) { warden.freezeJoint(climb.nearJoint); arm.shake += 0.01; }
       }
-    } else if (was && climb.fell === 4) {
+    } else if (was && climb_.fell === 4) {
       // Over the capital: the Wraith stands on the pillar's top.
       controller.hold = false; controller.grounded = true;
-      controller.pos.x = climb.topX; controller.pos.y = climb.topY; controller.pos.z = climb.topZ;
+      controller.pos.x = climb_.topX; controller.pos.y = climb_.topY; controller.pos.z = climb_.topZ;
       controller.vel.x = 0; controller.vel.y = 0; controller.vel.z = 0;
-      sfx.x = climb.topX; sfx.y = climb.topY; sfx.z = climb.topZ; sfx.gain = 0.7; sfx.play(SFX.STEP);
+      sfx.x = climb_.topX; sfx.y = climb_.topY; sfx.z = climb_.topZ; sfx.gain = 0.7; sfx.play(SFX.STEP);
     } else if (was) {
-      // Off the Warden: real momentum from here (thrown, dropped or slipped).
+      // Off the Warden (or the neck): real momentum from here (thrown, dropped or slipped).
       controller.hold = false; controller.grounded = false;
-      controller.vel.x = climb.vx; controller.vel.y = climb.vy; controller.vel.z = climb.vz;
-      if (climb.fell === 1) arm.shake += 0.03;
+      controller.vel.x = climb_.vx; controller.vel.y = climb_.vy; controller.vel.z = climb_.vz;
+      if (climb_.fell === 1) arm.shake += 0.03;
     }
     knockCtl.dt = clock.dt; knockCtl.step();
   } });

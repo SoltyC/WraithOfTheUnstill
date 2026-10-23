@@ -57,6 +57,9 @@ export function bakeVillageMask(village, opts = {}) {
   const roads = village.roads || [], plots = village.plots || [], greens = village.greens || [];
   const b = villageBounds(village);
   if (!isFinite(b.x0)) return { x0: 0, z0: 0, size: 8, texel, data: new Uint8Array(8 * 8 * 4) };
+  // Extra paving outside the village (the manor's forecourt): { bounds, paved(x, z) -> 0..1 }, flagstone.
+  const extra = opts.extraPaving || [];
+  for (const e of extra) { b.x0 = Math.min(b.x0, e.bounds.x0); b.x1 = Math.max(b.x1, e.bounds.x1); b.z0 = Math.min(b.z0, e.bounds.z0); b.z1 = Math.max(b.z1, e.bounds.z1); }
   const x0 = Math.floor(b.x0 - pad), z0 = Math.floor(b.z0 - pad);
   const size = Math.ceil((Math.max(b.x1 - b.x0, b.z1 - b.z0) + 2 * pad) / texel / 8) * 8;
   const N = size, data = new Uint8Array(N * N * 4);
@@ -171,6 +174,17 @@ export function bakeVillageMask(village, opts = {}) {
       const k = (1 - smooth(rad * 0.25, rad, Math.max(sd, 0) + border(x, z, 31) * 0.35)) * (0.5 + 0.5 * ahead) * (small ? 0.6 : 1);
       const o = j * N + i;
       if (k > B[o]) B[o] = k;
+    }
+  }
+
+  // ---- extra paving (the manor forecourt: whole slabs paved, the broken patches left to turf) ------------------
+  for (const e of extra) {
+    const [i0, i1, j0, j1] = range(e.bounds.x0, e.bounds.z0, e.bounds.x1, e.bounds.z1);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = e.paved(wx(i), wz(j)); if (!(k > 0)) continue;
+      const o = j * N + i;
+      if (k > R[o]) R[o] = k;
+      VAR[o] = Math.max(VAR[o], 3 * k);
     }
   }
 

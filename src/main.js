@@ -108,6 +108,7 @@ async function boot() {
   (await import('./systems/villagers.js')).addVillagerSystem(g);
   (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
+  (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/robes.js')).addRobesSystem(g);
   (await import('./systems/barks.js')).addBarksSystem(g);
@@ -197,6 +198,7 @@ async function boot() {
     if (shotsMod) shotsMod.shotsTake(engine, qs);
   }
   if (bench) bench.runBench(game, qs);
+  if (qs.get('bot') === '1') (await import('./core/bot.js')).startBot(window.__wraith, qs);
 }
 
 /** Resolve on the first end-of-frame where test() is true. */

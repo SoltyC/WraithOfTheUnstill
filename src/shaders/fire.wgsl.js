@@ -10,7 +10,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 
 export const FIRES = 48; // 8 for the camp (hearth, braziers, built fires) + 40 for the burning village (systems/villageFire.js)
-export const PER_FIRE = 112; // 48 flames, 36 embers, 28 smoke
+export const PER_FIRE = 112; // camp: 48 flames, 36 embers, 28 smoke. Burning building (fireL.z > 0): 60 tongues, 28 embers, 20 smoke, 4 glow cards
 export const FIRE_COUNT = FIRES * PER_FIRE;
 
 export const fireVertexWGSL = /* wgsl */ `
@@ -19,6 +19,7 @@ uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform fires: array<vec4f, ${FIRES}>; // xyz = base (world), w = size (0 = out)
 uniform fireX: array<vec4f, ${FIRES}>; // x = smoke scale (1), y = flame amount (1; 0 = smoke only: every particle is a puff), z = level of detail 0..1 (1: share of particles drawn), w = soot 0..1 (dark, fire-lit smoke)
+uniform fireL: array<vec4f, ${FIRES}>; // burning building: xy = flame line direction (x, z), z = half length (m; 0 = a plain camp fire), w = mode*10 + phase (mode 1: an opening, flames burst out along (-dir.y, dir.x))
 uniform fireT: vec4f;                  // x = time (s), yz = wind direction (unit x, z), w = wind strength
 varying vUv: vec2f;
 varying vAlpha: f32;
@@ -27,6 +28,7 @@ varying vLife: f32;
 varying vWorldPos: vec3f;
 varying vSoot: f32;
 varying vGain: f32;
+varying vVil: f32;
 
 fn fh(n: u32) -> f32 {
   var x = n * 747796405u + 2891336453u;
@@ -48,7 +50,73 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let wind = vec3f(uniforms.fireT.y, 0.0, uniforms.fireT.z) * uniforms.fireT.w;
   var p = F.xyz; var size = 0.1; var alpha = 0.0; var kind = 0.0; var life = 0.0; var stretch = 1.0;
   var rank = 0.0; // 0..1 within its kind (level of detail)
-  if (k < 48u && !smokeOnly) {
+  let L = uniforms.fireL[f];
+  let vil = L.z > 0.0 && !smokeOnly;
+  let dir = L.xy; let hl = L.z; let mode = step(5.0, L.w); let ph = L.w - mode * 10.0;
+  let outv = vec2f(-dir.y, dir.x);
+  let tt = t + ph * 17.0;
+  let th = 0.9 + 0.36 * S;      // a tongue's height (m): many, each a man's height or two
+  let ssc = 0.55 + 0.22 * S;    // smoke scale
+  if (vil) {
+    // A burning building: tongues licking along the ridge (or out of the opening and up the wall), a rising
+    // column of sparks, a dark rolling smoke column, and a few big faint glow cards lighting the air.
+    if (k < 60u) {
+      let j = (k * 37u) % 60u;                       // scatter along the line so level of detail thins it evenly
+      rank = f32(k) / 60.0;
+      life = fract(tt * (1.5 + 1.3 * h1) + h2);
+      let s = ((f32(j) + h4) / 60.0 * 2.0 - 1.0) * hl;
+      let mid = 1.0 - (s * s) / max(hl * hl, 0.01);
+      let fl = 0.75 + 0.35 * sin(tt * 7.0 + f32(j) * 1.7) * sin(tt * 3.3 + h1 * 6.28);
+      let hgt = th * fl * select(0.75 + 0.4 * mid, 1.0, mode > 0.5);
+      p += vec3f(dir.x * s, h5 * 0.15 - 0.1 * (1.0 - mode), dir.y * s);
+      p.y += life * hgt * (0.9 + 0.8 * h3);
+      if (mode > 0.5) { // bursting out of the opening, then climbing the wall
+        let lunge = hgt * 0.55 * smoothstep(0.0, 0.3, life) * (1.0 - 0.5 * life) * (0.5 + h3);
+        p += vec3f(outv.x * lunge, 0.0, outv.y * lunge);
+      } else {
+        p += vec3f(outv.x, 0.0, outv.y) * (h5 - 0.5) * 0.5;
+      }
+      p += vec3f(sin(tt * 3.1 + h1 * 6.28), 0.0, cos(tt * 2.7 + h2 * 6.28)) * 0.07 * hgt * life + wind * life * life * 0.35 * hgt;
+      size = (0.42 * hgt * (1.0 - life * 0.7) + 0.06) * (0.75 + 0.5 * h3);
+      stretch = 2.1;
+      alpha = smoothstep(0.0, 0.1, life) * (1.0 - life) * (0.85 + 0.15 * sin(tt * 11.0 + h1 * 40.0));
+      kind = 0.0;
+      if (rank > mix(0.3, 1.0, clamp((S - 1.0) / 3.0, 0.0, 1.0))) { alpha = 0.0; } // a young fire has fewer tongues
+    } else if (k < 88u) {
+      rank = f32(k - 60u) / 28.0;
+      // Sparks lifted on the heat column, swirling; a few are bright streaks.
+      let streak = h1 > 0.82;
+      life = fract(tt * (0.22 + 0.3 * h1) * select(1.0, 1.6, streak) + h2);
+      let s = (h4 * 2.0 - 1.0) * hl;
+      let ang = tt * (0.8 + h1) + h2 * 6.283;
+      let rad = life * (0.3 + 0.9 * h5) * (0.6 + 0.15 * S);
+      let rise = life * (2.5 + 5.5 * h3) * (0.6 + 0.25 * S) * select(1.0, 1.4, streak);
+      p += vec3f(dir.x * s + cos(ang) * rad, 0.4 + rise, dir.y * s + sin(ang) * rad) + wind * life * life * (3.0 + 3.0 * h3);
+      size = (0.014 + 0.018 * h3) * select(1.0, 0.8, streak);
+      stretch = select(2.0, 6.0, streak);
+      alpha = (1.0 - life) * (0.65 + 0.35 * sin(tt * 19.0 + h1 * 50.0)) * select(0.0, 1.0, h5 < 0.92);
+      kind = select(1.0, 1.2, streak);
+    } else if (k < 108u) {
+      rank = f32(k - 88u) / 20.0;
+      // Smoke: a thick, dark column from the roof, rolling and widening, leaning downwind.
+      let sm = X.x;
+      life = fract(tt * (0.06 + 0.04 * h1) + h2);
+      p += vec3f(dir.x * h4 * hl * 0.7 + outv.x * (h5 - 0.5) * 0.8, 0.6 + life * 5.5 * ssc * (0.6 + 0.4 * sm), dir.y * h4 * hl * 0.7 + outv.y * (h5 - 0.5) * 0.8);
+      p += vec3f(sin(tt * 0.6 + h1 * 6.28), 0.0, cos(tt * 0.5 + h3 * 6.28)) * life * 0.9 * ssc + wind * life * (5.0 + 5.0 * h3) * ssc;
+      size = ssc * (1.0 + life * 2.6) * (0.8 + 0.4 * h3) * (0.7 + 0.3 * sm);
+      alpha = smoothstep(0.0, 0.18, life) * pow(1.0 - life, 1.3) * 0.5 * (1.0 + 0.7 * X.w) / (1.0 + life * 0.8);
+      kind = 2.0;
+    } else {
+      rank = 0.0;
+      // Glow: a few large, very faint additive cards around the base, so the fire lights the air.
+      let gi = f32(k - 108u);
+      life = 0.0;
+      p += vec3f(dir.x * (gi - 1.5) / 1.5 * hl * 0.7 + outv.x * mode * 0.5, th * 0.5 + 0.2, dir.y * (gi - 1.5) / 1.5 * hl * 0.7 + outv.y * mode * 0.5);
+      size = (1.4 + hl * 0.55 + S * 0.45) * (0.85 + 0.25 * (gi % 2.0));
+      alpha = 0.05 * (0.8 + 0.2 * sin(tt * 9.0 + gi * 2.1) * sin(tt * 5.3 + gi));
+      kind = 3.0;
+    }
+  } else if (k < 48u && !smokeOnly) {
     rank = f32(k) / 48.0;
     // Flame tongues: born at the embers, rising and narrowing, leaning a little downwind.
     life = fract(t * (1.15 + 0.7 * h1) + h2);
@@ -95,7 +163,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vLife = life;
   vertexOutputs.vSoot = X.w;
   // Big fires stack many overlapping tongues (added light): each one dimmer, so the mass stays orange, not white.
-  vertexOutputs.vGain = 1.0 / (1.0 + max(S - 1.0, 0.0) * 1.8);
+  vertexOutputs.vGain = select(1.0 / (1.0 + max(S - 1.0, 0.0) * 1.8), 0.8 / (1.0 + max(S - 1.0, 0.0) * 0.35), vil);
+  vertexOutputs.vVil = select(0.0, 1.0, vil);
   vertexOutputs.vWorldPos = p;
 }
 `;
@@ -110,6 +179,7 @@ varying vLife: f32;
 varying vWorldPos: vec3f;
 varying vSoot: f32;
 varying vGain: f32;
+varying vVil: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 
@@ -132,15 +202,20 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let temp = clamp((1.0 - life * 0.8) * (1.3 - r) - 0.08 * uv.y, 0.0, 1.0);
     let col = mix(vec3f(0.9, 0.18, 0.03), vec3f(1.0, 0.62, 0.22), smoothstep(0.1, 0.5, temp)) + vec3f(1.0, 0.85, 0.6) * smoothstep(0.55, 0.9, temp) * mix(1.0, 0.25, 1.0 - fragmentInputs.vGain); // big fires: less white core
     let a = body * fragmentInputs.vAlpha;
-    let lit = col * a * 9.0 * fragmentInputs.vGain / max(ex, 1e-6);
+    var tc = col;
+    if (fragmentInputs.vVil > 0.5) { // house fire: hot orange-yellow base, deep red tips, never a white core
+      tc = mix(vec3f(0.7, 0.07, 0.01), vec3f(1.0, 0.46, 0.08), smoothstep(0.08, 0.45, temp)) + vec3f(0.5, 0.3, 0.05) * smoothstep(0.5, 0.95, temp);
+    }
+    let lit = tc * a * 9.0 * fragmentInputs.vGain / max(ex, 1e-6);
     outc = vec4f(displayTransform(lit, ex), 0.0);
   } else if (kind < 1.5) {
     let r2 = dot(uv, uv);
     if (r2 > 1.0) { discard; }
     let a = (1.0 - r2) * fragmentInputs.vAlpha;
-    let lit = vec3f(1.0, 0.38, 0.08) * a * 5.0 / max(ex, 1e-6);
+    let streak = step(1.1, kind);
+    let lit = mix(vec3f(1.0, 0.38, 0.08) * 5.0, vec3f(1.0, 0.62, 0.2) * 12.0, streak) * a / max(ex, 1e-6);
     outc = vec4f(displayTransform(lit, ex), 0.0);
-  } else {
+  } else if (kind < 2.5) {
     // Smoke: a soft, lumpy puff of pale wood smoke, lit by the sky, by the sun (bright against it:
     // smoke scatters forward) and, young and low, by the fire under it.
     let r = length(uv);
@@ -154,10 +229,23 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
              + vec3f(1.0, 0.4, 0.12) * soot * (1.0 - smoothstep(0.0, 0.5, life)) * (1.0 - smoothstep(0.0, 0.5, life)) * 0.3 / max(ex, 1e-6); // lit from below, low down only
     let cosT = dot(normalize(wp - uniforms.cameraPosition), uniforms.keyDir);
     let phase = 0.3 + 1.6 * pow(max(cosT, 0.0), 4.0);
-    let col = vec3f(0.5, 0.52, 0.55) * (1.0 - 0.9 * soot) * (sky + atmoKeyColor() * max(uniforms.keyDir.y + 0.1, 0.0) * phase / PI) + glow;
+    var glowV = glow;
+    if (fragmentInputs.vVil > 0.5) { // lit orange from beneath, near the fire only
+      let low = 1.0 - smoothstep(0.0, 0.4, life);
+      glowV = vec3f(1.0, 0.4, 0.1) * low * low * 1.1 / max(ex, 1e-6);
+    }
+    let col = vec3f(0.5, 0.52, 0.55) * (1.0 - 0.9 * soot) * (sky + atmoKeyColor() * max(uniforms.keyDir.y + 0.1, 0.0) * phase / PI) + glowV;
     let a = d * fragmentInputs.vAlpha;
     let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
     outc = vec4f(displayTransform(lit, ex) * a, a);
+  } else {
+    // Glow card: a very faint warm halo with a slow shimmer, added light.
+    let r2 = dot(uv, uv);
+    if (r2 > 1.0) { discard; }
+    let n = noised(uv * 1.5 + vec2f(t * 0.6, -t * 1.1)).x;
+    let a = (1.0 - r2) * (1.0 - r2) * fragmentInputs.vAlpha * (0.8 + 0.4 * n);
+    let lit = vec3f(1.0, 0.36, 0.08) * a * 3.0 / max(ex, 1e-6);
+    outc = vec4f(displayTransform(lit, ex), 0.0);
   }
   fragmentOutputs.color = outc;
 }

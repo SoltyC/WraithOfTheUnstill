@@ -6,7 +6,8 @@
 /** The guide's lead-the-way: she runs ahead along the road and waits if the Wraith falls behind. */
 export const LEAD = { run: 4.0, wait: 22, near: 8 };
 /** The child: follows a few steps behind at a child's pace, waits when left behind, is "out" past `out` m from the house. */
-export const CHILD = { gap: 1.8, run: 2.8, wait: 14, out: 12, hand: 4.5, dwell: 1.2, reach: 2.6 };
+export const CHILD = { gap: 1.8, run: 2.8, wait: 14, out: 6, hand: 4.5,   // out 6 (was 12: Marit stands 12 m from the house, so he could never be both out and with her)
+  dwell: 1.2, reach: 2.6 };
 
 const _p = [0, 0, 0];
 
@@ -96,6 +97,14 @@ export function newChild(x, z) {
 export function childStep(st, c, dt, T = CHILD) {
   const dw = Math.hypot(c.wx - st.x, c.wz - st.z);
   let target = 0;
+  // The raid begins while he plays by the door: he runs inside (by the door) and hides (bot playtest
+  // 2026-10-24: he stayed out in the street, never "in" the burning house).
+  if (st.mode === 'idle' && c.raid && !c.follow) st.mode = 'enter';
+  if (st.mode === 'enter') {
+    target = 0.4;
+    if (!st.inDoor) { if (stepToward(st, c.door[0], c.door[1], 0.3, 2.6, dt) === 0) st.inDoor = true; }
+    else if (stepToward(st, c.house[0], c.house[1], 0.15, 1.6, dt) === 0) { st.mode = 'cower'; st.inDoor = false; st.dwell = 0; }
+  }
   if (st.mode === 'cower') {
     target = 0.6; st.vx = 0; st.vz = 0;
     st.dwell = dw < T.reach ? st.dwell + dt : 0;
@@ -132,6 +141,18 @@ export function ringSlots(cx, cz, r, n, a0 = 0) {
 export function frontOf(plot, out = 1.5) {
   const f = plot.facing, r = plot.d + out;
   return [plot.at[0] + Math.sin(f) * r, plot.at[1] + Math.cos(f) * r];
+}
+
+/** Where a figure hides inside a building and where its door lets out, from the kit's own plan (site
+ *  `build.meta`: half-extents W, D, offset ox, oz, the front door's offset a along the wall) — the plot's
+ *  bounds are larger than the house and the door is off centre. Falls back to the plot's centre/front. */
+export function houseSpots(plot, meta) {
+  if (!meta || !meta.door || meta.door.wall !== 'front') return { inside: [plot.at[0], plot.at[1]], door: frontOf(plot, 1.6) };
+  const f = plot.facing, c = Math.cos(f), s = Math.sin(f);
+  const w = (a, z) => [plot.at[0] + a * c + z * s, plot.at[1] - a * s + z * c];
+  const ox = meta.ox || 0, oz = meta.oz || 0, side = meta.door.a > 0 ? -1 : 1;
+  // A back corner on the side away from the door: seen through the doorway, not from the street.
+  return { inside: w(ox + side * meta.W * 0.45, oz - meta.D * 0.35), door: w(ox + meta.door.a, oz + meta.D + 1.3) };
 }
 
 /** The plot ids ordered by distance from a point. */

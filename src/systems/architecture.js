@@ -3,6 +3,7 @@
 // Wraith has rested at keep a cold light in their glyphs; the monastery's wake when the steppe is
 // restored; the camp's fire burns brighter at night.
 
+import { planWindowSpill, spillLevel, lateNight } from './lights.js';
 import { villageSites } from '../world/villageKits.js';
 import { manorSites } from '../world/manor.js';
 import { stairSites, stairSegments, loadBakedHeight } from '../world/stair.js';
@@ -76,6 +77,10 @@ export async function addArchitectureSystem(g) {
   const lanternLights = [];
   sites.forEach((s, i) => { if (s.kind === 'lantern' && s.npc !== 'wraith') lanternLights.push({ i, r: WL.add({ x: NaN, y: NaN, z: NaN, radius: 7, color: [1, 0.6, 0.28], intensity: 0.7, kind: 'lamp', level: 0 }) }); });
 
+  // Window spill: lit windows pool warm light on the cobbles and walls just outside ~60 % of the houses.
+  const spill = planWindowSpill(sites).map((s) => ({ s, r: WL.add({ x: NaN, y: NaN, z: NaN, radius: 5.5, color: [1, 0.65, 0.35], intensity: 1.2, kind: 'candle', level: 0, phase: s.phase }) }));
+  g.windowSpill = spill;
+
   /** Seat: the lowest ground over the site's footprint (9 samples) — or the highest for a site
    *  built up from a peak (seatAt 'top', foundations running down) — or NaN until known. */
   function seat(s) {
@@ -107,6 +112,23 @@ export async function addArchitectureSystem(g) {
     }
     return s.seatAt === 'top' ? hi : lo;
   }
+  /** The Bellwether's vents (manor-vent-0..2): hide / show a turf cap (the fight, systems/bellwetherFight.js). */
+  const ventIdx = [0, 1, 2].map((k) => sites.findIndex((s) => s.id === 'manor-vent-' + k));
+  g.setVentHidden = (k, hidden) => { const i = ventIdx[k]; if (i >= 0) { sites[i].hidden = !!hidden; if (hidden) view.sites[i * 4 + 3] = 0; } };
+  /** Every vent cap back on (a reset fight). */
+  g.resetVents = () => { for (let k = 0; k < 3; k++) g.setVentHidden(k, false); };
+  /** The Bellwether's release, as the built world sees it: the village's soot gone, its lanterns and hearths lit, and the
+   *  mill's sails turning. The sails are a site whose `spin` is the axis through its origin; the site shader only translates a
+   *  site, so for now `g.millSpin` carries the turn (angle, rate) for whoever can rotate it (see PLAN M9). */
+  g.villageRestoredSites = (on = true) => {
+    for (let i = 0; i < sites.length; i++) {
+      const id = sites[i].id;
+      if (on && id.startsWith('vil-')) view.char[i] = 0;
+      if (id.startsWith('vil-') || sites[i].lamp) view.glow[i * 4 + 3] = 1;
+    }
+    const m = sites.findIndex((s) => s.id === 'vil-mill-sails');
+    g.millSpin = { site: m, axis: m >= 0 && sites[m].spin ? sites[m].spin : null, rate: on && m >= 0 ? 1.1 : 0, angle: 0 };
+  };
   // Chunk culling. Snapshot rendering replays recorded bundles, so Babylon's per-frame frustum test
   // never runs (every mesh here is alwaysSelectAsActiveMesh); chunks are switched by distance
   // instead, with hysteresis, and snapshotRenderingReset() only when a set actually changes. Shadow
@@ -131,6 +153,7 @@ export async function addArchitectureSystem(g) {
   let frame = 0;
   loop.add({ name: 'architecture', update: () => {
     frame++;
+    if (g.millSpin) g.millSpin.angle += g.millSpin.rate * clock.dt;
     // Everything draws through the loading frames (every pipeline is made then, BRIEF §15); culling starts after.
     if (frame > WARM_FRAMES && frame % 6 === 0) cullChunks(camera.position.x, camera.position.z);
     const p = controller.pos;
@@ -138,6 +161,8 @@ export async function addArchitectureSystem(g) {
     for (let i = 0; i < sites.length; i++) {
       const s = sites[i], o = i * 4;
       if (s.prop) continue; // moved by the NPC system
+      // A hidden site (the manor's turf caps once the Bellwether's vents are stripped) is not drawn: w = 0 collapses it.
+      if (s.hidden) { view.sites[o + 3] = 0; continue; }
       if ((frame + i) % 20 !== 0 && view.sites[o + 3] > 0.5) continue;
       const dx = s.at[0] - p.x, dz = s.at[1] - p.z;
       if (view.sites[o + 3] > 0.5 && dx * dx + dz * dz < 200 * 200) continue;
@@ -149,8 +174,8 @@ export async function addArchitectureSystem(g) {
     // Moving sites (the arena's pillars rise and sink): their seat less how far they are sunk.
     for (let i = 0; i < sites.length; i++) {
       const s = sites[i];
-      if (!s.pillar || s.seatY === undefined) continue;
-      const y = s.seatY - s.sink;
+      if ((!s.pillar && !s.vent) || s.seatY === undefined) continue;
+      const y = s.seatY - (s.sink || 0);   // (a vent cap sinks a little into its stack as it is blown at)
       view.sites[i * 4 + 1] = y; solids.sites[i].seat = y;
     }
     // Glyph light (siteGlow.x): shrines rested at; the monastery once the steppe is restored. A site with
@@ -164,6 +189,7 @@ export async function addArchitectureSystem(g) {
     }
     view.glow[camp * 4 + 1] = night;
     for (let i = 0; i < sites.length; i++) if (sites[i].kind === 'lantern') view.glow[i * 4 + 1] = 0.35 + 0.65 * night;
+    view.params.w = lateNight(tod);
     view.params.x = clock.simTime; view.params.y = weather.snow; view.params.z = restoration.value;
     // Flames: the camp's hearth always burns; a brazier once its flame is carried to it.
     { const F = g.fire.fires, cs = view.sites, co = camp * 4;
@@ -188,6 +214,11 @@ export async function addArchitectureSystem(g) {
         b.r.x = cs[o] + b.l.x; b.r.y = cs[o + 1] + b.l.y; b.r.z = cs[o + 2] + b.l.z;
         // The moon under the roof only by night; candles and the brazier always (Aud keeps them).
         b.r.level = b.l.kind === 'bounce' ? wn : b.l.kind === 'lamp' ? 0.35 + 0.65 * wn : 1;
+      }
+      for (const w of spill) {
+        const o = w.s.site * 4; if (cs[o + 3] <= 0.5) { w.r.level = 0; continue; }
+        w.r.x = cs[o] + w.s.fx * w.s.out; w.r.y = cs[o + 1] + 1.7; w.r.z = cs[o + 2] + w.s.fz * w.s.out;
+        w.r.level = spillLevel(wn, tod, w.s.hour);
       }
       const co = camp * 4;
       if (cs[co + 3] > 0.5) {

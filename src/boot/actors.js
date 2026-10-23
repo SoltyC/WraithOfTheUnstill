@@ -6,7 +6,7 @@
 
 /** @param {any} g  shared boot context (world objects from boot/world.js) */
 export async function createActors(g) {
-  const { scene, atmosphere, shadows, bindShadows, ground, wraithView, terrainState, content, camera, capture, qs } = g;
+  const { scene, atmosphere, shadows, bindShadows, ground, wraithView, terrainState, content, camera, capture, qs, engine } = g;
   const [worldPois, ctl, armMod] = await Promise.all([
     import('../../data/world/pois.json'),
     import('../character/capsuleController.js'),
@@ -127,7 +127,79 @@ export async function createActors(g) {
   spikesView.freeze();
   const { createClimb } = await import('../game/warden/climb.js');
   const climb = createClimb({ warden, ground, pillars });
-  arm.occluder = warden;
+  // The Bellwether (the meadow Warden, Stage 6): only its neck and head are a live chunk body — the
+  // rest is the manor. Placed DORMANT in the west wing; Meadow-material chunks through the 'shaped'
+  // shader (turf, drystone, root, amber pods); near/far views like the Warden; drawn within ~600 m.
+  const bellMod = await import('../game/bellwether/bellwether.js');
+  const bellwether = bellMod.createBellwether({ ground });
+  bellwether.sfx = sfx;
+  const bellView = createShapedView(scene, atmosphere, bellwether.chunks, { subdivisions: 3, name: 'bellwether', shader: 'bellwether', neighbours: bellwether.nbr });
+  bindShadows(bellView.material, shadows);
+  shadows.addCaster(bellView.mesh, bellView.makeShadowMaterial, 1);
+  bellView.freeze();
+  const bellFar = createShapedView(scene, atmosphere, bellwether.chunks, { subdivisions: 2, name: 'bellwetherFar', shader: 'bellwether', neighbours: bellwether.nbr });
+  bindShadows(bellFar.material, shadows);
+  shadows.addCaster(bellFar.mesh, bellFar.makeShadowMaterial, 2, 2);
+  bellFar.freeze();
+  const { createNeckClimb } = await import('../game/bellwether/neckClimb.js');
+  const bellClimb = createNeckClimb({ bell: bellwether, ground });
+  bellClimb.spend = (c) => combatSpend(c);
+  const combatSpend = (c) => (g.combat ? g.combat.spend(c) : true);
+  {
+    const { clock: bclock } = await import('../core/clock.js');
+    const BELL_WAKE_SETTLE = 7.5; const BELL = bellMod.B, NEAR = 320, FAR = 700;
+    const drawn = new Map();
+    const setOn = (mesh, on) => {
+      // Culled only after it has drawn for a while (pipelines are made while the loading screen is up).
+      if (mesh.isEnabled()) drawn.set(mesh, (drawn.get(mesh) || 0) + 1);
+      if (!on && (drawn.get(mesh) || 0) < 30) return;
+      if (mesh.isEnabled() !== on) { mesh.setEnabled(on); engine.snapshotRenderingReset(); }
+    };
+    // Dev hook: ?bell=wake | idle | exhale | shake (captures settle the pose at once).
+    const spotId = qs.get('spot') || '';
+    const hookQ = qs.get('bell'), hook = (['wake', 'idle', 'exhale', 'shake'].includes(hookQ) ? hookQ : null) || (spotId && spotId.startsWith('p8-bell-wake') ? 'wake' : spotId === 'p8-bell-climb' ? 'idle' : null);
+    let devT = 0, hooked = false;
+    const settle = (secs) => { for (let k = 0; k < Math.round(secs * 60); k++) bellwether.update(1 / 60, 0); };
+    const aimAtWraith = () => { const p = g.controller.pos; bellwether.targetX = p.x; bellwether.targetY = p.y + 1.4; bellwether.targetZ = p.z; };
+    g.bellwetherSystem = { name: 'bellwether', update: () => {
+      aimAtWraith();
+      let dt = bclock.dt;
+      if (hook && !hooked && (capture || bclock.simTime > 1)) {
+        hooked = true;
+        if (hook === 'wake') { if (capture) { bellwether.wake(); settle(BELL_WAKE_SETTLE); } else bellwether.wake(); }
+        else { bellwether.forceIdle(); if (capture) { if (hook === 'exhale') { bellwether.inhale(); settle(3.2); bellwether.exhale(); settle(0.9); } else if (hook === 'shake') { bellwether.shake(); settle(0.9); } else settle(2); } }
+      }
+      if (hook && hooked) {
+        devT += dt;
+        if (hook === 'exhale' && devT >= 6 && bellwether.state === BELL.IDLE) { devT = 0; bellwether.inhale(); }
+        if (hook === 'exhale' && bellwether.state === BELL.INHALE && bellwether.inhaled) bellwether.exhale();
+        if (hook === 'shake' && devT >= 5 && bellwether.state === BELL.IDLE) { devT = 0; bellwether.shake(); }
+      }
+      bellwether.update(dt, bclock.simTime);
+      const b = bellwether.base, cx = camera.position.x, cz = camera.position.z, d2 = (b.x - cx) * (b.x - cx) + (b.z - cz) * (b.z - cz);
+      const near = d2 < NEAR * NEAR || bellwether.state === BELL.EXHALE;
+      if (d2 < FAR * FAR) { if (near && !bellView.mesh.isEnabled()) bellView.update(); if (!near && !bellFar.mesh.isEnabled()) bellFar.update(); }
+      setOn(bellView.mesh, near && d2 < FAR * FAR);
+      setOn(bellFar.mesh, !near && d2 < FAR * FAR);
+      const v = bellView.mesh.isEnabled() ? bellView : bellFar.mesh.isEnabled() ? bellFar : null;
+      if (v !== null) { if (bellwether.nbrDirty) { bellView.updateNeighbours(); bellFar.updateNeighbours(); bellwether.nbrDirty = false; } v.update(); }
+    } };
+    // The frame loop is created after the actors: register the system the moment g.loop is assigned
+    // (set g.bellwetherManual first to register it yourself, e.g. in a systems file).
+    let loopRef = g.loop;
+    Object.defineProperty(g, 'loop', { configurable: true, enumerable: true, get: () => loopRef, set: (l) => { loopRef = l; if (l && !g.bellwetherManual) l.add(g.bellwetherSystem); } });
+    if (loopRef && !g.bellwetherManual) loopRef.add(g.bellwetherSystem);
+  }
+  // The camera keeps out of the warden's and the Bellwether's bodies (architecture.js wraps this once more).
+  arm.occluder = {
+    qx: 0.5, qy: 0.5, qz: 0.5,
+    probe() {
+      warden.qx = this.qx; warden.qy = this.qy; warden.qz = this.qz;
+      if (warden.probe()) return true;
+      bellwether.qx = this.qx; bellwether.qy = this.qy; bellwether.qz = this.qz;
+      return bellwether.probe();
+    },
+  };
   // Knockdown: the release's shockwave throws the Wraith onto its back (character/knockdown.js).
   const { createKnockdown } = await import('../character/knockdown.js');
   const BRUSH_PLOUGH = (await import('../shaders/terrainState.wgsl.js')).BRUSH.PLOUGH;
@@ -163,7 +235,7 @@ export async function createActors(g) {
 
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
-    frostMod, frost, galeMod, gale, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
+    bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
     climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },

@@ -436,13 +436,13 @@ export function villageLayout(world, opts = {}) {
   }
 
   // ---- emit roads (split by surface / bridge) -------------------------------------------------
-  const roads = [];
+  const roads = [], bridgePieces = [];
   const roadSegs = []; // for the index: {ax,az,bx,bz,w}
   function emit(r) {
     const w = WIDTH[r.kind], n = r.pts.length;
     const br = new Array(n).fill(false);
-    if (r.kind === 'main') {
-      for (let i = 0; i < n; i++) if (wetNear(r.pts[i][0], r.pts[i][1], 3.5)) br[i] = true;
+    if (r.kind === 'main' || r.bridgeOk) {
+      for (let i = 0; i < n; i++) if (wetNear(r.pts[i][0], r.pts[i][1], 1.6)) br[i] = true;
       const b2 = br.slice();
       for (let i = 0; i < n; i++) if (br[i]) { if (i > 0) b2[i - 1] = true; if (i < n - 1) b2[i + 1] = true; }
       for (let i = 0; i < n; i++) br[i] = b2[i];
@@ -456,8 +456,12 @@ export function villageLayout(world, opts = {}) {
       else { cur = { bridge, surface, pts: [a, b] }; pieces.push(cur); }
     }
     pieces.forEach((pc, i) => {
+      if (pc.bridge && pc.pts.length > 2) { // a bridge is straight: its points go onto the chord
+        const A = pc.pts[0], B = pc.pts[pc.pts.length - 1], m = pc.pts.length - 1;
+        pc.pts = pc.pts.map((_, k) => [A[0] + (B[0] - A[0]) * k / m, A[1] + (B[1] - A[1]) * k / m]);
+      }
       const road = { id: pieces.length > 1 ? `${r.id}.${i}` : r.id, route: r.id, pts: pc.pts.map((p) => [+p[0].toFixed(2), +p[1].toFixed(2)]), width: w, surface: pc.surface, kind: r.kind };
-      if (pc.bridge) road.bridge = true;
+      if (pc.bridge) { road.bridge = true; bridgePieces.push(road); }
       roads.push(road);
       addSegs(road.pts, w);
     });
@@ -509,7 +513,6 @@ export function villageLayout(world, opts = {}) {
     return m;
   }
   for (const r of routes) emit(r);
-
   // ---- greens -------------------------------------------------------------------------------
   const greens = [];
   const rg = mulberry32(hash32(seed, 71));
@@ -584,11 +587,11 @@ export function villageLayout(world, opts = {}) {
       for (const g of greens) if (!(kind === 'stall' && g === sqG) && kind !== 'well' && dist(sx, sz, g.at[0], g.at[1]) < g.r + 1) return null;
       const hy = W.h(sx, sz); if (hy < hmin) hmin = hy; if (hy > hmax) hmax = hy;
     }
-    if (hmax - hmin > 3.2) return null;
+    if (hmax - hmin > (o.maxDh ?? 3.2)) return null;
     // water + 4 m
     const iw = w + 4.2, id = d + 4.2, A = rectAxes(f);
     for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) if (W.wet(x + A.rx * iw * a / 3 + A.nx * id * b / 3, z + A.rz * iw * a / 3 + A.nz * id * b / 3)) return null;
-    p.y = (hmin + hmax) / 2;
+    p.y = (hmin + hmax) / 2; p.dh = hmax - hmin; p.yt = hmax;
     return p;
   }
   function commit(p) {
@@ -636,7 +639,7 @@ export function villageLayout(world, opts = {}) {
         a += adv; swept += adv;
       }
     }
-    // chapel: beside a street in the lower village, 45-80 m from the square
+    // (the old chapel's plot: now a big house; the churchyard chapel is placed last, so no earlier plot id moves)
     const cands = [];
     for (const r of routes) if (r.kind !== 'lane') for (let s = 20; s < r.cum[r.cum.length - 1] - 16; s += 6) for (const side of [1, -1]) cands.push([r, s, side, hash32(seed, 83, cands.length)]);
     cands.sort((a, b) => a[3] - b[3]);
@@ -644,7 +647,7 @@ export function villageLayout(world, opts = {}) {
       const q = pointAt(r, s), dm = dM(q.x, q.z);
       if (dm < 45 || dm > 100) continue;
       const w = 4.8, d = 8.5, sb = WIDTH[r.kind] / 2 + 2.4 + d;
-      if (place(candidate('chapel', q.x - q.tz * side * sb, q.z + q.tx * side * sb, w, d, 0, districtAt(q.x, q.z)))) break;
+      if (place(candidate('house2', q.x - q.tz * side * sb, q.z + q.tx * side * sb, w, d, 0, districtAt(q.x, q.z)))) break;
     }
   }
 
@@ -768,6 +771,101 @@ export function villageLayout(world, opts = {}) {
     }
   }
 
+  // ---- additions, all appended after everything above so no earlier road or plot id moves (the quest pins ids) -------
+  // The stone bridge: a street from the north end of the east-bank network, over the stream, round to the first hub.
+  // Only this street may cross water (route.bridgeOk), once.
+  {
+    const OLD = opts.oldHub || [H[0] - 90, H[1] + 40];
+    bridgeSt: for (const [p0, t0] of [[[-40, 95], [-95, 85]], [[-20, 100], [-95, 85]], [[-55, 90], [-100, 70]], [[-40, 95], [-90, 105]], [[-30, 80], [-100, 90]], [[-10, 105], [-85, 95]], [[-60, 110], [-100, 60]]]) {
+      const P0 = [H[0] + p0[0], H[1] + p0[1]], T = [H[0] + t0[0], H[1] + t0[1]];
+      const n0 = nearestRoad(P0[0], P0[1], 220);
+      if (!n0) continue;
+      const n1 = nearestRoad(OLD[0], OLD[1], 60), a = route([n0.x, n0.z], T, { water: true, avoidFoot: true, slopeK: 110 }), b2 = route(T, n1 ? [n1.x, n1.z] : OLD, { water: true, avoidFoot: true, slopeK: 110 });
+      const pts = a && b2 ? smoothPath(a.concat(b2.slice(1))) : null;
+      if (!pts) continue;
+      let runs = 0, wasWet = false;
+      for (const q of pts) { const w = wetNear(q[0], q[1], 1.6); if (w && !wasWet) runs++; wasWet = w; }
+      const clear = pts.every((q, qi) => { if (qi < 2 || qi >= pts.length - 2) return true; for (const o of nearPlots(q[0], q[1])) if (inRect(o, q[0], q[1], WIDTH.street / 2 + 0.8)) return false; return true; });
+      if (runs !== 1 || !clear || pts.some((q) => W.e(q[0], q[1]) < 1.05)) continue;
+      const r = { id: 'bridgest', kind: 'street', pts, cum: cumLen(pts), bridgeOk: true };
+      routes.push(r); stampRoad(pts); emit(r);
+      // a few cottages along its dry ends
+      const rb = mulberry32(hash32(seed, 151));
+      for (let k = 0, made = 0; k < 24 && made < 4; k++) {
+        const s2 = 6 + rb() * (r.cum[r.cum.length - 1] - 12), q = pointAt(r, s2), side = rb() < 0.5 ? 1 : -1, [w, d] = dim(rb, 'house');
+        const sb = WIDTH.street / 2 + 2.5 + d;
+        if (place(candidate('house', q.x - q.tz * side * sb, q.z + q.tx * side * sb, w, d, (rb() - 0.5) * 0.2, districtAt(q.x, q.z), { row: 'bridgest:' + side }))) made++;
+      }
+      break bridgeSt;
+    }
+  }
+  // the windmill: a stone tower on a rise at the village edge, near the stream, in view of the square
+  {
+    const rr = mulberry32(hash32(seed, 121));
+    const found = [];
+    const hM = W.h(M[0], M[1]);
+    for (let k = 0; k < 260; k++) {
+      const a = rr() * TAU, r = 100 + rr() * 85, x = M[0] + Math.cos(a) * r, z = M[1] + Math.sin(a) * r;
+      const c = cellOf(x, z);
+      if (c < 0 || info(c) !== 1 || W.e(x, z) < 1.3 || wetNear(x, z, 9)) continue;
+      const near = nearestRoad(x, z, 200);
+      if (!near || near.d < 20 || near.d > 120) continue;
+      const h0 = W.h(x, z);
+      let ring = 0; for (let i = 0; i < 8; i++) ring += W.h(x + Math.cos(i * PI / 4) * 24, z + Math.sin(i * PI / 4) * 24);
+      const rise = h0 - ring / 8;
+      if (rise < 0.3) continue;
+      let dw = 99;
+      for (let rad = 14; rad <= 90 && dw === 99; rad += 11) for (let i = 0; i < 12; i++) if (W.wet(x + Math.cos(i * PI / 6) * rad, z + Math.sin(i * PI / 6) * rad)) { dw = rad; break; }
+      let vis = true;
+      for (let t = 0.08; t < 0.93; t += 0.07) {
+        const px = M[0] + (x - M[0]) * t, pz = M[1] + (z - M[1]) * t, ray = hM + 2 + (h0 + 8 - hM - 2) * t;
+        if (W.h(px, pz) > ray - 0.3) { vis = false; break; }
+      }
+      if (!vis) continue;
+      const score = rise - dw * 0.03 - r * 0.07;
+      found.push({ x, z, score, near });
+    }
+    found.sort((a, b) => b.score - a.score);
+    for (let ci = 0; ci < Math.min(found.length, 10) && !plots.some((q) => q.kind === 'mill'); ci++) {
+      const { x, z, near } = found[ci], f = Math.atan2(near.x - x, near.z - z), d = 4.3;
+      const ex = x + Math.sin(f) * (d + 3), ez = z + Math.cos(f) * (d + 3);
+      const path = !wetNear(ex, ez, 3) && route([near.x, near.z], [ex, ez], { avoidFoot: true, slopeK: 90, noise: 0.5 });
+      if (path && !path.some((q) => W.wet(q[0], q[1]) || W.e(q[0], q[1]) < 1.03)) {
+        const pr = { id: 'pathmill', kind: 'path', pts: path, cum: cumLen(path) }, before = roads.length;
+        routes.push(pr);
+        const pc = { id: pr.id, route: pr.id, pts: path.map((q) => [+q[0].toFixed(2), +q[1].toFixed(2)]), width: WIDTH.path, surface: 'grass', kind: 'path' };
+        roads.push(pc); const pathSegs = addSegs(pc.pts, WIDTH.path);
+        const mp = place(candidate('mill', x, z, d, d, 0, 'farm'));
+        if (!mp) { roads.length = before; routes.pop(); removeSegs(pathSegs); } else stampRoad(path);
+      }
+    }
+  }
+
+
+  // The chapel: a landmark with a churchyard (plot = the yard, w/d half extents), on the best free ground 45-125 m from the square.
+  {
+    const rc = mulberry32(hash32(seed, 161));
+    chapel: for (const [cw, cd] of [[10.5, 14], [9, 12.3], [7.8, 10.8]]) {
+      const tries = [];
+      for (let ring = 0; ring < 14; ring++) for (let k = 0; k < 24; k++) tries.push([50 + ring * 5.5, (k + rc() * 0.6) * TAU / 24]);
+      for (const [r, a] of tries) {
+        const x = M[0] + Math.cos(a) * r, z = M[1] + Math.sin(a) * r;
+        if (place(candidate('chapel', x, z, cw, cd, 0, districtAt(x, z), { maxDh: 1.5, need: 1.2 }))) break chapel;
+      }
+    }
+  }
+  // More barns and sheds by the farmsteads (small barns beside the yards).
+  {
+    const rr = mulberry32(hash32(seed, 171));
+    for (const farm of plots.filter((p) => p.kind === 'farm').slice()) {
+      const right = [Math.cos(farm.facing), -Math.sin(farm.facing)], nrm = [Math.sin(farm.facing), Math.cos(farm.facing)];
+      for (let t = 0, n = 0; t < 8 && n < 2; t++) {
+        const [bw, bd] = dim(rr, 'barn', 0.8), sg = rr() < 0.5 ? 1 : -1, lat = (farm.w + bw + 2 + rr() * 8) * sg, dep = -(rr() * 8) - (farm.d - bd) * 0.4;
+        if (place(candidate('barn', farm.at[0] + right[0] * lat + nrm[0] * dep, farm.at[1] + right[1] * lat + nrm[1] * dep, bw, bd, (rr() - 0.5) * 0.5, 'farm'))) n++;
+      }
+    }
+  }
+
   // final pass: faces re-snapped to the nearest road if a late path changed it; drop what no longer fits
   {
     const kept = [];
@@ -785,8 +883,86 @@ export function villageLayout(world, opts = {}) {
       kept.push(p);
     }
     plots.length = 0;
-    kept.forEach((p, i) => { p.id = 'p' + i; delete p._base; delete p._jit; p.at = [+p.at[0].toFixed(2), +p.at[1].toFixed(2)]; p.facing = +p.facing.toFixed(4); if (/^u\d+$/.test(p.row)) p.row = p.id; p.w = +p.w.toFixed(2); p.d = +p.d.toFixed(2); p.y = +p.y.toFixed(2); plots.push(p); });
+    kept.forEach((p, i) => { p.id = 'p' + i; delete p._base; delete p._jit; p.at = [+p.at[0].toFixed(2), +p.at[1].toFixed(2)]; p.facing = +p.facing.toFixed(4); if (/^u\d+$/.test(p.row)) p.row = p.id; p.w = +p.w.toFixed(2); p.d = +p.d.toFixed(2); p.y = +p.y.toFixed(2); p.dh = +(p.dh || 0).toFixed(1); if (p.kind === 'mill') p.yt = +p.yt.toFixed(2); else delete p.yt; plots.push(p); });
   }
+
+  // ---- back gardens: the free depth behind each house-like plot (drawn by villageProps.js) -------------------
+  const gardenRects = [];
+  for (const p of plots) {
+    if (!(p.kind === 'house' || p.kind === 'house2' || p.kind === 'shop' || p.kind === 'workshop') || p.dh > 1.8 || p.district === 'farm') continue;
+    const A = rectAxes(p.facing);
+    for (const g of [7, 5.5, 4, 2.8]) {
+      const c = p.d + g / 2 + 0.1, gr = { at: [p.at[0] - A.nx * c, p.at[1] - A.nz * c], facing: p.facing, w: p.w, d: g / 2, row: '~g' };
+      let ok = true;
+      for (const q of nearPlots(gr.at[0], gr.at[1])) if (q.id !== p.id && rectsOverlap(gr, q, 0.3)) { ok = false; break; }
+      if (ok) for (const q of gardenRects) if (rectsOverlap(gr, q, 0.3)) { ok = false; break; }
+      if (ok) for (const [sx, sz] of rectSamples(gr.at[0], gr.at[1], p.w, g / 2, p.facing)) if (W.e(sx, sz) < 1.1 || wetNear(sx, sz, 2) || clearance(sx, sz, 1.2) < 1.2 || (Math.abs(W.h(sx, sz) - p.y) > 2.2)) { ok = false; break; }
+      if (ok) { gardenRects.push(gr); p.garden = g; break; }
+    }
+  }
+
+  // ---- fields: drystone-walled paddocks behind the farmsteads (walls with baked heights, field rects for trees / crops) -
+  const walls = [], fields = [];
+  {
+    const FW = 34, FD = 28, STEP = 3.2;
+    const free = (x, z) => {
+      if (W.e(x, z) < 1.12 || wetNear(x, z, 2.5) || dist(x, z, F[0], F[1]) < 45) return false;
+      for (const q of nearPlots(x, z)) if (inRect(q, x, z, 1.6)) return false;
+      if (Math.hypot(W.h(x + 2, z) - W.h(x - 2, z), W.h(x, z + 2) - W.h(x, z - 2)) / 4 > 0.38) return false; // too steep to farm
+      return clearance(x, z, 2) > 1.6;
+    };
+    const taken = []; // field centres already walled (by any farm)
+    plots.filter((p) => p.kind === 'farm').forEach((fp, k) => {
+      const A = rectAxes(fp.facing), at = (sx, ff) => [fp.at[0] + A.rx * sx + A.nx * ff, fp.at[1] + A.rz * sx + A.nz * ff];
+      const fTop = -(fp.d + 2.5), cells = [];
+      for (const [c, row] of [[0, 0], [-1, 0], [1, 0], [0, 1], [-1, 1], [1, 1]]) {
+        const cc = at(c * FW, fTop - FD * (row + 0.5));
+        const corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]].filter(([a, b]) => free(...at(c * FW + a * FW * 0.42, fTop - FD * (row + 0.5) + b * FD * 0.42))).length;
+        if (free(cc[0], cc[1]) && corners >= 3 && (row === 0 || cells.some((q) => q.c === c && q.row === 0)) && !taken.some((q) => dist(q[0], q[1], cc[0], cc[1]) < FW * 0.9)) cells.push({ c, row, at: cc });
+      }
+      if (cells.length < 1) return;
+      for (const q of cells) taken.push(q.at);
+      const edges = new Map();
+      for (const { c, row } of cells) {
+        const f0 = fTop - FD * row, f1 = f0 - FD, sL = (c - 0.5) * FW, sR = (c + 0.5) * FW;
+        edges.set(`V${2 * c - 1}:${row}`, [sL, f0, sL, f1]); edges.set(`V${2 * c + 1}:${row}`, [sR, f0, sR, f1]);
+        edges.set(`H${row + 1}:${c}`, [sL, f1, sR, f1]);
+        if (!(row === 0 && c === 0)) edges.set(`H${row}:${c}`, [sL, f0, sR, f0]);
+      }
+      const runs = [];
+      [...edges.keys()].sort().forEach((key, ei) => {
+        const [s0, f0, s1, f1] = edges.get(key), len = Math.hypot(s1 - s0, f1 - f0), n = Math.max(2, Math.round(len / STEP)), gate = 2 + (hash32(seed, 131 + k, ei) % Math.max(1, n - 4));
+        let cur = [];
+        for (let i = 0; i <= n; i++) {
+          const [x, z] = at(s0 + ((s1 - s0) * i) / n, f0 + ((f1 - f0) * i) / n);
+          if (!free(x, z)) { if (cur.length > 1) runs.push(cur); cur = []; continue; }
+          cur.push([x, z]);
+          if (i === gate) { if (cur.length > 1) runs.push(cur); cur = []; }
+        }
+        if (cur.length > 1) runs.push(cur);
+      });
+      if (!runs.length) return;
+      let base = 1e9; for (const r of runs) for (const q of r) q[2] = W.h(q[0], q[1]);
+      for (const r of runs) for (const q of r) base = Math.min(base, q[2]);
+      base = Math.floor(base);
+      walls.push({ id: 'wall' + k, farm: fp.id, at: [+fp.at[0].toFixed(1), +fp.at[1].toFixed(1)], seatY: base, runs: runs.map((r) => r.map((q) => [+q[0].toFixed(1), +q[1].toFixed(1), +(q[2] - base).toFixed(2)])) });
+      cells.forEach((q, i) => fields.push({ id: `field${k}.${i}`, farm: fp.id, kind: ['crop', 'pasture', 'orchard', 'pasture'][hash32(seed, 141 + k, i) % 4], at: [+q.at[0].toFixed(1), +q.at[1].toFixed(1)], facing: fp.facing, w: FW / 2 - 1.5, d: FD / 2 - 1.5 }));
+    });
+  }
+
+  // The stone bridges (villageProps.js bridgeSite): the structure spans the stream's wet run along the straightened bridge
+  // road piece with 3.4 m of abutment each side. Heights are baked: the site is seated at `seatY` (the higher bank).
+  const bridges = bridgePieces.map((rd, k) => {
+    const A = rd.pts[0], B = rd.pts[rd.pts.length - 1], L0 = dist(A[0], A[1], B[0], B[1]) || 1, dx = (B[0] - A[0]) / L0, dz = (B[1] - A[1]) / L0;
+    let w0 = Infinity, w1 = -Infinity;
+    for (let t = -6; t <= L0 + 6; t += 0.5) if (W.wet(A[0] + dx * t, A[1] + dz * t)) { w0 = Math.min(w0, t); w1 = Math.max(w1, t); }
+    if (w0 > w1) { w0 = L0 / 2 - 2; w1 = L0 / 2 + 2; }
+    const s0 = Math.min(0, w0 - 3.4), s1 = Math.max(L0, w1 + 3.4);
+    const hA = W.h(A[0] + dx * s0, A[1] + dz * s0), hB = W.h(A[0] + dx * s1, A[1] + dz * s1), seatY = Math.max(hA, hB);
+    const m = (s0 + s1) / 2;
+    return { id: 'bridge' + k, road: rd.id, at: [+(A[0] + dx * m).toFixed(2), +(A[1] + dz * m).toFixed(2)], yaw: +Math.atan2(dx, dz).toFixed(4), len: +(s1 - s0).toFixed(2), width: 5.6,
+      eA: +(hA - seatY).toFixed(2), eB: +(hB - seatY).toFixed(2), seatY: +seatY.toFixed(2), wet: [+(w0 - s0).toFixed(2), +(w1 - s0).toFixed(2)] };
+  });
 
   // ---- lights ---------------------------------------------------------------------------------
   const lights = [];
@@ -832,7 +1008,7 @@ export function villageLayout(world, opts = {}) {
   }
 
   return {
-    roads, plots, lights, greens,
+    roads, plots, lights, greens, bridges, walls, fields,
     meta: {
       seed, market: M.slice(), marketRadius: Rsq, foot: F.slice(), hub: H.slice(), entry: E.slice(),
       corridor: corridor.map((p) => [+p[0].toFixed(2), +p[1].toFixed(2)]),

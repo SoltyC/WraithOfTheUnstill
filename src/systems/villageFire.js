@@ -21,9 +21,13 @@ export function addVillageFireSystem(g) {
   const vf = g.villageFire = createVillageFire(plots);
   vf.events = [];
   const N = vf.N, T = fireTuning;
-  const siteOf = new Int16Array(N);
+  const siteOf = new Int16Array(N), streamHits = new Uint8Array(N);
   for (let i = 0; i < N; i++) siteOf[i] = sites.findIndex((s) => s.id === 'vil-' + vf.ids[i]);
-  const F = g.fire.fires, FX = g.fire.fireX, FT = g.fire.fireT;
+  for (let i = 0; i < N; i++) {
+    const m = siteOf[i] >= 0 && sites[siteOf[i]].build && sites[siteOf[i]].build.meta;
+    if (m && m.ridgeY) vf.setRidge(i, m.ridgeY, m.ridgeAlongA, m.ridgeHalf, m.ridgeC);
+  }
+  const F = g.fire.fires, FX = g.fire.fireX, FL = g.fire.fireL, FT = g.fire.fireT;
   const SLOTS = F.length / 4;
 
   /** The fire's own wind (the meadow is stilled: its air barely moves, so spread and smoke lean on a floor of 0.5). Override: g.villageFireWind = { x, z, strength }. */
@@ -41,12 +45,24 @@ export function addVillageFireSystem(g) {
   const verbs = (v, dt) => {
     const fr = g.frost, ga = g.gale;
     if (fr) {
-      // The Ribbon's far end (the oldest live node: where the water lands): water on whatever burns there.
+      // The Ribbon's water: every live node of the stream over a burning house cools it (a quarter of the
+      // stream on it is a full douse). Only the far tip counted before, and its figure-eight mostly missed
+      // the roof (bot playtest 2026-10-24: 3 s of Ribbon took 0.25 heat off a house).
       let tip = -1;
-      if (fr.ribbonStrength > 0.3) for (let n = fr.ribbonNodes.length / 4 - 1; n >= 0; n--) if (fr.ribbonNodes[n * 4 + 3] > 0.15) { tip = n; break; }
+      if (fr.ribbonStrength > 0.3) {
+        const nodes = fr.ribbonNodes, NN = nodes.length / 4;
+        streamHits.fill(0); let live = 0;
+        for (let n = 0; n < NN; n++) {
+          if (!(nodes[n * 4 + 3] > 0.15)) continue;
+          live++; tip = n;
+          const i = v.nearestBurning(nodes[n * 4], nodes[n * 4 + 2], 1.5);
+          if (i >= 0) streamHits[i]++;
+        }
+        const q = Math.max(2, live * 0.25);
+        for (let i = 0; i < N; i++) if (streamHits[i] > 0) v.douseAt(i, T.ribbonRate * dt * fr.ribbonStrength * Math.min(1, streamHits[i] / q));
+      }
       if (tip >= 0) {
         const x = fr.ribbonNodes[tip * 4], y = fr.ribbonNodes[tip * 4 + 1], z = fr.ribbonNodes[tip * 4 + 2];
-        v.douse(x, z, 1.6, T.ribbonRate * dt * fr.ribbonStrength);
         // Through an Updraft the stream rains down over the whole roof.
         if (ga && ga.liftAt(x, y, z) > 0.4) { rainX = x; rainZ = z; rainLeft = 1.2; }
       }
@@ -66,7 +82,7 @@ export function addVillageFireSystem(g) {
 
   // ---- Visual ranking (nearest first), reused buffers ----
   const cand = new Int16Array(N), candD = new Float32Array(N);
-  const out3 = new Float32Array(3);
+  const out3 = new Float32Array(3), seg4 = new Float32Array(4);
   const lights = [];
   for (let i = 0; i < LIGHT_POOL; i++) lights.push(WL.add({ x: NaN, y: NaN, z: NaN, radius: 20, color: [1, 0.4, 0.12], intensity: 1, kind: 'fire', level: 0 }));
 
@@ -93,6 +109,7 @@ export function addVillageFireSystem(g) {
           const size = vf.emitter(i, k, out3), o = slot * 4;
           F[o] = out3[0]; F[o + 1] = seat + out3[1]; F[o + 2] = out3[2]; F[o + 3] = size;
           FX[o] = k === 0 ? 1.1 + 0.9 * vf.smoke[i] : 0.7; FX[o + 1] = 1; FX[o + 2] = lod; FX[o + 3] = k === 0 ? 0.5 + 0.5 * vf.smoke[i] : 0.6;
+          vf.emitterSegment(i, k, seg4); FL[o] = seg4[0]; FL[o + 1] = seg4[1]; FL[o + 2] = seg4[2]; FL[o + 3] = seg4[3]; // tongues along the ridge / out of the opening
         }
         if (li < LIGHT_POOL) {
           const L = lights[li++];
@@ -104,6 +121,7 @@ export function addVillageFireSystem(g) {
         const size = vf.smokePoint(i, out3), o = slot * 4;
         F[o] = out3[0]; F[o + 1] = seat + out3[1]; F[o + 2] = out3[2]; F[o + 3] = size;
         FX[o] = 1.2 + 0.6 * vf.smoke[i]; FX[o + 1] = 0; FX[o + 2] = lod; FX[o + 3] = 0.85;
+        FL[o] = 0; FL[o + 1] = 0; FL[o + 2] = 0; FL[o + 3] = 0;
         slot++;
       }
     }
@@ -119,17 +137,24 @@ export function addVillageFireSystem(g) {
 
   // ---- The Wraith ----
   const door = [0, 0];
-  let dwell = 0;
+  let dwell = 0, burns = 0, coolT = 0;
   function wraith(dt) {
     const co = g.combat; if (!co || co.dying > 0 || dt <= 0) return;
     const p = controller.pos;
     const h = vf.heatAt(p.x, p.y, p.z);
+    const inside = vf.insideAt(p.x, p.z, T.ejectHeat);
     if (h > T.damageHeat) {
-      co.health -= heatDamage(h, dt, co.health, g.combatTuning.health);
-      co.focus = Math.max(0, co.focus - T.focusPerSec * h * dt);
+      const d = heatDamage(h, dt, co.health, g.combatTuning.health);
+      co.health -= d; burns += d; coolT = 0;
+      // Only inside a burning house does the heat sap focus: out in the street it would starve the Ribbon
+      // that puts the fire out (bot playtest 2026-10-24: focus sat at 0 beside the houses).
+      if (inside >= 0) co.focus = Math.max(0, co.focus - T.focusPerSec * h * dt);
+    } else if (burns > 0) {
+      // Burns heal once out of the heat a moment (only what the fire took: the fight's wounds stay).
+      coolT += dt;
+      if (coolT > T.burnHealDelay) { const k = Math.min(burns, T.burnHealRate * dt, g.combatTuning.health - co.health); if (k > 0) { co.health += k; burns -= k; } else burns = 0; }
     }
     // Inside a fully burning house: after a moment the heat drives the Wraith out of the door (health unchanged by this).
-    const inside = vf.insideAt(p.x, p.z, T.ejectHeat);
     if (inside < 0) { dwell = Math.max(0, dwell - 2 * dt); return; }
     dwell += dt;
     if (dwell < T.ejectDwell) return;
