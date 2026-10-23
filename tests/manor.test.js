@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildArchitecture } from '../src/world/architecture.js';
-import { manorSites, MANOR, FACING, manorWorld, padE } from '../src/world/manor.js';
+import { manorSites, MANOR, FACING, manorWorld, padE, BACK } from '../src/world/manor.js';
 import { MAT } from '../src/world/architecture.js';
 import { createSolids } from '../src/world/solids.js';
 
@@ -25,7 +25,7 @@ describe('manor', () => {
   });
   it('builds finite indexed geometry inside the vertex budget', () => {
     const n = built.positions.length / 3;
-    expect(n).toBeLessThanOrEqual(250000);
+    expect(n).toBeLessThanOrEqual(300000);
     let maxI = 0; for (const i of built.indices) maxI = Math.max(maxI, i);
     expect(maxI).toBeLessThan(n);
     for (let i = 0; i < built.positions.length; i++) if (!Number.isFinite(built.positions[i])) throw new Error('NaN at ' + i);
@@ -38,7 +38,9 @@ describe('manor', () => {
       const r = built.ranges[sites.indexOf(s)], P = built.positions;
       let worst = 0;
       for (let k = r.v0; k < r.v1; k += 7) { const x = s.at[0] + P[k * 3], z = s.at[1] + P[k * 3 + 2]; if (P[k * 3 + 1] > -2) worst = Math.max(worst, Math.hypot((x - 300) / 72, (z - 1000) / 58)); }
-      expect(worst, s.id).toBeLessThan(1.18);
+      // The house stands at the west rim on footings into the slope (manor.js BACK): the rim pieces may
+      // reach a little past the pad; the forecourt and the gate stay on it.
+      expect(worst, s.id).toBeLessThan(/hall|wing|tower/.test(s.id) ? 1.3 : 1.18);
     }
   });
   it('has camera-only roof blockers, a walkable hall floor, and doors a body fits through', () => {
@@ -55,13 +57,13 @@ describe('manor', () => {
       }
       return moved;
     };
-    expect(walk([0, -8], [0, -22])).toBeLessThan(0.05);            // through the portal into the hall
+    expect(walk([0, -8 - BACK], [0, -22 - BACK])).toBeLessThan(0.05);            // through the portal into the hall
     expect(walk([0, 62], [0, 50])).toBeLessThan(0.05);             // through the gate arch
-    expect(walk([-3, -22], [-3 - 0, -26.5])).toBeLessThan(0.05);   // across the hall
-    solids.cull(...manorWorld(10, -26));
-    expect(solids.floor(...manorWorld(10, -26), 410, false, 410.3)).toBeCloseTo(410.25, 5);
+    expect(walk([-3, -22 - BACK], [-3 - 0, -26.5 - BACK])).toBeLessThan(0.05);   // across the hall
+    solids.cull(...manorWorld(10, -26 - BACK));
+    expect(solids.floor(...manorWorld(10, -26 - BACK), 410, false, 410.3)).toBeCloseTo(410.25, 5);
     // The hall wall blocks.
-    expect(walk([-20, -9], [-20, -16])).toBeGreaterThan(0.2);
+    expect(walk([-20, -9 - BACK], [-20, -16 - BACK])).toBeGreaterThan(0.2);
   });
   it('has the lit window on its own site and the pad fit table', () => {
     const lit = idx('manor-hall-lit');

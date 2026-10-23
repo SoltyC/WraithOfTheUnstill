@@ -606,9 +606,9 @@ analytic solids (not 800 platforms).
    half its roof down and the ribcage trusses showing, a scorched east wing, an open west wing for
    the neck, four towers — one leaning and roofless — a gatehouse at the stair head, a broken
    forecourt with toppled statues and a dry fountain, one lit window); trees and rocks kept off
-   the summit and the stair. Shots `screenshots/manor-2/`. **Open: the manor cannot be seen from
-   the village** (the dome's shoulder hides the summit) — move it to the village-facing rim,
-   raise the towers, or flatten the shoulder.
+   the summit and the stair. Shots `screenshots/manor-2/`. Then (user: option 1) the house moved 13 m
+   back to the village-facing west rim on footings into the slope, and the towers rose to 46–64 m:
+   they crown the hill above the rooftops from the market (`p8-manor-market`).
 5. **Fire quest** — per-building fire states, extinguishing (Ribbon main; Sweep; Crystallize
    holds; Ribbon + Updraft rain; Gust fans), terrified NPCs, interiors and the child rescue, the
    guide NPC, char via the transform channel; plan-fire-quest.md. (4)

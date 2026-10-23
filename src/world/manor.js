@@ -31,6 +31,8 @@ export { Builder };
 const PI = Math.PI;
 const S_ = MAT.STONE;
 
+/** How far (m) the house stands back from the pad centre toward the west rim (manorSites). */
+export const BACK = 13;
 export const MANOR = { centre: [300, 1000], y: 410, pad: [72, 58], stairHead: [346.7, 976.1] };
 export const FACING = Math.atan2(MANOR.stairHead[0] - MANOR.centre[0], MANOR.stairHead[1] - MANOR.centre[1]);
 const PM = rot(FACING);
@@ -643,20 +645,24 @@ function forecourt(F) {
 
 /** The manor's sites, to be appended after the village's (each seated at MANOR.y). */
 export function manorSites() {
-  const mk = (id, ou, of, footprint, build, extra = {}) => ({
-    id, at: manorWorld(ou, of), facing: FACING, footprint, seatAt: 'center', seatY: MANOR.y,
-    build: (b, facing) => build(new Fr(b, facing, [ou, of]), b), ...extra,
-  });
+  // The house stands back on the west rim (BACK m behind the pad centre), so its back wall and towers
+  // rise straight above the slope the village looks up at, on battered footings running down into the
+  // hill (nothing floats where the rim falls away); the gate and the forecourt stay at the stair.
+  const mk = (id, ou, of, footprint, build, extra = {}) => {
+    const back = extra.back ? BACK : 0; // drawn in the manor frame as before, the site moved back
+    return { id, at: manorWorld(ou, of - back), facing: FACING, footprint, seatAt: 'center', seatY: MANOR.y,
+      build: (b, facing) => { const F = new Fr(b, facing, [ou, of]); build(F, b); if (extra.footing) extra.footing(F); }, ...extra };
+  };
   return [
     mk('manor-forecourt', 0, 20, 62, forecourt),
-    mk('manor-hall', 0, -26, 42, hall),
-    mk('manor-hall-lit', 0, -26, 4, hallLit, { windows: true }),
-    mk('manor-wing-e', -42, -20, 22, (F) => wing(F, -1, true)),
-    mk('manor-wing-w', 42, -18, 22, (F) => wing(F, 1, false)),
-    mk('manor-tower-1', -36, -43, 12, (F) => tower(F, -36, -43, 5.4, 42, { seed: 11, coneH: 12.5, coneGone: (i) => (i === 3 ? 1 : 0) })),
-    mk('manor-tower-2', 37, -42, 12, (F) => tower(F, 37, -42, 5.4, 46, { seed: 12, lean: 4 * PI / 180, leanDir: [0.8, 0.6], ruinTop: 0.45, lay: 8, top: 7 })),
-    mk('manor-tower-3', -46, -1, 11, (F) => tower(F, -46, -1, 4.6, 32, { seed: 13, coneH: 10.5, lay: 8, top: 5, coneGone: (i) => (i === 8 ? 2 : 0) })),
-    mk('manor-tower-4', 31, -9, 11, (F) => tower(F, 31, -9, 4.6, 36, { seed: 14, coneH: 11, lay: 8, top: 5 })),
+    mk('manor-hall', 0, -26,  42, hall, { back: true, footing: (F) => F.obox(0, -26, -40, 0.2, 36.5, 15, 0, MAT.STONE, 900, { plain: true, carve: 5 }) }),
+    mk('manor-hall-lit', 0, -26,  4, hallLit, { windows: true, back: true }),
+    mk('manor-wing-e', -42, -20,  22, (F) => wing(F, -1, true), { back: true, footing: (F) => F.obox(-42, -20, -40, 0.2, 9, 22, 0, MAT.STONE, 901, { plain: true, carve: 5 }) }),
+    mk('manor-wing-w', 42, -18,  22, (F) => wing(F, 1, false), { back: true, footing: (F) => F.obox(42, -18, -40, 0.2, 9, 22, 0, MAT.STONE, 902, { plain: true, carve: 5 }) }),
+    mk('manor-tower-1', -36, -43,  12, (F) => tower(F, -36, -43, 6.2, 58, { seed: 11, coneH: 12.5, coneGone: (i) => (i === 3 ? 1 : 0) }), { back: true, footing: (F) => F.b.drum(...F.xz(-36, -43), -40, 0.3, 8.4, 6.7, 14, MAT.STONE, 903, { solid: false }) }),
+    mk('manor-tower-2', 37, -42,  12, (F) => tower(F, 37, -42, 6.2, 64, { seed: 12, lean: 4 * PI / 180, leanDir: [0.8, 0.6], ruinTop: 0.45, lay: 8, top: 7 }), { back: true, footing: (F) => F.b.drum(...F.xz(37, -42), -40, 0.3, 8.4, 6.7, 14, MAT.STONE, 904, { solid: false }) }),
+    mk('manor-tower-3', -46, -1,  11, (F) => tower(F, -46, -1, 5.2, 46, { seed: 13, coneH: 10.5, lay: 8, top: 5, coneGone: (i) => (i === 8 ? 2 : 0) }), { back: true, footing: (F) => F.b.drum(...F.xz(-46, -1), -40, 0.3, 6.6, 5.1, 14, MAT.STONE, 905, { solid: false }) }),
+    mk('manor-tower-4', 31, -9,  11, (F) => tower(F, 31, -9, 5.2, 50, { seed: 14, coneH: 11, lay: 8, top: 5 }), { back: true, footing: (F) => F.b.drum(...F.xz(31, -9), -40, 0.3, 6.6, 5.1, 14, MAT.STONE, 906, { solid: false }) }),
     mk('manor-gate', 0, 56.6, 20, gatehouse),
   ];
 }

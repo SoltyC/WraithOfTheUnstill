@@ -1,0 +1,2 @@
+2026-10-23T04:24:33.960Z 1/1 p8-manor-aerial: saved screenshots/manor-3/p8-manor-aerial.png
+2026-10-23T04:24:33.966Z Shots done: 1/1 spot(s) (p8-manor-aerial*) → screenshots/manor-3/.
