@@ -21,6 +21,9 @@ export function createSolids(sites, built, stairRuns = null) {
   // Rocks near the Wraith (systems/rockSolids.js fills them): an ellipse (half-extents rx, rz in
   // the rock's yawed frame: local x = wx·cos + wz·sin, z = −wx·sin + wz·cos) from its seat y0 to
   // its top y1 (a dome over the ellipse for standing on).
+  // Gates: invisible blocking boxes a quest switches on and off (the stair foot until the elder's leave).
+  // Box frame as the blockers: right = (cos, −sin), forward = (sin, cos); every height; ignored when `on` is false.
+  const gates = [];
   const MAXR = 96;
   const rk = { n: 0, x: new Float64Array(MAXR), z: new Float64Array(MAXR), c: new Float64Array(MAXR), s: new Float64Array(MAXR),
     rx: new Float64Array(MAXR), rz: new Float64Array(MAXR), y0: new Float64Array(MAXR), y1: new Float64Array(MAXR) };
@@ -28,7 +31,13 @@ export function createSolids(sites, built, stairRuns = null) {
   const ROCK_STEP = 0.55;
 
   return {
-    sites: S, blockers, platforms, rocks: rk, stair: ST,
+    sites: S, blockers, platforms, rocks: rk, stair: ST, gates,
+    /** An invisible wall: centre (x, z), half-extents hx (across) × hz (along its facing), facing yaw. Returns the gate; set .on. */
+    addGate(x, z, hx, hz, yaw) {
+      const gate = { x, z, hx, hz, cos: Math.cos(yaw), sin: Math.sin(yaw), on: false };
+      gates.push(gate);
+      return gate;
+    },
     /** False while a site whose footprint covers (x, z) has no seat yet (a landing would miss its floors). */
     seatedNear(x, z) {
       for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; if (s.rad > 0 && dx * dx + dz * dz < s.rad * s.rad && Number.isNaN(s.seat)) return false; }
@@ -149,6 +158,19 @@ export function createSolids(sites, built, stairRuns = null) {
         let nx = ex / (a * a), nz = ez / (b * b); const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
         const wx = nx * c - nz * s, wz = nx * s + nz * c;
         const into = v.x * wx + v.z * wz; if (into < 0) { v.x -= into * wx; v.z -= into * wz; }
+      }
+      for (let i = 0; i < gates.length; i++) {
+        const b = gates[i];
+        if (!b.on) continue;
+        const lx = (p.x - b.x) * b.cos - (p.z - b.z) * b.sin, lz = (p.x - b.x) * b.sin + (p.z - b.z) * b.cos;
+        const ex = b.hx + R, ez = b.hz + R;
+        if (lx <= -ex || lx >= ex || lz <= -ez || lz >= ez) continue;
+        const px = ex - Math.abs(lx), pz = ez - Math.abs(lz);
+        let nx, nz, pen;
+        if (px < pz) { const sgn = lx < 0 ? -1 : 1; nx = b.cos * sgn; nz = -b.sin * sgn; pen = px; }
+        else { const sgn = lz < 0 ? -1 : 1; nx = b.sin * sgn; nz = b.cos * sgn; pen = pz; }
+        p.x += nx * pen; p.z += nz * pen;
+        const into = v.x * nx + v.z * nz; if (into < 0) { v.x -= into * nx; v.z -= into * nz; }
       }
       for (let i = 0; i < blockers.length; i++) {
         const b = blockers[i];

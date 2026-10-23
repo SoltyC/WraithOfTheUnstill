@@ -1,5 +1,5 @@
 // Fire (shaders/fire.wgsl.js): one static mesh of FIRE_COUNT particle quads, animated entirely in
-// the vertex shader; the owner writes up to eight fires (base position, size; 0 = out), the time
+// the vertex shader; the owner writes up to FIRES (48) fires (base position, size; 0 = out; plus fireX: smoke scale, flame amount, level of detail, soot), the time
 // and the wind. Drawn in the transparent pass after the falling snow; premultiplied, no depth write.
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
@@ -36,21 +36,24 @@ export function createFire(scene, atmo) {
   mesh.freezeWorldMatrix();
   /** Per fire: x, y, z (base, world), size (0 = out). Written in place by the owner. */
   const fires = new Float32Array(FIRES * 4);
+  /** Per fire: smoke scale, flame amount (0 = smoke only), level of detail (share of particles), soot. Defaults draw a plain camp fire. */
+  const fireX = new Float32Array(FIRES * 4);
+  for (let i = 0; i < FIRES; i++) { fireX[i * 4] = 1; fireX[i * 4 + 1] = 1; fireX[i * 4 + 2] = 1; }
   const fireT = new Vector4(0, 1, 0, 0);
   const mat = new ShaderMaterial('fire', scene, { vertex: 'fire', fragment: 'fire' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'fires', 'fireT', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'fires', 'fireX', 'fireT', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
     needAlphaBlending: true,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
-  mat.setArray4('fires', fires); mat.setVector4('fireT', fireT);
+  mat.setArray4('fires', fires); mat.setArray4('fireX', fireX); mat.setVector4('fireT', fireT);
   mat.alphaMode = Constants.ALPHA_PREMULTIPLIED_PORTERDUFF;
   mat.disableDepthWrite = true;
   mat.backFaceCulling = false;
   mesh.material = mat;
   mat.freeze(); fastFrozenIsReady(mat);
-  return { mesh, material: mat, fires, fireT };
+  return { mesh, material: mat, fires, fireX, fireT };
 }

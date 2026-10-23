@@ -9,6 +9,29 @@
 import { QuestGraph } from './quests/questGraph.js';
 
 /**
+ * One chapter's data from several data files (frost.json, meadow.json …): NPCs, quests and
+ * barks are joined, keyed tables merged. The first file's title and chapter stay; `village`
+ * (the meadow's people and fire plots) comes from whichever file has it.
+ * @param {any} base
+ * @param {...any} more
+ */
+export function mergeChapters(base, ...more) {
+  const out = { ...base, npcs: [...base.npcs], quests: [...base.quests] };
+  for (const k of ['places', 'talk', 'dialogue', 'echoes', 'lore', 'names', 'barks']) out[k] = { ...(base[k] || {}) };
+  for (const d of more) {
+    out.npcs.push(...(d.npcs || [])); out.quests.push(...(d.quests || []));
+    for (const k of ['places', 'talk', 'dialogue', 'echoes', 'lore', 'names', 'barks']) {
+      for (const id in d[k] || {}) {
+        if (k !== 'barks' && id in out[k]) throw new Error(`chapter data: duplicate ${k} "${id}"`);
+        out[k][id] = d[k][id];
+      }
+    }
+    if (d.village) out.village = d.village;
+  }
+  return out;
+}
+
+/**
  * @param {{ data: any, pois: any[], hooks: { echo?: Function, lore?: Function, shrine?: Function,
  *           autosave?: Function, journal?: Function, questStarted?: Function, questDone?: Function } }} opts
  */

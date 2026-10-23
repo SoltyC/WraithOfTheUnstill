@@ -23,10 +23,11 @@ export function addNpcSystems(g) {
 
   function place(ref) { const p = table[ref.poi].pos; return [p[0] + (ref.dx || 0), p[1] + (ref.dz || 0)]; }
 
-  function makeNpc(id, name, archetype, home) {
+  /** @param {{ tint?: number[], interact?: boolean }} [opt]  tint: dyed robe (multiplier); interact: a Speak target (default: when named) */
+  function makeNpc(id, name, archetype, home, opt = {}) {
     const A = ARCHETYPES[archetype];
     const xf = { ox: home[0], oy: 0, oz: home[1], s: A.scale };
-    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: A.tint, simGround: scaledGround(ground, xf, g.solids || null), xform: xf });
+    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: opt.tint || A.tint, simGround: scaledGround(ground, xf, g.solids || null), xform: xf });
     bindShadows(view.material, shadows); bindShadows(view.fur.material, shadows); bindShadows(view.fx.material, shadows);
     shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
     view.freeze();
@@ -40,14 +41,15 @@ export function addNpcSystems(g) {
       id, name, archetype, A, view, xf, home, x: home[0], z: home[1], y: 0, yaw: rnd() * 6.28,
       shown: false, placed: false, shiftT: A.shift[0] + rnd() * (A.shift[1] - A.shift[0]), offX: 0.5 - 0.5, offZ: 0.5 - 0.5,
       lod: 0.5 - 0.5, path: null, pathT: 0.5 - 0.5, at: null, vx: 0.5 - 0.5, vz: 0.5 - 0.5,
-      target: name ? { kind: 'npc', id, verb: 'Speak', name, x: 0.5, y: 0.5, z: 0.5, r: TALK_R, h: 0.25, hidden: true } : null,
+      brain: null, hunch: undefined, noLook: false,
+      target: (opt.interact ?? !!name) ? { kind: 'npc', id, verb: 'Speak', name, x: 0.5, y: 0.5, z: 0.5, r: TALK_R, h: 0.25, hidden: true } : null,
     };
     if (n.target) g.interactables.push(n.target);
     npcs.push(n);
     return n;
   }
 
-  for (const d of data.npcs) makeNpc(d.id, d.name, d.archetype, place(d.home));
+  for (const d of data.npcs) if (!d.lazy) makeNpc(d.id, d.name, d.archetype, place(d.home));
   // Ambient pilgrim: walks from the fire across the frozen tarn to the shrine on its far shore, and back.
   const camp = table['camp-frost'].pos, shrine = table['shrine-frost-3'].pos;
   const walker = makeNpc('pilgrim-1', null, 'pilgrim', [camp[0] - 6, camp[1] - 6]);
@@ -173,6 +175,13 @@ export function addNpcSystems(g) {
     }
   }
 
+  // For systems that drive their own people (systems/villagers.js): make an NPC late, walk, re-place.
+  g.npcApi = {
+    make: makeNpc, walkTo, place,
+    /** Put n at (x, z) now (out of sight or not: the caller decides), keeping its sim origin in step. */
+    put(n, x, z) { n.x = x; n.z = z; n.xf.ox = x; n.xf.oz = z; n.placed = false; n.at = [x, z]; n.vx = 0; n.vz = 0; },
+  };
+
   loop.add({ name: 'npcs', update: () => {
     frame++;
     const cp = camera.position, p = controller.pos, dt = clock.dt;
@@ -185,6 +194,8 @@ export function addNpcSystems(g) {
         n.pathT += dt * 1.05;
         pathPoint(n, n.pathT, pp);
         n.x = pp[0]; n.z = pp[1]; n.yaw = pp[2];
+      } else if (n.brain) {
+        n.brain(n, dt); // a system drives it (systems/villagers.js): sets x, z, vx, vz, yaw, hunch
       } else if (n.id === 'tobin' && tobinTick(n, dt)) {
         // walking with the Wraith (or home)
       } else {
@@ -210,7 +221,7 @@ export function addNpcSystems(g) {
       if (g.solids) { const so = g.solids; so.qx = n.x; so.qz = n.z; so.qh = n.y; so.floorAnyQ(); n.y = so.h; }
       if (!n.placed) { xf.oy = n.y; n.placed = true; }
       // Idle life: shift weight now and then (a small corrective step), turn toward the Wraith.
-      if (!n.path && !n.vx && !n.vz) {
+      if (!n.path && !n.vx && !n.vz && !n.noLook) {
         n.shiftT -= dt;
         if (n.shiftT <= 0) { n.shiftT = n.A.shift[0] + rnd() * (n.A.shift[1] - n.A.shift[0]); n.offX = (rnd() - 0.5) * 0.16; n.offZ = (rnd() - 0.5) * 0.16; }
         const tx = p.x - n.x, tz = p.z - n.z;
@@ -224,6 +235,7 @@ export function addNpcSystems(g) {
       sim[0] = xf.ox + (n.x + n.offX - xf.ox) / xf.s; sim[2] = xf.oz + (n.z + n.offZ - xf.oz) / xf.s; sim[1] = xf.oy + (n.y - xf.oy) / xf.s;
       w.bx = sim[0]; w.by = sim[1]; w.bz = sim[2];
       w.vx = n.path ? Math.sin(n.yaw) * 1.05 / xf.s : (n.vx || 0) / xf.s; w.vz = n.path ? Math.cos(n.yaw) * 1.05 / xf.s : (n.vz || 0) / xf.s;
+      if (n.hunch !== undefined) w.body.hunch = n.hunch;
       w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1); w.time = clock.simTime;
       if (g.wind) { g.wind.sx = n.x; g.wind.sz = n.z; g.wind.sample(); w.windStrength = g.wind.speed * 0.9; w.windX = g.wind.outX; w.windZ = g.wind.outZ; }
       else { w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ; }

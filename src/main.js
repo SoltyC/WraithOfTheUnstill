@@ -98,12 +98,14 @@ async function boot() {
   (await import('./systems/chapter.js')).addChapterSystem(g);
   (await import('./systems/lights.js')).addLightSystem(g);
   await (await import('./systems/architecture.js')).addArchitectureSystem(g);
+  (await import('./systems/villageFire.js')).addVillageFireSystem(g); // after architecture (it feeds fire slots 8.. and the sites' char) and the combat system
   (await import('./systems/rockSolids.js')).addRockSolidSystem(g);
   if (!capture) (await import('./ui/windView.js')).addWindView(g); // dev: overlay toggle 'wind field (map)'
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);
   (await import('./systems/encounters.js')).addEncounterSystem(g);
+  (await import('./systems/villagers.js')).addVillagerSystem(g);
   (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/flame.js')).addFlameSystem(g);

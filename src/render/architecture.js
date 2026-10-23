@@ -27,16 +27,18 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
   /** Per site: x, seat y, z, shown (0/1); glow: glyph light, fire, hearth x, hearth z. Written in
    *  place by the owner (materials keep the array references and read them every bind). */
   const sites = new Float32Array(ARCH_SITES * 4), glow = new Float32Array(ARCH_SITES * 4);
+  /** Per site char 0..1 (4 sites per vec4), written by systems/villageFire.js. */
+  const char = new Float32Array(ARCH_SITES);
   const params = new Vector4(0, 0, 0, 0);
   const mat = new ShaderMaterial('arch', scene, { vertex: 'arch', fragment: 'arch' }, {
     attributes: ['position', 'normal', 'uv', 'info'],
-    uniforms: ['viewProjection', 'sites', 'siteGlow', 'archParams', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'sites', 'siteGlow', 'siteChar', 'archParams', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
-  mat.setArray4('sites', sites); mat.setArray4('siteGlow', glow); mat.setVector4('archParams', params);
+  mat.setArray4('sites', sites); mat.setArray4('siteGlow', glow); mat.setArray4('siteChar', char); mat.setVector4('archParams', params);
   mat.backFaceCulling = false;
   // Y is unknown at build time (seats arrive later): generous bounds. The meshes stay
   // alwaysSelectAsActiveMesh: with snapshot rendering the recorded bundle is replayed, so Babylon's
@@ -58,7 +60,7 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
   const shadowMats = new Map();
   return {
     /** Chunk views: { id, mesh, prop, sites, cx, cz, radius, vertexCount } (debugging: view.chunks). */
-    chunks: views, material: mat, sites, glow, params,
+    chunks: views, material: mat, sites, glow, char, params,
     makeShadowMaterial(name, light, origin) {
       if (shadowMats.has(light)) return shadowMats.get(light);
       const m = new ShaderMaterial(name, scene, { vertex: 'arch', fragment: 'shadowDepth' }, {

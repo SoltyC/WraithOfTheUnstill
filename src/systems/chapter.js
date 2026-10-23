@@ -5,7 +5,8 @@
 // shrines unlocked, autosaves.
 
 import frostData from '../../data/quests/frost.json';
-import { createChapter } from '../game/chapter.js';
+import meadowData from '../../data/quests/meadow.json';
+import { createChapter, mergeChapters } from '../game/chapter.js';
 import { applyEcho } from '../game/echoes.js';
 import { surfTuning } from '../character/surf.js';
 import { createHud } from '../ui/hud/hud.js';
@@ -16,7 +17,7 @@ export function addChapterSystem(g) {
   g.surfTuning = surfTuning;
   const hud = g.hud = createHud();
   const chapter = g.chapter = createChapter({
-    data: frostData, pois: g.pois,
+    data: mergeChapters(frostData, meadowData), pois: g.pois,
     hooks: {
       // An Echo found is carried; it takes effect once attuned at a shrine (BRIEF §11).
       echo: (id, e, loading) => {

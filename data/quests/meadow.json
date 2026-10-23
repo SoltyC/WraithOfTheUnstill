@@ -1,0 +1,289 @@
+{
+  "_review": "Meadow chapter, part 1: the fire night at Hearn (user plan 2026-10-22). Merged into frost.json's data by game/chapter.js mergeChapters; one quest graph. Ids are meadow-*; flags are meadow:*. Dialogue follows docs/village/dialogue-style.md: plain, who/what/where, objectives as imperatives. Coordinates of places come from data/world/village.json (tests pin them).",
+  "chapter": "meadow",
+  "title": "The Burning Night",
+  "npcs": [
+    { "id": "meadow-wenna", "name": "Wenna", "archetype": "lantern", "lazy": true, "home": { "poi": "meadow-road" }, "about": "A young woman of Hearn with a lantern. Ran north for help. Leads the Wraith to the burning village." },
+    { "id": "meadow-marit", "name": "Marit", "archetype": "pilgrim", "lazy": true, "home": { "poi": "meadow-mother" }, "about": "Ebb's mother. Stands in the square and calls at his house." },
+    { "id": "meadow-ebb", "name": "Ebb", "archetype": "child", "lazy": true, "home": { "poi": "meadow-ebb-house" }, "about": "Marit's six-year-old son. Hides in the burning house." },
+    { "id": "meadow-hild", "name": "Hild", "archetype": "elder", "lazy": true, "home": { "poi": "meadow-hall" }, "about": "Elder of Hearn. Gives the Wraith leave to climb the stair." },
+    { "id": "meadow-corin", "name": "Corin", "archetype": "staff", "lazy": true, "home": { "poi": "meadow-market" }, "about": "Looking for his brother Alder, who was taken." },
+    { "id": "meadow-doran", "name": "Doran", "archetype": "staff", "lazy": true, "home": { "poi": "stair-foot" }, "about": "Watches the foot of the stair and lets no one climb." }
+  ],
+  "places": {
+    "meadow-road": { "pos": [168.8, 1180.7], "name": "The North Road" },
+    "meadow-market": { "pos": [93.28, 925.8], "name": "The Square of Hearn" },
+    "meadow-hall": { "pos": [65.4, 930.2], "name": "The Hall of Hearn" },
+    "meadow-ebb-house": { "pos": [106.41, 949.24], "name": "Marit's House" },
+    "meadow-mother": { "pos": [101.5, 938.0], "name": "Marit" }
+  },
+  "village": {
+    "name": "Hearn",
+    "market": [93.28, 925.8],
+    "wellPlot": "p140",
+    "hallPlot": "p0",
+    "childPlot": "p77",
+    "firePlots": ["p77", "p10", "p9", "p7", "p8", "p25", "p128", "p26", "p24", "p135", "p27", "p65", "p37", "p78"],
+    "guidePath": ["arc1.2", "arc1.1", "arc1.0"],
+    "guideReverse": true,
+    "folk": [
+      { "id": "meadow-joss", "name": "Joss", "archetype": "staff", "tint": [2.1, 1.8, 0.7], "post": { "plot": "p1", "out": 1.4 }, "role": "bucket" },
+      { "id": "meadow-hob", "name": "Hob", "archetype": "pilgrim", "tint": [1.6, 1.2, 0.9], "post": { "plot": "p2", "out": 1.4 }, "role": "bucket" },
+      { "id": "meadow-nell", "name": "Nell", "archetype": "pilgrim", "tint": [2.2, 0.9, 0.8], "post": { "plot": "p3", "out": 1.4 }, "role": "caller" },
+      { "id": "meadow-bram", "name": "Bram", "archetype": "staff", "tint": [0.8, 1.1, 2.1], "post": { "plot": "p4", "out": 1.4 }, "role": "caller" },
+      { "id": "meadow-sefa", "name": "Sefa", "archetype": "lantern", "tint": [0.9, 1.7, 1.0], "post": { "plot": "p5", "out": 1.4 }, "role": "huddle" },
+      { "id": "meadow-orrin", "name": "Orrin", "archetype": "elder", "tint": [1.5, 1.45, 1.35], "post": { "plot": "p6", "out": 1.4 }, "role": "huddle" },
+      { "id": "meadow-tam", "name": "Tam", "archetype": "child", "tint": [1.2, 1.7, 1.4], "post": { "plot": "p47", "out": 1.4 }, "role": "huddle" },
+      { "id": "meadow-dilly", "name": "Dilly", "archetype": "child", "tint": [1.6, 1.0, 1.8], "post": { "plot": "p129", "out": 1.4 }, "role": "huddle" },
+      { "id": "meadow-wyn", "name": "Wyn", "archetype": "pilgrim", "tint": [2.0, 1.4, 0.9], "post": { "plot": "p49", "out": 1.4 }, "role": "huddle" },
+      { "id": "meadow-peg", "name": "Peg", "archetype": "elder", "tint": [0.9, 1.3, 1.9], "post": { "plot": "p139", "out": 1.4 }, "role": "huddle" }
+    ],
+    "shouts": {
+      "caller": ["Help! Over here!", "The roof is going! We need water!", "Someone, please! This house is full of smoke!", "Over here! Get the water over here!"],
+      "bucket": ["Water! More water!", "Keep the buckets coming!", "It is not enough. It is never enough."],
+      "huddle": ["Stay down. Stay together.", "Where are the children?", "They came down so fast.", "Do not look at it. Look at me."],
+      "marit": ["Ebb! Ebb, can you hear me?", "My son is in that house!", "Somebody, please! Ebb is inside!"],
+      "corin": ["Alder! Alder, can you hear me?", "Has anyone seen my brother?"],
+      "guideLead": ["This way! Hurry!", "Please, keep close!", "The village is just ahead!"],
+      "guideWait": ["Please, wait for me! No, I mean — come on!", "Are you coming? We have to hurry!"],
+      "guideArrive": ["This is Hearn. Look at the roofs!"]
+    }
+  },
+  "talk": {
+    "meadow-wenna": [
+      { "when": { "flag": "meadow:stair-open" }, "say": "meadow.wenna.after" },
+      { "when": { "flag": "meadow:arrived" }, "say": "meadow.wenna.here" },
+      { "when": { "flag": "meadow:guide-lead" }, "say": "meadow.wenna.hurry" },
+      { "say": "meadow.wenna.plea" }
+    ],
+    "meadow-marit": [
+      { "when": { "flag": "meadow:ebb-saved" }, "say": "meadow.marit.thanks" },
+      { "say": "meadow.marit.plea" }
+    ],
+    "meadow-ebb": [
+      { "when": { "flag": "meadow:ebb-saved" }, "say": "meadow.ebb.home" },
+      { "when": { "flag": "meadow:ebb-follow" }, "say": "meadow.ebb.behind" },
+      { "say": "meadow.ebb.cower" }
+    ],
+    "meadow-hild": [
+      { "when": { "flag": "meadow:stair-open" }, "say": "meadow.hild.after" },
+      { "when": { "flag": ["meadow:fires-out", "meadow:ebb-saved"] }, "say": "meadow.hild.thanks" },
+      { "when": { "flag": "meadow:fires-out" }, "say": "meadow.hild.ebb" },
+      { "say": "meadow.hild.fires" }
+    ],
+    "meadow-corin": [
+      { "when": { "flag": "meadow:stair-open" }, "say": "meadow.corin.after" },
+      { "say": "meadow.corin.search" }
+    ],
+    "meadow-doran": [
+      { "when": { "flag": "meadow:stair-open" }, "say": "meadow.doran.open" },
+      { "say": "meadow.doran.block" }
+    ]
+  },
+  "dialogue": {
+    "meadow.wenna.plea": {
+      "speaker": "meadow-wenna",
+      "lines": [
+        "Please — the village is burning! I am Wenna, from Hearn.",
+        "Shaped came down from the hill at dusk. They set the houses on fire.",
+        "You are the first person I have found out here. Please, help us. Follow me!"
+      ],
+      "then": [{ "setFlag": "meadow:guide-lead" }]
+    },
+    "meadow.wenna.hurry": {
+      "speaker": "meadow-wenna",
+      "lines": ["Hearn is south of here, down the road. Stay close to me!"]
+    },
+    "meadow.wenna.here": {
+      "speaker": "meadow-wenna",
+      "lines": ["This is Hearn. Please, put out the fires. Elder Hild is at the hall."]
+    },
+    "meadow.wenna.after": {
+      "speaker": "meadow-wenna",
+      "lines": ["Hearn is still standing because of you. Thank you."]
+    },
+    "meadow.marit.plea": {
+      "speaker": "meadow-marit",
+      "lines": [
+        "I am Marit. My son Ebb is still inside! That is our house, there.",
+        "He is six years old. He hides when he is afraid. Please, bring him out!"
+      ],
+      "then": [{ "setFlag": "meadow:marit-told" }]
+    },
+    "meadow.marit.thanks": {
+      "speaker": "meadow-marit",
+      "lines": ["Ebb is safe. I will not forget this."]
+    },
+    "meadow.ebb.cower": {
+      "speaker": "meadow-ebb",
+      "lines": [
+        "I am Ebb. Please do not go! The roof is making noises.",
+        "Are you here to take me out? Okay. I will stay right behind you.",
+        "Lead me to my mum. She is in the square."
+      ],
+      "then": [{ "setFlag": "meadow:ebb-follow" }]
+    },
+    "meadow.ebb.behind": {
+      "speaker": "meadow-ebb",
+      "lines": ["I am right behind you. Do not walk too fast."]
+    },
+    "meadow.ebb.home": {
+      "speaker": "meadow-ebb",
+      "lines": ["Mum says I was brave. I was not. I was very scared."]
+    },
+    "meadow.hild.fires": {
+      "speaker": "meadow-hild",
+      "lines": [
+        "I am Hild, elder of Hearn. The fires come first. Put out as many as you can.",
+        "And Marit's son is still in his house. Please help her."
+      ]
+    },
+    "meadow.hild.ebb": {
+      "speaker": "meadow-hild",
+      "lines": ["The fires are out, but Ebb is still in Marit's house. Please, bring him out first."]
+    },
+    "meadow.hild.thanks": {
+      "speaker": "meadow-hild",
+      "lines": [
+        "The fires are out. Ebb is safe. Thank you.",
+        "I am Hild, elder of Hearn. I will tell you plainly what happened tonight.",
+        "The Shaped came down from the hill at dusk. They carried fire, and they set our roofs alight.",
+        "They took two people with them: Alder, a shepherd, and Tamsin, my granddaughter.",
+        "We searched the hill road. We found only footprints, going up.",
+        "No one has climbed the stair in years. We were afraid of it. But you have proved yourself.",
+        "The stair is yours. Go up the hill, and bring them home if you can."
+      ],
+      "then": [{ "setFlag": "meadow:stair-open" }]
+    },
+    "meadow.hild.after": {
+      "speaker": "meadow-hild",
+      "lines": ["The stair is open to you. Alder and Tamsin are somewhere up there. Please find them."]
+    },
+    "meadow.corin.search": {
+      "speaker": "meadow-corin",
+      "lines": [
+        "Have you seen my brother? I am Corin. My brother Alder was with the sheep on the hill road.",
+        "He did not come back. I have looked at every door in Hearn. He is not here.",
+        "They took him. I know they took him."
+      ],
+      "then": [{ "setFlag": "meadow:corin-met" }]
+    },
+    "meadow.corin.after": {
+      "speaker": "meadow-corin",
+      "lines": ["Hild says you may climb the stair. Please look for Alder. He is tall, with a brown coat and a shepherd's crook."],
+      "then": [{ "setFlag": "meadow:corin-met" }]
+    },
+    "meadow.doran.block": {
+      "speaker": "meadow-doran",
+      "lines": [
+        "Stop. I am Doran. I watch the foot of the stair.",
+        "No one goes up there. Not since the Shaped began coming down it.",
+        "Ask Elder Hild. Only she can say who climbs."
+      ]
+    },
+    "meadow.doran.open": {
+      "speaker": "meadow-doran",
+      "lines": [
+        "Elder Hild says you may climb. I am sorry I stopped you.",
+        "Go on, and be careful. The stair is long, and what took our people is at the top."
+      ]
+    }
+  },
+  "quests": [
+    {
+      "id": "meadow-the-burning-night",
+      "kind": "main",
+      "title": "The Burning Night",
+      "summary": "A woman begs you to follow her. Her village, Hearn, is on fire.",
+      "start": { "any": [{ "near": { "poi": "meadow-road", "r": 170 } }, { "near": { "poi": "hub", "r": 170 } }] },
+      "steps": [
+        { "id": "meet", "journal": "Talk to Wenna, the woman with the lantern, on the north road.", "when": { "flag": "meadow:guide-lead" }, "goal": { "dynamic": "meadow-guide", "label": "Wenna" } },
+        { "id": "lead", "journal": "Follow Wenna to the village of Hearn. Stay close to her.", "when": { "flag": "meadow:arrived" }, "goal": { "dynamic": "meadow-guide", "label": "Wenna", "radius": 12 } },
+        { "id": "fires", "journal": "Put out the fires in Hearn. Use Ribbon or Sweep on the burning roofs.", "when": { "flag": "meadow:fires-out" }, "goal": { "dynamic": "meadow-fire", "label": "A burning house", "radius": 12 } },
+        { "id": "ebb", "journal": "Bring Ebb out of the burning house. His mother, Marit, is in the square.", "when": { "flag": "meadow:ebb-saved" }, "goal": { "dynamic": "meadow-ebb", "label": "Ebb", "radius": 6 } },
+        { "id": "thanks", "journal": "Talk to Elder Hild at the hall.", "when": { "flag": "meadow:stair-open" }, "goal": { "dynamic": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "lore": "meadow-lore-raid" }, { "autosave": true }] }
+      ],
+      "optional": [
+        { "id": "marit", "journal": "Talk to Marit in the square. She is calling for her son.", "when": { "event": "talk:meadow-marit" }, "goal": { "dynamic": "meadow-marit", "label": "Marit", "radius": 6 } }
+      ]
+    },
+    {
+      "id": "meadow-the-missing",
+      "kind": "side",
+      "title": "Alder",
+      "summary": "Corin cannot find his brother. The Shaped took him up the hill.",
+      "start": { "flag": "meadow:arrived" },
+      "steps": [
+        { "id": "ask", "journal": "Talk to Corin in Hearn. He is looking for his brother Alder.", "when": { "flag": "meadow:corin-met" }, "goal": { "dynamic": "meadow-corin", "label": "Corin", "radius": 8 } },
+        { "id": "climb", "journal": "Climb the stair behind Hearn. The Shaped took Alder up the hill.", "when": { "flag": "meadow:stair-open" }, "goal": { "poi": "stair-foot", "label": "The foot of the stair", "radius": 12 } },
+        { "id": "find", "journal": "Find Alder on the hill.", "when": { "flag": "meadow:alder-found" } }
+      ]
+    }
+  ],
+  "lore": {
+    "meadow-lore-raid": { "title": "The Raid on Hearn", "text": "At dusk the Shaped came down the hill road with fire and set the roofs of Hearn alight. They took two people, Alder the shepherd and Tamsin, the elder's granddaughter, and went back up the hill. As told by Hild." }
+  },
+  "names": {},
+  "barks": {
+    "meadow-wenna": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["I keep looking up at the hill. Tamsin is up there.", "Thank you again. I do not have anything to give you."] },
+      { "when": { "flag": "meadow:arrived" }, "lines": ["I will find Hild. Please, the fires first."] }
+    ],
+    "meadow-hild": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Tamsin has her mother's temper. She will be fighting them still."] },
+      { "lines": ["Fires first. Then we will count who is missing."] }
+    ],
+    "meadow-corin": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Alder knows every path on that hill. If he can run, he is running."] },
+      { "lines": ["Alder! Alder, answer me!"] }
+    ],
+    "meadow-doran": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Mind the steps. There are over eight hundred of them."] },
+      { "lines": ["Nobody climbs. Those are Hild's orders."] }
+    ],
+    "meadow-marit": [
+      { "when": { "flag": "meadow:ebb-saved" }, "lines": ["I am not letting go of him tonight."] },
+      { "lines": ["Ebb! Ebb, please!"] }
+    ],
+    "meadow-joss": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["We will rebuild. We always do."] },
+      { "lines": ["The well is half empty already."] }
+    ],
+    "meadow-hob": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["The thatch will take all summer to mend."] },
+      { "lines": ["Pass the bucket! Pass it along!"] }
+    ],
+    "meadow-nell": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["My house is only half burnt. I am lucky."] },
+      { "lines": ["That is the baker's roof! Someone help!"] }
+    ],
+    "meadow-bram": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["They came so fast. I did not even see their faces."] },
+      { "lines": ["Look at the sparks! They are jumping from roof to roof!"] }
+    ],
+    "meadow-sefa": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["I cannot stop smelling smoke."] },
+      { "lines": ["Stay low. Stay with me."] }
+    ],
+    "meadow-orrin": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["I have lived here seventy years. I never saw the Shaped come down before tonight."] },
+      { "lines": ["It is the hill. The hill has woken up."] }
+    ],
+    "meadow-tam": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Are the monsters gone?"] },
+      { "lines": ["I want to go home. But home is on fire."] }
+    ],
+    "meadow-dilly": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Ebb says he was not scared. He is lying."] },
+      { "lines": ["Is Ebb out yet? Is he out?"] }
+    ],
+    "meadow-wyn": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Count us again, Hild. Please. Just once more."] },
+      { "lines": ["Two of us are gone. Two. I counted."] }
+    ],
+    "meadow-peg": [
+      { "when": { "flag": "meadow:stair-open" }, "lines": ["Come to my shop when you are back. There will be bread."] },
+      { "lines": ["My shop! My whole shop!"] }
+    ]
+  }
+}

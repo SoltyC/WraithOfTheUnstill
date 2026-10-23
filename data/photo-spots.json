@@ -1819,6 +1819,8 @@
     {"id": "p8-manor-village", "biome": "meadow", "label": "The manor on its hill from the village square, golden hour", "time": 17.4, "weather": "clear", "player": [130, 860], "restoration": "stilled", "camera": {"mode": "follow", "yaw": 0.76, "pitch": -0.38, "dist": 5}},
     {"id": "p8-manor-night", "biome": "meadow", "label": "The manor at night: one lit window", "time": 22.5, "weather": "clear", "player": [330, 982], "restoration": "stilled", "camera": {"mode": "follow", "yaw": -1.1, "pitch": 0.1, "dist": 9}},
     {"id": "p8-manor-aerial", "biome": "meadow", "label": "The summit from the air: the manor and the stair winding up", "time": 16.4, "weather": "clear", "player": [300, 990], "restoration": "stilled", "camera": {"mode": "follow", "yaw": 0.4, "pitch": 0.6, "dist": 140}},
-    {"id": "p8-manor-market", "biome": "meadow", "label": "The manor above the rooftops from the market lane", "time": 17.4, "weather": "clear", "player": [93, 926], "restoration": "stilled", "camera": {"mode": "follow", "yaw": 1.14, "pitch": -0.3, "dist": 4}}
+    {"id": "p8-manor-market", "biome": "meadow", "label": "The manor above the rooftops from the market lane", "time": 17.4, "weather": "clear", "player": [93, 926], "restoration": "stilled", "camera": {"mode": "follow", "yaw": 1.14, "pitch": -0.3, "dist": 4}},
+    {"id": "p8-fire-night", "biome": "meadow", "label": "The meadow fire: a dozen roofs alight around the market square at night, smoke leaning downwind (ignites itself; ?spot=p8-fire-night)", "time": 22, "weather": "clear", "player": [93, 926], "restoration": "stilled", "camera": {"mode": "follow", "yaw": -1.71, "pitch": 0.12, "dist": 7}},
+    {"id": "p8-quest-start", "biome": "meadow", "label": "The meadow road head at night, where Wenna waits (the fire quest begins)", "time": 21.8, "weather": "clear", "player": [150, 1215], "restoration": "stilled", "camera": {"mode": "follow", "yaw": 2.9, "pitch": 0.12, "dist": 6}}
 ]
 }

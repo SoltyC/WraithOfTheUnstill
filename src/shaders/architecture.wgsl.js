@@ -43,6 +43,7 @@ export const archVertexWGSL = ARCH_VERTEX;
 export const archFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world); where y = 0: z = 1 no snow (the meadow), w = embers 0..1
+uniform siteChar: array<vec4f, ${ARCH_SITES / 4}>; // soot/char 0..1 per site (systems/villageFire.js; 4 sites per vec4: site >> 2, component site & 3); 0 = untouched
 uniform archParams: vec4f;                       // x = time, y = snow cover 0..1, z = restored 0..1
 ${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -317,6 +318,19 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Bronze, green with age.
     albedo = mix(vec3f(0.22, 0.14, 0.07), vec3f(0.12, 0.2, 0.17), smoothstep(-0.2, 0.6, n1 + 0.3 * N.y));
     rough = 0.45;
+  }
+
+  // Char (a burnt village building): blackened plaster and timber, scorched roofs; soot streaks climb from the base and
+  // run up under the eaves; gloss goes (roughness up), lit windows die. 0 = untouched: skipped, so unburnt sites are bit-identical.
+  let charK = uniforms.siteChar[site >> 2u][site & 3u];
+  if (charK > 0.001 && mid != 5) {
+    let streak = 0.6 + 0.4 * smoothstep(-0.3, 0.7, n1 * 0.5 + 0.5 + 0.35 * sin(uv.x * 7.0 + seed));
+    let up = 1.0 - 0.45 * smoothstep(0.0, 6.0, fragmentInputs.vLocalY);
+    let ck = clamp(charK * streak * (0.55 + 0.45 * up) * 1.15, 0.0, 1.0);
+    albedo = mix(albedo, vec3f(0.028, 0.024, 0.022) * (0.7 + 0.6 * n2), ck * 0.9);
+    rough = mix(rough, 0.95, ck);
+    ssr = ssr * (1.0 - ck);
+    emit = emit * (1.0 - charK);
   }
 
   // Snow on what faces up (not on embers or ice), heavier when it is snowing; drifts at the base.

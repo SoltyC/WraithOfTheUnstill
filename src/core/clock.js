@@ -13,7 +13,14 @@ export const clock = {
   realDt: 0.5,
   /** Hit-stop (BRIEF §10): real seconds the simulation holds still after a heavy impact. */
   hitStop: 0.5 - 0.5,
+  /** Hour the clock is held at (null = the day runs). Set with pinTime()/unpinTime(). */
+  pinHour: /** @type {number|null} */ (null),
 };
+
+/** Hold the time of day at `hour` (eased to it); a quest's night. */
+export function pinTime(hour) { clock.pinHour = hour; }
+/** Let the day run again from wherever the hour is. */
+export function unpinTime() { clock.pinHour = null; }
 
 const MAX_DT = 1 / 15;
 
@@ -26,7 +33,11 @@ export function advanceClock() {
   if (clock.hitStop > 0) { clock.hitStop = Math.max(0, clock.hitStop - r); clock.dt = 0; }
   clock.simTime += clock.dt;
   const p = params.v;
-  if (p.timeScale > 0 && !clock.frozen) {
+  if (clock.pinHour !== null && !clock.frozen) {
+    // Pinned (a quest holds the hour, e.g. the fire night at 22:00): ease to it by the shortest way, then stay.
+    const d = ((clock.pinHour - p.timeOfDay + 36) % 24) - 12;
+    if (Math.abs(d) > 0.005) { p.timeOfDay = (p.timeOfDay + d * Math.min(1, r * 0.8) + 24) % 24; params.version++; }
+  } else if (p.timeScale > 0 && !clock.frozen) {
     // A full day takes dayLengthMin real minutes.
     p.timeOfDay = (p.timeOfDay + (clock.dt * 24) / (p.dayLengthMin * 60)) % 24;
     params.version++;

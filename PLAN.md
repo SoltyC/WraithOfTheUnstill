@@ -612,6 +612,16 @@ analytic solids (not 800 platforms).
 5. **Fire quest** — per-building fire states, extinguishing (Ribbon main; Sweep; Crystallize
    holds; Ribbon + Updraft rain; Gust fans), terrified NPCs, interiors and the child rescue, the
    guide NPC, char via the transform channel; plan-fire-quest.md. (4)
+   **Stage 5 first pass (2026-10-23):** fire (`game/fire/villageFire.js`, `systems/villageFire.js`:
+   per-building states, downwind spread, Ribbon douse / Sweep / Crystallize hold / Ribbon+Updraft
+   rain / Gust fans / Vortex draws; heat floors health at 25 % and drives the Wraith out of
+   interiors; 48 fire slots with LOD, soot smoke, 24 fire lights; char per site until restoreAll);
+   the quest (`data/quests/meadow.json`, `systems/villagers.js`: Wenna leads from the road head
+   at (168.8, 1180.7), 14 buildings fire, buckets and callers, Ebb in house p77 to his mother Marit,
+   Elder Hild opens the stair; Corin's missing brother left open for the hill; the stair-foot gate;
+   night pinned at 22:00 during the quest). Not yet played. Open: the flames read as glowing blobs
+   (a proper fire effect pass), villagers walk in straight lines (no pathing), no bucket props, save
+   of the fire state.
 6. **The Bellwether at the manor** — vents, climb, valves, gale exhale, the Shaped at 30 %, the
    release down the stair. (5–6)
 
