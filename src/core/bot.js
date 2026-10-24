@@ -198,14 +198,19 @@ export function startBot(w, qs) {
    */
   const filmCam = { on: false, x: 0, y: 0, z: 0, tx: 0, ty: 0, tz: 1, fov: 0.8,
     at(x, y, z, tx, ty, tz, fov = 0.8) { this.on = true; this.x = x; this.y = y; this.z = z; this.tx = tx; this.ty = ty; this.tz = tz; this.fov = fov; },
-    off() { this.on = false; } };
-  g.loop.add({ name: 'botFilmCam', update: () => {
+    off() { this.on = false; },
+    /** Time-lapse: set the hour (0..24) for this frame (the clock's pin is released so it does not pull back). */
+    tod(h) { if (g.clock) g.clock.pinHour = null; setParam('timeOfDay', ((h % 24) + 24) % 24); } };
+  // Runs just before the atmosphere: it (and the shadows, clipmap, …) read the camera when they update, so a pose set at
+  // the end of the frame would leave the sky drawn from the game's camera (trailer v1: the sky stood still as the camera moved).
+  const filmSys = { name: 'botFilmCam', update: () => {
     if (!filmCam.on) return;
     const c = g.camera, dx = filmCam.tx - filmCam.x, dy = filmCam.ty - filmCam.y, dz = filmCam.tz - filmCam.z;
     c.position.set(filmCam.x, filmCam.y, filmCam.z);
     c.rotation.set(-Math.atan2(dy, Math.hypot(dx, dz)), Math.atan2(dx, dz), 0);
     c.fov = filmCam.fov;
-  } });
+  } };
+  { const sys = g.loop.systems, k = sys.findIndex((q) => q.name === 'atmosphere'); sys.splice(k < 0 ? sys.length : k, 0, filmSys); }
   async function filmRun({ name = 'clip', dir = 'trailer', seconds = 5, fps = 60, js = '', quality = 0.92, size = [1920, 1080], warm = 30 }) {
     const engine = g.engine, loop = g.loop, canvas = engine.getRenderingCanvas();
     const step = js ? new Function('t', 'i', 'g', 'w', 'cam', 'inject', js) : null;

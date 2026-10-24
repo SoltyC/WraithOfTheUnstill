@@ -26,8 +26,19 @@ const around = (d0, d1, h0, h1, a0, a1, lookUp = 1.2, fov = 0.75) => `
   { const a = S.yaw + Math.PI + L(${a0}, ${a1}, u), d = L(${d0}, ${d1}, u), x = P.x + Math.sin(a) * d, z = P.z + Math.cos(a) * d;
     cam.at(x, Math.max(H(x, z) + 0.6, P.y + L(${h0}, ${h1}, u)), z, P.x, P.y + ${lookUp}, P.z, ${fov}); }`;
 
+// Gameplay on the game's own follow camera: forward held for the whole shot, the camera (and so her heading) drifting by `drift`
+// rad; `extra` adds inputs (e.g. casts) by frame.
+const walk = (n, drift = 0, extra = '', keys = "'MoveForward'") => `
+  if (i === -30) { S.y0 = g.arm.yaw; for (const k of [${keys}]) inject(k, true); }
+  if (i >= 0) g.arm.yaw = S.y0 + ${drift} * Math.min(1, t / ${n / 60});
+  ${extra}
+  if (i === ${n - 1}) for (const k of [${keys}]) inject(k, false);`;
+
 const SHOTS = [
-  // 1 — the meadow, still: a low glide over the grass up to the Wraith.
+  // 0 — dawn over the meadow: a slow aerial push from the fields toward the hill and the village under it.
+  { name: 's00-dawn-aerial', spot: 'p8-hill-aerial', seconds: 9,
+    js: `if (i < 0 || i % 30 === 0) cam.tod(6.35 + t * 0.02); cam.at(L(-170, -60, u), L(430, 395, u), L(720, 830, u), L(160, 200, u), L(300, 330, u), L(960, 985, u), 0.75);` },
+  // 1 — the meadow: a low glide over the grass up to the Wraith.
   { name: 's01-meadow', spot: 'p8-hill-south', seconds: 7, js: around(15, 6.5, 1.9, 2.3, 0.4, 0.05, 1.3, 0.7) },
   // 2 — the lake at golden hour, a slow track.
   { name: 's02-lake', spot: 'p8-lake-golden', seconds: 5.5, js: around(9, 8, 1.6, 2.2, -0.5, 0.2, 1.0, 0.75) },
@@ -37,8 +48,12 @@ const SHOTS = [
   { name: 's04-blizzard', spot: 'p6-blizzard-dusk', seconds: 4.5, js: `if (i === 0) inject('MoveForward', true); if (i === 260) inject('MoveForward', false);` },
   // 5 — the Frost Warden, a slow orbit.
   { name: 's05-warden', spot: 'p5-warden-golden', seconds: 5.5, js: around(16, 12, 3, 5, -0.6, 0.3, 4, 0.8) },
-  // 6 — Hearn from the air at dusk.
-  { name: 's06-village-aerial', spot: 'tour-09-dusk-aerial', seconds: 6.5, js: orbit(93, 926, 150, 3.3, 2.8, 85, 300, 0.8) },
+  // 6 — Hearn from above, a day in twelve seconds: dawn, noon, the long evening, the windows lit at night.
+  { name: 's06-timelapse', spot: 'tour-09-dusk-aerial', seconds: 13,
+    // A slow, low orbit (about 0.4 rad in 13 s, ~85 m up, ~230 m out), aimed level so the roofs fill the lower frame and the
+    // hill, the manor and the sky the upper; the day runs from before dawn to night. Exposure snaps each frame (no lag).
+    js: `{ const k = Math.min(1, t / 13); g.atmosphere.alwaysSnap = true; cam.tod(5.4 + 17.2 * k); const e = k * k * (3 - 2 * k) * 0.6 + k * 0.4, a = 3.78 - 0.42 * e;
+      const y = H(125, 950) + 85 + 6 * e, x = 125 + Math.sin(a) * 230, z = 950 + Math.cos(a) * 230; cam.at(x, y, z, 200, y - 12, 985, 0.8); }` },
   // 7 — the burning night: the market square with the houses on fire.
   { name: 's07-fire-night', spot: 'p8-fire-night', seconds: 6, settle: 25000, js: around(14, 10, 4, 6, -0.4, 0.2, 2, 0.85) },
   // 8 — the Ribbon on a burning house (the game's camera, Primary held at the nearest fire).
@@ -47,19 +62,28 @@ const SHOTS = [
   { name: 's09-stair', spot: 'tour-07-golden-stairfoot', seconds: 6, js: `{ const x = P.x - 6, z = P.z - 6; cam.at(x, P.y + L(1.5, 6, u), z, L(P.x, 300, u), L(P.y + 2, 440, u), L(P.z, 1000, u), 0.8); }` },
   // 10 — it wakes: the neck rears over the manor, seen from the market.
   { name: 's10-wake-market', spot: 'p8-bell-wake-market', seconds: 6, js: `{ cam.at(P.x - 2, P.y + 1.6, P.z + 1, 300, L(430, 440, u), 1000, L(0.75, 0.55, u)); }` },
-  // 11 — under it on the forecourt: the camera holds on its head as it rears.
-  { name: 's11-wake-gate', spot: 'p8-bell-wake-gate', seconds: 6, js: `{ const b = g.bellwether; cam.at(P.x + L(8, 5, u), P.y + 1.4, P.z + L(10, 7, u), b.hx, b.hy - 2, b.hz, L(0.95, 0.8, u)); }` },
   // 12 — the neck reared over the forecourt (the fight on, the chimneys stripped): a slow orbit round its head.
-  { name: 's12-neck', spot: 'p8-bell-fight', extra: '^&gale=1^&bell=fight', seconds: 6, settle: 8000, setup: 'neck',
-    js: `{ const b = g.bellwether; if (!S.h) S.h = { x: b.hx, y: b.hy, z: b.hz }; const a = L(-0.9, -0.3, u), x = S.h.x + Math.sin(a) * 48, z = S.h.z + Math.cos(a) * 48; cam.at(x, Math.max(H(x, z) + 2, S.h.y - 14), z, b.hx, b.hy - 6, b.hz, 0.85); }` },
+  { name: 's12-neck', spot: 'p8-bell-fight', extra: '^&gale=1^&bell=fight', seconds: 4, settle: 8000, setup: 'neck',
+    js: `{ const b = g.bellwether; if (!S.h) S.h = { x: b.hx, y: b.hy, z: b.hz }; const a = L(-0.9, -0.6, u), x = S.h.x + Math.sin(a) * 48, z = S.h.z + Math.cos(a) * 48; cam.at(x, Math.max(H(x, z) + 2, S.h.y - 14), z, b.hx, b.hy - 6, b.hz, 0.85); }` },
   // 13 — the release: valves open, it breathes out, the front rolls down to the village (its own cinematic camera).
   { name: 's13-release', spot: 'p8-bell-fight', extra: '^&gale=1^&bell=fight', seconds: 16, settle: 8000, setup: 'release', warm: 2, js: '' },
   // 14 — the mill turning again.
   { name: 's14-mill', spot: 'tour-04-noon-street', extra: '^&bell=release', seconds: 6, setup: 'mill', js: orbit(41.3, 816.5, 26, 0.35, 0.75, 4, 'H(41.3, 816.5) + 7', 0.7) },
-  // 15 — Gale across the restored grass.
-  { name: 's15-gale', spot: 'p8-gale-meadow', extra: '^&gale=1', seconds: 5, setup: 'gale', js: `if (i === 20 || i === 120 || i === 220) inject('Primary', true); if (i === 26 || i === 126 || i === 226) inject('Primary', false);` },
-  // 16 — the finale: the summit, the village below, the camera craning away.
+  // 16 — the finale: high on the stair, the village below, the camera craning away.
   { name: 's16-summit', spot: 'p8-summit', extra: '^&bell=release', seconds: 9, js: around(6, 26, 1.6, 12, 0.2, 0.75, 1.4, 0.8) },
+  // Gameplay: walking the meadow at noon.
+  { name: 'g01-meadow-walk', spot: 'p8-meadow-noon', seconds: 6, js: walk(360, 0.35) },
+  // Gameplay: wading into the lake.
+  { name: 'g02-wade', spot: 'p8-lake-wade', seconds: 5, js: walk(300, -0.25) },
+  // Gameplay: surfing the frost (Traverse held on snow), carving left and right.
+  { name: 'g03-surf', spot: 'p4-surf-carve-golden', seconds: 5, js: walk(300, 0, `if (i === 60) inject('MoveLeft', true); if (i === 130) { inject('MoveLeft', false); inject('MoveRight', true); } if (i === 210) inject('MoveRight', false);`, "'MoveForward', 'Traverse'") },
+  // Gameplay: through the village by day, the villagers about.
+  { name: 'g04-village-walk', spot: 'tour-04-noon-street', extra: '^&bell=release', seconds: 6, js: walk(360, -0.3) },
+  // Gameplay: up the stair.
+  { name: 'g05-stair-walk', spot: 'p8-stair-foot', extra: '^&bell=release', seconds: 5.5, js: walk(330, 0.1) },
+  // Gameplay: Gust across the grass, twice, walking.
+  { name: 'g06-gust', spot: 'p8-gale-meadow', extra: '^&gale=1', seconds: 5, setup: 'gale', js: walk(300, 0.2, `if (i === 40 || i === 170) inject('Primary', true); if (i === 46 || i === 176) inject('Primary', false);`) },
+
 ];
 
 const SETUP = {

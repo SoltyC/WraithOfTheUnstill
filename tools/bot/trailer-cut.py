@@ -16,22 +16,27 @@ win = lambda p: subprocess.check_output(['wslpath', '-w', p]).decode().strip()
 
 # (shot, seconds used from its start, line of text over it or None)
 CUT = [
-    ('s01-meadow', 6.5, 'The meadow holds its breath.'),
-    ('s02-lake', 5.5, None),
-    ('s03-forest', 4.5, None),
-    ('s04-blizzard', 4.0, None),
-    ('s05-warden', 5.0, 'The frost was only the beginning.'),
-    ('s06-village-aerial', 5.5, None),
-    ('s07-fire-night', 5.5, 'Hearn is burning.'),
-    ('s08-ribbon', 4.5, None),
-    ('s09-stair', 5.0, None),
-    ('s10-wake-market', 6.0, 'Something sleeps under the manor.'),
-    ('s12-neck', 3.2, None),
-    ('s13-release', 12.0, 'Let it breathe.'),
-    ('s14-mill', 6.0, None),
-    ('s16-summit', 8.5, None),
+    ('s00-dawn-aerial', 7.0, 'The meadow holds its breath.'),
+    ('g01-meadow-walk', 5.0, None),
+    ('s03-forest', 4.0, None),
+    ('g02-wade', 4.0, None),
+    ('s04-blizzard', 3.0, None),
+    ('g03-surf', 4.0, None),
+    ('s05-warden', 4.5, 'The frost was only the beginning.'),
+    ('s06-timelapse', 12.5, None),
+    ('g04-village-walk', 5.0, None),
+    ('s07-fire-night', 4.5, 'Hearn is burning.'),
+    ('s08-ribbon', 3.5, None),
+    ('g05-stair-walk', 4.5, None),
+    ('s09-stair', 4.0, None),
+    ('s10-wake-market', 5.0, 'Something sleeps under the manor.'),
+    ('s13-release', 11.0, 'Let it breathe.'),
+    ('g06-gust', 4.0, None),
+    ('s14-mill', 4.0, None),
+    ('s16-summit', 7.5, None),
 ]
-XF = 0.6          # crossfade (s)
+XF = 0.8          # crossfade (s)
+BAR = 138         # letterbox bar (px): 1920 × 804 picture, 2.39:1
 END = 5.0         # end card (s)
 FONT = 'C\\:/Windows/Fonts/georgia.ttf'
 
@@ -55,12 +60,14 @@ for name, secs, text in CUT:
 inputs, parts = [], []
 for k, (mp4, secs, text) in enumerate(shots):
     inputs += ['-i', win(mp4)]
-    f = f'[{k}:v]trim=0:{secs:.3f},setpts=PTS-STARTPTS,fps=60,settb=1/60,format=yuv420p'
+    # Letterboxed to 2.39:1 (bars of 138 px); the lines sit in the lower bar.
+    f = (f'[{k}:v]trim=0:{secs:.3f},setpts=PTS-STARTPTS,fps=60,settb=1/60,format=yuv420p'
+         f',drawbox=x=0:y=0:w=iw:h={BAR}:color=black:t=fill,drawbox=x=0:y=ih-{BAR}:w=iw:h={BAR}:color=black:t=fill')
     if text:
         t0, t1 = 0.8, secs - 0.9
         alpha = f"if(lt(t,{t0}),0,if(lt(t,{t0 + 0.6}),(t-{t0})/0.6,if(lt(t,{t1 - 0.6}),1,if(lt(t,{t1}),({t1}-t)/0.6,0))))"
-        f += (f",drawtext=fontfile='{FONT}':text='{text}':fontsize=46:fontcolor=white:alpha='{alpha}'"
-              f":x=(w-text_w)/2:y=h*0.80:box=1:boxcolor=black@0.35:boxborderw=16")
+        f += (f",drawtext=fontfile='{FONT}':text='{text}':fontsize=40:fontcolor=white:alpha='{alpha}'"
+              f":x=(w-text_w)/2:y=h-{BAR // 2}-text_h/2")
     parts.append(f + f'[v{k}]')
 # End card: black, the title, then fade.
 endk = len(shots)
