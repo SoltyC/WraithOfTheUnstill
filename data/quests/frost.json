@@ -674,8 +674,8 @@
             "event": "talk:aud"
           },
           "goal": {
-            "poi": "monastery",
-            "label": "Aud"
+            "npc": "aud",
+            "radius": 6
           }
         },
         {
@@ -815,7 +815,11 @@
             {
               "say": "bark.first-sight"
             }
-          ]
+          ],
+          "goal": {
+            "dynamic": "next-gate",
+            "radius": 8
+          }
         }
       ],
       "onDone": [
@@ -859,8 +863,8 @@
             "flag": "met-maren"
           },
           "goal": {
-            "poi": "camp-frost",
-            "label": "Old Maren"
+            "npc": "maren",
+            "radius": 8
           },
           "actions": [
             {
@@ -922,8 +926,8 @@
             ]
           },
           "goal": {
-            "poi": "varo-rise",
-            "label": "Varo"
+            "npc": "varo",
+            "radius": 8
           }
         },
         {
@@ -959,8 +963,8 @@
             ]
           },
           "goal": {
-            "poi": "varo-rise",
-            "label": "Varo"
+            "npc": "varo",
+            "radius": 8
           }
         }
       ],
@@ -1012,6 +1016,10 @@
           "journal": "Break all six crystals.",
           "when": {
             "event": "warden:ward"
+          },
+          "goal": {
+            "dynamic": "warden-joint",
+            "radius": 8
           }
         }
       ],
@@ -1050,8 +1058,8 @@
             "flag": "maren-after"
           },
           "goal": {
-            "poi": "camp-frost",
-            "label": "Old Maren"
+            "npc": "maren",
+            "radius": 8
           },
           "actions": [
             {
@@ -1127,8 +1135,8 @@
             ]
           },
           "goal": {
-            "poi": "spring-frost",
-            "label": "Tobin"
+            "npc": "tobin",
+            "radius": 10
           }
         },
         {
@@ -1138,8 +1146,8 @@
             "flag": "tobin-found"
           },
           "goal": {
-            "poi": "spring-frost",
-            "label": "Tobin"
+            "npc": "tobin",
+            "radius": 6
           }
         },
         {
@@ -1156,8 +1164,8 @@
             ]
           },
           "goal": {
-            "poi": "camp-frost",
-            "label": "Old Maren"
+            "npc": "maren",
+            "radius": 10
           }
         }
       ],
@@ -1235,8 +1243,8 @@
             "flag": "told-hounds"
           },
           "goal": {
-            "poi": "camp-frost",
-            "label": "Old Maren"
+            "npc": "maren",
+            "radius": 8
           },
           "actions": [
             {
@@ -1320,7 +1328,12 @@
             {
               "lore": "lore-five-stones"
             }
-          ]
+          ],
+          "goal": {
+            "dynamic": "next-shrine-frost",
+            "label": "A shrine to rest at",
+            "radius": 6
+          }
         }
       ]
     },
@@ -1340,8 +1353,8 @@
             "flag": "flame-carried"
           },
           "goal": {
-            "poi": "camp-frost",
-            "label": "Isolde"
+            "npc": "isolde",
+            "radius": 6
           }
         },
         {
@@ -1365,8 +1378,8 @@
             "flag": "isolde-sang"
           },
           "goal": {
-            "poi": "camp-frost",
-            "label": "Isolde"
+            "npc": "isolde",
+            "radius": 6
           },
           "actions": [
             {

@@ -22,6 +22,13 @@ export const ROBES = [
     text: 'Dyed the colour of coals and banded in gold thread, the way the pilgrims dress for a song.',
     tint: [2.3, 1.15, 0.6], band: [0.62, 0.43, 0.14], sash: [0.22, 0.12, 0.05],
     effect: 'A carried flame gutters more slowly.', mods: { flameLife: 1.4 } },
+  { id: 'barley', name: 'The barley cloak', how: 'Dunn’s gift, when the barley was quiet.',
+    text: 'Woven from the first sheaf of the year: the colour of ripe awns, with a green hem.',
+    tint: [2.2, 1.85, 0.95], band: [0.35, 0.5, 0.18], sash: [0.5, 0.36, 0.14], effect: null },
+  { id: 'glider', name: 'The courier’s cloth', how: 'Gold on the Western Edge.',
+    text: 'Sail-cloth, pale as a kite, with a fine blue hem. It cuts the wind cleanly.',
+    tint: [1.9, 2.0, 2.15], band: [0.2, 0.4, 0.7], sash: null,
+    effect: 'A glide loses less speed in its turns.', mods: { glideTurn: 0.6 } },
 ];
 export const ROBE_BY_ID = Object.fromEntries(ROBES.map((r) => [r.id, r]));
 
@@ -38,5 +45,5 @@ export function wornRobe(flags, vars) {
 /** The modifiers of a robe (1 where it has none). */
 export function robeMods(r) {
   const m = r.mods || {};
-  return { shapedDamage: m.shapedDamage ?? 1, surfSpeed: m.surfSpeed ?? 1, flameLife: m.flameLife ?? 1 };
+  return { shapedDamage: m.shapedDamage ?? 1, surfSpeed: m.surfSpeed ?? 1, flameLife: m.flameLife ?? 1, glideTurn: m.glideTurn ?? 1 };
 }

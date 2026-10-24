@@ -109,8 +109,13 @@ export function createCompass() {
     if (edge) {
       const left = edge.rel < 0, x = left ? 12 : W - 12;
       g.fillStyle = GOLD; g.beginPath();
-      if (left) { g.moveTo(x - 6, mid - 12); g.lineTo(x + 5, mid - 19); g.lineTo(x + 5, mid - 5); } else { g.moveTo(x + 6, mid - 12); g.lineTo(x - 5, mid - 19); g.lineTo(x - 5, mid - 5); }
-      g.closePath(); g.fill();
+      // Behind the Wraith: two arrows, so it reads as "turn right round" rather than "off to the side".
+      for (let k = 0; k < (Math.abs(edge.rel) > 2.1 ? 2 : 1); k++) {
+        const o = left ? k * 9 : -k * 9;
+        if (left) { g.moveTo(x - 6 + o, mid - 12); g.lineTo(x + 5 + o, mid - 19); g.lineTo(x + 5 + o, mid - 5); } else { g.moveTo(x + 6 + o, mid - 12); g.lineTo(x - 5 + o, mid - 19); g.lineTo(x - 5 + o, mid - 5); }
+        g.closePath();
+      }
+      g.fill();
     }
     // The heading mark: a small downward notch at the centre.
     g.fillStyle = GOLD; g.beginPath(); g.moveTo(W / 2 - 5, 1); g.lineTo(W / 2 + 5, 1); g.lineTo(W / 2, 8); g.closePath(); g.fill();
@@ -136,7 +141,8 @@ export function createCompass() {
       const moved = Math.abs(angleDiff(heading, lastHeading)) > 0.004 || (px - lastX) ** 2 + (pz - lastZ) ** 2 > 0.04;
       lastHeading = heading; lastX = px; lastZ = pz;
       const tg = nav.trackedGoal, tkey = tg ? tg.id : '';
-      if (moved || tkey !== lastTracked) quiet = 0; else quiet += dt;
+      if (moved) quiet = 0; else quiet += dt;
+      if (tkey !== lastTracked && tkey !== '') quiet = -5;   // a new goal wakes it a little longer, so it is read
       lastTracked = tkey;
       const target = this.mode === 'always' ? 1 : quiet < 4 ? 1 : 0.38;
       const a = last.alpha < 0 ? target : last.alpha + (target - last.alpha) * Math.min(1, dt * 3);
@@ -154,7 +160,7 @@ export function createCompass() {
       if (act !== activityText) { activityText = act; activity.textContent = act; }
       // The world waypoint over the tracked goal (in view, not too near).
       let on = false;
-      if (tg && tg.dist > 22 && project) {
+      if (tg && tg.dist > Math.max(14, tg.radius + 6) && project) {
         const sp = project(tg.x, tg.y + 6, tg.z);
         if (sp !== null && sp[0] > 24 && sp[0] < window.innerWidth - 24 && sp[1] > 24 && sp[1] < window.innerHeight - 24) {
           on = true;

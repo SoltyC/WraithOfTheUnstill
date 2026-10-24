@@ -688,6 +688,17 @@ in and never out. Its arena is a ring of standing stones on a hill.
     course off the escarpment with medals, Echo stones that ask for Gale gestures.
 - **Shrines:** 4–8 in the meadow; Echoes: 1–2 new ones with visible effects.
 - Map and journal extend to the meadow (the map already draws from real heights).
+- **Done (2026-10-25, side quests, shrines, HUD direction):** `goal: { npc }` follows a person's live position
+  (also while they walk; home place until made); every step of every quest has a goal (data test); a new
+  goal is tracked by itself and announced ("Now"), the journal can follow a quest, the compass wakes longer on a
+  new goal and shows a double arrow when it is behind. Five errands in `data/quests/meadow-side.json`, mechanics
+  in `src/systems/side/`: The Fen Lamp (Ketil; carried flame by night, wind snuffs it), The Fallen Stone (Orm;
+  three Updrafts), The Flock in the Barley (Dunn; hidden Sedgerunners; barley cloak), The Western Edge (Wyl; six
+  glide rings, medals 30/25/21 s, courier's cloth), The Stones That Listen (Maud; Gust/Vortex/Updraft sequences,
+  Echo of the Turning Wind). Six meadow shrines (five baked + the Green Shrine in Hearn), on the map (new meadow
+  view) and compass. Bots: `tools/bot/side-*.mjs` (HUD painted into bot shots). Open: glide medals were set from the
+  ideal line, not a human run (the bot cannot fly it); the last fight of the barley was cleared by the bot with
+  forced kills (its own Sweeps died to the runners); no pipeline/alloc profile of the new sites yet.
 
 ### M11 — Rain and thunderstorm
 

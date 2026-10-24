@@ -4,6 +4,8 @@
 
 import { ROBES, wornRobe, robeMods } from '../game/robes.js';
 import { BRAZIERS } from '../world/architecture.js';
+import { glideTuning } from '../character/glide.js';
+import { GLIDE_MEDALS } from '../game/sideQuests.js';
 
 /** @param {any} g  shared boot context */
 export function addRobesSystem(g) {
@@ -13,7 +15,10 @@ export function addRobesSystem(g) {
     'rime-hide': () => flags.has('cleared:den'),
     runner: () => typeof vars['run.best'] === 'number' && vars['run.best'] <= 23, // gold (systems/trials.js)
     ember: () => (vars.braziers || 0) >= BRAZIERS.length,
+    barley: () => flags.has('meadow:side-flock-thanked'),
+    glider: () => typeof vars['glide.best'] === 'number' && vars['glide.best'] <= GLIDE_MEDALS.gold,
   };
+  const turnCost = glideTuning.turnCost;
   let wornId = null;
   function apply() {
     const r = wornRobe(flags, vars);
@@ -24,6 +29,7 @@ export function addRobesSystem(g) {
     combat.shapedDamageMul = m.shapedDamage;
     controller.surf.speedMul = m.surfSpeed;
     if (g.flame) g.flame.lifeMul = m.flameLife;
+    glideTuning.turnCost = turnCost * m.glideTurn;
   }
   g.wearRobe = (id) => { vars.robe = id; apply(); };
   loop.add({ name: 'robes', update: () => {

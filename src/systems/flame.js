@@ -1,5 +1,6 @@
 // Carry the Flame (side quest, user request 2026-10-09: quests that are gameplay): Isolde lights
-// the Wraith's lantern from hers, at night. The flame gutters with time, faster when the Wraith
+// the Wraith's lantern from hers, at night. (In the meadow Ketil lights it for the Fen Lamp, systems/side/lamp.js:
+// the same lantern, the same guttering, a hard wind snuffs it faster.) The flame gutters with time, faster when the Wraith
 // surfs or runs or the snow is falling, and a blow knocks most of it out; at nothing it dies and
 // Isolde must light it again. Carried, it lights the four cold braziers — three by the shrines and
 // one at the edge of the Warden's arena (the Wraith re-forms beside that one once lit). Its light
@@ -8,14 +9,14 @@
 import { BRAZIERS } from '../world/architecture.js';
 
 const dist2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
-export const flameTuning = { life: 300, surf: 5, run: 1.6, snow: 2, blow: 0.4, drawAfter: 50 };
+export const flameTuning = { life: 300, surf: 5, run: 1.6, snow: 2, blow: 0.4, drawAfter: 50, windFrom: 0.8, wind: 2.5 };
 
 /** @param {any} g  shared boot context */
 export function addFlameSystem(g) {
   const { loop, controller, chapter, nav, hud, music, combat, clock, params, weather, shaped, sfx, SFX, wraithView, capture } = g;
   const graph = chapter.graph, flags = graph.flags, vars = graph.vars;
   const T = flameTuning;
-  const f = g.flame = { carrying: false, strength: 0.5 - 0.5, carryT: 0.5 - 0.5, drawn: false, lifeMul: 1.5 - 0.5 };
+  const f = g.flame = { carrying: false, strength: 0.5 - 0.5, carryT: 0.5 - 0.5, drawn: false, lifeMul: 1.5 - 0.5, from: 'Isolde', wind: 0.5 - 0.5 };
   const sitesIdx = new Map((g.archSites || []).map((s, i) => [s.id, i]));
   const A = g.architecture.sites, glow = g.architecture.glow;
 
@@ -44,24 +45,27 @@ export function addFlameSystem(g) {
   };
 
   // ── The lantern at the Wraith's hand ───────────────────────────────────────────────────────
+  /** Nothing waits on the flame any more: every brazier lit, or (the meadow) the Fen Lamp lit. */
+  f.done = () => (vars.braziers || 0) >= BRAZIERS.length || flags.has('meadow:side-lamp-lit');
   const prop = g.props?.wraith;
   let lastHealth = combat.health;
-  function give() {
-    f.carrying = true; f.strength = 1; f.carryT = 0; f.drawn = false;
+  function give(from) {
+    f.carrying = true; f.strength = 1; f.carryT = 0; f.drawn = false; f.from = from;
     flags.delete('flame-out'); flags.add('flame-carried');
     chapter.raise('flame:taken');
-    if (!capture) hud.notice('Isolde\'s flame', 'Carried in your lantern', 'It gutters if you hurry and dies if you are struck. Snow eats at it.', 7);
+    if (!capture) hud.notice(from + '\'s flame', 'Carried in your lantern', from === 'Isolde' ? 'It gutters if you hurry and dies if you are struck. Snow eats at it.' : 'It gutters if you hurry and dies if you are struck. A hard wind will take it.', 7);
   }
   function out(why) {
     f.carrying = false; f.strength = 0; flags.add('flame-out');
-    if (!capture) hud.notice('The flame is out', why, 'Isolde can light it again, at night.', 6);
+    if (!capture) hud.notice('The flame is out', why, f.from + ' can light it again, at night.', 6);
   }
 
   loop.add({ name: 'flame', update: () => {
     const dt = clock.dt, p = controller.pos;
-    if (flags.has('flame-given')) { flags.delete('flame-given'); give(); }
+    if (flags.has('flame-given')) { flags.delete('flame-given'); give('Isolde'); }
+    if (flags.has('flame-given-ketil')) { flags.delete('flame-given-ketil'); give('Ketil'); }
     // Not carried (a load, a fall) while braziers wait: it counts as out, so Isolde will relight it.
-    if (!f.carrying && flags.has('flame-carried') && (vars.braziers || 0) < BRAZIERS.length && !flags.has('flame-out')) flags.add('flame-out');
+    if (!f.carrying && flags.has('flame-carried') && !f.done() && !flags.has('flame-out')) flags.add('flame-out');
     // Braziers: seated with their sites; hidden until Isolde has spoken of them or the Wraith is near.
     for (const t of braziers) {
       if (A[t.site * 4 + 3] > 0.5) t.y = A[t.site * 4 + 1];
@@ -70,7 +74,9 @@ export function addFlameSystem(g) {
     if (f.carrying) {
       f.carryT += dt;
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
-      const rate = (controller.surf.active ? T.surf : sp > 4 ? T.run : 1) * (weather.snow > 0.5 ? T.snow : 1);
+      // A hard wind (the wind field where the Wraith stands) takes the flame faster.
+      if (g.wind) { g.wind.sx = p.x; g.wind.sz = p.z; g.wind.sample(); f.wind = g.wind.speed; }
+      const rate = (controller.surf.active ? T.surf : sp > 4 ? T.run : 1) * (weather.snow > 0.5 ? T.snow : 1) * (f.wind > T.windFrom ? 1 + (f.wind - T.windFrom) * T.wind : 1);
       f.strength -= rate * dt / (T.life * f.lifeMul); // lifeMul: the ember robe
       if (combat.health < lastHealth - 0.5) f.strength -= T.blow;
       if (combat.dying > 0) out('You fell, and it went with you.');
@@ -80,8 +86,9 @@ export function addFlameSystem(g) {
       if (f.carrying && night && !f.drawn && f.carryT > T.drawAfter) {
         f.drawn = true;
         const a = Math.atan2(controller.vel.x, controller.vel.z) + Math.PI;
-        shaped.spawn('hound', p.x + Math.sin(a + 0.5) * 20, p.z + Math.cos(a + 0.5) * 20);
-        shaped.spawn('hound', p.x + Math.sin(a - 0.5) * 22, p.z + Math.cos(a - 0.5) * 22);
+        const prey = g.ws.biome === 'meadow' ? 'sedgerunner' : 'hound';
+        shaped.spawn(prey, p.x + Math.sin(a + 0.5) * 20, p.z + Math.cos(a + 0.5) * 20);
+        shaped.spawn(prey, p.x + Math.sin(a - 0.5) * 22, p.z + Math.cos(a - 0.5) * 22);
         if (!capture) hud.notice('Shaped', 'Drawn by the light', 'Keep the flame from them.', 4);
       }
     }
@@ -97,6 +104,6 @@ export function addFlameSystem(g) {
         if (L[23] <= 0) { L[16] = b.ha[0]; L[17] = b.ha[1] + 0.2; L[18] = b.ha[2]; L[19] = 9; L[20] = 1; L[21] = 0.55; L[22] = 0.24; L[23] = 1.1 * f.strength; }
       } else A[o + 3] = 0;
     }
-    if (!capture) hud.line('flame', f.carrying ? 'Isolde\'s flame · ' + (f.strength > 0.6 ? 'steady' : f.strength > 0.3 ? 'guttering' : 'almost out') : '', f.carrying && f.strength <= 0.3);
+    if (!capture) hud.line('flame', f.carrying ? f.from + '\'s flame · ' + (f.strength > 0.6 ? 'steady' : f.strength > 0.3 ? 'guttering' : 'almost out') : '', f.carrying && f.strength <= 0.3);
   } });
 }

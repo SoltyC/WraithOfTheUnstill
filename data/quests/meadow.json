@@ -197,18 +197,18 @@
       "summary": "A woman begs you to follow her. Her village, Hearn, is on fire.",
       "start": { "any": [{ "near": { "poi": "meadow-road", "r": 170 } }, { "near": { "poi": "hub", "r": 170 } }] },
       "steps": [
-        { "id": "meet", "journal": "Talk to Wenna, the woman with the lantern, on the north road.", "when": { "flag": "meadow:guide-lead" }, "goal": { "dynamic": "meadow-guide", "label": "Wenna" } },
-        { "id": "lead", "journal": "Follow Wenna to the village of Hearn. Stay close to her.", "when": { "flag": "meadow:arrived" }, "goal": { "dynamic": "meadow-guide", "label": "Wenna", "radius": 12 } },
+        { "id": "meet", "journal": "Talk to Wenna, the woman with the lantern, on the north road.", "when": { "flag": "meadow:guide-lead" }, "goal": { "npc": "meadow-wenna", "label": "Wenna", "radius": 6 } },
+        { "id": "lead", "journal": "Follow Wenna to the village of Hearn. Stay close to her.", "when": { "flag": "meadow:arrived" }, "goal": { "npc": "meadow-wenna", "label": "Wenna", "radius": 12 } },
         { "id": "fires", "journal": "Put out the fires in Hearn. Use Ribbon or Sweep on the burning roofs.", "when": { "flag": "meadow:fires-out" }, "goal": { "dynamic": "meadow-fire", "label": "A burning house", "radius": 12 } },
         { "id": "ebb", "journal": "Bring Ebb out of the burning house. His mother, Marit, is in the square.", "when": { "flag": "meadow:ebb-saved" }, "goal": { "dynamic": "meadow-ebb", "label": "Ebb", "radius": 6 } },
-        { "id": "thanks", "journal": "Talk to Elder Hild at the hall.", "when": { "flag": "meadow:stair-open" }, "goal": { "dynamic": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "lore": "meadow-lore-raid" }, { "autosave": true }] },
+        { "id": "thanks", "journal": "Talk to Elder Hild at the hall.", "when": { "flag": "meadow:stair-open" }, "goal": { "npc": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "lore": "meadow-lore-raid" }, { "autosave": true }] },
         { "id": "manor", "journal": "Climb the stair to the manor at the top of the hill.", "when": { "near": { "poi": "manor", "r": 90 } }, "goal": { "poi": "manor", "label": "The manor", "radius": 60 } },
         { "id": "face", "journal": "Go to the manor's forecourt. Something inside it is waking up.", "when": { "flag": "meadow:bellwether-woke" }, "goal": { "poi": "manor", "label": "The manor", "radius": 40 } },
         { "id": "release", "journal": "Free the Bellwether. Blow the turf off its three chimneys with Gust, then climb its neck and strike the three valves.", "when": { "flag": "meadow:bellwether-released" }, "goal": { "poi": "manor", "label": "The Bellwether", "radius": 40 } },
-        { "id": "return", "journal": "Go back down to Hearn. Tell Elder Hild what happened.", "when": { "flag": "meadow:bellwether-released", "near": { "x": 93, "z": 926, "r": 45 } }, "goal": { "dynamic": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "autosave": true }] }
+        { "id": "return", "journal": "Go back down to Hearn. Tell Elder Hild what happened.", "when": { "flag": "meadow:bellwether-released", "near": { "x": 93, "z": 926, "r": 45 } }, "goal": { "npc": "meadow-hild", "label": "Elder Hild", "radius": 8 }, "actions": [{ "autosave": true }] }
       ],
       "optional": [
-        { "id": "marit", "journal": "Talk to Marit in the square. She is calling for her son.", "when": { "event": "talk:meadow-marit" }, "goal": { "dynamic": "meadow-marit", "label": "Marit", "radius": 6 } }
+        { "id": "marit", "journal": "Talk to Marit in the square. She is calling for her son.", "when": { "event": "talk:meadow-marit" }, "goal": { "npc": "meadow-marit", "label": "Marit", "radius": 6 } }
       ]
     },
     {
@@ -218,9 +218,9 @@
       "summary": "Corin cannot find his brother. The Shaped took him up the hill.",
       "start": { "flag": "meadow:arrived" },
       "steps": [
-        { "id": "ask", "journal": "Talk to Corin in Hearn. He is looking for his brother Alder.", "when": { "flag": "meadow:corin-met" }, "goal": { "dynamic": "meadow-corin", "label": "Corin", "radius": 8 } },
+        { "id": "ask", "journal": "Talk to Corin in Hearn. He is looking for his brother Alder.", "when": { "flag": "meadow:corin-met" }, "goal": { "npc": "meadow-corin", "label": "Corin", "radius": 8 } },
         { "id": "climb", "journal": "Climb the stair behind Hearn. The Shaped took Alder up the hill.", "when": { "flag": "meadow:stair-open" }, "goal": { "poi": "stair-foot", "label": "The foot of the stair", "radius": 12 } },
-        { "id": "find", "journal": "Find Alder on the hill.", "when": { "flag": "meadow:alder-found" } }
+        { "id": "find", "journal": "Find Alder on the hill.", "when": { "flag": "meadow:alder-found" }, "goal": { "poi": "manor", "label": "The hill", "radius": 80 } }
       ]
     }
   ],
