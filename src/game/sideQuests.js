@@ -63,7 +63,7 @@ export class GestureAsk {
 }
 
 /** Vortex held on a point: counts seconds the column (strength `s`) stands within `reach` m of it. */
-export function vortexHold(acc, dt, strength, vx, vz, x, z, reach = 3.5) {
+export function vortexHold(acc, dt, strength, vx, vz, x, z, reach = 6) {
   return strength > 0.6 && Math.hypot(vx - x, vz - z) < reach ? acc + dt : Math.max(0, acc - dt * 2);
 }
 

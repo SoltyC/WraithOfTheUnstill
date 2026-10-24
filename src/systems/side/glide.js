@@ -12,7 +12,7 @@ export function addGlide(ctx) {
     const pl = ctx.table['side-ring-' + k]; if (!pl) return { tick() {} };
     rings.push({ x: pl.pos[0], y: pl.y, z: pl.pos[1], r: pl.r }); idx.push(site('side-glide-ring-' + k));
   }
-  const course = new GlideCourse(rings);
+  const course = g.sideCourse = new GlideCourse(rings);
   const start = ctx.table['side-edge'];
   // The compass follows the next ring (its height: the waypoint sits 6 m above the goal's y).
   const goal = { x: 0, z: 0, y: 0, name: '' };

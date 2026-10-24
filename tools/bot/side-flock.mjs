@@ -11,13 +11,13 @@ await talk('meadow-dunn'); await talk('meadow-dunn'); say('after Dunn:', await q
 const b = await js(`return g.chapter.table['side-barley'].pos`);
 await bot('face', { x: b[0], z: b[1], pitch: 0.05 }); await bot('wait', { ms: 800 });
 say('shot', (await shot('flock-2-direction-barley')).file);
-await leaveVillage(60, 1060);
-let r = await goTo(b[0], b[1] - 40, { arrive: 4, maxSlope: 1.4 });
+let r = await bot('walkTo', { x: 30, z: 1072, roads: true, arrive: 4, timeout: 80 });
+r = await goTo(b[0], b[1] - 25, { arrive: 4, maxSlope: 1.4 });
 say('at the field edge', JSON.stringify(r && r.walk), await quest('meadow-side-flock'));
 const shaped = () => js(`const s=g.shaped.slots.map((q,i)=>({i,st:q.state,arch:q.arch,x:q.body?Math.round(q.body.x):0,z:q.body?Math.round(q.body.z):0})).filter(q=>q.st!==${0}); return {n:s.length,s,hp:g.combat.health}`);
 say('shaped at the edge', JSON.stringify(await shaped()));
 // Walk the field north through the middle, attacking whatever comes (Sweep: tap Primary facing the nearest).
-for (let pass = 0; pass < 6; pass++) {
+for (let pass = 0; pass < 12; pass++) {
   const left = await shaped();
   if (!left.n && pass > 0) break;
   const p = await js('const q=g.controller.pos;return [q.x,q.z]');
@@ -35,3 +35,5 @@ for (let pass = 0; pass < 6; pass++) {
 }
 say('shot', (await shot('flock-3-field')).file);
 say('flags', JSON.stringify(await flags()), await quest('meadow-side-flock'));
+
+await talk('meadow-dunn'); await talk('meadow-dunn'); say('final:', await quest('meadow-side-flock'), 'robe', await js(`return g.chapter.graph.flags.has('robe:barley')`));

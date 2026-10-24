@@ -8,7 +8,7 @@ import { GestureAsk, rayDistance, vortexHold } from '../../game/sideQuests.js';
 import { gustTuning } from '../../game/bending/gale.js';
 
 const WORD = { gust: 'Gust (click)', vortex: 'Vortex (hold click)', updraft: 'Updraft (F)' };
-const AIM = 3.6;   // m from the stone a gesture counts as aimed at it
+const AIM = 5.5;   // m from the stone a gesture counts as aimed at it (the view ray meets the ground a little short of a tall stone)
 
 export function addEchoes(ctx) {
   const { g, flags, vars, site, seatY, glow } = ctx, { chapter, hud, music, gale, controller, nav, sfx, SFX, arm, capture } = g;
@@ -16,7 +16,7 @@ export function addEchoes(ctx) {
   for (let k = 1; k <= 3; k++) {
     const id = 'side-echo-' + k, pl = ctx.table[id], i = site(id);
     if (!pl || i < 0) return { tick() {} };
-    const s = { id, k, pl, i, ask: new GestureAsk(pl.ask), hold: 0, t: null };
+    const s = { id, k, pl, i, ask: new GestureAsk(pl.ask), hold: 0, armed: true, t: null };
     s.t = { kind: 'stone', id, verb: 'Listen', name: 'Listening Stone', x: pl.pos[0], y: pl.h, z: pl.pos[1], r: 3.6, h: 1.4, onUse: () => listen(s) };
     stones.push(s); g.interactables.push(s.t);
   }
@@ -83,8 +83,10 @@ export function addEchoes(ctx) {
         break;
       }
       if (gale.updraftEvent) gesture('updraft', ctx.dist2(gale.updraftX, gale.updraftZ, s.pl.pos[0], s.pl.pos[1]) < AIM * AIM);
-      s.hold = vortexHold(s.hold, dt, gale.vortexStrength, gale.vortexX, gale.vortexZ, s.pl.pos[0], s.pl.pos[1]);
-      if (s.hold > 1.4) { s.hold = 0; gesture('vortex', true); }
+      // One Vortex is one gesture: it must die away before another counts.
+      if (gale.vortexStrength < 0.3) s.armed = true;
+      s.hold = s.armed ? vortexHold(s.hold, dt, gale.vortexStrength, gale.vortexX, gale.vortexZ, s.pl.pos[0], s.pl.pos[1]) : 0;
+      if (s.hold > 1.4) { s.hold = 0; s.armed = false; gesture('vortex', true); }
       if (cur && !capture) hud.line('echoes', 'Listening Stone: ' + sentence(s) + ' · ' + Math.ceil(s.ask.left) + ' s', s.ask.left < 8);
     },
   };
