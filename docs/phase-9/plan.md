@@ -66,6 +66,12 @@ Same shape as Phase 8. Each ends in something reviewable on the 3060. The risky 
   - **Star megadunes** (40–80 m) where the winds converge in the erg's heart, near the Warden. These are the landmarks seen from the escarpment and from glides.
   - **Seif (linear) dunes** toward the ember side, stretched along the wind and darkening with ash.
   - **Playas and salt pans** in the interdunes: flat, pale and cracked, for mirages and the camp's well.
+- **Ravines (user):** the erg is not only dunes. Carve (bake, `carveRavines`, least-earthwork style like the stair):
+  - **a canyon system** along the escarpment foot — sandstone walls 30–80 m, layered strata, sand floors fed by spill-over dunes at the rim (sandfalls when restored), arches and hoodoos;
+  - **slot canyons** (2–6 m wide, 20–40 m deep, sculpted walls) — light shafts at noon, a sand-surf run through one (the run's walls are collision; the floor is sand), flash-flood lore;
+  - **wadis** — dry braided river beds crossing the basin from the meadow's rivers (the aqueduct ruins follow one); restored rain in the meadow sends a thin seasonal stream down it;
+  - **a rift** — one deep crack across the erg (the Long Walker's old path split the bedrock), crossed by glide, a Ridge bridge or the ruins' fallen spans.
+  - Ravines give the erg verticality, shade, cover and routes; they are where caves (Phase 13) open. CPU/GPU parity: canyons are in the macro bake (2 m), sharp walls by the rock material's triplanar strata.
 - **Escarpment descent** from the meadow: a carved pass ("the Dry Stair") with a caravan road (`story.mjs` least-earthwork route, like the hill stair). This is the erg reveal: the first view from the lip at golden hour is a planned photo spot.
 - **Frost–dune border:**
   - Snow lies in the dunes' lee hollows and is stripped off the crests (height blend; BRIEF §5.1: snow settles in hollows first).
@@ -400,6 +406,9 @@ Roughly 16–20 sessions. Sonnet agents build each milestone in a worktree; I re
 - **Order freedom** (cross-biome): if the dunes can be done before the meadow, nothing on the critical path may need Gale. See the cross-biome plan.
 
 ## Decisions for the user
+
+**Answered (user, 2026-10-24):** (1) the erg grows, **with ravines** — wadis, canyons and slot canyons cut into it (see D0); (2) the Long Walker, **but it must feel unlike the other Wardens** (no "strip the vents, climb, strike three things" formula; see D10 and docs/gameplay-design.md); (3) Skitters, Plate-backs, Whirlers, Glass-sworn: yes; (4) open order; (5) **no world-tier scaling.**
+
 
 1. **Erg size:** grow it to about 8–10 km² by pushing the ember influence south, a bake change that leaves frost, meadow and Hearn untouched (recommended), or keep today's 4.3 km².
 2. **The dune Warden:** the Long Walker (recommended), or one of:

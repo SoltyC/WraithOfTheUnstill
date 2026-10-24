@@ -224,6 +224,8 @@ In Phase 9 unless marked:
 
 ## Decisions for the user
 
+**Answered (user, 2026-10-24):** open order — yes. World-tier scaling — **no**: each biome has a fixed, designed difficulty (its base); a biome visited late is easier because the player brings more tools and skill, which is the reward. Replace §1's world-tier paragraph and §9 item 4 accordingly when implementing.
+
 1. **Open order** after the frost (meadow, dunes, mire any order; ember late by difficulty; coast last), recommended; or a fixed chain.
 2. **Elements lent at the waking** of each Warden (as the Bellwether does now), recommended.
 3. **World tier scaling** of the Shaped (not the Wardens) by the number of releases, recommended.
