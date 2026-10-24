@@ -244,7 +244,9 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     /** Flow on the body: the cloth's glow uniform, and the hand-light trail (a point every 40 ms, living 0.17–0.38 s). */
     _flowFx(t) {
       const L = this.flowLevel, k = L < 0.02 ? 0 : Math.min(1, L / 3), hg = this.flowColor;
-      flowV.set(hg[0] * k * 0.3, hg[1] * k * 0.3, hg[2] * k * 0.3, k);
+      // Warm motion-gold over the element's hue: the frost creep of low health is cold blue-white, and
+      // Flow must never read as a wound.
+      flowV.set((hg[0] * 0.4 + 0.6) * k * 0.3, (hg[1] * 0.4 + 0.47) * k * 0.3, (hg[2] * 0.4 + 0.27) * k * 0.3, k);
       const live = k > 0;
       if (live && t - trailAt > 0.04) {
         trailAt = t;

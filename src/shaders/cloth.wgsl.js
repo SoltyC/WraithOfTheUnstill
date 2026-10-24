@@ -259,7 +259,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Flow: the hem, the mantle's edge and the cuffs catch the element's light, a slow shimmer along the threads.
   if (uniforms.clothFlow.w > 0.002 && g <= 3) {
     let edge = smoothstep(select(0.55, 0.78, g >= 2), 1.0, uv.y);
-    let shimmer = 0.65 + 0.35 * sin(uniforms.clothParams.y * 2.6 + m.x * 22.0 + m.y * 6.0);
+    // Bands that run back along the hem, faster with Flow: it reads as motion, not as a stain.
+    let shimmer = 0.6 + 0.4 * sin(uniforms.clothParams.y * (5.0 + 7.0 * uniforms.clothFlow.w) - uv.y * 16.0 + m.x * 9.0);
     glow += uniforms.clothFlow.rgb * edge * edge * shimmer * select(1.0, 0.7, g == 1);
   }
   // A faint cool edge at a fixed on-screen level (display-referred, like the cowl light): the
