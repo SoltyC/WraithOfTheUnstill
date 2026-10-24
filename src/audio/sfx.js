@@ -99,7 +99,7 @@ export function createSfx() {
     /** Sound position and loudness (fields) for the next play(). */
     x: 0.5, y: 0.5, z: 0.5, gain: 1.5 - 0.5,
     /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss, rain. thunderDist: metres of the next THUNDER. */
-    wind: 0.5 - 0.5, hiss: 0.5 - 0.5, rain: 0.5 - 0.5, time: 0.5, thunderDist: 1000.5,
+    wind: 0.5 - 0.5, hiss: 0.5 - 0.5, rain: 0.5 - 0.5, shelter: 0.5 - 0.5, rainBed: 0.5 - 0.5, time: 0.5, thunderDist: 1000.5,
 
     /** Effects volume 0..1 (settings). */
     setVolume(v) { this.volume = v; if (master) master.gain.value = 0.7 * v; },
@@ -205,8 +205,9 @@ export function createSfx() {
       windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust), t, 0.3);
       windFilter.frequency.setTargetAtTime(260 + 900 * this.wind * gust, t, 0.3);
       hissGain.gain.setTargetAtTime(this.hiss * 0.18, t, 0.04);
-      rainGain.gain.setTargetAtTime(this.rain * 0.2, t, 0.4);
-      rainLowGain.gain.setTargetAtTime(this.rain * this.rain * 0.28, t, 0.4);
+      // Under a roof the patter is gone and a muffled drumming remains (the low bed lifts).
+      rainGain.gain.setTargetAtTime(this.rain * 0.2 * (1 - this.shelter), t, 0.4);
+      rainLowGain.gain.setTargetAtTime((this.rain * this.rain * 0.28) * (1 + 1.2 * this.shelter) + this.shelter * this.rainBed * 0.1, t, 0.4);
     },
   };
   return self;

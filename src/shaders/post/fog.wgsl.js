@@ -199,7 +199,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
           let beer = exp(-od * (1.4 + 1.2 * gloom)) * mix(1.0, 1.0 - exp(-dens * 160.0), 0.5); // powder
           let amb = skyUp * mix(0.55, 1.15, hFrac) * 3.14159 * 0.35 * (1.0 - 0.4 * gloom);
           // Lightning (pad[0].z = glow): the cloud lights from within, brightest toward the bolt.
-          let flashLum = vec3f(0.8, 0.9, 1.0) * P.pad[0].z * 9.0 * (0.35 + 0.65 * pow(max(cosT, 0.0), 2.0)) * mix(0.6, 1.0, hFrac);
+          let flashLum = vec3f(0.8, 0.9, 1.0) * P.pad[0].z * 0.75 * (0.07 + 0.93 * pow(max(cosT, 0.0), 12.0)) * mix(0.6, 1.0, hFrac);
           let lum = sunC * beer * phase * 0.32 * (1.0 - 0.3 * gloom) + amb + flashLum;
           let ext = dens;
           let tr = exp(-ext * dt);

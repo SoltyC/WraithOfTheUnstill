@@ -9,14 +9,14 @@ import { env as envMod, updateEnvironment, invalidateEnvironment } from '../rend
 import { worldState } from '../game/worldState.js';
 
 /** Key illuminance of a close strike's flash (the noon sun is 8.2). */
-const FLASH_ILLUM = 2.2;
+const FLASH_ILLUM = 1.7;
 
 /** @param {any} g  shared boot context */
 export function addStormSystems(g) {
   const { loop, weather, pendingTp, camera, clock, atmosphere, post, shadows, sfx, SFX, streamer, rain, bolt, arm, capture } = g;
   const env = envMod;
   const lightning = g.lightning = createLightning();
-  let lit = false, windSX = 1, windSZ = 0, boltVersion = -1, heldX = 0, heldZ = 0;
+  let shelter = 0, shelterT = 0, lit = false, windSX = 1, windSZ = 0, boltVersion = -1, heldX = 0, heldZ = 0, shelterGoal = 0;
   // Ground height anywhere (the 8 m overview: strikes land beyond the streamed tiles).
   const farGround = (x, z) => {
     const ov = streamer.overview, n = streamer.overviewN; if (!ov) return 0;
@@ -66,7 +66,12 @@ export function addStormSystems(g) {
     rain.windX = windSX / wl; rain.windZ = windSZ / wl;
     rain.fallSpeed = 8.8 + 1.6 * weather.storm;
     rain.windSpeed = Math.min(sp * 0.75, rain.fallSpeed * 0.95);
-    rain.density = weather.rain; rain.time = clock.simTime; rain.dt = clock.dt;
+    // Under a roof or a floor above: the rain does not fall here (tested ~6×/s; eased), the bed is muffled.
+    shelterT -= clock.realDt;
+    const so = g.solids;
+    if (shelterT <= 0 && so) { shelterT = 0.16; so.px = p.x; so.py = p.y; so.pz = p.z; shelterGoal = so.coveredQ() ? 1 : 0; }
+    shelter += (shelterGoal - shelter) * (1 - Math.exp(-clock.realDt * 6));
+    rain.density = weather.rain * (1 - shelter); rain.time = clock.simTime; rain.dt = clock.dt;
     rain.update();
     // The bolt: rebuilt per strike, bright for a third of a second.
     if (lightning.version !== boltVersion) {
@@ -78,6 +83,6 @@ export function addStormSystems(g) {
     const fw = Math.pow(weather.fog, 2.2);
     bolt.fogDensity = 0.00002 + (0.02 - 0.00002) * fw; bolt.fogFalloff = 1 / (300 + 600 * weather.fog * weather.fog); bolt.fogBase = post.fog.groundY;
     bolt.update();
-    sfx.rain = weather.rain;
+    sfx.rain = weather.rain; sfx.rainBed = weather.rain; sfx.shelter = shelter;
   } });
 }

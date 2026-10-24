@@ -30,7 +30,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let side = normalize(cross(dir, toCam) + vec3f(1e-5, 0.0, 0.0));
   let glow = uniforms.bolt.y;
   // One to two pixels across for the core (a pixel ~ dist · 0.0009), several for the glow.
-  let width = vertexInputs.uv.y * max(0.25, dist * mix(0.0022, 0.0075, glow));
+  let width = vertexInputs.uv.y * max(0.25, dist * mix(0.0034, 0.011, glow));
   let wp = p - dir * width * 0.7 + side * vertexInputs.uv.x * width;
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (uniforms.bolt.x < 0.004) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
@@ -52,10 +52,10 @@ ${COMMON_WGSL}
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let x = fragmentInputs.vSide;
   let core = exp(-x * x * 7.0);
-  let halo = exp(-x * x * 2.0);
+  let halo = exp(-x * x * 1.6);
   let glow = uniforms.bolt.y;
   if (glow < 0.5 && core < 0.25) { discard; }
-  let i = mix(core * 14.0, halo * 0.9, glow);
+  let i = mix(core * 14.0, halo * 1.5, glow);
   let c = mix(vec3f(0.8, 0.9, 1.0), vec3f(0.55, 0.7, 1.0), glow) * i * fragmentInputs.vGain;
   fragmentOutputs.color = vec4f(min(c, vec3f(160.0)), 0.0);
 }
