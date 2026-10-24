@@ -78,6 +78,7 @@ export function addEncounterSystem(g) {
   // ── Death re-forms at the nearest safe place ───────────────────────────────────────────────
   const shrineIds = [];
   for (let k = 1; k <= 5; k++) shrineIds.push('shrine-frost-' + k);
+  for (const p of g.pois) if (p.kind === 'shrine' && p.biome === 'meadow') shrineIds.push(p.id);
   g.setRespawn = (t) => { combat.shrineX = t.x + 2.5; combat.shrineZ = t.z - 2.5; };
   let wasDying = false;
   function respawnTick() {

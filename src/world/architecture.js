@@ -432,7 +432,7 @@ function gestureStone(symbol) {
 }
 
 /** An Echo stone: a tall carved monolith in a ring of low stones, a pale disc of ice at its foot. */
-function echoStone(b, facing, R) {
+export function echoStone(b, facing, R) {
   b.drum(0, 0, -FOUND, 0.08, 2.1, 2.1, 16, MAT.STONE, 1, { solid: false });
   b.drum(0, 0, 0.08, 0.14, 1.5, 1.5, 16, MAT.ICE, 2, { solid: false });
   b.box(0, 0, 0.1, 3.1, 0.5, 0.28, facing, MAT.GLYPH, 3, { carve: 1, tilt: (R() - 0.5) * 0.08 });
@@ -838,7 +838,7 @@ function market(b, facing, R) {
 
 /** The meadow shrine: five standing stones round a paved ring and a carved altar with a candle,
  *  prayer ribbons tied to the stones (the Shapers' shrine, kept by pilgrims). */
-function meadowShrine(b, facing, R) {
+export function meadowShrine(b, facing, R) {
   for (let k = 0; k < 10; k++) { const a = (k / 10) * TAU + 0.16; b.box(Math.sin(a) * 2.7, Math.cos(a) * 2.7, -0.5, 0.1 + 0.012 * (k & 1), 0.85, 0.55, a, MAT.STONE, 5 + k, { solid: false, ...NS }); }
   for (let k = 0; k < 5; k++) { const a = (k / 5) * TAU + 0.5; b.box(Math.sin(a) * 1.35, Math.cos(a) * 1.35, -0.5, 0.12 + 0.01 * (k % 3), 0.8, 0.5, a, MAT.STONE, 20 + k, { solid: false, ...NS }); }
   b.box(0, 0, 0.1, 0.95, 0.52, 0.52, facing, MAT.GLYPH, 30, { carve: 1, ...NS });
@@ -955,7 +955,7 @@ export function buildArchitecture(sites) {
   const ranges = [];
   sites.forEach((s, i) => {
     const v0 = b.pos.length / 3, i0 = b.idx.length;
-    b.site = i; b.noSnow = /^(hub|vil|stair|manor)-/.test(s.id); s.build(b, s.facing, rng(0x5a17 + i * 977));
+    b.site = i; b.noSnow = NO_SNOW.test(s.id); s.build(b, s.facing, rng(0x5a17 + i * 977));
     ranges.push({ v0, v1: b.pos.length / 3, i0, i1: b.idx.length });
   });
   return {
@@ -964,6 +964,9 @@ export function buildArchitecture(sites) {
     ranges,
   };
 }
+
+/** Sites with no snow on or round them: the meadow's places (hub, village, stair, manor, side-quest sites, meadow shrines). */
+export const NO_SNOW = /^(hub|vil|stair|manor|side)-|^shrine-meadow/;
 
 /** Chunk edge, metres: sites are grouped by the cell of their anchor. */
 export const ARCH_CHUNK_CELL = 128;

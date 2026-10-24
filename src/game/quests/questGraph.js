@@ -10,7 +10,7 @@
 //     steps: [{ id, journal, when: Condition, actions?: Action[], goal?: Goal }],
 //     optional?: [{ id, journal, when: Condition, actions?: Action[], goal?: Goal }],  // in parallel
 //     onDone?: Action[] }
-// Goal (what the navigation system points at): { poi: 'id' } | { at: [x, z] } | { dynamic: 'name' },
+// Goal (what the navigation system points at): { poi: 'id' } | { at: [x, z] } | { npc: 'npc id' } (the NPC where it is now, also while it walks) | { dynamic: 'name' },
 //   plus an optional label and radius (m, default 30: the goal counts as reached inside it).
 // Condition (all keys optional, all must hold):
 //   { flag: 'name' | ['a', 'b'],          // world flags set
@@ -181,8 +181,8 @@ export class QuestGraph {
       const q = this.quests[d.id];
       if (q.state !== 'active') continue;
       const s = d.steps[q.step];
-      if (s && s.goal) out.push({ quest: d.id, kind: d.kind, title: d.title, step: s.id, optional: false, goal: s.goal });
-      for (const o of d.optional || []) if (o.goal && !q.opt.includes(o.id)) out.push({ quest: d.id, kind: d.kind, title: d.title, step: o.id, optional: true, goal: o.goal });
+      if (s && s.goal) out.push({ quest: d.id, kind: d.kind, title: d.title, step: s.id, journal: s.journal, optional: false, goal: s.goal });
+      for (const o of d.optional || []) if (o.goal && !q.opt.includes(o.id)) out.push({ quest: d.id, kind: d.kind, title: d.title, step: o.id, journal: o.journal, optional: true, goal: o.goal });
     }
     return out;
   }
@@ -233,7 +233,7 @@ export function validateQuests(defs) {
     if (!Array.isArray(d.steps) || d.steps.length === 0) fail(p, 'needs steps');
     cond(d.start, p + '.start');
     const sids = new Set();
-    const goalOk = (g, path) => { if (g && !(g.poi || g.at || g.dynamic)) fail(path, 'goal needs poi, at or dynamic'); };
+    const goalOk = (g, path) => { if (g && !(g.poi || g.at || g.npc || g.dynamic)) fail(path, 'goal needs poi, at, npc or dynamic'); };
     for (const [j, s] of d.steps.entries()) {
       if (!s.id || sids.has(s.id)) fail(`${p}.steps[${j}]`, 'step id missing or duplicate');
       sids.add(s.id);

@@ -7,7 +7,8 @@ import { planWindowSpill, spillLevel, lateNight } from './lights.js';
 import { villageSites } from '../world/villageKits.js';
 import { manorSites } from '../world/manor.js';
 import { stairSites, stairSegments, loadBakedHeight } from '../world/stair.js';
-import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA } from '../world/architecture.js';
+import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA, NO_SNOW } from '../world/architecture.js';
+import { sideSites } from '../world/sideSites.js';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
 import { SHADOW_SPLITS } from '../render/shadows.js';
@@ -24,7 +25,7 @@ export async function addArchitectureSystem(g) {
   // segments are also the analytic stepped floor of solids.js.
   const stairRoute = (g.routes || []).find((r) => r.id === 'manor-stair') || {};
   const stairH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', stairRoute).catch(() => null);
-  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites()];
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });
@@ -59,12 +60,12 @@ export async function addArchitectureSystem(g) {
   // Ground anchors for every site (indices after the NPCs' 1..5).
   sites.forEach((s) => { if (!s.prop) streamer.addAnchor(s.at[0], s.at[1]); });
   const camp = sites.findIndex((s) => s.id === 'camp-frost');
-  const brazierIdx = []; sites.forEach((s, i) => { if (s.id.startsWith('brazier-')) brazierIdx.push(i); });
+  const brazierIdx = []; sites.forEach((s, i) => { if (s.id.startsWith('brazier-') || s.fire) brazierIdx.push(i); });
   view.glow[camp * 4 + 2] = sites[camp].at[0]; view.glow[camp * 4 + 3] = sites[camp].at[1];
   // The hall's candles and vigil brazier burn (embers on a site without a hearth: render/architecture).
   view.glow[sites.findIndex((s) => s.id === 'monastery') * 4 + 3] = 1;
   // The meadow's places: no snow on them, and the hub's hearth burns.
-  sites.forEach((s, i) => { if (s.id.startsWith('hub-') || s.id.startsWith('vil-') || s.id.startsWith('stair-') || s.id.startsWith('manor-')) view.glow[i * 4 + 2] = 1; });
+  sites.forEach((s, i) => { if (NO_SNOW.test(s.id)) view.glow[i * 4 + 2] = 1; });
   // The village's lanterns burn (their ember: siteGlow.w where there is no hearth).
   sites.forEach((s, i) => { if (s.lamp || s.id.startsWith('vil-')) view.glow[i * 4 + 3] = 1; }); // door lanterns and hearths too
   // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
@@ -191,7 +192,7 @@ export async function addArchitectureSystem(g) {
     const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5 ? 1 : tod < 7 || tod > 17.5 ? 0.5 : 0.2;
     for (let i = 0; i < sites.length; i++) {
       const id = sites[i].id;
-      const want = sites[i].glow !== undefined ? sites[i].glow : sites[i].windows ? (night - 0.2) / 0.8 : id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
+      const want = sites[i].glow !== undefined ? sites[i].glow : sites[i].windows ? (night - 0.2) / 0.8 : id.startsWith('shrine') ? (chapter.shrines.has(id) ? 1 : 0.08) : id === 'monastery' ? 0.1 + 0.9 * restoration.value : id === 'varo-rise' ? 0.25 : /^(gesture|echo-frost|brazier|run-gate|side-echo|side-brazier)/.test(id) ? (chapter.graph.flags.has('lit:' + id) ? 1 : 0.12) : 0;
       view.glow[i * 4] += (want - view.glow[i * 4]) * Math.min(1, clock.realDt * 0.8);
     }
     view.glow[camp * 4 + 1] = night;
@@ -205,7 +206,7 @@ export async function addArchitectureSystem(g) {
       for (const bi of brazierIdx) {
         if (fi >= 8) break;
         const lit = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[bi * 4 + 3] > 0.5;
-        F[fi * 4] = cs[bi * 4]; F[fi * 4 + 1] = cs[bi * 4 + 1] + 1.26; F[fi * 4 + 2] = cs[bi * 4 + 2]; F[fi * 4 + 3] = lit ? 0.5 : 0; fi++;
+        F[fi * 4] = cs[bi * 4]; F[fi * 4 + 1] = cs[bi * 4 + 1] + (sites[bi].fire ?? 1.26); F[fi * 4 + 2] = cs[bi * 4 + 2]; F[fi * 4 + 3] = lit ? 0.5 : 0; fi++;
       }
       // Fires built into the places (the hall's vigil brazier): flames on their coals.
       for (const b of builtLights) {
@@ -243,7 +244,7 @@ export async function addArchitectureSystem(g) {
       brazierIdx.forEach((bi, k) => {
         const r = brazierLights[k], o = bi * 4;
         r.level = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[o + 3] > 0.5 ? 1 : 0;
-        r.x = cs[o]; r.y = cs[o + 1] + 1.6; r.z = cs[o + 2];
+        r.x = cs[o]; r.y = cs[o + 1] + (sites[bi].fire ?? 1.26) + 0.34; r.z = cs[o + 2];
       });
       for (const ll of lanternLights) {
         const o = ll.i * 4;
