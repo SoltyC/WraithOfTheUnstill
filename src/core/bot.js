@@ -5,6 +5,7 @@
 // turn. Dev only: nothing loads it without ?bot=1.
 
 import { Action } from '../input/actions.js';
+import { params, setParam } from './params.js';
 
 const sleepFrames = (n) => new Promise((r) => { let k = 0; const f = () => (++k >= n ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); });
 const sleepMs = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -164,7 +165,87 @@ export function startBot(w, qs) {
     return res.ok ? `screenshots/${dir}/${safe}.png` : 'HTTP ' + res.status;
   }
 
+  /** Footage: the game canvas through MediaRecorder (the DOM HUD is not in it), uploaded to screenshots/<dir>/<name>.webm. */
+  let rec = null;
+  function recStart({ fps = 60, mbps = 24 } = {}) {
+    if (rec) throw new Error('already recording');
+    const canvas = g.engine?.getRenderingCanvas?.() || document.querySelector('canvas');
+    const stream = canvas.captureStream(fps);
+    const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t));
+    const mr = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: mbps * 1e6 });
+    const parts = [];
+    mr.ondataavailable = (e) => { if (e.data.size) parts.push(e.data); };
+    mr.start(1000);
+    rec = { mr, parts, type, t0: performance.now(), w: canvas.width, h: canvas.height };
+    return { recording: type, size: [canvas.width, canvas.height] };
+  }
+  async function recStop(name, dir = 'trailer') {
+    if (!rec) throw new Error('not recording');
+    const r = rec; rec = null;
+    await new Promise((res) => { r.mr.onstop = res; r.mr.stop(); });
+    r.mr.stream.getTracks().forEach((t) => t.stop());
+    const blob = new Blob(r.parts, { type: r.type });
+    const safe = String(name || 'clip').replace(/[^a-z0-9-]/gi, '');
+    const res = await fetch(`/__wraith/clip?dir=${dir}&name=${safe}`, { method: 'POST', body: blob });
+    return { file: res.ok ? `screenshots/${dir}/${safe}.webm` : 'HTTP ' + res.status, seconds: +((performance.now() - r.t0) / 1000).toFixed(1), mb: +(blob.size / 1e6).toFixed(1), size: [r.w, r.h] };
+  }
+
+  /**
+   * Film mode: the render loop is driven here, each frame advancing exactly 1/fps of game time, and every
+   * frame is saved (JPEG) to screenshots/<dir>/frames/<name>/ for ffmpeg — smooth footage whatever the
+   * live frame rate. `js` runs before each frame as (t, i, g, w, cam, inject): script the camera with
+   * cam.at(x, y, z, tx, ty, tz, fov) (null = the game's own camera) and inputs with inject(action, down).
+   */
+  const filmCam = { on: false, x: 0, y: 0, z: 0, tx: 0, ty: 0, tz: 1, fov: 0.8,
+    at(x, y, z, tx, ty, tz, fov = 0.8) { this.on = true; this.x = x; this.y = y; this.z = z; this.tx = tx; this.ty = ty; this.tz = tz; this.fov = fov; },
+    off() { this.on = false; } };
+  g.loop.add({ name: 'botFilmCam', update: () => {
+    if (!filmCam.on) return;
+    const c = g.camera, dx = filmCam.tx - filmCam.x, dy = filmCam.ty - filmCam.y, dz = filmCam.tz - filmCam.z;
+    c.position.set(filmCam.x, filmCam.y, filmCam.z);
+    c.rotation.set(-Math.atan2(dy, Math.hypot(dx, dz)), Math.atan2(dx, dz), 0);
+    c.fov = filmCam.fov;
+  } });
+  async function filmRun({ name = 'clip', dir = 'trailer', seconds = 5, fps = 60, js = '', quality = 0.92, size = [1920, 1080], warm = 30 }) {
+    const engine = g.engine, loop = g.loop, canvas = engine.getRenderingCanvas();
+    const step = js ? new Function('t', 'i', 'g', 'w', 'cam', 'inject', js) : null;
+    const prevScale = params.v.renderScale, prevDyn = params.v.dynamicRes;
+    setParam('dynamicRes', 0); setParam('renderScale', 1);
+    canvas.style.width = size[0] + 'px'; canvas.style.height = size[1] + 'px'; engine.resize();
+    engine.stopRenderLoop();
+    loop.fixedDt = 1 / fps;
+    const off = new OffscreenCanvas(size[0], size[1]), ctx = off.getContext('2d');
+    const n = Math.round(seconds * fps);
+    let inflight = 0, failed = 0;
+    const t0 = performance.now();
+    try {
+      for (let i = -warm; i < n; i++) {
+        // Warm frames (not saved): the script's first pose settles TAA history and streaming first.
+        const t = Math.max(0, i) / fps;
+        if (step) step(t, i, g, w, filmCam, inject);
+        engine.beginFrame(); loop._frame(); engine.endFrame();
+        if (i < 0) { await sleepMs(0); continue; }
+        ctx.drawImage(canvas, 0, 0, size[0], size[1]);
+        const blob = await off.convertToBlob({ type: 'image/jpeg', quality });
+        inflight++;
+        fetch(`/__wraith/frame?dir=${dir}&name=${name}&i=${i}`, { method: 'POST', body: blob }).then((r) => { if (!r.ok) failed++; }, () => failed++).finally(() => inflight--);
+        while (inflight > 6) await sleepMs(4);
+        w.botFilm = { name, i, n };
+      }
+      while (inflight > 0) await sleepMs(20);
+    } finally {
+      filmCam.off();
+      loop.fixedDt = 0; loop.last = performance.now();
+      setParam('dynamicRes', prevDyn); setParam('renderScale', prevScale);
+      engine.runRenderLoop(loop._frame);
+    }
+    return { frames: n, failed, dir: `screenshots/${dir}/frames/${name}`, wallS: +((performance.now() - t0) / 1000).toFixed(1) };
+  }
+
   const cmds = {
+    film: (c) => filmRun(c),
+    recStart: (c) => recStart(c),
+    recStop: async (c) => recStop(c.name, c.dir),
     state: (c) => state(!!c.full),
     perf: async (c) => { if (c.frames) await sleepFrames(c.frames); return perf(c.frames || 120); },
     /** Hold actions for ms: { keys: ['MoveForward', 'Primary'], ms } (names from Action). */

@@ -30,15 +30,17 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
   /** Per site char 0..1 (4 sites per vec4), written by systems/villageFire.js. */
   const char = new Float32Array(ARCH_SITES);
   const params = new Vector4(0, 0, 0, 0);
+  /** The turning site (the mill's sails): x = site index (-1 none), y = angle, zw = axis x, z. */
+  const spin = new Vector4(-1, 0, 1, 0);
   const mat = new ShaderMaterial('arch', scene, { vertex: 'arch', fragment: 'arch' }, {
     attributes: ['position', 'normal', 'uv', 'info'],
-    uniforms: ['viewProjection', 'sites', 'siteGlow', 'siteChar', 'archParams', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'sites', 'siteSpin', 'siteGlow', 'siteChar', 'archParams', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
-  mat.setArray4('sites', sites); mat.setArray4('siteGlow', glow); mat.setArray4('siteChar', char); mat.setVector4('archParams', params);
+  mat.setArray4('sites', sites); mat.setVector4('siteSpin', spin); mat.setArray4('siteGlow', glow); mat.setArray4('siteChar', char); mat.setVector4('archParams', params);
   mat.backFaceCulling = false;
   // Y is unknown at build time (seats arrive later): generous bounds. The meshes stay
   // alwaysSelectAsActiveMesh: with snapshot rendering the recorded bundle is replayed, so Babylon's
@@ -60,14 +62,14 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
   const shadowMats = new Map();
   return {
     /** Chunk views: { id, mesh, prop, sites, cx, cz, radius, vertexCount } (debugging: view.chunks). */
-    chunks: views, material: mat, sites, glow, char, params,
+    chunks: views, material: mat, sites, glow, char, params, spin,
     makeShadowMaterial(name, light, origin) {
       if (shadowMats.has(light)) return shadowMats.get(light);
       const m = new ShaderMaterial(name, scene, { vertex: 'arch', fragment: 'shadowDepth' }, {
-        attributes: ['position', 'normal', 'uv', 'info'], uniforms: ['viewProjection', 'sites', 'shadowLight', 'shadowOrigin'],
+        attributes: ['position', 'normal', 'uv', 'info'], uniforms: ['viewProjection', 'sites', 'siteSpin', 'shadowLight', 'shadowOrigin'],
         shaderLanguage: ShaderLanguage.WGSL,
       });
-      m.setArray4('sites', sites);
+      m.setArray4('sites', sites); m.setVector4('siteSpin', spin);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       m.backFaceCulling = false;
       shadowMats.set(light, m);

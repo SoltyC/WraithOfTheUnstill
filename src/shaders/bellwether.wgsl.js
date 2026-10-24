@@ -18,7 +18,8 @@ const MATERIAL = /* wgsl */ `
     var trans = 0.0;
     if (kind == 5) {
       // Turf: grass where it faces up, soil on the flanks, tussocks in the grain.
-      let grass = vec3f(0.17, 0.30, 0.08) * (0.75 + 0.4 * n2) * (0.9 + 0.2 * n3);
+      // Old, wind-starved turf: olive and straw, not a hedge's green.
+      let grass = mix(vec3f(0.19, 0.24, 0.10), vec3f(0.33, 0.29, 0.15), smoothstep(0.35, 0.75, n2)) * (0.8 + 0.3 * n3);
       let soil = vec3f(0.17, 0.11, 0.065) * (0.8 + 0.3 * n1);
       albedo = mix(soil, grass, smoothstep(0.2, 0.55, Ns.y + 0.25 * (n1 - 0.5)));
       trans = 0.12 * up;
@@ -28,7 +29,9 @@ const MATERIAL = /* wgsl */ `
       let lich = smoothstep(0.45, 0.7, vnoise3(wp * 0.45 + sd) + 0.2 * up);
       let moss = smoothstep(0.42, 0.7, n1 + 0.35 * up);
       albedo = mix(stone, vec3f(0.52, 0.55, 0.30), lich * 0.55);
-      albedo = mix(albedo, vec3f(0.15, 0.27, 0.08) * (0.8 + 0.4 * n3), moss * 0.75 * smoothstep(0.1, 0.5, up));
+      albedo = mix(albedo, vec3f(0.17, 0.24, 0.09) * (0.8 + 0.4 * n3), moss * 0.6 * smoothstep(0.1, 0.5, up));
+      // Courses: dark joints across the slabs (dressed stone, not a boulder).
+      albedo *= 1.0 - 0.35 * smoothstep(0.86, 0.97, abs(sin(dot(wp, vec3f(0.0, 1.9, 0.0)) + sd)));
     } else if (kind == 8) {
       albedo = vec3f(0.45, 0.25, 0.09);
       trans = 0.3;

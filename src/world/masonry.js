@@ -275,6 +275,7 @@ export function snowDrift(B, x, z, y0, hx, hz, yaw, seed, { height = 0.45, reach
  */
 export function snowPillow(B, o, ex, ez, a, c, seed, { round = false, height = 0, mat = 7 } = {}) {
   if (a < 0.12 || c < 0.08) return;
+  if (B.noSnow && mat === 7) return;   // a site below the snowline (the meadow's): no snow caps
   const H = height || Math.min(0.24, 0.4 * Math.min(a, c) + 0.04) * (0.6 + 0.6 * h2(seed, 91));
   const nu = Math.max(4, Math.min(10, Math.round(a * 4))), nv = Math.max(3, Math.min(6, Math.round(c * 5)));
   const S = (u, v) => {

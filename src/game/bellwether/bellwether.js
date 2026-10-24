@@ -74,11 +74,14 @@ export function createBellwether(ctx) {
     for (let k = 0; k < 10; k++) {
       const a = ((k + tw + (rnd() - 0.5) * 0.2) / 10) * Math.PI * 2;
       const top = Math.cos(a) > -0.1;
-      neck(s + (rnd() - 0.5) * 0.3, a, 0.78, 1.2 + 0.1 * rnd(), 0.55 + 0.05 * rnd(), SEG_LEN * (1.35 + 0.15 * rnd()), top && rnd() < 0.92 ? CHUNK.TURF : CHUNK.STONE);
+      // (Turf over 92 % of the top read as a clipped hedge at rest: now half, the stone showing through in courses.)
+      neck(s + (rnd() - 0.5) * 0.3, a, 0.78, 1.2 + 0.1 * rnd(), 0.55 + 0.05 * rnd(), SEG_LEN * (1.35 + 0.15 * rnd()), top && rnd() < (i % 3 === 1 ? 0.25 : 0.6) ? CHUNK.TURF : CHUNK.STONE);
     }
     neck(s, 0, 0, 1.7, 1.7, SEG_LEN * 1.4, CHUNK.STONE);
-    // A mane of turf mats down the back, stone plates along the flanks.
-    for (const a of [0, -0.65, 0.65]) neck(s + (a === 0 ? 0.15 : -0.1), a, 0.95, 1.25, 0.4, SEG_LEN * 1.5, CHUNK.TURF);
+    // A spine of standing-stone vertebrae down the back (one per segment, so it reads as a creature),
+    // mats of turf either side of it, stone plates along the flanks.
+    neck(s + 0.15, 0, 1.02, 0.85, 0.85, SEG_LEN * 0.95, CHUNK.STONE);
+    for (const a of [-0.65, 0.65]) neck(s - 0.1, a, 0.95, 1.25, 0.4, SEG_LEN * 1.5, CHUNK.TURF);
     for (const sg of [-1, 1]) neck(s + sg * 0.12, sg * (1.5 + 0.1 * rnd()), 0.97, 1.2, 0.38, SEG_LEN * 1.25, CHUNK.STONE);
     for (const sg of [-1, 1]) neck(s + (rnd() - 0.5) * 0.4, sg * (2.3 + 0.5 * rnd()), 0.95, 0.24, 0.5 + 0.3 * rnd(), 0.24, CHUNK.ROOT, 1);
   }

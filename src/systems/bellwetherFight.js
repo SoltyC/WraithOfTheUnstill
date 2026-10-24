@@ -420,6 +420,7 @@ export function addBellwetherFightSystem(g) {
       if (devRelease) flags.add(FLAG.RELEASED);
     }
     const released = flags.has(FLAG.RELEASED);
+    if (flags.has(FLAG.WOKE) && g.elements && !g.elements.unlocked.has('gale')) g.elements.unlock('gale');   // a loaded save mid-fight
     if (released && !applied && !rel.active) applyRestored();
     else if (!released && applied && !rel.active) unapply();
 
@@ -464,7 +465,14 @@ export function addBellwetherFightSystem(g) {
 
       const ev = fight.ev;
       if (ev) {
-        if (ev & BEV.WAKE) { flags.add(FLAG.WOKE); music.sting('wake'); if (!capture) hud.notice('The Bellwether', 'The manor wakes', 'It is holding its breath. Blow the turf off the three chimneys with Gust.', 9); }
+        if (ev & BEV.WAKE) {
+          flags.add(FLAG.WOKE); music.sting('wake');
+          // The air it has held so long leaks out of the stones round it, and the Wraith can bend it: Gale, before the
+          // release makes it hers for good (bot playtest 2026-10-24: without ?gale=1 the chimneys could not be stripped).
+          const fresh = !g.elements?.unlocked.has('gale');
+          g.elements?.unlock('gale'); g.elements?.select('gale');
+          if (!capture) hud.notice('The Bellwether', 'The manor wakes', (fresh ? 'Its held wind leaks out of the stones: you can bend it (Gale, key 2). ' : '') + 'Blow the turf off the three chimneys: look up at one and Gust.', 10);
+        }
         if (ev & BEV.NECK_RISES && !capture) hud.notice('The Bellwether', 'Its neck rears', 'Climb it (hold right mouse at its base). Strike each valve (click) when you reach it.', 9);
         if (ev & BEV.INHALE) sound(bell.mx, bell.my, bell.mz, 1.8, SFX.CHARGE);
         if (ev & BEV.GALE) sound(bell.mx, bell.my, bell.mz, 2, SFX.BOOM, SFX.WHOOSH);

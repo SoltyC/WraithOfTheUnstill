@@ -58,19 +58,35 @@ function shotSink() {
       });
       return;
     }
-    if (!req.url.startsWith('/__wraith/shot') || req.method !== 'POST') return next();
+    const clip = req.url.startsWith('/__wraith/clip');   // a recorded video clip (the bot's rec), .webm
+    const frame = req.url.startsWith('/__wraith/frame'); // one frame of the bot's film mode: <dir>/frames/<name>/f000123.jpg
+    if (!(clip || frame || req.url.startsWith('/__wraith/shot')) || req.method !== 'POST') return next();
     const q = new URL(req.url, 'http://x').searchParams;
+    if (frame) {
+      const dir = String(q.get('dir') || 'trailer').replace(/[^a-z0-9-]/gi, ''), name = String(q.get('name') || 'clip').replace(/[^a-z0-9-]/gi, '');
+      const i = Math.max(0, Math.min(999999, parseInt(q.get('i'), 10) || 0));
+      const parts = [];
+      req.on('data', (c) => parts.push(c));
+      req.on('end', () => {
+        const out = path.resolve('screenshots', dir, 'frames', name);
+        fs.mkdirSync(out, { recursive: true });
+        fs.writeFileSync(path.join(out, 'f' + String(i).padStart(6, '0') + '.jpg'), Buffer.concat(parts));
+        res.end('ok');
+      });
+      return;
+    }
     const dir = String(q.get('dir') || 'phase-xx').replace(/[^a-z0-9-]/gi, '');
     const name = String(q.get('name') || 'shot').replace(/[^a-z0-9-]/gi, '');
     const chunks = [];
     let size = 0;
-    req.on('data', (c) => { size += c.length; if (size > 64 << 20) req.destroy(); else chunks.push(c); });
+    const ext = clip ? '.webm' : '.png';
+    req.on('data', (c) => { size += c.length; if (size > (clip ? 1024 : 64) << 20) req.destroy(); else chunks.push(c); });
     req.on('end', () => {
       const out = path.resolve('screenshots', dir);
       fs.mkdirSync(out, { recursive: true });
-      fs.writeFileSync(path.join(out, name + '.png'), Buffer.concat(chunks));
+      fs.writeFileSync(path.join(out, name + ext), Buffer.concat(chunks));
       res.setHeader('content-type', 'application/json');
-      res.end(JSON.stringify({ ok: true, file: `screenshots/${dir}/${name}.png` }));
+      res.end(JSON.stringify({ ok: true, file: `screenshots/${dir}/${name}${ext}` }));
     });
   };
   return {

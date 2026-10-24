@@ -19,6 +19,7 @@ attribute uv: vec2f;
 attribute info: vec4f;       // site, material, seed, carve
 uniform viewProjection: mat4x4f;
 uniform sites: array<vec4f, ${ARCH_SITES}>;
+uniform siteSpin: vec4f;     // x = the turning site (the mill's sails; -1 none), y = angle, zw = axis x, z (horizontal, unit)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -28,11 +29,22 @@ varying vLocalY: f32;
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   let s = uniforms.sites[u32(vertexInputs.info.x + 0.5)];
-  let wp = vec3f(s.x, s.y, s.z) + vertexInputs.position;
+  var lp = vertexInputs.position;
+  var ln = vertexInputs.normal;
+  let sp = uniforms.siteSpin;
+  if (sp.x >= 0.0 && abs(vertexInputs.info.x - sp.x) < 0.5) {
+    // Rodrigues about the horizontal axis k through the site origin (the windshaft).
+    let k = vec3f(sp.z, 0.0, sp.w);
+    let c = cos(sp.y);
+    let sn = sin(sp.y);
+    lp = lp * c + cross(k, lp) * sn + k * dot(k, lp) * (1.0 - c);
+    ln = ln * c + cross(k, ln) * sn + k * dot(k, ln) * (1.0 - c);
+  }
+  let wp = vec3f(s.x, s.y, s.z) + lp;
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (s.w < 0.5) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
   vertexOutputs.vWorldPos = wp;
-  vertexOutputs.vNormal = vertexInputs.normal;
+  vertexOutputs.vNormal = ln;
   vertexOutputs.vUv = vertexInputs.uv;
   vertexOutputs.vInfo = vertexInputs.info;
   vertexOutputs.vLocalY = vertexInputs.position.y;

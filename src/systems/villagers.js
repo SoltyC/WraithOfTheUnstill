@@ -16,6 +16,10 @@
 //  4. All fires out (`meadow:fires-out`) and Ebb saved: Hild thanks the Wraith and, when she has
 //     spoken, sets `meadow:stair-open`. The gate across the stair foot (an invisible solid, see
 //     world/solids.js addGate) is on until that flag; Doran stands at it and steps aside when it opens.
+//  5. Walking: every long walk (goStand) goes by the streets (game/streetNav.js: A* over village.roads,
+//     routes cached, two searches a frame), short hops stay straight. Wenna keeps her authored path, Ebb
+//     his door-to-door steps. By day the idle villagers (huddle role) run errands: a street point, the
+//     square or the well within ~120 m of their post, a pause, and home again.
 //
 // Interface with the fire system (src/systems/villageFire.js, built separately; all optional — with
 // no g.villageFire the raid has no fires and `meadow:fires-out` is set 3 s after arriving):
@@ -32,6 +36,7 @@
 
 import { pinTime, unpinTime } from '../core/clock.js';
 import { LEAD, CHILD, makePath, pathAt, projectOnPath, newGuide, leadStep, newChild, childStep, stepToward, ringSlots, frontOf, houseSpots, nearestFirst, stairDir } from '../game/villagers.js';
+import { createStreetNav, walkTo } from '../game/streetNav.js';
 
 const QUEST = 'meadow-the-burning-night';
 const NIGHT_HOUR = 22;
@@ -53,6 +58,7 @@ export function addVillagerSystem(g) {
   const ebbDoor = ebbSpots.door, ebbIn = ebbSpots.inside;
   const fireIds = V.firePlots.filter((id) => plots.has(id)), N = fireIds.length;
   const wp = controller.pos;
+  const nav = createStreetNav(village.roads);
   const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
 
   // The north street, run backwards: road head → square.
@@ -88,7 +94,7 @@ export function addVillagerSystem(g) {
     V.folk.forEach((f, i) => {
       const post = postOf(f);
       const n = api.make(f.id, f.name, f.archetype, [post[0], post[1]], { tint: f.tint, interact: !!chapter.data.talk?.[f.id] });
-      n.v = { role: f.role, post, slot: slots[i], k: i, delay: 0.3 + rnd() * 2.6, b: 0, bt: 0, nextShout: rnd() * 8, yawPost: post[2] };
+      n.v = { role: f.role, post, slot: slots[i], k: i, delay: 0.3 + rnd() * 2.6, b: 0, bt: 0, nextShout: rnd() * 8, yawPost: post[2], er: 0, dest: [0, 0], errand: f.role === 'huddle' && i % 3 !== 0 };
       n.yaw = post[2]; n.brain = folkBrain; N_[f.id] = n;
     });
     N_['meadow-wenna'].brain = wennaBrain; N_['meadow-marit'].brain = maritBrain; N_['meadow-ebb'].brain = ebbBrain;
@@ -112,10 +118,10 @@ export function addVillagerSystem(g) {
     hud.bark(n.name, lines[(n.v.said + (n.v.k || 0)) % lines.length], 4);
     lastShout = t;
   }
-  /** Walk to (tx, tz); standing there, face `yaw` (or the Wraith when `look`). Returns true on arrival. */
+  /** Walk to (tx, tz) by the streets; standing there, face `yaw`. Returns true on arrival. */
   function goStand(n, tx, tz, top, dt, yaw) {
     const d = dist(n.x, n.z, tx, tz);
-    if (d > 0.5) { stepToward(n, tx, tz, 0, top, dt); return false; }
+    if (d > 0.5) { walkTo(nav, n, tx, tz, 0, top, dt); return false; }
     halt(n); if (yaw !== undefined) n.yaw = yaw;
     return true;
   }
@@ -278,6 +284,29 @@ export function addVillagerSystem(g) {
   let loadId = 0;
   { const prev = g.navSync; g.navSync = () => { prev?.(); restart = true; loadId++; relightT = 1.5; cursor = 0; lit.clear(); outSet.clear(); queue.length = 0; doneT = 0; if (spawned) { guide.arrived = false; } }; }
 
+  // ── Errands: by day some villagers walk out and back (v.er: 0 at the post, 1 going, 2 there, 3 home) ──
+  const errandTo = [0, 0];
+  function errand(n, dt) {
+    const v = n.v;
+    if (dW(n) > 260 || (chapter.talking && dW(n) < 8)) { halt(n); return; } // too far to be seen, or being spoken to
+    if (v.er === 1 || v.er === 3) {
+      const to = v.er === 1 ? v.dest : v.post;
+      if (goStand(n, to[0], to[1], 1.4, dt, v.er === 3 ? v.yawPost : undefined)) { v.er = v.er === 1 ? 2 : 0; v.et = clock.simTime + (v.er === 2 ? 8 + rnd() * 17 : 10 + rnd() * 30); }
+      return;
+    }
+    halt(n);
+    if (v.et === undefined) v.et = clock.simTime + 3 + rnd() * 20;
+    if (clock.simTime < v.et) return;
+    if (v.er === 2) { v.er = 3; return; }
+    // Leave on an errand: the square, the well, or a street corner within ~120 m of home.
+    const r = rnd(), a = rnd() * 6.2832;
+    if (r < 0.25) { errandTo[0] = M[0] + Math.sin(a) * 5; errandTo[1] = M[1] + Math.cos(a) * 5; }
+    else if (r < 0.4) { errandTo[0] = well[0] + Math.sin(a) * 2.5; errandTo[1] = well[1] + Math.cos(a) * 2.5; }
+    else if (!nav.randomPoint(v.post[0], v.post[1], 120, rnd, errandTo)) { v.et = clock.simTime + 30; return; }
+    if (dist(errandTo[0], errandTo[1], v.post[0], v.post[1]) < 8) { v.et = clock.simTime + 5; return; }
+    v.dest[0] = errandTo[0]; v.dest[1] = errandTo[1]; v.er = 1;
+  }
+
   // ── The others: calm at their posts; on the fire night buckets, callers, and those who cower ──
   function folkBrain(n, dt) {
     const v = n.v;
@@ -286,9 +315,11 @@ export function addVillagerSystem(g) {
       return;
     }
     if (phase !== 'raid' || raidClock < v.delay) {
-      n.noLook = false; hunchTo(n, n.A.hunch, dt); goStand(n, v.post[0], v.post[1], 1.5, dt, v.yawPost);
+      n.noLook = false; hunchTo(n, n.A.hunch, dt);
+      if (phase === 'calm' && v.errand) errand(n, dt); else goStand(n, v.post[0], v.post[1], 1.5, dt, v.yawPost);
       return;
     }
+    v.er = 0;
     const burn = burningNow();
     let role = v.role;
     if (!burn.length && role !== 'huddle') role = 'huddle';
@@ -346,6 +377,7 @@ export function addVillagerSystem(g) {
 
   loop.add({ name: 'villagers', update: () => {
     const dt = clock.dt;
+    nav.newFrame();
     ensure();
     const q = graph.quests[QUEST];
     // The fire night only: pinned from the start (or, in a photo-spot playtest, once Wenna leads — the spot's

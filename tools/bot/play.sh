@@ -12,7 +12,7 @@ q="bot=1^&title=0"; [ -n "$spot" ] && q="$q^&spot=$spot"
 t0=$(curl -s http://localhost:4173/__wraith/bot/status | sed -n 's/.*"hello":\([0-9]*\).*/\1/p')
 prof="wraith-bot-$(date +%s%N)"
 cmd.exe /c start chrome --headless=new "--user-data-dir=%TEMP%\\$prof" --no-first-run --enable-unsafe-webgpu --enable-gpu \
-  --ignore-gpu-blocklist --disable-background-timer-throttling --disable-renderer-backgrounding --window-size=2560,1440 \
+  --ignore-gpu-blocklist --disable-background-timer-throttling --disable-renderer-backgrounding --window-size=${WIN:-2560,1440} \
   "http://localhost:4173/?$q$extra" >/dev/null 2>&1
 # Wait for the page to poll.
 for i in $(seq 1 60); do

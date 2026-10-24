@@ -8,6 +8,7 @@
 // Dev: ?fire=1 (or the photo spot p8-fire-night) sets fire to the 12 buildings nearest the market square at night.
 
 import { createVillageFire, heatDamage, fireTuning, S, EV, BUILDING_KINDS } from '../game/fire/villageFire.js';
+import { worldState } from '../game/worldState.js';
 
 const FIRST_SLOT = 8;        // 0..7: the camp (systems/architecture.js)
 const LIGHT_POOL = 24;       // world lights shared by the burning buildings (nearest first)
@@ -86,6 +87,26 @@ export function addVillageFireSystem(g) {
   const lights = [];
   for (let i = 0; i < LIGHT_POOL; i++) lights.push(WL.add({ x: NaN, y: NaN, z: NaN, radius: 20, color: [1, 0.4, 0.12], intensity: 1, kind: 'fire', level: 0 }));
 
+  // ---- Hearths (the chimneys of the village, for smoke once it is restored) ----
+  const hearths = (() => {
+    const site = [], lx = [], ly = [], lz = [];
+    sites.forEach((st, i) => { const c = st.id.startsWith('vil-') && st.build && st.build.meta && st.build.meta.chimneyTop; if (c) { site.push(i); lx.push(c[0]); ly.push(c[1]); lz.push(c[2]); } });
+    const n = site.length, MAX = 12;
+    return { n, site, lx, ly, lz, order: new Int16Array(MAX), d: new Float32Array(MAX), shown: 0, sortIn: 0, MAX };
+  })();
+  function rankHearths(cx, cz) {
+    const H = hearths; let k = 0;
+    for (let h = 0; h < H.n; h++) {
+      const s = H.site[h], d = Math.hypot(view.sites[s * 4] - cx, view.sites[s * 4 + 2] - cz);
+      if (d > 260 || (h * 7) % 3 === 0) continue;   // two chimneys in three are lit
+      let q = Math.min(k, H.MAX - 1);
+      if (k >= H.MAX && d >= H.d[q]) continue;
+      while (q > 0 && H.d[q - 1] > d) { H.d[q] = H.d[q - 1]; H.order[q] = H.order[q - 1]; q--; }
+      H.d[q] = d; H.order[q] = h; if (k < H.MAX) k++;
+    }
+    H.shown = k;
+  }
+
   function feed() {
     const cam = g.camera.position, wn = WL.night;
     let nc = 0;
@@ -124,6 +145,19 @@ export function addVillageFireSystem(g) {
         FL[o] = 0; FL[o + 1] = 0; FL[o + 2] = 0; FL[o + 3] = 0;
         slot++;
       }
+    }
+    // Hearth smoke: after the release the air moves again and the village's chimneys smoke (the nearest few, thin and pale).
+    if (hearths.n > 0 && worldState.restoration.meadow === 'restored' && vf.nAct === 0) {
+      if (--hearths.sortIn <= 0) { hearths.sortIn = 30; rankHearths(cam.x, cam.z); }
+      for (let c = 0; c < hearths.shown && slot < SLOTS; c++, slot++) {
+        const h = hearths.order[c], s = hearths.site[h], o = slot * 4;
+        if (view.sites[s * 4 + 3] < 0.5) { F[o + 3] = 0; continue; }
+        F[o] = view.sites[s * 4] + hearths.lx[h]; F[o + 1] = view.sites[s * 4 + 1] + hearths.ly[h]; F[o + 2] = view.sites[s * 4 + 2] + hearths.lz[h]; F[o + 3] = 1.3;
+        FX[o] = 1.0; FX[o + 1] = 0; FX[o + 2] = hearths.d[c] < 90 ? 0.8 : 0.5; FX[o + 3] = 0.35;
+        FL[o] = 0; FL[o + 1] = 0; FL[o + 2] = 0; FL[o + 3] = 0;
+      }
+      const l = Math.hypot(wind.x, wind.z) || 1;
+      FT.y = wind.x / l; FT.z = wind.z / l; FT.w = 0.3 + 0.4 * wind.strength;
     }
     for (; slot < SLOTS; slot++) F[slot * 4 + 3] = 0;
     for (; li < LIGHT_POOL; li++) lights[li].level = 0;

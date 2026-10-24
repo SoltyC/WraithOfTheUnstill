@@ -118,8 +118,8 @@ export async function addArchitectureSystem(g) {
   /** Every vent cap back on (a reset fight). */
   g.resetVents = () => { for (let k = 0; k < 3; k++) g.setVentHidden(k, false); };
   /** The Bellwether's release, as the built world sees it: the village's soot gone, its lanterns and hearths lit, and the
-   *  mill's sails turning. The sails are a site whose `spin` is the axis through its origin; the site shader only translates a
-   *  site, so for now `g.millSpin` carries the turn (angle, rate) for whoever can rotate it (see PLAN M9). */
+   *  mill's sails turning. The sails are a site whose `spin` is the axis through its origin; `g.millSpin` carries the turn
+   *  (angle, rate) and the site shader rotates that one site about it (siteSpin). */
   g.villageRestoredSites = (on = true) => {
     for (let i = 0; i < sites.length; i++) {
       const id = sites[i].id;
@@ -127,7 +127,8 @@ export async function addArchitectureSystem(g) {
       if (id.startsWith('vil-') || sites[i].lamp) view.glow[i * 4 + 3] = 1;
     }
     const m = sites.findIndex((s) => s.id === 'vil-mill-sails');
-    g.millSpin = { site: m, axis: m >= 0 && sites[m].spin ? sites[m].spin : null, rate: on && m >= 0 ? 1.1 : 0, angle: 0 };
+    const was = g.millSpin;
+    g.millSpin = { site: m, axis: m >= 0 && sites[m].spin ? sites[m].spin : null, rate: on && m >= 0 ? 1.1 : 0, angle: was ? was.angle : 0, speed: was ? was.speed : 0 };
   };
   // Chunk culling. Snapshot rendering replays recorded bundles, so Babylon's per-frame frustum test
   // never runs (every mesh here is alwaysSelectAsActiveMesh); chunks are switched by distance
@@ -153,7 +154,13 @@ export async function addArchitectureSystem(g) {
   let frame = 0;
   loop.add({ name: 'architecture', update: () => {
     frame++;
-    if (g.millSpin) g.millSpin.angle += g.millSpin.rate * clock.dt;
+    const ms = g.millSpin;
+    if (ms && ms.site >= 0 && ms.axis) {
+      // The sails ease up to speed (and down again), and turn about the windshaft in the site shader.
+      ms.speed = (ms.speed || 0) + (ms.rate - (ms.speed || 0)) * Math.min(1, clock.dt * 0.25);
+      ms.angle = (ms.angle + ms.speed * clock.dt) % (Math.PI * 2);
+      view.spin.x = ms.site; view.spin.y = ms.angle; view.spin.z = ms.axis[0]; view.spin.w = ms.axis[2];
+    } else view.spin.x = -1;
     // Everything draws through the loading frames (every pipeline is made then, BRIEF §15); culling starts after.
     if (frame > WARM_FRAMES && frame % 6 === 0) cullChunks(camera.position.x, camera.position.z);
     const p = controller.pos;

@@ -32,6 +32,8 @@ export class Loop {
     /** CPU ms of this frame's systems and of scene.render + GPU bookkeeping (set before late systems). */
     this.sysMs = 0.5;
     this.renderMs = 0.5;
+    /** > 0: every frame advances exactly this many seconds (the bot's film mode: deterministic footage). */
+    this.fixedDt = 0;
     this._frame = this._frame.bind(this);
   }
 
@@ -74,7 +76,7 @@ export class Loop {
     fs.ms[fs.head] = now - this.last;
     fs.head = (fs.head + 1) % fs.capacity;
     if (fs.count < fs.capacity) fs.count++;
-    clock.realDt = (now - this.last) * 0.001;
+    clock.realDt = this.fixedDt > 0 ? this.fixedDt : (now - this.last) * 0.001;
     this.last = now;
     advanceClock();
     const sys = this.systems, sp = this.prof;

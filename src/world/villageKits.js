@@ -478,6 +478,7 @@ function building(b, facing, o, extras) {
     rf.box(-0.75, 0.75, FLOOR, plateY + 0.05, cc - 0.4, cc + 0.4, MAT.STONE, S(), { solid: true });
     rf.box(-0.36, 0.36, plateY, top, cc - 0.3, cc + 0.3, MAT.STONE, S());
     rf.box(-0.46, 0.46, top, top + 0.14, cc - 0.4, cc + 0.4, MAT.STONE, S());
+    o.chimneyTop = rf.pt(0, top + 0.2, cc);
     rf.box(-0.55, 0.55, FLOOR + 0.9, FLOOR + 1.0, cc - 0.52, cc + 0.4, MAT.STONE, S());
     const fp = rf.sub(0, cc - se * 0.4, se > 0 ? PI : 0);       // the hearth opening on the breast's inner face
     fp.box(-0.38, 0.38, FLOOR, FLOOR + 0.85, -0.02, 0.0, MAT.IRON, S());
@@ -531,6 +532,8 @@ function ridgeOf(o) {
 }
 function finishMeta(fn, o, extra = {}) {
   fn.meta = { ...(o.h0 != null && o.pitch != null ? ridgeOf(o) : {}), kind: o.kind, W: o.W, D: o.D, J: o.J || 0, ox: o.ox || 0, oz: o.oz || 0, foot: o.foot == null ? 0.45 : o.foot, door: o.door, roofMat: o.roofMat, pitch: o.pitch, pattern: o.pattern, framed: true, shop: o.shop, lean: !!o.lean, ...extra };
+  // The chimney's mouth (site-local x, y, z), known once the build has run (hearth smoke after the release).
+  Object.defineProperty(fn.meta, 'chimneyTop', { get: () => o.chimneyTop || null, enumerable: false });
   return fn;
 }
 function placeDoorLantern(o, r, always) {
