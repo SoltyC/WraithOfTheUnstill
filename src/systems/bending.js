@@ -7,7 +7,7 @@ import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 /** @param {any} g  shared boot context */
 export function addBendingSystem(g) {
-  const { loop, game, input, Action, frost, frostMod, gale, elements, ribbon, crystals, streaks, controller, arm, combat, combatTuning, sfx, SFX, clock, ground, camera, shaped, wraithView, castFlash, capture } = g;
+  const { loop, game, input, Action, frost, frostMod, gale, elements, ribbon, crystals, streaks, controller, arm, combat, combatTuning, sfx, SFX, clock, ground, camera, shaped, wraithView, castFlash, capture, flow } = g;
   let primaryHeld = 0;
   const HOLD = 0.22; // s: a shorter press is a tap (Sweep), a longer one holds the Ribbon
   /** Aim: where the camera's view ray meets the ground, kept within the verbs' range. → aim.x/y/z */
@@ -121,6 +121,27 @@ export function addBendingSystem(g) {
     crystals.time = clock.simTime; crystals.update();
     if (bendRoll.t >= spec.seconds) { bendRoll.active = false; game.pendingBend = null; game.wraithHeld = capture; }
   }
+  // The flowing Gust (Flow 3) carries the Wraith along its lane: for CARRY_TIME s a push along the
+  // aim, through whichever mode it is in (the surf's speed, the glide's airspeed, or the body's own
+  // velocity with a small lift), so a Gust is a ride, not a push-and-stop.
+  const CARRY_TIME = 0.7, CARRY_ACCEL = 16, CARRY_KICK = 9, CARRY_LIFT = 3.2;
+  let carryT = 0, carryX = 0, carryZ = 0;
+  function carry() {
+    carryT = CARRY_TIME; carryX = Math.sin(arm.yaw); carryZ = Math.cos(arm.yaw);
+    // On foot or in the air (no surf or glide to push): a kick along the lane and a hop, which a held glide can catch.
+    if (!controller.glide.active && !controller.surf.active) {
+      const v = controller.vel; v.x += carryX * CARRY_KICK; v.z += carryZ * CARRY_KICK;
+      if (controller.grounded) { v.y = CARRY_LIFT; controller.grounded = false; }
+    }
+  }
+  function stepCarry(dt) {
+    if (carryT <= 0) return;
+    carryT = Math.max(0, carryT - dt);
+    const k = Math.min(1, carryT / CARRY_TIME * 2) * CARRY_ACCEL * dt;     // eases out over the last half
+    const gl = controller.glide, sf = controller.surf;
+    if (gl.active) { gl.speed = Math.min(gl.speed + k, 30); gl.vy += 3 * dt; }
+    else if (sf.active && controller.grounded) sf.speed = Math.min(sf.speed + k, 26);
+  }
   loop.add({ name: 'bending', update: () => {
     if (game.pendingBend !== null) {
       if (!bendRoll.active && game.worldSettled() && game.pendingTrail === null && game.pendingWalk === null) {
@@ -131,7 +152,8 @@ export function addBendingSystem(g) {
     }
     const dt = clock.dt;
     // No casting mid-conversation (the mouse is still captured while someone speaks).
-    const can = !arm.free && !controller.scripted && !controller.surf.active && !(g.chapter && g.chapter.talking) && !g.verbBlock;
+    // (Casting mid-surf is allowed: a Sweep thrown from the carve is the Flow payoff, docs §3.)
+    const can = !arm.free && !controller.scripted && !(g.chapter && g.chapter.talking) && !g.verbBlock;
     const able = can && combat.dying === 0;
     // The element in hand (keys 1–5): only unlocked, built elements answer.
     for (let k = 0; k < ELEMENTS.length; k++) {
@@ -140,8 +162,10 @@ export function addBendingSystem(g) {
     const isGale = elements.active === 'gale';
     if (able) {
       if (input.down[Action.Primary]) primaryHeld += dt;
-      if (input.released[Action.Primary] && primaryHeld < HOLD && combat.spend(isGale ? combatTuning.costGust : combatTuning.costSweep)) {
-        if (isGale) gale.castGust = true; else frost.castSweep = true;
+      if (input.released[Action.Primary] && primaryHeld < HOLD && combat.spend((isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
+        // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
+        frost.power = gale.power = flow.power; frost.flowing = flow.flowing;
+        if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
         castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
       }
       if (!input.down[Action.Primary]) primaryHeld = 0;
@@ -149,13 +173,14 @@ export function addBendingSystem(g) {
     const holding = able && primaryHeld >= HOLD && combat.focus > 1;
     frost.ribbonHeld = holding && !isGale;
     gale.vortexHeld = holding && isGale;
-    if (able && input.pressed[Action.Heavy] && combat.spend(isGale ? combatTuning.costUpdraft : combatTuning.costCrystal)) {
+    if (able && input.pressed[Action.Heavy] && combat.spend((isGale ? combatTuning.costUpdraft : combatTuning.costCrystal) * flow.costMul)) {
       if (isGale) gale.castUpdraft = true; else frost.castCrystal = true;
       arm.shake += 0.01; castFlash.v = 1; arm.kick += 0.02;
     }
     // The Wraith turns to face what it bends.
     if (frost.castSweep || frost.castCrystal || frost.ribbonHeld || gale.castGust || gale.castUpdraft || gale.vortexHeld) controller.yaw = arm.yaw;
     updateAim();
+    stepCarry(dt);
     const b = wraithView.wraith.body;
     frost.hx = b.ha[3]; frost.hy = b.ha[4]; frost.hz = b.ha[5];
     frost.tx = aim.x; frost.ty = aim.y; frost.tz = aim.z;

@@ -6,6 +6,7 @@
 import { MAX_SHAPED } from '../shaped/shaped.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
+import { FLOW_EVENT } from '../flow.js';
 
 export const combatTuning = {
   health: 100, focus: 100,
@@ -28,6 +29,7 @@ export function createCombat(ctx) {
   const { shaped, frost, controller, ts, clock, teleport } = ctx;
   const warden = ctx.warden || null;
   const gale = ctx.gale || null;
+  const flow = ctx.flow || null;     // Flow (game/flow.js): feeds it reactions, near misses and blows; reads what it gives
   const T = combatTuning;
   const sweepSeen = new Uint32Array(4 * MAX_SHAPED);   // last sweep id that hit each slot, per sweep slot
   const gustSeen = new Uint32Array(3 * MAX_SHAPED);    // the same for the Gale's gusts
@@ -64,7 +66,7 @@ export function createCombat(ctx) {
       if (this.dying > 0) { stepDeath(dt); return; }
       // Focus: restored by movement and flow, spent by the verbs.
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
-      const regen = controller.surf.active ? T.focusSurf : sp > 2 ? T.focusMove : T.focusIdle;
+      const regen = (controller.surf.active ? T.focusSurf : sp > 2 ? T.focusMove : T.focusIdle) * (flow !== null ? flow.focusMul : 1);
       // Inside a Chanter's pollen, focus does not return (PLAN.md M8).
       if (!(shaped.pollenAt && shaped.pollenAt(controller.pos.x, controller.pos.z) > 0.3)) this.focus = Math.min(T.focus, this.focus + regen * dt);
       // The Gale clears hanging pollen: a Gust's lane and an Updraft's column blow it away.
@@ -73,8 +75,9 @@ export function createCombat(ctx) {
         if (gale.updraftEvent) shaped.disperseNear(gale.updraftX, gale.updraftZ, 5);
         if (gale.vortexStrength > 0.5) shaped.disperseNear(gale.vortexX, gale.vortexZ, 3);
       }
-      if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * dt);
-      if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * dt);
+      const cheap = flow !== null ? flow.costMul : 1;     // verbs cost less at Flow 2+
+      if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * cheap * dt);
+      if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * cheap * dt);
       this.wound += ((1 - this.health / T.health) - this.wound) * (1 - Math.exp(-dt * 3));
       ribbonTick -= dt; bodyTick -= dt;
       hits(dt);
@@ -132,7 +135,10 @@ export function createCombat(ctx) {
       // Crystallize: the formation freezes what it catches.
       if (frost.crystalEvent) {
         const dx = cx - frost.crystalX, dz = cz - frost.crystalZ;
-        if (dx * dx + dz * dz < 2.8 * 2.8) shaped.freeze(i, T.freezeTime);
+        if (dx * dx + dz * dz < 2.8 * 2.8) {
+          if (flow !== null && s.wet > 0 && !shaped.isFrozen(i)) flow.hit(FLOW_EVENT.REACTION);   // soaked, then frozen
+          shaped.freeze(i, T.freezeTime);
+        }
       }
     }
   }
@@ -198,6 +204,7 @@ export function createCombat(ctx) {
 
   /** A joint shatters: the heaviest impact in the game so far. */
   function breakJoint() {
+    if (flow !== null) flow.hit(FLOW_EVENT.SHATTER);
     clock.hitStop = Math.max(clock.hitStop, 0.16);
     self.shake += 0.06; self.kick += 0.09;
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 2; sx.z = controller.pos.z; sx.gain = 1.4; sx.play(SFX.SHATTER); sx.play(SFX.BOOM); }
@@ -215,7 +222,9 @@ export function createCombat(ctx) {
       const along = ex * gale.gustDX[k] + ez * gale.gustDZ[k], across = Math.abs(-ex * gale.gustDZ[k] + ez * gale.gustDX[k]);
       if (along < 1 && along > -1.4 && across < gale.gustHW[k] + 0.5) {
         gustSeen[k * MAX_SHAPED + i] = gale.gustId[k];
+        const soaked = s.wet > 0;
         strike(i, T.gustDamage, gale.gustDX[k], gale.gustDZ[k], true);
+        if (flow !== null) flow.hit(soaked ? FLOW_EVENT.REACTION : FLOW_EVENT.STRIP);   // Gale over a soaked body rimes it; a bare strike strips
         if (!shaped.isLive(i)) return;
         b.vx += gale.gustDX[k] * T.gustShove; b.vz += gale.gustDZ[k] * T.gustShove;
       }
@@ -243,11 +252,12 @@ export function createCombat(ctx) {
   /** A hit on slot i: frozen Shaped shatter (the reaction), others take damage and stagger. */
   function strike(i, dmg, dx, dz, heavy) {
     const frozen = shaped.isFrozen(i);
-    const amount = frozen ? dmg * T.shatterMul : dmg;
+    const amount = (frozen ? dmg * T.shatterMul : dmg) * (flow !== null ? flow.power : 1);   // Flow 2+: stronger verbs
     const b = shaped.slots[i].body, bx = b.sx[1], by = b.sy[1], bz = b.sz[1];
     shaped.chip(i, dx, dz, frozen && heavy ? 40 : heavy ? 24 : frozen ? 10 : 3);
     const killed = shaped.damage(i, amount, true, dx * 3, dz * 3);
     const sx = self.sfx, big = frozen && (heavy || killed);
+    if (big && flow !== null) flow.hit(FLOW_EVENT.SHATTER);   // freeze → shatter landed
     if (sx && (big || heavy || ribbonTick <= 0)) {
       sx.x = bx; sx.y = by; sx.z = bz; sx.gain = big ? 1.2 : heavy ? 1 : 0.5;
       sx.play(big ? SFX.SHATTER : heavy ? SFX.THUD : SFX.CRUNCH);
@@ -264,7 +274,8 @@ export function createCombat(ctx) {
     if (shaped.slams > 0) self.shake += 0.02 * Math.max(0, 1 - shaped.slamDist / 16);
     const wh = warden && warden.active ? warden.hits : 0;
     if (shaped.hits === 0 && wh === 0) return;
-    if (controller.dodgeT > 0) return;               // the bend-step slips through
+    if (controller.dodgeT > 0) { if (flow !== null) flow.nearMiss(); return; }   // the bend-step slips through: a near miss feeds Flow
+    if (flow !== null) flow.hurt();
     self.health -= shaped.hitDamage * self.shapedDamageMul + (wh ? warden.hitDamage : 0);
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
@@ -277,6 +288,7 @@ export function createCombat(ctx) {
   /** Damage that no bend-step slips (the Warden's spikes): a blow, and death at nothing left. */
   self.hurtRaw = (amount) => {
     if (self.dying > 0 || amount <= 0) return;
+    if (flow !== null) flow.hurt();
     self.health -= amount;
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
@@ -314,6 +326,7 @@ export function createCombat(ctx) {
     if (self.dying >= T.deathTime && self.dying - dt < T.deathTime) teleport(self.shrineX, self.shrineZ);
     if (self.dying >= T.deathTime + T.reformTime) {
       self.dying = 0; controller.hold = false;
+      if (flow !== null) flow.reset(false);
       self.health = T.health; self.focus = T.focus * 0.5; self.wound = 0;
     }
   }

@@ -173,7 +173,7 @@ export function addCreatureSystems(g) {
     const deathFade = dying > 0 ? Math.max(0, 1 - dying / 1.2) : 1;
     const reform = dying > combatTuning.deathTime ? Math.min(1, (dying - combatTuning.deathTime) / combatTuning.reformTime) : 0;
     wraithView.cowlLight = (1 - 0.65 * w) * gutter * Math.max(deathFade, reform);
-    wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus + 1.2 * castFlash.v) * Math.max(deathFade, reform);
+    wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus + 1.2 * castFlash.v + 0.07 * g.flow.show) * Math.max(deathFade, reform);   // Flow brightens the hands a little
     wraithView.frost = Math.min(1, w * 1.15);
     wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;
     vignette.style.opacity = String(Math.max(0, (w - 0.65) / 0.35).toFixed(3));

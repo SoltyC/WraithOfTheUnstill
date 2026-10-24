@@ -207,7 +207,9 @@ export async function createActors(g) {
   // Combat (Phase 5): focus, hits and reactions, lock-on, dodge, wounds and death.
   const { createCombat, combatTuning } = await import('../game/combat/combat.js');
   const { clock } = await import('../core/clock.js');
-  const combat = createCombat({ shaped, frost, gale, warden, controller, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
+  const { createFlow, flowTuning } = await import('../game/flow.js');
+  const flow = createFlow();
+  const combat = createCombat({ shaped, frost, gale, warden, controller, flow, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
   climb.spend = (c) => combat.spend(c);
   combat.sfx = sfx;
   combat.shrineX = monastery.pos[0]; combat.shrineZ = monastery.pos[1];
@@ -236,7 +238,7 @@ export async function createActors(g) {
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
     bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
-    climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
+    climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, flow, flowTuning, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },
   });

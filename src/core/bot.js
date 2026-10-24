@@ -54,6 +54,7 @@ export function startBot(w, qs) {
       t: r2(g.clock.simTime), tod: r2(g.params.v.timeOfDay),
       pos: [r2(p.x), r2(p.y), r2(p.z)], camYaw: r2(g.arm.yaw), camPitch: r2(g.arm.pitch),
       health: cb ? r2(cb.health) : null, focus: cb ? r2(cb.focus) : null,
+      flow: g.flow ? { v: r2(g.flow.value), tier: g.flow.tier, show: r2(g.flow.show), streak: g.flow.streak, secs: Array.from(g.flow.timeAt, r2), counts: Array.from(g.flow.counts) } : null,
       element: g.elements?.active, unlocked: g.elements ? [...g.elements.unlocked] : null,
       climbing: !!(g.activeClimb && g.activeClimb.mode), talking: !!g.chapter?.talking,
       line: lastLine || null, task: document.querySelector('.task-line.on')?.textContent || null,

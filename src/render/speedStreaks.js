@@ -16,14 +16,14 @@ import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 
-const COUNT = 160;
+const BASE = 160, COUNT = 224;   // the extra 64 show only with Flow
 
 const vertexWGSL = /* wgsl */ `
 attribute position: vec3f;          // x = streak, yz = corner (−1..1)
 uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform streakParams: vec4f;        // xyz = travel velocity (m/s), w = distance travelled (m)
-uniform streakFade: vec4f;          // x = intensity 0..1
+uniform streakFade: vec4f;          // x = intensity 0..1, y = Flow 0..1 (longer, brighter, more of them)
 varying vUv: vec2f;
 varying vAlpha: f32;
 fn hs(n: f32) -> f32 { return fract(sin(n * 127.1) * 43758.5453); }
@@ -43,7 +43,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let L = 44.0;
   let along = fract(c - uniforms.streakParams.w * (1.1 + 0.4 * hs(id * 5.9)) / L) * L - L * 0.5;
   let p = uniforms.cameraPosition + side * a * 9.0 + up * (b * 7.0 - 2.0) + f * along;
-  let len = 0.4 + speed * 0.09 * (0.6 + 0.8 * hs(id * 7.3));
+  let flow = uniforms.streakFade.y;
+  let len = (0.4 + speed * 0.09 * (0.6 + 0.8 * hs(id * 7.3))) * (1.0 + 0.7 * flow);
   let toCam = normalize(uniforms.cameraPosition - p);
   let w = normalize(cross(f, toCam));
   let wp = p + f * corner.x * len + w * corner.y * (0.006 + 0.008 * hs(id * 9.1));
@@ -51,7 +52,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // Fade: by intensity, near the ends of the box, and close to the camera (no streak in the face).
   let d = length(p - uniforms.cameraPosition);
   let fade = uniforms.streakFade.x * (1.0 - smoothstep(14.0, 22.0, abs(along))) * smoothstep(2.0, 5.0, d);
-  vertexOutputs.vAlpha = fade * (0.4 + 0.6 * hs(id * 11.3));
+  // Flow makes them brighter and brings an extra set in (ids from BASE_COUNT up show only with Flow).
+  let extra = select(1.0, smoothstep(0.0, 0.5, flow), id >= ${BASE}.0);
+  vertexOutputs.vAlpha = fade * (0.4 + 0.6 * hs(id * 11.3)) * (1.0 + 0.9 * flow) * extra;
   if (vertexOutputs.vAlpha < 0.002) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
   vertexOutputs.vUv = corner;
 }
@@ -108,14 +111,15 @@ export function createSpeedStreaks(scene, atmo) {
   let travelled = 0;
   return {
     mesh,
-    /** Owner fields: travel velocity (m/s), frame dt (s), traversal engagement 0..1. */
-    vx: 0.5, vy: 0.5, vz: 0.5, dt: 0.5, engaged: 0.5 - 0.5,
+    /** Owner fields: travel velocity (m/s), frame dt (s), traversal engagement 0..1, Flow 0..3 (eased). */
+    vx: 0.5, vy: 0.5, vz: 0.5, dt: 0.5, engaged: 0.5 - 0.5, flow: 0.5 - 0.5,
     update() {
       const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz);
       // Distance travelled drives the streaks (a phase from time × speed would jump as speed changes).
       travelled = (travelled + sp * this.dt) % 4400;
       params.x = this.vx; params.y = this.vy; params.z = this.vz; params.w = travelled;
       fade.x = this.engaged * Math.min(1, Math.max(0, (sp - 7) / 9));
+      fade.y = Math.min(1, this.flow / 3);
     },
   };
 }
