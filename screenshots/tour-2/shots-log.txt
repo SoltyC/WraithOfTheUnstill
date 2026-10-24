@@ -1,13 +1,2 @@
-2026-10-23T23:37:04.737Z 1/12 tour-01-dawn-square: saved screenshots/tour-2/tour-01-dawn-square.png
-2026-10-23T23:37:25.035Z 2/12 tour-02-morning-entry: saved screenshots/tour-2/tour-02-morning-entry.png
-2026-10-23T23:37:42.072Z 3/12 tour-03-farm: saved screenshots/tour-2/tour-03-farm.png
-2026-10-23T23:37:57.282Z 4/12 tour-04-noon-street: saved screenshots/tour-2/tour-04-noon-street.png
-2026-10-23T23:38:07.319Z 5/12 tour-05-overcast-square: saved screenshots/tour-2/tour-05-overcast-square.png
-2026-10-23T23:38:17.107Z 6/12 tour-06-afternoon-chapel: saved screenshots/tour-2/tour-06-afternoon-chapel.png
-2026-10-23T23:38:32.784Z 7/12 tour-07-golden-stairfoot: saved screenshots/tour-2/tour-07-golden-stairfoot.png
-2026-10-23T23:38:42.371Z 8/12 tour-08-dusk-market: saved screenshots/tour-2/tour-08-dusk-market.png
-2026-10-23T23:38:51.382Z 9/12 tour-09-dusk-aerial: saved screenshots/tour-2/tour-09-dusk-aerial.png
-2026-10-23T23:39:00.609Z 10/12 tour-10-night-street: saved screenshots/tour-2/tour-10-night-street.png
-2026-10-23T23:39:16.118Z 11/12 tour-11-night-from-hill: saved screenshots/tour-2/tour-11-night-from-hill.png
-2026-10-23T23:39:25.253Z 12/12 tour-12-predawn: saved screenshots/tour-2/tour-12-predawn.png
-2026-10-23T23:39:25.253Z Shots done: 12/12 spot(s) (tour-*) → screenshots/tour-2/.
+2026-10-24T00:00:14.390Z 1/1 tour-06-afternoon-chapel: saved screenshots/tour-2/tour-06-afternoon-chapel.png
+2026-10-24T00:00:14.395Z Shots done: 1/1 spot(s) (tour-06*) → screenshots/tour-2/.

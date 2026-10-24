@@ -624,6 +624,22 @@ analytic solids (not 800 platforms).
    of the fire state.
 6. **The Bellwether at the manor** — vents, climb, valves, gale exhale, the Shaped at 30 %, the
    release down the stair. (5–6)
+   **Stage 6 first pass + village polish (2026-10-24):** the Bellwether's neck and head
+   (`game/bellwether/`: a 54 m turf-and-stone neck arcing out of the west wing's open end over the
+   forecourt, a ram-horned grazer skull, three valves; its own earth shader on the Warden's smooth-mass
+   blend), the neck climb, the director (`fight.js`: aimed Gusts strip the three chimney vents, climb to
+   open the valves, a gale every 25 s with shelter, the Shaped at 4 of 6), the wiring and release
+   (`systems/bellwetherFight.js`: cinematic, wind front, bells, char cleared, Gale unlocked, saved).
+   Village polish: real house fires along the ridge, an arch bridge, a windmill, the chapel, gardens,
+   carts and field walls, window spill light, the forecourt paving kept clear of grass.
+   **Played by a bot** (`src/core/bot.js`, `tools/bot/`: the real inputs over a preview-server bridge,
+   headless Chrome on the 3060): the whole fire night (Wenna → Hearn → Ebb → 15 fires out, none lost,
+   ~3 min), Hild, the 193 s climb, the vents, the climb and the valves, the release. Fixed on the way:
+   villagers' cloth (13 → 70 fps in the burning village), dynamic resolution stuck low (the soft robe),
+   dousing (the whole stream), focus drain and burns, Ebb's house, the "0/14" counter, the summit gate
+   blocking the gatehouse, Gust unable to reach the chimneys, the fight spot inside the fountain, the
+   night pinned over every meadow playtest. Open: the Bellwether lying at rest reads as a hedge; the
+   release cinematic needs a review on screen; villagers still path in straight lines; dusk aerials dark.
 
 ### M9 — The Meadow Warden
 

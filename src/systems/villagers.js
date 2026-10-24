@@ -348,7 +348,11 @@ export function addVillagerSystem(g) {
     const dt = clock.dt;
     ensure();
     const q = graph.quests[QUEST];
-    const want = q.state === 'active';
+    // The fire night only: pinned from the start (or, in a photo-spot playtest, once Wenna leads — the spot's
+    // own hour holds before that) until the fires are out; then the night runs on (the climb, the
+    // Bellwether). Pinning for the whole quest held every meadow playtest at 22:00 (bot playtest 2026-10-24).
+    const started = flags.has('meadow:guide-lead') || flags.has('meadow:arrived');
+    const want = q.state === 'active' && !flags.has('meadow:fires-out') && (started || !g.qs?.get('spot'));
     if (want !== pinned) { pinned = want; if (want) pinTime(NIGHT_HOUR); else unpinTime(); }
     phase = !flags.has('meadow:arrived') || flags.has('meadow:stair-open') ? 'calm' : !flags.has('meadow:fires-out') ? 'raid' : 'after';
     raidClock = phase === 'raid' ? raidClock + dt : 0;
