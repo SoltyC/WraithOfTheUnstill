@@ -367,6 +367,17 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     ssr = 0.0;
   }
 
+  // Rain: stone, plaster and timber darken and take a sheen; the wet runs down, so it is heavier
+  // toward the ground and on what faces up (roofs shine).
+  let wetA = uniforms.wetParams.x;
+  if (wetA > 0.002 && mid != 5 && mid != 4 && mid != 18 && snow < 0.5) {
+    let upw = clamp(N.y, 0.0, 1.0);
+    let wk = wetA * clamp(0.55 + 0.25 * upw + 0.3 * (1.0 - smoothstep(0.0, 2.5, fragmentInputs.vLocalY)), 0.0, 1.0);
+    albedo *= mix(1.0, 0.6, wk);
+    rough = mix(rough, 0.22, wk * 0.75);
+    ssr = max(ssr, wk * upw * upw * 0.3 * (0.04 + 0.96 * pow(1.0 - max(dot(N, V), 0.0), 5.0)));
+  }
+
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let nl = dot(N, L);

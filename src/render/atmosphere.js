@@ -52,7 +52,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   const skyViewMoon = tex(SKYVIEW_W, SKYVIEW_H, 'atmo-skyview-moon');
   const aerialLut = tex(AP_RES * AP_SLICES, AP_RES, 'atmo-aerial');
 
-  const paramsData = new Float32Array(40);
+  const paramsData = new Float32Array(44);
   const atmoParams = new StorageBuffer(engine, paramsData.byteLength, undefined, 'atmo-params');
   const atmoLight = new StorageBuffer(engine, 13 * 16, undefined, 'atmo-light'); // key, sky up/side, horizon+exposure, 9 SH
   // Frame meter, written by the post chain's metering pass (post/meter.js); zero = no meter yet.
@@ -105,6 +105,8 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,
+    /** Thunderstorm 0..1 (darker sky and exposure) and the lightning key illuminance (added to the key). */
+    storm: 0.5 - 0.5, flash: 0.5 - 0.5,
     /** Closed share of the cloud deck (0..1), derived from cover each frame. */
     deck: 0.5 - 0.5,
     /** Snap exposure every frame (frozen-clock captures: converge, never ease). */
@@ -137,6 +139,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
       const dim = 0.015 + 0.985 * (1 - cc) * (1 - cc) * (1 - cc);
       p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
       p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
+      p[40] = this.storm; p[41] = this.flash; p[42] = 0; p[43] = 0;
       p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = 0;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;

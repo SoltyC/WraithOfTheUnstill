@@ -7,7 +7,7 @@
 import { GRID_N, GRID_CELL, MAX_PER_CELL, LIGHTS_VEC4 } from '../render/lightGrid.js';
 
 /** Uniforms every lit material declares (names must match render/environment.js). */
-export const ENV_UNIFORMS = ['keyDir', 'keyColor', 'skyZenith', 'skyHorizon', 'groundBounce', 'sunDir', 'sunHalo', 'fogParams', 'cameraPosition', 'envMisc', 'screenInfo', 'artParams'];
+export const ENV_UNIFORMS = ['keyDir', 'keyColor', 'skyZenith', 'skyHorizon', 'groundBounce', 'sunDir', 'sunHalo', 'fogParams', 'cameraPosition', 'envMisc', 'screenInfo', 'artParams', 'wetParams'];
 
 export const ENV_DECL = /* wgsl */ `
 uniform keyDir: vec3f;
@@ -22,6 +22,7 @@ uniform cameraPosition: vec3f;
 uniform envMisc: vec4f;
 uniform screenInfo: vec4f;
 uniform artParams: vec4f; // x = glint intensity; y, z, w = grade (desaturate, warmth, flatten); 0 = neutral
+uniform wetParams: vec4f; // x = surface wetness 0..1 (rain; dries after), y = puddle fill 0..1, z = rain intensity 0..1, w = lightning flash 0..1
 `;
 
 export const COMMON_WGSL = /* wgsl */ `

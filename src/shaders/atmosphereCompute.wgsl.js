@@ -240,7 +240,7 @@ fn deckCover() -> f32 { return clamp((P.weather.x - 0.35) / 0.65, 0.0, 1.0); }
 // zenith (CIE overcast gradient, (1 + 2 sin θ) / 3).
 fn overcastRadiance(dir: vec3f) -> vec3f {
   let e = P.weather.y * max(P.sunDir.y, 0.04) + P.weather.z * max(P.moonDir.y, 0.04) * 0.6;
-  return vec3f(0.90, 0.94, 1.0) * e * 0.22 / PI_A * (1.0 + 2.0 * max(dir.y, 0.0)) / 2.0;
+  return vec3f(0.90, 0.94, 1.0) * e * 0.22 * (1.0 - 0.45 * P.storm.x) / PI_A * (1.0 + 2.0 * max(dir.y, 0.0)) / 2.0;
 }
 fn skyRadiance(dir: vec3f, r: f32) -> vec3f {
   return mix(clearSkyRadiance(dir, r), overcastRadiance(dir), deckCover() * 0.92);
@@ -261,7 +261,8 @@ fn main() {
   // Key light: whichever of sun and moon is brighter after transmittance.
   let sunC = sampleTransmittance(r, P.sunDir.y) * P.sunDir.w * select(0.0, 1.0, P.sunDir.y > -0.02);
   let moonC = sampleTransmittance(r, P.moonDir.y) * P.moonDir.w * MOON_TINT * select(0.0, 1.0, P.moonDir.y > -0.02);
-  outLight[0] = vec4f(select(moonC, sunC, dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0))), 0.0);
+  let keyBase = select(moonC, sunC, dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
+  outLight[0] = vec4f(keyBase, 0.0);
   // Cosine-weighted irradiance over the upper hemisphere (up normal) and a side normal.
   var up = vec3f(0.0);
   var side = vec3f(0.0);
@@ -338,9 +339,12 @@ fn main() {
   }
   // Weather: an overcast or snowing day is meant to read grey and heavy, not auto-exposed back
   // to a sunny day's brightness (−0.5 stop under a closed deck).
-  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * deckCover());
+  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * deckCover()) * (1.0 - 0.3 * P.storm.x);
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));
+  // A lightning strike lights the world as a brief key (the owner turns the key direction toward
+  // it); added last so it moves neither the sky's light nor the exposure.
+  outLight[0] = vec4f(keyBase + vec3f(0.82, 0.9, 1.0) * P.storm.y, 0.0);
 }
 `;

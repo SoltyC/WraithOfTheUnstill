@@ -12,6 +12,8 @@ const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 -
 export async function addEnvironmentSystems(g) {
   const { loop, engine, env, atmosphere, content, camera, streamer, shadows, post, rocks, weather, ws, clock, ground, pendingTp, warden, wardenMod, restoration,
     params, spindrift, dust, snowfall, sfx, SFX, arm, frost, controller, terrainState, footprints, toggles, game, registerToggle, ring, wraithView, setRenderScale } = g;
+  // Rain, lightning and thunder (systems/storm.js): the strike turns the key light, so it runs first.
+  (await import('./storm.js')).addStormSystems(g);
   loop.add({ name: 'atmosphere', update: () => {
     // Materials read their own pixel position in the scene target: the internal size.
     env.env.screenInfo.x = post.post.width; env.env.screenInfo.y = post.post.height;
@@ -35,6 +37,10 @@ export async function addEnvironmentSystems(g) {
   let fogGroundY = controller.pos.y, snowWX = 1, snowWZ = 0;
   loop.add({ name: 'weather', update: () => {
     weather.restored = ws.restoration.frost === 'restored' ? 1 : 0;
+    weather.meadowRestored = ws.restoration.meadow === 'restored' ? 1 : 0;
+    weather.meadow = bwM / Math.max(bwF + bwM, 1e-3);  // the meadow's weight here (eased below)
+    // A load, a teleport and a capture show the weather outright, not easing in from the old place.
+    if (pendingTp.active || g.capture) weather.snap = true;
     weather.override = ws.weatherOverride;
     weather.dt = clock.dt;
     weather.update();
@@ -271,12 +277,14 @@ export async function addEnvironmentSystems(g) {
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
   reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });
+  reg({ key: 'rain', label: 'rain (streaks, splashes)', group: 'System', on: true, onChange: (on) => { g.rain.mesh.setEnabled(on); g.rain.splashMesh.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'rocks', label: 'rock outcrops', group: 'System', on: true, onChange: (on) => { for (const m of rocks.meshes) m.setEnabled(on); engine.snapshotRenderingReset(); } });
   reg({ key: 'player', label: 'player (the Wraith)', group: 'System', on: true, onChange: (on) => { wraithView.setEnabled(on); engine.snapshotRenderingReset(); } });
   // Shadows fade under a closed cloud deck (what little sun remains is diffused by it).
   let shadowsOn = true;
   reg({ key: 'shadows', label: 'shadows', group: 'System', on: true, onChange: (on) => { shadowsOn = on; } });
-  loop.add({ name: 'shadowStrength', update: () => { shadows.strength = shadowsOn ? 1 - 0.85 * atmosphere.deck : 0; } });
+  // (A lightning flash is a hard, shadowed key light: it brings them back for its moment.)
+  loop.add({ name: 'shadowStrength', update: () => { shadows.strength = shadowsOn ? Math.max(1 - 0.85 * atmosphere.deck, Math.min(1, g.lightning.flash * 1.6)) : 0; } });
   reg({ key: 'autosave', label: 'autosave', group: 'System', on: true });
   reg({ key: 'footprints', label: 'player footprints', group: 'Terrain', on: true });
 }

@@ -6,13 +6,13 @@
 // wind field: the stilled steppe is silent, the release brings the wind back. The context starts
 // on the first key or pointer press (browser autoplay rules).
 
-export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9 };
+export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, THUNDER: 10 };
 const VOICES = 20;
 
 export function createSfx() {
   /** @type {AudioContext|null} */
   let ac = null;
-  let master = null, windGain = null, windFilter = null, hissGain = null, hissFilter = null;
+  let master = null, windGain = null, windFilter = null, hissGain = null, hissFilter = null, rainGain = null, rainLowGain = null;
   const voices = [];
   let next = 0;
 
@@ -51,6 +51,45 @@ export function createSfx() {
     hissFilter = ac.createBiquadFilter(); hissFilter.type = 'bandpass'; hissFilter.frequency.value = 3200; hissFilter.Q.value = 1.4;
     hissGain = ac.createGain(); hissGain.gain.value = 0;
     hs.connect(hissFilter); hissFilter.connect(hissGain); hissGain.connect(master); hs.start(0, 1.1);
+    // Rain bed: a bright patter on leaves and ground (band-passed noise) over a low drumming wash.
+    const rs = ac.createBufferSource(); rs.buffer = nb; rs.loop = true;
+    const rf = ac.createBiquadFilter(); rf.type = 'bandpass'; rf.frequency.value = 3400; rf.Q.value = 0.45;
+    rainGain = ac.createGain(); rainGain.gain.value = 0;
+    rs.connect(rf); rf.connect(rainGain); rainGain.connect(master); rs.start(0, 0.7);
+    const rl = ac.createBufferSource(); rl.buffer = nb; rl.loop = true;
+    const rlf = ac.createBiquadFilter(); rlf.type = 'lowpass'; rlf.frequency.value = 700; rlf.Q.value = 0.5;
+    rainLowGain = ac.createGain(); rainLowGain.gain.value = 0;
+    rl.connect(rlf); rlf.connect(rainLowGain); rainLowGain.connect(master); rl.start(0, 1.7);
+  }
+
+  /** Thunder (dist m, gain 0..1, pan -1..1): a crack when near, a rolling rumble whose length grows
+   *  and whose pitch drops with distance, and a sub-bass thump. Three pooled voices. */
+  function thunder(dist, gain, pan) {
+    const t = ac.currentTime, near = 1 / (1 + dist / 700);
+    const roll = 2.2 + Math.min(dist, 6000) / 1000;
+    const vs = [voices[next], voices[(next + 1) % VOICES], voices[(next + 2) % VOICES]]; next = (next + 3) % VOICES;
+    for (const v of vs) {
+      v.ng.gain.cancelScheduledValues(t); v.og.gain.cancelScheduledValues(t); v.filt.frequency.cancelScheduledValues(t); v.osc.frequency.cancelScheduledValues(t);
+      v.ng.gain.setValueAtTime(0, t); v.og.gain.setValueAtTime(0, t); v.pan.pan.setValueAtTime(pan, t);
+    }
+    // Rumble: low-passed noise rolling in irregular swells.
+    const [r, c, b] = vs;
+    r.filt.type = 'lowpass'; r.filt.Q.setValueAtTime(0.7, t);
+    r.filt.frequency.setValueAtTime(900 * near + 160, t); r.filt.frequency.exponentialRampToValueAtTime(70, t + roll);
+    let at = 0.04 + 0.5 * (1 - near);
+    r.ng.gain.setValueAtTime(0.0001, t); r.ng.gain.linearRampToValueAtTime(0.9 * gain, t + at);
+    for (let k = 1; at < roll - 0.6; k++) {
+      at += 0.25 + 0.5 * Math.random();
+      r.ng.gain.linearRampToValueAtTime(gain * (0.9 - 0.7 * at / roll) * (0.55 + 0.45 * Math.random()), t + at);
+    }
+    r.ng.gain.exponentialRampToValueAtTime(0.001, t + roll);
+    // The crack (only close enough to carry): a hard noise burst.
+    if (dist < 2200) {
+      c.filt.type = 'bandpass'; c.filt.Q.setValueAtTime(0.9, t); c.filt.frequency.setValueAtTime(1800, t); c.filt.frequency.exponentialRampToValueAtTime(380, t + 0.35);
+      c.ng.gain.setValueAtTime(0.0001, t); c.ng.gain.linearRampToValueAtTime(1.2 * gain * near, t + 0.004); c.ng.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+    }
+    b.osc.type = 'sine'; b.osc.frequency.setValueAtTime(62, t); b.osc.frequency.exponentialRampToValueAtTime(26, t + roll * 0.8);
+    b.og.gain.setValueAtTime(0.0001, t); b.og.gain.linearRampToValueAtTime(0.75 * gain, t + 0.12); b.og.gain.exponentialRampToValueAtTime(0.001, t + roll * 0.9);
   }
 
   const self = {
@@ -59,8 +98,8 @@ export function createSfx() {
     lx: 0.5, ly: 0.5, lz: 0.5, rx: 1.5 - 0.5, rz: 0.5 - 0.5,
     /** Sound position and loudness (fields) for the next play(). */
     x: 0.5, y: 0.5, z: 0.5, gain: 1.5 - 0.5,
-    /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss. */
-    wind: 0.5 - 0.5, hiss: 0.5 - 0.5, time: 0.5,
+    /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss, rain. thunderDist: metres of the next THUNDER. */
+    wind: 0.5 - 0.5, hiss: 0.5 - 0.5, rain: 0.5 - 0.5, time: 0.5, thunderDist: 1000.5,
 
     /** Effects volume 0..1 (settings). */
     setVolume(v) { this.volume = v; if (master) master.gain.value = 0.7 * v; },
@@ -73,6 +112,8 @@ export function createSfx() {
 
     play(kind) {
       if (!ac || ac.state !== 'running' || !this.enabled) return;
+      // Thunder is heard everywhere at once: the owner has set `gain` and (in x, y, z, relative to the listener) its bearing.
+      if (kind === SFX.THUNDER) { thunder(this.thunderDist, this.gain, Math.max(-1, Math.min(1, ((this.x - this.lx) * this.rx + (this.z - this.lz) * this.rz) / (Math.hypot(this.x - this.lx, this.z - this.lz) + 1e-3) * 0.7))); return; }
       const dx = this.x - this.lx, dy = this.y - this.ly, dz = this.z - this.lz;
       const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
       const far = kind === SFX.BOOM || kind === SFX.RUMBLE || kind === SFX.CHARGE ? 40 : 10;
@@ -157,13 +198,15 @@ export function createSfx() {
       }
     },
 
-    /** Continuous layers: wind (gusting) and the Ribbon's hiss. */
+    /** Continuous layers: wind (gusting), the Ribbon's hiss and the rain. */
     update() {
       if (!ac || ac.state !== 'running') return;
       const t = ac.currentTime, gust = 0.7 + 0.3 * Math.sin(this.time * 0.9) * Math.sin(this.time * 0.37 + 1.1);
       windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust), t, 0.3);
       windFilter.frequency.setTargetAtTime(260 + 900 * this.wind * gust, t, 0.3);
       hissGain.gain.setTargetAtTime(this.hiss * 0.18, t, 0.04);
+      rainGain.gain.setTargetAtTime(this.rain * 0.2, t, 0.4);
+      rainLowGain.gain.setTargetAtTime(this.rain * this.rain * 0.28, t, 0.4);
     },
   };
   return self;

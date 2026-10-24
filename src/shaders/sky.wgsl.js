@@ -64,7 +64,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let horizonY = -sqrt(max(1.0 - (R_GROUND / r) * (R_GROUND / r), 0.0));
   var sdir = dir;
   if (dir.y < horizonY + 0.002) { sdir = normalize(vec3f(dir.x, 2.0 * (horizonY + 0.002) - dir.y, dir.z)); }
-  var col = atmoSky(sdir) + atmoSunDisc(dir);
+  // A closing cloud deck hides the discs and the stars (the cloud pass does not paint over them all).
+  let skyOpen = 1.0 - smoothstep(0.5, 0.85, atmoParams.weather.x);
+  var col = atmoSky(sdir) + atmoSunDisc(dir) * skyOpen;
   // Ice halo of the stilled air (artParams.y: 1 stilled, fading as the land is restored): the
   // grains held motionless in the cold refract the sun into a 22° ring (sharp, reddish inner edge,
   // a soft white skirt outward), sun dogs either side at the sun's height and, when the sun is low,
@@ -80,7 +82,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += vec3f(0.30, 0.45, 1.0) * 0.005 * uniforms.envMisc.x; // same floor as the ambient (atmosphere.js NIGHT_FLOOR)
 
   // Night: stars and moon, faded in by envMisc.x (night factor).
-  let night = uniforms.envMisc.x;
+  let night = uniforms.envMisc.x * skyOpen;
   if (night > 0.001) {
     let md = uniforms.moonDir;
     let mmu = dot(dir, md);

@@ -25,6 +25,8 @@ export const env = {
   envMisc: new Vector4(),
   /** Art controls read by materials: x = glint intensity. */
   artParams: new Vector4(1, 0, 0, 0),
+  /** Rain on the world (set by the weather system): x = wetness, y = puddles, z = rain, w = lightning flash. */
+  wetParams: new Vector4(0, 0, 0, 0),
   /** (render width, height, 1/width, 1/height), set by the owner each frame. */
   screenInfo: new Vector4(1, 1, 1, 1),
   /** 0 = day, 1 = full night. */
@@ -40,6 +42,9 @@ const DEG = Math.PI / 180;
 // params.version at the last recompute (an integer compare: no double loads when idle, which
 // matters while V8 still runs this rarely-called function in the interpreter).
 let lastVersion = -1;
+
+/** Make the next updateEnvironment() recompute (something else moved the key direction meanwhile). */
+export function invalidateEnvironment() { lastVersion = -1; }
 
 /** Recompute the environment from params if anything changed. Allocation-free. */
 export function updateEnvironment() {
@@ -127,5 +132,6 @@ export function bindEnvironment(mat) {
   mat.setVector4('fogParams', env.fogParams);
   mat.setVector4('envMisc', env.envMisc);
   mat.setVector4('artParams', env.artParams);
+  mat.setVector4('wetParams', env.wetParams);
   mat.setVector4('screenInfo', env.screenInfo);
 }

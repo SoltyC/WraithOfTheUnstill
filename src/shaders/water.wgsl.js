@@ -105,6 +105,33 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
 `;
 
 
+/** Rain on the water (wetParams.z = rain 0..1): stateless raindrop rings — two grids of jittered cells,
+ *  each ringing out on its own phase — as a surface slope, faded to roughness once a ring is smaller
+ *  than the pixel's footprint fp. */
+const RAIN_RIPPLES_WGSL = /* wgsl */ `
+fn rainRipples(p: vec2f, t: f32, fp: f32) -> vec2f {
+  var g = vec2f(0.0);
+  for (var layer = 0; layer < 2; layer++) {
+    let cell = select(0.62, 0.97, layer == 1);
+    let q = p / cell + select(0.0, 17.3, layer == 1);
+    let ci = floor(q);
+    for (var j = -1; j <= 1; j++) { for (var i = -1; i <= 1; i++) {
+      let c = ci + vec2f(f32(i), f32(j));
+      let h = fract(sin(vec3f(dot(c, vec2f(127.1, 311.7)), dot(c, vec2f(269.5, 183.3)), dot(c, vec2f(419.2, 371.9)))) * 43758.5453);
+      let ph = fract(t * (0.8 + 0.7 * h.z) + h.x * 3.0);
+      // Only some cells have a drop this cycle (the density follows the rain).
+      if (h.y > uniforms.wetParams.z * 0.95) { continue; }
+      let d = length((q - (c + 0.15 + 0.7 * h.xy)) * cell);
+      let r = ph * 0.2 * (1.0 + 0.5 * h.x);
+      let x = d - r;
+      let env = exp(-x * x / 0.00022) * (1.0 - ph) * (1.0 - ph);
+      g += (q - (c + 0.15 + 0.7 * h.xy)) * cell / max(d, 0.01) * (env * cos(x * 95.0) * 0.3);
+    } }
+  }
+  return g * (1.0 - smoothstep(0.03, 0.14, fp));
+}
+`;
+
 const GROUND_WGSL = /* wgsl */ `
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
@@ -173,6 +200,7 @@ ${WIND_WGSL}
 ${GROUND_WGSL}
 fn wNoised(p: vec2f) -> vec3f { return noised(p); }
 ${WATER_WAVES_WGSL}
+${RAIN_RIPPLES_WGSL}
 ${OPTICS}
 /** The surface slope with the current: rivers carry their waves downstream (two phases of a flow
  *  map, cross-faded), roughened by the current; lakes as they are. */
@@ -224,7 +252,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let wf = windField(wp.xz);
   let fp = length(fwidth(wp.xz));
   let fl = fragmentInputs.vFlow;
-  let sl = waterSlopeF(wp.xz, t, wf.xy * wf.z, fp, fl);
+  var sl = waterSlopeF(wp.xz, t, wf.xy * wf.z, fp, fl);
+  if (uniforms.wetParams.z > 0.02) {
+    // Rain: rings on the surface, and a pitted, busier water that mirrors less sharply.
+    sl = vec4f(sl.xy + rainRipples(wp.xz, t, fp), sl.z, sl.w + 0.0009 * uniforms.wetParams.z);
+  }
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
   let T = exp(-W_SIGMA * wPath(depth, V));

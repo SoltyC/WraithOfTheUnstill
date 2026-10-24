@@ -172,7 +172,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     var ratio = 1.0;
     if (P.fog.w > 0.5) { ratio = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).r; }
     let phase = mix(hgPhase(cosT, 0.55), 0.0795775, 0.45);
-    let ins = (keyC * phase * ratio * 0.9 + skyUp * 0.95) * (1.0 - T);
+    let ins = (keyC * phase * ratio * 0.9 + skyUp * 0.95 * (1.0 - 0.5 * P.pad[0].w)) * (1.0 - T); // a storm's air is dark
     dbgT = T;
     c = vec4f(c.rgb * T + ins * exposure, c.a);
   }

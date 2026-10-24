@@ -14,27 +14,14 @@ export const SNOW_COUNT = 16000;
 const R = 26; // m: half extent of the camera-centred column
 const HT = 18; // m: column height (wrapped)
 
-export const snowVertexWGSL = /* wgsl */ `
-attribute position: vec3f;          // x = flake id, yz = quad corner (−1..1)
-uniform viewProjection: mat4x4f;
-uniform cameraPosition: vec3f;
-uniform levels: array<vec4f,16>;
-uniform snow: vec4f;                // x = fall travel (m), y = density 0..1, zw = wind travel x, z (m, wrapped)
-uniform snowWind: vec4f;            // xy = wind direction (unit), z = fall speed (m/s), w = wind speed (m/s)
-var<storage, read> levelData: array<vec4f>;
-var<storage, read> biomeA: array<u32>;
-var<storage, read> windMap: array<u32>;
-varying vUv: vec2f;
-varying vAlpha: f32;
-varying vWorldPos: vec3f;
-
+/** Column helpers shared by the falling-snow and rain vertex stages: the hash, the wind
+ *  climatology, the frost share of the land and the clipmap ground height. */
+export const PRECIP_COMMON_WGSL = /* wgsl */ `
 const V: u32 = ${CLIPMAP_N + 1}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
 const W_HALF: f32 = 4096.0;
 const NW: i32 = 256; const CW: f32 = 32.0;
 const N8: i32 = 1024; const C8: f32 = 8.0;
-const RT: f32 = ${R}.0;
-const HT: f32 = ${HT}.0;
 
 fn hsh(n: u32) -> f32 {
   var x = n * 747796405u + 2891336453u;
@@ -66,7 +53,25 @@ fn groundAtD(x: f32, z: f32) -> f32 {
   }
   return 0.0;
 }
+`;
 
+export const snowVertexWGSL = /* wgsl */ `
+attribute position: vec3f;          // x = flake id, yz = quad corner (−1..1)
+uniform viewProjection: mat4x4f;
+uniform cameraPosition: vec3f;
+uniform levels: array<vec4f,16>;
+uniform snow: vec4f;                // x = fall travel (m), y = density 0..1, zw = wind travel x, z (m, wrapped)
+uniform snowWind: vec4f;            // xy = wind direction (unit), z = fall speed (m/s), w = wind speed (m/s)
+var<storage, read> levelData: array<vec4f>;
+var<storage, read> biomeA: array<u32>;
+var<storage, read> windMap: array<u32>;
+varying vUv: vec2f;
+varying vAlpha: f32;
+varying vWorldPos: vec3f;
+
+${PRECIP_COMMON_WGSL}
+const RT: f32 = ${R}.0;
+const HT: f32 = ${HT}.0;
 
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {

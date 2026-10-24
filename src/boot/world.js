@@ -71,6 +71,13 @@ export async function createWorld(g) {
   const { createSnowfall } = await import('../render/snowfall.js');
   const snowfall = createSnowfall(scene, content.clipmap, atmosphere);
   bindShadows(snowfall.material, shadows);
+  // Rain (Phase 8 M11): streaks and splashes, the same stateless column; drawn after the snow.
+  const { createRain } = await import('../render/rain.js');
+  const rain = createRain(scene, content.clipmap, atmosphere);
+  bindShadows(rain.material, shadows);
+  bindShadows(rain.splashMaterial, shadows);
+  // The lightning bolt (ribbons, additive): after the rain.
+  const bolt = (await import('../render/lightningBolt.js')).createLightningBolt(scene);
   // Fire: the camp's hearth and the braziers (flames, embers, smoke), after the falling snow.
   const fire = (await import('../render/fire.js')).createFire(scene, atmosphere);
   // The Gale's wind made visible (Phase 8 M6): gust lines, vortex debris, updraft columns.
@@ -152,5 +159,5 @@ export async function createWorld(g) {
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
 }
