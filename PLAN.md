@@ -712,6 +712,16 @@ M5–M7 two; M8–M9 two; M10–M11 two; M12 one. Roughly 10–12 sessions, with
 
 ---
 
+## Phase 9 — Glass Dunes and Stone (planned 2026-10-24)
+
+Work order: `docs/phase-9/plan.md` (milestones D0–D12: geography, sand material, crests and
+avalanching sand, sand-surf, Stone verbs, desert light, sandstorm and the moving erg, ruins and
+glass, scrub and oasis, dune Shaped, the Long Walker, the camp and quests, gate). How play works
+across biomes (order, element locks, traversal by surface, reactions everywhere, world tier, the
+story thread): `docs/cross-biome.md`. Both end with decisions for the user.
+
+---
+
 ## Cross-cutting rules (from BRIEF, apply to every milestone)
 
 - Zero allocations per frame; pools for everything transient; `npm run alloc` covers new hot paths.
