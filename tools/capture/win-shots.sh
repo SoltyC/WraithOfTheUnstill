@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Photo-spot shots on the Windows GPU from WSL, supervised (headless Chrome: works with the PC
-# locked). Needs `npm run preview` (or tools/playtest.sh) serving the build on :4173.
+# locked). Needs `npm run preview` (or tools/playtest.sh) serving the build on :${PORT:-4173}.
 #
 #   tools/capture/win-shots.sh <spot prefix> <dir> [timeout s per spot, default 60] [extra query, cmd-escaped: "^&k=v"]
 #
@@ -15,17 +15,17 @@ log=screenshots/$dir/shots-log.txt
 ids=$(node -e "const s=require('./data/photo-spots.json').spots;console.log(s.filter(x=>x.id.startsWith(process.argv[1])).map(x=>x.id).join(' '))" "$prefix")
 total=$(wc -w <<<"$ids")
 [ "$total" -gt 0 ] || { echo "no spots start with '$prefix'"; exit 1; }
-curl -sf -o /dev/null http://localhost:4173/ || { echo "preview server not running on :4173"; exit 1; }
+curl -sf -o /dev/null http://localhost:${PORT:-4173}/ || { echo "preview server not running on :${PORT:-4173}"; exit 1; }
 
 killChrome() {
-  powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"name='chrome.exe'\" | Where-Object { \$_.CommandLine -match 'wraith-shots' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" >/dev/null 2>&1
+  powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"name='chrome.exe'\" | Where-Object { \$_.CommandLine -match 'wraith-shots-${PORT:-4173}-' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" >/dev/null 2>&1
 }
 saved() { local c=0; for id in $ids; do [ -f "screenshots/$dir/$id.png" ] && c=$((c + 1)); done; echo $c; }
 launch() { # $1 = first spot id, $2 = its index
-  local prof="wraith-shots-$(date +%s%N)"
+  local prof="wraith-shots-${PORT:-4173}-$(date +%s%N)"
   cmd.exe /c start chrome --headless=new "--user-data-dir=%TEMP%\\$prof" --no-first-run --enable-unsafe-webgpu --enable-gpu \
     --ignore-gpu-blocklist --disable-background-timer-throttling --disable-renderer-backgrounding --window-size=2560,1440 \
-    "http://localhost:4173/?shots=$prefix^&spot=$1^&shotIndex=$2^&dir=$dir^&capture=1^&res=2560x1440^&shotTimeout=$per$extra" >/dev/null 2>&1
+    "http://localhost:${PORT:-4173}/?shots=$prefix^&spot=$1^&shotIndex=$2^&dir=$dir^&capture=1^&res=2560x1440^&shotTimeout=$per$extra" >/dev/null 2>&1
 }
 
 killChrome
