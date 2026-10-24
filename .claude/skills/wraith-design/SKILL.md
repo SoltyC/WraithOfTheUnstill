@@ -29,8 +29,9 @@ The design source of truth is `docs/gameplay-design.md` (pillars, loops, Flow, c
 1. **Moving is the joy.** It rejects dead walking and traversal as a corridor.
 2. **The world remembers and answers.** It rejects bespoke props, invisible state and resets.
 3. **Release, not kill.** Every Warden is a different kind of problem. It rejects HP sponges and reskinned formulas.
-4. **Quiet, but never empty.** It rejects checklists, icons, fetch quests, loot and levels.
-5. **Learn by reading.** It rejects hidden scaling, stat gates and lying telegraphs.
+4. **Quiet, but never empty.** It rejects checklists, icons, fetch quests, random loot spam and stat grinding.
+5. **Learn by reading.** It rejects hidden scaling and lying telegraphs.
+6. **Grow by what you carry.** Weapons are found, forged and upgraded; marks are traded; consumables heal and strengthen; elements are the secondary powers. It rejects random rolls, numbers-only upgrades, and shops that sell what the world should give. Economy checks: does every faucet have a sink, is there no reason to grind, and does each upgrade change how a weapon plays.
 
 ## Project constraints to respect
 

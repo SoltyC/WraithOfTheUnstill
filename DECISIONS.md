@@ -471,3 +471,13 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Gust fronts** are bands moving downwind at 8 m/s (two families, 140 m and 57 m apart, the second 20 % faster, each wandering slowly along its length). Their height is the weather's gustiness. **Bursts** are expanding rings (14 m/s, 2.2 s) pushing outward, for the Gale's Gust and anything else that wants to move the air locally.
 - The cloth used a fixed wind direction (0.76, −0.65) since Phase 3. It now takes the field's direction at the figure. Its strength is scaled (×0.9 of the field's speed) to match the old frost cloth on average.
 - `npm run alloc`: `controller.update` and `springArm.update` already fail on this branch (482–512 KB, 46–82 GC events over 2M calls, the same with or without this change). Noted for the Phase 14 hardening pass.
+
+## Gameplay direction (user, 2026-10-24) — supersedes parts of BRIEF §2.4, §7 and §12
+
+- **Weapons, upgrades, currency, trade and consumables** are added (user: "there needs to be progression for the player… instead of relying on elements, they can be secondary powers, we should provide actual weapons which can be obtained, upgraded from quests, etc, trade currency, trade with npc to buy items, to heal, provide buffs like strength"). This overrides BRIEF §2.4's "not a loot system" and "keep the number of upgrades small" for weapons. Items are hand-placed and earned, never random rolls. Design: `docs/gameplay-design.md` §11.
+- **Controls change** (BRIEF §7): LMB = weapon; Q tap/hold = element quick/sustained verb; F = element heavy; R/C = consumable use/cycle; wheel/X = weapon cycle. Dev free-cam keys move off Q/R.
+- **Flow** (a diegetic momentum value built by skilled movement and reactions) is added: `docs/gameplay-design.md` §3.
+- **No world-tier difficulty scaling;** open biome order after the frost (`docs/cross-biome.md`).
+- **The Long Walker** is a "bring it home" Warden (pursue, stumble, board, steer to the well): `docs/gameplay-design.md` §5.1.
+- **The Remembrance page** and **a nook pass** on frost and meadow are approved.
+- **Design review:** every gameplay feature goes through the project skill `.claude/skills/wraith-design` (pillars, smells, briefs, bot playtest with NOT ASSESSED).

@@ -17,8 +17,9 @@ The rule, from the research: **every feature serves a pillar or it is cut.**
 | **1. Moving is the joy.** Surf, glide and climb are fun in an empty field. Speed, carving and chaining are the game's main pleasure. | Sensation, Challenge | Dead walking between content; traversal as a loading corridor; fast travel as the normal way to move. |
 | **2. The world remembers and answers.** Every verb writes the ground, and reactions are rules, not scripts. The player's marks are their signature. | Expression, Discovery | One-off puzzle props with bespoke logic; invisible state; resets. |
 | **3. Release, not kill.** A Warden is a problem to understand, and each one is a *different kind* of problem. | Fantasy, Narrative, Challenge | HP sponges; the same boss formula reskinned ("strip, climb, strike three"). |
-| **4. Quiet, but never empty.** Few people, few icons, and every place pays the player for turning toward it. | Discovery, Submission | Checklists, map-icon clearing, fetch quests, loot, levels. |
-| **5. Learn by reading.** Difficulty is fixed and designed. Material and motion tell the truth about threats, and knowledge opens the world. | Challenge (competence) | Hidden scaling (user: no world tier), stat gates, lying telegraphs. |
+| **4. Quiet, but never empty.** Few people, few icons, and every place pays the player for turning toward it. | Discovery, Submission | Checklists, map-icon clearing, fetch quests, random loot spam, stat grinding. |
+| **5. Learn by reading.** Difficulty is fixed and designed. Material and motion tell the truth about threats, and knowledge opens the world. | Challenge (competence) | Hidden scaling (user: no world tier), lying telegraphs. |
+| **6. Grow by what you carry (user, 2026-10-24).** Weapons found and forged, upgraded through quests and trade; a currency and people to trade with; consumables that heal and strengthen. Elements become the secondary powers. | Fantasy, Challenge, Discovery | Random-roll loot, numbers-only upgrades, shops that sell power the world should give. |
 
 ## 2. The loop stack
 
@@ -237,9 +238,140 @@ The rule, from `/balance-check`: anything we haven't measured is **NOT ASSESSED*
 5. **Encounter variety audit:** frost and meadow encounters against §4.2 (roles mixed, arena feature, honest telegraphs, calm after peaks).
 6. **Isolation tests** for the surf, the glide and frost combat, filmed for the user.
 
-## 11. Decisions for the user
+## 11. Progression, weapons and trade (user, 2026-10-24)
 
-1. **Flow:** build it (recommended), and prototype it on the existing game first?
-2. **The Long Walker as "bring it home"** (pursue, stumble, board, steer to the well), or a more combat-heavy variant?
-3. **The Remembrance page** (observations and the living reaction table)?
-4. **Nook density:** add a nook pass to frost and meadow before Phase 9 starts?
+The user's direction: *"there needs to be progression for the player… instead of relying on elements, they can be secondary powers, we should provide actual weapons which can be obtained, upgraded from quests, etc, trade currency, trade with npc to buy items, to heal, provide buffs like strength."* This overrides BRIEF §2.4's "no loot" and the robe rule (DECISIONS.md). The design keeps the spirit of Pillars 3–5: items are **hand-placed and earned**, never random rolls, and every upgrade **changes how a weapon plays**, not only its numbers (smell: treadmill).
+
+### 11.1 Controls (the new combat layout)
+
+| Input | Action |
+|---|---|
+| **LMB** tap / hold | Weapon: light attack (combo) / charged heavy attack |
+| **Q** tap / hold | Element: quick verb / sustained verb (Sweep, Ribbon; Gust, Vortex; Shard, Ridge) |
+| **F** | Element heavy verb (Crystallize, Updraft, Bloom) |
+| **RMB** (hold) | Traversal (surf), glide in the air; while locked on: guard |
+| **Ctrl** | Bend-step dodge |
+| **1–5** | Select element (cuffs and hand-light colour) |
+| **Mouse wheel / X** | Cycle the carried weapons (two carried) |
+| **R** | Use the selected consumable; **C** cycles consumables |
+| Tab, E, Space, M, J, Esc | Unchanged |
+
+The dev free-camera keys move off Q and R (to the overlay's free-cam mode). The action map in `src/input/actions.js` is what changes.
+
+### 11.2 Weapons
+
+These are Shaper relics: things the Shapers carried to shape the world, now found, given or forged. Each is a procedural mesh held in the wrapped hands (no rigging; BRIEF §8). The attacks are procedural arcs on the existing Wraith pose with cloth reacting, a swept trail ribbon, hit-stop and material spray (§4.3, BRIEF §10). Six weapon families, **horizontal** (different, not better):
+
+| Family | Feel | Light combo / heavy | Pairs with |
+|---|---|---|---|
+| **Pilgrim's staff** (start) | reach, sweeping, defensive | 3-hit sweep / overhead slam that dents the ground | Frost (a Sweep from the staff's tip) |
+| **Sickle pair** | fast, close, bleeding cuts | 5-hit flurry / spinning reap | Gale (cuts in a Vortex hit everything inside) |
+| **Shaper maul** | slow, staggering, breaks armour | 2 heavy swings / ground-shaking smash (a crater) | Stone (smash raises a Ridge ring) |
+| **Glaive** | reach and arcs, crowd control | wide arcs / a thrust that pins | Gale, Frost |
+| **Lantern flail** | a burning weight on a chain; area | swings / a lit spin that scorches grass | Ember (later), the carried flame |
+| **Glass blade** (dunes) | precise, brittle-fast; ruinous to frozen and glass foes | quick cuts / a lunge that shatters frozen Shaped | Frost (shatter) |
+
+- **Where they come from:** the staff at the waking. The others come from **quests, Warden releases and sites** (one per biome is a quest reward, one is found at a site, one can be bought or forged). There is no random loot: each weapon is placed and named.
+- **Material-aware:** weapon hits apply the material reaction table weakly (a maul on a frozen Shaped shatters it; a blade on a plate-back glances). Elements remain the strong lever; weapons the reliable one.
+- **Flow (§3):** weapon hits build Flow; at Flow 2+ each weapon gets its *flowing* finisher (a surf-strike, a glide-dive slam).
+
+### 11.3 Upgrades — the forge
+
+- **Smiths:** Hearn's forge, the dune caravan's glass-reader, and later one per settlement. Upgrades cost **marks** (currency) plus **materials** from the biome:
+  - frost: rime cores;
+  - meadow: hedge-heart and turf-amber;
+  - dunes: glass and sand-cores.
+- **Five tiers per weapon.** Tiers 1, 3 and 5 **add or change a move** (a combo extender, an elemental infusion slot, the weapon's art). Tiers 2 and 4 are numbers (damage, stagger). So no upgrade is only numbers twice in a row.
+- **Infusion:** from tier 3, a weapon can carry one element. Its hits then apply that element's reaction lightly: frozen edges, gusting strikes, stone weight. This is how elements become the *secondary* powers the user asked for, and it ties the two systems together.
+- **Quest upgrades:** some side quests upgrade a weapon directly (the smith's lost hammer, Corin's brother's blade).
+
+### 11.4 Currency and trade
+
+- **Currency: marks**, old Shaper silver pieces the Veiled still trade in.
+- **Earned from:**
+  - Shaped (they leave a mark or two when they collapse, more from elites);
+  - quests;
+  - nooks and sites;
+  - selling surplus materials.
+- **Spent on:**
+  - forge upgrades;
+  - consumables;
+  - robes and dyes;
+  - maps of unexplored regions (the mapmaker sketches the next biome's landmarks);
+  - a few weapons.
+- **Traders** (named Veiled with their own stock that grows as their quests are done):
+  - Hearn's market: Corin's stall;
+  - the frost camp's sled-trader;
+  - the dune caravan master.
+- **Trade screen:** the parchment codex style (BRIEF §12), with buy, sell and stock. It opens through the existing talk interaction.
+- **Economy targets** (tune with telemetry):
+  - a biome's main path earns about 1.5× the cost of fully upgrading one weapon to tier 3;
+  - grinding Shaped earns slowly (smell: no reason to grind);
+  - quests and sites pay the most.
+
+### 11.5 Consumables and buffs
+
+Carried in a small pouch (4 kinds; stacks of 3–5). Bought, found and given.
+
+| Item | Effect | Notes |
+|---|---|---|
+| **Warm salve** | heals over 3 s (interruptible) | the core heal; buyable everywhere |
+| **Shrine water** | a flask refilled at every rested shrine (3 charges, upgradable by quests) | the guaranteed heal (Souls' Estus pattern) |
+| **Ember tea** | +25 % weapon damage for 60 s ("strength") | |
+| **Rime tonic** | −25 % damage taken for 60 s | |
+| **Wind-bread** | focus regen ×1.5 for 90 s | |
+| **Stillwater draught** | Flow decays half as fast for 60 s | |
+| **Ash charm** (later) | a throwable that blinds | |
+
+- **Use takes time** (an animation of about 0.6 s, cancelled by dodge), so healing mid-fight is a decision (opportunity cost).
+- Buffs show on the body: a warm glow at the hands for strength, a frost sheen on the robe for defence.
+
+### 11.6 The Wraith's own growth
+
+- **Health threads:** each Warden release and certain quests weave a thread into the robe: +1 health segment. It shows as the cowl light burning steadier.
+- **Focus:** Echoes (as now) improve elements.
+- **Robes:** keep their identity and gain a **modest defence value** plus their one property. They become the armour slot (a robe and a mantle).
+- **No experience levels.** Growth comes from weapons, the forge, threads, Echoes and robes, all earned by play.
+
+### 11.7 Death
+
+On death the Wraith re-forms at the last rested shrine and **drops its carried marks where it fell**: its robe's imprint stays in the terrain state, and walking there recovers them. Marks are lost only if it dies again before recovering them. Weapons and items are never lost. (Souls-like stakes, softened.)
+
+### 11.8 Save
+
+Save v3 gains:
+- inventory (weapons with tiers and infusion, materials, consumables, marks);
+- equipped weapon, robe and mantle;
+- the shrine-water flask;
+- health threads;
+- trader stocks;
+- the dropped marks' position.
+
+## 12. Decisions
+
+**Answered (user, 2026-10-24):**
+- build Flow;
+- the Long Walker as "bring it home";
+- the Remembrance page: yes;
+- a nook pass on frost and meadow: yes;
+- **weapons, upgrades, currency, trade and consumables** (§11), with elements as secondary powers;
+- new mechanics are welcome where they make the game more fun.
+
+**Defaults chosen by me** (revisit any of them):
+- the control layout (§11.1);
+- six weapon families;
+- the marks currency;
+- dropped-marks death;
+- health threads;
+- robes as armour;
+- no experience levels.
+
+## 13. Build order
+
+1. **Flow** (with the combat feel pass).
+2. **Weapons and the new controls:** the staff first, then one weapon per family.
+3. **Inventory, consumables and the trade screen;** marks drops; the Hearn trader and forge.
+4. **The forge and upgrades,** infusion, health threads, robes as armour, save v3.
+5. **The Remembrance page and the living reaction table.**
+6. **The nook pass** on frost and meadow.
+7. Then Phase 9, with weapons and Flow in place: the dunes get the glass blade, the caravan trader and smith, and dune materials.
