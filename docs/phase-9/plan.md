@@ -279,6 +279,9 @@ Proposals (the user to choose or replace), made of packed sand, sandstone and ru
 
 ### D10 — The dune Warden and its arena
 
+> **Superseded (2026-10-24):** the fight below is replaced by the "bring it home" design in `docs/gameplay-design.md` §5.1 (follow its glass track, wake it, pursue it on sand-surf, stumble a leg by reshaping the ground, board it, steer it to the camp's dry well). Kept for its arena and quality-gate notes.
+
+
 Proposal (the user to choose; alternatives at the end): **the Long Walker.**
 
 - **What it is:**
