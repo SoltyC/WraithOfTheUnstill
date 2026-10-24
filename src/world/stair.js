@@ -358,3 +358,34 @@ function buildChord(b, c, ex, seed, F) {
     for (const sd of [-1, 1]) { const [lx, lz] = pt(d, sd * (hw - 2.6)); lantern(b, lx, Y(g.y1 + LIFT), lz, c.yaw, 2, seed + 900 + sd); }
   }
 }
+
+/**
+ * The stair's footprint for the village ground mask (tools/bake-world/villageMask.mjs extraPaving): paved within each
+ * chord's half width (a 0.6 m soft edge), so the meadow grass does not grow up through the treads and landings.
+ * @returns {{ bounds: { x0: number, z0: number, x1: number, z1: number }, paved: (x: number, z: number) => number }}
+ */
+export function stairPaving(route) {
+  const segs = stairSegments(route), CELL = 16, grid = new Map();
+  const bounds = { x0: Infinity, z0: Infinity, x1: -Infinity, z1: -Infinity };
+  for (const s of segs) {
+    const r = s.halfWidth + 1;
+    const ax = Math.min(s.x0, s.x1) - r, bx = Math.max(s.x0, s.x1) + r, az = Math.min(s.z0, s.z1) - r, bz = Math.max(s.z0, s.z1) + r;
+    bounds.x0 = Math.min(bounds.x0, ax); bounds.x1 = Math.max(bounds.x1, bx); bounds.z0 = Math.min(bounds.z0, az); bounds.z1 = Math.max(bounds.z1, bz);
+    for (let cz = Math.floor(az / CELL); cz <= Math.floor(bz / CELL); cz++) for (let cx = Math.floor(ax / CELL); cx <= Math.floor(bx / CELL); cx++) {
+      const k = cx + ',' + cz; if (!grid.has(k)) grid.set(k, []); grid.get(k).push(s);
+    }
+  }
+  function paved(x, z) {
+    const list = grid.get(Math.floor(x / CELL) + ',' + Math.floor(z / CELL)); if (!list) return 0;
+    let best = 0;
+    for (const s of list) {
+      const dx = s.x1 - s.x0, dz = s.z1 - s.z0, L2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - s.x0) * dx + (z - s.z0) * dz) / L2));
+      const d = Math.hypot(x - (s.x0 + dx * t), z - (s.z0 + dz * t));
+      const k = Math.max(0, Math.min(1, (s.halfWidth + 0.3 - d) / 0.6));
+      if (k > best) best = k;
+    }
+    return best;
+  }
+  return { bounds, paved };
+}

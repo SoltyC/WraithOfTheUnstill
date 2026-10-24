@@ -20,6 +20,7 @@ import { carveStory, storyPOIs } from './story.mjs';
 import { carveHill, HILL } from './hill.mjs';
 import { bakeVillageMask } from './villageMask.mjs';
 import { forecourtPaving, forecourtBounds } from '../../src/world/manor.js';
+import { stairPaving } from '../../src/world/stair.js';
 import { villageLayout } from '../../src/world/village.js';
 import { gfbm } from '../../src/terrain/gnoise.js';
 import { encodePng } from './png.mjs';
@@ -230,7 +231,8 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   const village = villageLayout({ height: h4at, water: wetAt, isHill: hillE }, { seed: 1, foot, hub: hubP, hillCentre: HILL.centre, hillAx: HILL.ax, hillAz: HILL.az });
   log('village', village.plots.length, 'plots,', village.roads.length, 'roads,', village.lights.length, 'lamps', Date.now() - t0, 'ms');
   // The village's ground mask (villageMask.mjs): streets, square and yards, 0.5 m per texel; its box rides in village.json.
-  const mask = bakeVillageMask(village, { extraPaving: [{ bounds: forecourtBounds(), paved: forecourtPaving }] });
+  // Paved (no grass): the manor's forecourt and the stair's treads and landings (grass grew up through the steps).
+  const mask = bakeVillageMask(village, { extraPaving: [{ bounds: forecourtBounds(), paved: forecourtPaving }, stairPaving(hill.route)] });
   village.mask = { x0: mask.x0, z0: mask.z0, size: mask.size, texel: mask.texel };
   log('village mask', mask.size + '²', Date.now() - t0, 'ms');
   write('village_mask.rgba8', Buffer.from(mask.data.buffer, mask.data.byteOffset, mask.data.byteLength));

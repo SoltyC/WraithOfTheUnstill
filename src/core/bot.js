@@ -230,6 +230,9 @@ export function startBot(w, qs) {
         if (step) step(t, i, g, w, filmCam, inject);
         engine.beginFrame(); loop._frame(); engine.endFrame();
         if (i < 0) { await sleepMs(0); continue; }
+        // Trees keep the placement the warm frames settled on (a moving camera re-placed them every 20 m: trees fading in and
+        // out at the edge and their shadows shifting — trailer review 2026-10-24).
+        if (i === 0 && g.trees) g.trees.hold = true;
         ctx.drawImage(canvas, 0, 0, size[0], size[1]);
         const blob = await off.convertToBlob({ type: 'image/jpeg', quality });
         inflight++;
@@ -240,6 +243,7 @@ export function startBot(w, qs) {
       while (inflight > 0) await sleepMs(20);
     } finally {
       filmCam.off();
+      if (g.trees) g.trees.hold = false;
       loop.fixedDt = 0; loop.last = performance.now();
       setParam('dynamicRes', prevDyn); setParam('renderScale', prevScale);
       engine.runRenderLoop(loop._frame);

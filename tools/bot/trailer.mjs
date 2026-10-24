@@ -27,17 +27,31 @@ const around = (d0, d1, h0, h1, a0, a1, lookUp = 1.2, fov = 0.75) => `
     cam.at(x, Math.max(H(x, z) + 0.6, P.y + L(${h0}, ${h1}, u)), z, P.x, P.y + ${lookUp}, P.z, ${fov}); }`;
 
 // Gameplay on the game's own follow camera: forward held for the whole shot, the camera (and so her heading) drifting by `drift`
-// rad; `extra` adds inputs (e.g. casts) by frame.
-const walk = (n, drift = 0, extra = '', keys = "'MoveForward'") => `
+// rad; `extra` adds inputs (e.g. casts) by frame. With `path` (an array of [x, z], or 'road' = the nearest village street, run the
+// way she faces) she is steered along it instead — she turns toward a point a few metres ahead and never walks into a stall.
+const walk = (n, drift = 0, extra = '', keys = "'MoveForward'", path = null) => `
   if (i === -30) { S.y0 = g.arm.yaw; for (const k of [${keys}]) inject(k, true); }
-  if (i >= 0) g.arm.yaw = S.y0 + ${drift} * Math.min(1, t / ${n / 60});
+  ${path ? `if (!S.path) {
+    let pts = ${path === 'road' ? 'null' : JSON.stringify(path)};
+    if (!pts) {
+      let best = null, bd = 1e9, bk = 0;
+      for (const r of g.village.roads) { const q = r.pts || r; for (let k = 0; k < q.length; k++) { const d = Math.hypot(q[k][0] - P.x, q[k][1] - P.z); if (d < bd) { bd = d; best = q; bk = k; } } }
+      const f = best[Math.min(bk + 1, best.length - 1)], b = best[Math.max(bk - 1, 0)];
+      const cf = Math.cos(Math.atan2(f[0] - P.x, f[1] - P.z) - S.y0), cb = Math.cos(Math.atan2(b[0] - P.x, b[1] - P.z) - S.y0);
+      pts = cf >= cb ? best.slice(bk) : best.slice(0, bk + 1).reverse();
+    }
+    S.path = pts; S.k = 0;
+  }
+  { const p = g.controller.pos; while (S.k < S.path.length - 1 && Math.hypot(S.path[S.k][0] - p.x, S.path[S.k][1] - p.z) < 4) S.k++;
+    const q = S.path[S.k]; let d = Math.atan2(q[0] - p.x, q[1] - p.z) - g.arm.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); g.arm.yaw += d * (i < 0 ? 0.3 : 0.05); }` :
+  `if (i >= 0) g.arm.yaw = S.y0 + ${drift} * Math.min(1, t / ${n / 60});`}
   ${extra}
   if (i === ${n - 1}) for (const k of [${keys}]) inject(k, false);`;
 
 const SHOTS = [
   // 0 — dawn over the meadow: a slow aerial push from the fields toward the hill and the village under it.
-  { name: 's00-dawn-aerial', spot: 'p8-hill-aerial', seconds: 9,
-    js: `if (i < 0 || i % 30 === 0) cam.tod(6.35 + t * 0.02); cam.at(L(-170, -60, u), L(430, 395, u), L(720, 830, u), L(160, 200, u), L(300, 330, u), L(960, 985, u), 0.75);` },
+  { name: 's00-dawn-aerial', spot: 'p8-hill-aerial', seconds: 9, pre: 'if (i < 0) t = 4.5;',
+    js: `if (i === 0) g.post.post.resetHistory = true; if (i < 0 || i % 30 === 0) cam.tod(6.35 + t * 0.02); cam.at(L(-170, -60, u), L(430, 395, u), L(720, 830, u), L(160, 200, u), L(300, 330, u), L(960, 985, u), 0.75);` },
   // 1 — the meadow: a low glide over the grass up to the Wraith.
   { name: 's01-meadow', spot: 'p8-hill-south', seconds: 7, js: around(15, 6.5, 1.9, 2.3, 0.4, 0.05, 1.3, 0.7) },
   // 2 — the lake at golden hour, a slow track.
@@ -49,10 +63,14 @@ const SHOTS = [
   // 5 — the Frost Warden, a slow orbit.
   { name: 's05-warden', spot: 'p5-warden-golden', seconds: 5.5, js: around(16, 12, 3, 5, -0.6, 0.3, 4, 0.8) },
   // 6 — Hearn from above, a day in twelve seconds: dawn, noon, the long evening, the windows lit at night.
-  { name: 's06-timelapse', spot: 'tour-09-dusk-aerial', seconds: 13,
-    // A slow, low orbit (about 0.4 rad in 13 s, ~85 m up, ~230 m out), aimed level so the roofs fill the lower frame and the
-    // hill, the manor and the sky the upper; the day runs from before dawn to night. Exposure snaps each frame (no lag).
-    js: `{ const k = Math.min(1, t / 13); g.atmosphere.alwaysSnap = true; cam.tod(5.4 + 17.2 * k); const e = k * k * (3 - 2 * k) * 0.6 + k * 0.4, a = 3.78 - 0.42 * e;
+  { name: 's06-timelapse', spot: 'tour-09-dusk-aerial', seconds: 16,
+    // A slow, low orbit (about 0.45 rad in 16 s, ~85 m up, ~230 m out), aimed level so the roofs fill the lower frame and the
+    // hill, the manor and the sky the upper. The day runs from before dawn to night, lingering on sunrise and on sunset
+    // (the hour eased through a table: share of the shot → hour). Exposure snaps each frame (no lag).
+    js: `{ const k = Math.min(1, t / 16); g.atmosphere.alwaysSnap = true;
+      const K = [0, 0.28, 0.4, 0.85, 1], Hr = [5.6, 7.4, 16.2, 18.1, 21.0];
+      let j = 0; while (j < 3 && k > K[j + 1]) j++; const f = (k - K[j]) / (K[j + 1] - K[j]); cam.tod(Hr[j] + (Hr[j + 1] - Hr[j]) * f);
+      const e = k * k * (3 - 2 * k) * 0.6 + k * 0.4, a = 3.8 - 0.45 * e;
       const y = H(125, 950) + 85 + 6 * e, x = 125 + Math.sin(a) * 230, z = 950 + Math.cos(a) * 230; cam.at(x, y, z, 200, y - 12, 985, 0.8); }` },
   // 7 — the burning night: the market square with the houses on fire.
   { name: 's07-fire-night', spot: 'p8-fire-night', seconds: 6, settle: 25000, js: around(14, 10, 4, 6, -0.4, 0.2, 2, 0.85) },
@@ -78,9 +96,9 @@ const SHOTS = [
   // Gameplay: surfing the frost (Traverse held on snow), carving left and right.
   { name: 'g03-surf', spot: 'p4-surf-carve-golden', seconds: 5, js: walk(300, 0, `if (i === 60) inject('MoveLeft', true); if (i === 130) { inject('MoveLeft', false); inject('MoveRight', true); } if (i === 210) inject('MoveRight', false);`, "'MoveForward', 'Traverse'") },
   // Gameplay: through the village by day, the villagers about.
-  { name: 'g04-village-walk', spot: 'tour-04-noon-street', extra: '^&bell=release', seconds: 6, js: walk(360, -0.3) },
+  { name: 'g04-village-walk', spot: 'tour-04-noon-street', extra: '^&bell=release', seconds: 6, js: walk(360, 0, '', "'MoveForward'", 'road') },
   // Gameplay: up the stair.
-  { name: 'g05-stair-walk', spot: 'p8-stair-foot', extra: '^&bell=release', seconds: 5.5, js: walk(330, 0.1) },
+  { name: 'g05-stair-walk', spot: 'p8-stair-foot', extra: '^&bell=release', seconds: 5.5, js: walk(330, 0, '', "'MoveForward'", [[162.9, 886.5], [171.5, 885.9], [182.9, 879.5], [190.7, 870.5], [197.2, 862.6]]) },
   // Gameplay: Gust across the grass, twice, walking.
   { name: 'g06-gust', spot: 'p8-gale-meadow', extra: '^&gale=1', seconds: 5, setup: 'gale', js: walk(300, 0.2, `if (i === 40 || i === 170) inject('Primary', true); if (i === 46 || i === 176) inject('Primary', false);`) },
 
@@ -117,7 +135,7 @@ for (const s of SHOTS) {
   execFileSync('tools/bot/play.sh', [s.spot, s.extra || ''], { stdio: 'inherit' });
   await bot('wait', { ms: s.settle || 6000 });
   if (s.setup) await SETUP[s.setup]();
-  let js2 = PRE(s.seconds) + s.js;
+  let js2 = (s.pre || '') + PRE(s.seconds) + s.js;
   if (s.setup === 'release') js2 = `if (i === -1) { const b = g.bellwether; for (let k = 0; k < 3; k++) b.openValve(k); }` + js2;
   await js('w.__shot = null; return 1');
   const r = await bot('film', { name: s.name, seconds: s.seconds, js: js2, warm: s.warm ?? 30 }, 900000);

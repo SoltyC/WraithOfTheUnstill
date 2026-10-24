@@ -313,6 +313,9 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
     canopy: 0.5 - 0.5,
     /** Canopy cover at the last placement (unsmoothed). */
     cover: 0.5 - 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
+    /** True: keep the current placement however far the camera moves (filmed camera moves: no trees fading in and out at the
+     *  edge, no shadows shifting with them). */
+    hold: false,
     update() {
       params.x = this.time; params.y = this.wind; params.z = this.windX; params.w = this.windZ;
       const now = (performance.now() - t0) * 0.001;
@@ -320,7 +323,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
       this.canopy += (canopyTarget - this.canopy) * Math.min(1, (now - lastNow) * 0.7); lastNow = now;
       if (canopyDirty && streamer.overview) { const tc = performance.now(); buildCanopy(); api.canopyMs = performance.now() - tc; }
       const dx = this.camX - lastX, dz = this.camZ - lastZ, m2 = dx * dx + dz * dz;
-      if (m2 > REPLACE * REPLACE) {
+      if (m2 > REPLACE * REPLACE && !this.hold) {
         lastX = this.camX; lastZ = this.camZ;
         const jump = m2 > JUMP * JUMP;
         rebuild(lastX, lastZ, jump, now);

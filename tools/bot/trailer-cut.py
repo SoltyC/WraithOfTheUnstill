@@ -23,14 +23,14 @@ CUT = [
     ('s04-blizzard', 3.0, None),
     ('g03-surf', 4.0, None),
     ('s05-warden', 4.5, 'The frost was only the beginning.'),
-    ('s06-timelapse', 12.5, None),
-    ('g04-village-walk', 5.0, None),
+    ('s06-timelapse', 15.0, None),
+    ('g04-village-walk', 4.5, None),
     ('s07-fire-night', 4.5, 'Hearn is burning.'),
     ('s08-ribbon', 3.5, None),
     ('g05-stair-walk', 4.5, None),
     ('s09-stair', 4.0, None),
     ('s10-wake-market', 5.0, 'Something sleeps under the manor.'),
-    ('s13-release', 11.0, 'Let it breathe.'),
+    ('s13-release', 7.5, 'Let it breathe.'),       # starts ~62 s: the theme swells again at ~64 s
     ('g06-gust', 4.0, None),
     ('s14-mill', 4.0, None),
     ('s16-summit', 7.5, None),
@@ -69,11 +69,15 @@ for k, (mp4, secs, text) in enumerate(shots):
         f += (f",drawtext=fontfile='{FONT}':text='{text}':fontsize=40:fontcolor=white:alpha='{alpha}'"
               f":x=(w-text_w)/2:y=h-{BAR // 2}-text_h/2")
     parts.append(f + f'[v{k}]')
-# End card: black, the title, then fade.
+# End card: black and the title, timed so the release theme plays to its own end under it (it decays from ~80 s to
+# 88.9 s): the card runs from where the last shot crossfades out to the music's end, plus a beat of silence.
 endk = len(shots)
+MUSIC_LEN = 88.88
+card_at = sum(sh[1] for sh in shots) - XF * endk
+END = max(5.0, MUSIC_LEN + 0.7 - card_at)
 inputs += ['-f', 'lavfi', '-t', str(END), '-i', 'color=c=black:s=1920x1080:r=60']
 parts.append(f"[{endk}:v]format=yuv420p,drawtext=fontfile='{FONT}':text='WRAITH OF THE UNSTILL':fontsize=78:fontcolor=white:"
-             f"alpha='if(lt(t,0.6),0,if(lt(t,1.6),t-0.6,if(lt(t,{END - 1.2}),1,max(0,({END}-t)/1.2))))':x=(w-text_w)/2:y=(h-text_h)/2,"
+             f"alpha='if(lt(t,0.8),0,if(lt(t,2.3),(t-0.8)/1.5,if(lt(t,{END - 1.6}),1,max(0,({END - 0.4}-t)/1.2))))':x=(w-text_w)/2:y=(h-text_h)/2,"
              f"fps=60,settb=1/60[v{endk}]")
 acc, length = 'v0', shots[0][1]
 for k in range(1, endk + 1):
@@ -81,11 +85,12 @@ for k in range(1, endk + 1):
     off = length - XF
     parts.append(f'[{acc}][v{k}]xfade=transition=fade:duration={XF}:offset={off:.3f}[x{k}]')
     acc, length = f'x{k}', off + d
-# Music: the release theme from the start, faded out with the end card.
+# Music: the release theme from the start to its own ending (no fade out: it decays by itself), padded to the picture.
 music = os.path.join(ROOT, 'assets', 'audio', 'music', 'release.wav')
 inputs += ['-i', win(music)]
 ak = endk + 1
-parts.append(f'[{ak}:a]atrim=0:{length:.3f},afade=t=in:d=1.5,afade=t=out:st={length - 3.5:.3f}:d=3.5[a]')
+parts.append(f'[{ak}:a]afade=t=in:d=1.5,apad,atrim=0:{length:.3f}[a]')
+print(f'end card at {card_at:.1f} s for {END:.1f} s; the music ends at {MUSIC_LEN} s')
 out = os.path.join(T, 'wraith-trailer.mp4')
 run([FF, '-v', 'error', '-y', *inputs, '-filter_complex', ';'.join(parts), '-map', f'[{acc}]', '-map', '[a]',
      '-c:v', 'libx264', '-crf', '17', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '256k', '-movflags', '+faststart', win(out)])
