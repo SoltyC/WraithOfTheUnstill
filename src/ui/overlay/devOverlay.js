@@ -14,6 +14,7 @@ import { toggleDefs, toggles, setToggle } from '../../core/systems.js';
 import { input, Action, releasePointer } from '../../input/actions.js';
 import { FrameGraph } from './frameGraph.js';
 import { buildWorldTools } from './worldTools.js';
+import { buildFlowTools } from './flowTools.js';
 
 const STAT_INTERVAL = 0.25;
 
@@ -54,6 +55,9 @@ export class DevOverlay {
     onLatePipeline(() => this._refreshLate());
     this.enabled = true;
   }
+
+  /** The Flow section (needs the boot context, so it joins after the constructor). */
+  addFlowTools(g) { if (g.flow) this.root.append(buildFlowTools(g, el)); }
 
   _stat(grid, key, label) {
     const v = el('span', { class: 'v' }, '–');

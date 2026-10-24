@@ -16,6 +16,7 @@ import { params } from '../../src/core/params.js';
 import { clock, advanceClock } from '../../src/core/clock.js';
 import { createWeather } from '../../src/world/weather.js';
 import { createWind } from '../../src/world/wind.js';
+import { createFlow, FLOW_IN } from '../../src/game/flow.js';
 
 let gcs = 0;
 new PerformanceObserver((list) => { gcs += list.getEntries().length; }).observe({ entryTypes: ['gc'] });
@@ -59,16 +60,27 @@ const cases = {
     if ((i & 1023) === 0) wind.burst(i & 63, 5, 2);
     for (let k = 0; k < 4; k++) { wind.sx = (i & 255) + k * 3.1; wind.sz = k * 7.3; wind.sample(); }
   },
+  // Flow: modes cycling (surf, glide, a crest jump, standing) with events and blows mixed in.
+  'flow.update (modes, chains, events)': (i) => {
+    const ph = (i >> 7) & 7;
+    const n = flow.inp;
+    n[FLOW_IN.DT] = clock.dt; flow.paused = false;
+    flow.surfOn = ph < 5; flow.glideOn = ph === 2 || ph === 3; flow.grounded = ph !== 2 && ph !== 3 && ph !== 5;
+    n[FLOW_IN.SPEED] = ph === 7 ? 0 : 15; n[FLOW_IN.SURF_SPEED] = 18; n[FLOW_IN.GLIDE_SPEED] = 14; n[FLOW_IN.GRIP] = (i & 255) / 255; n[FLOW_IN.VY] = ph === 5 ? -20 : -2; n[FLOW_IN.LIFT] = ph === 6 ? 1 : 0;
+    flow.update();
+    if ((i & 511) === 0) flow.hit(2 + (i >> 9) % 5); if ((i & 1023) === 7) flow.hurt(); if ((i & 2047) === 9) flow.nearMiss();
+  },
   'frameStats.push': (i) => stats.push(8 + (i & 7)),
   'pool acquire/release': () => { const o = pool.acquire(); pool.release(o); },
 };
 
 const wind = createWind();
+const flow = createFlow();
 clock.dt = 1 / 90 + Math.random() * 1e-9; // a heap double, like the real clock
 const N = 2_000_000;
 let failed = false;
 for (const [name, fn] of Object.entries(cases)) {
-  for (let i = 0; i < 200_000; i++) fn(i); // warm up and let V8 optimise
+  for (let i = 0; i < (name.startsWith("flow") ? 3_000_000 : 200_000); i++) fn(i); // warm up and let V8 optimise (flow: its rare branches take longer to settle)
   globalThis.gc?.();
   await new Promise((r) => setTimeout(r, 20)); // flush the forced GC's observer entry
   const before = v8.getHeapStatistics().used_heap_size;

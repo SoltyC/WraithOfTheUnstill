@@ -35,7 +35,7 @@ const BASE = 'audio/music/';
  * @param {{ context: () => AudioContext|null }} audio  shares the sfx context (one per page)
  */
 export function createMusic(audio) {
-  let ac = null, bus = null, duckGain = null;
+  let ac = null, bus = null, duckGain = null, brightness = null;
   const beds = {};      // id → { def, els: [a, b], gains: [g, g], cur, xfading, playing, target, pan }
   const stings = {};    // id → AudioBuffer
   let ready = false;
@@ -45,7 +45,9 @@ export function createMusic(audio) {
     if (!ac) return false;
     bus = ac.createGain(); bus.gain.value = self.volume;
     duckGain = ac.createGain(); duckGain.gain.value = 1;
-    bus.connect(duckGain); duckGain.connect(ac.destination);
+    // The Flow lift also adds a high shelf (0 → +4 dB above 2.5 kHz; transparent at 0): the score brightens.
+    brightness = ac.createBiquadFilter(); brightness.type = 'highshelf'; brightness.frequency.value = 2500; brightness.gain.value = 0;
+    bus.connect(brightness); brightness.connect(duckGain); duckGain.connect(ac.destination);
     for (const id in BEDS) {
       const def = BEDS[id];
       const n = def.loop ? 2 : 1, els = [], gains = [];
@@ -90,6 +92,8 @@ export function createMusic(audio) {
     want: null,
     /** Master music volume (settings) and dialogue ducking (0 none … 1 full duck), fields. */
     volume: 0.8, duck: 0.5 - 0.5,
+    /** Flow lift (0..1, eased by the owner): the score swells a little and opens up as the Wraith finds its flow. */
+    lift: 0.5 - 0.5,
     /** Listener and the spatial bed's source (the camp fire), fields. */
     lx: 0.5, ly: 0.5, lz: 0.5, fx: 0.5 - 0.5, fz: 1.5 - 0.5, sx: 0.5, sy: 0.5, sz: 0.5,
     /** Bed currently audible (for the dev overlay and tests). */
@@ -154,8 +158,9 @@ export function createMusic(audio) {
       }
       this.current = null;
       for (const id in beds) if (beds[id].playing) this.current = id;
-      bus.gain.value = this.volume;
+      bus.gain.value = this.volume * (1 + 0.28 * this.lift);
       duckGain.gain.value = 1 - 0.55 * this.duck;
+      brightness.gain.value = 4 * this.lift;
     },
   };
   return self;

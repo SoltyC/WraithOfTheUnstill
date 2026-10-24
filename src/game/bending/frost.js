@@ -58,7 +58,8 @@ export function createFrostBending(ctx) {
   const SWEEPS = 4;
   // Sweep pool: active, t, origin x/z, dir x/z, previous front distance.
   const sw = { active: new Uint8Array(SWEEPS), t: new Float64Array(SWEEPS), ox: new Float64Array(SWEEPS), oz: new Float64Array(SWEEPS),
-    dx: new Float64Array(SWEEPS), dz: new Float64Array(SWEEPS), prev: new Float64Array(SWEEPS) };
+    dx: new Float64Array(SWEEPS), dz: new Float64Array(SWEEPS), prev: new Float64Array(SWEEPS),
+    sc: new Float64Array(SWEEPS), lane: new Uint8Array(SWEEPS) };
   let seed = 11, sweepSerial = 0;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
@@ -97,6 +98,9 @@ export function createFrostBending(ctx) {
      *  direction (unit, horizontal), dt, time; requests set for one frame by the owner. */
     x: 0.5, y: 0.5, z: 0.5, aimX: 0.5, aimZ: 0.5, dt: 0.5, time: 0.5,
     castSweep: false,
+    /** Flow (game/flow.js), set with the cast: `power` scales the Sweep's range and width (1 = none);
+     *  `flowing` (Flow 3) makes it freeze a lane behind its front that can be surfed. */
+    power: 1, flowing: false,
     /** Light slots this frame's verbs took (the Gale continues from here). */
     lightsUsed: 0,
 
@@ -147,7 +151,7 @@ export function createFrostBending(ctx) {
     sw.active[k] = 1; sw.t[k] = 0;
     sw.dx[k] = s.aimX / l; sw.dz[k] = s.aimZ / l;
     sw.ox[k] = s.x + sw.dx[k] * 0.6; sw.oz[k] = s.z + sw.dz[k] * 0.6;
-    sw.prev[k] = 0;
+    sw.prev[k] = 0; sw.sc[k] = s.power; sw.lane[k] = s.flowing ? 1 : 0;
     self.sweepId[k] = ++sweepSerial;
   }
 
@@ -155,12 +159,13 @@ export function createFrostBending(ctx) {
   function stepSweep(k, dt, li) {
     const T = sweepTuning;
     sw.t[k] += dt;
-    const travel = T.range / T.speed;
+    const sc = sw.sc[k], range = T.range * sc;
+    const travel = range / T.speed;
     const t = sw.t[k];
-    const d = Math.min(T.range, t * T.speed);
+    const d = Math.min(range, t * T.speed);
     // Ease in from the ground, settle back out at the end of its run.
     const ease = Math.min(1, t / T.easeIn) * Math.min(1, Math.max(0, (travel + T.easeOut - t) / T.easeOut));
-    const f = d / T.range, hw = T.halfWidth0 + (T.halfWidth1 - T.halfWidth0) * f;
+    const f = d / range, hw = (T.halfWidth0 + (T.halfWidth1 - T.halfWidth0) * f) * sc;
     const dx = sw.dx[k], dz = sw.dz[k];
     const seg = d - sw.prev[k];
     if (seg > 0.01 && ease > 0.02) {
@@ -169,6 +174,12 @@ export function createFrostBending(ctx) {
       ts.bl = seg * 0.5; ts.bw = hw; ts.bd = T.depth * ease; ts.bc = 0.6;
       ts.bk = BRUSH.PLOUGH; ts.bwet = T.wetness * ease; ts.bbias = 0; ts.bberm = T.berm;
       ts.stamp();
+      // Flowing (Flow 3): the channel freezes behind the front — a lane of ice to surf on.
+      if (sw.lane[k] === 1) {
+        ts.bl = seg * 0.5; ts.bw = hw * 0.95; ts.bd = 0; ts.bc = 0.5;
+        ts.bk = BRUSH.FREEZE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
+        ts.stamp();
+      }
     }
     sw.prev[k] = d;
     self.sweepFX[k] = sw.ox[k] + dx * d; self.sweepFZ[k] = sw.oz[k] + dz * d; self.sweepHW[k] = hw * Math.min(1, ease * 2);

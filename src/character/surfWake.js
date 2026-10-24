@@ -31,6 +31,8 @@ export function createSurfWake(ts, fx) {
   return {
     /** Owner fields: the controller's surf model, foot position, grounded. */
     surf: null, x: 0.5, y: 0.5, z: 0.5, grounded: false, enabled: true,
+    /** Flow 0..3 (game/flow.js, eased): the wake grows wider, deeper and throws more spray. */
+    flow: 0.5 - 0.5,
     update() {
       const s = this.surf;
       if (!this.enabled || !s || !s.active || !this.grounded || s.speed < 1) { px = NaN; return; }
@@ -44,8 +46,9 @@ export function createSurfWake(ts, fx) {
       // (turning right → the outside is left → negative bias).
       ts.bx = (this.x + px) * 0.5; ts.bz = (this.z + pz) * 0.5; ts.bdx = dx / len; ts.bdz = dz / len;
       ts.bl = len * 0.5;
-      ts.bw = T.halfWidth + T.widthPerSpeed * sp;
-      ts.bd = Math.min(T.maxDepth, T.depth + T.depthPerSpeed * sp) * s.blend;
+      const fk = this.flow;
+      ts.bw = (T.halfWidth + T.widthPerSpeed * sp) * (1 + 0.1 * fk);
+      ts.bd = Math.min(T.maxDepth, T.depth + T.depthPerSpeed * sp) * s.blend * (1 + 0.08 * fk);
       ts.bc = T.compaction;
       ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = -Math.sign(s.latAccel) * grip * T.bias; ts.bberm = T.berm;
       ts.stamp();
@@ -64,7 +67,7 @@ export function createSurfWake(ts, fx) {
         fx.emit();
       }
       const out = s.latAccel > 0.5 ? -1 : s.latAccel < -0.5 ? 1 : 0;
-      const n = Math.min(T.maxSpray, Math.round(sp * T.sprayPerSpeed + Math.abs(s.latAccel) * T.sprayPerLat)) * s.blend;
+      const n = Math.min(T.maxSpray * (1 + 0.25 * fk), Math.round(sp * T.sprayPerSpeed + Math.abs(s.latAccel) * T.sprayPerLat) * (1 + 0.2 * fk)) * s.blend;
       for (let k = 0; k < n; k++) {
         const side = out !== 0 ? out * (0.7 + 0.3 * rnd()) : (rnd() < 0.5 ? -1 : 1);
         const back = 0.2 + 0.5 * rnd();

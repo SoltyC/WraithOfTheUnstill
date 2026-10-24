@@ -9,7 +9,8 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
-export const FX_GLOWS = 3;
+export const FX_TRAIL = 5;                   // hand-light trail points per hand (Flow)
+export const FX_GLOWS = 3 + 2 * FX_TRAIL;     // cowl, two fingertips, then the trails
 export const FX_SPRAY = 3072;
 export const FX_COUNT = FX_GLOWS + FX_SPRAY;
 export const SPRAY_LIFE = 1.1;

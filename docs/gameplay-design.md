@@ -68,6 +68,16 @@ The rule, from Halo's nested loops [P]: **vary the situation around fixed verbs;
   - it serves Pillars 1 and 2.
 - **Tuning by data** (`combatTuning.flow`), with tests for the build and decay curves. Feel is reviewed by the user.
 
+### Flow — Done (2026-10-25)
+
+- **Built:** `src/game/flow.js` (pure, allocation-free, `npm run alloc` case `flow.update`), owner `src/systems/flow.js`, tuning `flowTuning` (data, every number has a slider in the dev overlay's Flow section, `src/ui/overlay/flowTools.js`). Tests: `tests/flow.test.js`, `tests/combatFlow.test.js`.
+- **Build values (per s):** surfing above 11 m/s +0.16, +0.42 scaled 14→22 m/s, carving +0.40 from 55 % of grip (≥ 9 m/s), gliding +0.34 scaled 9→15 m/s. Passive building fades out over the last 0.6 below `softCap` 2.1, and above it bleeds 0.2/s: tier 3 needs chains and reactions. Chains (mode held ≥ 0.5 s, next mode within 1 s): +0.45, +0.12 per chain in the streak (max +0.3 extra); surf→glide, glide→surf, crest jump landing back on the surf (≥ 0.35 s air), updraft catch +0.45. Events: shatter +0.6, Gust strike +0.45, any soaked-then-frozen or soaked-then-Gusted body +0.45, near miss +0.5 (rate-limited 0.5 s), `flow.hit(FLOW_EVENT.WEAPON_LIGHT/HEAVY)` +0.25/+0.4 for the weapons to call. Stacked events divide by (1 + recent), forgotten at 2.5/s.
+- **Lost:** standing 1.5/s after 0.3 s (3 → 0 in 2 s); walking 0.35/s (not for 1 s after a chain, nor 1.6 s after a feeding event); a blow −1 and nothing builds for 0.6 s; a fall faster than 17 m/s −1 (not from a glide). Death resets.
+- **Gives:** focus regen × (1 + 0.5·flow) (also the surf/move/idle rates); tier 2+: verb costs × 0.7 (taps, heavies, Ribbon and Vortex per second), Sweep and Gust range/width and verb damage × 1.25; tier 3: Frost Sweep also freezes its channel (a lane of ice that stays), Gale Gust carries the Wraith (0.7 s: +~6 m/s on the surf, airspeed in a glide, a 9 m/s kick and hop on foot). Verbs may now be cast mid-surf (they were blocked; the spec's "a Sweep cast mid-surf" needs it).
+- **On the body:** hem, mantle edge and cuffs glow in the element's light (cloth shader `clothFlow`), cloth streams more (wind × (1 + 0.22·flow) plus a push back along travel), the hand-light leaves a 5-point trail per hand, the surf wake is 10 %/8 % wider/deeper per tier with more spray, speed streaks longer, brighter, with 64 extra, a soft tone per tier change (up: rising, warmer each tier; down: sinking), the score +28 % gain and a +4 dB high shelf at flow 3. Hands brighten a little. No HUD.
+- **Telemetry** (bot state `flow`): on a 45 s snow-surf route seconds at tier 0/1/2/3 were 21 / 14 / 10 / 0 (the run broke up where the snow ended); with landed reactions injected tier 3 is reached and held a few seconds. See the report for the fight numbers.
+- **Open:** Stone's flowing Shard (not built); weapon hit tuning (the hook exists); casting mid-surf has no pose of its own; fights with a cold start rarely lift Flow above tier 1 (the bot is a poor fighter: needs the user's feel pass); the glow could be read as the wound frost, so check at night; music lift is only a gain and a high shelf, not a separate layer; hard-fall threshold and the near-miss rate limit are untested by a human.
+
 ## 4. Combat
 
 ### 4.1 Roles and the material lever

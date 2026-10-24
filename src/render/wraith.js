@@ -16,7 +16,7 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { clothVertexWGSL, clothFragmentWGSL, furVertexWGSL, furFragmentWGSL, FUR_SHELLS } from '../shaders/cloth.wgsl.js';
-import { fxVertexWGSL, fxFragmentWGSL, fxShadowFragmentWGSL, FX_GLOWS, FX_SPRAY, FX_COUNT } from '../shaders/wraithFx.wgsl.js';
+import { fxVertexWGSL, fxFragmentWGSL, fxShadowFragmentWGSL, FX_GLOWS, FX_TRAIL, FX_SPRAY, FX_COUNT } from '../shaders/wraithFx.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -89,7 +89,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const lit = { samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES], storage: [...ATMO_MATERIAL_BUFFERS, 'shadowData'] };
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'clothRobe', 'clothBand', 'clothSash', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'clothRobe', 'clothBand', 'clothSash', 'clothFlow', 'spellLights', ...ENV_UNIFORMS],
     samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage, 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -97,8 +97,8 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   mat.setStorageBuffer('clothVerts', verts);
   mat.setVector4('clothParams', clothParams);
   mat.setVector4('clothHead', head); mat.setVector4('clothHandL', handL); mat.setVector4('clothHandR', handR);
-  const frostCreep = new Vector4(0, 0, 0, 0);
-  mat.setVector4('clothFrost', frostCreep);
+  const frostCreep = new Vector4(0, 0, 0, 0), flowV = new Vector4(0, 0, 0, 0);
+  mat.setVector4('clothFrost', frostCreep); mat.setVector4('clothFlow', flowV);
   const tint = opts.tint || [1, 1, 1];
   const tintV = new Vector4(tint[0], tint[1], tint[2], 1);
   // Robe look (game/robes.js): x = embroidered hem band on, y = sash re-dyed; band / sash colours.
@@ -161,6 +161,9 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   let sprayNext = 0, seed = 1;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   const meshes = [mesh, fur, fx];
+  // Flow: the hand-light's trail, a short ring of where each fingertip was (world space).
+  const trail = new Float32Array(2 * FX_TRAIL * 4);   // per point: x, y, z, time made
+  let trailNext = 0, trailAt = -1e9;
 
   return {
     wraith, mesh, fur, fx, material: mat, clothParams,
@@ -176,6 +179,10 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     handGlowSize: 0.035,
     /** Frost creeping up the robe (0..1, from wounds). */
     frost: 0.5 - 0.5,
+    /** Flow (game/flow.js, eased 0..3): the hems and cuffs catch the element's light and the hand-light trails. */
+    flowLevel: 0.5 - 0.5,
+    /** The element's light for Flow (rgb): frost cold blue, gale pale green. */
+    flowColor: [0.28, 0.5, 0.8],
     /** Owner fields: sim time (s), set before update(). */
     time: 0.5,
     isEnabled() { return mesh.isEnabled(); },
@@ -234,6 +241,27 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     /** Run the simulation (inputs already set on `wraith`) and upload the vertices and effects. */
     /** Glow colour of the hands (rgb; the Wraith's element light, or a Veiled's lantern). */
     handGlow: [0.25, 0.45, 0.6],
+    /** Flow on the body: the cloth's glow uniform, and the hand-light trail (a point every 40 ms, living 0.17–0.38 s). */
+    _flowFx(t) {
+      const L = this.flowLevel, k = L < 0.02 ? 0 : Math.min(1, L / 3), hg = this.flowColor;
+      flowV.set(hg[0] * k * 0.3, hg[1] * k * 0.3, hg[2] * k * 0.3, k);
+      const live = k > 0;
+      if (live && t - trailAt > 0.04) {
+        trailAt = t;
+        for (let s = 0; s < 2; s++) {
+          const h = s === 0 ? handL : handR, o = (s * FX_TRAIL + trailNext) * 4;
+          trail[o] = h.x; trail[o + 1] = h.y; trail[o + 2] = h.z; trail[o + 3] = t;
+        }
+        trailNext = (trailNext + 1) % FX_TRAIL;
+      }
+      const life = 0.17 + 0.07 * L, on = Math.min(1, Math.max(0, (L - 0.2) / 1.2));
+      for (let s = 0; s < 2; s++) for (let q = 0; q < FX_TRAIL; q++) {
+        const o = (s * FX_TRAIL + q) * 4, age = t - trail[o + 3], f = live ? Math.max(0, 1 - age / life) : 0;
+        const e = (3 + s * FX_TRAIL + q) * 8, w = f * f * on * 0.8;
+        fxData[e] = trail[o]; fxData[e + 1] = trail[o + 1]; fxData[e + 2] = trail[o + 2]; fxData[e + 3] = w;
+        fxData[e + 4] = hg[0] * 0.8; fxData[e + 5] = hg[1] * 0.8; fxData[e + 6] = hg[2] * 0.8; fxData[e + 7] = this.handGlowSize * (0.45 + 0.4 * f);
+      }
+    },
     /** Run the simulation only, without upload (a far Veiled keeps its pose cheaply). */
     update() {
       wraith.update();
@@ -260,6 +288,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
       const hg = this.handGlow;
       glow(fxData, 1, handL, hg[0] * handL.w, hg[1] * handL.w, hg[2] * handL.w, this.handGlowSize, this.handLight);
       glow(fxData, 2, handR, hg[0] * handR.w, hg[1] * handR.w, hg[2] * handR.w, this.handGlowSize, this.handLightR ?? this.handLight);
+      this._flowFx(t);
       fxBuf.update(fxData);
       fxParams.x = t; fxParams.y = wraith.cloth.windX * 0.2; fxParams.z = wraith.cloth.windZ * 0.2;
       furParams.x = wraith.cloth.windX * 0.05; furParams.y = wraith.cloth.windZ * 0.05; furParams.z = t;

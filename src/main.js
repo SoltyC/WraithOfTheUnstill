@@ -90,6 +90,7 @@ async function boot() {
   sysClimb.addClimbSystem(g);
   if (g.water) { g.controller.water = g.water; g.arm.water = g.water; } // swimming; the camera stays above the surface
   loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind }));
+  (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
   sysWraith.addWraithSystem(g);
   sysCreatures.addCreatureSystems(g);
@@ -118,7 +119,7 @@ async function boot() {
   if (!capture && !qs.get('bench')) (await import('./systems/titleCam.js')).addTitleCamSystem(g);
 
   const overlay = new overlayMod.DevOverlay(game);
-  overlay.refreshToggles();
+  overlay.refreshToggles(); overlay.addFlowTools(g);
   loop.addLate(overlay);
   // A playtest (a photo spot played live: ?spot=…&title=0, playtest.html) never autosaves over the real game.
   const playtest = !!qs.get('spot') && !capture;

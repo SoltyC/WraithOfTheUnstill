@@ -6,7 +6,7 @@
 // wind field: the stilled steppe is silent, the release brings the wind back. The context starts
 // on the first key or pointer press (browser autoplay rules).
 
-export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9 };
+export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, FLOW_UP: 10, FLOW_DOWN: 11 };
 const VOICES = 20;
 
 export function createSfx() {
@@ -57,8 +57,8 @@ export function createSfx() {
     enabled: true,
     /** Listener (fields): camera position and its right vector (horizontal). */
     lx: 0.5, ly: 0.5, lz: 0.5, rx: 1.5 - 0.5, rz: 0.5 - 0.5,
-    /** Sound position and loudness (fields) for the next play(). */
-    x: 0.5, y: 0.5, z: 0.5, gain: 1.5 - 0.5,
+    /** Sound position and loudness (fields) for the next play(). `tone` (0..2) picks the Flow cue's pitch. */
+    x: 0.5, y: 0.5, z: 0.5, gain: 1.5 - 0.5, tone: 0,
     /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss. */
     wind: 0.5 - 0.5, hiss: 0.5 - 0.5, time: 0.5,
 
@@ -135,6 +135,20 @@ export function createSfx() {
           og.linearRampToValueAtTime(0.32 * g, t + 0.01); og.exponentialRampToValueAtTime(0.001, t + 1.4);
           v.filt.type = 'highpass'; q.setValueAtTime(0.7, t); f.setValueAtTime(5000, t);
           ng.linearRampToValueAtTime(0.25 * g, t + 0.01); ng.exponentialRampToValueAtTime(0.001, t + 0.35);
+          break;
+        case SFX.FLOW_UP: { // a tier gained: a soft rising tone, warmer each tier, with a breath of air under it
+          const base = 330 * (this.tone === 0 ? 1 : this.tone === 1 ? 1.25 : 1.5);
+          v.osc.type = 'sine'; of.setValueAtTime(base, t); of.exponentialRampToValueAtTime(base * 1.5, t + 0.5);
+          og.linearRampToValueAtTime(0.16 * g, t + 0.06); og.exponentialRampToValueAtTime(0.001, t + 1.1);
+          v.filt.type = 'bandpass'; q.setValueAtTime(0.9, t); f.setValueAtTime(900, t); f.exponentialRampToValueAtTime(3200, t + 0.5);
+          ng.linearRampToValueAtTime(0.07 * g, t + 0.15); ng.exponentialRampToValueAtTime(0.001, t + 0.7);
+          break;
+        }
+        case SFX.FLOW_DOWN: // a tier lost: the same tone sinking, and the air going out of it
+          v.osc.type = 'sine'; of.setValueAtTime(330, t); of.exponentialRampToValueAtTime(190, t + 0.6);
+          og.linearRampToValueAtTime(0.1 * g, t + 0.04); og.exponentialRampToValueAtTime(0.001, t + 0.7);
+          v.filt.type = 'lowpass'; q.setValueAtTime(0.6, t); f.setValueAtTime(1400, t); f.exponentialRampToValueAtTime(240, t + 0.6);
+          ng.linearRampToValueAtTime(0.06 * g, t + 0.05); ng.exponentialRampToValueAtTime(0.001, t + 0.6);
           break;
         case SFX.BOOM:      // a colossal footfall, a slam: felt more than heard
           v.osc.type = 'sine'; of.setValueAtTime(78, t); of.exponentialRampToValueAtTime(30, t + 0.7);

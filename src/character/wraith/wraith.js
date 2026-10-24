@@ -13,7 +13,7 @@ const SUB = 1 / 120;
 const TURN_RATE = 9;
 const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
 /** Air drag on the cloth (1/s): walking, and the extra while surfing (the robe streams back). */
-const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3, GLIDE_AIR_DRAG = 1.6, GLIDE_WIND = 9;
+const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3, GLIDE_AIR_DRAG = 1.6, GLIDE_WIND = 9, FLOW_WIND = 0.22, FLOW_BACK = 3.2;
 const ARM = 0.58, UPPER = 0.3;
 /** Head centre in the body frame (body.js). */
 const HEAD_Y = 0.74, HEAD_Z = 0.02;
@@ -59,6 +59,8 @@ export class Wraith {
     this.facing = 0.5 - 0.5;
     /** Wind (unit direction blown toward) and strength 0..2, gust phase from time. */
     this.windX = 0.76; this.windZ = -0.65; this.windStrength = 0.6; this.time = 0.5;
+    /** Flow 0..3 (game/flow.js): the cloth streams longer. */
+    this.flow = 0.5 - 0.5;
     // Place the body once so garments can be built in the world.
     this._syncInputs();
     this.gait.reset(); this.gait.dt = 0; this.gait.update();
@@ -157,9 +159,14 @@ export class Wraith {
     // Wind: the field's direction and strength here (systems/wraith.js samples it, gusts included);
     // a little flutter of its own.
     const gust = 0.9 + 0.1 * Math.sin(this.time * 2.3) * Math.sin(this.time * 0.97 + 1.3);
-    const ws = this.windStrength * 4.5 * gust;
+    // Flow (0..3) lets the hem and sleeves stream: more of the wind, and a push back along the travel.
+    const ws = this.windStrength * 4.5 * gust * (1 + FLOW_WIND * this.flow);
     this.cloth.frameVX = this.vx; this.cloth.frameVY = this.vy; this.cloth.frameVZ = this.vz;
     this.cloth.windX = this.windX * ws; this.cloth.windZ = this.windZ * ws; this.cloth.windY = 0.4 * ws * 0.2;
+    if (this.flow > 0.02) {
+      const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz), k = this.flow * Math.min(1, sp / 12) * FLOW_BACK / Math.max(sp, 1);
+      this.cloth.windX -= this.vx * k; this.cloth.windZ -= this.vz * k;
+    }
     // In the water the robe nearly floats (buoyant, heavy with water: little gravity, a slow drift up).
     this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim); this.cloth.windY += 0.6 * this.swim;
     // Gliding: the robe roars back (drag toward the surf value and a bit more); restored after.

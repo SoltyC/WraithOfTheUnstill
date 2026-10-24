@@ -63,7 +63,7 @@ export function createGaleBending(ctx) {
   const { ts, ground, wind, lights } = ctx;
   // Gust pool: active, t, origin, dir, previous front distance, last burst time.
   const gu = { active: new Uint8Array(GUSTS), t: new Float64Array(GUSTS), ox: new Float64Array(GUSTS), oz: new Float64Array(GUSTS),
-    dx: new Float64Array(GUSTS), dz: new Float64Array(GUSTS), prev: new Float64Array(GUSTS), burst: new Float64Array(GUSTS) };
+    dx: new Float64Array(GUSTS), dz: new Float64Array(GUSTS), prev: new Float64Array(GUSTS), burst: new Float64Array(GUSTS), sc: new Float64Array(GUSTS) };
   const vx = { x: 0, z: 0, y: 0, s: 0, t: 0, stamp: 0, burst: 0 };
   const up = { active: new Uint8Array(DRAFTS), x: new Float64Array(DRAFTS), z: new Float64Array(DRAFTS), y: new Float64Array(DRAFTS),
     age: new Float64Array(DRAFTS), next: 0 };
@@ -84,6 +84,8 @@ export function createGaleBending(ctx) {
      *  ground (tx, ty, tz), dt, time; requests set for one frame by the owner; vortexHeld held. */
     x: 0.5, y: 0.5, z: 0.5, aimX: 0.5, aimZ: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, dt: 0.5, time: 0.5,
     castGust: false, castUpdraft: false, vortexHeld: false,
+    /** Flow (game/flow.js), set with the cast: scales the Gust's range and width (1 = none). */
+    power: 1,
     /** First light slot this frame (after the frost verbs'). */
     lightBase: 0,
     /** Gesture for the body: 1 right after a cast, decaying; held by the Vortex. */
@@ -134,7 +136,7 @@ export function createGaleBending(ctx) {
     let k = 0;
     for (let i = 0; i < GUSTS; i++) if (!gu.active[i]) { k = i; break; } else if (gu.t[i] > gu.t[k]) k = i;
     gu.active[k] = 1; gu.t[k] = 0; gu.ox[k] = s.x + s.aimX * 0.6; gu.oz[k] = s.z + s.aimZ * 0.6;
-    gu.dx[k] = s.aimX; gu.dz[k] = s.aimZ; gu.prev[k] = 0; gu.burst[k] = -1;
+    gu.dx[k] = s.aimX; gu.dz[k] = s.aimZ; gu.prev[k] = 0; gu.burst[k] = -1; gu.sc[k] = s.power;
     self.gustId[k] = ++serial;
   }
 
@@ -142,11 +144,12 @@ export function createGaleBending(ctx) {
     if (!gu.active[k]) { self.gustHW[k] = 0; return li; }
     const T = gustTuning;
     gu.t[k] += dt;
-    const t = gu.t[k], travel = T.range / T.speed;
-    const d = Math.min(T.range, t * T.speed);
+    const sc = gu.sc[k], range = T.range * sc;
+    const t = gu.t[k], travel = range / T.speed;
+    const d = Math.min(range, t * T.speed);
     if (t > travel + T.easeOut) { gu.active[k] = 0; self.gustHW[k] = 0; return li; }
     const ease = Math.min(1, t / T.easeIn) * Math.min(1, Math.max(0, (travel + T.easeOut - t) / T.easeOut));
-    const hw = T.halfWidth0 + (T.halfWidth1 - T.halfWidth0) * (d / T.range);
+    const hw = (T.halfWidth0 + (T.halfWidth1 - T.halfWidth0) * (d / range)) * sc;
     const dx = gu.dx[k], dz = gu.dz[k];
     const fx0 = gu.ox[k] + dx * d, fz0 = gu.oz[k] + dz * d;
     self.gustFX[k] = fx0; self.gustFZ[k] = fz0; self.gustHW[k] = hw * ease;
@@ -160,8 +163,8 @@ export function createGaleBending(ctx) {
     }
     gu.prev[k] = d;
     // The wind field: a burst along the front now and then (the grass beyond ripples).
-    if (wind && d < T.range && t - gu.burst[k] >= T.burstEvery) { gu.burst[k] = t; wind.burst(fx0, fz0, T.burstStrength * ease); }
-    if (li < SPELL_LIGHTS && d < T.range) {
+    if (wind && d < range && t - gu.burst[k] >= T.burstEvery) { gu.burst[k] = t; wind.burst(fx0, fz0, T.burstStrength * ease); }
+    if (li < SPELL_LIGHTS && d < range) {
       const o = li * 8, gy = ground1(fx0, fz0);
       lights[o] = fx0; lights[o + 1] = gy + 0.8; lights[o + 2] = fz0; lights[o + 3] = T.lightRadius;
       lights[o + 4] = 0.78; lights[o + 5] = 0.88; lights[o + 6] = 1.0; lights[o + 7] = T.lightIntensity * ease;
@@ -240,7 +243,7 @@ export function createGaleBending(ctx) {
     for (let k = 0; k < GUSTS; k++) {
       const o = k * 4, o2 = (3 + k) * 4;
       if (!gu.active[k]) { fx[o + 3] = 0; continue; }
-      const d = Math.min(T.range, gu.t[k] * T.speed), travel = T.range / T.speed;
+      const range = T.range * gu.sc[k], d = Math.min(range, gu.t[k] * T.speed), travel = range / T.speed;
       const ease = Math.min(1, gu.t[k] / T.easeIn) * Math.min(1, Math.max(0, (travel + T.easeOut - gu.t[k]) / T.easeOut));
       fx[o] = self.gustFX[k]; fx[o + 1] = ground1(self.gustFX[k], self.gustFZ[k]); fx[o + 2] = self.gustFZ[k]; fx[o + 3] = ease;
       fx[o2] = gu.dx[k]; fx[o2 + 1] = gu.dz[k]; fx[o2 + 2] = self.gustHW[k]; fx[o2 + 3] = d;
