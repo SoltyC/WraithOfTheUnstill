@@ -139,7 +139,7 @@ export function addBellwetherFightSystem(g) {
   if (!bell || !bellClimb) return;
   const flags = chapter.graph.flags;
   const devQ = qs ? qs.get('bell') : null;
-  const devFight = devQ === 'fight', devRelease = devQ === 'release';
+  const devFight = devQ === 'fight', devRelease = devQ === 'release' || (qs?.get('spot') || '').startsWith('p8-bell-released');
 
   const arena = arenaCentre();
   const vents = ventPositions();

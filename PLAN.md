@@ -640,6 +640,16 @@ analytic solids (not 800 platforms).
    blocking the gatehouse, Gust unable to reach the chimneys, the fight spot inside the fountain, the
    night pinned over every meadow playtest. Open: the Bellwether lying at rest reads as a hedge; the
    release cinematic needs a review on screen; villagers still path in straight lines; dusk aerials dark.
+   **Final polish (2026-10-24):** villagers walk the streets (`game/streetNav.js`, A* over the roads) and
+   four run errands by day; the mill's sails turn after the release (`siteSpin`); hearth smoke from the
+   chimneys once restored; the Bellwether's wake gives Gale (a real playthrough could not strip the
+   chimneys without `?gale=1`); its resting body has standing-stone vertebrae and olive turf; no snow
+   caps on meadow masonry (the fountain's white floor); spots reframed (summit, released, dusk aerial,
+   predawn, climb). All 150 spots shot (`screenshots/final-1/`, sheets in `final-sheets/`). Trailer:
+   the bot's film mode (fixed 1/60 s steps, every frame saved) → `tools/bot/trailer.mjs` (16 shots) →
+   `tools/bot/trailer-cut.py` (ffmpeg, the release theme) → `screenshots/trailer/wraith-trailer.mp4`.
+   Open: the stair's mid flights sit dark in their cut in the afternoon; the release cinematic camera
+   swings fast (smeary under TAA); the Bellwether at rest still lumpy close up.
 
 ### M9 — The Meadow Warden
 
