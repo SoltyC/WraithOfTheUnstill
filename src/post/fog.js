@@ -47,6 +47,8 @@ export function createFog(post, scene, atmo, shadows) {
     /** Inputs (owner): weather, ground height below the camera (m), key direction, dt. */
     weather: null, groundY: 0.5, dt: 0.5 - 0.5,
     keyDir: null,
+    /** Lightning glow in the clouds, 0..1 (owner). */
+    glow: 0.5 - 0.5,
     offX: 0.5 - 0.5, offZ: 0.5 - 0.5,
     /** Valley (inversion) fog of still air (owner): the level of its flat top (m), its density
      *  inside (1/m), the softness of the top (m) and its weight (0 = none; the stilled state). */
@@ -66,7 +68,7 @@ export function createFog(post, scene, atmo, shadows) {
   post.onResize((W, H) => build(W, H));
   post.onParams((P) => {
     const w = fog.weather;
-    if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; P[108] = 0; P[116] = 0; return; }
+    if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; P[108] = 0; P[116] = 0; P[106] = 0; P[107] = 0; return; }
     // Visibility: ~300 km clear haze is the atmosphere's job; overcast ~4 km, snowfall ~1 km,
     // blizzard ~150 m (σ = 3 / visibility).
     const f = Math.pow(w.fog, 2.2);
@@ -79,6 +81,8 @@ export function createFog(post, scene, atmo, shadows) {
     const sp = 6 + 10 * w.wind;
     fog.offX -= 0.6 * sp * fog.dt; fog.offZ -= 0.8 * sp * fog.dt;
     if (fog.offX < -1e5) fog.offX += 14000 * 7; if (fog.offZ < -1e5) fog.offZ += 14000 * 7;
+    // Rain and storm: a lower, darker deck (gloom), and the cloud's lightning glow.
+    P[106] = fog.glow; P[107] = Math.min(1, 0.45 * w.rain + 0.55 * w.storm);
     P[60] = w.snow; P[61] = w.cover; P[62] = fog.offX; P[63] = fog.offZ;
     const k = fog.keyDir;
     P[64] = k.x; P[65] = k.y; P[66] = k.z; P[67] = 1;

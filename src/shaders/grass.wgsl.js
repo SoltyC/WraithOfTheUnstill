@@ -273,6 +273,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // with the frozen channel.
   let rime = fragmentInputs.vFrost;
   albedo = mix(albedo, vec3f(0.6, 0.66, 0.72) * (0.85 + 0.3 * fleck), rime * (0.55 + 0.45 * t));
+  // Rain: wet blades are darker and more saturated, and catch a sheen.
+  let wetG = uniforms.wetParams.x;
+  albedo *= mix(1.0, 0.8, wetG);
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let nl = dot(N, L);
@@ -290,7 +293,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += key * albedo * vec3f(0.95, 1.3, 0.8) * back * vis * 0.32;
   // Sheen along the blade.
   let H = normalize(L + V);
-  col += key * pow(max(dot(N, H), 0.0), 24.0) * (0.06 + 0.3 * rime) * vis * t;
+  col += key * pow(max(dot(N, H), 0.0), 24.0) * (0.06 + 0.3 * rime + 0.55 * wetG) * vis * t;
   let ex = uniforms.fogParams.z * atmoExposure();
   col += spellLit(wp, N, albedo, 0.4, ex);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);

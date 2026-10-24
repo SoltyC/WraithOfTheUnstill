@@ -273,6 +273,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let tn = fragmentInputs.vTint;
   var albedo = a.rgb * tn.y;
   albedo = albedo * (1.0 + vec3f(tn.x, tn.x * 0.4, -tn.x));
+  albedo *= mix(1.0, 0.75, uniforms.wetParams.x); // wet
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let vis = shadowVisibilityFast(wp, camPos);

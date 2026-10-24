@@ -164,7 +164,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   }
   // Weather fog (snow haze, falling snow, blizzard), lit by the sky and the shafted sun.
   if (P.fog.x > 1e-7) {
-    let fogp = vec4f(P.fog.x, P.fog.y, P.fog.z, 0.0);
+    // Under a rain or storm deck (pad[0].w, gloom) the fog is a low haze of the lower air: the sky
+    // above keeps its clouds (a storm's deck has bases and cores, not a grey wall).
+    let skyThin = select(1.0, 1.0 - 0.9 * P.pad[0].w, d <= 0.0);
+    let fogp = vec4f(P.fog.x * skyThin, P.fog.y, P.fog.z, 0.0);
     let T = exp(-fogOpticalDepth(cam, dir, dist, fogp));
     let keyC = atmoLight[0].xyz;
     let skyUp = atmoLight[1].xyz;
@@ -172,7 +175,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     var ratio = 1.0;
     if (P.fog.w > 0.5) { ratio = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).r; }
     let phase = mix(hgPhase(cosT, 0.55), 0.0795775, 0.45);
-    let ins = (keyC * phase * ratio * 0.9 + skyUp * 0.95) * (1.0 - T);
+    let ins = (keyC * phase * ratio * 0.9 * skyThin + skyUp * 0.95 * (1.0 - 0.5 * P.pad[0].w)) * (1.0 - T); // a storm's air is dark
     dbgT = T;
     c = vec4f(c.rgb * T + ins * exposure, c.a);
   }

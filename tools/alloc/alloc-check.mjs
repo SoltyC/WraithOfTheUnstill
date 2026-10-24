@@ -15,6 +15,7 @@ import { updateEnvironment } from '../../src/render/environment.js';
 import { params } from '../../src/core/params.js';
 import { clock, advanceClock } from '../../src/core/clock.js';
 import { createWeather } from '../../src/world/weather.js';
+import { createLightning } from '../../src/world/lightning.js';
 import { createWind } from '../../src/world/wind.js';
 
 let gcs = 0;
@@ -42,6 +43,8 @@ const pool = new Pool(() => ({ a: 0 }), 64);
 // Results go into a typed array: returning a double from the case lambda would itself box.
 const sink = new Float64Array(1);
 const weather = createWeather(); weather.restored = 1; weather.dt = 0.0111;
+const mWeather = createWeather(); mWeather.meadowRestored = 1; mWeather.meadow = 0.7; mWeather.dt = 0.9;
+const lightning = createLightning(); lightning.storm = 1; lightning.dt = 0.0111;
 const cases = {
   'ground.sample': (i) => { ground.qx = (i % 1000) * 0.2 - 100; ground.qz = (i % 777) * 0.2 - 70; ground.sample(); sink[0] = ground.h; },
   // dt comes from a mutable field, as in the game (a literal constant would hide boxing).
@@ -54,6 +57,8 @@ const cases = {
   'updateEnvironment (idle, clock running)': () => { clock.simTime += 0.011; updateEnvironment(); },
   'advanceClock': () => { clock.realDt = 0.0111; advanceClock(); },
   'weather.update (cycling)': () => { weather.dt = 0.9; weather.update(); },
+  'weather.update (meadow rain/storm cycle, wetness)': () => { mWeather.update(); },
+  'lightning.update (a strike in progress: envelopes, thunder queue)': () => { if (lightning.age < 0) lightning.strike(0.5, 3000, 5, true); lightning.update(); },
   'wind update + samples (with a burst)': (i) => {
     wind.time += 0.011; wind.strength = 0.8; wind.gustiness = 0.6; wind.update();
     if ((i & 1023) === 0) wind.burst(i & 63, 5, 2);

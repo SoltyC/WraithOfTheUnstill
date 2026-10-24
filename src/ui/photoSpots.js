@@ -6,7 +6,7 @@ import { params, setParam } from '../core/params.js';
 import { worldState } from '../game/worldState.js';
 
 /** @typedef {{ id: string, biome: string, label: string, time: number, weather: string, player?: number[],
- *   hidePlayer?: boolean, trail?: number[][], walk?: { speed: number, seconds: number, facing?: number },
+ *   hidePlayer?: boolean, strike?: { bearing: number, dist: number, age?: number, seed?: number }, trail?: number[][], walk?: { speed: number, seconds: number, facing?: number },
  *   camera: { mode: 'follow', yaw: number, pitch: number, dist: number, fov?: number } | { mode: 'free', pos: number[], yaw: number, pitch: number, fov: number } }} PhotoSpot */
 
 /** @type {PhotoSpot[]} */
@@ -23,6 +23,8 @@ export function applySpot(spot, game) {
   setParam('timeOfDay', spot.time);
   // Spots force their weather (reproducible shots); 'auto' leaves the natural cycle.
   worldState.weatherOverride = spot.weather && spot.weather !== 'auto' ? spot.weather : null;
+  // A lightning strike held at its moment for the shot: { bearing (deg from the view), dist (m), age (s) }.
+  worldState.strike = spot.strike || null;
   // Spots show the land restored unless they ask for it stilled (the accepted gate looks).
   worldState.restoration[spot.biome === 'frost' ? 'frost' : spot.biome] = spot.restoration || 'restored';
   const { controller, arm, teleport } = game;

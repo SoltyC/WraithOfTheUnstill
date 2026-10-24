@@ -40,14 +40,15 @@ export function buildWorldTools(game, el) {
   h('Weather & restoration');
   const wSel = el('select', { onchange: (e) => { worldState.weatherOverride = e.target.value === 'auto' ? null : e.target.value; } });
   wSel.append(el('option', { value: 'auto' }, 'auto (cycle)'));
-  for (const w of WEATHER_STATES[worldState.biome]) wSel.append(el('option', { value: w }, w));
-  root.append(el('div', { class: 'row' }, el('label', null, 'Weather (' + worldState.biome + ')'), wSel));
+  // Every state, wherever you stand: a state the biome has not maps to its counterpart (rain ↔ snowfall).
+  for (const w of new Set([...WEATHER_STATES.frost, ...WEATHER_STATES.meadow])) wSel.append(el('option', { value: w }, w));
+  root.append(el('div', { class: 'row' }, el('label', null, 'Weather'), wSel, el('button', { onclick: () => { worldState.strike = { bearing: 0, dist: 700, age: 0 }; } }, 'Strike')));
   const restRow = el('div', { class: 'toggles' });
   for (const b of BIOMES) {
     const cb = el('input', { type: 'checkbox', checked: worldState.restoration[b] === 'restored', onchange: (e) => { worldState.restoration[b] = e.target.checked ? 'restored' : 'stilled'; } });
     restRow.append(el('label', { class: 'toggle' }, cb, b + ' restored'));
   }
-  root.append(restRow, el('div', { class: 'note' }, 'Weather eases over ~40 s. A stilled steppe has no falling snow or blizzard (still air).'));
+  root.append(restRow, el('div', { class: 'note' }, 'Weather eases over ~40 s. A stilled steppe or meadow has no precipitation (still air); rain and storm fall in the meadow only. Strike: lightning ahead.'));
 
   // Camera and player.
   h('Camera & player');

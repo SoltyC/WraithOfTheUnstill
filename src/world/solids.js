@@ -6,6 +6,8 @@
 
 const R = 0.38; // capsule radius (m)
 
+const seatTop = (b, s) => s.seat + b.y1;
+
 export function createSolids(sites, built, stairRuns = null) {
   const S = sites.map((s) => ({ x: s.at[0], z: s.at[1], seat: NaN, rad: 0 }));
   const blockers = built.blockers.map((b) => ({ ...b, x: b.x + sites[b.site].at[0], z: b.z + sites[b.site].at[1] }));
@@ -95,6 +97,24 @@ export function createSolids(sites, built, stairRuns = null) {
         if (Number.isNaN(seat) || y > seat + p.top + m) continue;
         const dx = x - p.x, dz = z - p.z, lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
         if (lx > -p.hx && lx < p.hx && lz > -p.hz && lz < p.hz) return true;
+      }
+      return false;
+    },
+    /** True when something built stands over (px, pz) above height py — a roof, a floor above (the rain
+     *  does not reach there). Camera-only roof blockers count; every seated site near the point is tested. */
+    coveredQ() {
+      const x = this.px, y = this.py, z = this.pz;
+      for (let i = 0; i < blockers.length; i++) {
+        const b = blockers[i], s = S[b.site];
+        if (Number.isNaN(s.seat)) continue;
+        const sx = s.x - x, sz = s.z - z;
+        if (sx * sx + sz * sz > s.rad * s.rad || seatTop(b, s) < y + 0.6) continue;
+        const dx = x - b.x, dz = z - b.z;
+        if (b.kind === 'circle') { if (dx * dx + dz * dz < b.r * b.r) return true; }
+        else {
+          const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
+          if (lx > -b.hx && lx < b.hx && lz > -b.hz && lz < b.hz && s.seat + b.y0 > y - 0.3) return true;
+        }
       }
       return false;
     },

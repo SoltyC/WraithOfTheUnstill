@@ -92,8 +92,9 @@ fn sunVis(wp: vec3f, dist: f32) -> f32 {
 // Cloud layer: base, top (m); coverage from the weather.
 fn cloudLayer() -> vec2f {
   let cover = P.fog2.y;
-  let base = mix(2700.0, 1750.0, smoothstep(0.5, 1.0, cover) * (0.4 + 0.6 * P.fog2.x));
-  return vec2f(base, base + mix(900.0, 1500.0, cover));
+  // Rain and storm (pad[0].w = gloom 0..1) bring the deck down and thicken it.
+  let base = mix(2700.0, 1750.0, smoothstep(0.5, 1.0, cover) * (0.4 + 0.6 * P.fog2.x)) - 900.0 * P.pad[0].w;
+  return vec2f(base, base + mix(900.0, 1500.0, cover) + 300.0 * P.pad[0].w);
 }
 // Noise with a crude level of detail: the 512² field (27 m texels over 14 km) aliases into radial
 // streaks where long, grazing marches sample it every few hundred metres, so far samples blend to
@@ -129,7 +130,7 @@ fn cloudDensity(p: vec3f, lay: vec2f, lod: f32) -> f32 {
     let detail = textureSampleLevel(noiseTex, noiseSampler, uv * 6.1 + vec2f(h * 0.37, -h * 0.29), 0.0).g;
     d = clamp(d - (1.0 - d) * detail * 0.6 * fine, 0.0, 1.0);
   }
-  return d * mix(0.006, 0.012, cover);
+  return d * mix(0.006, 0.012, cover) * (1.0 + 0.9 * P.pad[0].w);
 }
 
 @compute @workgroup_size(8, 8, 1)
@@ -194,9 +195,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
             od += cloudDensity(p + L * s, lay, lod + 1.0) * s * 0.5;
           }
           let hFrac = clamp((p.y - lay.x) / (lay.y - lay.x), 0.0, 1.0);
-          let beer = exp(-od * 1.4) * mix(1.0, 1.0 - exp(-dens * 160.0), 0.5); // powder
-          let amb = skyUp * mix(0.55, 1.15, hFrac) * 3.14159 * 0.35;
-          let lum = sunC * beer * phase * 0.32 + amb;
+          let gloom = P.pad[0].w;
+          let beer = exp(-od * (1.4 + 1.2 * gloom)) * mix(1.0, 1.0 - exp(-dens * 160.0), 0.5); // powder
+          let amb = skyUp * mix(0.55, 1.15, hFrac) * 3.14159 * 0.35 * (1.0 - 0.4 * gloom);
+          // Lightning (pad[0].z = glow): the cloud lights from within, brightest toward the bolt.
+          let flashLum = vec3f(0.8, 0.9, 1.0) * P.pad[0].z * 0.75 * (0.07 + 0.93 * pow(max(cosT, 0.0), 12.0)) * mix(0.6, 1.0, hFrac);
+          let lum = sunC * beer * phase * 0.32 * (1.0 - 0.3 * gloom) + amb + flashLum;
           let ext = dens;
           let tr = exp(-ext * dt);
           S += T * lum * (1.0 - tr);

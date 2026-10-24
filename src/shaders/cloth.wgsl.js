@@ -177,8 +177,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   // Hem: darker where wet, dusted with snow along the very edge, patchy.
   if (g == 0 || g == 10) {
-    let wet = 1.0 - smoothstep(0.0, 0.22, edgeM);
-    albedo *= 1.0 - 0.3 * wet;
+    // (Rain soaks the hem up the robe: the wet line climbs with the wetness.)
+    let wet = 1.0 - smoothstep(0.0, 0.22 + 0.7 * uniforms.wetParams.x, edgeM);
+    albedo *= 1.0 - (0.3 + 0.2 * uniforms.wetParams.x) * wet;
     let dust = (1.0 - smoothstep(0.0, 0.09, edgeM)) * smoothstep(0.35, 0.75, vn2(m * vec2f(14.0, 30.0)));
     albedo = mix(albedo, vec3f(0.42, 0.44, 0.47), dust * 0.45 * uniforms.clothParams.z);
   }
@@ -195,6 +196,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let crystal = vn2(m * 90.0);
     albedo = mix(albedo, vec3f(0.7, 0.8, 0.92) * (0.8 + 0.4 * crystal), frostAmt * 0.9);
   }
+  // Rain: wet wool is darker all over and takes a sheen (g 5-8 are linen wraps, 9 the cord: less).
+  albedo *= mix(1.0, select(0.78, 0.62, g <= 4), uniforms.wetParams.x);
+  sheenTint *= 1.0 + 2.2 * uniforms.wetParams.x;
   // Inner faces: darker  // Inner faces: darker (enclosed, the light that reaches them has crossed the cloth).
   var ambientK = 1.0;
   if (inside) {

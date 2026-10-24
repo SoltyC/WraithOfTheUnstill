@@ -1,0 +1,4 @@
+2026-10-24T19:52:01.761Z 1/2 p8-storm-day: saved screenshots/rain-final/p8-storm-day.png
+2026-10-24T19:52:30.207Z 2/2 p8-storm-lightning: saved screenshots/rain-final/p8-storm-lightning.png
+2026-10-24T19:52:30.207Z Shots done: 2/2 spot(s) (p8-storm*) → screenshots/rain-final/.
+2026-10-24T19:52:30.659Z p8-storm-lightning: unhandled rejection: OperationError: Instance dropped error in getCompilationInfo — reloading once

@@ -468,6 +468,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       mcol += ms.albedo * lc.rgb * lc.w * fall * max(dot(ms.N, lv / d), 0.0) / max(exm, 1e-6) * 0.35;
     }
     col = mix(col, mcol, wMeadow);
+    // Wet ground and puddles reflect (SSR: sky, lamps, the Wraith): Fresnel × the gloss.
+    ssrMask = max(ssrMask, wMeadow * ms.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ms.N, V), 0.0), 5.0)) * 0.85);
   }
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);

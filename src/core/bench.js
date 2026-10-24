@@ -6,7 +6,7 @@
 // ?bench=bend (Phase 4) instead, on the frost steppe:
 //   surf — snow-surfing S-turns (traversal held, steering by synthetic mouse motion)
 //   cast — standing: Sweep every 1.5 s, Crystallize every 3 s, Ribbon held in between
-// ?bench=weather (Phase 6): the full post chain on the steppe in each frost weather (walking,
+// ?bench=weather (Phase 6; the meadow's rain, storm and a clear → storm transition, Phase 8 M11): the full post chain on the steppe in each frost weather (walking,
 // camera orbiting), a live clear → blizzard transition, and the Shaped pack in a blizzard.
 // Records presented frame time (rAF interval; capped by the display's refresh rate) and GPU
 // main-pass time (timestamp queries; the real cost). Shows a results panel and POSTs the JSON to
@@ -158,6 +158,21 @@ export async function runBench(game, qs) {
     phases.push(await phase('pack-blizzard', seconds, settle, () => {
       release(); yawRate = 0.15; game.applySpot(findSpot('p5-pack-afternoon'));
       worldState.weatherOverride = 'blizzard';
+    }));
+    // Phase 8 M11, the meadow: rain, a storm (lightning and thunder on the schedule), and a live
+    // clear → storm transition (not snapped).
+    for (const [name, spotId] of [['rain', 'p8-rain-meadow'], ['storm', 'p8-storm-day']]) {
+      phaseStarts.push(Math.round(performance.now() - t0));
+      phases.push(await phase(name, seconds, settle, () => {
+        release(); yawRate = 0.2; game.applySpot(findSpot(spotId));
+        setTimeout(() => injectAction(Action.MoveForward, true), 1500);
+      }));
+    }
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('transition-storm', seconds * 2, settle, () => {
+      release(); yawRate = 0.2; game.applySpot(findSpot('p8-meadow-noon'));
+      setTimeout(() => { worldState.weatherOverride = 'storm'; }, settle * 1000);
+      setTimeout(() => { worldState.strike = { bearing: 10, dist: 1200, age: 0 }; }, (settle + seconds * 0.6) * 1000);
     }));
   } else if (qs.get('bench') === 'fight') {
     // Phase 5: the Warden in view (awake, advancing), climbing it, and a pack of Shaped.

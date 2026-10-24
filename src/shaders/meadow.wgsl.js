@@ -14,7 +14,7 @@
 // groove).
 
 export const MEADOW_WGSL = /* wgsl */ `
-struct MeadowSurf { albedo: vec3f, N: vec3f, rough: f32, ao: f32, rock: f32 };
+struct MeadowSurf { albedo: vec3f, N: vec3f, rough: f32, ao: f32, rock: f32, wetK: f32 };
 
 // Top-down sample of one layer (planar xz), normal into world space (x → +x, y → +z).
 fn mdPlanar(layer: i32, p: vec2f, k: f32, N: vec3f) -> MatS {
@@ -188,6 +188,21 @@ fn meadowSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, canopy:
   // Terrain state: trampled/flattened ground is darker and smoother; wet ground glossier.
   o.albedo *= 1.0 - 0.18 * state.x - 0.25 * state.y;
   o.rough = mix(o.rough, 0.45, state.y * 0.6);
+  // Rain (wetParams: x wetness, y puddle fill): the ground darkens and turns glossy; where it lies flat
+  // in a hollow (low noise) water stands — dark, mirror-smooth, level. The wet state (footprints) joins.
+  let wet = clamp(max(uniforms.wetParams.x, state.y), 0.0, 1.0);
+  if (wet > 0.002) {
+    let hol = 0.5 + 0.5 * (0.6 * noised(p * 0.11 + 17.0).x + 0.3 * noised(p * 0.43 + 3.0).x + 0.1 * noised(p * 1.7).x);
+    let lvl = smoothstep(0.975, 0.995, Ng.y);
+    let pud = smoothstep(1.0 - uniforms.wetParams.y * 0.62, 1.0 - uniforms.wetParams.y * 0.62 + 0.1, 1.0 - hol) * lvl * uniforms.wetParams.y;
+    // Wet earth and stone go much darker than wet grass; cobbles keep their colour but deepen.
+    o.albedo *= mix(1.0, 0.68, wet);
+    o.albedo = mix(o.albedo, o.albedo * vec3f(0.55, 0.6, 0.62), pud);
+    o.rough = mix(o.rough, 0.3, wet * 0.8);
+    o.rough = mix(o.rough, 0.035, pud);
+    o.N = normalize(mix(o.N, vec3f(0.0, 1.0, 0.0), pud * 0.92));
+    o.wetK = clamp(pud + wet * 0.3, 0.0, 1.0);
+  }
   return o;
 }
 
@@ -201,7 +216,7 @@ fn meadowLight(s: MeadowSurf, N: vec3f, V: vec3f, L: vec3f, key: vec3f, vis: f32
   let H = normalize(L + V);
   let nh = max(dot(N, H), 0.0);
   let F = 0.04 + 0.96 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
-  col += key * pow(nh, mix(8.0, 60.0, 1.0 - s.rough)) * F * 0.15 * clamp(nl, 0.0, 1.0) * vis;
+  col += key * pow(nh, mix(8.0, 240.0, (1.0 - s.rough) * (1.0 - s.rough))) * F * (0.15 + 1.4 * s.wetK) * clamp(nl, 0.0, 1.0) * vis;
   return col;
 }
 `;

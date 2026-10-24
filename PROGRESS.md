@@ -614,3 +614,5 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 - warm every pipeline during loading;
 - gate shots and benchmarks run on T via `?shots=` and `?bench=flight` at 60 Hz;
 - rebuild after editing `data/photo-spots.json`.
+
+- Phase 8 M11 (rain and thunderstorm): see PLAN.md "M11 Done" and DECISIONS.md. Rain/storm states, rain renderer, wet world, lightning, thunder; shots in screenshots/rain-final.
