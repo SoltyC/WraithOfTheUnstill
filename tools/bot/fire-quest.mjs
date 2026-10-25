@@ -41,7 +41,7 @@ while (rounds++ < 80) {
   const w = await bot('walkTo', { x: f.x + dx / dl * R, z: f.z + dz / dl * R, arrive: 1.5, timeout: 25, roads: true });
   if (!w.walk.arrived) say('  could not reach', f.id, JSON.stringify(w.walk));
   await bot('face', { x: f.x, z: f.z, pitch: 0.05 });
-  const h = await bot('hold', { keys: ['Primary'], ms: 3000 });
+  const h = await bot('hold', { keys: ['Bend'], ms: 3000 });
   const after = (await burning()).find((q) => q.id === f.id);
   say(f.id.padEnd(5), 'heat', f.heat, '->', after ? after.heat : 'out', '| health', h.health.toFixed(0), 'focus', h.focus.toFixed(0), '| fps', h.perf && h.perf.fps, '| left', list.length - (after ? 0 : 1));
   logState(h);

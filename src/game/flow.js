@@ -31,7 +31,7 @@ export const flowTuning = {
   chainWindow: 1, chainMinTime: 0.5, chainGain: 0.45, chainStep: 0.12, chainStepMax: 0.3, chainReset: 4,
   crestAir: 0.35,                       // s airborne on a surf that lands back on it: a crest jump
   // Events: flow gained by FLOW_EVENT kind (diminishing when they stack: ÷(1 + recent)).
-  events: [0.25, 0.4, 0.6, 0.45, 0.45, 0.5, 0.45],
+  events: [0.3, 0.55, 0.6, 0.45, 0.45, 0.5, 0.45],
   eventFade: 2.5,                       // per second: how fast stacked events are forgotten
   nearMissCool: 0.5,                    // s between near misses counted
   // Losing.
@@ -107,7 +107,7 @@ export function createFlow() {
         d[10] = 0;
       } else if (this.grounded && !this.swimming && d[17] < T.idleSpeed) {
         d[10] += dt;
-        if (d[10] > T.idleGrace) next -= T.idleDrain * dt;
+        if (d[10] > T.idleGrace && d[23] <= 0) next -= T.idleDrain * dt;      // a fight is not standing: swinging on the spot holds it too
       } else {
         d[10] = 0;
         if (d[8] > T.chainWindow && d[23] <= 0) next -= T.walkDrain * dt;

@@ -52,6 +52,13 @@ export function createCombat(ctx) {
     shrineX: 0.5, shrineZ: 0.5,
     /** Camera shake and punch (FOV kick) requested this frame (owner adds them to the arm). */
     shake: 0.5 - 0.5, kick: 0.5 - 0.5,
+    /** Shake and punch asked for by systems that run before this one (the weapons), taken up at the start of update(). */
+    pendShake: 0.5 - 0.5, pendKick: 0.5 - 0.5,
+    /** Blows taken by the Wraith so far (the weapons read it to knock a windup out). */
+    blows: 0,
+    /** A weapon blow (game/weapons): fields in — i (slot), dmg, dx, dz (unit knock direction), stagger, knock, chip, stop, shake, kick,
+     *  heavy, glance, sound (0 thud, 1 cut, 2 shatter, 3 glance, 4 boom, −1 none) — then weaponHit(); out: dealt, killed. */
+    wh: { i: 0, dmg: 0.5 - 0.5, dx: 0.5 - 0.5, dz: 0.5 - 0.5, stagger: false, knock: 0.5 - 0.5, chip: 0.5 - 0.5, stop: 0.5 - 0.5, shake: 0.5 - 0.5, kick: 0.5 - 0.5, heavy: false, glance: false, sound: 0, dealt: 0.5 - 0.5, killed: false },
     /** Sound (audio/sfx.js), set by the owner; null = silent. */
     sfx: null,
     /** Inputs (fields) for one frame. */
@@ -62,7 +69,7 @@ export function createCombat(ctx) {
 
     update() {
       const dt = this.dt;
-      this.shake = 0; this.kick = 0;
+      this.shake = this.pendShake; this.kick = this.pendKick; this.pendShake = 0; this.pendKick = 0;
       if (this.dying > 0) { stepDeath(dt); return; }
       // Focus: restored by movement and flow, spent by the verbs.
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
@@ -270,6 +277,29 @@ export function createCombat(ctx) {
     else if (ribbonTick <= 0) { clock.hitStop = Math.max(clock.hitStop, T.hitStopLight); ribbonTick = 0.18; self.kick += T.kickHit * 0.3; }
   }
 
+  /** A weapon blow on a Shaped, through the same path as the verbs' (strike): chips off its material, damages and
+   *  staggers it (a frozen one shatters), then the stop, the camera and the sound. */
+  self.weaponHit = () => {
+    const w = self.wh, i = w.i, mul = flow !== null ? flow.power : 1;
+    const b = shaped.slots[i].body, bx = b.sx[1], by = b.sy[1], bz = b.sz[1];
+    const frozen = shaped.isFrozen(i), hp0 = shaped.slots[i].hp;
+    if (w.chip > 0) shaped.chip(i, w.dx, w.dz, w.chip);
+    const killed = shaped.damage(i, w.dmg < 1e8 ? w.dmg * mul : w.dmg, w.stagger, w.dx * w.knock, w.dz * w.knock);
+    w.killed = killed; w.dealt = Math.max(0, hp0 - (killed ? 0 : shaped.slots[i].hp));
+    if (killed && frozen && flow !== null) flow.hit(FLOW_EVENT.SHATTER);
+    if (killed && frozen) self.onShatter?.();
+    if (w.stop > 0) clock.hitStop = Math.max(clock.hitStop, killed && frozen ? Math.max(w.stop, 0.06) : w.stop);
+    self.shake += w.shake; self.kick += w.kick;
+    const sx = self.sfx;
+    if (sx && w.sound >= 0) {
+      sx.x = bx; sx.y = by; sx.z = bz;
+      sx.gain = w.sound === 4 ? 1.2 : w.heavy ? 1 : 0.6;
+      if (w.sound === 2 || (killed && frozen)) { sx.gain = 1.2; sx.play(SFX.SHATTER); }
+      else if (w.sound === 3) sx.play(SFX.CLANG);
+      else { sx.play(w.sound === 1 ? SFX.CRUNCH : SFX.THUD); if (w.sound === 4) sx.play(SFX.BOOM); }
+    }
+  };
+
   /** Shaped → the Wraith: lunges land unless the Wraith is mid bend-step. */
   function hurt() {
     if (shaped.slams > 0) self.shake += 0.02 * Math.max(0, 1 - shaped.slamDist / 16);
@@ -277,6 +307,7 @@ export function createCombat(ctx) {
     if (shaped.hits === 0 && wh === 0) return;
     if (controller.dodgeT > 0) { if (flow !== null) flow.nearMiss(); return; }   // the bend-step slips through: a near miss feeds Flow
     if (flow !== null) flow.hurt();
+    self.blows++;
     self.health -= shaped.hitDamage * self.shapedDamageMul + (wh ? warden.hitDamage : 0);
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
@@ -290,6 +321,7 @@ export function createCombat(ctx) {
   self.hurtRaw = (amount) => {
     if (self.dying > 0 || amount <= 0) return;
     if (flow !== null) flow.hurt();
+    self.blows++;
     self.health -= amount;
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);

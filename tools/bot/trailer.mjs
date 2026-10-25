@@ -74,8 +74,8 @@ const SHOTS = [
       const y = H(125, 950) + 85 + 6 * e, x = 125 + Math.sin(a) * 230, z = 950 + Math.cos(a) * 230; cam.at(x, y, z, 200, y - 12, 985, 0.8); }` },
   // 7 — the burning night: the market square with the houses on fire.
   { name: 's07-fire-night', spot: 'p8-fire-night', seconds: 6, settle: 25000, js: around(14, 10, 4, 6, -0.4, 0.2, 2, 0.85) },
-  // 8 — the Ribbon on a burning house (the game's camera, Primary held at the nearest fire).
-  { name: 's08-ribbon', spot: 'p8-fire-night', seconds: 5, settle: 25000, setup: 'ribbon', js: `if (i === 0) inject('Primary', true); if (i === 290) inject('Primary', false);` },
+  // 8 — the Ribbon on a burning house (the game's camera, Bend (Q) held at the nearest fire).
+  { name: 's08-ribbon', spot: 'p8-fire-night', seconds: 5, settle: 25000, setup: 'ribbon', js: `if (i === 0) inject('Bend', true); if (i === 290) inject('Bend', false);` },
   // 9 — the stair foot at golden hour, the camera rising to the manor on the summit.
   { name: 's09-stair', spot: 'tour-07-golden-stairfoot', seconds: 6, js: `{ const x = P.x - 6, z = P.z - 6; cam.at(x, P.y + L(1.5, 6, u), z, L(P.x, 300, u), L(P.y + 2, 440, u), L(P.z, 1000, u), 0.8); }` },
   // 10 — it wakes: the neck rears over the manor, seen from the market.
@@ -100,7 +100,7 @@ const SHOTS = [
   // Gameplay: up the stair.
   { name: 'g05-stair-walk', spot: 'p8-stair-foot', extra: '^&bell=release', seconds: 5.5, js: walk(330, 0, '', "'MoveForward'", [[162.9, 886.5], [171.5, 885.9], [182.9, 879.5], [190.7, 870.5], [197.2, 862.6]]) },
   // Gameplay: Gust across the grass, twice, walking.
-  { name: 'g06-gust', spot: 'p8-gale-meadow', extra: '^&gale=1', seconds: 5, setup: 'gale', js: walk(300, 0.2, `if (i === 40 || i === 170) inject('Primary', true); if (i === 46 || i === 176) inject('Primary', false);`) },
+  { name: 'g06-gust', spot: 'p8-gale-meadow', extra: '^&gale=1', seconds: 5, setup: 'gale', js: walk(300, 0.2, `if (i === 40 || i === 170) inject('Bend', true); if (i === 46 || i === 176) inject('Bend', false);`) },
 
 ];
 

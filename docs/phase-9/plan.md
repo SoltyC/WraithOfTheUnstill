@@ -66,7 +66,7 @@ Same shape as Phase 8. Each ends in something reviewable on the 3060. The risky 
   - **Star megadunes** (40–80 m) where the winds converge in the erg's heart, near the Warden. These are the landmarks seen from the escarpment and from glides.
   - **Seif (linear) dunes** toward the ember side, stretched along the wind and darkening with ash.
   - **Playas and salt pans** in the interdunes: flat, pale and cracked, for mirages and the camp's well.
-- **Ravines (user):** the erg is not only dunes. Carve (bake, `carveRavines`, least-earthwork style like the stair):
+- **Ravines (user):** the full spec, with sections, plan views and the look we expect, is now `docs/phase-9/dunes-design.md` §7 (figures in `docs/phase-9/figures/`). Slot canyons are a bake trench plus a mesh kit (new milestone D7b). The summary below still holds. The erg is not only dunes. Carve (bake, `carveRavines`, least-earthwork style like the stair):
   - **a canyon system** along the escarpment foot — sandstone walls 30–80 m, layered strata, sand floors fed by spill-over dunes at the rim (sandfalls when restored), arches and hoodoos;
   - **slot canyons** (2–6 m wide, 20–40 m deep, sculpted walls) — light shafts at noon, a sand-surf run through one (the run's walls are collision; the floor is sand), flash-flood lore;
   - **wadis** — dry braided river beds crossing the basin from the meadow's rivers (the aqueduct ruins follow one); restored rain in the meadow sends a thin seasonal stream down it;
@@ -311,6 +311,8 @@ Proposal (the user to choose; alternatives at the end): **the Long Walker.**
 - Climb quality gate (BRIEF §8.4): if a moving six-legged climb can't reach the bar, the climb happens on the kneeling body (stationary), with the shaking kept, and the decision is recorded.
 
 ### D11 — The camp, quests, shrines, Echoes and robes
+
+> **Quests superseded (user, 2026-10-26):** the main quests, side quests and robes below read too much like the frost's. They are replaced by the puzzle hub in `docs/phase-9/dunes-design.md`: the sand grammar, the three Silent Instruments, five side sites and the D11 build order there. The camp, shrines, Echoes, map, HUD and save notes here still stand.
 
 - **The camp:**
   - **Wellhouse**, a Veiled caravan stranded in a ruined caravanserai at the oasis on the playa (x ≈ 1800, z ≈ 700; placed in D0);

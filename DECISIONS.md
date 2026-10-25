@@ -482,6 +482,12 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **The Remembrance page** and **a nook pass** on frost and meadow are approved.
 - **Design review:** every gameplay feature goes through the project skill `.claude/skills/wraith-design` (pillars, smells, briefs, bot playtest with NOT ASSESSED).
 
+### Dune quests are puzzles; ravines specified (user, 2026-10-26)
+
+- The user found the old dune quest plan too close to the frost's (follow tracks, rescue, a timed race, carry a light). The dunes become **puzzle-based**: a hub of three Shaper instruments (light, sand flow, sound), in any order, and five side sites. All are built from one **sand grammar** of nine rules: flow, channel, frost holds, sun thaws and shade keeps, wet stands, light, song, Stone, wind. Main-quest puzzles before the Walker's waking need Frost only. There are no fight goals: Shaped press inside puzzles. Design: `docs/phase-9/dunes-design.md`; it supersedes the quests in `plan.md` D11.
+- **Ravines:** four types (the Red Galleries canyon, the Needle slot canyons, the Dry Braids wadis, the Stride rift), specified with sections, plan views and `p9r-*` look targets in the same file. Slot canyons are a bake trench plus a procedural wall kit, because a 2 m heightfield can't hold a 2–6 m slot. Canyon walls are not climbable.
+- Shrines get "wait until" (morning, noon, dusk, night), because time of day is a puzzle tool.
+
 ### Rain and thunderstorm (PLAN.md M11, 2026-10-24)
 
 - **Two weather machines, one blend.** The frost and meadow machines both run always (their clocks are independent and seeded); targets blend by the meadow's weight under the camera (the one the restoration system already eases), so walking across the border eases snow → sleet (some of the frost's snow falls as rain, peaking at the border) → rain over ~40 s. A forced state maps to the other biome's counterpart (rain ↔ snowfall, storm ↔ blizzard); the overlay offers all six.
@@ -489,3 +495,7 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Lightning as a brief key light, not a point light.** The strike turns `env.keyDir` toward the bolt (shadows, materials and the post fog all follow it), adds a key colour in the atmosphere pass *after* the exposure and the SH are computed (so the flash moves neither), and the shadows come back for it. Clouds glow from a separate envelope (`pad[0].z`). The bolt's core writes depth because the post fog treats a pixel by its depth (a sky pixel is 20 km away: fully fogged); its colour carries the fog's inverse so it outshines haze.
 - **Rain streak width follows the internal render height.** A fixed 1-pixel streak vanished under dynamic resolution and TAA; width is max(a few mm, ~1.5 internal pixels) with the alpha dimmed to the same energy.
 - `npm run alloc`: `controller.update` / `springArm.update` still fail as before; the new meadow weather and lightning cases pass. Avoid an object-literal getter on a hot object (it allocated).
+
+### Weapons and the new controls (2026-10-26)
+
+- **Controls:** LMB swings the carried weapon (tap: the combo, hold: the charged heavy); Q is the element (tap: quick verb, hold: sustained verb); F is the element's heavy verb; R uses and C cycles consumables; the wheel or X swaps the two carried weapons; Ctrl dodges and cancels a recovery. Dev free-camera keys moved off Q and R. Spec and numbers: `docs/gameplay-design.md` §11.1-11.2; playtest: `docs/weapons-playtest.md`.

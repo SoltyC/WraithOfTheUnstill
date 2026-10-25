@@ -11,26 +11,29 @@ const TAU = Math.PI * 2;
 /** Site-local (right, forward) under the nook's yaw. */
 const frame = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, f) => [u * c + f * s, -u * s + f * c]; };
 
-/** A pile of stones: `n` layers of fewer, smaller, turned blocks, a carved glyph slab standing on top when `slab` (its yaw). */
-function stack(b, R, o, n, w, slab, seed) {
+/** A pile of stones: `n` layers of fewer, smaller rounded stones (squat drums, each its own size), a capstone on top. */
+function stack(b, R, o, n, w, seed) {
   let id = seed;
+  const snow = b.noSnow;
+  b.noSnow = true;   // no snow caps on the stones themselves (each would read as a little roof); only the capstone keeps one
   for (let k = 0; k < n; k++) {
-    const per = Math.max(1, 5 - k - (k > 2 ? 1 : 0)), r = 0.62 * w * (1 - k * 0.24), y0 = -0.3 + k * 0.3, a0 = R() * TAU;
+    const per = Math.max(1, 5 - k - (k > 2 ? 1 : 0)), r = 0.6 * w * (1 - k * 0.24), y0 = -0.35 + k * 0.3, a0 = R() * TAU;
     for (let j = 0; j < per; j++) {
-      const a = a0 + j / per * TAU + (R() - 0.5) * 0.5, hx = w * (0.44 - k * 0.05) * (0.8 + R() * 0.4);
-      b.box(per === 1 ? (R() - 0.5) * 0.1 : Math.cos(a) * r, per === 1 ? (R() - 0.5) * 0.1 : Math.sin(a) * r, y0, y0 + 0.28 + R() * 0.1, hx, hx * (0.7 + R() * 0.3), R() * TAU, MAT.STONE, id++, { solid: k < 1, tilt: (R() - 0.5) * 0.12, ...o });
+      const a = a0 + j / per * TAU + (R() - 0.5) * 0.5, rad = w * (0.34 - k * 0.04) * (0.8 + R() * 0.4), one = per === 1;
+      b.drum(one ? (R() - 0.5) * 0.1 : Math.cos(a) * r, one ? (R() - 0.5) * 0.1 : Math.sin(a) * r, y0, y0 + 0.3 + R() * 0.1, rad, rad * (0.7 + R() * 0.15), 9, MAT.STONE, id++, { solid: k < 1, ...o });
     }
   }
-  if (slab !== undefined) b.box(0, 0, -0.3 + n * 0.3, -0.3 + n * 0.3 + 0.18, 0.3, 0.26, slab, MAT.STONE, id, { solid: false, tilt: (R() - 0.5) * 0.08, ...o });   // the capstone
+  b.noSnow = snow;
+  b.drum(0, 0, -0.35 + n * 0.3, -0.35 + n * 0.3 + 0.2, 0.3, 0.2, 9, MAT.STONE, id, { solid: false, ...o });   // the capstone
 }
 
 const SHAPES = {
   // A cairn: a stack of turned stones, a carved slab leaning on it (the line the nook reads), a few stones round its foot.
   cairn(b, f, R, o) {
-    stack(b, R, o, 4 + (R() * 2 | 0), 1.0, f, 10);
+    stack(b, R, o, 4 + (R() * 2 | 0), 1.0, 10);
     // The carved line: a glyph slab leaning against the pile on its front side.
     { const P = frame(f), [sx, sz] = P(0, 0.95); b.box(sx, sz, -0.35, 1.25, 0.32, 0.09, f, MAT.GLYPH, 11, { carve: 1, solid: false, tilt: -0.22, ...o }); }
-    for (let k = 0; k < 3; k++) { const a = R() * TAU; b.box(Math.cos(a) * 1.3, Math.sin(a) * 1.3, -0.3, 0.1 + R() * 0.12, 0.26, 0.2, a, MAT.STONE, 30 + k, { solid: false, ...o }); } },
+    for (let k = 0; k < 3; k++) { const a = R() * TAU; { const w = b.noSnow; b.noSnow = true; b.drum(Math.cos(a) * 1.3, Math.sin(a) * 1.3, -0.35, 0.1 + R() * 0.12, 0.26, 0.2, 8, MAT.STONE, 30 + k, { solid: false }); b.noSnow = w; } } },
   // A seat on a rise: a low stone bench, its back to the view's far side, a glyph slab behind it.
   seat(b, f, R, o) {
     const P = frame(f), [bx, bz] = P(0, -0.55), [sx, sz] = P(1.3, -0.4), [tx, tz] = P(-1.3, -0.4);

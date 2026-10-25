@@ -28,6 +28,8 @@ if (!navigator.gpu) {
     window.__wraith = { ...(window.__wraith || {}), error: String(e && e.stack || e) };
     const qs = new URLSearchParams(location.search);
     if (qs.get('shots')) (await import('./core/shots.js')).shotsBootFailed(qs, e);
+    // A bot page that fails to boot would just never say hello: put the reason in the preview's log.
+    if (qs.get('bot') === '1') fetch('/__wraith/shot-log?dir=bot', { method: 'POST', body: 'BOOT FAILED ' + String(e && e.stack || e) }).catch(() => {});
   });
 }
 
@@ -92,7 +94,9 @@ async function boot() {
   loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind }));
   (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
+  (await import('./systems/weapons.js')).addWeaponSystem(g); // before the Wraith (the attack pose) and the creatures (the blows it lands)
   sysWraith.addWraithSystem(g);
+  (await import('./systems/weaponView.js')).addWeaponViewSystem(g); // after it: the weapon follows the hand
   sysCreatures.addCreatureSystems(g);
   sysCinematic.addCinematicSystem(g);
   await sysEnv.addEnvironmentSystems(g);

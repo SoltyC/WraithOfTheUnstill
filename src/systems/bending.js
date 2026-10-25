@@ -1,5 +1,6 @@
-// Bending in play (BRIEF §9): the element in hand (1–5, game/elements.js) takes a tap of Primary,
-// a hold, and Heavy — Frost: Sweep, Ribbon, Crystallize; Gale: Gust, Vortex, Updraft. The aim
+// Bending in play (BRIEF §9): the element in hand (1–5, game/elements.js) takes a tap of Q (Bend),
+// a hold, and Heavy (F) — Frost: Sweep, Ribbon, Crystallize; Gale: Gust, Vortex, Updraft (LMB is
+// the weapon since docs §11.1, game/weapons/). The aim
 // point; the speed streaks; and the photo spots' scripted bending sequence.
 
 import { ELEMENTS, ELEMENT_NAMES } from '../game/elements.js';
@@ -161,15 +162,15 @@ export function addBendingSystem(g) {
     }
     const isGale = elements.active === 'gale';
     if (able) {
-      if (input.down[Action.Primary]) primaryHeld += dt;
-      if (input.released[Action.Primary] && primaryHeld < HOLD && combat.spend((isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
+      if (input.down[Action.Bend]) primaryHeld += dt;
+      if (input.released[Action.Bend] && primaryHeld < HOLD && combat.spend((isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
         // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
         frost.power = gale.power = flow.power; frost.flowing = flow.flowing;
         if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
         g.remembrance?.cast(isGale ? 'gust' : 'sweep');
         castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
       }
-      if (!input.down[Action.Primary]) primaryHeld = 0;
+      if (!input.down[Action.Bend]) primaryHeld = 0;
     } else primaryHeld = 0;
     const holding = able && primaryHeld >= HOLD && combat.focus > 1;
     if (holding && !frost.ribbonHeld && !gale.vortexHeld) g.remembrance?.cast(isGale ? 'vortex' : 'ribbon');   // the hold begins
