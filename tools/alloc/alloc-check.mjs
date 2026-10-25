@@ -18,6 +18,11 @@ import { createWeather } from '../../src/world/weather.js';
 import { createLightning } from '../../src/world/lightning.js';
 import { createWind } from '../../src/world/wind.js';
 import { createFlow, FLOW_IN } from '../../src/game/flow.js';
+import { createShaped } from '../../src/game/shaped/shaped.js';
+import { createFrostBending } from '../../src/game/bending/frost.js';
+import { createCombat } from '../../src/game/combat/combat.js';
+import { createInventory } from '../../src/game/inventory.js';
+import { createWeapons } from '../../src/game/weapons/weapons.js';
 
 let gcs = 0;
 new PerformanceObserver((list) => { gcs += list.getEntries().length; }).observe({ entryTypes: ['gc'] });
@@ -75,22 +80,45 @@ const cases = {
     flow.update();
     if ((i & 511) === 0) flow.hit(2 + (i >> 9) % 5); if ((i & 1023) === 7) flow.hurt(); if ((i & 2047) === 9) flow.nearMiss();
   },
+  // Weapons: a combo, a held heavy and a swap in turn against hounds that keep respawning (hits, strikes, impacts, bleeding).
+  'weapons.update (swings, hits, heavies)': (i) => {
+    const k = i % 400;
+    wp.weapons.able = true; wp.weapons.dt = 1 / 60; wp.weapons.aimYaw = 0; wp.weapons.swapPressed = false; wp.weapons.dodgePressed = false;
+    wp.weapons.pressed = k === 0 || k === 14 || k === 28 || k === 200; wp.weapons.down = k >= 200 && k < 245;
+    if (k === 399) { wp.weapons.swapPressed = true; }
+    if (k === 1) for (let q = 0; q < 3; q++) if (!wp.shaped.isLive(q)) wp.shaped.spawn('hound', (q - 1) * 1.2, 1.8);
+    wp.weapons.update(); wp.shaped.dt = 1 / 60; wp.shaped.px = 0; wp.shaped.pz = 0; wp.shaped.update(); wp.combat.dt = 1 / 60; wp.combat.update();
+    wp.clock.hitStop = 0;
+  },
   'frameStats.push': (i) => stats.push(8 + (i & 7)),
   'pool acquire/release': () => { const o = pool.acquire(); pool.release(o); },
 };
 
 const wind = createWind();
 const flow = createFlow();
+const wp = (() => {
+  const gr = { qx: 0, qz: 0, h: 0, nx: 0, ny: 1, nz: 0, sample() { this.h = 0; }, sampleNormal() { this.nx = 0; this.ny = 1; this.nz = 0; } };
+  const ts = { stamp() {} }, fx = { emit() {} }, clk = { hitStop: 0, simTime: 0, dt: 1 / 60 };
+  const ctl2 = new CapsuleController(gr); ctl2.teleport(0, 0);
+  const shaped = createShaped({ ts, fx, ground: gr });
+  const frost = createFrostBending({ ts, fx, ground: gr });
+  const fl = createFlow();
+  const combat = createCombat({ shaped, frost, controller: ctl2, ts, clock: clk, flow: fl, teleport: () => {} });
+  const inventory = createInventory(); inventory.give('sickles'); inventory.give('maul'); inventory.carry('sickles', 1);
+  const weapons = createWeapons({ shaped, combat, controller: ctl2, clock: clk, ts, fx, flow: fl, inventory, ground: gr });
+  return { shaped, combat, weapons, clock: clk };
+})();
 clock.dt = 1 / 90 + Math.random() * 1e-9; // a heap double, like the real clock
 const N = 2_000_000;
 let failed = false;
 for (const [name, fn] of Object.entries(cases)) {
+  const heavyCase = name.startsWith('weapons');
   for (let i = 0; i < (name.startsWith("flow") ? 3_000_000 : 200_000); i++) fn(i); // warm up and let V8 optimise (flow: its rare branches take longer to settle)
   globalThis.gc?.();
   await new Promise((r) => setTimeout(r, 20)); // flush the forced GC's observer entry
   const before = v8.getHeapStatistics().used_heap_size;
   const g0 = gcs;
-  for (let i = 0; i < N; i++) fn(i);
+  for (let i = 0; i < (heavyCase ? 400_000 : N); i++) fn(i);
   await new Promise((r) => setTimeout(r, 10)); // let gc entries flush
   const grew = v8.getHeapStatistics().used_heap_size - before;
   const scav = gcs - g0;

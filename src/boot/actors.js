@@ -218,6 +218,12 @@ export async function createActors(g) {
   document.body.append(vignette);
   const { createSpeedStreaks } = await import('../render/speedStreaks.js');
   const streaks = createSpeedStreaks(scene, atmosphere);
+  // The weapons (docs §11.2): their mesh (carried and lying in the world), shadow and swing trail.
+  const { createWeaponView } = await import('../render/weaponView.js');
+  const weaponView = createWeaponView(scene, atmosphere, g.matLib, content.clipmap);
+  bindShadows(weaponView.material, shadows);
+  shadows.addCaster(weaponView.mesh, weaponView.makeShadowMaterial, 2);
+  weaponView.freeze();
   // The release cinematic: when the last joint breaks the camera takes a slow orbit around the
   // Warden as it exhales and lies down (letterboxed, skippable).
   const { createReleaseCam } = await import('../camera/releaseCam.js');
@@ -238,7 +244,7 @@ export async function createActors(g) {
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
     bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
-    climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, flow, flowTuning, vignette, streaks, releaseCam, bars, flashEl, weather, footprints,
+    climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, flow, flowTuning, vignette, streaks, weaponView, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },
   });

@@ -1,5 +1,5 @@
 // Bot: the Bellwether's first phase from the forecourt: Gust the turf off the three chimneys, as a player
-// would (aim the camera at a chimney, tap Primary), watching the gale and taking cover when it breathes.
+// would (aim the camera at a chimney, tap Bend (Q)), watching the gale and taking cover when it breathes.
 import { bot, js } from './client.mjs';
 const t0 = Date.now(), T = () => ((Date.now() - t0) / 1000).toFixed(0).padStart(4) + 's';
 const say = (...a) => console.log(T(), ...a);
@@ -13,7 +13,7 @@ for (let k = 0; k < 3; k++) {
     if (s.focus < 15) { await bot('wait', { ms: 2000 }); continue; }
     const v = vents[k];
     s = await bot('aim', { x: v[0], y: v[1], z: v[2] });
-    s = await bot('press', { key: 'Primary' });
+    s = await bot('press', { key: 'Bend' });
     await bot('wait', { ms: 700 });
     s = await bot('state');
     say(`vent ${k} try ${tries}: vents ${s.bell.vents.join(',')} | phase ${s.bell.phase} galeIn ${s.bell.galeIn} | health ${s.health.toFixed(0)} focus ${s.focus.toFixed(0)} | ${s.bell.hint}`);

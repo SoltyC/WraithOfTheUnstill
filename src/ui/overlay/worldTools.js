@@ -56,7 +56,7 @@ export function buildWorldTools(game, el) {
   const god = el('input', { type: 'checkbox', onchange: (e) => game.setGod(e.target.checked) });
   const pos = el('div', { class: 'note' });
   root.append(el('div', { class: 'toggles' }, el('label', { class: 'toggle' }, free, 'free camera'), el('label', { class: 'toggle' }, god, 'god mode')), pos,
-    el('div', { class: 'note' }, 'Free cam: WASD, R/Q up/down, Shift fast. God mode: fly, no collision.'));
+    el('div', { class: 'note' }, 'Free cam: WASD, PageUp/PageDown up/down, Shift fast. God mode: fly, no collision.'));
 
   // Spawn a Shaped a few metres in front of the player (it rises out of the ground).
   h('Spawn');

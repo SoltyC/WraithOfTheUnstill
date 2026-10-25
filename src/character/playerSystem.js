@@ -33,7 +33,8 @@ export function createPlayerSystem(ctx) {
       // While surfing the mouse steers the carve (horizontal) instead of orbiting the camera.
       const gl = controller.glide;
       const surfing = (sf.active || gl.active) && !arm.free;
-      arm.look(surfing ? 0 : input.mouseDX, input.mouseDY, input.wheel);
+      // The wheel swaps weapons (game/weapons); Shift + wheel zooms the camera.
+      arm.look(surfing ? 0 : input.mouseDX, input.mouseDY, d[Action.FreeCamFast] ? input.wheel : 0);
 
       if (controller.scripted || controller.hold) {
         // A scripted run (photo spots) drives the controller; the camera holds.

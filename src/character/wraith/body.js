@@ -39,6 +39,10 @@ export class Body {
     this.cast = 0.5 - 0.5;
     /** Death: 0..1 collapse (the figure folds forward as it sinks). */
     this.collapse = 0.5 - 0.5;
+    /** Attack pose (inputs, game/weapons): the torso turns `twist` rad from the facing (the head stays steadier) and
+     *  pitches `atkLean` rad more; each hand with ikW > 0 reaches for ikT (torso-local x, y, z; L then R). */
+    this.twist = 0.5 - 0.5; this.atkLean = 0.5 - 0.5;
+    this.ikW = new Float64Array(2); this.ikT = new Float64Array(6);
     /** Climbing (inputs): when set, the torso frame comes from the surface — forward into it,
      *  up along the climb — and the arms reach up onto it, alternating with climbPhase. */
     this.climbing = false; this.climbPhase = 0.5 - 0.5; this.climbBlend = 1.5 - 0.5;
@@ -73,6 +77,25 @@ export class Body {
     v[2] = z * c + sy * y * s + cy * d;
   }
 
+  /** Hand s reaches for ikT (torso-local) with weight ikW: two-bone IK from the shoulder, the elbow
+   *  down and out and a little back. Blends over the arm the pose above gave it. */
+  _reach(s) {
+    const o = s * 3, w = this.ikW[s], side = s === 0 ? -1 : 1, ua = 0.3, fa = 0.28;
+    this.toWorld(this.ikT[o], this.ikT[o + 1], this.ikT[o + 2]);
+    const sx = this.sh[o], sy = this.sh[o + 1], sz = this.sh[o + 2];
+    let dx = this.out[0] - sx, dy = this.out[1] - sy, dz = this.out[2] - sz;
+    const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-4;
+    dx /= dl; dy /= dl; dz /= dl;
+    const L = Math.min(dl, ua + fa - 1e-3), along = (ua * ua - fa * fa + L * L) / (2 * L), h = Math.sqrt(Math.max(ua * ua - along * along, 0));
+    const r = this.r, u = this.u, f = this.f;
+    let px = r[0] * side * 0.5 - u[0] * 0.85 - f[0] * 0.2, py = r[1] * side * 0.5 - u[1] * 0.85 - f[1] * 0.2, pz = r[2] * side * 0.5 - u[2] * 0.85 - f[2] * 0.2;
+    const pd = px * dx + py * dy + pz * dz; px -= dx * pd; py -= dy * pd; pz -= dz * pd;
+    const pl = Math.sqrt(px * px + py * py + pz * pz) || 1; px /= pl; py /= pl; pz /= pl;
+    const ex = sx + dx * along + px * h, ey = sy + dy * along + py * h, ez = sz + dz * along + pz * h;
+    this.el[o] += (ex - this.el[o]) * w; this.el[o + 1] += (ey - this.el[o + 1]) * w; this.el[o + 2] += (ez - this.el[o + 2]) * w;
+    this.ha[o] += (sx + dx * L - this.ha[o]) * w; this.ha[o + 1] += (sy + dy * L - this.ha[o + 1]) * w; this.ha[o + 2] += (sz + dz * L - this.ha[o + 2]) * w;
+  }
+
   /** @param {import('./gait.js').Gait} g */
   update(g) {
     const dt = this.dt;
@@ -100,8 +123,9 @@ export class Body {
     if (gl === 0 && Math.abs(this.gBank) < 1e-4) this.gBank = 0;
     const sway = g.speed > 0.25 ? 0.035 * Math.sin(Math.PI * 2 * g.phase) : 0;
     // Torso basis: yaw, then lean (pitch forward), then bank + sway (roll).
-    const cy = Math.cos(this.yaw), sy = Math.sin(this.yaw);
-    const cl = Math.cos(this.lean), sl = Math.sin(this.lean);
+    const cy = Math.cos(this.yaw + this.twist), sy = Math.sin(this.yaw + this.twist);
+    const lean = this.lean + this.atkLean;
+    const cl = Math.cos(lean), sl = Math.sin(lean);
     const roll = this.bank + sway, cr = Math.cos(roll), sr = Math.sin(roll);
     // Unrolled: right0 = (cy, 0, -sy), up0 = (sl·sy, cl, sl·cy) leaned forward, fwd0 = (cl·sy, -sl, cl·cy).
     const r0x = cy, r0y = 0, r0z = -sy;
@@ -127,10 +151,12 @@ export class Body {
     // Head basis: half the lean, no sway (the head steadies itself).
     // Swimming, the head stays up out of the water, looking ahead.
     // Gliding, the head lifts to look ahead.
+    // (An attack's torso twist is only partly followed: the head keeps watching the target.)
     const hl = (this.lean * 0.5 * (1 - sw) + 0.15 * sw) * (1 - gl) + GLIDE_HEAD * gl, chl = Math.cos(hl), shl = Math.sin(hl);
-    this.hr[0] = cy; this.hr[1] = 0; this.hr[2] = -sy;
-    this.hu[0] = shl * sy; this.hu[1] = chl; this.hu[2] = shl * cy;
-    this.hf[0] = chl * sy; this.hf[1] = -shl; this.hf[2] = chl * cy;
+    const hcy = this.twist === 0 ? cy : Math.cos(this.yaw + this.twist * 0.35), hsy = this.twist === 0 ? sy : Math.sin(this.yaw + this.twist * 0.35);
+    this.hr[0] = hcy; this.hr[1] = 0; this.hr[2] = -hsy;
+    this.hu[0] = shl * hsy; this.hu[1] = chl; this.hu[2] = shl * hcy;
+    this.hf[0] = chl * hsy; this.hf[1] = -shl; this.hf[2] = chl * hcy;
     if (this.climbing) {
       // The head looks up the surface a little.
       if (this.knocked) for (let i = 0; i < 3; i++) { this.hr[i] = this.r[i]; this.hu[i] = this.u[i]; this.hf[i] = this.f[i]; }
@@ -205,6 +231,7 @@ export class Body {
         this.ha[o] = sx + dx * L; this.ha[o + 1] = sy + dy * L; this.ha[o + 2] = sz + dz * L;
       }
     }
+    for (let s = 0; s < 2; s++) if (this.ikW[s] > 0.001 && !this.climbing) this._reach(s);
     // Keep the knees/feet in the gait (legs are the gait's); hip width for colliders.
     this.hipWidth = GAIT.hipWidth;
   }

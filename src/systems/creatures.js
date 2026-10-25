@@ -155,7 +155,9 @@ export function addCreatureSystems(g) {
   } });
   loop.add({ name: 'combat', update: () => {
     if (input.pressed[Action.LockOn]) combat.wantLockToggle = true;
-    if (input.pressed[Action.Dodge] && !controller.god && combat.dying === 0 && combat.spend(combatTuning.costDodge)) controller.dodgeRequested = true;
+    // A dodge cancels a recovery or a charge (game/weapons/machine.js); one pressed mid-swing waits for the recovery.
+    const wantDodge = g.weapons ? g.weapons.dodgeNow : input.pressed[Action.Dodge] === 1;
+    if (wantDodge && !controller.god && combat.dying === 0 && combat.spend(combatTuning.costDodge)) controller.dodgeRequested = true;
     combat.dt = clock.dt;
     combat.update();
     arm.shake += combat.shake + warden.shake; arm.kick += combat.kick;
