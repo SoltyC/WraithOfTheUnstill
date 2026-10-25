@@ -36,6 +36,7 @@ export function createWeapons(ctx) {
   const st = { prevProg: 0.5 - 0.5, swapT: 0.5 - 0.5, atkYaw: 0.5 - 0.5, push: 0.5 - 0.5 };
   let hitMask = 0, impacted = false, lastBlows = 0, passMark = 0, brushed = false;
   let curDef = null;
+  let tdBase = null, tdTier = -1, tdDef = null;     // the forge's def for the weapon in hand, rebuilt only when the weapon or its tier changes
   const w = combat.wh;
 
   const self = {
@@ -54,7 +55,9 @@ export function createWeapons(ctx) {
       const dt = this.dt;
       // Swap (X / wheel): the other carried weapon is drawn; nothing swings meanwhile.
       if (this.swapPressed && this.able && !m.busy && inventory.cycle()) st.swapT = F.swapTime;
-      const base = inventory.def, def = base !== null ? tierDef(base, inventory.tier(base.id)) : null;   // the forge's tier (tiers.js)
+      const base = inventory.def, bt = base !== null ? inventory.tier(base.id) : 0;
+      if (base !== tdBase || bt !== tdTier) { tdBase = base; tdTier = bt; tdDef = tierDef(base, bt); }       // the forge's tier (tiers.js)
+      const def = tdDef;
       if (def !== curDef) { curDef = def; m.def = def; pose.def = def; m.reset(); if (def) pose.snapRest(); }
       st.swapT = Math.max(0, st.swapT - dt); this.swapT = st.swapT;
       const live = this.able && combat.dying === 0;

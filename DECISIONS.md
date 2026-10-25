@@ -499,3 +499,21 @@ Every deviation from BRIEF.md, one line each, with rationale.
 ### Weapons and the new controls (2026-10-26)
 
 - **Controls:** LMB swings the carried weapon (tap: the combo, hold: the charged heavy); Q is the element (tap: quick verb, hold: sustained verb); F is the element's heavy verb; R uses and C cycles consumables; the wheel or X swaps the two carried weapons; Ctrl dodges and cancels a recovery. Dev free-camera keys moved off Q and R. Spec and numbers: `docs/gameplay-design.md` §11.1-11.2; playtest: `docs/weapons-playtest.md`.
+
+### Economy: marks, pouch, forge, trade, death, save v3 (2026-10-26)
+
+Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in its "Economy — Done" note):
+
+- **Quest data pays through actions,** not a side table: `{ marks }`, `{ give: { material: n } }`, `{ item }`, `{ thread: true }`, `{ flask }` on a step or `onDone` (the quest graph validates them; `src/game/chapter.js` hands them to `systems/economy.js`). A trader or the smith opens through `{ trade: 'corin' }` in a dialogue's `then`, or `"trade"` in a talk entry once the first words have been said. So reward amounts sit in the quest JSON next to the step they belong to, and a back-pay for old saves can read them.
+- **Back-pay.** A v2 save finished quest steps with no pay. Its migration sets `economy.backPay`; on its first load the game tallies the rewards of the steps and quests that save finished (`rewards.js backPay`) so an old save is not poorer than a new one. The weapons v2 knew only as `own:<id>` quest flags become owned weapons in the migration.
+- **Shaped pay from a purse** (10 marks, refilling a mark per 30 s, saved) so grinding a hundred Shaped pays what ten do; the den mother is a placed elite and pays outright with 2 rime cores. Marks are the only thing the Shaped leave: no item drops, nothing rolled (pillar 4).
+- **Materials come only from quests and the elite** (7 hedge-hearts, 5 turf-amber and 10 rime cores in the first two chapters): the forge can finish one weapon, not two, so what to forge is a choice. Traders buy materials back at 60 % of value, which is a loss against the forge, never a gain.
+- **A weapon's tier is a derived def,** built once and cached (`weapons/tiers.js`): the base def plus each tier's patch. The base def (the dev overlay's live-tuned numbers) is never edited; the cost is that live edits do not reach a tier above 0. Tier 3's infusion is stored on the weapon (`owned[].infusion`).
+- **Infusion offers frost and gale** (the elements whose verbs exist); stone is in the code, not offered. The Wraith's elements do not have to be unlocked for the staff to be forged, only to be chosen as an infusion.
+- **Health in segments of 20,** five at most; four threads exist in the first two chapters, the dunes' Warden is the fifth. Robes' armour is a `defence` apart from the one property (a robe test pins at most one property). A Rime tonic multiplies on top.
+- **No mantle slot yet.** `equipped.mantle` is saved as `null`; no mantles exist to wear. Robes are not sold and there are no dyes (§11.4 lists them as sinks; the first sinks are the forge and the pouch).
+- **Buffs are not saved.** A minute of tea does not survive a reload (nor does a heal in progress); the pouch and the flask do.
+- **A drink is refused at full health** ("Already whole"), so a heal is never wasted on a key press. A drink is also refused while a swing is in progress, so using one in a fight is a choice made between blows.
+- **The dropped marks show as** a terrain press, a candle-light, sparks and a mark on the map page, not on the compass (the compass is for quest goals; a new kind of goal there is a larger change).
+- **Fixed prices, no scaling,** no haggling, stock by quest condition, restock one a shrine rest: all of §11.4's "named Veiled with their own stock that grows as their quests are done".
+- `tools/capture/economy-pages.mjs` takes page shots of the DOM pages (the bot's canvas `shot` does not paint them).

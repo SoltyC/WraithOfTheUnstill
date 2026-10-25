@@ -32,8 +32,9 @@ export function createInventory() {
   const self = {
     owned, carried, held: 0, version: 0,
     marks: 0, materials, pouch, flask, threads: 0, sel: 'flask',
-    has(id) { return owned.some((w) => w.id === id); },
-    tier(id) { const w = owned.find((q) => q.id === id); return w ? w.tier : -1; },
+    // (plain loops: the weapons ask every frame, and a closure per call would allocate)
+    has(id) { for (let i = 0; i < owned.length; i++) if (owned[i].id === id) return true; return false; },
+    tier(id) { for (let i = 0; i < owned.length; i++) if (owned[i].id === id) return owned[i].tier; return -1; },
     /** The weapon id in hand, or null. */
     get equipped() { return carried[this.held]; },
     /** The def of the weapon in hand (data), or null. */
@@ -50,7 +51,7 @@ export function createInventory() {
     /** Raise a weapon's tier (the forge pays first: economy/forge.js). */
     upgrade(id) { const w = owned.find((q) => q.id === id); if (!w) return false; w.tier++; this.version++; return true; },
     /** The element a weapon carries (tier 3+), or null. */
-    infusion(id) { const w = owned.find((q) => q.id === id); return w ? w.infusion : null; },
+    infusion(id) { for (let i = 0; i < owned.length; i++) if (owned[i].id === id) return owned[i].infusion; return null; },
     infuse(id, element) { const w = owned.find((q) => q.id === id); if (!w || w.tier < 3) return false; w.infusion = element; this.version++; return true; },
 
     // ── Marks and materials ─────────────────────────────────────────────────────────────────────

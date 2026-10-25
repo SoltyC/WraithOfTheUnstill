@@ -195,6 +195,7 @@ export function addEconomySystem(g) {
     if (d[9] > 0.005 || hg[0] !== COLD[0]) {
       const k = d[9] < 0.005 ? 0 : d[9];
       hg[0] = COLD[0] + (WARM[0] - COLD[0]) * k; hg[1] = COLD[1] + (WARM[1] - COLD[1]) * k; hg[2] = COLD[2] + (WARM[2] - COLD[2]) * k;
+      wraithView.handGlowSize = 0.035 + 0.025 * k;
     }
 
     // The fight's marks, summed into one quiet line when it is over.
