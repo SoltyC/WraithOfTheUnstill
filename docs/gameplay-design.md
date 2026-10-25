@@ -160,6 +160,7 @@ The fiction: the Shapers' walker that carried a caravanserai across the desert; 
    - Its shaking and shedding try to throw the Wraith off, and Skitters climb aboard.
    - Checkpoints come at each stumble.
 7. **Release.**
+   - (2026-10-26) It lies down only when the well's glass eye is lit: throw the evening sun into the shaft with the two mirror-stones on its roof (`docs/phase-9/dunes-design.md` §4.4).
    - At the well it kneels, lowers its head into the shaft and lies down. It becomes a dune range around the oasis.
    - The wind returns; every crest streams; the dunes begin to migrate; **the well fills**.
    - The camp's quest line resolves *because of where the player brought it*.

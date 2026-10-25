@@ -105,7 +105,7 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 4. **The remaining weapon families:** glaive, lantern flail, and the glass blade (dunes, Phase 9).
 5. **Restored-world play** (§7): the summit glide course, ridge-lift routes, and Hearn's requests after the release.
 6. **Encounter variety audit** (§4.2) and **isolation tests** (§9), filmed for the user.
-7. **Phase 9** per `docs/phase-9/plan.md`, starting with D0:
+7. **Phase 9** per `docs/phase-9/plan.md`, with the dune quests and ravines from `docs/phase-9/dunes-design.md` (user, 2026-10-26: puzzle-based, unlike the frost), starting with D0:
    - the bigger erg with ravines (wadis, canyons, slot canyons, a rift);
    - no grass on sand.
 

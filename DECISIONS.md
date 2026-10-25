@@ -482,6 +482,12 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **The Remembrance page** and **a nook pass** on frost and meadow are approved.
 - **Design review:** every gameplay feature goes through the project skill `.claude/skills/wraith-design` (pillars, smells, briefs, bot playtest with NOT ASSESSED).
 
+### Dune quests are puzzles; ravines specified (user, 2026-10-26)
+
+- The user found the old dune quest plan too close to the frost's (follow tracks, rescue, a timed race, carry a light). The dunes become **puzzle-based**: a hub of three Shaper instruments (light, sand flow, sound), in any order, and five side sites. All are built from one **sand grammar** of nine rules: flow, channel, frost holds, sun thaws and shade keeps, wet stands, light, song, Stone, wind. Main-quest puzzles before the Walker's waking need Frost only. There are no fight goals: Shaped press inside puzzles. Design: `docs/phase-9/dunes-design.md`; it supersedes the quests in `plan.md` D11.
+- **Ravines:** four types (the Red Galleries canyon, the Needle slot canyons, the Dry Braids wadis, the Stride rift), specified with sections, plan views and `p9r-*` look targets in the same file. Slot canyons are a bake trench plus a procedural wall kit, because a 2 m heightfield can't hold a 2–6 m slot. Canyon walls are not climbable.
+- Shrines get "wait until" (morning, noon, dusk, night), because time of day is a puzzle tool.
+
 ### Rain and thunderstorm (PLAN.md M11, 2026-10-24)
 
 - **Two weather machines, one blend.** The frost and meadow machines both run always (their clocks are independent and seeded); targets blend by the meadow's weight under the camera (the one the restoration system already eases), so walking across the border eases snow → sleet (some of the frost's snow falls as rain, peaking at the border) → rain over ~40 s. A forced state maps to the other biome's counterpart (rain ↔ snowfall, storm ↔ blizzard); the overlay offers all six.
