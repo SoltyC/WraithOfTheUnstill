@@ -203,6 +203,20 @@ It reuses the reaction table (Pillar 2) and makes the biome's traversal the figh
   - "The hounds flee from fire."
   - Knowledge is the key (Outer Wilds [S]). Reactions discovered fill a living **reaction table** in the journal, collected by doing, never by checklist.
 
+### Remembrance & nooks — Done (2026-10-26)
+
+- **Remembrance:** `data/remembrance.json`, 46 entries (land 16, Shaped 7, Wardens 5, people 10, reactions 8), each unlocked once into the quest-graph flag `rem:<id>` (saved with the quests). One call, `remember(id)` (`game/remembrance.js`), is where the world answers (`systems/remembrance.js`): a quiet notice, a soft chime, the places the entry reveals made known on the compass and map, and a wind burst for a view. Triggers: world events through `chapter.raise` (talks, nooks), casts from the bending system, shatters from combat, and states polled twice a second (places sighted, Shaped sketched, shrines rested at, Echo stones, Wardens released, Flow 2). The first poll after a load is silent. The journal's **Remembrance** tab lists only what is remembered, plus the living reaction table (snow and grass by frost and gale; a cell fills with the rule's own words the first time that bend is cast on that ground).
+- **Nooks:** 39 built (36 designed, 3 added for the far legs) from `data/nooks.json`, 13 procedural shapes in `world/nookSites.js` (cairn, seat, offering, marker, glint, sled, lantern, cart, log, tools, fire, boat, chimes) in the same stone, timber, felt and bronze as the places round them. Each has an interaction (Read, Look out, Look, Dig, Cross) paying on first use: a lore line (also in the Lore tab), a Remembrance entry with a swell, or the place a marker points at. Hidden from the compass until found (never sensed), then a quiet compass mark and a map mark. Found nooks light their glyphs. `reward {marks}` is data only; `payReward` in `systems/nooks.js` is the marked TODO for the economy. A nook is re-seated on the fine ground once the Wraith is within 120 m (the architecture seats far sites on the coarse ground, a metre low on a crest). `ARCH_SITES` went 400 to 512: the world already had 402 sites.
+- **Payoff interval** (`node tools/world/payoff.mjs [--before]`, baked ground, travel pace per route; a payoff is a POI, shrine, quest site or nook within sight):
+
+| | before | after |
+|---|---|---|
+| Natural routes (37 min of route) | mean gap 33 s, max 262 s (2 stretches over 180 s) | mean 27 s, max 105 s |
+| Far legs (24 min: shrines 3, 4, 5) | mean 122 s, max 511 s (3 stretches over 180 s) | mean 61 s, max 158 s |
+
+  Nothing now passes 180 s. The target of 60 to 90 s holds on the far legs (61 s); on the dense routes the gap is shorter than the target because shrines, stones and quest sites were already close.
+- **NOT ASSESSED:** the payoff numbers are from a route model, not a human walk (the bot walked six meadow nooks and one frost nook and each was findable and paid, but not whole routes); whether a human finds 27 s dense-route gaps too busy; the late-pipeline count (no new material or pipeline was added, but the detector was not read); the frame-time cost of 39 more sites (65k vertices); whether the reaction table's cast detection is right on water, or in the biomes not yet built (surface is taken from the biome: snow in the frost, grass in the meadow); the burnt cart's wheel stands edge-on and reads weakly in the soot; `reward {marks}` pays nothing yet.
+
 ## 7. The restored world must add play, not only looks
 
 After a release:
