@@ -1,7 +1,9 @@
 // Save schema, defaults, validation, and version migrations (BRIEF §4.5).
 // A save is plain JSON-compatible data plus binary terrain pages (Uint8Array).
 
-export const SAVE_VERSION = 2;
+import { MATERIALS, CONSUMABLES, FLASK } from '../economy/items.js';
+
+export const SAVE_VERSION = 3;
 export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
 
 /**
@@ -15,12 +17,26 @@ export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
  *   world: { timeOfDay: number, weather: string, weatherOverride: string|null, biome: string, restoration: Record<string, string> },
  *   entities: { crystals: number[], warden: null | { state: string, x: number, z: number, heading: number } },
  *   terrainPages: TerrainPage[],
+ *   inventory: { owned: { id: string, tier: number, infusion: string|null }[], carried: (string|null)[], held: number, marks: number,
+ *     materials: Record<string, number>, pouch: Record<string, number>, flask: { charges: number, max: number }, threads: number, sel: string },
+ *   equipped: { weapon: string, robe: string, mantle: string|null },
+ *   economy: { stocks: Record<string, Record<string, number>>|null, drop: null | { marks: number, x: number, z: number }, purse: number, backPay: boolean },
  * }} SaveData
  *
  * Times: playSeconds is the game clock (clock.simTime) at the save; terrain pages' savedAt and
  * crystal birth times are on that same clock, and a load shifts them to the new session's clock.
  * journal.map is the explored-cells bitmask (map/fog of war), base64.
  */
+
+/** A new game's inventory (v3): the staff, nothing else. */
+export function emptyInventory() {
+  return {
+    owned: [{ id: 'staff', tier: 0, infusion: null }], carried: ['staff', null], held: 0, marks: 0,
+    materials: Object.fromEntries(Object.keys(MATERIALS).map((k) => [k, 0])),
+    pouch: Object.fromEntries(Object.keys(CONSUMABLES).map((k) => [k, 0])),
+    flask: { charges: FLASK.base, max: FLASK.base }, threads: 0, sel: 'flask',
+  };
+}
 
 /** @returns {SaveData} */
 export function createEmptySave(slot = 'auto', now = 0) {
@@ -37,6 +53,9 @@ export function createEmptySave(slot = 'auto', now = 0) {
     world: { timeOfDay: 16.5, weather: 'clear', weatherOverride: null, biome: 'frost', restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' } },
     entities: { crystals: [], warden: null },
     terrainPages: [],
+    inventory: emptyInventory(),
+    equipped: { weapon: 'staff', robe: 'wanderer', mantle: null },
+    economy: { stocks: null, drop: null, purse: 10, backPay: false },
   };
 }
 
@@ -58,6 +77,24 @@ export const migrations = {
     world: { ...s.world, weatherOverride: null },
     entities: { crystals: [], warden: null },
   }),
+  // v2 (Phase 7) → v3 (the economy): the inventory, the equipped items and the economy's state are added.
+  // The weapons v2 knew only as quest flags (`own:<id>`) become owned weapons; the robe worn was a quest
+  // variable. A v2 save earned its quests with no pay, so `backPay` asks the game to pay what the steps
+  // it finished would have paid (systems/economy.js) on its first load.
+  2: (s) => {
+    const flags = s.quests?.flags || [], vars = s.quests?.vars || {};
+    const own = flags.filter((f) => typeof f === 'string' && f.startsWith('own:')).map((f) => f.slice(4)).filter((id) => id !== 'staff');
+    const inv = emptyInventory();
+    for (const id of own) inv.owned.push({ id, tier: 0, infusion: null });
+    if (own.length) inv.carried[1] = own[own.length - 1];
+    return {
+      ...s,
+      version: 3,
+      inventory: inv,
+      equipped: { weapon: 'staff', robe: typeof vars.robe === 'string' ? vars.robe : 'wanderer', mantle: null },
+      economy: { stocks: null, drop: null, purse: 10, backPay: true },
+    };
+  },
 };
 
 /**
@@ -96,6 +133,14 @@ export function validateSave(s) {
   if (w !== null && (typeof w?.state !== 'string' || !Number.isFinite(w.x) || !Number.isFinite(w.z) || !Number.isFinite(w.heading))) fail('entities.warden');
   if (!Number.isFinite(s.world?.timeOfDay)) fail('world.timeOfDay');
   if (!Array.isArray(s.terrainPages)) fail('terrainPages');
+  const inv = s.inventory;
+  if (!Array.isArray(inv?.owned) || !Array.isArray(inv.carried) || !Number.isFinite(inv.marks) || inv.marks < 0) fail('inventory');
+  for (const w of inv.owned) if (typeof w?.id !== 'string' || !Number.isFinite(w.tier)) fail('inventory.owned[]');
+  if (typeof inv.materials !== 'object' || inv.materials === null || typeof inv.pouch !== 'object' || inv.pouch === null) fail('inventory.items');
+  if (!Number.isFinite(inv.flask?.charges) || !Number.isFinite(inv.flask?.max) || !Number.isFinite(inv.threads)) fail('inventory.flask');
+  if (typeof s.equipped?.weapon !== 'string' || typeof s.equipped.robe !== 'string') fail('equipped');
+  const d = s.economy?.drop;
+  if (s.economy === undefined || (d !== null && (!Number.isFinite(d?.marks) || !Number.isFinite(d.x) || !Number.isFinite(d.z)))) fail('economy.drop');
   for (const p of s.terrainPages) if (typeof p.key !== 'string' || !(p.data instanceof Uint8Array)) fail('terrainPages[]');
   return s;
 }

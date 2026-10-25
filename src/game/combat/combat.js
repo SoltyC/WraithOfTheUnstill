@@ -42,6 +42,10 @@ export function createCombat(ctx) {
   const RIBBON_TICK = 0.18;
   const self = {
     health: T.health, focus: T.focus,
+    /** Maximum health: the base plus a segment per health thread (game/economy/items.js); the economy system sets it. */
+    maxHealth: T.health,
+    /** Damage taken × (the worn robe's guard and a Rime tonic), and focus regeneration × (Wind-bread); the economy system sets them. */
+    guardMul: 1, regenMul: 1,
     /** 0..1 eased "low health" for the robe frost, cowl gutter and vignette. */
     wound: 0.5 - 0.5,
     /** Locked Shaped slot or −1. */
@@ -73,7 +77,7 @@ export function createCombat(ctx) {
       if (this.dying > 0) { stepDeath(dt); return; }
       // Focus: restored by movement and flow, spent by the verbs.
       const sp = Math.hypot(controller.vel.x, controller.vel.z);
-      const regen = (controller.surf.active ? T.focusSurf : sp > 2 ? T.focusMove : T.focusIdle) * (flow !== null ? flow.focusMul : 1);
+      const regen = (controller.surf.active ? T.focusSurf : sp > 2 ? T.focusMove : T.focusIdle) * (flow !== null ? flow.focusMul : 1) * this.regenMul;
       // Inside a Chanter's pollen, focus does not return (PLAN.md M8).
       if (!(shaped.pollenAt && shaped.pollenAt(controller.pos.x, controller.pos.z) > 0.3)) this.focus = Math.min(T.focus, this.focus + regen * dt);
       // The Gale clears hanging pollen: a Gust's lane and an Updraft's column blow it away.
@@ -85,7 +89,7 @@ export function createCombat(ctx) {
       const cheap = flow !== null ? flow.costMul : 1;     // verbs cost less at Flow 2+
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * cheap * dt);
       if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * cheap * dt);
-      this.wound += ((1 - this.health / T.health) - this.wound) * (1 - Math.exp(-dt * 3));
+      this.wound += ((1 - this.health / this.maxHealth) - this.wound) * (1 - Math.exp(-dt * 3));
       ribbonTick -= dt; bodyTick -= dt;
       hits(dt);
       if (warden && warden.active) { wardenHits(); wardenBody(); }
@@ -306,7 +310,7 @@ export function createCombat(ctx) {
     if (controller.dodgeT > 0) { if (flow !== null) flow.nearMiss(); return; }   // the bend-step slips through: a near miss feeds Flow
     if (flow !== null) flow.hurt();
     self.blows++;
-    self.health -= shaped.hitDamage * self.shapedDamageMul + (wh ? warden.hitDamage : 0);
+    self.health -= (shaped.hitDamage * self.shapedDamageMul + (wh ? warden.hitDamage : 0)) * self.guardMul;
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
     self.shake += 0.015;
@@ -320,7 +324,7 @@ export function createCombat(ctx) {
     if (self.dying > 0 || amount <= 0) return;
     if (flow !== null) flow.hurt();
     self.blows++;
-    self.health -= amount;
+    self.health -= amount * self.guardMul;
     if (self.sfx) { const sx = self.sfx; sx.x = controller.pos.x; sx.y = controller.pos.y + 1; sx.z = controller.pos.z; sx.gain = 1.1; sx.play(SFX.THUD); }
     clock.hitStop = Math.max(clock.hitStop, T.hitStopHurt);
     self.shake += 0.02;
@@ -358,7 +362,7 @@ export function createCombat(ctx) {
     if (self.dying >= T.deathTime + T.reformTime) {
       self.dying = 0; controller.hold = false;
       if (flow !== null) flow.reset(false);
-      self.health = T.health; self.focus = T.focus * 0.5; self.wound = 0;
+      self.health = self.maxHealth; self.focus = T.focus * 0.5; self.wound = 0;
     }
   }
 

@@ -33,7 +33,7 @@ export function mergeChapters(base, ...more) {
 
 /**
  * @param {{ data: any, pois: any[], hooks: { echo?: Function, lore?: Function, shrine?: Function,
- *           autosave?: Function, journal?: Function, questStarted?: Function, questDone?: Function } }} opts
+ *           autosave?: Function, journal?: Function, questStarted?: Function, questDone?: Function, reward?: Function, trade?: Function } }} opts
  */
 export function createChapter({ data, pois, hooks = {} }) {
   const table = {};
@@ -55,6 +55,8 @@ export function createChapter({ data, pois, hooks = {} }) {
     if (a.journal) hooks.journal?.(a.journal);
     if (a.encounter) hooks.encounter?.(a.encounter);
     if (a.robe) hooks.robe?.(a.robe);
+    if (a.marks || a.give || a.item || a.thread || a.flask) hooks.reward?.(a);
+    if (a.trade) hooks.trade?.(a.trade);
     if (a.say) self.say(a.say);
     if (a.questStarted) hooks.questStarted?.(graph.byId.get(a.questStarted));
     if (a.questDone) hooks.questDone?.(graph.byId.get(a.questDone));
@@ -80,7 +82,7 @@ export function createChapter({ data, pois, hooks = {} }) {
       const list = data.talk?.[npc];
       if (!list) return false;
       this.raise('talk:' + npc);
-      for (const t of list) if (graph.test(t.when, facts)) { this.say(t.say); return true; }
+      for (const t of list) if (graph.test(t.when, facts)) { if (t.trade) hooks.trade?.(t.trade); else this.say(t.say); return true; }
       return false;
     },
     /** Queue a dialogue by id (subtitles; `then` actions run after its last line or choice). */

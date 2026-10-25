@@ -56,6 +56,8 @@ export function startBot(w, qs) {
       health: cb ? r2(cb.health) : null, focus: cb ? r2(cb.focus) : null,
       flow: g.flow ? { v: r2(g.flow.value), tier: g.flow.tier, show: r2(g.flow.show), streak: g.flow.streak, secs: Array.from(g.flow.timeAt, r2), counts: Array.from(g.flow.counts) } : null,
       weapon: g.weapons ? { held: g.inventory.equipped, carried: [...g.inventory.carried], owned: g.inventory.owned.map((w) => w.id), phase: g.weapons.machine.phase, combo: g.weapons.machine.combo, heavy: g.weapons.machine.heavy, stats: { ...g.weapons.stats } } : null,
+      econ: g.economy ? { marks: g.inventory.marks, mats: { ...g.inventory.materials }, pouch: { ...g.inventory.pouch }, sel: g.inventory.sel, flask: { ...g.inventory.flask }, threads: g.inventory.threads,
+        maxHealth: cb.maxHealth, using: g.buffs.using, buffs: Array.from(g.buffs.left, r2), drop: g.economy.drop.serialize(), purse: r2(g.economy.purse.level), tiers: g.inventory.owned.map((w) => w.id + ':' + w.tier + (w.infusion ? ':' + w.infusion : '')) } : null,
       element: g.elements?.active, unlocked: g.elements ? [...g.elements.unlocked] : null,
       climbing: !!(g.activeClimb && g.activeClimb.mode), talking: !!g.chapter?.talking,
       line: lastLine || null, task: document.querySelector('.task-line.on')?.textContent || null,

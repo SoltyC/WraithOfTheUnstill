@@ -13,21 +13,25 @@ import { WeaponMachine, PHASE } from './machine.js';
 import { WeaponPose } from './pose.js';
 import { arc, bodyRadius } from './arcs.js';
 import { hitMat } from './affinity.js';
+import { tierDef } from './tiers.js';
+import { combatTuning } from '../combat/combat.js';
 
 /** Tuning shared by the weapons, edited from the dev overlay. */
 export const weaponTuning = { hitStopMul: 1, shakeMul: 1, damageMul: 1, bleedTick: 0.5, impactChip: 1 };
 
 /**
- * @param {{ shaped: any, combat: any, controller: any, clock: any, ts: any, fx: any, flow: any, inventory: any, ground: any, sfx?: any, SFX?: any }} ctx
+ * @param {{ shaped: any, combat: any, controller: any, clock: any, ts: any, fx: any, flow: any, inventory: any, ground: any, sfx?: any, SFX?: any, buffs?: any }} ctx
  */
 export function createWeapons(ctx) {
   const { shaped, combat, controller, clock, ts, fx, flow, inventory, ground } = ctx;
-  const sfx = ctx.sfx || null, SFX = ctx.SFX || null;
+  const sfx = ctx.sfx || null, SFX = ctx.SFX || null, buffs = ctx.buffs || null;
   const F = weaponFeel, T = weaponTuning;
   const m = new WeaponMachine(), pose = new WeaponPose();
   const radius = {};
   for (const k in ARCHETYPES) radius[k] = bodyRadius(ARCHETYPES[k]);
   const bleedT = new Float64Array(MAX_SHAPED), bleedDps = new Float64Array(MAX_SHAPED);
+  // Frost infusion: blows landed on each slot in the last few seconds (the third freezes it).
+  const chill = new Float64Array(MAX_SHAPED), chillT = new Float64Array(MAX_SHAPED);
   // Mutable state lives in an object of double fields (a closure variable holding a double boxes it on every write).
   const st = { prevProg: 0.5 - 0.5, swapT: 0.5 - 0.5, atkYaw: 0.5 - 0.5, push: 0.5 - 0.5 };
   let hitMask = 0, impacted = false, lastBlows = 0, passMark = 0, brushed = false;
@@ -39,7 +43,7 @@ export function createWeapons(ctx) {
     /** Inputs (fields), set each frame by systems/weapons.js. */
     down: false, pressed: false, dodgePressed: false, swapPressed: false, able: true, aimYaw: 0.5 - 0.5, dt: 0.5 - 0.5,
     /** Out: a dodge may go now; the swing is cutting (the trail), and where the weapon is heading. */
-    dodgeNow: false, cutting: false, trailT: 0.5 - 0.5, swapT: 0.5 - 0.5, yaw: 0.5 - 0.5,
+    dodgeNow: false, cutting: false, knockOv: 0.5 - 0.5, trailT: 0.5 - 0.5, swapT: 0.5 - 0.5, yaw: 0.5 - 0.5,
     /** Telemetry for the bot and the overlay. */
     stats: { swings: 0, heavies: 0, hits: 0, damage: 0, shatters: 0, glances: 0 },
     /** The tier of the weapon in hand (0 = as found). */
@@ -50,7 +54,7 @@ export function createWeapons(ctx) {
       const dt = this.dt;
       // Swap (X / wheel): the other carried weapon is drawn; nothing swings meanwhile.
       if (this.swapPressed && this.able && !m.busy && inventory.cycle()) st.swapT = F.swapTime;
-      const def = inventory.def;
+      const base = inventory.def, def = base !== null ? tierDef(base, inventory.tier(base.id)) : null;   // the forge's tier (tiers.js)
       if (def !== curDef) { curDef = def; m.def = def; pose.def = def; m.reset(); if (def) pose.snapRest(); }
       st.swapT = Math.max(0, st.swapT - dt); this.swapT = st.swapT;
       const live = this.able && combat.dying === 0;
@@ -73,6 +77,7 @@ export function createWeapons(ctx) {
       if (this.cutting) this.trailT = 0.18; else this.trailT = Math.max(0, this.trailT - dt);
       if (ph === PHASE.ACTIVE && a !== null) this.cut(a);
       this.bleed(dt);
+      for (let i = 0; i < MAX_SHAPED; i++) if (chillT[i] > 0) chillT[i] -= dt;
       // The body: footing slows, the facing is held, the pose follows the machine.
       const busy = ph !== PHASE.IDLE;
       controller.walkMul = busy ? (ph === PHASE.WINDUP ? def.move.windup : ph === PHASE.ACTIVE ? def.move.active : ph === PHASE.RECOVER ? def.move.recover : def.move.charge) : 1;
@@ -168,18 +173,29 @@ export function createWeapons(ctx) {
       const frozen = shaped.isFrozen(i), heavy = m.heavy;
       hitMat.aff = def.affinity; hitMat.heavy = heavy; hitMat.frozen = frozen; hitMat.armour = A.armour || 0; hitMat.meadow = A.material === 'meadow';
       hitMat.resolve();
-      let dmg = a.dmg * (heavy ? m.power : 1) * (1 + 0.12 * Math.max(0, this.tier)) * hitMat.dmgMul * falloff * T.damageMul;
+      const inf = def.infusable ? inventory.infusion(def.id) : null;
+      let dmg = a.dmg * (heavy ? m.power : 1) * (def.dmgMul || 1) * (buffs !== null ? buffs.damageMul : 1) * (inf === 'stone' ? 1.1 : 1) * hitMat.dmgMul * falloff * T.damageMul;
       if (hitMat.shatter) dmg = 1e9;
       else if (hitMat.armour > 0) dmg = dmg * hitMat.pierce / hitMat.armour;     // shaped.damage multiplies the armour back in
-      w.i = i; w.dmg = dmg; w.dx = dx; w.dz = dz; w.stagger = a.stagger; w.knock = a.knock; w.chip = a.chip * T.impactChip;
+      w.i = i; w.dmg = dmg; w.dx = dx; w.dz = dz; w.stagger = a.stagger || inf === 'stone'; w.knock = (this.knockOv > 0 ? this.knockOv : a.pull ? -a.pull : a.knock) * (inf === 'gale' ? 1.7 : 1); w.chip = a.chip * T.impactChip * (inf === 'stone' ? 1.5 : 1);
       w.stop = a.stop * T.hitStopMul * (hitMat.glance ? 0.4 : 1); w.shake = a.shake * T.shakeMul; w.kick = a.kick * T.shakeMul;
       w.heavy = heavy; w.glance = hitMat.glance; w.sound = hitMat.shatter ? 2 : hitMat.glance ? 3 : a.sfx === 'boom' ? 4 : a.sfx === 'cut' ? 1 : 0;
       combat.weaponHit();
+      if (inf !== null) this.infuse(inf, i);
       flow.hit(heavy ? FLOW_EVENT.WEAPON_HEAVY : FLOW_EVENT.WEAPON_LIGHT);
       const st = this.stats; st.hits++; st.damage += w.dealt; if (hitMat.shatter) st.shatters++; if (hitMat.glance) st.glances++;
       // Cuts bleed.
       const af = def.affinity;
       if (af.bleed && !w.killed && !hitMat.glance && !frozen) { bleedT[i] = af.bleedTime; bleedDps[i] = af.bleed * (heavy ? 1.4 : 1); }
+    },
+
+    /** An infused blow's light reaction (tier 3+, forged): frost chills (the third blow freezes), gale feeds a breath of focus. */
+    infuse(inf, i) {
+      if (inf === 'frost' && !w.killed) {
+        if (chillT[i] <= 0) chill[i] = 0;
+        chillT[i] = 3; chill[i]++;
+        if (chill[i] >= 3) { chill[i] = 0; shaped.freeze(i, 1.4); }
+      } else if (inf === 'gale') combat.focus = Math.min(combatTuning.focus, combat.focus + 1.5);
     },
 
     /** A heavy strikes the ground: damage in a disc with falloff, the terrain dented or cratered, spray and a ring of dust. */
@@ -199,6 +215,9 @@ export function createWeapons(ctx) {
         const fx0 = dl > 0.2 ? dx / dl : Math.sin(st.atkYaw), fz0 = dl > 0.2 ? dz / dl : Math.cos(st.atkYaw);
         this.strike(i, a, fx0, fz0, 1 - 0.35 * Math.min(1, Math.max(0, dmin - r) / R));
       }
+      // Forged arts: the staff's shock lane down the heading; the maul's ring past the crater.
+      if (a.shock) this.lane(a, ix, iz);
+      if (a.ring) this.ring(a, ix, iz);
       // The ground: a dent (staff), a crater with its cracks (maul).
       const big = a.brush === 'crater', k = m.heavy ? 1 + (m.power - 1) * 0.6 : 1;
       ts.bx = ix; ts.bz = iz; ts.bdx = Math.sin(st.atkYaw); ts.bdz = Math.cos(st.atkYaw); ts.bl = 0; ts.bw = (big ? 1.5 : 0.85) * k; ts.bd = (big ? 0.5 : 0.2) * k; ts.bc = 0.7;
@@ -224,6 +243,33 @@ export function createWeapons(ctx) {
       if (sfx !== null) {
         sfx.x = ix; sfx.y = iy; sfx.z = iz; sfx.gain = big ? 1.3 : 1;
         sfx.play(big ? SFX.BOOM : SFX.THUD); if (big) sfx.play(SFX.CRUNCH);
+      }
+    },
+
+    /** The Plant (staff, tier 5): the slam's shock runs `len` m on down the heading from the impact; each Shaped within `hw` of the line takes `frac` of a blow. */
+    lane(a, ix, iz) {
+      const L = a.shock, ux = Math.sin(st.atkYaw), uz = Math.cos(st.atkYaw);
+      for (let i = 0; i < MAX_SHAPED; i++) {
+        if (hitMask & (1 << i) || !shaped.isLive(i)) continue;
+        const s = shaped.slots[i], b = s.body, r = radius[s.arch];
+        const ex = b.sx[1] - ix, ez = b.sz[1] - iz, along = ex * ux + ez * uz;
+        if (along < 0 || along > L.len || Math.abs(-ex * uz + ez * ux) > L.hw + r) continue;
+        hitMask |= 1 << i;
+        this.strike(i, a, ux, uz, L.frac);
+      }
+    },
+    /** Groundbreaker (maul, tier 5): everything within `radius` of the impact that the crater missed is thrown back by `frac` of a blow. */
+    ring(a, ix, iz) {
+      const R = a.ring;
+      for (let i = 0; i < MAX_SHAPED; i++) {
+        if (hitMask & (1 << i) || !shaped.isLive(i)) continue;
+        const s = shaped.slots[i], b = s.body;
+        const dx = b.sx[1] - ix, dz = b.sz[1] - iz, dl = Math.hypot(dx, dz);
+        if (dl - radius[s.arch] > R.radius) continue;
+        hitMask |= 1 << i;
+        this.knockOv = R.knock;
+        this.strike(i, a, dl > 0.2 ? dx / dl : Math.sin(st.atkYaw), dl > 0.2 ? dz / dl : Math.cos(st.atkYaw), R.frac);
+        this.knockOv = 0;
       }
     },
 
@@ -261,7 +307,7 @@ export function createWeapons(ctx) {
     get push() { return st.push; },
     get heading() { return st.atkYaw; },
     /** Clear everything (death, a load). */
-    reset() { m.reset(); bleedT.fill(0); st.swapT = 0; st.push = 0; },
+    reset() { m.reset(); bleedT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
   };
   return self;
 }

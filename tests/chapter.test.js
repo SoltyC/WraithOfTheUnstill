@@ -25,7 +25,7 @@ describe('frost chapter data', () => {
     for (const n of data.npcs) expect(places.has(n.home.poi)).toBe(true);
     for (const npc in data.talk) {
       expect(ids.has(npc)).toBe(true);
-      for (const t of data.talk[npc]) expect(data.dialogue[t.say], t.say).toBeTruthy();
+      for (const t of data.talk[npc]) if (!t.trade) expect(data.dialogue[t.say], t.say).toBeTruthy();
     }
     const acts = [];
     for (const q of data.quests) { for (const s of q.steps) acts.push(...(s.actions || [])); acts.push(...(q.onDone || [])); }

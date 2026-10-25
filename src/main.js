@@ -95,6 +95,7 @@ async function boot() {
   (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
   (await import('./systems/weapons.js')).addWeaponSystem(g); // before the Wraith (the attack pose) and the creatures (the blows it lands)
+  (await import('./systems/economy.js')).addEconomySystem(g); // right after: it reads their `able`, takes the hands for a drink
   sysWraith.addWraithSystem(g);
   (await import('./systems/weaponView.js')).addWeaponViewSystem(g); // after it: the weapon follows the hand
   sysCreatures.addCreatureSystems(g);
@@ -137,7 +138,10 @@ async function boot() {
     g.menus = menus;
     g.openShrine = (t) => menus.open('shrine', t);
     const ch = g.chapter;
-    g.progress = { collect(s) { ch.collect(s); s.journal.map = menus.map.serialize(); }, apply(s) { ch.apply(s); menus.map.restore(s.journal.map); } };
+    g.progress = {
+      collect(s) { ch.collect(s); s.journal.map = menus.map.serialize(); g.economy.collect(s); },
+      apply(s) { ch.apply(s); menus.map.restore(s.journal.map); g.economy.apply(s); },
+    };
     loop.addLate({ name: 'menus', update: () => menus.update() });
   }
   loop.addLate({ name: 'inputEnd', update: inputMod.endInputFrame });

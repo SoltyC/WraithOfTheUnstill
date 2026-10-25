@@ -113,7 +113,7 @@ describe('inventory', () => {
   });
 });
 
-function world(weapon = 'staff') {
+function world(weapon = 'staff', extra = {}, setup = null) {
   const ground = { qx: 0, qz: 0, h: 0, nx: 0, ny: 1, nz: 0, sample() { this.h = 0; }, sampleNormal() { this.nx = 0; this.ny = 1; this.nz = 0; } };
   const stamps = [], pins = [];
   const ts = { stamp() { stamps.push(this.bk); } }, fx = { emit() {} }, clock = { hitStop: 0, simTime: 0, dt: 1 / 60 };
@@ -124,7 +124,8 @@ function world(weapon = 'staff') {
   const combat = createCombat({ shaped, frost, controller, ts, clock, flow, teleport: () => {} });
   const inventory = createInventory();
   if (weapon !== 'staff') { inventory.give(weapon); inventory.cycle(); }
-  const weapons = createWeapons({ shaped, combat, controller, clock, ts, fx, flow, inventory, ground });
+  if (setup) setup(inventory);
+  const weapons = createWeapons({ shaped, combat, controller, clock, ts, fx, flow, inventory, ground, ...extra });
   const step = (n, input = {}) => {
     for (let k = 0; k < n; k++) {
       const dt = 1 / 60;
@@ -221,5 +222,65 @@ describe('weapons in play', () => {
     w.combat.blows++;
     w.step(1);
     expect(w.weapons.machine.busy).toBe(false);
+  });
+});
+
+describe('forged weapons in play (the economy)', () => {
+  const tierUp = (id, n) => (inv) => { for (let k = 0; k < n; k++) inv.upgrade(id); };
+  /** hp a lone hound loses to one press of the staff at the given tier. */
+  const lost = (n, extra) => {
+    const w = world('staff', extra, tierUp('staff', n)), i = target(w), hp0 = w.shaped.slots[i].hp;
+    w.step(16, { press: true });
+    return hp0 - w.shaped.slots[i].hp;
+  };
+  it('a second tier lands harder than the first and the base; the first tier only moves', () => {
+    const t0 = lost(0), t1 = lost(1), t2 = lost(2);
+    expect(t1).toBeCloseTo(t0, 5);
+    expect(t2).toBeGreaterThan(t0 * 1.1);
+  });
+  it('Ember tea strengthens the blow by a quarter', () => {
+    const base = lost(0), buffed = lost(0, { buffs: { damageMul: 1.25 } });
+    expect(buffed / base).toBeCloseTo(1.25, 1);
+  });
+  it('tier 1 adds a fourth staff hit to the combo', () => {
+    const w = world('staff', {}, tierUp('staff', 1));
+    w.step(1, { press: true });
+    expect(w.weapons.def.combo.length).toBe(4);
+    let maxCombo = 0;
+    for (let k = 0; k < 160; k++) { w.step(1, { press: k % 8 === 0 }); maxCombo = Math.max(maxCombo, w.weapons.machine.combo); }
+    expect(maxCombo).toBe(3);
+  });
+  it('a frost infusion freezes a hound on the third blow', () => {
+    const w = world('staff', {}, (inv) => { tierUp('staff', 3)(inv); inv.infuse('staff', 'frost'); });
+    const i = target(w, 'brute', 1.8);
+    let frozen = false;
+    for (let k = 0; k < 140 && !frozen; k++) { w.step(1, { press: k % 20 === 0 }); frozen = w.shaped.isFrozen(i); }
+    expect(frozen).toBe(true);
+    const plain = world('staff', {}, tierUp('staff', 3)), j = target(plain, 'brute', 1.8);
+    for (let k = 0; k < 140; k++) plain.step(1, { press: k % 20 === 0 });
+    expect(plain.shaped.isFrozen(j)).toBe(false);
+  });
+  it('the tier-5 staff\'s slam reaches a hound six metres down the lane', () => {
+    const run = (n) => {
+      const w = world('staff', {}, tierUp('staff', n)), i = target(w, 'hound', 6.5), hp0 = w.shaped.slots[i].hp;
+      w.step(40, { press: true, down: true }); w.step(1, { down: false }); w.step(60);
+      return hp0 - w.shaped.slots[i].hp;
+    };
+    expect(run(4)).toBe(0);
+    expect(run(5)).toBeGreaterThan(5);
+  });
+  it('the tier-5 maul\'s smash throws back a hound the crater missed', () => {
+    const run = (n) => {
+      const w = world('maul', {}, tierUp('maul', n)), i = target(w, 'hound', 6.3), hp0 = w.shaped.slots[i].hp;
+      w.step(60, { press: true, down: true }); w.step(1, { down: false }); w.step(70);
+      return hp0 - w.shaped.slots[i].hp;
+    };
+    expect(run(5)).toBeGreaterThan(run(4));
+  });
+  it('a forged weapon never touches the base def the overlay edits', () => {
+    const before = weaponDefs.staff.combo.length;
+    world('staff', {}, tierUp('staff', 5)).step(2);
+    expect(weaponDefs.staff.combo.length).toBe(before);
+    expect(weaponDefs.staff.heavy.shock).toBeUndefined();
   });
 });

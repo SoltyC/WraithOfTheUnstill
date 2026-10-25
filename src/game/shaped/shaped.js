@@ -76,6 +76,8 @@ export function createShaped(ctx) {
     lungeToken: -1,
     /** A shattering kill happened this frame (owner: the big hit-stop and punch) at (bx, by, bz). */
     shattered: 0, bx: 0.5, by: 0.5, bz: 0.5,
+    /** Called with the archetype name when a Shaped collapses (the economy leaves marks); null = nobody listens. */
+    onKill: null,
     /** Sound (audio/sfx.js), set by the owner; null = silent. */
     sfx: null,
     /** Ground slams this frame (camera shake), and the strongest one's distance to the Wraith. */
@@ -350,6 +352,7 @@ export function createShaped(ctx) {
 
   function die(s, burst) {
     s.state = S.FALLING; s.t = 0; s.glow = 0;
+    if (self.onKill !== null) self.onKill(s.arch);
     if (self.lungeToken === s.idx) self.lungeToken = -1;
     startFall(s.body, s.st, rnd, burst);
     if (burst > 0) {

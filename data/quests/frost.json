@@ -62,6 +62,17 @@
         "dz": -1.5
       },
       "about": "A staff-bearer who went out to watch the Warden and did not come back."
+    },
+    {
+      "id": "osk",
+      "name": "Osk",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "camp-frost",
+        "dx": -5.5,
+        "dz": -2.5
+      },
+      "about": "The sled-trader. Drags goods across the ice between the pilgrim fires, and trades for marks and what the cold gives."
     }
   ],
   "places": {
@@ -296,6 +307,26 @@
       },
       {
         "say": "varo.again"
+      }
+    ],
+    "osk": [
+      {
+        "when": {
+          "flag": [
+            "cleared:camp-raid",
+            "trade:osk"
+          ]
+        },
+        "trade": "osk"
+      },
+      {
+        "when": {
+          "flag": "cleared:camp-raid"
+        },
+        "say": "osk.first"
+      },
+      {
+        "say": "osk.raid"
       }
     ]
   },
@@ -658,6 +689,27 @@
       "lines": [
         "A robe with no one in it. Stand by the fire, then. The hounds have been circling since dusk, and they will come again."
       ]
+    },
+    "osk.raid": {
+      "speaker": "osk",
+      "lines": [
+        "Not now. Hounds. Get them off the sled and then we will talk prices."
+      ]
+    },
+    "osk.first": {
+      "speaker": "osk",
+      "lines": [
+        "I am Osk. That sled is mine, and so is what is on it. Salves, mostly. A tonic or two, for the cold.",
+        "Marks are the only coin out here. Old Shaper silver. Bring me rime cores, if you find any, and I will pay for them. But the smith in Hearn will pay you more, in work, if you keep them."
+      ],
+      "then": [
+        {
+          "setFlag": "trade:osk"
+        },
+        {
+          "trade": "osk"
+        }
+      ]
     }
   },
   "quests": [
@@ -825,6 +877,9 @@
       "onDone": [
         {
           "startQuest": "pilgrims-fire"
+        },
+        {
+          "marks": 30
         }
       ]
     },
@@ -879,6 +934,14 @@
       "onDone": [
         {
           "startQuest": "watching-stone"
+        },
+        {
+          "marks": 50
+        },
+        {
+          "item": {
+            "salve": 2
+          }
         }
       ]
     },
@@ -971,6 +1034,14 @@
       "onDone": [
         {
           "startQuest": "held-snow"
+        },
+        {
+          "marks": 70
+        },
+        {
+          "give": {
+            "rime-core": 1
+          }
         }
       ]
     },
@@ -1026,6 +1097,17 @@
       "onDone": [
         {
           "startQuest": "first-snow"
+        },
+        {
+          "marks": 120
+        },
+        {
+          "thread": true
+        },
+        {
+          "give": {
+            "rime-core": 3
+          }
         }
       ]
     },
@@ -1095,6 +1177,16 @@
               "autosave": true
             }
           ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 75
+        },
+        {
+          "give": {
+            "rime-core": 2
+          }
         }
       ]
     },
@@ -1189,6 +1281,11 @@
             }
           ]
         }
+      ],
+      "onDone": [
+        {
+          "marks": 40
+        }
       ]
     },
     {
@@ -1254,6 +1351,14 @@
               "autosave": true
             }
           ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 40
+        },
+        {
+          "thread": true
         }
       ]
     },
@@ -1335,6 +1440,14 @@
             "radius": 6
           }
         }
+      ],
+      "onDone": [
+        {
+          "marks": 40
+        },
+        {
+          "flask": 1
+        }
       ]
     },
     {
@@ -1393,6 +1506,16 @@
             }
           ]
         }
+      ],
+      "onDone": [
+        {
+          "marks": 40
+        },
+        {
+          "give": {
+            "rime-core": 1
+          }
+        }
       ]
     },
     {
@@ -1417,7 +1540,12 @@
           "goal": {
             "dynamic": "next-gate",
             "radius": 8
-          }
+          },
+          "actions": [
+            {
+              "marks": 10
+            }
+          ]
         },
         {
           "id": "silver",
@@ -1436,6 +1564,9 @@
           "actions": [
             {
               "lore": "lore-shapers-run"
+            },
+            {
+              "marks": 15
             }
           ]
         },
@@ -1456,6 +1587,17 @@
           "actions": [
             {
               "echo": "echo-frost-surf"
+            },
+            {
+              "marks": 25
+            },
+            {
+              "thread": true
+            },
+            {
+              "give": {
+                "rime-core": 1
+              }
             }
           ]
         }

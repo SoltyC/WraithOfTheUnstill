@@ -70,6 +70,8 @@ export function createFlow() {
     surfOn: false, glideOn: false, grounded: true, swimming: false,
     /** The numeric inputs (FLOW_IN slots): a typed array, since a plain double field is boxed on every write. */
     inp: d,
+    /** Drain × (a Stillwater draught halves it); the economy system sets it. */
+    decayMul: 1,
     /** Paused (dead, scripted, in conversation, climbing): nothing builds or drains. */
     paused: false,
 
@@ -103,14 +105,14 @@ export function createFlow() {
       let next = v;
       if (m !== 0) {
         if (d[11] <= 0) next += rate * dt * Math.min(1, Math.max(0, (T.softCap - v) / T.softBand));
-        if (v > T.softCap) next -= T.overDrain * dt;
+        if (v > T.softCap) next -= T.overDrain * this.decayMul * dt;
         d[10] = 0;
       } else if (this.grounded && !this.swimming && d[17] < T.idleSpeed) {
         d[10] += dt;
-        if (d[10] > T.idleGrace && d[23] <= 0) next -= T.idleDrain * dt;      // a fight is not standing: swinging on the spot holds it too
+        if (d[10] > T.idleGrace && d[23] <= 0) next -= T.idleDrain * this.decayMul * dt;      // a fight is not standing: swinging on the spot holds it too
       } else {
         d[10] = 0;
-        if (d[8] > T.chainWindow && d[23] <= 0) next -= T.walkDrain * dt;
+        if (d[8] > T.chainWindow && d[23] <= 0) next -= T.walkDrain * this.decayMul * dt;
       }
       d[2] = next; commit(this);
       timeAt[this.tier] += dt;

@@ -6,6 +6,7 @@
 // creatures (the blows it lands).
 
 import { createInventory } from '../game/inventory.js';
+import { createBuffs } from '../game/economy/buffs.js';
 import { createWeapons } from '../game/weapons/weapons.js';
 import { weaponFinds } from '../game/weapons/finds.js';
 
@@ -13,14 +14,15 @@ import { weaponFinds } from '../game/weapons/finds.js';
 export function addWeaponSystem(g) {
   const { loop, input, Action, controller, arm, combat, clock, shaped, wraithView, terrainState: ts, flow, ground, game, sfx, SFX, capture } = g;
   const inventory = g.inventory = createInventory();
+  const buffs = g.buffs = createBuffs(inventory);      // Ember tea strengthens the blows (game/economy/buffs.js)
   const fxSink = wraithView;       // the Wraith's effects emitter doubles as the spray the blows throw up
-  const weapons = g.weapons = createWeapons({ shaped, combat, controller, clock, ts, fx: fxSink, flow, inventory, ground, sfx, SFX });
+  const weapons = g.weapons = createWeapons({ shaped, combat, controller, clock, ts, fx: fxSink, flow, inventory, ground, sfx, SFX, buffs });
   const wraith = wraithView.wraith;
 
   /** Why the weapon must stay sheathed this frame. */
   function able() {
     return !arm.free && !controller.scripted && !controller.hold && !controller.god && !controller.surf.active && !controller.glide.active
-      && !controller.swimming && !(g.chapter && g.chapter.talking) && !g.verbBlock && !(g.activeClimb && g.activeClimb.mode)
+      && !controller.swimming && !(g.chapter && g.chapter.talking) && !g.verbBlock && buffs.using === null && !(g.activeClimb && g.activeClimb.mode)
       && !(g.bellClimb && g.bellClimb.climbing) && !g.knock.active && game.pendingSurf === null && game.pendingBend === null;
   }
 

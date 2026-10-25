@@ -7,6 +7,7 @@ import { createMap } from './map.js';
 import { releaseAll } from '../../input/actions.js';
 import { ownedRobes, wornRobe } from '../../game/robes.js';
 import { BEASTS, sketchSvg } from '../../game/bestiary.js';
+import { createEconomyPages } from './trade.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
@@ -88,7 +89,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes'], ['arms', 'Arms'], ['pouch', 'Pouch']], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -112,12 +113,17 @@ export function createMenus(g) {
         fig.innerHTML = sketchSvg(vars['sketch:' + b.id]);
         el('p', null, pg, b.text);
       }, 'Nothing sketched yet. The Shaped rise out of the snow; look at them long enough to draw.');
+    } else if (tab === 'arms') {
+      listPage([['Weapons', econ.armsTab()]], (pg, w) => econ.armsPage(pg, w), 'Only the staff.');
+    } else if (tab === 'pouch') {
+      econ.pouchTab(el('div', 'codex-page wide', sheet));
     } else if (tab === 'robes') {
       const flags = chapter.graph.flags, vars = chapter.graph.vars;
       const worn = wornRobe(flags, vars).id;
       listPage([['Robes', ownedRobes(flags).map((r) => ({ ...r, title: r.name, done: false }))]], (pg, r) => {
         el('h2', null, pg, r.name); el('div', 'summary', pg, r.how); el('p', null, pg, r.text);
         if (r.effect) el('p', 'echo-effect', pg, r.effect);
+        if (r.defence) el('p', null, pg, 'Armour: turns aside ' + Math.round(r.defence * 100) + '% of a blow.');
         const b = el('button', 'robe-wear', pg, r.id === worn ? 'Worn' : 'Wear');
         if (r.id === worn) b.disabled = true; else b.onclick = () => { g.wearRobe?.(r.id); open('journal', 'robes'); };
       }, 'Only the robe it woke in.');
@@ -150,6 +156,8 @@ export function createMenus(g) {
       // The places of the errands, once the Wraith has been near them (the same "known" the compass keeps).
       for (const id of ['side-fen-lamp', 'side-stone-ring', 'side-barley', 'side-edge', 'side-echo-shore']) if (chapter.graph.flags.has('known:' + id)) marks.push({ x: T[id].pos[0], z: T[id].pos[1], name: T[id].name, kind: 'place' });
     }
+    const dr = g.economy && g.economy.drop;
+    if (dr && dr.active) marks.push({ x: dr.x, z: dr.z, name: dr.marks + ' marks', kind: 'place' });
     for (const p of g.pois) if (p.kind === 'shrine' && p.biome === view) marks.push({ x: p.pos[0], z: p.pos[1], name: null, kind: chapter.shrines.has(p.id) ? 'shrine-lit' : 'shrine' });
     foot([['M', 'close'], ['J', 'journal'], ['Esc', 'back']]);
     const sw = el('div', 'codex-actions', sheet);
@@ -249,7 +257,10 @@ export function createMenus(g) {
     foot([['Esc', 'leave']]);
   }
 
-  const PAGES = { journal, map: mapPage, pause, saves, settings: settingsPage, shrine: shrinePage };
+  const econ = createEconomyPages({ g, el, head, foot, tabs, listPage, sheet, open });
+  const PAGES = { journal, map: mapPage, pause, saves, settings: settingsPage, shrine: shrinePage, trade: econ.trade, forge: econ.forge };
+  // The talk interaction opens a trader's stall, or the smith's forge (data: { trade: 'corin' }).
+  g.openTrade = (id) => open(id === 'garrow' ? 'forge' : 'trade', id === 'garrow' ? { id } : { id, tab: 'buy' });
 
   async function loadSlot(slot) {
     const s = await game.saves.load(slot);

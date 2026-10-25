@@ -822,6 +822,19 @@
             }
           ]
         }
+      ],
+      "onDone": [
+        {
+          "marks": 45
+        },
+        {
+          "flask": 1
+        },
+        {
+          "give": {
+            "turf-amber": 1
+          }
+        }
       ]
     },
     {
@@ -888,6 +901,17 @@
             }
           ]
         }
+      ],
+      "onDone": [
+        {
+          "marks": 45
+        },
+        {
+          "give": {
+            "hedge-heart": 1,
+            "turf-amber": 1
+          }
+        }
       ]
     },
     {
@@ -953,6 +977,16 @@
               "autosave": true
             }
           ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 45
+        },
+        {
+          "give": {
+            "hedge-heart": 1
+          }
         }
       ]
     },
@@ -1054,6 +1088,17 @@
             }
           ]
         }
+      ],
+      "onDone": [
+        {
+          "marks": 60
+        },
+        {
+          "give": {
+            "hedge-heart": 1,
+            "turf-amber": 1
+          }
+        }
       ]
     },
     {
@@ -1134,6 +1179,17 @@
               "autosave": true
             }
           ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 45
+        },
+        {
+          "give": {
+            "hedge-heart": 1,
+            "turf-amber": 1
+          }
         }
       ]
     }
