@@ -4,6 +4,8 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
+> **Handoff 2026-10-25:** read `HANDOFF.md` first. It lists the merged work (rain and thunderstorm, side quests and HUD direction, Flow, the gameplay design), the two pushed WIP branches (`claude/weapons`, `claude/remembrance`) and the remaining task order.
+
 - **Phase:** 7 (RPG layer), **in progress — visual pass under way on branch `claude/wraithoftheunstill-phase-7` (see Session log 2026-10-09 and PLAN.md)** — built and pushed, awaiting the user's play-through on T (see "Phase 7 open"). Phase 6 is closed (accepted by the user, 2026-10-04, on the MacBook re-shoot and the T bench), on condition that `src/main.js` is cut down first. Phase 5 is closed: the user said to fix the last issues and move on if good (2026-10-04); they were fixed and judged good on the target shots. Phase 4 is closed (accepted by the user, 2026-10-03). Phase 3 is closed (accepted 2026-10-03). Phase 2 is closed (accepted 2026-10-03). Phase 1 is closed under the user's ruling (2026-10-03). Phase 0 is closed (2026-10-02).
 - **Phase 7 built** (commits 9ed68f1 …; DECISIONS.md "Phase 7"):
   - **`src/main.js` split** (1101 → ~190 lines): `src/boot/` (engine, world, actors, game facade) and `src/systems/` (one module per concern, same run order).
