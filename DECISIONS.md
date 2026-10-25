@@ -489,3 +489,7 @@ Every deviation from BRIEF.md, one line each, with rationale.
 - **Lightning as a brief key light, not a point light.** The strike turns `env.keyDir` toward the bolt (shadows, materials and the post fog all follow it), adds a key colour in the atmosphere pass *after* the exposure and the SH are computed (so the flash moves neither), and the shadows come back for it. Clouds glow from a separate envelope (`pad[0].z`). The bolt's core writes depth because the post fog treats a pixel by its depth (a sky pixel is 20 km away: fully fogged); its colour carries the fog's inverse so it outshines haze.
 - **Rain streak width follows the internal render height.** A fixed 1-pixel streak vanished under dynamic resolution and TAA; width is max(a few mm, ~1.5 internal pixels) with the alpha dimmed to the same energy.
 - `npm run alloc`: `controller.update` / `springArm.update` still fail as before; the new meadow weather and lightning cases pass. Avoid an object-literal getter on a hot object (it allocated).
+
+### Weapons and the new controls (2026-10-26)
+
+- **Controls:** LMB swings the carried weapon (tap: the combo, hold: the charged heavy); Q is the element (tap: quick verb, hold: sustained verb); F is the element's heavy verb; R uses and C cycles consumables; the wheel or X swaps the two carried weapons; Ctrl dodges and cancels a recovery. Dev free-camera keys moved off Q and R. Spec and numbers: `docs/gameplay-design.md` §11.1-11.2; playtest: `docs/weapons-playtest.md`.
