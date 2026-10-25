@@ -55,11 +55,9 @@ The dunes are the natural third:
 - Shaped that hide under the sand.
 
 **Difficulty:**
-- **World tier** = the number of Wardens released (0–5). Shaped of every biome scale with it:
-  - health, damage and aggression rise about 12 % per tier;
-  - behaviours unlock: flanking from tier 1, elites appear from tier 2, mixed packs at borders from tier 2.
-- Each biome also has a **base tier**: frost 0, meadow 0, mire 1, dunes 1, ember 2, coast 3.
-- Effective difficulty is `max(base, world tier)`. A biome visited late isn't trivial, and one visited early isn't a wall.
+- **Fixed difficulty, no world tier** (user, 2026-10-24). Each biome's Shaped are tuned once to that biome's designed level: frost 0, meadow 0, mire 1, dunes 1, ember 2, coast 3. Releases never make the Shaped stronger.
+- A biome visited late is easier because the player brings more elements, weapons and skill. That is the reward for exploring.
+- Behaviours belong to a biome's level, not the player's progress: flanking from level 1, elites from level 2, mixed packs at borders where either side is level 1 or higher.
 - **Wardens don't scale:** their fights are designed and tuned once, and they are the difficulty spikes (§10).
   - The player brings more tools to a late Warden, which is the reward for exploring.
 
@@ -142,7 +140,7 @@ The cells are proposals. Each becomes a side quest or a secret in its biome's ph
 
 - **Read the material:** every Shaped is made of its biome's material, and the material decides the element to use (§10).
   - The compass and journal sketches teach it; there's no damage-number UI.
-- **Shaped stay in their biome.** At borders, from tier 2, **mixed packs** appear:
+- **Shaped stay in their biome.** At borders where either side is level 1 or higher, **mixed packs** appear:
   - frost hounds with Sedgerunners on the snowline;
   - Skitters with ash constructs on the seif dunes.
   - The player must switch elements mid-fight with keys 1–5, and the cuffs show the choice.
@@ -195,13 +193,10 @@ The cells are proposals. Each becomes a side quest or a secret in its biome's ph
 
 In Phase 9 unless marked:
 
-1. **Save v3:** unlocked and active element, per-biome restoration, world tier, dune migration time, medal times and lock states, with a v2 → v3 migration. Today elements aren't saved; Gale is re-granted from a flag.
+1. **Save v3:** unlocked and active element, per-biome restoration, dune migration time, medal times and lock states, with a v2 → v3 migration. Today elements aren't saved; Gale is re-granted from a flag.
 2. **Traversal dispatch by surface** (`character/playerSystem.js`): one surf controller with per-material tuning tables and wake types, mode morphing at borders, and landing hand-off by surface.
 3. **Reactions coverage test** (§4) and the Stone column brushes for snow, grass and water.
-4. **World tier:**
-   - `game/worldState.js` gains `tier()`;
-   - Shaped archetype tuning reads `max(base, tier)`;
-   - a test proves monotone scaling.
+4. **Biome difficulty levels:** Shaped archetype tuning reads the biome's fixed level (data, not progress), with a test that the release count never changes it.
 5. **Encounter director per biome:** anchors in each chapter's data, not frost POIs.
 6. **Critical-path validator:**
    - quest steps declare `needs: ['gale']` when a verb is required;
@@ -220,13 +215,13 @@ In Phase 9 unless marked:
   - a "meadow second" save then does the dunes with Gale in hand, using the faster routes.
 - Order-independence is tested, not hoped for.
 - **Reactions matrix screenshots:** one spot per built cell (`xr-<surface>-<element>`), with a contact sheet per phase.
-- **Unit tests:** reactions coverage, the critical-path validator, world-tier scaling and save v3 round-trip.
+- **Unit tests:** reactions coverage, the critical-path validator, fixed biome levels and save v3 round-trip.
 
 ## Decisions for the user
 
-**Answered (user, 2026-10-24):** open order — yes. World-tier scaling — **no**: each biome has a fixed, designed difficulty (its base); a biome visited late is easier because the player brings more tools and skill, which is the reward. Replace §1's world-tier paragraph and §9 item 4 accordingly when implementing.
+**Answered (user, 2026-10-24):** open order — yes. World-tier scaling — **no**: each biome has a fixed, designed difficulty (its base); a biome visited late is easier because the player brings more tools and skill, which is the reward. §1 and §9 item 4 are updated (2026-10-26).
 
 1. **Open order** after the frost (meadow, dunes, mire any order; ember late by difficulty; coast last), recommended; or a fixed chain.
 2. **Elements lent at the waking** of each Warden (as the Bellwether does now), recommended.
-3. **World tier scaling** of the Shaped (not the Wardens) by the number of releases, recommended.
+3. ~~World tier scaling~~ (answered: no).
 4. **Revisit locks:** the table in §2, 2–3 per biome. Approve the idea, then the cells per phase.
