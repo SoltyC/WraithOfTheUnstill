@@ -1,0 +1,1255 @@
+{
+  "_review": "Meadow side quests and shrines (user request 2026-10-24: more side quests, quest direction on the HUD). Merged into the chapter data by systems/chapter.js (mergeChapters). Ids are meadow-side-*; flags are meadow:side-*. Dialogue follows docs/village/dialogue-style.md. Places carry their mechanics' data (rings, stones' gestures); the sites stand where tools/world/sample.mjs found dry, level ground (tests/sideQuests.test.js pins that). Mechanics: systems/sideQuests.js.",
+  "chapter": "meadow",
+  "title": "The Burning Night",
+  "npcs": [
+    {
+      "id": "meadow-ketil",
+      "name": "Ketil",
+      "archetype": "lantern",
+      "lazy": true,
+      "home": {
+        "poi": "meadow-market"
+      },
+      "post": {
+        "plot": "p136",
+        "out": 1.4
+      },
+      "about": "Keeper of the lamps of Hearn. Lights the Fen Lamp's flame for the Wraith.",
+      "tint": [
+        2.0,
+        1.5,
+        0.8
+      ]
+    },
+    {
+      "id": "meadow-orm",
+      "name": "Orm",
+      "archetype": "staff",
+      "lazy": true,
+      "home": {
+        "poi": "meadow-market"
+      },
+      "post": {
+        "plot": "p36",
+        "out": 1.4
+      },
+      "about": "Stonewright. The ninth stone of the ring has lain on its side since the great calm.",
+      "tint": [
+        1.1,
+        1.2,
+        1.35
+      ]
+    },
+    {
+      "id": "meadow-dunn",
+      "name": "Dunn",
+      "archetype": "staff",
+      "lazy": true,
+      "home": {
+        "poi": "meadow-market"
+      },
+      "post": {
+        "plot": "p79",
+        "out": 1.4
+      },
+      "about": "Farmer north of the village. Something hides in his barley.",
+      "tint": [
+        1.8,
+        1.55,
+        0.8
+      ]
+    },
+    {
+      "id": "meadow-wyl",
+      "name": "Wyl",
+      "archetype": "pilgrim",
+      "lazy": true,
+      "home": {
+        "poi": "meadow-market"
+      },
+      "post": {
+        "plot": "p38",
+        "out": 1.4
+      },
+      "about": "Courier of Hearn. Set six rings along the Western Edge for gliders.",
+      "tint": [
+        0.9,
+        1.5,
+        1.8
+      ]
+    },
+    {
+      "id": "meadow-maud",
+      "name": "Maud",
+      "archetype": "elder",
+      "lazy": true,
+      "home": {
+        "poi": "meadow-market"
+      },
+      "post": {
+        "plot": "p23",
+        "out": 1.4
+      },
+      "about": "Weaver. Her grandmother taught her to listen to the three stones on the lake shore.",
+      "tint": [
+        1.9,
+        0.9,
+        1.5
+      ]
+    }
+  ],
+  "places": {
+    "side-fen-lamp": {
+      "kind": "spring",
+      "biome": "meadow",
+      "pos": [
+        -294,
+        1144
+      ],
+      "name": "The Fen Lamp",
+      "h": 256.28
+    },
+    "side-stone-ring": {
+      "kind": "overlook",
+      "biome": "meadow",
+      "pos": [
+        233,
+        744
+      ],
+      "name": "The Ring of Nine",
+      "h": 266.84
+    },
+    "side-barley": {
+      "kind": "camp",
+      "biome": "meadow",
+      "pos": [
+        22,
+        1108
+      ],
+      "name": "Dunn's Barley",
+      "h": 262.09
+    },
+    "side-edge": {
+      "kind": "overlook",
+      "biome": "meadow",
+      "pos": [
+        -847,
+        546
+      ],
+      "name": "The Western Edge",
+      "h": 233.28
+    },
+    "side-echo-1": {
+      "pos": [
+        -196,
+        896
+      ],
+      "name": "The First Listening Stone",
+      "ask": [
+        "gust",
+        "updraft"
+      ],
+      "h": 255.44
+    },
+    "side-echo-2": {
+      "pos": [
+        -172,
+        924
+      ],
+      "name": "The Second Listening Stone",
+      "ask": [
+        "vortex",
+        "gust"
+      ],
+      "h": 253.97
+    },
+    "side-echo-3": {
+      "pos": [
+        -170,
+        952
+      ],
+      "name": "The Third Listening Stone",
+      "ask": [
+        "gust",
+        "vortex",
+        "updraft"
+      ],
+      "h": 255.13
+    },
+    "side-echo-shore": {
+      "kind": "overlook",
+      "biome": "meadow",
+      "pos": [
+        -179,
+        924
+      ],
+      "name": "The Listening Stones",
+      "h": 254.03
+    },
+    "shrine-meadow-6": {
+      "pos": [
+        22.3,
+        979
+      ],
+      "kind": "shrine",
+      "biome": "meadow",
+      "h": 261.2,
+      "name": "The Green Shrine"
+    },
+    "side-ring-1": {
+      "pos": [
+        -868.3,
+        524.9
+      ],
+      "y": 229.8,
+      "r": 7.5,
+      "name": "Ring 1 of 6",
+      "h": 219.31
+    },
+    "side-ring-2": {
+      "pos": [
+        -917.2,
+        496.0
+      ],
+      "y": 221.0,
+      "r": 7.5,
+      "name": "Ring 2 of 6",
+      "h": 190.19
+    },
+    "side-ring-3": {
+      "pos": [
+        -938.6,
+        432.4
+      ],
+      "y": 209.5,
+      "r": 7.5,
+      "name": "Ring 3 of 6",
+      "h": 171.31
+    },
+    "side-ring-4": {
+      "pos": [
+        -1000.9,
+        410.0
+      ],
+      "y": 199.0,
+      "r": 7.5,
+      "name": "Ring 4 of 6",
+      "h": 147.5
+    },
+    "side-ring-5": {
+      "pos": [
+        -1025.1,
+        349.3
+      ],
+      "y": 188.0,
+      "r": 7.5,
+      "name": "Ring 5 of 6",
+      "h": 132.81
+    },
+    "side-ring-6": {
+      "pos": [
+        -1081.0,
+        313.4
+      ],
+      "y": 176.5,
+      "r": 7.5,
+      "name": "Ring 6 of 6",
+      "h": 119.88
+    }
+  },
+  "names": {
+    "shrine-meadow-1": "Shrine of the Lake Road",
+    "shrine-meadow-2": "Shrine of the Far Reeds",
+    "shrine-meadow-3": "Shrine of the East Fields",
+    "shrine-meadow-4": "Shrine of the South Rise",
+    "shrine-meadow-5": "Shrine of the Low Ground"
+  },
+  "talk": {
+    "meadow-ketil": [
+      {
+        "when": {
+          "flag": "meadow:side-lamp-thanked"
+        },
+        "say": "meadow.ketil.after"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-lamp-lit"
+        },
+        "say": "meadow.ketil.done"
+      },
+      {
+        "when": {
+          "flag": [
+            "meadow:side-lamp-flame",
+            "flame-out"
+          ],
+          "night": true
+        },
+        "say": "meadow.ketil.relight"
+      },
+      {
+        "when": {
+          "flag": [
+            "meadow:side-lamp-flame",
+            "flame-out"
+          ]
+        },
+        "say": "meadow.ketil.dark"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-lamp-flame"
+        },
+        "say": "meadow.ketil.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-lamp-told",
+          "night": true
+        },
+        "say": "meadow.ketil.flame"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-lamp-told"
+        },
+        "say": "meadow.ketil.dark"
+      },
+      {
+        "when": {
+          "flag": "meadow:stair-open"
+        },
+        "say": "meadow.ketil.plea"
+      },
+      {
+        "say": "meadow.ketil.busy"
+      }
+    ],
+    "meadow-orm": [
+      {
+        "when": {
+          "flag": "meadow:side-stone-thanked"
+        },
+        "say": "meadow.orm.after"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-stone-raised"
+        },
+        "say": "meadow.orm.done"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-stone-told"
+        },
+        "say": "meadow.orm.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:bellwether-woke"
+        },
+        "say": "meadow.orm.plea"
+      },
+      {
+        "say": "meadow.orm.busy"
+      }
+    ],
+    "meadow-dunn": [
+      {
+        "when": {
+          "flag": "meadow:side-flock-thanked"
+        },
+        "say": "meadow.dunn.after"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-flock-cleared"
+        },
+        "say": "meadow.dunn.done"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-flock-told"
+        },
+        "say": "meadow.dunn.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:stair-open"
+        },
+        "say": "meadow.dunn.plea"
+      },
+      {
+        "say": "meadow.dunn.busy"
+      }
+    ],
+    "meadow-wyl": [
+      {
+        "when": {
+          "flag": "meadow:side-glide-thanked"
+        },
+        "say": "meadow.wyl.after"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "glide.best",
+            "gte": 1,
+            "lte": 21
+          }
+        },
+        "say": "meadow.wyl.gold"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "glide.best",
+            "gte": 1,
+            "lte": 25
+          }
+        },
+        "say": "meadow.wyl.silver"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "glide.best",
+            "gte": 1,
+            "lte": 30
+          }
+        },
+        "say": "meadow.wyl.bronze"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-glide-told"
+        },
+        "say": "meadow.wyl.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:bellwether-woke"
+        },
+        "say": "meadow.wyl.plea"
+      },
+      {
+        "say": "meadow.wyl.busy"
+      }
+    ],
+    "meadow-maud": [
+      {
+        "when": {
+          "flag": "meadow:side-echo-thanked"
+        },
+        "say": "meadow.maud.after"
+      },
+      {
+        "when": {
+          "flag": "attuned:echo-meadow-wind"
+        },
+        "say": "meadow.maud.done"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "side.stones",
+            "gte": 3
+          }
+        },
+        "say": "meadow.maud.attune"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-echo-told"
+        },
+        "say": "meadow.maud.wait"
+      },
+      {
+        "when": {
+          "restored": "meadow"
+        },
+        "say": "meadow.maud.plea"
+      },
+      {
+        "say": "meadow.maud.busy"
+      }
+    ]
+  },
+  "dialogue": {
+    "meadow.ketil.busy": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "I am Ketil, keeper of the lamps of Hearn.",
+        "I cannot talk now. The fires come first."
+      ]
+    },
+    "meadow.ketil.plea": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "I am Ketil. I keep the lamps of Hearn.",
+        "The Fen Lamp stands on the north shore of the lake, where the path bends away from the water. It went dark on the night of the raid.",
+        "Without it, people lose the path in the reeds after dark. Two have walked into the water this month.",
+        "It needs a flame from my hearth. Come to me after dark, and I will light your lantern."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-lamp-told"
+        }
+      ]
+    },
+    "meadow.ketil.dark": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "The lamp is lit at night. Come back after dark, and I will light your lantern."
+      ]
+    },
+    "meadow.ketil.flame": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "Hold out your lantern. There.",
+        "Carry it to the Fen Lamp, on the north shore of the lake. Walk. If you run, the flame gutters.",
+        "A blow will put it out, and so will a hard wind. If it dies, come back and I will light it again."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-lamp-flame"
+        },
+        {
+          "setFlag": "flame-given-ketil"
+        }
+      ]
+    },
+    "meadow.ketil.relight": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "It went out? It happens. Hold out your lantern again.",
+        "The Fen Lamp is on the north shore. Keep the flame low."
+      ],
+      "then": [
+        {
+          "setFlag": "flame-given-ketil"
+        }
+      ]
+    },
+    "meadow.ketil.wait": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "The Fen Lamp is on the north shore, west along the lake. Walk, and shelter the flame from the wind."
+      ]
+    },
+    "meadow.ketil.done": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "I can see it from my door. The Fen Lamp is burning.",
+        "Thank you. The path is safe again. My mother said the lamp was lit for the people who cannot see the way, and for the ones who can."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-lamp-thanked"
+        }
+      ]
+    },
+    "meadow.ketil.after": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "The Fen Lamp burns every night now. Thank you."
+      ]
+    },
+    "meadow.orm.busy": {
+      "speaker": "meadow-orm",
+      "lines": [
+        "I am Orm, a stonewright.",
+        "I have a job that needs the wind. Come back when you can call it."
+      ]
+    },
+    "meadow.orm.plea": {
+      "speaker": "meadow-orm",
+      "lines": [
+        "I am Orm, stonewright of Hearn. There is a ring of nine standing stones on the flat south-east of the hall.",
+        "The ninth fell in the great calm. It has lain on its side ever since. Ten men could not lift it.",
+        "You have the Gale now. An Updraft can lift it, but only a little at a time.",
+        "Cast one at the head of the stone, one at the middle and one at the foot. Do all three before it settles."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-stone-told"
+        }
+      ]
+    },
+    "meadow.orm.wait": {
+      "speaker": "meadow-orm",
+      "lines": [
+        "The ring is south-east of the hall, on the flat above the stair road.",
+        "Take the Gale in hand, and cast Updraft at the head, the middle and the foot of the fallen stone."
+      ]
+    },
+    "meadow.orm.done": {
+      "speaker": "meadow-orm",
+      "lines": [
+        "It stands! I felt it from here. The ground rang.",
+        "Nine stones again. Thank you. Go to the ring at noon, and the shadows fall the way my grandfather meant them to."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-stone-thanked"
+        }
+      ]
+    },
+    "meadow.orm.after": {
+      "speaker": "meadow-orm",
+      "lines": [
+        "The ring is whole. I sit with it most evenings."
+      ]
+    },
+    "meadow.dunn.busy": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "I am Dunn. I farm the barley north of Hearn.",
+        "Not now. Your fires first."
+      ]
+    },
+    "meadow.dunn.plea": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "I am Dunn. I farm the barley north of Hearn. Something is living in it.",
+        "Three ewes gone in a week. I found tracks like long bird feet, and plaited stalks. Hild says they are Sedgerunners.",
+        "They lie still in the barley until you are almost on them. Then they all break at once.",
+        "Walk through the field, flush them out, and put them down."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-flock-told"
+        }
+      ]
+    },
+    "meadow.dunn.wait": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "The barley is straight north, past the last houses. Walk right into it. They only break when you are close."
+      ]
+    },
+    "meadow.dunn.done": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "The barley is quiet. I can hear the wind in it and nothing else.",
+        "Take this. My wife wove it from the first sheaf of the year. It is a barley cloak."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-flock-thanked"
+        }
+      ]
+    },
+    "meadow.dunn.after": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "The ewes are back in the north field. Nothing has touched them."
+      ]
+    },
+    "meadow.wyl.busy": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "I am Wyl. I carry messages between Hearn and the farms.",
+        "I would rather fly them."
+      ]
+    },
+    "meadow.wyl.plea": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "I am Wyl, courier of Hearn. You can glide now. I saw you on the hill.",
+        "I set six rings along the Western Edge, past the lake road, where the ground falls away.",
+        "Jump off the edge, hold your robe open and fly through all six. I keep the time.",
+        "Under thirty seconds is bronze. Twenty-five is silver. Twenty-one is gold."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-glide-told"
+        }
+      ]
+    },
+    "meadow.wyl.wait": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "The Western Edge is due west, past the lake road. Run off the crest, jump, and hold the glide.",
+        "Take the rings in order. The first one is just below the crest."
+      ]
+    },
+    "meadow.wyl.bronze": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "Bronze. Not bad for a walker. Silver is under twenty-five seconds.",
+        "Dive between the rings to carry your speed."
+      ]
+    },
+    "meadow.wyl.silver": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "Silver! You are faster than I am. Gold is under twenty-one seconds.",
+        "Take the line straight through the rings, and do not bank more than you must."
+      ]
+    },
+    "meadow.wyl.gold": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "Gold! Under twenty-one seconds. I have never done that.",
+        "You have earned the courier's cloth. I made it from the sail of my first kite."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-glide-thanked"
+        }
+      ]
+    },
+    "meadow.wyl.after": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "I fly it every morning, and every morning I am slower than you."
+      ]
+    },
+    "meadow.maud.busy": {
+      "speaker": "meadow-maud",
+      "lines": [
+        "I am Maud, a weaver.",
+        "I listen to the old stones by the lake. They have been silent since the wind stopped."
+      ]
+    },
+    "meadow.maud.plea": {
+      "speaker": "meadow-maud",
+      "lines": [
+        "I am Maud, a weaver. My grandmother taught me to listen to the three stones on the lake shore.",
+        "They did not speak in the calm. Now the wind is back, and I think they are asking for something.",
+        "Go and listen to them. Each wants the wind shaped in a certain way: a Gust, a Vortex, an Updraft. Do what each one asks, in order."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-echo-told"
+        }
+      ]
+    },
+    "meadow.maud.wait": {
+      "speaker": "meadow-maud",
+      "lines": [
+        "The stones are on the east shore of the lake, west of the village. Press E at a stone and listen. Then shape the wind as it asks."
+      ]
+    },
+    "meadow.maud.attune": {
+      "speaker": "meadow-maud",
+      "lines": [
+        "I heard them sing from my loom! They gave you an Echo.",
+        "Rest at a shrine to carry it. The Green Shrine, on the village green, is the nearest. Attune it there."
+      ]
+    },
+    "meadow.maud.done": {
+      "speaker": "meadow-maud",
+      "lines": [
+        "The wind came from nowhere when you attuned it. I felt it in the loom threads.",
+        "My grandmother said the stones remember the first Shapers. Now they remember you."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:side-echo-thanked"
+        }
+      ]
+    },
+    "meadow.maud.after": {
+      "speaker": "meadow-maud",
+      "lines": [
+        "The stones hum in the evening now. I leave my window open."
+      ]
+    }
+  },
+  "quests": [
+    {
+      "id": "meadow-side-lamp",
+      "kind": "side",
+      "title": "The Fen Lamp",
+      "summary": "Ketil keeps the lamps of Hearn. The Fen Lamp on the lake shore has gone dark, and people lose the path at night.",
+      "start": {
+        "flag": "meadow:stair-open"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Ketil, the lamp-keeper, in Hearn.",
+          "when": {
+            "flag": "meadow:side-lamp-told"
+          },
+          "goal": {
+            "npc": "meadow-ketil",
+            "radius": 7
+          }
+        },
+        {
+          "id": "flame",
+          "journal": "Go to Ketil after dark. He will light your lantern.",
+          "when": {
+            "flag": "meadow:side-lamp-flame"
+          },
+          "goal": {
+            "npc": "meadow-ketil",
+            "radius": 7
+          }
+        },
+        {
+          "id": "carry",
+          "journal": "Carry the flame to the Fen Lamp on the north shore of the lake. Walk, and keep it out of the wind. If it dies, go back to Ketil.",
+          "when": {
+            "flag": "meadow:side-lamp-lit"
+          },
+          "goal": {
+            "dynamic": "place:side-fen-lamp",
+            "radius": 4
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Ketil the Fen Lamp is lit.",
+          "when": {
+            "flag": "meadow:side-lamp-thanked"
+          },
+          "goal": {
+            "npc": "meadow-ketil",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-fen"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meadow-side-stone",
+      "kind": "side",
+      "title": "The Fallen Stone",
+      "summary": "Orm the stonewright has a ring of nine standing stones. The ninth fell in the great calm, and only the wind can lift it.",
+      "start": {
+        "flag": "meadow:bellwether-woke"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Orm, the stonewright, in Hearn.",
+          "when": {
+            "flag": "meadow:side-stone-told"
+          },
+          "goal": {
+            "npc": "meadow-orm",
+            "radius": 7
+          }
+        },
+        {
+          "id": "go",
+          "journal": "Go to the Ring of Nine, on the flat south-east of the hall.",
+          "when": {
+            "near": {
+              "poi": "side-stone-ring",
+              "r": 16
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-stone-ring",
+            "radius": 14
+          }
+        },
+        {
+          "id": "raise",
+          "journal": "Raise the fallen stone. Take the Gale in hand (2) and cast Updraft (F) at its head, its middle and its foot, one after another.",
+          "when": {
+            "flag": "meadow:side-stone-raised"
+          },
+          "goal": {
+            "dynamic": "place:side-stone-ring",
+            "radius": 5
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Orm the stone stands.",
+          "when": {
+            "flag": "meadow:side-stone-thanked"
+          },
+          "goal": {
+            "npc": "meadow-orm",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-ring"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meadow-side-flock",
+      "kind": "side",
+      "title": "The Flock in the Barley",
+      "summary": "Something hides in Dunn's barley and takes his ewes.",
+      "start": {
+        "flag": "meadow:stair-open"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Dunn, the farmer, in Hearn.",
+          "when": {
+            "flag": "meadow:side-flock-told"
+          },
+          "goal": {
+            "npc": "meadow-dunn",
+            "radius": 7
+          }
+        },
+        {
+          "id": "field",
+          "journal": "Go to Dunn's barley, north of the village.",
+          "when": {
+            "near": {
+              "poi": "side-barley",
+              "r": 40
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-barley",
+            "radius": 35
+          }
+        },
+        {
+          "id": "flush",
+          "journal": "Walk through the barley. The Sedgerunners hide in it and break when you come close. Put them all down.",
+          "when": {
+            "flag": "meadow:side-flock-cleared"
+          },
+          "goal": {
+            "dynamic": "place:side-barley",
+            "radius": 20
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Dunn the barley is quiet.",
+          "when": {
+            "flag": "meadow:side-flock-thanked"
+          },
+          "goal": {
+            "npc": "meadow-dunn",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-barley"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meadow-side-glide",
+      "kind": "side",
+      "title": "The Western Edge",
+      "summary": "Wyl the courier set six rings down the slope west of the lake road. Glide through them, and he keeps the time.",
+      "start": {
+        "flag": "meadow:bellwether-woke"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Wyl, the courier, in Hearn.",
+          "when": {
+            "flag": "meadow:side-glide-told"
+          },
+          "goal": {
+            "npc": "meadow-wyl",
+            "radius": 7
+          }
+        },
+        {
+          "id": "edge",
+          "journal": "Go to the Western Edge, past the lake road. The first ring hangs just below the crest.",
+          "when": {
+            "near": {
+              "poi": "side-edge",
+              "r": 25
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-edge",
+            "radius": 20
+          }
+        },
+        {
+          "id": "bronze",
+          "journal": "Glide through all six rings in under 30 seconds. Run off the crest, jump, and hold the glide.",
+          "when": {
+            "var": {
+              "name": "glide.best",
+              "gte": 1,
+              "lte": 30
+            }
+          },
+          "goal": {
+            "dynamic": "next-ring",
+            "radius": 7
+          }
+        },
+        {
+          "id": "silver",
+          "journal": "Glide the rings in under 25 seconds. Dive between them to keep your speed.",
+          "when": {
+            "var": {
+              "name": "glide.best",
+              "gte": 1,
+              "lte": 25
+            }
+          },
+          "goal": {
+            "dynamic": "next-ring",
+            "radius": 7
+          }
+        },
+        {
+          "id": "gold",
+          "journal": "Glide the rings in under 21 seconds. Take the straight line through them.",
+          "when": {
+            "var": {
+              "name": "glide.best",
+              "gte": 1,
+              "lte": 21
+            }
+          },
+          "goal": {
+            "dynamic": "next-ring",
+            "radius": 7
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Wyl your time.",
+          "when": {
+            "flag": "meadow:side-glide-thanked"
+          },
+          "goal": {
+            "npc": "meadow-wyl",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-edge"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "meadow-side-echoes",
+      "kind": "side",
+      "title": "The Stones That Listen",
+      "summary": "Maud the weaver says three stones on the lake shore are asking for something, now that the wind is back.",
+      "start": {
+        "restored": "meadow"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Maud, the weaver, in Hearn.",
+          "when": {
+            "flag": "meadow:side-echo-told"
+          },
+          "goal": {
+            "npc": "meadow-maud",
+            "radius": 7
+          }
+        },
+        {
+          "id": "find",
+          "journal": "Go to the three Listening Stones on the east shore of the lake, west of the village.",
+          "when": {
+            "near": {
+              "poi": "side-echo-shore",
+              "r": 30
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-echo-shore",
+            "radius": 25
+          }
+        },
+        {
+          "id": "wake",
+          "journal": "Answer all three stones. Press E at a stone, then shape the wind as it asks: Gust (click), Vortex (hold click) or Updraft (F), in order.",
+          "when": {
+            "var": {
+              "name": "side.stones",
+              "gte": 3
+            }
+          },
+          "goal": {
+            "dynamic": "next-echo",
+            "radius": 5
+          }
+        },
+        {
+          "id": "attune",
+          "journal": "Rest at a shrine and attune the Echo. The Green Shrine is on the village green.",
+          "when": {
+            "flag": "attuned:echo-meadow-wind"
+          },
+          "goal": {
+            "dynamic": "place:shrine-meadow-6",
+            "radius": 6,
+            "label": "The Green Shrine"
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Maud the stones answered.",
+          "when": {
+            "flag": "meadow:side-echo-thanked"
+          },
+          "goal": {
+            "npc": "meadow-maud",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-listening"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "echoes": {
+    "echo-meadow-wind": {
+      "name": "Echo of the Turning Wind",
+      "effect": "Gust runs 30% farther, and the Updraft's column rises 25% higher.",
+      "text": "The stones taught the wind to answer."
+    }
+  },
+  "lore": {
+    "meadow-lore-fen": {
+      "title": "The Fen Lamp",
+      "text": "Ketil's mother lit the Fen Lamp every dusk for forty years. She said a lamp is lit for the people who cannot see the way, and for the ones who can. As told by Ketil."
+    },
+    "meadow-lore-ring": {
+      "title": "The Ring of Nine",
+      "text": "Nine stones stand on the flat above the stair road, set by Orm's grandfather. At noon on the longest day their shadows meet in the middle. As told by Orm."
+    },
+    "meadow-lore-barley": {
+      "title": "The Hidden Flock",
+      "text": "Sedgerunners lie still in tall grass and break all at once when something comes close. They are lean, and light enough that a Gust bowls them over. As told by Dunn."
+    },
+    "meadow-lore-edge": {
+      "title": "The Western Edge",
+      "text": "West of the lake road the ground falls away for a long way. Wyl's six rings hang over it, and the wind comes up the slope. As told by Wyl."
+    },
+    "meadow-lore-listening": {
+      "title": "The Listening Stones",
+      "text": "Three stones stand on the east shore of the lake. They were set to answer the wind, and in the calm they had nothing to answer. As told by Maud."
+    }
+  },
+  "barks": {
+    "meadow-ketil": [
+      {
+        "when": {
+          "flag": "meadow:side-lamp-thanked"
+        },
+        "lines": [
+          "I look at the Fen Lamp every night before I sleep."
+        ]
+      },
+      {
+        "when": {
+          "night": true
+        },
+        "lines": [
+          "Mind the reeds if you walk the shore tonight."
+        ]
+      },
+      {
+        "lines": [
+          "Wick, oil, flint. That is all a lamp is."
+        ]
+      }
+    ],
+    "meadow-orm": [
+      {
+        "when": {
+          "flag": "meadow:side-stone-thanked"
+        },
+        "lines": [
+          "Nine. I count them every morning."
+        ]
+      },
+      {
+        "lines": [
+          "A stone is only heavy if you push it the wrong way."
+        ]
+      }
+    ],
+    "meadow-dunn": [
+      {
+        "when": {
+          "flag": "meadow:side-flock-thanked"
+        },
+        "lines": [
+          "Quiet barley. I never thought I would miss the noise."
+        ]
+      },
+      {
+        "lines": [
+          "Something moves in my barley when the wind is still."
+        ]
+      }
+    ],
+    "meadow-wyl": [
+      {
+        "when": {
+          "flag": "meadow:side-glide-thanked"
+        },
+        "lines": [
+          "Six rings, and you took them all. I am not jealous. A little."
+        ]
+      },
+      {
+        "lines": [
+          "If I had your robe I would never touch the ground."
+        ]
+      }
+    ],
+    "meadow-maud": [
+      {
+        "when": {
+          "flag": "meadow:side-echo-thanked"
+        },
+        "lines": [
+          "The stones hum in the evening now."
+        ]
+      },
+      {
+        "lines": [
+          "Hush. Do you hear that? No. It was the loom."
+        ]
+      }
+    ]
+  }
+}

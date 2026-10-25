@@ -154,13 +154,46 @@ export function startBot(w, qs) {
     return walkTo(x, z, c);
   }
 
-  async function shot(name, dir = 'bot') {
+  /** The DOM HUD is not in the game canvas: paint the compass, waypoint, notices, task line and subtitles onto the copy (text as laid out, shapes simplified). */
+  function paintHud(c2, ctx) {
+    const k = c2.width / window.innerWidth;
+    ctx.save(); ctx.scale(k, k);
+    const vis = (e) => { const cs = getComputedStyle(e); return cs.display !== 'none' && cs.visibility !== 'hidden'; };
+    const op = (e) => { let o = 1; for (let n = e; n && n !== document.body; n = n.parentElement) o *= +getComputedStyle(n).opacity; return o; };
+    const text = (e, color) => {
+      if (!e || !e.textContent || !vis(e)) return; const a = op(e); if (a < 0.05) return;
+      const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+      ctx.globalAlpha = a; ctx.font = `${cs.fontStyle} ${cs.fontSize} ${cs.fontFamily}`; ctx.fillStyle = color || cs.color; ctx.textBaseline = 'top';
+      ctx.textAlign = cs.textAlign === 'center' ? 'center' : 'left';
+      ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 5;
+      const t = cs.textTransform === 'uppercase' ? e.textContent.toUpperCase() : e.textContent;
+      ctx.fillText(t, ctx.textAlign === 'center' ? r.left + r.width / 2 : r.left, r.top, r.width + 40); ctx.shadowBlur = 0;
+    };
+    const cv = document.querySelector('.compass.on canvas');
+    if (cv) { const r = cv.getBoundingClientRect(); ctx.globalAlpha = op(cv.parentElement); ctx.fillStyle = 'rgba(8,10,14,0.45)'; ctx.fillRect(r.left, r.top, r.width, r.height); ctx.drawImage(cv, r.left, r.top, r.width, r.height); }
+    text(document.querySelector('.compass.on .compass-label'), '#f2dca0'); text(document.querySelector('.compass.on .compass-activity'));
+    const wp = document.querySelector('.waypoint.on');
+    if (wp) {
+      const m = wp.querySelector('.mark').getBoundingClientRect(), cx = m.left + m.width / 2, cy = m.top + m.height / 2, a = op(wp);
+      ctx.globalAlpha = a; ctx.fillStyle = '#f2dca0'; ctx.beginPath(); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx + 6, cy); ctx.lineTo(cx, cy + 8); ctx.lineTo(cx - 6, cy); ctx.closePath(); ctx.fill();
+      text(wp.querySelector('.name'), '#f2dca0'); text(wp.querySelector('.dist'));
+    }
+    for (const n of document.querySelectorAll('.notice.on')) for (const q of ['.kind', '.title', '.sub']) text(n.querySelector(q));
+    text(document.querySelector('.task-line.on')); text(document.querySelector('.bark.on'));
+    for (const q of ['.subtitles.on .who', '.subtitles.on .line']) text(document.querySelector(q));
+    const gl = document.querySelector('.glyph.on .label'); if (gl) text(gl);
+    ctx.restore();
+  }
+
+  async function shot(name, dir = 'bot', hud = true) {
     await sleepFrames(1);
     const canvas = g.engine?.getRenderingCanvas?.() || document.querySelector('canvas');
     // Half size (the terminal player reads it, not a gate shot): an offscreen copy, as PNG.
     const k = Math.min(1, (w.botShotWidth || 1280) / canvas.width), c2 = document.createElement('canvas');
     c2.width = Math.round(canvas.width * k); c2.height = Math.round(canvas.height * k);
-    c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
+    const c2x = c2.getContext('2d');
+    c2x.drawImage(canvas, 0, 0, c2.width, c2.height);
+    if (hud) paintHud(c2, c2x);
     const blob = await new Promise((r) => c2.toBlob(r, 'image/png'));
     const safe = String(name || 'shot').replace(/[^a-z0-9-]/gi, '');
     const res = await fetch(`/__wraith/shot?dir=${dir}&name=${safe}`, { method: 'POST', body: blob });
@@ -312,7 +345,7 @@ export function startBot(w, qs) {
       return { reached: false, timeout: true, ...state() };
     },
     wait: async (c) => { await sleepMs(c.ms ?? 1000); return state(); },
-    shot: async (c) => ({ file: await shot(c.name, c.dir), ...state() }),
+    shot: async (c) => ({ file: await shot(c.name, c.dir, c.hud !== false), ...state() }),
     spot: async (c) => { await w.prepareSpot(c.id, 4); return state(); },
     teleport: async (c) => { g.controller.pos.x = c.x; g.controller.pos.z = c.z; if (c.y != null) g.controller.pos.y = c.y; await sleepFrames(10); return state(); },
     /** Escape hatch: run JS with (g, w, state) and return its JSON-able result. */

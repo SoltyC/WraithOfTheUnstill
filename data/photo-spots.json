@@ -1175,7 +1175,7 @@
     {
       "id": "p6-clear-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 6.6,
       "weather": "clear",
       "player": [
@@ -1197,7 +1197,7 @@
     {
       "id": "p6-clear-noon",
       "biome": "frost",
-      "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 12.5,
       "weather": "clear",
       "player": [
@@ -1219,7 +1219,7 @@
     {
       "id": "p6-clear-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 17.5,
       "weather": "clear",
       "player": [
@@ -1241,7 +1241,7 @@
     {
       "id": "p6-clear-night",
       "biome": "frost",
-      "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 23,
       "weather": "clear",
       "player": [
@@ -1263,7 +1263,7 @@
     {
       "id": "p6-overcast-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 6.6,
       "weather": "overcast",
       "player": [
@@ -1285,7 +1285,7 @@
     {
       "id": "p6-overcast-noon",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 12.5,
       "weather": "overcast",
       "player": [
@@ -1307,7 +1307,7 @@
     {
       "id": "p6-overcast-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 17.5,
       "weather": "overcast",
       "player": [
@@ -1329,7 +1329,7 @@
     {
       "id": "p6-overcast-night",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 23,
       "weather": "overcast",
       "player": [
@@ -1351,7 +1351,7 @@
     {
       "id": "p6-snowfall-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 6.6,
       "weather": "snowfall",
       "player": [
@@ -1373,7 +1373,7 @@
     {
       "id": "p6-snowfall-noon",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 12.5,
       "weather": "snowfall",
       "player": [
@@ -1395,7 +1395,7 @@
     {
       "id": "p6-snowfall-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 17.5,
       "weather": "snowfall",
       "player": [
@@ -1417,7 +1417,7 @@
     {
       "id": "p6-snowfall-night",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 23,
       "weather": "snowfall",
       "player": [
@@ -1439,7 +1439,7 @@
     {
       "id": "p6-blizzard-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 6.6,
       "weather": "blizzard",
       "player": [
@@ -1461,7 +1461,7 @@
     {
       "id": "p6-blizzard-noon",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 12.5,
       "weather": "blizzard",
       "player": [
@@ -1483,7 +1483,7 @@
     {
       "id": "p6-blizzard-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 17.5,
       "weather": "blizzard",
       "player": [
@@ -1505,7 +1505,7 @@
     {
       "id": "p6-blizzard-night",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
+      "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
       "time": 23,
       "weather": "blizzard",
       "player": [
@@ -1721,7 +1721,7 @@
         ],
         "yaw": 0.72,
         "pitch": 0.28,
-        "fov": 1.0
+        "fov": 1
       }
     },
     {
@@ -1809,7 +1809,7 @@
       "restoration": "restored",
       "camera": {
         "mode": "follow",
-        "yaw": 0.0,
+        "yaw": 0,
         "pitch": 0.16,
         "dist": 7
       }
@@ -1854,7 +1854,7 @@
       "id": "p8-forest-log",
       "biome": "meadow",
       "label": "A fallen log in a grove, shrubs in the gaps",
-      "time": 15.0,
+      "time": 15,
       "weather": "clear",
       "player": [
         -160,
@@ -1863,7 +1863,7 @@
       "restoration": "restored",
       "camera": {
         "mode": "follow",
-        "yaw": 0.0,
+        "yaw": 0,
         "pitch": 0.3,
         "dist": 5
       }
@@ -2041,7 +2041,7 @@
       "camera": {
         "mode": "follow",
         "yaw": 2.6,
-        "pitch": 0.0,
+        "pitch": 0,
         "dist": 5
       }
     },
@@ -2671,7 +2671,7 @@
       "id": "p8-shaped-trio",
       "biome": "meadow",
       "label": "The meadow Shaped: two Sedgerunners, a Hedgewarden with its standing stone, a Chanter in the grass (golden hour)",
-      "time": 17.0,
+      "time": 17,
       "weather": "clear",
       "player": [
         100,
@@ -3082,7 +3082,7 @@
       "id": "tour-02-morning-entry",
       "biome": "meadow",
       "label": "Morning: the road in from the west",
-      "time": 9.0,
+      "time": 9,
       "weather": "clear",
       "player": [
         -15,
@@ -3100,7 +3100,7 @@
       "id": "tour-03-farm",
       "biome": "meadow",
       "label": "Early morning at a farmstead",
-      "time": 8.0,
+      "time": 8,
       "weather": "clear",
       "player": [
         30,
@@ -3154,7 +3154,7 @@
       "id": "tour-06-afternoon-chapel",
       "biome": "meadow",
       "label": "Afternoon: the chapel",
-      "time": 15.0,
+      "time": 15,
       "weather": "clear",
       "player": [
         92,
@@ -3226,7 +3226,7 @@
       "id": "tour-10-night-street",
       "biome": "meadow",
       "label": "Night: the street lanterns",
-      "time": 22.0,
+      "time": 22,
       "weather": "clear",
       "player": [
         -15,
@@ -3244,7 +3244,7 @@
       "id": "tour-11-night-from-hill",
       "biome": "meadow",
       "label": "Night: the village from the hillside",
-      "time": 23.0,
+      "time": 23,
       "weather": "clear",
       "player": [
         200,
@@ -3316,7 +3316,7 @@
       "id": "p8-manor-hall",
       "biome": "meadow",
       "label": "Inside the great hall: the exposed trusses, the ribs, the sky through the roof",
-      "time": 15.0,
+      "time": 15,
       "weather": "clear",
       "player": [
         290,
@@ -3523,7 +3523,7 @@
       "restoration": "stilled",
       "camera": {
         "mode": "follow",
-        "yaw": 2.0,
+        "yaw": 2,
         "pitch": 0.15,
         "dist": 6
       }
@@ -3825,7 +3825,7 @@
         "mode": "follow",
         "yaw": 0.9,
         "pitch": 0.55,
-        "dist": 5.0
+        "dist": 5
       },
       "facing": 3.142,
       "weapon": {
@@ -3898,7 +3898,7 @@
         "mode": "follow",
         "yaw": 0.5,
         "pitch": 0.22,
-        "dist": 6.0
+        "dist": 6
       },
       "facing": 2.442,
       "shaped": {
@@ -3906,12 +3906,12 @@
           [
             "hound",
             -0.9,
-            3.0
+            3
           ],
           [
             "hound",
             0.9,
-            3.0
+            3
           ],
           [
             "hound",
@@ -3930,7 +3930,7 @@
         "id": "maul",
         "attack": "heavy",
         "hold": 0.7,
-        "seconds": 1.0
+        "seconds": 1
       }
     },
     {
@@ -3981,6 +3981,114 @@
         "attack": "carry",
         "seconds": 0.3,
         "finds": true
+      }
+    },
+    {
+      "id": "p8-side-green-shrine",
+      "biome": "meadow",
+      "label": "The Green Shrine on Hearn's village green: five stones round an altar, the roofs behind",
+      "time": 16.4,
+      "weather": "clear",
+      "player": [
+        17.3,
+        974
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.8,
+        "pitch": 0.12,
+        "dist": 6
+      }
+    },
+    {
+      "id": "p8-side-fen-lamp",
+      "biome": "meadow",
+      "label": "The Fen Lamp on the lake shore at dusk, its bowl lit, the reeds and water beside it",
+      "time": 19,
+      "weather": "clear",
+      "player": [
+        -290,
+        1138
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": -0.6,
+        "pitch": 0.08,
+        "dist": 6
+      }
+    },
+    {
+      "id": "p8-side-stone-ring",
+      "biome": "meadow",
+      "label": "The Ring of Nine on the flat above the stair road, eight stones standing and a socket empty",
+      "time": 16.8,
+      "weather": "clear",
+      "player": [
+        227,
+        730
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.35,
+        "pitch": 0.12,
+        "dist": 8
+      }
+    },
+    {
+      "id": "p8-side-listening-stones",
+      "biome": "meadow",
+      "label": "The Listening Stones on the east shore of the lake at golden hour",
+      "time": 17.4,
+      "weather": "clear",
+      "player": [
+        -164,
+        920
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": -1.9,
+        "pitch": 0.12,
+        "dist": 7
+      }
+    },
+    {
+      "id": "p8-side-glide-edge",
+      "biome": "meadow",
+      "label": "The Western Edge: the first glide ring hangs below the crest, the slope falling away to the west",
+      "time": 16.4,
+      "weather": "clear",
+      "player": [
+        -837,
+        554
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": -2.35,
+        "pitch": 0.1,
+        "dist": 9
+      }
+    },
+    {
+      "id": "p8-side-barley",
+      "biome": "meadow",
+      "label": "Dunn's barley from the field's edge, the farm behind",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        28,
+        1082
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": 0,
+        "pitch": 0.12,
+        "dist": 6
       }
     }
   ]

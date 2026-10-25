@@ -2,6 +2,8 @@
 // names, once (a load re-applies the saved set on fresh tuning). Effects are described to the
 // player in data/quests/<biome>.json.
 
+import { gustTuning, updraftTuning } from './bending/gale.js';
+
 /** @type {Record<string, (g: any) => void>} */
 export const ECHO_EFFECTS = {
   // Ribbon reaches 25 % farther: its nodes fly faster for the same life.
@@ -14,6 +16,8 @@ export const ECHO_EFFECTS = {
   'echo-frost-sweep': (g) => { g.frostMod.sweepTuning.range *= 1.2; },
   // Focus returns faster while standing still.
   'echo-frost-still': (g) => { g.combatTuning.focusIdle *= 2.2; },
+  // The Listening Stones' (data/quests/meadow-side.json): the Gust runs farther down its lane, the Updraft's column stands taller.
+  'echo-meadow-wind': () => { gustTuning.range *= 1.3; updraftTuning.height *= 1.25; },
 };
 
 /** Apply an Echo's effect once. */

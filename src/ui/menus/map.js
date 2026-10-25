@@ -4,12 +4,16 @@
 // bare parchment. Exploration is a 64 × 64 grid of 125 m cells over the continent, saved as base64.
 
 const N = 64, CELL = 8192 / N, REVEAL = 260;
-/** Frost chapter view: world x/z bounds. */
-const VIEW = { x0: -3700, x1: 4100, z0: 600, z1: 4000 };
+/** The views of the map: world x/z bounds (the frost steppe, the meadow round Hearn). */
+export const VIEWS = {
+  frost: { x0: -3700, x1: 4100, z0: 600, z1: 4000 },
+  meadow: { x0: -2700, x1: 2700, z0: -1900, z1: 1500 },
+};
 
 export function createMap() {
   const explored = new Uint8Array(N * N);
-  let heights = null, base = null, loading = null;
+  let heights = null, loading = null, VIEW = VIEWS.frost;
+  const bases = {};
 
   function cellOf(x, z) { const i = Math.floor((x + 4096) / CELL), j = Math.floor((4096 - z) / CELL); return i >= 0 && j >= 0 && i < N && j < N ? j * N + i : -1; }
 
@@ -25,6 +29,7 @@ export function createMap() {
 
   /** The land itself, drawn once: sepia hill shading and contour lines. */
   function drawBase(W, H) {
+    // (VIEW: the view being drawn.)
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d');
     const img = g.createImageData(W, H), d = img.data;
@@ -72,11 +77,12 @@ export function createMap() {
      * Draw the map into canvas `cv`: land where explored (soft edges), the places found, the
      * Wraith. marks: [{ x, z, name, kind: 'shrine'|'shrine-lit'|'camp'|'monastery'|'warden'|'place' }].
      */
-    async draw(cv, marks, px, pz, yaw) {
+    async draw(cv, marks, px, pz, yaw, view = 'frost') {
+      VIEW = VIEWS[view];
       const W = 1540, H = Math.round(W * (VIEW.z1 - VIEW.z0) / (VIEW.x1 - VIEW.x0));
       cv.width = W; cv.height = H;
       if (!heights) { loading ||= loadHeights(); await loading; }
-      base ||= drawBase(W, H);
+      const base = bases[view] ||= drawBase(W, H);
       const g = cv.getContext('2d');
       g.clearRect(0, 0, W, H);
       // Fog of war: a soft mask of explored cells.

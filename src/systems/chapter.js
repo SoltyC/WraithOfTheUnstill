@@ -6,18 +6,25 @@
 
 import frostData from '../../data/quests/frost.json';
 import meadowData from '../../data/quests/meadow.json';
+import sideData from '../../data/quests/meadow-side.json';
 import { createChapter, mergeChapters } from '../game/chapter.js';
 import { applyEcho } from '../game/echoes.js';
 import { surfTuning } from '../character/surf.js';
 import { createHud } from '../ui/hud/hud.js';
+
+/** Biomes whose restoration the quests can ask for (`restored: 'frost'`). */
+const RESTORABLE = ['frost', 'meadow'];
 
 /** @param {any} g  shared boot context */
 export function addChapterSystem(g) {
   const { loop, controller, scene, input, Action, params, ws, warden, wardenMod, frost, music, game, clock, capture } = g;
   g.surfTuning = surfTuning;
   const hud = g.hud = createHud();
+  const data = mergeChapters(frostData, meadowData, sideData);
+  // Places the data gives a kind and a biome (the Green Shrine in Hearn, the side quests' sites) join the baked ones: compass, map, travel.
+  for (const id in data.places) { const p = data.places[id]; if (p.kind && p.biome && !g.pois.some((q) => q.id === id)) { g.pois.push({ id, kind: p.kind, biome: p.biome, pos: p.pos, h: p.h }); if (p.name) data.names[id] ||= p.name; } }
   const chapter = g.chapter = createChapter({
-    data: mergeChapters(frostData, meadowData), pois: g.pois,
+    data, pois: g.pois,
     hooks: {
       // An Echo found is carried; it takes effect once attuned at a shrine (BRIEF §11).
       echo: (id, e, loading) => {
@@ -37,7 +44,7 @@ export function addChapterSystem(g) {
     if (!chapter.echoes.has(id) || chapter.graph.flags.has('attuned:' + id)) return false;
     chapter.graph.flags.add('attuned:' + id);
     applyEcho(g, id);
-    const e = frostData.echoes[id];
+    const e = chapter.data.echoes[id];
     music.sting('echo'); hud.notice('Attuned', e?.name || id, e?.effect, 7);
     return true;
   };
@@ -49,7 +56,7 @@ export function addChapterSystem(g) {
 
   /** Things the Wraith can use: shrines (always), NPCs (added by the NPC system). */
   const targets = g.interactables = [];
-  for (const p of g.pois) if (p.kind === 'shrine' && p.biome === 'frost') targets.push({ kind: 'shrine', id: p.id, verb: 'Rest', name: 'Shrine', x: p.pos[0], y: p.h, z: p.pos[1], r: 4.5, h: 1.4 });
+  for (const p of g.pois) if (p.kind === 'shrine' && (p.biome === 'frost' || p.biome === 'meadow')) targets.push({ kind: 'shrine', id: p.id, verb: 'Rest', name: 'Shrine', x: p.pos[0], y: p.h, z: p.pos[1], r: 4.5, h: 1.4 });
   let near = null;
   // The Warden's weak points, shown while it fights: four seams, the one to work next pulsing, and one line saying what to do.
   const wp = document.createElement('div'); wp.className = 'warden-pips';
@@ -113,8 +120,9 @@ export function addChapterSystem(g) {
     f.x = p.x; f.z = p.z;
     const tod = params.v.timeOfDay;
     f.night = tod < 5.5 || tod > 19.5;
-    if (ws.restoration.frost === 'restored') { if (!f.restored.has('frost')) f.restored.add('frost'); }
-    else if (f.restored.size) f.restored.clear();
+    for (const b of RESTORABLE) {
+      if (ws.restoration[b] === 'restored') { if (!f.restored.has(b)) f.restored.add(b); } else if (f.restored.has(b)) f.restored.delete(b);
+    }
     // Events from the world.
     const wst = warden.active ? warden.state : -1;
     if (wst === wardenMod.W.RELEASE && lastWarden !== wardenMod.W.RELEASE && lastWarden >= 0) chapter.raise('warden:released');

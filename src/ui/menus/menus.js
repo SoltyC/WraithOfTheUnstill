@@ -34,7 +34,7 @@ export function createMenus(g) {
     openedAt = performance.now();
     releaseAll();
     if (!page) { wasFrozen = clock.frozen; clock.frozen = true; input.gameHasFocus = false; document.exitPointerLock?.(); }
-    page = name; shrine = name === 'shrine' ? arg : shrine;
+    page = name; shrine = name === 'shrine' ? arg : shrine; if (name === 'map' && arg !== 'keep') mapView = null;
     sheet.replaceChildren();
     PAGES[name](arg);
     veil.classList.add('on');
@@ -96,6 +96,11 @@ export function createMenus(g) {
       listPage([['Journeys', active('main')], ['Errands', active('side')], ['Finished', done]], (pg, q) => {
         el('h2', null, pg, q.title); el('div', 'summary', pg, q.summary);
         q.lines.forEach((line, i) => el('p', i < q.lines.length - 1 || q.done ? 'past' : null, pg, line));
+        // Which errand the compass follows: this one, from here.
+        if (!q.done && g.nav && g.nav.goals.some((x) => x.quest === q.id)) {
+          const on = g.nav.trackedGoal && g.nav.trackedGoal.quest === q.id, b = el('button', 'robe-wear', pg, on ? 'Followed on the compass' : 'Follow on the compass');
+          if (on) b.disabled = true; else b.onclick = () => { g.nav.trackQuest(q.id); open('journal'); };
+        }
       }, 'Nothing yet. The robe is still learning to move.');
     } else if (tab === 'lore') {
       listPage([['Fragments', j.lore]], (pg, l) => { el('h2', null, pg, l.title); el('p', null, pg, l.text); }, 'No fragments found.');
@@ -124,19 +129,33 @@ export function createMenus(g) {
     foot([['J', 'close'], ['M', 'map'], ['Esc', 'back']]);
   }
 
+  let mapView = null;
   async function mapPage() {
-    head('The Frost Steppe', 'Drawn as walked');
+    // The view follows where the Wraith is (the frost steppe or the meadow), and can be switched.
+    const view = mapView || (g.ws.biome === 'meadow' ? 'meadow' : 'frost');
+    head(view === 'meadow' ? 'The Meadow of Hearn' : 'The Frost Steppe', 'Drawn as walked');
     const wrap = el('div', 'codex-map', sheet), cv = el('canvas', null, wrap);
     const marks = [];
     const T = chapter.table;
-    marks.push({ x: T.monastery.pos[0], z: T.monastery.pos[1], name: 'The Monastery', kind: 'monastery' });
-    marks.push({ x: T['camp-frost'].pos[0], z: T['camp-frost'].pos[1], name: 'The Pilgrims’ Fire', kind: 'camp' });
-    marks.push({ x: T['spring-frost'].pos[0], z: T['spring-frost'].pos[1], name: 'The Sleeping Spring', kind: 'place' });
-    marks.push({ x: T['varo-rise'].pos[0], z: T['varo-rise'].pos[1], name: 'The Watching Stone', kind: 'place' });
-    marks.push({ x: T['warden-frost'].pos[0], z: T['warden-frost'].pos[1], name: g.ws.restoration.frost === 'restored' ? 'Where It Lay Down' : 'The Held Snow', kind: 'warden' });
-    for (let k = 1; k <= 5; k++) { const id = 'shrine-frost-' + k, p = T[id]; marks.push({ x: p.pos[0], z: p.pos[1], name: null, kind: chapter.shrines.has(id) ? 'shrine-lit' : 'shrine' }); }
+    if (view === 'frost') {
+      marks.push({ x: T.monastery.pos[0], z: T.monastery.pos[1], name: 'The Monastery', kind: 'monastery' });
+      marks.push({ x: T['camp-frost'].pos[0], z: T['camp-frost'].pos[1], name: 'The Pilgrims’ Fire', kind: 'camp' });
+      marks.push({ x: T['spring-frost'].pos[0], z: T['spring-frost'].pos[1], name: 'The Sleeping Spring', kind: 'place' });
+      marks.push({ x: T['varo-rise'].pos[0], z: T['varo-rise'].pos[1], name: 'The Watching Stone', kind: 'place' });
+      marks.push({ x: T['warden-frost'].pos[0], z: T['warden-frost'].pos[1], name: g.ws.restoration.frost === 'restored' ? 'Where It Lay Down' : 'The Held Snow', kind: 'warden' });
+    } else {
+      const mp = T['meadow-market'].pos;
+      marks.push({ x: mp[0], z: mp[1], name: 'Hearn', kind: 'camp' });
+      marks.push({ x: T.manor.pos[0], z: T.manor.pos[1], name: g.ws.restoration.meadow === 'restored' ? 'Where It Lay Down' : 'The Manor', kind: 'warden' });
+      // The places of the errands, once the Wraith has been near them (the same "known" the compass keeps).
+      for (const id of ['side-fen-lamp', 'side-stone-ring', 'side-barley', 'side-edge', 'side-echo-shore']) if (chapter.graph.flags.has('known:' + id)) marks.push({ x: T[id].pos[0], z: T[id].pos[1], name: T[id].name, kind: 'place' });
+    }
+    for (const p of g.pois) if (p.kind === 'shrine' && p.biome === view) marks.push({ x: p.pos[0], z: p.pos[1], name: null, kind: chapter.shrines.has(p.id) ? 'shrine-lit' : 'shrine' });
     foot([['M', 'close'], ['J', 'journal'], ['Esc', 'back']]);
-    await map.draw(cv, marks, controller.pos.x, controller.pos.z, arm.yaw);
+    const sw = el('div', 'codex-actions', sheet);
+    const other = view === 'frost' ? 'meadow' : 'frost';
+    el('button', null, sw, other === 'meadow' ? 'The Meadow' : 'The Frost Steppe').onclick = () => { mapView = other; open('map', 'keep'); };
+    await map.draw(cv, marks, controller.pos.x, controller.pos.z, arm.yaw, view);
   }
 
   function pause() {
@@ -201,7 +220,7 @@ export function createMenus(g) {
   }
 
   function shrinePage(t) {
-    head('Shrine', 'The stones are warm under the frost');
+    head('Shrine', t.id.includes('meadow') ? 'The stones are warm in the grass' : 'The stones are warm under the frost');
     const body = el('div', 'codex-body', sheet);
     const left = el('div', null, body);
     el('div', 'codex-sub', left, 'Rest until');
@@ -223,7 +242,7 @@ export function createMenus(g) {
     el('h2', null, right, 'Travel');
     const dest = [...chapter.shrines].filter((id) => id !== t.id).sort();
     if (!dest.length) el('p', 'codex-empty', right, 'Rest at other shrines, and the stones will carry you between them.');
-    actions(right, dest.map((id) => ['Shrine ' + id.split('-').pop(), () => {
+    actions(right, dest.map((id) => [chapter.data.names?.[id] || 'Shrine ' + id.split('-').pop(), () => {
       const p = chapter.table[id].pos;
       close(); game.teleport(p[0] + 5, p[1] + 5);
     }]));

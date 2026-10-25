@@ -115,6 +115,7 @@ async function boot() {
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/flame.js')).addFlameSystem(g);
+  (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)
   (await import('./systems/robes.js')).addRobesSystem(g);
   (await import('./systems/barks.js')).addBarksSystem(g);
   (await import('./systems/bestiary.js')).addBestiarySystem(g);

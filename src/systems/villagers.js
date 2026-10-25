@@ -77,7 +77,9 @@ export function addVillagerSystem(g) {
   let spawned = false, restart = true, phase = 'calm', raidClock = 0;
   let seed = 11;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  const slots = ringSlots(M[0], M[1], 7.5, V.folk.length, 0.4);
+  // The folk: the village's own, then the side-quest givers (npcs with a `post`: they stand at their door all day, and huddle in the raid).
+  const folkAll = [...V.folk, ...chapter.data.npcs.filter((d) => d.post).map((d) => ({ id: d.id, name: d.name, archetype: d.archetype, tint: d.tint, post: d.post, role: 'giver' }))];
+  const slots = ringSlots(M[0], M[1], 7.5, folkAll.length, 0.4);
   const postOf = (f) => {
     const p = plots.get(f.post.plot), q = frontOf(p, f.post.out ?? 1.4);
     return [q[0], q[1], p.kind === 'stall' ? p.facing + Math.PI : p.facing];
@@ -87,11 +89,11 @@ export function addVillagerSystem(g) {
     if (spawned) return;
     if (dist(wp.x, wp.z, road[0], road[1]) > 420 && dist(wp.x, wp.z, M[0], M[1]) > 420) return;
     spawned = true;
-    for (const d of chapter.data.npcs) if (d.lazy) {
+    for (const d of chapter.data.npcs) if (d.lazy && !d.post) {
       const n = api.make(d.id, d.name, d.archetype, api.place(d.home), { tint: TINTS[d.id] || undefined, interact: true });
       n.v = { nextShout: 3 + rnd() * 6 }; N_[d.id] = n;
     }
-    V.folk.forEach((f, i) => {
+    folkAll.forEach((f, i) => {
       const post = postOf(f);
       const n = api.make(f.id, f.name, f.archetype, [post[0], post[1]], { tint: f.tint, interact: !!chapter.data.talk?.[f.id] });
       n.v = { role: f.role, post, slot: slots[i], k: i, delay: 0.3 + rnd() * 2.6, b: 0, bt: 0, nextShout: rnd() * 8, yawPost: post[2], er: 0, dest: [0, 0], errand: f.role === 'huddle' && i % 3 !== 0 };
@@ -321,7 +323,7 @@ export function addVillagerSystem(g) {
     }
     v.er = 0;
     const burn = burningNow();
-    let role = v.role;
+    let role = v.role === 'giver' ? 'huddle' : v.role;
     if (!burn.length && role !== 'huddle') role = 'huddle';
     if (role === 'huddle') {
       const arrived = goStand(n, v.slot[0], v.slot[1], 3.6, dt, Math.atan2(M[0] - v.slot[0], M[1] - v.slot[1]));
@@ -347,12 +349,8 @@ export function addVillagerSystem(g) {
   }
 
   // ── Navigation goals (dynamic quest goals) ────────────────────────────────────────────────────
-  const goals = { guide: { x: 0, z: 0, name: 'Wenna' }, fire: { x: 0, z: 0, name: 'A burning house' }, ebb: { x: 0, z: 0, name: 'Ebb' }, one: { x: 0, z: 0, name: '' } };
-  const at = (id, o) => { const n = N_[id]; if (!n) { const p = id === 'meadow-wenna' ? road : M; o.x = p[0]; o.z = p[1]; } else { o.x = n.x; o.z = n.z; } return o; };
-  g.navDynamic['meadow-guide'] = () => at('meadow-wenna', goals.guide);
-  g.navDynamic['meadow-marit'] = () => at('meadow-marit', Object.assign(goals.one, { name: 'Marit' }));
-  g.navDynamic['meadow-hild'] = () => at('meadow-hild', Object.assign(goals.one, { name: 'Elder Hild' }));
-  g.navDynamic['meadow-corin'] = () => at('meadow-corin', Object.assign(goals.one, { name: 'Corin' }));
+  // (Quest goals that follow a person use `goal: { npc }`, resolved by the nav system from the NPC's live position.)
+  const goals = { fire: { x: 0, z: 0, name: 'A burning house' }, ebb: { x: 0, z: 0, name: 'Ebb' } };
   g.navDynamic['meadow-fire'] = () => {
     let best = 1e18, bx = null;
     for (const id of burningNow()) { const p = plotXZ(id), d = dist(p[0], p[1], wp.x, wp.z); if (d < best) { best = d; bx = p; } }

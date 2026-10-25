@@ -70,3 +70,76 @@ describe('navigation registry', () => {
     expect(nav.byId.get('shrine').known && nav.byId.get('shrine').visited).toBe(true);
   });
 });
+
+describe('goals that follow a person', () => {
+  const npcDefs = [
+    { id: 'q', kind: 'main', title: 'Q', summary: '', steps: [
+      { id: 'talk', journal: 'Talk to Hild.', when: { event: 'a' }, goal: { npc: 'hild', radius: 8 } },
+      { id: 'then', journal: 'Go to the camp.', when: { event: 'b' }, goal: { poi: 'camp' } }] },
+  ];
+  it('resolves an NPC goal through its live position while it walks, named after it', () => {
+    const graph = new QuestGraph(npcDefs, {});
+    const hild = { x: 50, z: 0, y: 7, name: 'Elder Hild' };
+    const nav = createNav({ pois, graph, npcAt: (id) => (id === 'hild' ? hild : null) });
+    graph.tick(none()); nav.px = 0; nav.pz = 0; nav.update(0.3);
+    expect(nav.trackedGoal.name).toBe('Elder Hild'); expect(nav.trackedGoal.dist).toBeCloseTo(50); expect(nav.trackedGoal.radius).toBe(8);
+    expect(nav.trackedGoal.rel).toBeCloseTo(Math.PI / 2);          // due east
+    hild.x = 0; hild.z = 80; nav.update(0.3);                      // she walks north
+    expect(nav.trackedGoal.dist).toBeCloseTo(80); expect(nav.trackedGoal.rel).toBeCloseTo(0);
+    expect(nav.trackedGoal.y).toBe(7);
+  });
+  it('skips a goal whose NPC is unknown, and a label wins over the NPC name', () => {
+    const graph = new QuestGraph([{ ...npcDefs[0], steps: [{ ...npcDefs[0].steps[0], goal: { npc: 'ghost' } }, npcDefs[0].steps[1]] }], {});
+    const nav = createNav({ pois, graph, npcAt: () => null });
+    graph.tick(none()); nav.update(0.3); expect(nav.goals.length).toBe(0); expect(nav.tracked).toBe(null);
+    const g2 = new QuestGraph([{ ...npcDefs[0], steps: [{ ...npcDefs[0].steps[0], goal: { npc: 'hild', label: 'The Elder' } }, npcDefs[0].steps[1]] }], {});
+    const n2 = createNav({ pois, graph: g2, npcAt: () => ({ x: 1, z: 1, name: 'Hild' }) });
+    g2.tick(none()); n2.update(0.3); expect(n2.trackedGoal.name).toBe('The Elder');
+  });
+  it('a goal with no height of its own is drawn at the Wraith\'s height', () => {
+    const graph = new QuestGraph(npcDefs, {});
+    const nav = createNav({ pois, graph, npcAt: () => ({ x: 9, z: 9, name: 'Hild' }) });
+    nav.py = 262; graph.tick(none()); nav.update(0.3);
+    expect(nav.trackedGoal.y).toBe(262);
+  });
+});
+
+describe('what the compass follows', () => {
+  const two = [
+    { id: 'main', kind: 'main', title: 'Main', summary: '', steps: [
+      { id: 'a', journal: 'One.', when: { event: 'ma' }, goal: { at: [0, 100] } }, { id: 'b', journal: 'Two.', when: { event: 'mb' }, goal: { at: [100, 0] } }] },
+    { id: 'side', kind: 'side', title: 'Side', summary: '', start: { event: 'go' }, steps: [
+      { id: 'a', journal: 'Side one.', when: { event: 'sa' }, goal: { at: [0, -100] } }, { id: 'b', journal: 'Side two.', when: { event: 'sb' }, goal: { at: [-100, 0] } }] },
+  ];
+  const ev = (...e) => { const f = none(); for (const x of e) f.events.add(x); return f; };
+  it('takes up a main goal as it appears, but a side quest never takes the compass from the main one', () => {
+    const graph = new QuestGraph(two, {}), told = [];
+    const nav = createNav({ pois, graph, onTrack: (g) => told.push(g.id + '|' + g.journal) });
+    graph.tick(none()); nav.update(0.3);
+    expect(nav.tracked).toBe('main:a'); expect(told).toEqual([]);   // the first look only learns what is there
+    graph.tick(ev('go')); nav.update(0.3);                          // a side quest starts: it never takes the compass from the main one
+    expect(nav.tracked).toBe('main:a'); expect(told).toEqual([]);
+    graph.tick(ev('ma')); nav.update(0.3);                          // the main quest moves on: its new goal is taken up, and said
+    expect(nav.tracked).toBe('main:b'); expect(told).toEqual(['main:b|' + nav.trackedGoal.journal]);
+  });
+  it('keeps the player\'s own choice, and follows that quest to its next step', () => {
+    const graph = new QuestGraph(two, {});
+    const nav = createNav({ pois, graph });
+    graph.tick(ev('go')); nav.update(0.3);
+    nav.track('side:a'); nav.update(0.3);
+    graph.tick(ev('ma')); nav.update(0.3);                          // main moves on: not taken over
+    expect(nav.tracked).toBe('side:a');
+    graph.tick(ev('sa')); nav.update(0.3);                          // the followed quest moves on: still followed
+    expect(nav.tracked).toBe('side:b');
+    expect(nav.trackQuest('main')).toBe('main:b'); expect(nav.tracked).toBe('main:b');
+  });
+  it('does not announce what a load brings back, and a goal that flickers is not new', () => {
+    const graph = new QuestGraph(two, {}), told = [];
+    let flick = true;
+    const nav = createNav({ pois, graph, dynamic: { f: () => (flick ? { x: 1, z: 1 } : null) }, onTrack: (g) => told.push(g.id) });
+    graph.tick(ev('go')); nav.update(0.3); nav.sync(); nav.update(0.3);
+    expect(told).toEqual([]);
+    flick = false; nav.update(0.3); flick = true; nav.update(0.3);
+    expect(told).toEqual([]);
+  });
+});
