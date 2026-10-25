@@ -32,7 +32,7 @@ export function addWraithSystem(g) {
       return;
     }
     // Photo spots with a glide (`surf.glide`): launched from the air at the spot, S-turns.
-    if (game.wraithHeld || game.pendingBend !== null) return;
+    if (game.wraithHeld || game.pendingBend !== null || game.pendingWeapon !== null) return;
     surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded;
     surfWake.enabled = toggles.on.footprints !== false;
     surfWake.update();

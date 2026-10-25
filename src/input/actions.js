@@ -10,8 +10,14 @@ export const Action = Object.freeze({
   Map: 11, Journal: 12, Pause: 13,
   Element1: 14, Element2: 15, Element3: 16, Element4: 17, Element5: 18,
   DevOverlay: 19, FreeCamUp: 20, FreeCamDown: 21, FreeCamFast: 22, Track: 23,
+  /** Q: the element's quick (tap) / sustained (hold) verb. Primary (LMB) is the weapon since docs §11.1. */
+  Bend: 24,
+  /** X (and the wheel): swap to the other carried weapon. */
+  WeaponSwap: 25,
+  /** R / C: use / cycle the selected consumable (reserved: no-ops until the inventory has them). */
+  Consume: 26, ConsumeNext: 27,
 });
-const COUNT = 24;
+const COUNT = 28;
 
 /** Default keyboard/mouse bindings: KeyboardEvent.code or 'Mouse0'/'Mouse2' → action. */
 export const defaultBindings = {
@@ -21,7 +27,9 @@ export const defaultBindings = {
   KeyM: Action.Map, KeyJ: Action.Journal, Escape: Action.Pause,
   Digit1: Action.Element1, Digit2: Action.Element2, Digit3: Action.Element3, Digit4: Action.Element4, Digit5: Action.Element5,
   F1: Action.DevOverlay, Backquote: Action.DevOverlay,
-  KeyQ: Action.FreeCamDown, KeyR: Action.FreeCamUp, ShiftLeft: Action.FreeCamFast,
+  // Free camera (dev): PageUp / PageDown fly up and down (Q and R belong to the game now).
+  PageDown: Action.FreeCamDown, PageUp: Action.FreeCamUp, ShiftLeft: Action.FreeCamFast,
+  KeyQ: Action.Bend, KeyX: Action.WeaponSwap, KeyR: Action.Consume, KeyC: Action.ConsumeNext,
   KeyT: Action.Track,
 };
 
@@ -54,7 +62,7 @@ function setAction(a, isDown) {
 }
 
 /** True when the browser should not see this key (we own it). */
-const CAPTURED = new Set(['Tab', 'F1', 'Space', 'Backquote']);
+const CAPTURED = new Set(['Tab', 'F1', 'Space', 'Backquote', 'PageUp', 'PageDown']);
 
 /** @param {HTMLElement} canvas */
 export function attachInput(canvas) {

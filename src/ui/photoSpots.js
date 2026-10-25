@@ -6,7 +6,7 @@ import { params, setParam } from '../core/params.js';
 import { worldState } from '../game/worldState.js';
 
 /** @typedef {{ id: string, biome: string, label: string, time: number, weather: string, player?: number[],
- *   hidePlayer?: boolean, strike?: { bearing: number, dist: number, age?: number, seed?: number }, trail?: number[][], walk?: { speed: number, seconds: number, facing?: number },
+ *   hidePlayer?: boolean, facing?: number, weapon?: { id: string, attack: 'carry' | 'combo' | 'heavy', seconds: number, hold?: number, gap?: number }, strike?: { bearing: number, dist: number, age?: number, seed?: number }, trail?: number[][], walk?: { speed: number, seconds: number, facing?: number },
  *   camera: { mode: 'follow', yaw: number, pitch: number, dist: number, fov?: number } | { mode: 'free', pos: number[], yaw: number, pitch: number, fov: number } }} PhotoSpot */
 
 /** @type {PhotoSpot[]} */
@@ -32,7 +32,7 @@ export function applySpot(spot, game) {
   if (c.mode !== 'free') { arm.yaw = c.yaw; arm.pitch = c.pitch; arm.zoomTarget = c.dist; }
   // Deferred: the player drops onto the ground once collision for the target is streamed;
   // the follow camera snaps to the player at that moment.
-  if (spot.player) { teleport(spot.player[0], spot.player[1]); controller.yaw = c.yaw; }
+  if (spot.player) { teleport(spot.player[0], spot.player[1]); controller.yaw = spot.facing ?? c.yaw; }
   if (c.mode === 'free') arm.setPose(c.pos[0], c.pos[1], c.pos[2], c.yaw, c.pitch, c.fov);
   // Gate shots of the land alone (Phase 2: "a static screenshot with no character").
   if (game.setPlayerVisible) game.setPlayerVisible(!spot.hidePlayer);

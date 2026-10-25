@@ -55,6 +55,9 @@ export class Wraith {
     this.swimming = false; this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
     /** Bending gesture target 0..1 (input); eased into the body's arm. */
     this.cast = 0.5 - 0.5;
+    /** Attack pose (inputs from game/weapons): torso twist and extra lean (rad), the hands' reach weights (L, R) and targets
+     *  (torso-local xyz each), and a push on the cloth (world x, z; the swing's wind). */
+    this.twist = 0.5 - 0.5; this.atkLean = 0.5 - 0.5; this.ikW = new Float64Array(2); this.ikT = new Float64Array(6); this.pushX = 0.5 - 0.5; this.pushZ = 0.5 - 0.5;
     /** Facing actually shown (input yaw, rate-limited). */
     this.facing = 0.5 - 0.5;
     /** Wind (unit direction blown toward) and strength 0..2, gust phase from time. */
@@ -106,6 +109,9 @@ export class Wraith {
     g.bx = this.bx; g.by = this.by; g.bz = this.bz; g.vx = this.vx; g.vz = this.vz; g.yaw = this.facing; g.grounded = this.grounded;
     g.surf = this.surf; g.glide = this.glide; g.swim = this.swim; g.swimPhase = this.swimPhase;
     this.body.yaw = this.facing; this.body.surf = this.surf; this.body.surfLean = this.surfLean;
+    this.body.twist = this.twist; this.body.atkLean = this.atkLean;
+    for (let i = 0; i < 6; i++) this.body.ikT[i] = this.ikT[i];
+    this.body.ikW[0] = this.ikW[0]; this.body.ikW[1] = this.ikW[1];
     this.body.glide = this.glide; this.body.glideBank = this.glideBank;
     this.body.swim = this.swim; this.body.swimPhase = this.swimPhase;
   }
@@ -162,7 +168,7 @@ export class Wraith {
     // Flow (0..3) lets the hem and sleeves stream: more of the wind, and a push back along the travel.
     const ws = this.windStrength * 4.5 * gust * (1 + FLOW_WIND * this.flow);
     this.cloth.frameVX = this.vx; this.cloth.frameVY = this.vy; this.cloth.frameVZ = this.vz;
-    this.cloth.windX = this.windX * ws; this.cloth.windZ = this.windZ * ws; this.cloth.windY = 0.4 * ws * 0.2;
+    this.cloth.windX = this.windX * ws + this.pushX; this.cloth.windZ = this.windZ * ws + this.pushZ; this.cloth.windY = 0.4 * ws * 0.2;
     if (this.flow > 0.02) {
       const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz), k = this.flow * Math.min(1, sp / 12) * FLOW_BACK / Math.max(sp, 1);
       this.cloth.windX -= this.vx * k; this.cloth.windZ -= this.vz * k;

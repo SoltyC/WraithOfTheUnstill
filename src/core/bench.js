@@ -134,9 +134,9 @@ export async function runBench(game, qs) {
     phases.push(await phase('cast', seconds, settle, () => {
       release(); steerPx = 0; yawRate = 0.15; game.applySpot(spot);
       const tap = (a, ms) => { injectAction(a, true); timers.push(setTimeout(() => injectAction(a, false), ms)); };
-      timers.push(setInterval(() => tap(Action.Primary, 60), 1500));       // Sweep
+      timers.push(setInterval(() => tap(Action.Bend, 60), 1500));          // Sweep
       timers.push(setInterval(() => tap(Action.Heavy, 60), 3000));         // Crystallize
-      timers.push(setTimeout(() => timers.push(setInterval(() => tap(Action.Primary, 900), 2200)), 700)); // Ribbon
+      timers.push(setTimeout(() => timers.push(setInterval(() => tap(Action.Bend, 900), 2200)), 700));   // Ribbon
     }));
     for (const t of timers) { clearInterval(t); clearTimeout(t); }
   } else if (qs.get('bench') === 'weather') {

@@ -59,6 +59,8 @@ export class CapsuleController {
     this.wishZ = 0; // camera-relative forward [-1, 1]
     this.wishUp = 0;
     this.cameraYaw = 0;
+    /** Walking speed scale (an attack's committed footing, game/weapons) and a hold on the facing (the swing's heading). */
+    this.walkMul = 1; this.faceLock = false;
     this.jumpRequested = false;
     /** Upward acceleration from rising air (m/s², owner, per frame; the Gale's Updraft): lifts
      *  the body off the ground when it beats gravity. */
@@ -173,7 +175,7 @@ export class CapsuleController {
       v.x = this.dodgeX * sp; v.z = this.dodgeZ * sp;
     } else {
       // Horizontal acceleration toward wish velocity.
-      const tx = wx * T.walkSpeed, tz = wz * T.walkSpeed;
+      const tx = wx * T.walkSpeed * this.walkMul, tz = wz * T.walkSpeed * this.walkMul;
       const control = this.grounded ? 1 : T.airControl;
       const rate = (wl > 0.01 ? T.accel : T.decel) * control;
       let dx = tx - v.x, dz = tz - v.z;
@@ -233,7 +235,7 @@ export class CapsuleController {
     }
     if (gy !== gy) throw new Error('heightfield returned NaN');
     this._wx = wx; this._wz = wz; this._wl = wl;
-    if (!surfing && !gliding) this._face();
+    if (!surfing && !gliding && !this.faceLock) this._face();
   }
 
   /** One substep swimming (fields in, like _step): strokes toward the wish, a glide, the float

@@ -28,6 +28,8 @@ export async function createGame(g) {
     pendingSurf: null,
     /** Photo-spot bending sequence ({ seconds }) still to cast. */
     pendingBend: null,
+    /** Photo-spot scripted swing ({ id, attack, seconds, … }, systems/weapons.js) still to play. */
+    pendingWeapon: null,
     /** Photo-spot Shaped encounter still to simulate. */
     pendingShaped: null,
     /** Photo-spot Warden placement ({ ahead, side?, turn?, seconds?, dormant?, freezeJoints? }). */
@@ -56,13 +58,14 @@ export async function createGame(g) {
       this.pendingWalk = spot.walk || null;
       this.pendingSurf = spot.surf || null;
       this.pendingBend = spot.bend || null;
+      this.pendingWeapon = spot.weapon || null;
       this.pendingShaped = spot.shaped || null;
       this.pendingWarden = spot.warden || null;
       this.wraithHeld = false;
       weather.snap = true; post.post.resetHistory = true;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
-    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingShaped === null && this.pendingWarden === null && terrainState.pendingBrushes === 0; },
+    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingWeapon === null && this.pendingShaped === null && this.pendingWarden === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
       if (wraithView.isEnabled() === on) return;
       wraithView.setEnabled(on); engine.snapshotRenderingReset();
