@@ -258,6 +258,7 @@ export function createCombat(ctx) {
     const killed = shaped.damage(i, amount, true, dx * 3, dz * 3);
     const sx = self.sfx, big = frozen && (heavy || killed);
     if (big && flow !== null) flow.hit(FLOW_EVENT.SHATTER);   // freeze → shatter landed
+    if (big) self.onShatter?.();
     if (sx && (big || heavy || ribbonTick <= 0)) {
       sx.x = bx; sx.y = by; sx.z = bz; sx.gain = big ? 1.2 : heavy ? 1 : 0.5;
       sx.play(big ? SFX.SHATTER : heavy ? SFX.THUD : SFX.CRUNCH);
