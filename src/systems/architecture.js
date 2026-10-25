@@ -9,6 +9,8 @@ import { manorSites } from '../world/manor.js';
 import { stairSites, stairSegments, loadBakedHeight } from '../world/stair.js';
 import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA, NO_SNOW } from '../world/architecture.js';
 import { sideSites } from '../world/sideSites.js';
+import { nookSites } from '../world/nookSites.js';
+import nookData from '../../data/nooks.json';
 import { createSolids } from '../world/solids.js';
 import { createArchitectureView } from '../render/architecture.js';
 import { SHADOW_SPLITS } from '../render/shadows.js';
@@ -25,7 +27,7 @@ export async function addArchitectureSystem(g) {
   // segments are also the analytic stepped floor of solids.js.
   const stairRoute = (g.routes || []).find((r) => r.id === 'manor-stair') || {};
   const stairH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', stairRoute).catch(() => null);
-  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table)];
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });

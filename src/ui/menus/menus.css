@@ -140,3 +140,10 @@
 .codex-page::-webkit-scrollbar, .codex-list::-webkit-scrollbar { width: 6px; }
 .codex-page::-webkit-scrollbar-thumb, .codex-list::-webkit-scrollbar-thumb { background: rgba(90, 64, 40, 0.4); border-radius: 3px; }
 .codex-page::-webkit-scrollbar-track, .codex-list::-webkit-scrollbar-track { background: transparent; }
+
+/* Remembrance: the living reaction table (journal). */
+.codex-page .rem-table { border-collapse: collapse; table-layout: fixed; margin-top: 14px; width: 100%; }
+.codex-page .rem-table th, .codex-page .rem-table td { border: 1px solid rgba(59, 42, 26, 0.3); padding: 8px 10px; text-align: left; vertical-align: top; font-size: clamp(14px, 1.05vw, 18px); }
+.codex-page .rem-table th { font-family: var(--text); font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: #7a5d3a; font-weight: normal; }
+.codex-page .rem-table td { color: rgba(36, 24, 12, 0.35); }
+.codex-page .rem-table td.on { color: #24180c; }

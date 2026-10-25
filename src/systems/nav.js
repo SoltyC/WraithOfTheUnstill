@@ -4,6 +4,7 @@
 
 import { createNav } from '../game/nav.js';
 import { createCompass } from '../ui/hud/compass.js';
+import { nookPois } from '../game/nooks.js';
 
 /** @param {any} g  shared boot context */
 export function addNavSystem(g) {
@@ -24,6 +25,7 @@ export function addNavSystem(g) {
     o.x = h.pos[0] + (def.home.dx || 0); o.z = h.pos[1] + (def.home.dz || 0); o.y = h.h ?? nav.py;
     return o;
   }
+  g.pois.push(...nookPois());   // hidden from the compass until found (kind 'nook')
   const nav = g.nav = createNav({
     pois: g.pois, names: chapter.data.names || {}, graph: chapter.graph, dynamic, npcAt,
     onDiscover: (p) => { if (!capture) { hud.notice('Discovered', p.name, null, 5); } },

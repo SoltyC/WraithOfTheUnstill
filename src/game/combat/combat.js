@@ -265,6 +265,7 @@ export function createCombat(ctx) {
     const killed = shaped.damage(i, amount, true, dx * 3, dz * 3);
     const sx = self.sfx, big = frozen && (heavy || killed);
     if (big && flow !== null) flow.hit(FLOW_EVENT.SHATTER);   // freeze → shatter landed
+    if (big) self.onShatter?.();
     if (sx && (big || heavy || ribbonTick <= 0)) {
       sx.x = bx; sx.y = by; sx.z = bz; sx.gain = big ? 1.2 : heavy ? 1 : 0.5;
       sx.play(big ? SFX.SHATTER : heavy ? SFX.THUD : SFX.CRUNCH);
@@ -286,6 +287,7 @@ export function createCombat(ctx) {
     const killed = shaped.damage(i, w.dmg < 1e8 ? w.dmg * mul : w.dmg, w.stagger, w.dx * w.knock, w.dz * w.knock);
     w.killed = killed; w.dealt = Math.max(0, hp0 - (killed ? 0 : shaped.slots[i].hp));
     if (killed && frozen && flow !== null) flow.hit(FLOW_EVENT.SHATTER);
+    if (killed && frozen) self.onShatter?.();
     if (w.stop > 0) clock.hitStop = Math.max(clock.hitStop, killed && frozen ? Math.max(w.stop, 0.06) : w.stop);
     self.shake += w.shake; self.kick += w.kick;
     const sx = self.sfx;
