@@ -243,12 +243,19 @@ These spots join the D12 gate list. They are judged on the 3060 against the exis
   - Graphics without play: *clear*, since the ravines are puzzle space.
 - **NOT ASSESSED:** whether the puzzles are fun to a human, the time-to-solve, whether the shade rule reads without a tutorial, and the sound phrase for players who can't hear well. The glyphs cover that last one, but they need checking. The bot measures solve times and false moves; the user plays A, B and C at the D11 checkpoint.
 
+## 8b. Decisions (user, 2026-10-26: "do what you think is best and will achieve the best graphical result")
+
+1. **Slot canyons use a bake trench plus a procedural wall kit.** The walls are curved, undercut and banded, with wind-polished sandstone, and get their own warm bounce-light term. Arches, hoodoos and overhangs come from the same kit. The heightfield-only alternative was rejected: at 2 m it gives faceted V-trenches, not slots.
+2. **Real sand flow is the target.** D2's relaxation pass drives the puzzle sand, so avalanches, cones and filled bowls are true terrain state that holds through a reload. If D2 can't make it stable, the fallback scripts only the *amounts* (a level per bowl). Those levels are still written into the terrain state through the same brushes, so the look doesn't change.
+3. **Shrines get "wait until"** (morning, noon, dusk, night), shown as the light sweeping across the land, not as a fade to black.
+4. **Light shafts and beams:** god-ray cards with drifting dust motes in the slots. Sunbeams from G6 use the same look, so a puzzle beam and a natural shaft read as the same light.
+
 ## 9. Build order inside Phase 9
 
 The tech is in D0–D4. Puzzles slot in as follows:
 
 - **D0:** carve the ravines, add the slot trench and place the sites (`figures/erg-plan.png`).
-- **D2:** relaxation, with the sand-flow fallback decision.
+- **D2:** relaxation (the target for puzzle sand; fallback per §8b).
 - **D4:** Stone.
 - **After D7, new D7b "Ravine kits":** slot walls, arches, hoodoos, sandfalls (running and frozen) and light shafts; the `p9r-*` shots.
 - **D11 is rewritten as:**
