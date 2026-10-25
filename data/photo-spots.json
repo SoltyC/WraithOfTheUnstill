@@ -3940,17 +3940,17 @@
       "time": 16.2,
       "weather": "clear",
       "player": [
-        -62,
-        842
+        145,
+        942
       ],
       "restoration": "restored",
       "camera": {
         "mode": "follow",
-        "yaw": 0.35,
+        "yaw": 0.86,
         "pitch": 0.12,
         "dist": 4.2
       },
-      "facing": 0.35,
+      "facing": 0.86,
       "weapon": {
         "id": "staff",
         "attack": "carry",

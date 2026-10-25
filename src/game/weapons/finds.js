@@ -4,7 +4,7 @@
 
 export const weaponFinds = [
   {
-    id: 'sickles', slot: 4, at: [-47, 872], yaw: 0.6, name: 'Sickle pair', place: 'The reaper\'s stand',
+    id: 'sickles', slot: 4, at: [152, 948], yaw: 0.6, name: 'Sickle pair', place: 'The reaper\'s stand',
     text: 'Two iron sickles hang on a weathered post at the field\'s edge, the oak of their handles worn smooth. Fast and close; the cuts bleed.',
   },
   {
