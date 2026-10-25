@@ -86,9 +86,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const n = data.nooks.find((x) => x.id === r.id);
     if (r.failed) { console.log('FAILED', r.id); bad++; continue; }
     n.pos = r.pos; n.h = r.h; n.facing = r.facing;
-    n.biome = r.meadow > 0.5 ? 'meadow' : 'frost';
     console.log(r.id.padEnd(26), r.pos.join(', ').padEnd(16), 'h', r.h, 'moved', r.moved, 'm', n.biome);
   }
-  if (!process.argv.includes('--check') && !bad) fs.writeFileSync(file, JSON.stringify(data, null, 2).replace(/\n\s+("snap"|"payoff"|"id"|"biome"|"kind"|"shape"|"name"|"verb"|"want"|"pos"|"h"|"facing")/g, ' $1').replace(/\{\s+"/g, '{ "').replace(/,\s+"(snap|payoff|id|biome|kind|shape|name|verb|want|pos|h|facing)"/g, ', "$1"') + '\n');
+  if (!process.argv.includes('--check') && !bad) fs.writeFileSync(file, '{ "_note": ' + JSON.stringify(data._note) + ',\n  "nooks": [\n' + data.nooks.map((n) => '    ' + JSON.stringify(n)).join(',\n') + '\n  ]\n}\n');
   process.exit(bad ? 1 : 0);
 }
