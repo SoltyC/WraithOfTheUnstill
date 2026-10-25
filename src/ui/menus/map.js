@@ -75,7 +75,7 @@ export function createMap() {
     },
     /**
      * Draw the map into canvas `cv`: land where explored (soft edges), the places found, the
-     * Wraith. marks: [{ x, z, name, kind: 'shrine'|'shrine-lit'|'camp'|'monastery'|'warden'|'place' }].
+     * Wraith. marks: [{ x, z, name, kind: 'shrine'|'shrine-lit'|'camp'|'monastery'|'warden'|'place'|'nook' }].
      */
     async draw(cv, marks, px, pz, yaw, view = 'frost') {
       VIEW = VIEWS[view];
@@ -118,6 +118,10 @@ export function createMap() {
         } else if (m.kind === 'warden') {
           g.beginPath(); g.ellipse(x, y, 16, 7, -0.3, 0, Math.PI * 2); g.stroke();
           g.beginPath(); g.ellipse(x, y, 9, 3.5, -0.3, 0, Math.PI * 2); g.stroke();
+        } else if (m.kind === 'nook') {
+          // A find: a small open diamond with a dot, quieter than a shrine.
+          g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, y - 5); g.lineTo(x + 4, y); g.lineTo(x, y + 5); g.lineTo(x - 4, y); g.closePath(); g.stroke();
+          g.beginPath(); g.arc(x, y, 1.1, 0, Math.PI * 2); g.fill();
         } else { g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill(); }
         if (m.name) { g.font = 'italic 19px "IM Fell English", serif'; g.fillStyle = '#3a2614'; g.fillText(m.name, x, y - 14); }
       }

@@ -21,6 +21,8 @@ export const KINDS = {
   'echo-stone': { icon: 'spark', name: 'An Echo Stone', sight: 90, hidden: true },
   den: { icon: 'claw', name: 'A Den', sight: 200 },
   settlement: { icon: 'tents', name: 'A Settlement', sight: 500 },
+  // A nook (data/nooks.json): never sensed from afar; known once found, then a quiet mark on the compass and the map.
+  nook: { icon: 'dot', name: 'A Find', sight: 0, hidden: true },
 };
 
 const TAU = Math.PI * 2;
