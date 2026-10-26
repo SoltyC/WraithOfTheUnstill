@@ -179,6 +179,8 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     handGlowSize: 0.035,
     /** Frost creeping up the robe (0..1, from wounds). */
     frost: 0.5 - 0.5,
+    /** Ember tea's warm hands and Rime tonic's frosted wool (0..1; systems/economy.js, creatures.js). */
+    warm: 0.5 - 0.5, rime: 0.5 - 0.5,
     /** Flow (game/flow.js, eased 0..3): the hems and cuffs catch the element's light and the hand-light trails. */
     flowLevel: 0.5 - 0.5,
     /** The element's light for Flow (rgb): frost cold blue, gale pale green. */
@@ -253,7 +255,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
       const L = this.flowLevel, k = L < 0.02 ? 0 : Math.min(1, L / 3), hg = this.flowColor;
       // Warm motion-gold over the element's hue: the frost creep of low health is cold blue-white, and
       // Flow must never read as a wound.
-      flowV.set((hg[0] * 0.4 + 0.6) * k * 0.3, (hg[1] * 0.4 + 0.47) * k * 0.3, (hg[2] * 0.4 + 0.27) * k * 0.3, k);
+      flowV.set((hg[0] * 0.15 + 0.85) * k * 0.8, (hg[1] * 0.2 + 0.6) * k * 0.8, (hg[2] * 0.3 + 0.18) * k * 0.8, k);
       const live = k > 0;
       if (live && t - trailAt > 0.04) {
         trailAt = t;
@@ -282,7 +284,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
       head.x = b.head[0] + b.hf[0] * 0.07 - b.hu[0] * 0.015; head.y = b.head[1] + b.hf[1] * 0.07 - b.hu[1] * 0.015; head.z = b.head[2] + b.hf[2] * 0.07 - b.hu[2] * 0.015;
       head.w = this.cowlLight * breath;
       clothParams.x = 1; clothParams.y = t; clothParams.w = this.handLight;
-      frostCreep.x = this.frost;
+      frostCreep.x = this.frost; frostCreep.y = this.warm; frostCreep.z = this.rime;
       // Fingertips: along the forearm past the wrist.
       for (let s = 0; s < 2; s++) {
         const o = s * 3, h = s === 0 ? handL : handR;
