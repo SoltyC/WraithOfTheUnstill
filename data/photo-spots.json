@@ -4767,14 +4767,14 @@
       "time": 11,
       "weather": "clear",
       "player": [
-        1346,
-        2866
+        1343,
+        2862
       ],
       "camera": {
         "mode": "follow",
         "yaw": 0.68,
-        "pitch": 0.2,
-        "dist": 8
+        "pitch": 0.02,
+        "dist": 14
       }
     },
     {
@@ -4882,32 +4882,39 @@
       "time": 10,
       "weather": "clear",
       "player": [
-        62,
-        1128
+        75,
+        1135
       ],
       "camera": {
-        "mode": "follow",
-        "yaw": 1.08,
-        "pitch": 0.2,
-        "dist": 8
-      }
+        "mode": "free",
+        "pos": [
+          62,
+          288,
+          1112
+        ],
+        "yaw": 0.62,
+        "pitch": -0.5,
+        "fov": 0.9
+      },
+      "hidePlayer": true
     },
     {
       "id": "p8r-green-lantern",
       "biome": "meadow",
       "label": "The lantern on its post by the Green Shrine, dusk",
-      "time": 20.2,
+      "time": 18.9,
       "weather": "clear",
       "player": [
-        28,
-        990
+        33,
+        985
       ],
       "camera": {
         "mode": "follow",
-        "yaw": 2.1,
-        "pitch": 0.14,
-        "dist": 5
-      }
+        "yaw": 1.77,
+        "pitch": 0.2,
+        "dist": 4
+      },
+      "hidePlayer": false
     }
   ]
 }

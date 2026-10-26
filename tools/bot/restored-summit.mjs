@@ -7,7 +7,7 @@ await restoredWorld({ hour: 12 });
 const varo = await js(`const n=g.npcs.find(q=>q.id==='varo'); return [n.x,n.z]`);
 await at(varo[0] + 3, varo[1] + 3, varo[0], varo[1]);
 await bot('talkTo', { id: 'varo', ms: 1500 }).catch((e) => say('talkTo: ' + e.message));
-await wait(9000);
+for (let i = 0; i < 10 && !/shelf|bronze/.test(await quest('shelf-stream')); i++) await wait(2500);
 say('after Varo:', await quest('shelf-stream'));
 ok(/shelf|bronze/.test(await quest('shelf-stream')), 'Varo sent the Wraith to the Shelf');
 const pl = await js(`return g.chapter.table['rw-shelf'].pos`);
@@ -18,7 +18,8 @@ const fly = pilot({ targets: `(() => { const r = g.shelfCourse.rings[Math.min(g.
 let best, reached = false;
 for (let run = 1; run <= (+process.env.RUNS || 6); run++) {
   await js(`g.chapter.graph.vars['shelf.time'] = undefined; delete g.chapter.graph.vars['shelf.time']; return 1`);
-  const r = await jsLong(fly + `; return { course: { next: g.shelfCourse.next, running: g.shelfCourse.running, t: Math.round(g.shelfCourse.t * 10) / 10 }, time: g.chapter.graph.vars['shelf.time'], best: g.chapter.graph.vars['shelf.best'] };`);
+  await jsLong(fly);
+  const r = await js(`return { course: { next: g.shelfCourse.next, running: g.shelfCourse.running, t: Math.round(g.shelfCourse.t * 10) / 10 }, time: g.chapter.graph.vars['shelf.time'], best: g.chapter.graph.vars['shelf.best'] };`);
   say('run', run, JSON.stringify(r));
   best = r.best;
   if (run === 1) await shot('shelf-2-after-run');
