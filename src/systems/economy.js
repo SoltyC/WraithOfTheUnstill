@@ -9,6 +9,7 @@
 import { createBuffs } from '../game/economy/buffs.js';
 import { createTrade } from '../game/economy/trade.js';
 import { createDrop } from '../game/economy/drop.js';
+import { createDropBeacon } from './economyDrop.js';
 import { createPurse } from '../game/economy/purse.js';
 import { applyReward, backPay } from '../game/economy/rewards.js';
 import { maxHealth, CONSUMABLES, MATERIALS, FLASK } from '../game/economy/items.js';
@@ -36,6 +37,7 @@ export function addEconomySystem(g) {
   d[6] = 1; d[7] = 1; d[8] = 1;
   let lastBlows = 0, wasDying = false, lastMax = combatTuning.health, fightTotal = 0;
   let light = null;
+  const beacon = createDropBeacon(g);
 
   // ── Rewards, rests and what the pages call ────────────────────────────────────────────────────
   const self = g.economy = {
@@ -106,25 +108,21 @@ export function addEconomySystem(g) {
     ts.bx = x; ts.bz = z; ts.bdx = 0; ts.bdz = 1; ts.bl = 0; ts.bw = 1.15; ts.bd = 0.1; ts.bc = 0.8; ts.bk = BRUSH.PRESS; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.5;
     ts.stamp();
   }
-  let sparkT = 0;
   function dropWorld(dt) {
     const WL = g.worldLights;
-    if (WL && light === null) light = WL.add({ x: 0, y: 0, z: 0, radius: 7, color: [1.0, 0.78, 0.4], intensity: 1.5, kind: 'candle', level: 0 });
-    if (!drop.active) { if (light) light.level = 0; return; }
+    if (WL && light === null) light = WL.add({ x: 0, y: 0, z: 0, radius: 9, color: [1.0, 0.78, 0.4], intensity: 3.2, kind: 'candle', level: 0 });
+    const mk = g.nav?.mark;
+    if (!drop.active) { if (light) light.level = 0; if (mk) mk.on = false; beacon.update(false); return; }
+    if (mk && (!mk.on || mk.x !== drop.x || mk.z !== drop.z)) { mk.on = true; mk.x = drop.x; mk.z = drop.z; }
     ground.qx = drop.x; ground.qz = drop.z;
     const here = ground.covers();
     if (here) ground.sample();
     const y = here ? ground.h : controller.pos.y;
     if (light) { light.x = drop.x; light.y = y + 0.8; light.z = drop.z; light.level = here ? 1 : 0; }
-    const dx = drop.x - controller.pos.x, dz = drop.z - controller.pos.z;
-    if (dx * dx + dz * dz > 80 * 80 || !here) return;
-    sparkT -= dt;
-    if (sparkT > 0) return;
-    sparkT = 0.09;
-    const a = clock.frame * 2.399;
-    wraithView.ex = drop.x + Math.sin(a) * 0.35; wraithView.ey = y + 0.1; wraithView.ez = drop.z + Math.cos(a) * 0.35;
-    wraithView.evx = Math.sin(a * 1.7) * 0.15; wraithView.evz = Math.cos(a * 1.3) * 0.15; wraithView.evy = 1.1 + (clock.frame % 5) * 0.2; wraithView.esize = 0.05;
-    wraithView.emit();
+    const cx = g.camera.position.x - drop.x, cy = g.camera.position.y - y, cz = g.camera.position.z - drop.z;
+    const far = cx * cx + cy * cy + cz * cz;
+    beacon.q[0] = drop.x; beacon.q[1] = y; beacon.q[2] = drop.z; beacon.q[9] = Math.sqrt(far);
+    beacon.update(here && far < 140 * 140);
   }
 
   loop.add({ name: 'economy', update: () => {
@@ -197,7 +195,7 @@ export function addEconomySystem(g) {
     if (d[9] > 0.005 || hg[0] !== COLD[0]) {
       const k = d[9] < 0.005 ? 0 : d[9];
       hg[0] = COLD[0] + (WARM[0] - COLD[0]) * k; hg[1] = COLD[1] + (WARM[1] - COLD[1]) * k; hg[2] = COLD[2] + (WARM[2] - COLD[2]) * k;
-      wraithView.handGlowSize = 0.035 + 0.025 * k;
+      wraithView.handGlowSize = 0.035 + 0.085 * k; wraithView.warm = k;
     }
 
     // The fight's marks, summed into one quiet line when it is over.

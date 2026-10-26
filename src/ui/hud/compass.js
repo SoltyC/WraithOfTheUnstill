@@ -52,6 +52,7 @@ export function createCompass() {
       case 'ring': g.ellipse(0, 0, s, s * 0.55, 0, 0, TAU); g.moveTo(s * 0.45, 0); g.ellipse(0, 0, s * 0.45, s * 0.25, 0, 0, TAU); break;
       case 'drop': g.moveTo(0, -s); g.quadraticCurveTo(s * 0.9, s * 0.2, 0, s * 0.9); g.quadraticCurveTo(-s * 0.9, s * 0.2, 0, -s); break;
       case 'stone': g.moveTo(-s * 0.35, s * 0.8); g.lineTo(-s * 0.45, -s * 0.2); g.lineTo(0, -s); g.lineTo(s * 0.45, -s * 0.1); g.lineTo(s * 0.35, s * 0.8); g.closePath(); break;
+      case 'ember': g.moveTo(0, -s); g.quadraticCurveTo(s * 0.8, -s * 0.1, s * 0.55, s * 0.35); g.quadraticCurveTo(0, s * 1.1, -s * 0.55, s * 0.35); g.quadraticCurveTo(-s * 0.8, -s * 0.1, 0, -s); break;
       case 'spark': g.moveTo(0, -s); g.lineTo(s * 0.18, -s * 0.18); g.lineTo(s, 0); g.lineTo(s * 0.18, s * 0.18); g.lineTo(0, s); g.lineTo(-s * 0.18, s * 0.18); g.lineTo(-s, 0); g.lineTo(-s * 0.18, -s * 0.18); g.closePath(); break;
       case 'claw': g.moveTo(-s * 0.7, s * 0.8); g.quadraticCurveTo(-s * 0.7, -s * 0.2, -s * 0.2, -s); g.moveTo(0, s * 0.8); g.quadraticCurveTo(0, -s * 0.2, s * 0.4, -s); g.moveTo(s * 0.7, s * 0.8); g.quadraticCurveTo(s * 0.8, -s * 0.2, s * 1.0, -s * 0.6); break;
       default: g.arc(0, 0, s * 0.6, 0, TAU);
@@ -95,6 +96,11 @@ export function createCompass() {
       g.globalAlpha = a;
       icon(p.icon, x, mid - 12, 5.5, p.visited ? DIM : COLD, false);
       g.globalAlpha = 1;
+    }
+    // The dropped marks: a small ember, quiet and warm (the glow in the world is the real sign).
+    if (nav.mark.on) {
+      const x = xOf(nav.mark.rel);
+      if (x !== null) { g.globalAlpha = 0.8; icon('ember', x, mid - 12, 5, '#f0b060', true); g.globalAlpha = 1; }
     }
     // Goals: the tracked one gold and filled; others hollow; optional ones dim.
     let edge = null;
@@ -150,6 +156,7 @@ export function createCompass() {
       // Redraw when something visible changed (heading to 0.1°, the goal/place signature).
       let sig = '';
       for (const p of nav.places) if (p.known) sig += p.id + (p.visited ? 'v' : '') + Math.round(p.rel * 400) + ',';
+      if (nav.mark.on) sig += 'm' + Math.round(nav.mark.rel * 400) + ',';
       for (const q of nav.goals) sig += q.id + Math.round(q.rel * 400) + (q.id === nav.tracked ? 't' : '') + ',';
       if (Math.abs(angleDiff(heading, last.heading)) > 0.0017 || sig !== last.sig) { last.heading = heading; last.sig = sig; draw(nav, heading, a); }
       // The caption under the strip: heading, and the tracked goal with its distance.

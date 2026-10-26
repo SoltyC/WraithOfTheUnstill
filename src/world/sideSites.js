@@ -40,21 +40,37 @@ function raisedStone(b, facing, R) {
 /** The Fen Lamp: a stone post and bowl on the reed shore, with timber stakes. Its flame is the shared brazier fire (`fire`). */
 const FEN_FIRE = 2.62;
 function fenLamp(b, facing, R) {
-  b.drum(0, 0, -1.4, 0.4, 0.62, 0.52, 10, MAT.STONE, 1);
-  b.drum(0, 0, 0.4, 2.3, 0.24, 0.18, 8, MAT.STONE, 2);
-  b.drum(0, 0, 2.25, 2.62, 0.2, 0.62, 12, MAT.GLYPH, 3, { carve: 1, solid: false });
-  b.drum(0, 0, 2.55, 2.64, 0.56, 0.52, 12, MAT.EMBER, 4, { solid: false });
-  for (let k = 0; k < 5; k++) {
-    const a = (k / 5) * TAU + 0.4, x = Math.sin(a) * 1.9, z = Math.cos(a) * 1.9;
-    stick(b, [x, -0.7, z], [x + (R() - 0.5) * 0.2, 1.5 + R() * 0.6, z + (R() - 0.5) * 0.2], 0.06, 0.045, 6, MAT.WOOD, 20 + k);
+  // A stepped Shaper plinth, the post with a carved band, the bowl, and a stone cage of four ribs and a cap over the flame: a lamp, not a stake.
+  b.drum(0, 0, -1.4, 0.14, 1.45, 1.3, 12, MAT.STONE, 1);
+  b.drum(0, 0, 0.1, 0.5, 0.95, 0.72, 12, MAT.STONE, 5);
+  b.drum(0, 0, 0.5, 2.3, 0.3, 0.19, 8, MAT.STONE, 2);
+  b.drum(0, 0, 1.15, 1.34, 0.34, 0.3, 10, MAT.GLYPH, 6, { carve: 1, solid: false });
+  b.drum(0, 0, 2.25, 2.62, 0.2, 0.66, 12, MAT.GLYPH, 3, { carve: 1, solid: false });
+  b.drum(0, 0, 2.55, 2.64, 0.6, 0.56, 12, MAT.EMBER, 4, { solid: false });
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * TAU + 0.4;
+    stick(b, [Math.sin(a) * 0.62, 2.6, Math.cos(a) * 0.62], [Math.sin(a) * 0.1, 3.55, Math.cos(a) * 0.1], 0.085, 0.055, 5, MAT.STONE, 30 + k);
+  }
+  b.drum(0, 0, 3.5, 3.72, 0.3, 0.08, 10, MAT.STONE, 34, { solid: false });
+  // Three timber props leaning from the reed bed to the post, braced like a tripod (the post stands in soft ground).
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * TAU + 0.9, x = Math.sin(a) * 1.9, z = Math.cos(a) * 1.9;
+    stick(b, [x, -0.5, z], [Math.sin(a) * 0.3, 1.25, Math.cos(a) * 0.3], 0.08, 0.06, 6, MAT.WOOD, 20 + k);
   }
 }
 
 /** A glide ring: stone hoop (radius `RING_R`) in the vertical plane across the course, ember studs that glow once it is flown through. */
 export const RING_R = 7;
-function glideRing(b, facing, R) {
+function glideRing(b, facing, R, lift = 0) {
   const c = Math.cos(facing), s = Math.sin(facing), N = 28;
   const P = (u, y) => [u * c, y, -u * s];                       // u runs across the course (site-local right)
+  // The support: a stone mast from the ground under the ring (the site hangs `lift` m up), forking into two arms that cradle the hoop's underside.
+  if (lift > 1) {
+    const mw = 0.5 + lift * 0.02, top = -RING_R - 2.6;
+    stick(b, [0, -lift - 3, 0], [0, top, 0], mw, 0.42, 8, MAT.STONE, 90);
+    b.drum(0, 0, -lift - 3, -lift + 0.5, mw * 3.2, mw * 2.2, 10, MAT.STONE, 91, { solid: false });
+    for (const sg of [-1, 1]) { const a = Math.PI + sg * 0.66, [x, y, z] = P(Math.sin(a) * RING_R, Math.cos(a) * RING_R); stick(b, [0, top, 0], [x, y + 0.1, z], 0.42, 0.28, 6, MAT.STONE, 92 + (sg > 0 ? 1 : 0)); }
+  }
   for (let k = 0; k < N; k++) {
     const a0 = (k / N) * TAU, a1 = ((k + 1) / N) * TAU;
     stick(b, P(Math.sin(a0) * RING_R, Math.cos(a0) * RING_R), P(Math.sin(a1) * RING_R, Math.cos(a1) * RING_R), 0.2, 0.2, 6, MAT.STONE, 1 + k);
@@ -83,7 +99,7 @@ export function sideSites(table) {
     if (!pl) continue;
     const a = nx ? nx.pos : pl.pos, b0 = pv ? pv.pos : pl.pos;
     const face = nx || pv ? Math.atan2(a[0] - b0[0], a[1] - b0[1]) : 0;
-    sites.push({ id: 'side-glide-ring-' + k, at: pl.pos, facing: face, build: glideRing, footprint: 1, seatAt: 'center', lift: pl.y - pl.h });
+    sites.push({ id: 'side-glide-ring-' + k, at: pl.pos, facing: face, build: (b, f, R) => glideRing(b, f, R, pl.y - pl.h), footprint: 1, seatAt: 'center', lift: pl.y - pl.h });
   }
   return sites;
 }

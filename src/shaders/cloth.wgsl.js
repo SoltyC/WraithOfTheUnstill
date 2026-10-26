@@ -65,7 +65,7 @@ uniform clothParams: vec4f;          // x = cowl light (health), y = time, z = s
 uniform clothHead: vec4f;            // xyz = the cowl light's position, w = breath 0..1
 uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
-uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1)
+uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1), y = Ember tea's warm hands (0..1), z = Rime tonic's frosted wool (0..1)
 uniform clothTint: vec4f;            // rgb = robe dye (multiplies the outer garments), w = undyed trims kept (1)
 uniform clothRobe: vec4f;            // x = embroidered hem band, y = sash re-dyed (game/robes.js)
 uniform clothBand: vec4f;            // rgb = the band's thread
@@ -187,7 +187,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // Wounds: frost creeps up the robe from the hem (and in from cuffs and the mantle's edge) as
   // health falls (BRIEF §8.1, §12) — a pale crystalline crust, with a ragged, glinting front.
-  let creep = uniforms.clothFrost.x;
+  let rime = uniforms.clothFrost.z;
+  let creep = max(uniforms.clothFrost.x, rime * 0.78);
   var frostAmt = 0.0;
   if (creep > 0.001 && g <= 3) {
     // Robe: up to about the thigh at worst; the mantle only at its edge; the cuffs.
@@ -196,6 +197,14 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     frostAmt = smoothstep(front, front + 0.1, uv.y);
     let crystal = vn2(m * 90.0);
     albedo = mix(albedo, vec3f(0.7, 0.8, 0.92) * (0.8 + 0.4 * crystal), frostAmt * 0.9);
+  }
+  // Flow: the hem, the mantle's edge and the cuffs turn gold in the weave (a dye shift reads on the pale noon robe, where an added glow does not); higher tiers climb further.
+  let flowK = uniforms.clothFlow.w;
+  var flowE = 0.0;
+  if (flowK > 0.002 && g <= 3) {
+    flowE = smoothstep(select(0.55, 0.78, g >= 2) - 0.24 * flowK, 1.0, uv.y);
+    flowE *= flowE;
+    albedo = mix(albedo, vec3f(0.8, 0.46, 0.07), flowE * (0.25 + 0.5 * flowK));
   }
   // Rain: wet wool is darker all over and takes a sheen (g 5-8 are linen wraps, 9 the cord: less).
   albedo *= mix(1.0, select(0.78, 0.62, g <= 4), uniforms.wetParams.x);
@@ -245,6 +254,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let gl = step(0.93, hash12(fc)) * pow(max(dot(N, H), 0.0), 60.0);
     col += (key * gl * 2.0 * vis + sky * 0.25 * pow(1.0 - nv, 2.0)) * frostAmt;
   }
+  // Rime tonic: the wool is hoared all over, a cold pale bloom in the weave and a glint of crystals (the wound's creep stays at the hem).
+  if (rime > 0.001 && g <= 3) {
+    let fc2 = floor(m * 120.0);
+    let gl2 = step(0.9, hash12(fc2 + 17.0)) * pow(max(dot(N, H), 0.0), 40.0);
+    col += (sky * vec3f(0.5, 0.72, 1.0) * (0.5 * pow(1.0 - nv, 2.0) + 0.1) * ao + key * gl2 * 2.5 * vis) * rime;
+  }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   let exposure = uniforms.fogParams.z * atmoExposure();
   // The cowl light: lights the inside of the hood (and faintly the rim), breathing slowly; the
@@ -258,14 +273,18 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   if (g >= 2 && g <= 6) {
     let k = coldLight(wp, uniforms.clothHandL, 0.035) + coldLight(wp, uniforms.clothHandR, 0.035);
-    glow += vec3f(0.6, 0.85, 1.0) * k * uniforms.clothParams.w * select(0.15, 0.6, g >= 5);
+    glow += mix(vec3f(0.6, 0.85, 1.0), vec3f(1.0, 0.6, 0.24), uniforms.clothFrost.y) * k * uniforms.clothParams.w * select(0.15, 0.6, g >= 5) * (1.0 + 1.6 * uniforms.clothFrost.y);
+  }
+  // Ember tea: the hands are warm under their wraps (the linen glows like banked coals).
+  if (uniforms.clothFrost.y > 0.002 && !inside) {
+    // Banked coals under the wraps, and the whole figure rimmed in their warmth (it reads from behind, where the hands hide).
+    glow += vec3f(1.0, 0.5, 0.16) * uniforms.clothFrost.y * (select(0.0, 0.5, g >= 5 && g <= 8) + 0.33 * pow(1.0 - nv, 1.8));
   }
   // Flow: the hem, the mantle's edge and the cuffs catch the element's light, a slow shimmer along the threads.
   if (uniforms.clothFlow.w > 0.002 && g <= 3) {
-    let edge = smoothstep(select(0.55, 0.78, g >= 2), 1.0, uv.y);
     // Bands that run back along the hem, faster with Flow: it reads as motion, not as a stain.
     let shimmer = 0.6 + 0.4 * sin(uniforms.clothParams.y * (5.0 + 7.0 * uniforms.clothFlow.w) - uv.y * 16.0 + m.x * 9.0);
-    glow += uniforms.clothFlow.rgb * edge * edge * shimmer * select(1.0, 0.7, g == 1);
+    glow += uniforms.clothFlow.rgb * flowE * shimmer * select(1.0, 0.7, g == 1);
   }
   // A faint cool edge at a fixed on-screen level (display-referred, like the cowl light): the
   // figure stays apart from the dark at night and indoors without lifting the scene.

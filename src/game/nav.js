@@ -65,6 +65,8 @@ export function createNav({ pois, names = {}, graph, dynamic = {}, npcAt, onDisc
 
   const self = {
     places, goals, byId,
+    /** The Wraith's dropped marks (systems/economy.js sets `on`, x, z): a quiet mark on the compass, never a goal. */
+    mark: { on: false, x: 0.5 - 0.5, z: 0.5 - 0.5, dist: 0.5, rel: 0.5 },
     /** Fields set each frame by the owner: player position and the camera's heading (rad). */
     px: 0.5, pz: 0.5, py: 0.5, heading: 0.5 - 0.5,
     get tracked() { return tracked; },
@@ -110,6 +112,8 @@ export function createNav({ pois, names = {}, graph, dynamic = {}, npcAt, onDisc
           else if (p.dist < p.sight) { p.known = true; graph.flags.add('known:' + p.id); onDiscover?.(p); }
         }
       }
+      const m = self.mark;
+      if (m.on) { const dx = m.x - px, dz = m.z - pz; m.dist = Math.sqrt(dx * dx + dz * dz); m.rel = angleDiff(bearing(px, pz, m.x, m.z), h); }
       sinceGoals += dt;
       if (sinceGoals > 0.25) { sinceGoals = 0; this.resolveGoals(); }
       for (let i = 0; i < goals.length; i++) {
