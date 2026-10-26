@@ -11,3 +11,5 @@ playwright-report/
 screenshots/bot/
 screenshots/trailer/
 screenshots/weapons/frames/
+screenshots/isolation/frames/
+screenshots/isolation/*-1080p.mp4

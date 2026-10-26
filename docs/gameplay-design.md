@@ -108,6 +108,14 @@ Each biome has three archetypes in fixed roles, plus an elite. The **material de
   - no hostile spawns for a while after a release or a hard fight (Left 4 Dead's relax phase [S]);
   - music and ambience carry the pacing; no spawning director.
 
+### Encounter audit — Done (2026-10-27, branch `claude/encounters`)
+
+- **Audited** every armed encounter in frost and meadow against §4.2 with bot runs (3 per cell, two kits, day and night): `docs/encounter-audit.md`, data in `docs/encounter-runs/`. Telemetry: `src/systems/encounterLog.js` (`?bot=1`), harness `tools/bot/encounters.mjs`.
+- **Changed:** the three one-role frost fights got a second role (a seer behind the cloister hounds and at the spring, a brute on the tarn); the Barley flock got a chanter; `camp-raid` is a storm surge (a blizzard while it lasts) so two guarded sites no longer follow each other; the meadow has two armed encounters (`stair-wardens` on the main path, `ring-ambush` on the Ring of Nine side quest) where it had none; every encounter carries an `arena` and a `kind`, and `ROUTES` keeps kinds from repeating (`tests/encounters.test.js`).
+- **Calm after peaks** is a rule now (`src/systems/calm.js`): no new rising within 120 m for 60 s after a clear, a Warden release or a re-form. Story-forced waves are exempt.
+- **Not built:** the Old Hedge (the meadow elite) does not exist; the meadow caster is a support caster (no shards).
+- **Not assessed:** feel to a human, telegraphs at speed or in the blizzard, human focus starvation, the flock with its chanter on the page. See the audit's list.
+
 ### 4.3 Death and fairness
 
 - **Fixed difficulty.** No selector and no scaling (user).

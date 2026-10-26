@@ -83,7 +83,7 @@ export function addFlameSystem(g) {
       else if (f.strength <= 0) out('It guttered and died.');
       // Its light draws the Shaped (once a carry, after a while, at night).
       const tod = params.v.timeOfDay, night = tod < 6 || tod > 18.5;
-      if (f.carrying && night && !f.drawn && f.carryT > T.drawAfter) {
+      if (f.carrying && night && !f.drawn && f.carryT > T.drawAfter && !g.calm?.holds(p.x, p.z)) {
         f.drawn = true;
         const a = Math.atan2(controller.vel.x, controller.vel.z) + Math.PI;
         const prey = g.ws.biome === 'meadow' ? 'sedgerunner' : 'hound';

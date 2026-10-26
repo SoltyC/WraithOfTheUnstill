@@ -5,6 +5,8 @@
 const FLAG = 'meadow:side-flock-cleared';
 /** Offsets from the field's centre (m): a flock of three in the north, two in the south (spawned together they flush together). */
 const FLOCKS = [[[-14, 14], [-9, 19], [-18, 20]], [[16, -14], [20, -9]]];
+/** Not in a flock: a Chanter stands behind the south flock (a caster, so the field is not one role alone; its song mends the runners). */
+export const SUPPORT = [['chanter', 8, -30]];
 
 export function addFlock(ctx) {
   const { g, flags } = ctx, { chapter, hud, music, shaped, shapedMod, capture } = g;
@@ -19,12 +21,13 @@ export function addFlock(ctx) {
       const step = ctx.stepOf('meadow-side-flock');
       if (!spawned) {
         // They lie down when the Wraith is told and comes within sight of the field (so none are spawned for nothing).
-        if (!step || step === 'ask' || ctx.away('side-barley') > 90) return;
+        if (!step || step === 'ask' || ctx.away('side-barley') > 90 || g.calm?.holds(place.pos[0], place.pos[1])) return;
         spawned = true; g.encounterLog.begin('side-flock');
         for (const flock of FLOCKS) for (const [dx, dz] of flock) {
           const k = shaped.spawn('sedgerunner', place.pos[0] + dx, place.pos[1] + dz);
           if (k >= 0) slots.push(k);
         }
+        for (const [name, dx, dz] of SUPPORT) { const k = shaped.spawn(name, place.pos[0] + dx, place.pos[1] + dz); if (k >= 0) slots.push(k); }
         if (!capture) hud.notice('The barley', 'Something lies in it', 'Walk through. They break when you come close.', 5);
         return;
       }

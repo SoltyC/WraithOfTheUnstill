@@ -29,7 +29,7 @@ export const ENCOUNTERS = {
     waves: [[['hound', -0.6, 11], ['hound', 0, 13], ['hound', 0.6, 11]], [['brute', 0.3, 13], ['hound', -1, 11], ['hound', 1.4, 11]], [['denmother', 0, 9]]] },
   // The meadow (none before the audit, docs/encounter-audit.md): the hedge guards the stair, and the Ring of Nine is held.
   'stair-wardens': { quest: 'meadow-the-burning-night', step: 'manor', at: 'stair-foot', name: 'The foot of the stair', near: 60, arena: 'slope', kind: 'guarded site',
-    waves: [[['hedgewarden', -0.4, 20], ['sedgerunner', 0.7, 24], ['sedgerunner', 1.2, 22]], [['chanter', 0, 26], ['sedgerunner', -1, 18]]] },
+    waves: [[['hedgewarden', -0.5, 11], ['sedgerunner', 0.8, 13]], [['chanter', 0, 14], ['sedgerunner', -1, 12]]] },
   'ring-ambush': { quest: 'meadow-side-stone', step: 'go', at: 'side-stone-ring', name: 'The Ring of Nine', near: 50, arena: 'ruins', kind: 'ambush',
     waves: [[['sedgerunner', -0.6, 16], ['sedgerunner', 0.6, 18], ['chanter', 0, 26]], [['hedgewarden', 0, 18]]] },
 };
@@ -64,7 +64,7 @@ export function addEncounterSystem(g) {
 
   function spawnWave(e, p) {
     const pl = table[e.at], px = pl.pos[0], pz = pl.pos[1];
-    const base = e.fromFacing ? (pl.facing ?? 0) : Math.atan2(p.x - px, p.z - pz);
+    const base = e.heading !== undefined ? e.heading : e.fromFacing ? (pl.facing ?? 0) : Math.atan2(p.x - px, p.z - pz);
     for (const [name, a, r] of e.waves[e.wave]) {
       const k = shaped.spawn(name, px + Math.sin(base + a) * r, pz + Math.cos(base + a) * r);
       if (k >= 0) e.slots.push(k);

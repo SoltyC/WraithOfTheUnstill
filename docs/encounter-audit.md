@@ -66,3 +66,101 @@ Frost sides (open once Maren is met): `trail-in-snow` → `spring-hounds` (guard
 Meadow main (`meadow-the-burning-night`: Wenna leads to Hearn → fires → Ebb → Hild → climb the stair → the manor → the Bellwether): **no armed encounter before the Warden**. The fire night is a rescue against fire (not hostile Shaped), and the climb from the stair foot to the manor (about 200 m of walking and 140 m of climb) is empty. Meadow sides: `meadow-side-flock` (hunt) is the only fight.
 
 Roles across all armed frost encounters: swarmer in all six, bruiser in 2, caster in 1 (a single wave of one seer), elite in 1. Three of six are **one role alone** (`cloister`, `spring-hounds`, `escort-ambush`), against §4.2.
+
+## 2. Measurement (Phase B)
+
+Tools: telemetry `src/systems/encounterLog.js` (`g.encounterLog`, only with `?bot=1`, allocation-free); harness `tools/bot/encounters.mjs` (teleports to a start 36 m from the place, forces the encounter with `g.startEncounter`, in-page auto-fighter, one JSON line per run into `docs/encounter-runs/<label>.jsonl`); arena stats `tools/world/arena.mjs`. Windows Chrome on the RTX 3060, preview on port 4177, full health, Flow reset, 13:00 unless stated, a run that is not cleared in 100 s of game time counts as failed.
+
+Two kits, both bot-played (an ideal tireless player: read as relative):
+
+- **staff**: the start weapon only, lights with a heavy every 3.5 s and bend-steps away from lunges (the `fight.mjs` logic). It never uses Frost.
+- **best**: the glaive plus Frost's Sweep (Q tap) at foes 4–13 m off, and Crystallize (F) on brutes and the den mother. (The plan's "Gale weapon" does not exist as a class: the glaive is the weapons playtest's best answer to packs.)
+
+**Calibration** (`docs/weapons-playtest.md`: 3 hounds, staff, mixed = 6.2 s): `tools/bot/fight.mjs staff mixed hound:3` on this build gave 6.4 s and 5.8 s. The harness's own numbers include the walk to the foes and the waves' 1.8 s gaps, so they are longer than a bare kill time.
+
+**Starvation** is the share of the run with focus below 10 (the Gust; below 8, the bend-step, is in the raw lines as `starve8`). It is **0 % almost everywhere** (the bot's casts are from full focus and rare), so the under-15 % target is met but **not a test of a human's focus use**: NOT ASSESSED for humans. Weapon blows cost no focus; only Sweep (14), Crystallize (30), Gust (10) and the bend-step (8) do.
+
+## 3. The numbers, before and after (3 runs per cell, day; mean and range)
+
+Before = the six frost encounters at `43f2e8a` (`docs/encounter-runs/baseline-day.jsonl`; the best kit's baseline is its second batch, with Crystallize). After = this branch (`after-day.jsonl`). `cl` = cleared. Time and health taken per run; "t2+3" = seconds at Flow tier 2 or 3.
+
+| Encounter | Kit | Before | After |
+|---|---|---|---|
+| `cloister` (+ seer wave) | staff | 3/3 cl, 12 s, taken 0 | **0/3 cl (100 s), taken 0**: the staff bot cannot close on the seer |
+| | best | 3/3 cl, 11 s, taken 0 | 3/3 cl, 33 s (33–34), taken 4 (0–12) |
+| `camp-raid` (+ blizzard) | staff | 3/3, 22 s, taken 36 (12–54), t2+3 3.8 s | 3/3, 23 s, taken 24 (12–30), t2+3 8.8 s |
+| | best | 3/3, 19 s (16–20), taken 18 (0–54) | 3/3, 19 s (18–19), taken 24 (0–42) |
+| `varo-hounds` (unchanged) | staff | 3/3, 28 s (22–35), taken 24 | 3/3, 26 s (22–31), taken 28 |
+| | best | 3/3, 16 s, taken 0 | 3/3, 18 s, taken 4 |
+| `spring-hounds` (+ seer) | staff | 3/3, 11 s, taken 4 | 3/3, **41 s (33–53), taken 57 (40–92)** |
+| | best | 3/3, 8 s, taken 4 | 3/3, 19 s (18–20), taken 10 |
+| `escort-ambush` (+ brute) | staff | 3/3, 9 s, taken 4 | 3/3, 22 s (19–24), taken 40 (0–60), t2+3 4.7 s |
+| | best | 3/3, 7 s, taken 0 | 3/3, 19 s (16–21), taken 30 (0–60), Flow 3 reached |
+| `den` (unchanged) | staff | 0/3 cl, 3 deaths | 0/3 cl, 3 deaths (identical) |
+| | best | 0/3 cl, 3 deaths | 1/3 cl (69–100 s), 2 deaths: run to run noise, the code is unchanged |
+| `stair-wardens` (new) | staff | n/a | 0/3 cl (the chanter kites the staff bot), taken 60 (48–66) |
+| | best | n/a | 3/3, 17 s (16–20), taken 19 (0–28) |
+| `ring-ambush` (new) | staff | n/a | 0/3 cl (the chanter kites), taken 3 |
+| | best | n/a | 3/3, 22 s (21–24), taken 41 (28–56) |
+
+Night (13:00 → 22:00, best kit, 1 run each, `after-night.jsonl`): every encounter cleared; times within 1–2 s of the day's (den 63 s), health taken 0 in all but `spring-hounds` (10). A taken-0 night across the board is **unexplained** (the bot's dodge may read the dark telegraph as well as the day's; or the hounds' pack timing differs): NOT ASSESSED which.
+
+Also measured: max active Shaped was 2–3 in every run (the cap of 8 is never approached); deaths 0 outside the den and one death in an early `stair-wardens` build (since lightened).
+
+Targets:
+
+| Measure | Target | Measured |
+|---|---|---|
+| Focus starvation | under 15 % | 0–2 % (the bot barely uses focus: not a human measure) |
+| Flow | tier 3 reachable, not constant | tier 3 reached in `camp-raid`, `escort-ambush` and the `den`; tier 0 for most of every run; never constant. Cold-start fights rarely lift Flow (known, `gameplay-design.md` §3 "Open") |
+| Deaths | recorded | 0 everywhere except the `den` (staff bot: 3 deaths in 3 runs, best kit 2 in 3) |
+
+## 4. Verdict per encounter (principles: §4.2, `encounter.md`, `smells.md`)
+
+| Encounter | Verdict | Why and the smallest fix |
+|---|---|---|
+| `cloister` | **changed** (+ a seer wave) | One role alone against §4.2 (3 of 6 frost fights were). Second wave: a seer 32 m out, behind the steps. It teaches "close the distance or break line of sight". Cost: the first fight of the game went from 11 s to 33 s (best kit) and the staff-only bot cannot close on a seer at all. **Risk: a first fight that long may be a bad tutorial. A human must judge it (NOT ASSESSED); if it reads badly, cut the wave, not the rule: move the seer into the `camp-raid` instead.** |
+| `camp-raid` | **changed** (kind: storm surge) | Was a guarded site next to another (`varo-hounds`). It now turns the weather to a blizzard while it lasts (`worldState.weatherOverride`, released at the clear or a load; not if the overlay or a photo spot already holds one). Honest-telegraph risk (§4.2: a storm surge makes telegraphs harder to read): not looked at in motion; the one shot (`screenshots/encounters/camp-raid-blizzard.png`) is taken before the weather has built. Roles: swarmer + bruiser. Arena: slope .45, water .15. |
+| `varo-hounds` | **keep** | Swarmer + caster, slope arena (.72 surfable, relief 24 m), the visible reason is Varo. The best-played one: the best kit takes 0–4 damage, the staff 24–28. |
+| `spring-hounds` | **changed** (+ a seer wave) | A seer across the frozen lake (22 m) shoots at the Wraith and at Tobin's ice. The staff-only cost went from 4 to 57 health and 11 to 41 s; with Sweep 10 health. Keep, but this is the worst case for a staff-only player: if a human finds it a slog, drop the seer to 28 m or cut it. Arena: ice. |
+| `escort-ambush` | **changed** (+ a brute) | A slow brute walking across the tarn is a lesson in the freeze (Crystallize, then a heavy shatters it). Cost 4 → 40 health with the staff; it raised Flow to 3 in some runs (near-miss dodges). Arena: ice. Kind: ambush (after the guarded `spring-hounds`). |
+| `den` | **keep, but too hard for the bot; NOT ASSESSED for a human** | Three roles, an elite, a cliff bowl (cliff .66: cover and a place to be pinned). Neither bot kit clears it reliably (0/3 staff, 1/3 best): the den mother's armour (0.3 unless frozen) and the brute wave with two hounds. Real players have Flow, the consumables and the shrine; the bot has none. The fix to try if humans fail: nothing in this audit (the polish agent owns the poise and stagger path). |
+| `stair-wardens` (new, meadow main path) | **new** | The meadow's critical path had no armed encounter before the Bellwether. The hedge guards the foot of the stair (kind: guarded site, the manor is in view above): a hedgewarden and a hidden sedgerunner, then a chanter and a sedgerunner. Armed by `meadow-the-burning-night` step `manor`. It rises on the 25 m shelf at the road's end (a first version at 20–24 m rose beyond the stair's retaining wall: unreachable). The hedgewarden's territory means the Wraith can walk past it (the plan's "surf past, and that's fine"). The first version also had two runners: 79 health lost with the staff, so one was cut (60 now; 19 with the best kit). |
+| `ring-ambush` (new, meadow side) | **new** | The Ring of Nine: two runners and a chanter, then a hedgewarden. Armed by `meadow-side-stone` step `go`. Ruins (the standing stones) are the cover. The best kit takes 41 health (a runner pack in the open): the biggest hit in the set, as in the weapons playtest. |
+| `side-flock` | **changed** (a chanter 30 m behind the south flock) | Five runners were one role alone; the chanter's song mends the runners, its pollen holds focus. Not measured on the page (the quest needs Dunn's talk): NOT ASSESSED. |
+| `flame-prey` | **keep, exception** | Two hounds drawn to the carried flame at night: a lure, not an encounter; listed in `SOLO_OK` in the test. Now also held back by the calm window. |
+| `echo-guard` | **keep** | Seer + two hounds already: 2 roles. Player-started, so not on a route. |
+| Wardens | out of scope | Frenzy summons already mix roles. |
+
+## 5. The biomes as a whole
+
+**Role mix.** Frost: every encounter now has two or more roles across its waves (hound/seer, hound/brute, hound/seer, hound/seer, hound/brute, three roles in the den). The seer is in four fights (was one), the brute in three (was two), the elite in one. Meadow: sedgerunner, hedgewarden and chanter now all appear outside the Bellwether; the Old Hedge (the meadow elite) **does not exist** and was not built (plan rule).
+
+**Kind rotation** (`ROUTES` in `src/systems/encounters.js`, tested): frost main ambush → storm surge → guarded site → Warden frenzy; frost trail guarded site → ambush → hunt; meadow main guarded site → Warden frenzy; meadow side hunt → ambush. No two in a row. Before: `camp-raid` and `varo-hounds` were both guarded sites.
+
+**Arena features.** Every encounter had one already (measured, section 1.3): ruins, slope, ice, cliffs. None needed its ring moved; the only move was the stair's rings pulled in (to stand on the shelf). Whether the fight *reshapes* the ground (craters, freezes, grass flattened) is true of the verbs (the terrain state keeps every mark) but **not measured per encounter**: NOT ASSESSED.
+
+**Calm after peaks.** There was none. Now `src/systems/calm.js`: after an encounter clears, a Warden is released (frost: `warden:released`; meadow: the Bellwether release), or the Wraith re-forms from a death, no new encounter rises within 120 m for 60 s, and neither does the Barley flock or the flame's night prey. A forced encounter (`g.startEncounter`: the bot, the dev) and the waves inside an encounter are exempt. Numbers in `calmTuning`. Music and ambience already settle after a sting; that part is NOT ASSESSED. The existing routes never needed it (consecutive places are over 120 m apart); it matters for deaths and the Warden's release.
+
+**Swarmers and casters cutting across surf lines.** Hounds and runners lunge across a line (telegraphed by the crouch); seers and chanters keep 11–12 m and shoot or heal. Whether a *mobile* player is threatened *at surf speed* is NOT ASSESSED: the bot fought on foot.
+
+**Honest telegraphs.** From the code: the hound crouch and back glow, the brute's rear and glow, the seer's gathering core, the den mother's visible rime. **Seen in a shot:** one close-up of a hound next to the Wraith in the blizzard. **At speed, at night, in the blizzard: NOT ASSESSED.**
+
+## 6. Smell walk (`smells.md`)
+
+- **Dominant strategy:** present in one place. A caster is answered only by Sweep or the Gust: the staff-only bot cannot clear the seer or chanter waves (cloister, stair, ring), while the best kit does so in 17–33 s. That is the design ("close the distance or break line of sight") but a **player who only swings is stuck**: the seer keeps 11 m and retreats. Watch in the user's play. Surfing past every fight is legal by the rules.
+- **Bare core:** not assessed here (see the isolation films).
+- **Lying telegraph:** none found in code; not assessed in motion.
+- **Complexity:** the new rule count is small (a field each for `arena`, `kind`, `weather`, `heading`).
+- **Treadmill:** none.
+
+## 7. NOT ASSESSED
+
+- How any fight **feels to a human**, including whether the longer cloister, the seered spring and the brute on the tarn are fun or a slog.
+- Whether **telegraphs read at speed**, in the blizzard, or at night (one daytime close shot only).
+- Focus starvation for a human (the bot's is 0–2 %).
+- The Barley flock with its chanter on the page; the den for a human; the flame prey with the calm window.
+- Whether the **calm rule** is felt (60 s, 120 m): only the data and unit tests; whether the music settles.
+- Why night runs took no damage.
+- The bot was a melee-only chaser for the "staff" kit: its 0/3 clears against casters are the bot's limit as much as the design's.
+- Dunes, mire, ember, coast (no encounters in code).

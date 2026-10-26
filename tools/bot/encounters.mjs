@@ -26,7 +26,10 @@ const S = createWorldSampler();
 // Where each encounter's place is, and the way the Wraith comes to it (the bearing it arrives from, rad, world heading).
 const info = (await bot('eval', { js: `const o = {}; for (const id in g.encounters) { const e = g.encounters[id], pl = g.chapter.table[e.at]; o[id] = { at: e.at, x: pl.pos[0], z: pl.pos[1], near: e.near }; } return o;` })).result;
 const FROM = { cloister: 3.45 + 3.14, 'camp-raid': 0.6, 'varo-hounds': 5.6, 'spring-hounds': 1.2, 'escort-ambush': 1.3, den: 3.14, 'stair-wardens': 5.2, 'ring-ambush': 5.0 };
+// Explicit starts where the 36 m ring is walled in (Hearn's streets at the foot of the stair): the end of the main road.
+const START = { 'stair-wardens': [136, 883] };
 function startFor(id) {
+  if (START[id]) return START[id];
   const { x, z } = info[id], want0 = FROM[id] ?? 0; let best = null, bd = 1e9;
   for (let k = 0; k < 24; k++) {
     const a = want0 + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 12), px = x + Math.sin(a) * 36, pz = z + Math.cos(a) * 36;
@@ -42,7 +45,7 @@ const fighterJs = (cfg) => `
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), frame = () => new Promise((r) => requestAnimationFrame(r));
   const flags = g.chapter.graph.flags, e = g.encounters[CFG.id], inv = g.inventory;
   g.game.killShaped(); flags.delete('cleared:' + CFG.id); flags.delete('fighting:' + CFG.id);
-  e.wave = -1; e.slots.length = 0; e.force = false; e.gap = 0;
+  g.endEncounter(CFG.id); g.calm.reset();
   g.encounterLog.reset();
   g.clock.pinHour = CFG.hour;
   g.game.teleport(CFG.x, CFG.z);
@@ -104,9 +107,9 @@ const fighterJs = (cfg) => `
   const cleared = flags.has('cleared:' + CFG.id);
   if (!cleared) g.encounterLog.end(CFG.id);
   const res = g.encounterLog.results.filter((r) => r.id === CFG.id).pop() || null;
-  const left = g.shaped.alive;
-  g.game.killShaped(); e.wave = -1; e.slots.length = 0; e.force = false; flags.delete('fighting:' + CFG.id);
-  return { cleared, res, left, sweeps, crystals, wall: +(g.clock.simTime - t0).toFixed(1), flowMax: g.flow.tier, hp: +g.combat.health.toFixed(0), deathsSeen };
+  const left = g.shaped.alive, surv = []; { const p = g.controller.pos; for (let i = 0; i < 8; i++) { const q = shapedSlots[i]; if (q.state === 0) continue; const b = q.body; surv.push([q.arch, q.state, Math.round(b.sx[1]), Math.round(b.sz[1]), Math.round(Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z)), Math.round(q.hp)]); } }
+  g.game.killShaped(); g.endEncounter(CFG.id); g.calm.reset();
+  return { cleared, res, left, surv: cleared ? undefined : surv, at: [Math.round(g.controller.pos.x), Math.round(g.controller.pos.z)], sweeps, crystals, wall: +(g.clock.simTime - t0).toFixed(1), flowMax: g.flow.tier, hp: +g.combat.health.toFixed(0), deathsSeen };
 `;
 
 const ids = want === 'all' ? Object.keys(info) : want.split(',');
