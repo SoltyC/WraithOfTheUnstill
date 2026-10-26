@@ -213,6 +213,13 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     freeze() {
       for (const m of [mat, furMat, fxMat]) { m.freeze(); fastFrozenIsReady(m); }
     },
+    /** A glow sprite placed in the world (slot gi of FX_WORLD; fields gx..gon, additive, 0 = off), written by `worldGlow()`. */
+    gi: 0, gx: 0.5, gy: 0.5, gz: 0.5, gr: 0.5, gg: 0.5, gb: 0.5, gsize: 0.5, gon: 0.5,
+    worldGlow() {
+      const o = (3 + 2 * FX_TRAIL + this.gi) * 8;
+      fxData[o] = this.gx; fxData[o + 1] = this.gy; fxData[o + 2] = this.gz; fxData[o + 3] = this.gon;
+      fxData[o + 4] = this.gr; fxData[o + 5] = this.gg; fxData[o + 6] = this.gb; fxData[o + 7] = this.gsize;
+    },
     /** Emit one spray particle: position (ex, ey, ez), velocity (evx, evy, evz), size (fields). */
     ex: 0.5, ey: 0.5, ez: 0.5, evx: 0.5, evy: 0.5, evz: 0.5, esize: 0.5,
     emit() {
