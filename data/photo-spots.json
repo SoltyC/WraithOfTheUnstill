@@ -4743,22 +4743,22 @@
       "time": 15.5,
       "weather": "clear",
       "player": [
-        1114.5,
-        2753.4
+        1112.3,
+        2756.2
       ],
       "restoration": "restored",
       "camera": {
         "mode": "free",
         "pos": [
-          1114.5,
-          733.8,
-          2753.4
+          1112.3,
+          735.6,
+          2756.2
         ],
-        "yaw": 0.575,
-        "pitch": 0.2,
-        "fov": 0.95
+        "yaw": 0.66,
+        "pitch": -0.08,
+        "fov": 0.9
       },
-      "facing": 0.575,
+      "facing": 0.66,
       "weapon": {
         "id": "staff",
         "attack": "carry",
@@ -4804,10 +4804,15 @@
       ],
       "restoration": "restored",
       "camera": {
-        "mode": "follow",
-        "yaw": 2.641592653589793,
-        "pitch": 0.02,
-        "dist": 3.6
+        "mode": "free",
+        "pos": [
+          1063.46,
+          728.55,
+          2694.24
+        ],
+        "yaw": -2.46,
+        "pitch": -0.389,
+        "fov": 0.8
       },
       "facing": 0.0,
       "weapon": {
@@ -4829,10 +4834,15 @@
       ],
       "restoration": "restored",
       "camera": {
-        "mode": "follow",
-        "yaw": 2.641592653589793,
-        "pitch": -0.08,
-        "dist": 4.6
+        "mode": "free",
+        "pos": [
+          1067.56,
+          729.55,
+          2699.24
+        ],
+        "yaw": -2.46,
+        "pitch": -0.544,
+        "fov": 0.8
       },
       "facing": 0.0,
       "weapon": {
@@ -4854,10 +4864,15 @@
       ],
       "restoration": "restored",
       "camera": {
-        "mode": "follow",
-        "yaw": 2.641592653589793,
-        "pitch": -0.08,
-        "dist": 4.6
+        "mode": "free",
+        "pos": [
+          1072.6,
+          730.78,
+          2705.4
+        ],
+        "yaw": -2.46,
+        "pitch": -0.611,
+        "fov": 0.8
       },
       "facing": 0.0,
       "weapon": {

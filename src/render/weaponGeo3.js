@@ -66,7 +66,7 @@ export function buildMaceFind(B) {
   B.use(WMAT.BRONZE, 0.6).column(0, 0, 2.95, 3.1, 0.05, 0.035, 8);
   B.use(WMAT.FELT, 0.5).tube([0, 3.0, 0, 0.0, 3.12, 0], [0.03, 0.025], 6, true);
   // The mace hangs by its butt inside the bell, bell-head down below the mouth.
-  B.push(0, 2.5, 0, 0, Math.PI, 0);
+  B.push(0, 2.39, 0, 0, Math.PI, 0);
   mace(B);
   B.pop();
 }
