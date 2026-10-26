@@ -102,8 +102,8 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
    - **save v3** with a v2→v3 migration (inventory, equipped items, the flask, threads, trader stocks, dropped marks);
    - wire the nooks' marks.
    - Run the wraith-design economy checks: every faucet has a sink, there's no reason to grind, and each upgrade changes play.
-4. **The remaining weapon families:** ~~glaive, lantern flail~~ (**done on `claude/weapons2`**, "Glaive and lantern flail — Done" in §11.2), and the glass blade (dunes, Phase 9).
-5. ~~**Restored-world play** (§7):~~ **Done, `claude/restored`** ("Restored world — Done" in §7). the summit glide course, ridge-lift routes, and Hearn's requests after the release.
+4. **The remaining weapon families:** ~~glaive, lantern flail~~ (**done, merged 2026-10-26**, "Glaive and lantern flail — Done" in §11.2), and the glass blade (dunes, Phase 9).
+5. ~~**Restored-world play** (§7):~~ **Done, merged 2026-10-26** ("Restored world — Done" in §7): the summit glide course, ridge-lift routes, and Hearn's requests after the release.
 6. **Encounter variety audit** (§4.2) and **isolation tests** (§9), filmed for the user.
 7. **Phase 9** per `docs/phase-9/plan.md`, with the dune quests and ravines from `docs/phase-9/dunes-design.md` (user, 2026-10-26: puzzle-based, unlike the frost), starting with D0:
    - the bigger erg with ravines (wadis, canyons, slot canyons, a rift);
@@ -135,6 +135,10 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
   - Ember tea is still barely visible on the robe at noon at the default camera distance (`screenshots/polish/buff-noon-after-tea.png`).
   - The glide-ring masts read as tall, thin modern pylons. Rebuild them as shorter, tapered Shaper stone, with carved bands and the rings lower.
   - The dropped-marks glow at night reads, but it's small at 30 m.
+- **Restored-world follow-ups (lead review, 2026-10-26):**
+  - The threshing floor for "The Chaff" stands inside a bush (`screenshots/restored/p8r-chaff-floor.png`). Clear the vegetation over the floor, or move the floor. The chaff, sacks and Ketil's rising lantern have never been seen in a shot. The green is too dark at dusk to find the lantern post.
+  - The bot never reliably flew the Shelf's last two rings or the Wind Road's finish ring. The medal times come from the route sim, so they need a human run.
+- **Bell-mace (in progress, `claude/mace`, `/home/sol/wraith-mace`):** spec `docs/mace-design.md`.
 
 ## 6. How to work here (tooling and conventions)
 
@@ -177,4 +181,4 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 
 ## 7. Worktrees on this machine (local; safe to remove after merging)
 
-`/home/sol/wraith-weapons` (`claude/weapons`) and `/home/sol/wraith-remember` (`claude/remembrance`). Both are pushed. Remove them with `git worktree remove --force <dir>` once their branches are merged.
+`/home/sol/wraith-mace` (`claude/mace`, the Bell-mace, in progress). Remove a worktree with `git worktree remove --force <dir>` once their branches are merged.
