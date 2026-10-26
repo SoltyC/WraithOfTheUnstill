@@ -20,7 +20,7 @@ export function addFlock(ctx) {
       if (!spawned) {
         // They lie down when the Wraith is told and comes within sight of the field (so none are spawned for nothing).
         if (!step || step === 'ask' || ctx.away('side-barley') > 90) return;
-        spawned = true;
+        spawned = true; g.encounterLog.begin('side-flock');
         for (const flock of FLOCKS) for (const [dx, dz] of flock) {
           const k = shaped.spawn('sedgerunner', place.pos[0] + dx, place.pos[1] + dz);
           if (k >= 0) slots.push(k);
@@ -37,7 +37,7 @@ export function addFlock(ctx) {
         if (ctx.away('side-barley') > 160) { for (const k of slots) shaped.damage(k, 1e9, false, 0, 0); slots.length = 0; spawned = false; }
         return;
       }
-      flags.add(FLAG); chapter.raise('encounter:side-flock:clear'); music.sting('echo');
+      flags.add(FLAG); chapter.raise('encounter:side-flock:clear'); g.encounterLog.end('side-flock'); music.sting('echo');
       if (!capture) hud.notice('Quiet', 'The barley is clear', 'Tell Dunn.', 5);
     },
   };

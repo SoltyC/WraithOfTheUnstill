@@ -331,7 +331,7 @@ export function addBellwetherFightSystem(g) {
   const mdist = Math.hypot(market[0] - arena.x, market[1] - arena.z);
 
   function startRelease() {
-    flags.add(FLAG.RELEASED);
+    flags.add(FLAG.RELEASED); g.calm?.note(g.controller.pos.x, g.controller.pos.z);   // calm after the peak (systems/calm.js)
     worldState.restoration.meadow = 'restored';
     g.elements?.unlock('gale');
     chapter.raise('bellwether:released');
