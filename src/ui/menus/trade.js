@@ -14,13 +14,13 @@ const WHY = { marks: 'Not enough marks.', materials: 'Missing materials.', 'sold
 export function createEconomyPages(u) {
   const { g, el, head, foot, tabs, listPage, sheet, open } = u;
   const inv = () => g.inventory;
-  const marksLine = (parent) => el('div', 'marks-line', parent, inv().marks + ' marks');
+  const purse = () => inv().marks + ' marks';
 
   /** A trader's stall. arg: { id, tab: 'buy' | 'sell', msg? }. */
   function tradePage(arg) {
     const id = typeof arg === 'string' ? arg : arg.id, tab = (arg && arg.tab) || 'buy', msg = arg && arg.msg;
     const T = TRADERS[id], tr = g.economy.trade;
-    head(T.name, T.place);
+    head(T.name, T.place + '  \u00b7  ' + purse());
     tabs([['buy', 'Buy'], ['sell', 'Sell']], tab, (k) => open('trade', { id, tab: k }));
     el('div', 'codex-rule', sheet);
     const go = (extra) => open('trade', { id, tab, ...extra });
@@ -30,9 +30,8 @@ export function createEconomyPages(u) {
         el('h2', null, pg, l.name); el('div', 'summary', pg, l.price + ' marks  ·  ' + (l.qty > 0 ? l.qty + ' left' : 'none left') + '  ·  you carry ' + l.carried + ' of ' + l.room);
         el('p', null, pg, l.text);
         const why = tr.buyBlock(id, l.id);
-        const b = el('button', 'robe-wear', pg, why ? WHY[why] : 'Buy for ' + l.price);
+        const b = el('button', 'ink-btn', pg, why ? WHY[why] : 'Buy for ' + l.price);
         if (why) b.disabled = true; else b.onclick = () => { tr.buy(id, l.id); g.sfx?.play?.(g.SFX.CHIME); go({ msg: 'Bought ' + l.name.toLowerCase() + '.' }); };
-        marksLine(pg);
         if (msg) el('p', 'echo-effect', pg, msg);
       }, T.lines);
     } else {
@@ -41,9 +40,8 @@ export function createEconomyPages(u) {
         el('h2', null, pg, i.name); el('div', 'summary', pg, 'They pay ' + i.price + ' marks each  ·  you carry ' + i.have);
         el('p', null, pg, (MATERIALS[i.id] || CONSUMABLES[i.id]).text);
         if (MATERIALS[i.id]) el('p', 'echo-effect', pg, 'The smith in Hearn uses these. Sell only what you will not forge.');
-        const b = el('button', 'robe-wear', pg, 'Sell one for ' + i.price);
+        const b = el('button', 'ink-btn', pg, 'Sell one for ' + i.price);
         b.onclick = () => { tr.sell(i.id); g.sfx?.play?.(g.SFX.CHIME); go({ msg: 'Sold ' + i.name.toLowerCase() + '.' }); };
-        marksLine(pg);
         if (msg) el('p', 'echo-effect', pg, msg);
       }, 'Nothing here that a trader wants. Weapons are never sold.');
     }
@@ -53,8 +51,7 @@ export function createEconomyPages(u) {
   /** The forge. arg: { id (the smith), pick?: weapon id, msg? }. */
   function forgePage(arg) {
     const smith = (arg && arg.id) || 'garrow', msg = arg && arg.msg, pick = arg && arg.pick;
-    head('The Forge of Hearn', 'Garrow, the smith');
-    el('div', 'codex-rule', sheet);
+    head('The Forge of Hearn', 'Garrow, the smith  \u00b7  ' + purse());
     const owned = inv().owned.filter((w) => TIER_INFO[w.id]).map((w) => ({ id: w.id, title: weaponDefs[w.id].name + '  ·  tier ' + w.tier, tier: w.tier }));
     const body = el('div', 'codex-body', sheet);
     const list = el('div', 'codex-list', body), pg = el('div', 'codex-page', body);
@@ -69,6 +66,23 @@ export function createEconomyPages(u) {
     function render(page, w) {
       const d = weaponDefs[w.id], s = forgeStatus(inv(), w.id);
       el('h2', null, page, d.name); el('div', 'summary', page, 'Tier ' + s.tier + ' of 5');
+      if (s.next) {
+        el('p', 'cost', page, 'Tier ' + s.next + ' (' + s.info.name + '): ' + costLine(s.cost));
+        const b = el('button', 'ink-btn', page, s.block ? WHY[s.block] : 'Forge tier ' + s.next + (s.info.move ? ' \u2014 a new move' : ' \u2014 weight only'));
+        if (s.block) b.disabled = true;
+        else b.onclick = () => { forge(inv(), w.id); g.sfx?.play?.(g.SFX.CLANG); open('forge', { id: smith, pick: w.id, msg: d.name + ' is tier ' + (s.tier + 1) + '. ' + s.info.name + '.' }); };
+      }
+      if (msg) el('p', 'echo-effect', page, msg);
+      if (s.tier >= 3) {
+        el('h2', 'sub', page, 'Infusion');
+        const cur = inv().infusion(w.id), unlocked = g.elements ? g.elements.unlocked : new Set(['frost']);
+        const row = el('div', 'infuse', page);
+        for (const e of [null, ...INFUSIONS]) {
+          const ok = e === null || unlocked.has(e), b = el('button', 'ink-btn' + (cur === e ? ' on' : ''), row, e === null ? 'None' : e[0].toUpperCase() + e.slice(1));
+          if (!ok) { b.disabled = true; b.title = 'Not yet bent'; } else b.onclick = () => { infuse(inv(), w.id, e); open('forge', { id: smith, pick: w.id, msg: e ? 'The ' + d.name.toLowerCase() + ' takes ' + e + '.' : 'The infusion is drawn out.' }); };
+        }
+        el('p', 'note', page, 'Frost chills, and the third blow freezes. Gale throws foes and feeds a breath of focus.');
+      }
       const ladder = el('div', 'tiers', page);
       for (let t = 1; t <= 5; t++) {
         const info = TIER_INFO[w.id][t], row = el('div', 'tier' + (t <= s.tier ? ' done' : t === s.next ? ' next' : ''), ladder);
@@ -77,24 +91,6 @@ export function createEconomyPages(u) {
         el('span', 'kind', row, info.move ? 'new move' : 'weight');
         el('div', 'ttext', row, info.text);
       }
-      if (s.next) {
-        el('p', 'cost', page, 'Tier ' + s.next + ': ' + costLine(s.cost) + '  ·  you have ' + inv().marks + ' marks');
-        const b = el('button', 'robe-wear', page, s.block ? WHY[s.block] : 'Forge tier ' + s.next + (s.info.move ? ' (a new move)' : ' (weight only)'));
-        if (s.block) b.disabled = true;
-        else b.onclick = () => { forge(inv(), w.id); g.sfx?.play?.(g.SFX.CLANG); open('forge', { id: smith, pick: w.id, msg: d.name + ' is tier ' + (s.tier + 1) + '. ' + s.info.name + '.' }); };
-      }
-      if (s.tier >= 3) {
-        el('h2', 'sub', page, 'Infusion');
-        const cur = inv().infusion(w.id), unlocked = g.elements ? g.elements.unlocked : new Set(['frost']);
-        const row = el('div', 'infuse', page);
-        for (const e of [null, ...INFUSIONS]) {
-          const ok = e === null || unlocked.has(e), b = el('button', 'robe-wear' + (cur === e ? ' on' : ''), row, e === null ? 'None' : e[0].toUpperCase() + e.slice(1));
-          if (!ok) { b.disabled = true; b.title = 'Not yet bent'; } else b.onclick = () => { infuse(inv(), w.id, e); open('forge', { id: smith, pick: w.id, msg: e ? 'The ' + d.name.toLowerCase() + ' takes ' + e + '.' : 'The infusion is drawn out.' }); };
-        }
-        el('p', null, page, 'Its blows apply the element lightly: frost chills and then freezes on the third, gale throws foes and feeds a breath of focus.');
-      }
-      if (msg) el('p', 'echo-effect', page, msg);
-      marksLine(page);
     }
     foot([['Esc', 'leave']]);
   }
@@ -102,18 +98,16 @@ export function createEconomyPages(u) {
   /** The journal's Pouch tab: marks, flask, threads, the pouch, materials. */
   function pouchTab(parent) {
     const I = inv();
-    el('h2', null, parent, 'The pouch'); el('div', 'summary', parent, I.marks + ' marks  ·  ' + I.threads + ' of ' + HEALTH.maxThreads + ' health threads');
-    el('p', null, parent, FLASK.name + ' × ' + I.flask.charges + ' of ' + I.flask.max + '. ' + FLASK.text);
+    el('h2', null, parent, 'The pouch'); el('div', 'summary', parent, I.marks + ' marks  ·  ' + I.threads + ' of ' + HEALTH.maxThreads + ' health threads  ·  R uses the marked item ◇, C moves the mark');
+    el('p', I.sel === 'flask' ? 'echo-effect' : null, parent, (I.sel === 'flask' ? '◇ ' : '') + FLASK.name + ' × ' + I.flask.charges + ' of ' + I.flask.max + '. ' + FLASK.text);
     for (const id in CONSUMABLES) {
       if (I.pouch[id] <= 0) continue;
-      const p = el('p', null, parent, CONSUMABLES[id].name + ' × ' + I.pouch[id] + '. ' + CONSUMABLES[id].text);
-      if (I.sel === id) p.classList.add('echo-effect');
+      el('p', I.sel === id ? 'echo-effect' : null, parent, (I.sel === id ? '◇ ' : '') + CONSUMABLES[id].name + ' × ' + I.pouch[id] + '. ' + CONSUMABLES[id].text);
     }
     const mats = Object.keys(MATERIALS).filter((id) => I.materials[id] > 0);
     if (mats.length) { el('h2', 'sub', parent, 'Materials'); for (const id of mats) el('p', null, parent, MATERIALS[id].name + ' × ' + I.materials[id] + '. ' + MATERIALS[id].text); }
     const d = g.economy.drop;
     if (d.active) el('p', 'echo-effect', parent, d.marks + ' marks lie where you fell. Walk back to the glow.');
-    el('p', 'summary', parent, 'R uses the marked item, C moves the mark. The flask fills at every shrine.');
   }
 
   /** The journal's Arms tab: the weapons owned, their tier, what each tier does. */
@@ -127,7 +121,7 @@ export function createEconomyPages(u) {
     const info = TIER_INFO[w.id];
     if (info) for (let t = 1; t <= w.tier; t++) el('p', 'past', pg, 'Tier ' + t + ': ' + info[t].name + '. ' + info[t].text);
     if (!w.tier) el('p', null, pg, 'As found. The smith in Hearn can forge it.');
-    const b = el('button', 'robe-wear', pg, I.equipped === w.id ? 'In hand' : 'Take in hand');
+    const b = el('button', 'ink-btn', pg, I.equipped === w.id ? 'In hand' : 'Take in hand');
     if (I.equipped === w.id) b.disabled = true; else b.onclick = () => { I.equip(w.id); open('journal', 'arms'); };
   }
 

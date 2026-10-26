@@ -41,6 +41,8 @@ export function addEconomySystem(g) {
   const self = g.economy = {
     inventory, buffs, purse, drop,
     get trade() { return trade; },
+    /** The drop's world light (a lights.js record), once made. */
+    get light() { return light; },
     /** A quest action that pays (marks, materials, items, a thread, a deeper flask). */
     reward(a) {
       const line = applyReward(inventory, a);

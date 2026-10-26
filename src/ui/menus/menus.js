@@ -8,13 +8,13 @@ import { releaseAll } from '../../input/actions.js';
 import { ownedRobes, wornRobe } from '../../game/robes.js';
 import { BEASTS, sketchSvg } from '../../game/bestiary.js';
 import { createEconomyPages } from './trade.js';
+import { el, createCodex } from './codex.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
 
 export function createMenus(g) {
   const { chapter, game, clock, input, music, sfx, params, controller, arm } = g;
-  const el = (tag, cls, parent, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; if (parent) parent.append(e); return e; };
   const map = createMap();
   const settings = { music: 0.8, sfx: 1, subtitles: 1, compass: 'fade' };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { /* private window */ }
@@ -47,45 +47,7 @@ export function createMenus(g) {
     clock.frozen = wasFrozen; input.gameHasFocus = !title.classList.contains('on'); releaseAll();
     g.canvas?.focus();
   }
-  function head(title, sub) {
-    const h = el('div', 'codex-head', sheet);
-    el('div', 'codex-title', h, title);
-    if (sub) el('div', 'codex-sub', h, sub);
-    el('div', 'codex-rule', sheet);
-  }
-  function foot(keys) {
-    const f = el('div', 'codex-foot', sheet);
-    for (const [k, t] of keys) { const s = el('span', null, f); el('b', null, s, k); s.append(t); }
-  }
-  function actions(parent, list) {
-    const a = el('div', 'codex-actions', parent);
-    for (const [label, fn, disabled, note] of list) {
-      const b = el('button', null, a, label);
-      if (disabled) b.disabled = true; else b.onclick = fn;
-      if (note) el('div', 'note', a, note);
-    }
-    return a;
-  }
-  /** Two columns: a list on the left, the page for the chosen item on the right. */
-  function listPage(groups, render, empty) {
-    const body = el('div', 'codex-body', sheet);
-    const list = el('div', 'codex-list', body), pg = el('div', 'codex-page', body);
-    let first = null;
-    for (const [group, items] of groups) {
-      if (!items.length) continue;
-      el('div', 'group', list, group);
-      for (const it of items) {
-        const b = el('button', it.done ? 'done' : null, list, it.title);
-        b.onclick = () => { for (const x of list.querySelectorAll('button')) x.classList.remove('on'); b.classList.add('on'); pg.replaceChildren(); render(pg, it); };
-        first ||= b;
-      }
-    }
-    if (first) first.click(); else el('div', 'codex-empty', pg, empty);
-  }
-  function tabs(names, current, go) {
-    const t = el('div', 'codex-tabs', sheet);
-    for (const [k, label] of names) { const b = el('button', k === current ? 'on' : null, t, label); b.onclick = () => go(k); }
-  }
+  const { head, foot, actions, listPage, tabs } = createCodex(sheet);
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
