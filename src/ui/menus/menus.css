@@ -141,6 +141,27 @@
 .codex-page::-webkit-scrollbar-thumb, .codex-list::-webkit-scrollbar-thumb { background: rgba(90, 64, 40, 0.4); border-radius: 3px; }
 .codex-page::-webkit-scrollbar-track, .codex-list::-webkit-scrollbar-track { background: transparent; }
 
+/* The economy's pages (ui/menus/trade.js): stalls, the forge, the pouch. */
+.codex-page.wide { flex: 1; min-height: 0; position: relative; z-index: 1; }
+.codex-page h2.sub { font-size: clamp(20px, 1.6vw, 27px); margin: 20px 0 6px; }
+/* The economy's buttons: ink with an underline, like the robe page's Wear. */
+.codex-page .ink-btn { all: unset; cursor: pointer; display: inline-block; margin-top: 14px; font-size: clamp(18px, 1.5vw, 26px); font-family: var(--ink-font); color: #4a3424; border-bottom: 1px solid currentColor; opacity: 0.85; transition: opacity 0.2s ease; }
+.codex-page .ink-btn:hover:not(:disabled), .codex-page .ink-btn:focus-visible { opacity: 1; }
+.codex-page .ink-btn:disabled { opacity: 0.45; border-bottom-color: transparent; cursor: default; }
+.codex-page .note { font-style: italic; font-size: 0.85em; color: #6a5236; margin: 8px 0 0; }
+.codex-page .cost { font-family: var(--ink-font); color: #4a3520; margin: 14px 0 0; }
+.codex-page .tiers { display: flex; flex-direction: column; gap: 4px; margin: 22px 0 6px; }
+.codex-page .tier { display: grid; grid-template-columns: 2.2em 1fr auto; column-gap: 12px; align-items: baseline; padding: 4px 0 6px; border-bottom: 1px solid rgba(60, 40, 20, 0.14); opacity: 0.55; }
+.codex-page .tier b { font-family: var(--ink-font); font-weight: 400; color: #5a3f22; }
+.codex-page .tier .tname { font-family: var(--ink-font); color: #2a1d10; }
+.codex-page .tier .kind { font-family: var(--text); font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #7a5d3a; }
+.codex-page .tier .ttext { grid-column: 2 / 4; font-size: 0.82em; line-height: 1.35; color: #4a3a26; }
+.codex-page .tier.next { opacity: 1; }
+.codex-page .tier.done { opacity: 0.75; }
+.codex-page .tier.done b::after { content: ' \2713'; font-size: 0.7em; }
+.codex-page .infuse { display: flex; gap: 22px; }
+.codex-page .infuse .ink-btn { margin-top: 4px; }
+.codex-page .infuse .ink-btn.on { opacity: 1; font-weight: 700; }
 /* Remembrance: the living reaction table (journal). */
 .codex-page .rem-table { border-collapse: collapse; table-layout: fixed; margin-top: 14px; width: 100%; }
 .codex-page .rem-table th, .codex-page .rem-table td { border: 1px solid rgba(59, 42, 26, 0.3); padding: 8px 10px; text-align: left; vertical-align: top; font-size: clamp(14px, 1.05vw, 18px); }

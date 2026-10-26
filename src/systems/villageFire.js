@@ -178,7 +178,7 @@ export function addVillageFireSystem(g) {
     const h = vf.heatAt(p.x, p.y, p.z);
     const inside = vf.insideAt(p.x, p.z, T.ejectHeat);
     if (h > T.damageHeat) {
-      const d = heatDamage(h, dt, co.health, g.combatTuning.health);
+      const d = heatDamage(h, dt, co.health, co.maxHealth);
       co.health -= d; burns += d; coolT = 0;
       // Only inside a burning house does the heat sap focus: out in the street it would starve the Ribbon
       // that puts the fire out (bot playtest 2026-10-24: focus sat at 0 beside the houses).
@@ -186,7 +186,7 @@ export function addVillageFireSystem(g) {
     } else if (burns > 0) {
       // Burns heal once out of the heat a moment (only what the fire took: the fight's wounds stay).
       coolT += dt;
-      if (coolT > T.burnHealDelay) { const k = Math.min(burns, T.burnHealRate * dt, g.combatTuning.health - co.health); if (k > 0) { co.health += k; burns -= k; } else burns = 0; }
+      if (coolT > T.burnHealDelay) { const k = Math.min(burns, T.burnHealRate * dt, co.maxHealth - co.health); if (k > 0) { co.health += k; burns -= k; } else burns = 0; }
     }
     // Inside a fully burning house: after a moment the heat drives the Wraith out of the door (health unchanged by this).
     if (inside < 0) { dwell = Math.max(0, dwell - 2 * dt); return; }

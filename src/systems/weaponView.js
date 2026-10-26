@@ -9,6 +9,8 @@ import { weaponFeel } from '../game/weapons/defs.js';
 const TO_SLOT = { staff: SLOT.STAFF, maul: SLOT.MAUL };
 
 /** @param {any} g  shared boot context */
+const TRAIL_FROST = [0.5, 0.78, 1.0], TRAIL_GALE = [0.55, 1.0, 0.7];
+
 export function addWeaponViewSystem(g) {
   const { loop, wraithView, weapons, inventory, weaponView: V, ground, controller, clock } = g;
   const wraith = wraithView.wraith, body = wraith.body;
@@ -77,7 +79,9 @@ export function addWeaponViewSystem(g) {
     const def = inventory.def;
     if (def === null) return;
     const tr = def.trail, on = weapons.trailT > 0.06;
-    V.setTrailLook(tr.tint[0], tr.tint[1], tr.tint[2], tr.strength);
+    // An infused weapon cuts in its element's colour; a forged one leaves a stronger trail (tier by tier).
+    const inf = inventory.infusion(def.id), tint = inf === 'frost' ? TRAIL_FROST : inf === 'gale' ? TRAIL_GALE : tr.tint;
+    V.setTrailLook(tint[0], tint[1], tint[2], tr.strength * (1 + 0.08 * Math.max(0, inventory.tier(def.id))));
     const n = def.twoHanded ? 1 : 2;
     for (let t = 0; t < n; t++) {
       // Which weapon edge: the staff/maul main one; for the pair, the blade that leads (or both on a spin / the X).

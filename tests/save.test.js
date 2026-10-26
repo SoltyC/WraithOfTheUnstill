@@ -72,7 +72,7 @@ describe('save migrations', () => {
     expect(() => migrate({ version: 9 }, table, 3)).toThrow(/newer/);
     expect(() => migrate({ version: 1 }, { 1: (s) => ({ ...s, version: 5 }) }, 3)).toThrow(/must produce/);
   });
-  it('upgrades a v1 (Phase 0) save to v2', () => {
+  it('upgrades a v1 (Phase 0) save through v2 to the current version', () => {
     const v1 = {
       version: 1, slot: 'slot1', createdAt: 1, updatedAt: 2, playSeconds: 30,
       player: { pos: [1, 2, 3], yaw: 0.5, element: 0, health: 1, focus: 1 },
@@ -82,7 +82,7 @@ describe('save migrations', () => {
       terrainPages: [{ key: '5', savedAt: 20, data: new Uint8Array([7]) }],
     };
     const s = validateSave(migrate(v1));
-    expect(s.version).toBe(2);
+    expect(s.version).toBe(SAVE_VERSION);
     expect(s.quests).toEqual({ quests: {}, flags: [] });
     expect(s.progression.echoes).toEqual(['e1']);
     expect(s.progression.shrines).toEqual([]);
@@ -90,6 +90,37 @@ describe('save migrations', () => {
     expect(s.world.weatherOverride).toBeNull();
     expect(s.entities).toEqual({ crystals: [], warden: null });
     expect(s.terrainPages[0].data[0]).toBe(7);
+  });
+  it('upgrades a v2 save to v3: weapons from the quest flags, the robe, an empty purse and a back-pay request', async () => {
+    const v2 = {
+      ...createEmptySave('slot1', 5), version: 2, quests: { quests: { 'meadow-the-missing': { state: 'active', step: 1, opt: [] } }, flags: ['woke', 'own:sickles', 'own:maul'], vars: { robe: 'rime-hide' } },
+    };
+    delete v2.inventory; delete v2.equipped; delete v2.economy;
+    const s = validateSave(migrate(v2));
+    expect(s.version).toBe(3);
+    expect(s.inventory.owned.map((w) => w.id)).toEqual(['staff', 'sickles', 'maul']);
+    expect(s.inventory.carried).toEqual(['staff', 'maul']);
+    expect(s.inventory.marks).toBe(0);
+    expect(s.inventory.flask).toEqual({ charges: 3, max: 3 });
+    expect(s.equipped).toEqual({ weapon: 'staff', robe: 'rime-hide', mantle: null });
+    expect(s.economy).toEqual({ stocks: null, drop: null, purse: 10, backPay: true });
+    expect(s.quests.flags).toEqual(['woke', 'own:sickles', 'own:maul']);       // nothing else is touched
+    // The migrated save encodes and decodes.
+    expect((await decodeSave(await encodeSave(s))).inventory.owned.length).toBe(3);
+  });
+  it('a v3 save carries the whole economy through the codec', async () => {
+    const s = createEmptySave('slot2', 9);
+    s.inventory.marks = 321; s.inventory.materials['hedge-heart'] = 4; s.inventory.pouch.tea = 2; s.inventory.threads = 2;
+    s.inventory.flask = { charges: 1, max: 4 }; s.inventory.owned[0].tier = 3; s.inventory.owned[0].infusion = 'frost';
+    s.economy = { stocks: { corin: { salve: 1 } }, drop: { marks: 55, x: 10.5, z: -7 }, purse: 4.5, backPay: false };
+    expect(await decodeSave(await encodeSave(s))).toEqual(s);
+  });
+  it('rejects a malformed economy block', () => {
+    const s = createEmptySave('slot1');
+    s.economy.drop = { marks: 5, x: NaN, z: 0 };
+    expect(() => validateSave(s)).toThrow(/economy/);
+    const t = createEmptySave('slot1'); t.inventory.marks = -1;
+    expect(() => validateSave(t)).toThrow(/inventory/);
   });
   it('validates the current schema', () => {
     expect(() => validateSave(createEmptySave('slot2'))).not.toThrow();

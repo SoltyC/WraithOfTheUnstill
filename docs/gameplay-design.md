@@ -377,6 +377,57 @@ Save v3 gains:
 - trader stocks;
 - the dropped marks' position.
 
+**Economy — Done (2026-10-26, branch `claude/economy`).** Built: marks, materials, the pouch, the flask, health threads, robes as armour, traders, the forge, the death drop and save v3. The numbers below are live data; the playtest is `tools/bot/economy.mjs` (a bot run: a quest pays, Osk and Corin sell, consumables in a fight, Garrow forges, death and recovery, a save and reload) and the page shots are in `screenshots/economy/`.
+- **Code:** `src/game/inventory.js` (marks, materials, pouch, flask, threads, infusion), `src/game/economy/` (`items.js` prices and effects, `buffs.js` the drink and the buffs, `trade.js` and `traders.js`, `forge.js`, `drop.js`, `purse.js`, `rewards.js`), `src/game/weapons/tiers.js` (the five tiers), `src/systems/economy.js` (play: R and C, buffs on the body, the drop's glow, saves), `src/ui/menus/trade.js` (stall, forge, journal Pouch and Arms), save v3 in `src/game/save/saveSchema.js`.
+- **Consumables** (R uses, C cycles; the flask is first in the cycle):
+
+  | Item | Price / sells for | Stack | Effect |
+  |---|---|---|---|
+  | Shrine water | (free; 3 charges, 5 at most) | the flask | heals 55 % of maximum over 2.2 s; fills at every shrine rest; two quests deepen it |
+  | Warm salve | 12 / 5 | 5 | heals 40 % of maximum over 3 s |
+  | Ember tea | 22 / 9 | 3 | weapon damage ×1.25 for 60 s |
+  | Rime tonic | 24 / 10 | 3 | damage taken ×0.75 for 60 s |
+  | Wind-bread | 14 / 6 | 3 | focus regeneration ×1.5 for 90 s |
+  | Stillwater draught | 30 / 12 | 2 | Flow drains ×0.5 for 60 s |
+
+  A use takes 0.6 s (the right hand goes to the lips, walking slows to half, the weapon is sheathed); a dodge breaks it off and spends nothing; a blow stops a heal that is trickling in. A heal is refused at full health. Buffs show on the body: the hand-light turns warm gold and larger (tea), the robe frosts without dimming the cowl (tonic). There is no new HUD; the journal's **Pouch** tab lists what is carried and a quiet notice names the item on C.
+- **Health and armour:** maximum health is 100 plus 20 per thread (five segments of 20). Four threads exist so far: the frost Warden, the Bellwether, the den mother and gold on the Shapers' Run (the dunes' Warden is the fifth). Each thread also steadies the cowl light's gutter at low health. Every robe has a `defence` (0 to 6 %: the wanderer's none, the rime-hide mantle 6 %, the runner's 3 %, Isolde's ember 4 %, the barley cloak 4 %, the courier's cloth 2 %), apart from its one property.
+- **Forge** (Garrow, Hearn; opens after the stair is open). Cost per tier, in marks and materials: I 40 + 2 rime cores; II 70 + 2 rime cores; III 120 + 2 hedge-hearts + 1 turf-amber; IV 200 + 2 hedge-hearts; V 320 + 3 hedge-hearts + 2 turf-amber (750 marks, 4 rime cores, 7 hedge-hearts, 3 turf-amber in all). Damage ×1.12 at II and ×1.25 from IV; I, III and V change play:
+
+  | Weapon | I (a move) | II | III | IV | V (the art) |
+  |---|---|---|---|---|---|
+  | Staff | a fourth hit, the return sweep | +12 % | infusion slot | +12 %, more knock | **The Plant:** the slam sends a shock 7 m down the lane |
+  | Sickles | a sixth cut, a lunging finish | +12 % | infusion slot | +12 %, deeper bleed | **Reaper's Fold:** the reap makes 3 passes and draws foes in |
+  | Maul | a third swing, the backhand | +12 % | infusion slot | +12 %, more knock | **Groundbreaker:** the smash throws back everything within 5 m |
+
+  **Infusion** (tier 3, chosen at the forge, free to change): frost chills, and the third blow within 3 s freezes the Shaped for 1.4 s; gale throws foes 1.7× as far and feeds 1.5 focus a hit. (Stone is in the code and the ladder of elements but not offered until it is bent.) The weapon's trail takes the element's colour, and grows with the tier.
+- **Trade:** Corin (Hearn; after the stair is open) and Osk, the sled-trader (the frost camp; after the camp raid). Lines open with quests; a stock is a copy or two and refills by one a shrine rest. Traders buy materials at 60 % of value and spare consumables at the `sells for` price; weapons are never sold.
+
+  | Trader | Always | Opens when |
+  |---|---|---|
+  | Corin | salve ×4, bread ×3 | tea ×2: The Fen Lamp done; draught ×2: The Stones That Listen done; tonic ×2: the Bellwether released |
+  | Osk | salve ×4, tonic ×3 | tea ×2: the pilgrims' hearth lit |
+- **Death:** the carried marks stay where the Wraith fell (the last safe footing if it fell into water or air): a press in the terrain state, a candle-light you can see from afar, sparks rising within 80 m, and a mark on the map page. Walking within 2.6 m takes them back. Dying before that loses them; the new drop is whatever was earned since. Weapons, items and materials are never lost.
+- **Faucets and sinks.** Marks available in the first two chapters: **1212** (frost 567: main 345, sides 210, the den mother's drop 12; meadow 645: main 345, sides 300). A weapon to tier 5 costs 750, so one weapon to tier 5 and a second to tier 2 (110) leaves about 350 for the pouch; everything cannot be bought. Both biomes' main paths pay exactly 1.5× a weapon's first three tiers (345 vs 230), as §11.4 asked.
+
+  | Faucet | Pays | Is finite? | Its sink |
+  |---|---|---|---|
+  | Main quests | 345 marks a biome; the Wardens' threads and rime cores / hedge-hearts | yes, once | forge tiers; consumables |
+  | Side quests | 40–60 marks each (frost 210, meadow 300), a material, a thread, or a deeper flask | yes, once | forge; consumables |
+  | Shaped | 1–3 marks a collapse from a purse of 10 that refills a mark per 30 s (about 120 an hour at the very most) | no, but capped | the everyday sinks, salves |
+  | A placed elite (the den mother) | 12 marks and 2 rime cores, once | yes | forge |
+  | Selling materials / spares | 60 % of a material's value; spares at under half price | yes (it costs the forge a tier) | none: it is a loss |
+  | Nooks and sites | their own `reward: { marks }` (the Remembrance branch's hooks, not yet wired) | yes | forge |
+
+  | Sink | Takes |
+  |---|---|
+  | The forge | 750 marks and 14 materials a weapon to tier 5; supply is 10 rime cores, 7 hedge-hearts and 5 turf-amber: one weapon can be finished (the hedge-hearts), not two |
+  | Consumables | 12–30 each, with stacks and the traders' stocks as the cap |
+  | Death | the marks carried, if it happens twice |
+- **The checks (`wraith-design`):** *Every faucet has a sink:* yes, above. *No reason to grind:* the Shaped's purse and the finite materials; an hour of fighting the same Shaped pays under 150 marks, and none of the materials (tests pin it in `tests/economy.test.js`). *Each upgrade changes play:* I, III and V add a move, the infusion or the art, II and IV are weight, so none follows another as numbers twice running; `tests/economy.test.js` pins that. Smells: *treadmill* and *loot spam* clear (nothing is rolled; the Shaped leave marks, not items); *shop sells power the world should give* clear (the traders sell only healing and short buffs, never weapons or tiers, and the stock that matters comes from quests).
+- **Tests:** `tests/economy.test.js` (inventory, consumables, trade, forge, death, purse, rewards), `tests/economyData.test.js` (the faucet targets, the materials, the traders against the quest data, back-pay), `tests/weapons.test.js` (forged weapons in play), `tests/save.test.js` (v2 to v3, the codec, validation).
+- **NOT ASSESSED:** how it feels in a human's hands (the 0.6 s use in a real fight, whether tea and tonic are chosen or ignored, whether the flask makes the salve redundant); the right prices (they are one set of numbers, from the targets, not telemetry); whether a purse of 10 feels stingy or generous to a player who fights a lot; the drink pose (the weapon rides with the hand at the lips; no flask mesh); the mantle slot (saved as `mantle: null`, no mantles exist yet); robes are not sold and no dyes exist; maps of unexplored regions (§11.4) are not built; the dune traders (glass, sand-cores) belong to Phase 9; a live load of a real v2 save in the browser (the migration and back-pay are unit-tested and the back-pay path ran on a live quest state, not a real v2 file); the nooks' marks (waiting for the Remembrance branch); the weapon meshes do not change by tier (only the trail does); the dev overlay's live edits do not reach a forged tier's def (tier 0 only); `npm run alloc` for the new systems (the harness fails on the controller as before; the economy and weapon updates use no closures, strings or arrays per frame by inspection); the new pages on a phone or a narrow window.
+
 ## 12. Decisions
 
 **Answered (user, 2026-10-24):**

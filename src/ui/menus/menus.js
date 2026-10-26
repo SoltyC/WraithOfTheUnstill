@@ -7,6 +7,8 @@ import { createMap } from './map.js';
 import { releaseAll } from '../../input/actions.js';
 import { ownedRobes, wornRobe } from '../../game/robes.js';
 import { BEASTS, sketchSvg } from '../../game/bestiary.js';
+import { createEconomyPages } from './trade.js';
+import { el, createCodex } from './codex.js';
 import { remembranceTab } from './remembrance.js';
 import { foundNookMarks } from '../../game/nooks.js';
 
@@ -15,7 +17,6 @@ const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
 
 export function createMenus(g) {
   const { chapter, game, clock, input, music, sfx, params, controller, arm } = g;
-  const el = (tag, cls, parent, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; if (parent) parent.append(e); return e; };
   const map = createMap();
   const settings = { music: 0.8, sfx: 1, subtitles: 1, compass: 'fade' };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { /* private window */ }
@@ -48,49 +49,11 @@ export function createMenus(g) {
     clock.frozen = wasFrozen; input.gameHasFocus = !title.classList.contains('on'); releaseAll();
     g.canvas?.focus();
   }
-  function head(title, sub) {
-    const h = el('div', 'codex-head', sheet);
-    el('div', 'codex-title', h, title);
-    if (sub) el('div', 'codex-sub', h, sub);
-    el('div', 'codex-rule', sheet);
-  }
-  function foot(keys) {
-    const f = el('div', 'codex-foot', sheet);
-    for (const [k, t] of keys) { const s = el('span', null, f); el('b', null, s, k); s.append(t); }
-  }
-  function actions(parent, list) {
-    const a = el('div', 'codex-actions', parent);
-    for (const [label, fn, disabled, note] of list) {
-      const b = el('button', null, a, label);
-      if (disabled) b.disabled = true; else b.onclick = fn;
-      if (note) el('div', 'note', a, note);
-    }
-    return a;
-  }
-  /** Two columns: a list on the left, the page for the chosen item on the right. */
-  function listPage(groups, render, empty) {
-    const body = el('div', 'codex-body', sheet);
-    const list = el('div', 'codex-list', body), pg = el('div', 'codex-page', body);
-    let first = null;
-    for (const [group, items] of groups) {
-      if (!items.length) continue;
-      el('div', 'group', list, group);
-      for (const it of items) {
-        const b = el('button', it.done ? 'done' : null, list, it.title);
-        b.onclick = () => { for (const x of list.querySelectorAll('button')) x.classList.remove('on'); b.classList.add('on'); pg.replaceChildren(); render(pg, it); };
-        first ||= b;
-      }
-    }
-    if (first) first.click(); else el('div', 'codex-empty', pg, empty);
-  }
-  function tabs(names, current, go) {
-    const t = el('div', 'codex-tabs', sheet);
-    for (const [k, label] of names) { const b = el('button', k === current ? 'on' : null, t, label); b.onclick = () => go(k); }
-  }
+  const { head, foot, actions, listPage, tabs } = createCodex(sheet);
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes'], ['remembrance', 'Remembrance']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes'], ['arms', 'Arms'], ['pouch', 'Pouch'], ['remembrance', 'Remembrance']], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -114,6 +77,10 @@ export function createMenus(g) {
         fig.innerHTML = sketchSvg(vars['sketch:' + b.id]);
         el('p', null, pg, b.text);
       }, 'Nothing sketched yet. The Shaped rise out of the snow; look at them long enough to draw.');
+    } else if (tab === 'arms') {
+      listPage([['Weapons', econ.armsTab()]], (pg, w) => econ.armsPage(pg, w), 'Only the staff.');
+    } else if (tab === 'pouch') {
+      econ.pouchTab(el('div', 'codex-page wide', sheet));
     } else if (tab === 'remembrance') {
       remembranceTab({ el, listPage, rem: g.remembrance });
     } else if (tab === 'robes') {
@@ -122,6 +89,7 @@ export function createMenus(g) {
       listPage([['Robes', ownedRobes(flags).map((r) => ({ ...r, title: r.name, done: false }))]], (pg, r) => {
         el('h2', null, pg, r.name); el('div', 'summary', pg, r.how); el('p', null, pg, r.text);
         if (r.effect) el('p', 'echo-effect', pg, r.effect);
+        if (r.defence) el('p', null, pg, 'Armour: turns aside ' + Math.round(r.defence * 100) + '% of a blow.');
         const b = el('button', 'robe-wear', pg, r.id === worn ? 'Worn' : 'Wear');
         if (r.id === worn) b.disabled = true; else b.onclick = () => { g.wearRobe?.(r.id); open('journal', 'robes'); };
       }, 'Only the robe it woke in.');
@@ -154,6 +122,8 @@ export function createMenus(g) {
       // The places of the errands, once the Wraith has been near them (the same "known" the compass keeps).
       for (const id of ['side-fen-lamp', 'side-stone-ring', 'side-barley', 'side-edge', 'side-echo-shore']) if (chapter.graph.flags.has('known:' + id)) marks.push({ x: T[id].pos[0], z: T[id].pos[1], name: T[id].name, kind: 'place' });
     }
+    const dr = g.economy && g.economy.drop;
+    if (dr && dr.active) marks.push({ x: dr.x, z: dr.z, name: dr.marks + ' marks', kind: 'place' });
     // The nooks found (a nook not yet found is not on the map).
     marks.push(...foundNookMarks(g.pois, chapter.graph.flags, view));
     for (const p of g.pois) if (p.kind === 'shrine' && p.biome === view) marks.push({ x: p.pos[0], z: p.pos[1], name: null, kind: chapter.shrines.has(p.id) ? 'shrine-lit' : 'shrine' });
@@ -255,7 +225,10 @@ export function createMenus(g) {
     foot([['Esc', 'leave']]);
   }
 
-  const PAGES = { journal, map: mapPage, pause, saves, settings: settingsPage, shrine: shrinePage };
+  const econ = createEconomyPages({ g, el, head, foot, tabs, listPage, sheet, open });
+  const PAGES = { journal, map: mapPage, pause, saves, settings: settingsPage, shrine: shrinePage, trade: econ.trade, forge: econ.forge };
+  // The talk interaction opens a trader's stall, or the smith's forge (data: { trade: 'corin' }).
+  g.openTrade = (id) => open(id === 'garrow' ? 'forge' : 'trade', id === 'garrow' ? { id } : { id, tab: 'buy' });
 
   async function loadSlot(slot) {
     const s = await game.saves.load(slot);

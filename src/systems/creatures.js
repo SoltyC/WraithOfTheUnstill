@@ -171,12 +171,13 @@ export function addCreatureSystems(g) {
     }
     // On the body, not a HUD: focus is the hand-light, health the cowl light and the robe's frost.
     const w = combat.wound, dying = combat.dying;
-    const gutter = w > 0.6 ? 0.75 + 0.25 * Math.sin(clock.simTime * 17) * Math.sin(clock.simTime * 7.3) : 1;
+    // Each health thread steadies the cowl light (docs §11.6).
+    const gutter = w > 0.6 ? 1 - 0.25 / (1 + 0.5 * g.inventory.threads) * (1 - Math.sin(clock.simTime * 17) * Math.sin(clock.simTime * 7.3)) : 1;
     const deathFade = dying > 0 ? Math.max(0, 1 - dying / 1.2) : 1;
     const reform = dying > combatTuning.deathTime ? Math.min(1, (dying - combatTuning.deathTime) / combatTuning.reformTime) : 0;
     wraithView.cowlLight = (1 - 0.65 * w) * gutter * Math.max(deathFade, reform);
     wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus + 1.2 * castFlash.v + 0.07 * g.flow.show) * Math.max(deathFade, reform);   // Flow brightens the hands a little
-    wraithView.frost = Math.min(1, w * 1.15);
+    wraithView.frost = Math.max(Math.min(1, w * 1.15), g.buffs.sheen);   // a Rime tonic frosts the robe without dimming the cowl
     wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;
     vignette.style.opacity = String(Math.max(0, (w - 0.65) / 0.35).toFixed(3));
   } });

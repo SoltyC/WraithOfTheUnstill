@@ -35,6 +35,8 @@ export function addChapterSystem(g) {
       shrine: () => {},
       autosave: () => { if (!capture) game.saves.requestAutosave(); },
       encounter: (id) => g.startEncounter?.(id),
+      reward: (a) => g.economy?.reward(a),            // marks, materials, items, threads (docs §11)
+      trade: (id) => g.economy?.open(id),             // a trader's stock, or the forge
       questStarted: (q) => hud.notice(q.kind === 'main' ? 'Journey' : 'Errand', q.title, q.summary, 7),
       questDone: (q) => { if (q.kind === 'side') music.sting('echo'); hud.notice('Completed', q.title, null, 6); },
     },
@@ -109,6 +111,7 @@ export function addChapterSystem(g) {
     const k = +t.id.slice(t.id.lastIndexOf('-') + 1);
     chapter.graph.vars.lastShrine = k;
     g.setRespawn?.(t);
+    g.economy?.rest();                              // the flask fills, the traders restock
     if (!chapter.shrines.has(t.id)) { chapter.shrines.add(t.id); hud.notice('Shrine', 'The stones remember', 'Rested. The way back here is open.', 6); }
     else hud.notice('Shrine', 'Rested', null, 3);
     if (!capture) game.saves.requestAutosave();

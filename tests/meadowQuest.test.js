@@ -41,7 +41,7 @@ describe('meadow chapter data', () => {
       for (const o of d.choice?.options || []) expect(o.text).toBeTruthy();
       expect(d.choice?.options.length ?? 2).toBeLessThanOrEqual(2);
     }
-    for (const npc in meadow.talk) { expect(named.has(npc)).toBe(true); for (const t of meadow.talk[npc]) expect(data.dialogue[t.say], t.say).toBeTruthy(); }
+    for (const npc in meadow.talk) { expect(named.has(npc)).toBe(true); for (const t of meadow.talk[npc]) if (!t.trade) expect(data.dialogue[t.say], t.say).toBeTruthy(); }
     const acts = [];
     for (const q of meadow.quests) for (const s of [...q.steps, ...(q.optional || [])]) acts.push(...(s.actions || []));
     for (const d of Object.values(meadow.dialogue)) acts.push(...(d.then || []));
@@ -68,7 +68,7 @@ describe('meadow chapter data', () => {
     expect(Math.hypot(hf[0] - meadow.places['meadow-hall'].pos[0], hf[1] - meadow.places['meadow-hall'].pos[1])).toBeLessThan(2);
     for (const f of meadow.village.folk) expect(plots.has(f.post.plot), f.id).toBe(true);
     expect(meadow.village.folk.length + meadow.npcs.length).toBeGreaterThanOrEqual(10);
-    expect(meadow.village.folk.length + meadow.npcs.length).toBeLessThanOrEqual(16);
+    expect(meadow.village.folk.length + meadow.npcs.length).toBeLessThanOrEqual(17);   // + Garrow, the smith (the economy)
   });
   it('the guide path runs from the road head to the square', () => {
     const lists = meadow.village.guidePath.map((id) => village.roads.find((r) => r.id === id).pts.slice());

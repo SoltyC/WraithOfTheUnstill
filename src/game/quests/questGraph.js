@@ -27,6 +27,8 @@
 //   | { shrine: 'id' } | { autosave: true } | { startQuest: 'id' } | { say: 'dialogue id' }
 //   | { reveal: 'poi id' | [ids] } (the places become known: compass, map) | { track: 'goal id' }
 //   | { setVar: { name, value } } | { addVar: { name, by } } | { encounter: 'id' } | { robe: 'id' }
+//   | { marks: n } | { give: { 'material id': n } } | { item: { 'consumable id': n } } | { thread: true }
+//   | { flask: n } (a deeper flask) | { trade: 'trader id' } (open that trader's page)   // the economy (docs §11)
 
 /** @typedef {{ state: 'locked'|'active'|'done', step: number }} QuestState */
 
@@ -202,7 +204,7 @@ export class QuestGraph {
 }
 
 const CONDITION_KEYS = new Set(['flag', 'notFlag', 'quest', 'questStep', 'near', 'event', 'restored', 'night', 'any', 'not', 'var']);
-const ACTION_KEYS = new Set(['setFlag', 'clearFlag', 'echo', 'journal', 'lore', 'shrine', 'autosave', 'startQuest', 'say', 'reveal', 'track', 'setVar', 'addVar', 'encounter', 'robe']);
+const ACTION_KEYS = new Set(['setFlag', 'clearFlag', 'echo', 'journal', 'lore', 'shrine', 'autosave', 'startQuest', 'say', 'reveal', 'track', 'setVar', 'addVar', 'encounter', 'robe', 'marks', 'give', 'item', 'thread', 'flask', 'trade']);
 
 /** Throws on the first malformed quest, naming its path (catches data typos at load and in tests). */
 export function validateQuests(defs) {
@@ -222,6 +224,7 @@ export function validateQuests(defs) {
     for (const [i, x] of (a || []).entries()) {
       const keys = Object.keys(x);
       if (keys.length !== 1 || !ACTION_KEYS.has(keys[0])) fail(`${p}[${i}]`, `action must have exactly one of ${[...ACTION_KEYS].join(', ')}`);
+      if (x.marks !== undefined && !(x.marks > 0)) fail(`${p}[${i}]`, 'marks must be positive');
     }
   };
   for (const [i, d] of defs.entries()) {

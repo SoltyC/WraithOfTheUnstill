@@ -7,9 +7,8 @@
 
 import { NOOKS, foundFlag } from '../game/nooks.js';
 
-/** TODO(economy): pay a nook's `reward: { marks }` into the inventory once it has a currency (docs/gameplay-design.md
- *  §11.4, build order §13). The data carries the amounts already; no currency code lives here. */
-function payReward(reward) { return reward; }
+/** A nook's `reward: { marks }` pays into the inventory (economy, docs §11.4); the economy system makes the notice and the chime. */
+function payReward(g, reward) { if (reward.marks > 0) g.economy?.reward({ marks: reward.marks }); }
 
 const GLOW_FOUND = 0.8;
 
@@ -45,7 +44,7 @@ export function addNookSystem(g) {
     if (p.lore || p.say) chapter.say(n.id);
     if (p.guide) for (const id of p.guide) { flags.add('known:' + id); nav.know(id); }
     if (p.rem) { music.sting('echo'); g.wind?.burst(n.pos[0], n.pos[1], 1.4); g.remembrance?.remember(p.rem, ctx); }
-    if (p.reward) payReward(p.reward);
+    if (p.reward) payReward(g, p.reward);
     if (!capture) { sfx.x = n.pos[0]; sfx.y = n.h + 1; sfx.z = n.pos[1]; sfx.gain = n.kind === 'glint' ? 0.8 : 0.5; sfx.play(n.kind === 'glint' ? SFX.CRUNCH : SFX.CHIME); }
     if (n.kind === 'glint') g.wind?.burst(n.pos[0], n.pos[1], 0.9);
   }
