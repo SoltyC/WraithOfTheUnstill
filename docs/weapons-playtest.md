@@ -77,3 +77,54 @@ Against the first three weapons' meadow figures (taken: staff 57, sickles 48, ma
 ### Filmed (screenshots/weapons2/, raw frames not committed)
 
 `glaive-combo-side.jpg`, `glaive-heavy-side.jpg` (the thrust on a frozen hound: the draw, the lane, the shatter), `flail-combo-side.jpg`, and the photo spots `p9w-glaive-*`, `p9w-flail-*` (`p9w-flail-night.png`: the whirl at night, the lantern's flame and trail), `p9w-find-glaive.png`, `p9w-find-flail.png`. Read for weight: the glaive's draw (the shaft goes back, the blade tips up) and the thrust read at once; the flail's lantern lags the haft in the windup and whips out on the cut, the flame streaming back along its travel.
+
+## Bell-mace (2026-10-26, branch `claude/mace`)
+
+Tool: `tools/bot/mace.mjs` (port 4178, Windows Chrome on the RTX 3060, full health, flow reset; the bot casts an Updraft 3 m ahead, steps into it, steers over the heart of the pack and plunges, plunges again from each rebound, and on the ground hops or taps lights; `LOG=1` adds a 0.5 s state trace). Same foe sets and spots as the table above. Three runs each; "-" is a 60 s timeout with 2 of 3 dead.
+
+### Iso plunges (an asleep brute, the Wraith set H m up)
+
+| H | glow | h stored | damage | toll radius | rebound | rebound apex |
+|---|---|---|---|---|---|---|
+| 5 m | 0.21 | 4.94 | 33.8 | 2.39 m | 2.47 m | 4.6 m |
+| 10 m | 0.43 | 9.99 | 50.0 | 3.20 m | 5.0 m | 7.2 m |
+| 14 m | 0.60 | 14.0 | 62.8 | 3.84 m | 7.0 m | 9.5 m |
+| 20 m | 0.80 | 20.07 | 82.0 | 4.80 m | 8.0 m | 10.4 m |
+
+The damage matches `18 + 3.2 h` to 0.1 (capped at 20 m: 82); the toll and the rebound follow their formulas (the rebound caps at 8 m).
+
+### Fights (mixed mode)
+
+| Foes | Time to clear (3 runs) | Taken (3 runs) | Plunges per Updraft | Plunge misses |
+|---|---|---|---|---|
+| 3 hounds | 4.3, 10.8, 7.3 s | 0, 36, 24 | 1.0, 0.2, 1.0 | 0, 0, 1 |
+| brute + 2 hounds | 13.3, 12.5, 15.3 s | 30, 42, 12 | 0.75, 1.25, 1.0 | 0, 1, 0 |
+| brute + 4 hounds | 16.2, 16.1, 9.7 s | 0, 12, 24 | 0.67, 1.2, 1.0 | 0, 0, 0 |
+| 3 sedgerunners | 13.4 s, -, - | 10, 40, 70 | 0.8, 0.29, 0.25 | 1, 1, 1 |
+| 2 hedgewardens + 2 sedgerunners | 23.5, 12.9, 19.7 s | 28, 86, 80 | 1.25, 1.25, 1.75 | 0, 0, 0 |
+
+Across the 15 runs the mean is about 0.9 plunges per Updraft; the highest stored height was 14.6 m (most plunges fell from 5-10 m). Against the other weapons' tables above the mace is last in the three hound and brute frost fights (the other weapons: 2.3-15.3 s) and in the hedgewarden mix, and worst in the sedgerunner fight (two of three runs timed out).
+
+### Bot or weapon
+
+Both, and mostly the weapon's cadence in tight fights. What the traces show (`LOG=1`, brute + 2 hounds, 12 s): a cycle is about 5.5 s, of which 1.5 s is the Updraft ride, 1-1.5 s a rebound plunge or two at 3-5 m, and the rest on the ground (hop-swing plunges from 2.5 m, light taps) because a foe inside 2.5 m of the Wraith stops the bot from casting (the Updraft aims 3 m or more out, and the bot will not cast at a foe it is standing next to). The bot's plunges fall from 3-5 m, so each is worth 28-34 damage; a human who drops from 10 m or more would deal about 50. The same fight varies by 2x run to run (3 hounds: 4.3 to 10.8 s), which is larger than any lever below. One lever was tried: the hop-swing lifting 3.5 m instead of 2.5 m (hound fights 6.9, 21.2, 12.5 s; brute + 2 hounds 13.1, 14.7 s; brute + 4 hounds 27.9, 15.4, 19.0 s): no faster, within the noise, and it was put back. The 20 m cap, the rebound drift and the toll falloff were not changed. Verdict: the mace is a slow, spacing weapon whose fights are dominated by the Updraft cadence; the bot is a poor mace player (it never chooses a height), so these times say "last with a middling bot", not "last". Judge by hand.
+
+### Combos (live, real inputs: Heavy = Updraft / Crystallize, Bend = Gust / Sweep, Primary in the air = the plunge)
+
+| Combo | Result |
+|---|---|
+| Dunk | An Updraft (cast 3 m ahead) catches a hound 2.2 m past the column's axis and throws it up (apex 4.3-4.5 m); the Wraith, set 9 m above it, plunges onto it in the air: `dunks 1`, `dunkLands 1`, `dunkHits 1` (h 6.1, 37.6 damage); the second hound, 2.2 m from the first, took 39.8 (the toll and the dunk together: it was inside the toll's radius, so the second impact alone is not separated; the unit test measures 60 % of the blow). The same setup with the hound missed by the column: no dunk (as designed). |
+| Ice star | Three hounds on a real Sweep lane (all three on ice; the Sweep staggered but did not freeze them, so they were frozen by the harness), a plunge from 8 m (h 8.1): `star true`, `shatters 3`, 3 `onShatter` calls, all three dead. |
+| Downdraft | A Gust (Bend) during the fall from 10 m: h 9.97 without it, 14.97 with it (+5.00), damage 49.9 to 65.9, `downdrafts 1`. |
+| Glide plunge | Glide from 18 m at 11.7 m/s, plunge onto a row of sleepers: h 16.75, 4 hits, rebound 8 m, the glide blocked for the rebound, back in the glide 1.08 s after the landing. |
+| Bell Ledge | Done (lead, 2026-10-27), on a fresh page (the mace not owned, the find not taken), `DIRECT=1 START=8 node tools/bot/mace.mjs ledge`: an Updraft cast against the bastion's front wall, the Wraith rising beside it to 16.2-16.4 m and steering onto the top while the column still lifts, landing on the 9.5 m ledge, Take, then a plunge onto the live hounds below: h 10.9 m, 53 damage, 1 hit (a hound killed). 2 of 3 runs landed (the miss fell short of the top). Three fixes made it reachable: the Updraft's lift is now full across a 1.4 m core (it fell below gravity under 1 m off the axis, so a body not dead on the axis barely rose: 5-6 m); air control is 0.7 while rising air lifts the body (0.25 otherwise); and the ledge courses are 1.6 m deeper. The earlier 'ledge too high' reading came from the bot casting from the hollow and gliding over the top. |
+
+`gpuStats.late` was `[]` after all of the above (fights, combos, 8 shots, iso runs).
+
+### Allocation (`npm run alloc`)
+
+`controller.update` (walking and idle) and `springArm.update` fail as before. `weapons.update (swings, hits, heavies)` fails too, with 313-325 GC events: it fails identically (313 events) on the `claude/wraithoftheunstill-phase-7` checkout, so it is not from the mace. New cases in `tools/alloc/alloc-check.mjs`: with foes (plunge, toll, rebound, dunk, 7050 plunges) 241 GC events and 3.8 MB, no worse than the same loop without the plunge (340 events, 4.1 MB: the framework's); the plunge alone with no foes (commit, fall, land): 1 GC event, 5.5 MB over 400k calls against 4.4 MB with the plunge switched off, so about 1.1 MB over 3300 plunges. That residue was not traced; the pre-existing weapons-update allocation hides it.
+
+### Shots (`screenshots/mace/`, 2560x1440)
+
+`p9w-mace-ledge.png` (the great bell in its frame on the bluff, from the yard), `p9w-mace-take.png`, `p9w-mace-glow-4/10/18.png` (dull bronze, warm gold, deeper gold in the bell's mouth; no red rim, no white blow-out), `p9w-mace-toll.png` (a fresh crater and a plume at the impact, the Wraith landing; the ring itself is faint), `p9w-mace-dunk.png` (the Wraith landing on a hound: a crouch with the hound's legs under her; a high view, not a low side view), `p9w-mace-star.png` (the shatter on the cracked ice). The terrain keeps craters from earlier shots, so the toll and dunk frames show older craters too.

@@ -9,6 +9,7 @@
 
 import { Builder, wobble, WMAT, SLOT } from './weaponBuilder.js';
 import { buildGlaive, buildFlail, buildFinds } from './weaponGeo2.js';
+import { buildMace, buildMaceFind } from './weaponGeo3.js';
 
 export { WMAT, SLOT };
 
@@ -105,5 +106,6 @@ export function buildWeaponMesh() {
   maul(B, SLOT.MAUL);
   stand(B); forge(B);
   buildGlaive(B); buildFlail(B); buildFinds(B);
+  buildMace(B); buildMaceFind(B);
   return B.data();
 }

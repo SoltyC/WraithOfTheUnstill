@@ -31,12 +31,14 @@ export class WeaponMachine {
     this.prog = 0.5 - 0.5;
     /** Hits chained since the combo began (the combo never loops). */
     this.chained = 0;
+    /** The Bell-mace's plunge is on (plunge.js): the windup runs into a hold (LOADED) that lasts until the bell lands. */
+    this.plunge = false;
   }
 
   /** Drop everything (weapon swap, death, a scripted moment). */
   reset() {
     this.phase = PHASE.IDLE; this.t = 0; this.combo = 0; this.heavy = false; this.chargeT = 0; this.holdT = 0; this.bufT = 0; this.dodgeBuf = 0;
-    this.attack = null; this.prog = 0; this.chained = 0;
+    this.attack = null; this.prog = 0; this.chained = 0; this.plunge = false;
   }
 
   _begin(hit, heavy) {
@@ -44,6 +46,14 @@ export class WeaponMachine {
     this.combo = hit; this.heavy = heavy; this.phase = PHASE.WINDUP; this.t = 0; this.startEvent = true;
   }
   _active() { this.phase = PHASE.ACTIVE; this.t = 0; this.activeEvent = true; }
+
+  /** Commit a plunge (game/weapons/plunge.js): pull the bell overhead (the attack's windup), then hold it there. */
+  beginPlunge(attack) {
+    this.attack = attack; this.combo = 0; this.heavy = true; this.plunge = true; this.power = 1; this.chained = 0;
+    this.phase = PHASE.WINDUP; this.t = 0; this.prog = 0; this.startEvent = true; this.bufT = 0;
+  }
+  /** The bell lands: play `attack` (the blow, then a short recovery or the kneel). */
+  strikePlunge(attack) { this.attack = attack; this._active(); }
 
   update() {
     const dt = this.dt, F = weaponFeel, def = this.def;
@@ -76,13 +86,15 @@ export class WeaponMachine {
         this.prog = this.t >= a.windup ? 1 : this.t / a.windup;
         if (!this.heavy && this.holdT >= F.holdAt && this.down && this.chained === 0) { this._charge(); break; }
         if (this.t >= a.windup) {
-          if (this.heavy) this._active();
+          if (this.plunge) { this.phase = PHASE.LOADED; this.t = 0; }
+          else if (this.heavy) this._active();
           else if (this.down && this.holdT < F.holdAt) { this.phase = PHASE.LOADED; this.t = 0; }
           else this._active();
         }
         break;
       }
       case PHASE.LOADED:
+        if (this.plunge) break;       // the bell is overhead until it lands (strikePlunge)
         // Waiting on the button: a release swings, holding on turns it into a charge.
         if (!this.down) this._active();
         else if (this.holdT >= F.holdAt && this.chained === 0) this._charge();
@@ -105,7 +117,7 @@ export class WeaponMachine {
         if (!this.heavy && this.bufT > 0 && this.t >= a.link * a.recover && this.combo + 1 < def.combo.length) {
           this.bufT = 0; this.chained++; this._begin(this.combo + 1, false); break;
         }
-        if (this.t >= a.recover) { this.phase = PHASE.IDLE; this.t = 0; this.attack = null; this.combo = 0; this.heavy = false; this.endEvent = true; this.chained = 0; }
+        if (this.t >= a.recover) { this.phase = PHASE.IDLE; this.t = 0; this.attack = null; this.combo = 0; this.heavy = false; this.endEvent = true; this.chained = 0; this.plunge = false; }
         break;
       }
     }

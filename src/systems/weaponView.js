@@ -11,8 +11,8 @@ import { weaponFeel } from '../game/weapons/defs.js';
 import { FlailHead } from '../game/weapons/flailHead.js';
 import { PHASE } from '../game/weapons/machine.js';
 
-const TO_SLOT = { staff: SLOT.STAFF, maul: SLOT.MAUL, glaive: SLOT.GLAIVE, flail: SLOT.FLAIL };
-const HELD = [SLOT.STAFF, SLOT.SICKLE_R, SLOT.SICKLE_L, SLOT.MAUL, SLOT.GLAIVE, SLOT.FLAIL, SLOT.CHAIN1, SLOT.CHAIN2, SLOT.HEAD, SLOT.FLAME];
+const TO_SLOT = { staff: SLOT.STAFF, maul: SLOT.MAUL, glaive: SLOT.GLAIVE, flail: SLOT.FLAIL, mace: SLOT.MACE };
+const HELD = [SLOT.STAFF, SLOT.SICKLE_R, SLOT.SICKLE_L, SLOT.MAUL, SLOT.GLAIVE, SLOT.FLAIL, SLOT.MACE, SLOT.CHAIN1, SLOT.CHAIN2, SLOT.HEAD, SLOT.FLAME];
 const BURN_LAMPS = 3;
 
 /** @param {any} g  shared boot context */
@@ -63,7 +63,11 @@ export function addWeaponViewSystem(g) {
     const sc = grow * grow * (3 - 2 * grow);
     V.show = true; V.tr = 0; V.tg = 0; V.tb = 0;
     if (def.id === 'flail') placeFlail(def, sc);
-    else if (def.twoHanded) { orient(1, def.mainHand, def); scale(sc); V.place(TO_SLOT[def.id]); }
+    else if (def.twoHanded) {
+      orient(1, def.mainHand, def); scale(sc);
+      if (def.id === 'mace') V.tr = weapons.plunge.glow;       // the bell's mouth glows with the height stored in it (the telegraph)
+      V.place(TO_SLOT[def.id]);
+    }
     else {
       orient(0, 0, def); scale(sc); V.place(SLOT.SICKLE_L);
       orient(1, 1, def); scale(sc); V.place(SLOT.SICKLE_R);
@@ -120,11 +124,16 @@ export function addWeaponViewSystem(g) {
   function placeFinds() {
     for (const f of g.weaponFinds) {
       const near = Math.hypot(controller.pos.x - f.at[0], controller.pos.z - f.at[1]) < 300;
-      if (near && (f.y !== f.y || reseat <= 0)) {
+      if (f.site !== undefined) {
+        // A find on a built ledge: seated on its site's seat, `lift` m above it (the Bell Ledge).
+        if (f.siteIdx < 0 && g.archSites) f.siteIdx = g.archSites.findIndex((s) => s.id === f.site);
+        const A = g.architecture ? g.architecture.sites : null;
+        if (near && A && f.siteIdx >= 0 && A[f.siteIdx * 4 + 3] > 0.5) f.y = A[f.siteIdx * 4 + 1] + f.lift;
+      } else if (near && (f.y !== f.y || reseat <= 0)) {
         ground.qx = f.at[0]; ground.qz = f.at[1];
         if (ground.covers()) { ground.sample(); f.y = ground.h; }
       }
-      const show = near && f.y === f.y && !f.taken && f.open;
+      const show = near && f.y === f.y && !f.taken && (f.open || f.visible === true);
       const c = Math.cos(f.yaw), s = Math.sin(f.yaw);
       V.ax = c; V.ay = 0; V.az = -s; V.bx = 0; V.by = 1; V.bz = 0; V.cx = s; V.cy = 0; V.cz = c;
       V.px = f.at[0]; V.py = (f.y === f.y ? f.y : 0) - 0.04; V.pz = f.at[1]; V.show = show; V.tr = f.glow || 0; V.tg = 0; V.tb = 0;
@@ -138,7 +147,8 @@ export function addWeaponViewSystem(g) {
     if (def === null) return;
     const tr = def.trail, on = weapons.trailT > 0.06;
     // An infused weapon cuts in its element's colour; a forged one leaves a stronger trail (tier by tier).
-    const inf = inventory.infusion(def.id), tint = inf === 'frost' ? TRAIL_FROST : inf === 'gale' ? TRAIL_GALE : tr.tint;
+    const inf = inventory.infusion(def.id), fall = weapons.plunge.falling, el = fall && g.elements ? g.elements.active : null;
+    const tint = inf === 'frost' || el === 'frost' ? TRAIL_FROST : inf === 'gale' || el === 'gale' ? TRAIL_GALE : tr.tint;       // a fall's trail is in the element in hand
     V.setTrailLook(tint[0], tint[1], tint[2], tr.strength * (1 + 0.08 * Math.max(0, inventory.tier(def.id))));
     const n = def.twoHanded ? 1 : 2;
     for (let t = 0; t < n; t++) {
