@@ -5228,6 +5228,42 @@
           2
         ]
       }
+    },
+    {
+      "id": "p8r-chaff-floor",
+      "biome": "meadow",
+      "label": "Dunn's threshing floor with the chaff heaped on it, the barley behind",
+      "time": 11,
+      "weather": "clear",
+      "player": [
+        75,
+        1135
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.4,
+        "pitch": 0.45,
+        "dist": 13
+      },
+      "hidePlayer": true
+    },
+    {
+      "id": "p8r-green-lantern",
+      "biome": "meadow",
+      "label": "The lantern on its post by the Green Shrine, dusk",
+      "time": 19.4,
+      "weather": "clear",
+      "player": [
+        22.5,
+        974.5
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.6,
+        "pitch": 0.1,
+        "dist": 6
+      },
+      "hidePlayer": true
     }
   ]
 }

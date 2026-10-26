@@ -161,8 +161,8 @@ fn meadowSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, canopy:
       let l0 = select(select(MAT_COBBLE_MOSSY, MAT_COBBLE_SETTS, lo == 1), MAT_COBBLE_RIVER, lo == 2);
       let l1 = select(select(MAT_COBBLE_SETTS, MAT_COBBLE_RIVER, lo == 1), MAT_FLAGSTONE, lo == 2);
       let k0 = select(kSet, kFlag, lo == 3); let k1 = select(kSet, kFlag, lo >= 2);
-      let tint0 = select(vec3f(0.2, 0.2, 0.18), vec3f(0.22, 0.2, 0.17), lo == 1);
-      let tint1 = select(select(vec3f(0.22, 0.2, 0.17), vec3f(0.2, 0.19, 0.16), lo == 1), vec3f(0.3, 0.28, 0.24), lo == 2);
+      let tint0 = select(vec3f(0.27, 0.27, 0.24), vec3f(0.29, 0.27, 0.23), lo == 1); // lifted a third: unlit streets read at night
+      let tint1 = select(select(vec3f(0.29, 0.27, 0.23), vec3f(0.27, 0.26, 0.22), lo == 1), vec3f(0.38, 0.36, 0.31), lo == 2);
       var w0 = 1.0 - ft; var w1 = ft;
       if (w1 > 0.02) { a1 = mdLayer(l1, p + vec2f(11.0, 3.0), k1, Ng, fp, tint1, 0.75); } else { w1 = 0.0; }
       if (w0 > 0.02) { a0 = mdLayer(l0, p + vec2f(11.0, 3.0), k0, Ng, fp, tint0, 0.75); } else { w0 = 0.0; }

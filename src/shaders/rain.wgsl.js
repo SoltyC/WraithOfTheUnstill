@@ -26,6 +26,7 @@ uniform levels: array<vec4f,16>;
 uniform rain: vec4f;                // x = fall travel (m), y = density 0..1, zw = wind travel x, z (m, wrapped)
 uniform screenInfo: vec4f;
 uniform rainWind: vec4f;            // xy = wind direction (unit), z = fall speed (m/s), w = horizontal drift (m/s)
+uniform rainShelter: vec4f;         // x = 0..1 under a roof: the drops near the camera stop, the ones beyond a few metres still fall
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
@@ -58,7 +59,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // The share of the drops that fall follows the density; drops stop at the ground and fade at
   // the column's edge and right at the lens.
   var alpha = select(0.0, 1.0, h4 * 0.999 < uniforms.rain.y) * smoothstep(0.0, 0.25, head.y - g)
-            * (1.0 - smoothstep(RT * 0.5, RT * 0.95, length(wrapped))) * smoothstep(0.6, 2.2, dist);
+            * (1.0 - smoothstep(RT * 0.5, RT * 0.95, length(wrapped))) * smoothstep(0.6, 2.2, dist)
+            * mix(1.0, smoothstep(3.5, 6.5, length(wrapped)), uniforms.rainShelter.x);
   // The streak runs along the drop's motion (fall + drift), long enough to read at the shutter.
   let vel = vec3f(wd.x * uniforms.rainWind.w, -uniforms.rainWind.z * kSpeed, wd.y * uniforms.rainWind.w);
   let speed = length(vel);

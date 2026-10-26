@@ -71,7 +71,7 @@ export function addStormSystems(g) {
     const so = g.solids;
     if (shelterT <= 0 && so) { shelterT = 0.16; so.px = p.x; so.py = p.y; so.pz = p.z; shelterGoal = so.coveredQ() ? 1 : 0; }
     shelter += (shelterGoal - shelter) * (1 - Math.exp(-clock.realDt * 6));
-    rain.density = weather.rain * (1 - shelter); rain.time = clock.simTime; rain.dt = clock.dt;
+    rain.density = weather.rain; rain.shelter = shelter; rain.time = clock.simTime; rain.dt = clock.dt;
     rain.update();
     // The bolt: rebuilt per strike, bright for a third of a second.
     if (lightning.version !== boltVersion) {
