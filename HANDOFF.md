@@ -102,7 +102,7 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
    - **save v3** with a v2→v3 migration (inventory, equipped items, the flask, threads, trader stocks, dropped marks);
    - wire the nooks' marks.
    - Run the wraith-design economy checks: every faucet has a sink, there's no reason to grind, and each upgrade changes play.
-4. **The remaining weapon families:** glaive, lantern flail, and the glass blade (dunes, Phase 9).
+4. **The remaining weapon families:** ~~glaive, lantern flail~~ (**done on `claude/weapons2`**, "Glaive and lantern flail — Done" in §11.2), and the glass blade (dunes, Phase 9).
 5. **Restored-world play** (§7): the summit glide course, ridge-lift routes, and Hearn's requests after the release.
 6. **Encounter variety audit** (§4.2) and **isolation tests** (§9), filmed for the user.
 7. **Phase 9** per `docs/phase-9/plan.md`, with the dune quests and ravines from `docs/phase-9/dunes-design.md` (user, 2026-10-26: puzzle-based, unlike the frost), starting with D0:

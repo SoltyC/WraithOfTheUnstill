@@ -2,7 +2,7 @@
 // Film a weapon's moves with the bot's film mode (src/core/bot.js filmRun): the render loop is driven at a fixed
 // 60 fps and every frame saved to screenshots/weapons/frames/<name>/. The camera is scripted round the Wraith.
 //   WRAITH_URL=http://localhost:4177 node tools/bot/weapons-film.mjs <weapon> <move> [cam]
-//   weapon: staff | sickles | maul      move: combo | heavy | carry | dodge      cam: side | front | back | high | wide
+//   weapon: staff | sickles | maul | glaive | flail     move: combo | heavy | carry | dodge      cam: side | front | back | high | wide
 // A frost hound (or the meadow's Sedgerunners) stands ahead, held still by the script, so the blows land.
 const base = process.env.WRAITH_URL || 'http://localhost:4177';
 const [, , weapon = 'staff', move = 'combo', camName = 'side'] = process.argv;
@@ -17,7 +17,7 @@ const CAMS = {
   high: [1.2, 4.2, 3.2, 0.9, 0.8], three: [0.85, 2.7, 1.35, 1.05, 0.72], rear: [2.6, 3.4, 1.7, 1.1, 0.75], wide: [1.1, 6.5, 2.0, 1.0, 0.8], close: [1.3, 2.4, 1.3, 1.1, 0.7],
 };
 const cfg = CAMS[camName] || CAMS.side;
-const seconds = { combo: weapon === 'sickles' ? 2.6 : 2.4, heavy: 2.4, carry: 0.6, dodge: 1.5 }[move] ?? 2.4;
+const seconds = { combo: weapon === 'sickles' ? 2.6 : weapon === 'glaive' ? 2.0 : 2.4, heavy: 2.4, carry: 0.6, dodge: 1.5 }[move] ?? 2.4;
 const js = `
   const p = g.controller.pos, f = g.controller.yaw0 ?? (g.controller.yaw0 = g.controller.yaw);
   const a = f + ${cfg[0]}, d = ${cfg[1]};
@@ -46,5 +46,5 @@ if (process.env.SPAWN) {
     for (let k = 0; k < n; k++) { const a = f + (k - (n - 1) / 2) * 0.5; ids.push(g.shaped.spawn(${JSON.stringify(name)}, p.x + Math.sin(a) * ${+dist}, p.z + Math.cos(a) * ${+dist})); }
     await new Promise((r) => setTimeout(r, 2400)); ${process.env.FREEZE ? 'for (const i of ids) g.shaped.freeze(i, 99);' : ''} return ids;` });
 }
-const r = await bot('film', { name: `${weapon}-${move}-${camName}`, dir: 'weapons', seconds, fps: 60, size: [1280, 720], quality: 0.86, warm: 40, js });
+const r = await bot('film', { name: `${weapon}-${move}-${camName}`, dir: process.env.FILM_DIR || 'weapons2', seconds, fps: 60, size: [1280, 720], quality: 0.86, warm: 40, js });
 console.log(JSON.stringify(r));

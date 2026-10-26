@@ -16,7 +16,7 @@ export function addWeaponSystem(g) {
   const inventory = g.inventory = createInventory();
   const buffs = g.buffs = createBuffs(inventory);      // Ember tea strengthens the blows (game/economy/buffs.js)
   const fxSink = wraithView;       // the Wraith's effects emitter doubles as the spray the blows throw up
-  const weapons = g.weapons = createWeapons({ shaped, combat, controller, clock, ts, fx: fxSink, flow, inventory, ground, sfx, SFX, buffs });
+  const weapons = g.weapons = createWeapons({ shaped, combat, controller, clock, ts, fx: fxSink, flow, inventory, ground, sfx, SFX, buffs, night: () => (g.worldLights ? g.worldLights.night : 0) });
   const wraith = wraithView.wraith;
 
   /** Why the weapon must stay sheathed this frame. */
@@ -66,7 +66,7 @@ export function addWeaponSystem(g) {
   } });
 
   // ── The weapons lying in the world: an interaction glyph, and a notice when taken ──────────────
-  g.weaponFinds = weaponFinds.map((f) => ({ ...f, y: NaN, taken: false }));
+  g.weaponFinds = weaponFinds.map((f) => ({ ...f, y: NaN, taken: false, open: !f.needs, forced: false }));
   for (const f of g.weaponFinds) {
     const t = { kind: 'weapon', id: 'weapon-' + f.id, verb: 'Take', name: f.name, x: f.at[0], y: 0, z: f.at[1], r: 3.2, h: 1.1, hidden: true, find: f,
       onUse: () => take(f) };
@@ -94,7 +94,8 @@ export function addWeaponSystem(g) {
     for (const f of g.weaponFinds) {
       if (flags !== null && flags.has('own:' + f.id) && !inventory.has(f.id)) inventory.give(f.id);     // a load
       if (inventory.has(f.id)) { f.taken = true; f.target.hidden = true; continue; }
-      f.target.hidden = !(f.y === f.y);
+      f.open = !f.needs || f.forced || (flags !== null && flags.has(f.needs));      // a quest's reward waits for its flag
+      f.target.hidden = !(f.y === f.y) || !f.open;
       f.target.y = f.y;
     }
   } });
@@ -110,7 +111,7 @@ export function addWeaponSystem(g) {
     if (roll.t < 0) {
       inventory.give(spec.id); inventory.equip(spec.id);
       roll.t = 0;
-      for (const f of g.weaponFinds) if (spec.finds) { f.taken = false; f.target.hidden = !(f.y === f.y); }
+      for (const f of g.weaponFinds) if (spec.finds) { f.taken = false; f.forced = true; f.open = true; f.target.hidden = !(f.y === f.y); }
     }
     for (let k = 0; k < 4 && roll.t < spec.seconds; k++) {
       const t = roll.t, tap = Math.floor((t + 1e-6) / (spec.gap ?? 0.3)) !== Math.floor((t - dt + 1e-6) / (spec.gap ?? 0.3));
