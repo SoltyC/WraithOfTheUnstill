@@ -111,6 +111,8 @@ describe('Ridge', () => {
     const segs = r.stamps.filter((s) => s.k === BRUSH.RIDGE && s.d >= ridgeTuning.height * ridgeTuning.firstSwell * 0.99);
     const zs = segs.map((s) => s.z);
     expect(Math.max(...zs)).toBeGreaterThan(2);       // it bent toward +z
+    expect(Math.max(...segs.map((q) => Math.hypot(q.x, q.z)))).toBeLessThan(ridgeTuning.start + ridgeTuning.maxLen + 1);   // and stops at its length
+    expect(Math.max(...segs.map((q) => Math.hypot(q.x, q.z)))).toBeGreaterThan(ridgeTuning.start + ridgeTuning.maxLen * 0.8);
     r.st.ridgeHeld = false; r.run(1);
   });
   it('is cover: a shot along the ground through the wall is blocked, one over its crest is not', () => {

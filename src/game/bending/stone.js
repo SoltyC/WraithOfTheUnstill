@@ -374,13 +374,16 @@ export function createStoneBending(ctx) {
       // Steer toward the aim target and drag the head along it.
       let ex = s.tx - rd.hx[k], ez = s.tz - rd.hz[k];
       const el = Math.sqrt(ex * ex + ez * ez);
-      if (el > 1.2 && rd.len[k] < maxLen) {
-        ex /= el; ez /= el;
-        const cur = Math.atan2(rd.dx[k], rd.dz[k]), want = Math.atan2(ex, ez);
-        let da = want - cur; da -= Math.round(da / 6.283185307) * 6.283185307;
-        const a = cur + Math.max(-T.turn * dt, Math.min(T.turn * dt, da));
-        rd.dx[k] = Math.sin(a); rd.dz[k] = Math.cos(a);
-        const step = Math.min(T.speed * dt, el - 1);
+      if (rd.len[k] < maxLen) {
+        // Bend toward the aim point; once the head is within reach of it, it carries straight on.
+        const cur = Math.atan2(rd.dx[k], rd.dz[k]);
+        let a = cur;
+        if (el > 3) {
+          let da = Math.atan2(ex, ez) - cur; da -= Math.round(da / 6.283185307) * 6.283185307;
+          a = cur + Math.max(-T.turn * dt, Math.min(T.turn * dt, da));
+          rd.dx[k] = Math.sin(a); rd.dz[k] = Math.cos(a);
+        }
+        const step = T.speed * dt;
         rd.hx[k] += rd.dx[k] * step; rd.hz[k] += rd.dz[k] * step; rd.acc[k] += step; rd.len[k] += step; s.ridgeAdvance += step;
         while (rd.acc[k] >= T.step && rd.n[k] < MAXSEG) { rd.acc[k] -= T.step; emitSegment(s, k); }
         rd.surf[k] = surfaceAt(rd.hx[k], rd.hz[k]);
