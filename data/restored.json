@@ -1,0 +1,283 @@
+{
+  "_review": "Restored-world play (docs/gameplay-design.md \u00a77). `streams`: lines of rising air a restored biome gives back (game/restored/streams.js): within `width` m of the line the air climbs at up to `rise` m/s, in full up to 0.6 x `top` m over the ground, scaled by the wind here and by the biome's restoration. `wind`: the climatology's unit wind where each biome's sites stand (the pennants fly downwind; tests/restored.test.js checks it against the baked map). `banners`: the poles that mark a stream (built only once the biome is restored). `summit`: the frost glide course from the Shelf (systems/restored/summit.js): rings in order, each at a height the glide cannot hold without the Shelf stream; medals in seconds. `road`: the meadow's Wind Road (systems/restored/road.js), checks in order (x, z, r; an air check also has agl, the least height over the ground). `chaff`, `lantern`: the two Hearn requests with a place. Every y and h is the baked ground (tools/world/lift.mjs); tests/restored.test.js pins them.",
+  "streams": [
+    {
+      "id": "frost-shelf",
+      "biome": "frost",
+      "name": "The Shelf stream",
+      "pts": [
+        [
+          1340,
+          2850
+        ],
+        [
+          1362,
+          2905
+        ],
+        [
+          1388,
+          2965
+        ]
+      ],
+      "width": 62,
+      "rise": 5.5,
+      "top": 95
+    },
+    {
+      "id": "meadow-hill",
+      "biome": "meadow",
+      "name": "The Hearn wind",
+      "pts": [
+        [
+          156,
+          900
+        ],
+        [
+          160,
+          980
+        ],
+        [
+          162,
+          1050
+        ],
+        [
+          156,
+          1120
+        ]
+      ],
+      "width": 70,
+      "rise": 6.5,
+      "top": 150
+    },
+    {
+      "id": "meadow-lake",
+      "biome": "meadow",
+      "name": "The Lake Ridge wind",
+      "pts": [
+        [
+          -690,
+          880
+        ],
+        [
+          -675,
+          1000
+        ],
+        [
+          -665,
+          1120
+        ],
+        [
+          -655,
+          1240
+        ]
+      ],
+      "width": 80,
+      "rise": 5,
+      "top": 100
+    }
+  ],
+  "banners": [
+    {
+      "id": "rw-banner-1",
+      "stream": "frost-shelf",
+      "pos": [
+        1352,
+        2872
+      ],
+      "h": 827.4
+    },
+    {
+      "id": "rw-banner-2",
+      "stream": "frost-shelf",
+      "pos": [
+        1396,
+        2958
+      ],
+      "h": 855.8
+    },
+    {
+      "id": "side-rw-banner-1",
+      "stream": "meadow-hill",
+      "pos": [
+        140,
+        1116
+      ],
+      "h": 273.3
+    },
+    {
+      "id": "side-rw-banner-2",
+      "stream": "meadow-hill",
+      "pos": [
+        136,
+        1060
+      ],
+      "h": 266.8
+    },
+    {
+      "id": "side-rw-banner-3",
+      "stream": "meadow-hill",
+      "pos": [
+        128,
+        900
+      ],
+      "h": 261.8
+    },
+    {
+      "id": "side-rw-banner-4",
+      "stream": "meadow-lake",
+      "pos": [
+        -700,
+        900
+      ],
+      "h": 246.8
+    },
+    {
+      "id": "side-rw-banner-5",
+      "stream": "meadow-lake",
+      "pos": [
+        -690,
+        1040
+      ],
+      "h": 250.3
+    },
+    {
+      "id": "side-rw-banner-6",
+      "stream": "meadow-lake",
+      "pos": [
+        -675,
+        1180
+      ],
+      "h": 240.2
+    }
+  ],
+  "summit": {
+    "medals": {
+      "bronze": 180,
+      "silver": 130,
+      "gold": 100
+    },
+    "rings": [
+      {
+        "pos": [
+          1440,
+          2915
+        ],
+        "h": 897.5,
+        "y": 905.5,
+        "r": 10
+      },
+      {
+        "pos": [
+          1280,
+          2935
+        ],
+        "h": 811.5,
+        "y": 851.5,
+        "r": 10
+      },
+      {
+        "pos": [
+          1375,
+          2885
+        ],
+        "h": 838.7,
+        "y": 874.7,
+        "r": 10
+      },
+      {
+        "pos": [
+          1448,
+          2950
+        ],
+        "h": 896.3,
+        "y": 910.3,
+        "r": 10
+      },
+      {
+        "pos": [
+          1200,
+          2965
+        ],
+        "h": 800,
+        "y": 884,
+        "r": 10
+      },
+      {
+        "pos": [
+          1060,
+          2905
+        ],
+        "h": 786.3,
+        "y": 841.3,
+        "r": 10
+      }
+    ]
+  },
+  "road": {
+    "checks": [
+      {
+        "name": "Over the Hearn hill",
+        "pos": [
+          255,
+          1000
+        ],
+        "r": 70,
+        "agl": 15
+      },
+      {
+        "name": "Over the Lake Ridge",
+        "pos": [
+          -668,
+          1000
+        ],
+        "r": 60,
+        "agl": 15
+      },
+      {
+        "name": "The first ring",
+        "pos": [
+          -868.3,
+          524.9
+        ],
+        "r": 12,
+        "y": 229.8
+      }
+    ],
+    "start": {
+      "pos": [
+        128,
+        1060
+      ],
+      "r": 90,
+      "agl": 60
+    }
+  },
+  "chaff": {
+    "pos": [
+      75,
+      1135
+    ],
+    "h": 270,
+    "r": 7,
+    "hits": 3
+  },
+  "lantern": {
+    "pos": [
+      38,
+      984
+    ],
+    "h": 261.2,
+    "rise": 90,
+    "seconds": 14
+  },
+  "wind": {
+    "frost": [
+      0.78,
+      -0.63
+    ],
+    "meadow": [
+      0.99,
+      -0.13
+    ]
+  }
+}

@@ -52,7 +52,7 @@ function fenLamp(b, facing, R) {
 
 /** A glide ring: stone hoop (radius `RING_R`) in the vertical plane across the course, ember studs that glow once it is flown through. */
 export const RING_R = 7;
-function glideRing(b, facing, R) {
+export function glideRing(b, facing, R) {
   const c = Math.cos(facing), s = Math.sin(facing), N = 28;
   const P = (u, y) => [u * c, y, -u * s];                       // u runs across the course (site-local right)
   for (let k = 0; k < N; k++) {

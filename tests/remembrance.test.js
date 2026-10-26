@@ -39,7 +39,7 @@ describe('Remembrance data', () => {
   });
   it('reveals only places that exist', () => {
     const known = new Set(read('data/world/pois.json').pois.map((p) => p.id));
-    for (const f of ['frost', 'meadow', 'meadow-side']) for (const id in read(`data/quests/${f}.json`).places || {}) known.add(id);
+    for (const f of ['frost', 'meadow', 'meadow-side', 'frost-restored', 'meadow-restored']) for (const id in read(`data/quests/${f}.json`).places || {}) known.add(id);
     for (const e of ENTRIES) for (const id of e.reveal || []) expect(known.has(id), e.id + ' reveals ' + id).toBe(true);
   });
   it('fills the reaction table from the game\'s own rule, one entry per cell', () => {
