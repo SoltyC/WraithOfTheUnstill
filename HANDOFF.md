@@ -133,7 +133,7 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 
 - **Polish follow-ups (lead review, 2026-10-26), polish2 pass (`claude/polish2`, shots in `screenshots/polish2/`):**
   - ~~Ember tea barely visible at noon~~: fixed (gold multiply on the robe plus a stronger rim; `tea-noon-before/after.png`). Dusk looks strong; judge by eye.
-  - Glide-ring masts: rebuilt as a tapered, banded Shaper pier with stout arms (`mast-before.png`, `p8p-glide-ring-mast.png`). **Not done: the rings are not lower.** Their heights (up to 84 m over ground) are the glide course and the medal times, so they were left. The pier is still tall on the high rings.
+  - ~~Glide-ring masts~~ **done:** a ring up to 22 m up stands on a tapered, banded Shaper pier; a higher one (up to 84 m: the course) has no pier and hangs in the wind under a carved plumb-stone, because a pier that tall always read as a pylon (lead fix, `p8p-glide-ring-mast.png`).
   - ~~Dropped-marks glow small at 30 m~~: fixed (halo swells and a faint column climbs with distance; `drop-before/after-30/60.png`).
   - Maul stagger-lock: fixed with a 1.2 s poise window per weapon (`weapons.js`), see `docs/weapons-playtest.md`.
 - **Restored-world follow-ups (lead review, 2026-10-26):**

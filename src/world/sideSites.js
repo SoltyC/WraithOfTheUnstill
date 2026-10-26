@@ -61,12 +61,22 @@ function fenLamp(b, facing, R) {
 
 /** A glide ring: stone hoop (radius `RING_R`) in the vertical plane across the course, ember studs that glow once it is flown through. */
 export const RING_R = 7;
+/** The highest ring (centre above the ground, m) that stands on a pier (about 15 m of pier). */
+const PIER_MAX = 22;
 export function glideRing(b, facing, R, lift = 0) {
   const c = Math.cos(facing), s = Math.sin(facing), N = 28;
   const P = (u, y) => [u * c, y, -u * s];                       // u runs across the course (site-local right)
   // The support: a tapered Shaper pier from the ground under the ring (the site hangs `lift` m up): a stepped footing, courses that
   // narrow as they climb with a carved band between each, a capstone, and two stout arms that cradle the hoop's underside.
-  if (lift > 1) {
+  // A pier taller than ~15 m reads as a modern pylon (lead review), so a ring hung higher than PIER_MAX has none: it rides
+  // the wind under a carved Shaper plumb-stone (a deliberate float, the stone that keeps it level), its arms cradling the hoop.
+  if (lift > PIER_MAX) {
+    const top = -RING_R - 2.6;
+    b.drum(0, 0, top - 4.2, top - 2.0, 0.12, 1.15, 10, MAT.STONE, 150, { solid: false });          // the plumb's point, hanging
+    b.drum(0, 0, top - 2.0, top - 1.4, 1.15, 1.2, 10, MAT.GLYPH, 151, { carve: 1, solid: false });   // its carved band
+    b.drum(0, 0, top - 1.4, top + 0.7, 1.2, 0.7, 10, MAT.STONE, 152, { solid: false });             // the shoulder up to the arms
+    for (const sg of [-1, 1]) { const a = Math.PI + sg * 0.66, [x, y, z] = P(Math.sin(a) * RING_R, Math.cos(a) * RING_R); stick(b, [0, top + 0.5, 0], [x, y + 0.1, z], 0.5, 0.3, 6, MAT.STONE, 92 + (sg > 0 ? 1 : 0)); }
+  } else if (lift > 1) {
     const y0 = -lift - 3, top = -RING_R - 2.6, r0 = Math.min(3.4, 1.2 + lift * 0.045), r1 = 0.75;
     const n = Math.max(2, Math.ceil((top - y0) / 7)), dy = (top - y0) / n;
     const rAt = (u) => r1 + (r0 - r1) * Math.pow(1 - u, 1.35);
