@@ -18,6 +18,7 @@ export const controllerTuning = {
   accel: 26,            // m/s² toward the wish velocity
   decel: 30,            // m/s² when there is no input
   airControl: 0.25,     // fraction of accel available in the air
+  liftControl: 0.7,     // ... while an updraft lifts the body
   gravity: 24,          // m/s²
   liftMax: 13,          // m/s: the fastest an updraft carries the body up
   jumpSpeed: 7.2,       // m/s initial vertical
@@ -180,7 +181,8 @@ export class CapsuleController {
     } else {
       // Horizontal acceleration toward wish velocity.
       const tx = wx * T.walkSpeed * this.walkMul, tz = wz * T.walkSpeed * this.walkMul;
-      const control = this.grounded ? 1 : T.airControl;
+      // In rising air the robe catches the wind: the body steers well within the column (and out of it onto a ledge).
+      const control = this.grounded ? 1 : this.lift > 0 ? T.liftControl : T.airControl;
       const rate = (wl > 0.01 ? T.accel : T.decel) * control;
       let dx = tx - v.x, dz = tz - v.z;
       const dl = Math.sqrt(dx * dx + dz * dz);

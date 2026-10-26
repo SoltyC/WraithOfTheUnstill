@@ -113,7 +113,7 @@ The cost is the same as the other weapons, from the same materials.
 
 - The Bell Ledge is planned in `docs/cross-biome.md` §3 (frost: "Updraft to the Bell Ledge shrine above the monastery") but not yet built. Build it here as a small site.
 - **Site:** a stone ledge about 9.5 m up (an Updraft with the glide peaks at 10–12 m, so it can be landed on) the cliff behind the monastery. A Shaper bell frame stands on it, with the mace hung as its clapper.
-  - It can't be reached by climbing; only an Updraft from the base gets you up.
+  - It can't be reached by climbing; only an Updraft cast against the front wall gets you up: you rise beside the wall and steer onto the top while the column still lifts (rising air gives the robe 0.7 air control).
   - It is visible from the monastery yard, so the lock is shown before the key.
 - **Needs:** Gale known (the flag from the Bellwether). "Take" from the bell frame.
 - **The first lesson is free:** two hounds idle in the hollow below the ledge. The way down is the first plunge (h ≈ 9.5 m, about 48 damage, a rebound to the second hound).

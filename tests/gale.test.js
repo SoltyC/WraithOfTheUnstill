@@ -115,6 +115,7 @@ describe('Updraft', () => {
     expect(r.g.liftAt(8 + T.radius * 1.3 + 0.1, 0.5, 0)).toBe(0);
     expect(r.g.liftAt(8, T.height + 0.5, 0)).toBe(0);
     expect(r.g.liftAt(8, 0.5, 0)).toBeGreaterThan(r.g.liftAt(8 + T.radius, 0.5, 0));
+    expect(r.g.liftAt(8 + 1.3, 0.5, 0)).toBeGreaterThan(24);           // a full core: 1.3 m off the axis still rises
     r.run(T.life + 0.2);
     expect(r.g.liftAt(8, 0.5, 0)).toBe(0);
   });

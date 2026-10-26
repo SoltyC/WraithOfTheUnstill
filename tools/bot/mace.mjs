@@ -156,7 +156,8 @@ const tests = {
     ${prelude}
     const L = g.bellLedge; if (!L) return { test: 'ledge', error: 'no bellLedge system' };
     const find = g.weaponFinds.find((f) => f.id === 'mace'), at = L.site.at, yaw = Math.atan2(at[0] - L.hollow.foot[0], at[1] - L.hollow.foot[1]);
-    const sx = L.hollow.foot[0] - Math.sin(yaw) * ${+(process.env.BACK || 3.5)}, sz = L.hollow.foot[1] - Math.cos(yaw) * ${+(process.env.BACK || 3.5)};
+    // START: metres from the ledge's centre, on the hollow side (beside the bastion's wall, on its own ground); unset: the hollow's foot.
+    const S0 = ${+(process.env.START || 0)}, sx = S0 ? at[0] - Math.sin(yaw) * S0 : L.hollow.foot[0] - Math.sin(yaw) * ${+(process.env.BACK || 3.5)}, sz = S0 ? at[1] - Math.cos(yaw) * S0 : L.hollow.foot[1] - Math.cos(yaw) * ${+(process.env.BACK || 3.5)};
     const start = { owned: g.inventory.has('mace'), taken: !!find.taken };
     await bot_tp(sx, sz);
     g.combat.health = 100; g.combat.focus = 100; g.flow.reset(true); g.elements.unlock('gale'); g.elements.select('gale');
@@ -172,13 +173,15 @@ const tests = {
       maxY = Math.max(maxY, h); if (h > 9) minD = Math.min(minD, d);
       // Phase 1: stand on the column's axis and let it lift (walking out of it, or gliding out of it, wastes it). Phase 2: from the apex, air-walk (or glide, GLIDE=1) at the ledge, letting go over it.
       const apex = h > 3 && c.vel.y < 0.5;
+      if (${process.env.DIRECT ? 1 : 0} && stage === 0 && c.pos.y > find.y + 1) stage = 2;   // DIRECT: steer for the top while the column still lifts
       if (c.grounded && stage === 0 && performance.now() - t0 < 3000 && Math.hypot(dx, dz) > 0.4) { g.arm.yaw = Math.atan2(dx, dz); set('MoveForward', true); }
       else if (stage === 0 && !apex) { set('MoveForward', false); set('Traverse', false); }
+      else if (stage === 0 && ${process.env.DIRECT ? 1 : 0}) stage = 2;   // (reached at the apex; see the early switch below)   // DIRECT: ride the one column up the wall, then step forward onto the top
       else if (stage === 0) { stage = 1; g.combat.focus = 100; g.arm.yaw = Math.atan2(ay, az); g.arm.pitch = 0.95; w.inject('Heavy', true); setTimeout(() => w.inject('Heavy', false), 60); castAt = performance.now(); }
       else if (stage === 1) {           // the second column, 3 m on toward the ledge: air-walk to its axis and stand in it
         g.arm.yaw = Math.atan2(dx, dz); set('MoveForward', Math.hypot(dx, dz) > 0.5 && performance.now() - castAt > 150); set('Traverse', performance.now() - castAt > 150 && Math.hypot(dx, dz) > 1.0);
         if (performance.now() - castAt > 700 && c.vel.y < 0.5 && h > 6) stage = 2;
-      } else { g.arm.yaw = Math.atan2(ay, az); const over = d < ${+(process.env.OVER || 2.0)}; set('MoveForward', !over); set('Traverse', ${process.env.GLIDE ? 'true' : 'false'} && !over); }
+      } else { g.arm.yaw = Math.atan2(ay, az); const over = d < ${+(process.env.OVER || 2.0)}; set('MoveForward', d > 0.8); set('Traverse', ${process.env.GLIDE ? 'true' : 'false'} && !over); }
       if (c.grounded && h > 8.5) { landed = true; break; }
       if (c.grounded && performance.now() - t0 > 4000) break;
     }
@@ -186,6 +189,10 @@ const tests = {
     const ledgeY = +(c.pos.y - y0).toFixed(1), toCentre = +Math.hypot(at[0] - p.x, at[1] - p.z).toFixed(1);
     let took = false, plunge = null;
     if (landed) {
+      // Walk across the ledge to the bell (the Take's reach is 3.6 m round the find), then Take.
+      for (let i = 0; i < 240 && Math.hypot(find.at[0] - p.x, find.at[1] - p.z) > 1.8; i++) { g.arm.yaw = Math.atan2(find.at[0] - p.x, find.at[1] - p.z); set('MoveForward', true); await frames(1); }
+      set('MoveForward', false); await sleep(300);
+      var dbg = { dFind: +Math.hypot(find.at[0] - p.x, find.at[1] - p.z).toFixed(1), dy: +(c.pos.y - find.y).toFixed(1), hidden: find.target.hidden, open: find.open, fy: find.y };
       await press('Interact', 80); await sleep(900); took = g.inventory.has('mace') && !!find.taken;
       if (took) {
         g.inventory.equip('mace'); await sleep(300);
@@ -203,7 +210,7 @@ const tests = {
         plunge = { pressed, h: +pl.last.h.toFixed(2), dmg: +pl.last.dmg.toFixed(1), hits: pl.last.hits, houndsLiveBefore: live0, hpBefore: hp, hpAfter: L.slots.map((i) => (i >= 0 ? g.shaped.slots[i].hp : 0)) };
       }
     }
-    return { tr: tr.length ? tr : undefined, test: 'ledge', start, houndsAsleep: hounds, peakM: +maxY.toFixed(1), closestToCentreAtAltitude: minD, landed, ledgeY, toCentre, took, plunge };
+    return { tr: tr.length ? tr : undefined, test: 'ledge', start, houndsAsleep: hounds, peakM: +maxY.toFixed(1), closestToCentreAtAltitude: minD, landed, ledgeY, toCentre, took, plunge, dbg: typeof dbg === 'undefined' ? null : dbg };
   `,
 
   // The auto-fighter: Updraft (cast 3 m ahead, step into it), ride, steer over the foe, plunge when high enough, plunge again from each rebound;

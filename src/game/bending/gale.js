@@ -109,9 +109,12 @@ export function createGaleBending(ctx) {
         const h = y - up.y[k];
         if (h < -1 || h > T.height) continue;
         const env = draftEnvelope(up.age[k], up.life[k]) * up.str[k];
-        const radial = 1 - Math.min(1, r / (T.radius * 1.3)); // strongest on the axis
+        // A full-strength core over most of the visible column, fading at its rim: a body need not be dead on
+        // the axis to rise (the old axis-peaked falloff fell below gravity under 1 m off the axis).
+        const t = Math.min(1, Math.max(0, (r - 0.55 * T.radius * 1.3) / (0.45 * T.radius * 1.3)));
+        const radial = 1 - t * t * (3 - 2 * t);
         const top = 1 - Math.max(0, (h - T.height * 0.6) / (T.height * 0.4)); // thins at the top
-        a = Math.max(a, T.accel * env * radial * radial * (2 - radial) * top);
+        a = Math.max(a, T.accel * env * radial * top);
       }
       return a;
     },

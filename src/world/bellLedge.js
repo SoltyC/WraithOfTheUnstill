@@ -20,18 +20,18 @@ const frame = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, 
 export function buildBellLedge(b, facing, R) {
   const P = frame(facing), T = LEDGE.top;
   // The bastion: three stepped courses of ashlar (the plinth builder lays the walls and paves each top), the last one the ledge.
-  b.box(0, 0, -3.2, 3.4, 6.0, 5.0, facing, MAT.STONE, 1, { drift: false });
-  { const [x, z] = P(0.5, -0.5); b.box(x, z, 3.4, 6.6, 5.0, 4.0, facing, MAT.STONE, 2, { drift: false }); }
-  { const [x, z] = P(0.5, -0.9); b.box(x, z, 6.6, T, 4.2, 3.4, facing, MAT.STONE, 3, { platform: true, drift: false }); }
+  b.box(0, 0, -3.2, 3.4, 6.0, 5.8, facing, MAT.STONE, 1, { drift: false });
+  { const [x, z] = P(0.5, -0.5); b.box(x, z, 3.4, 6.6, 5.0, 4.9, facing, MAT.STONE, 2, { drift: false }); }
+  { const [x, z] = P(0.5, -0.9); b.box(x, z, 6.6, T, 4.2, 4.2, facing, MAT.STONE, 3, { platform: true, drift: false }); }
   // Buttresses down the front face, battered toward the ground, and string courses between the stages.
   for (const u of [-3.4, 3.4]) {
-    const [x, z] = P(u, 5.3);
+    const [x, z] = P(u, 6.1);
     b.frustum(x, z, -3.2, 6.6, 1.0, 1.2, 0.7, 0.55, facing, MAT.STONE, 20 + u);
   }
-  { const [x, z] = P(0.5, -0.5); b.box(x, z, 3.3, 3.55, 5.25, 4.25, facing, MAT.STONE, 30, { solid: false, drift: false }); }
-  { const [x, z] = P(0.5, -0.9); b.box(x, z, 6.5, 6.75, 4.45, 3.65, facing, MAT.STONE, 31, { solid: false, drift: false }); }
+  { const [x, z] = P(0.5, -0.5); b.box(x, z, 3.3, 3.55, 5.25, 5.15, facing, MAT.STONE, 30, { solid: false, drift: false }); }
+  { const [x, z] = P(0.5, -0.9); b.box(x, z, 6.5, 6.75, 4.45, 4.45, facing, MAT.STONE, 31, { solid: false, drift: false }); }
   // A carved band on the front of the middle stage: the Shapers' marks that tell what hangs above.
-  { const [x, z] = P(0.5, 3.55); b.box(x, z, 4.1, 5.9, 2.1, 0.12, facing, MAT.GLYPH, 32, { carve: 2, solid: false, drift: false, cap: false }); }
+  { const [x, z] = P(0.5, 4.45); b.box(x, z, 4.1, 5.9, 2.1, 0.12, facing, MAT.GLYPH, 32, { carve: 2, solid: false, drift: false, cap: false }); }
   // The bell frame on the ledge: two carved pillars and a lintel (the bell hangs from it, 3.1 m under).
   const ledgeZ = -0.9;
   for (const s of [-1, 1]) { const [x, z] = P(0.5 + s * 2.3, ledgeZ); b.box(x, z, T, LEDGE.beam + 0.55, 0.42, 0.42, facing, MAT.GLYPH, 40 + s, { carve: 1, drift: false }); }
