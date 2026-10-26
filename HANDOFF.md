@@ -115,9 +115,9 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 
 - **Rain:**
   - the underside of storm clouds is blotchy during a flash;
-  - wet streets at dusk are still dark away from the lamps (wet ground now mirrors the lamps and windows near it, but the cobbles between them stay black);
+  - ~~wet streets at dusk are still dark away from the lamps~~ (polish2: cobble tints lifted a third; check by eye in the rain);
   - the robe isn't heavier when wet;
-  - rain seen through a doorway from inside is hidden (the fade is global);
+  - ~~rain seen through a doorway from inside is hidden~~ (polish2: under a roof only drops within ~3.5-6.5 m of the camera stop; `rainShelter`);
   - perf is about +1.3 ms per frame, measured on a shared GPU.
 - **Flow:**
   - tier 3 (from chains plus reactions) isn't proven in natural play;
@@ -131,12 +131,14 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 - **`npm run alloc`:** `controller.update` and `springArm.update` fail. This predates this work and is noted in DECISIONS.md.
 - **Phase 7 gate:** it still needs the user's own play-through and their sign-off in PROGRESS.md.
 
-- **Polish follow-ups (lead review, 2026-10-26):**
-  - Ember tea is still barely visible on the robe at noon at the default camera distance (`screenshots/polish/buff-noon-after-tea.png`).
-  - The glide-ring masts read as tall, thin modern pylons. Rebuild them as shorter, tapered Shaper stone, with carved bands and the rings lower.
-  - The dropped-marks glow at night reads, but it's small at 30 m.
+- **Polish follow-ups (lead review, 2026-10-26), polish2 pass (`claude/polish2`, shots in `screenshots/polish2/`):**
+  - ~~Ember tea barely visible at noon~~: fixed (gold multiply on the robe plus a stronger rim; `tea-noon-before/after.png`). Dusk looks strong; judge by eye.
+  - Glide-ring masts: rebuilt as a tapered, banded Shaper pier with stout arms (`mast-before.png`, `p8p-glide-ring-mast.png`). **Not done: the rings are not lower.** Their heights (up to 84 m over ground) are the glide course and the medal times, so they were left. The pier is still tall on the high rings.
+  - ~~Dropped-marks glow small at 30 m~~: fixed (halo swells and a faint column climbs with distance; `drop-before/after-30/60.png`).
+  - Maul stagger-lock: fixed with a 1.2 s poise window per weapon (`weapons.js`), see `docs/weapons-playtest.md`.
 - **Restored-world follow-ups (lead review, 2026-10-26):**
-  - The threshing floor for "The Chaff" stands inside a bush (`screenshots/restored/p8r-chaff-floor.png`). Clear the vegetation over the floor, or move the floor. The chaff, sacks and Ketil's rising lantern have never been seen in a shot. The green is too dark at dusk to find the lantern post.
+  - ~~Threshing floor inside a bush~~: fixed (no trees within 9 m of the floor; floor now a low terrace on the slope; chaff cleared by three Gusts and the sacks appear: `chaff-1..4`, `p8r-chaff-floor`). The photo spots `p8r-chaff-floor` and `p8r-green-lantern` are restored (the merge `a278458` had dropped them).
+  - ~~Ketil's lantern post unfindable~~: the post stood between two houses, so it moved to (28, 974) on the green (`data/restored.json`, `meadow-restored.json`); the paper shell now glows and throws a little warm world light; the Updraft lifts it (`lantern-1-before`, `-3-rise`, `p8r-green-lantern`). The aloft lantern itself is only a faint glow high in `lantern-3/4-rise.png`.
   - The bot never reliably flew the Shelf's last two rings or the Wind Road's finish ring. The medal times come from the route sim, so they need a human run.
 - **Bell-mace (in progress, `claude/mace`, `/home/sol/wraith-mace`):** spec `docs/mace-design.md`.
 
