@@ -225,7 +225,7 @@ describe('forge', () => {
     expect(forgeStatus(inv, 'staff').next).toBeNull();
   });
   it('tiers 1, 3 and 5 change the move and 2 and 4 are weight, for every weapon', () => {
-    for (const id of ['staff', 'sickles', 'maul']) {
+    for (const id of ['staff', 'sickles', 'maul', 'glaive', 'flail']) {
       expect(TIER_INFO[id].map((t) => t && t.move)).toEqual([null, true, false, true, false, true]);
       const kinds = TIER_INFO[id].slice(1).map((t) => t.move);
       for (let k = 1; k < 5; k++) expect(kinds[k] && kinds[k - 1]).toBe(false);    // never two weight tiers (nor two moves) abutting by accident
@@ -233,7 +233,7 @@ describe('forge', () => {
   });
   it('tier 1 lengthens the combo; tier 5 gives the art; tier 3 opens the infusion', () => {
     clearTierCache();
-    for (const id of ['staff', 'sickles', 'maul']) {
+    for (const id of ['staff', 'sickles', 'maul', 'glaive', 'flail']) {
       const base = weaponDefs[id];
       const t1 = tierDef(base, 1), t3 = tierDef(base, 3), t5 = tierDef(base, 5);
       expect(t1.combo.length).toBe(base.combo.length + 1);
