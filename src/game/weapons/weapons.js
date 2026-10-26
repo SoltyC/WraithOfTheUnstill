@@ -4,7 +4,7 @@
 // (testable with stand-ins); input and rendering live in systems/weapons.js and render/weaponView.js.
 // Allocation-free per frame; fields in, fields out (no doubles as call arguments).
 
-import { MAX_SHAPED } from '../shaped/shaped.js';
+import { MAX_SHAPED, S } from '../shaped/shaped.js';
 import { ARCHETYPES } from '../shaped/archetypes.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { FLOW_EVENT } from '../flow.js';
@@ -31,6 +31,8 @@ export function createWeapons(ctx) {
   const radius = {};
   for (const k in ARCHETYPES) radius[k] = bodyRadius(ARCHETYPES[k]);
   const bleedT = new Float64Array(MAX_SHAPED), bleedDps = new Float64Array(MAX_SHAPED);
+  // Poise recovery: a Shaped that was staggered by a weapon cannot be staggered again by it while it reels or for POISE_WINDOW s after (the blows still land): no stagger-lock.
+  const POISE_WINDOW = 1.2, poiseT = new Float64Array(MAX_SHAPED), poiseBy = new Array(MAX_SHAPED).fill('');
   // Frost infusion: blows landed on each slot in the last few seconds (the third freezes it).
   const chill = new Float64Array(MAX_SHAPED), chillT = new Float64Array(MAX_SHAPED);
   // Mutable state lives in an object of double fields (a closure variable holding a double boxes it on every write).
@@ -190,10 +192,12 @@ export function createWeapons(ctx) {
       let dmg = a.dmg * (heavy ? m.power : 1) * (def.dmgMul || 1) * (buffs !== null ? buffs.damageMul : 1) * (inf === 'stone' ? 1.1 : 1) * hitMat.dmgMul * falloff * T.damageMul;
       if (hitMat.shatter) dmg = 1e9;
       else if (hitMat.armour > 0) dmg = dmg * hitMat.pierce / hitMat.armour;     // shaped.damage multiplies the armour back in
-      w.i = i; w.dmg = dmg; w.dx = dx; w.dz = dz; w.stagger = a.stagger || inf === 'stone'; w.knock = (this.knockOv > 0 ? this.knockOv : a.pull ? -a.pull : a.knock) * (inf === 'gale' ? 1.7 : 1); w.chip = a.chip * T.impactChip * (inf === 'stone' ? 1.5 : 1);
+      w.i = i; w.dmg = dmg; w.dx = dx; w.dz = dz; w.stagger = a.stagger || inf === 'stone';
+      if (w.stagger && poiseBy[i] === def.id && poiseT[i] > 0) w.stagger = false; w.knock = (this.knockOv > 0 ? this.knockOv : a.pull ? -a.pull : a.knock) * (inf === 'gale' ? 1.7 : 1); w.chip = a.chip * T.impactChip * (inf === 'stone' ? 1.5 : 1);
       w.stop = a.stop * T.hitStopMul * (hitMat.glance ? 0.4 : 1); w.shake = a.shake * T.shakeMul; w.kick = a.kick * T.shakeMul;
       w.heavy = heavy; w.glance = hitMat.glance; w.sound = hitMat.shatter ? 2 : hitMat.glance ? 3 : a.sfx === 'boom' ? 4 : a.sfx === 'cut' ? 1 : 0;
       combat.weaponHit();
+      if (w.stagger && s.state === S.STAGGER && s.t >= 0) { poiseBy[i] = def.id; poiseT[i] = POISE_WINDOW; }
       if (inf !== null) this.infuse(inf, i);
       flow.hit(heavy ? FLOW_EVENT.WEAPON_HEAVY : FLOW_EVENT.WEAPON_LIGHT);
       const st = this.stats; st.hits++; st.damage += w.dealt; if (hitMat.shatter) st.shatters++; if (hitMat.glance) st.glances++;
@@ -345,6 +349,7 @@ export function createWeapons(ctx) {
     /** Bleeding: a tick of damage each bleedTick, quiet (a trickle of spray). */
     bleed(dt) {
       for (let i = 0; i < MAX_SHAPED; i++) {
+        if (poiseT[i] > 0) { const sl = shaped.slots[i]; if (sl.state === S.STAGGER && sl.t >= 0) poiseT[i] = POISE_WINDOW; else poiseT[i] -= dt; }
         if (bleedT[i] <= 0) continue;
         if (!shaped.isLive(i)) { bleedT[i] = 0; continue; }
         const before = bleedT[i];
@@ -362,7 +367,7 @@ export function createWeapons(ctx) {
     get push() { return st.push; },
     get heading() { return st.atkYaw; },
     /** Clear everything (death, a load). */
-    reset() { m.reset(); burn.reset(); pinMask = 0; bleedT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
+    reset() { m.reset(); burn.reset(); pinMask = 0; bleedT.fill(0); poiseT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
   };
   return self;
 }
