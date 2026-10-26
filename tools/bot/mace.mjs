@@ -62,6 +62,104 @@ const tests = {
     return out;
   `,
 
+  // Live combos (docs/mace-design.md §9): each returns the numbers the weapon's telemetry saw. Inputs are the real actions:
+  // Heavy = Updraft / Crystallize, Bend = Gust / Sweep (element in hand), Primary = the plunge in the air, Jump held = the glide.
+  dunk: () => `
+    ${prelude}
+    ${X < 0 ? '' : `await bot_tp(${X}, ${Z});`}
+    await ready(); g.elements.unlock('gale'); g.elements.select('gale');
+    const p = c.pos, y0 = gy(); g.arm.yaw = 0.7;
+    // The aim is clamped to a minimum range, so the column rises at the Wraith's own feet: the column stands 3 m ahead: hound a 2.2 m past its axis (inside its reach of 2.6), hound b 2.2 m beyond a (out of reach, inside the dunk's 2.4 m).
+    const fx = Math.sin(0.7), fz = Math.cos(0.7), ux = p.x, uz = p.z;
+    const a = g.shaped.spawn('hound', p.x + fx * 5.2, p.z + fz * 5.2, { idle: 999 }), b = g.shaped.spawn('hound', p.x + fx * 7.4, p.z + fz * 7.4, { idle: 999 });
+    await sleep(1500); const hpA = g.shaped.slots[a].hp, hpB = g.shaped.slots[b].hp;
+    g.arm.pitch = 0.95; await press('Heavy', 60); await sleep(150);
+    if (!g.shaped.air.isAir(a)) { g.combat.focus = 100; await press('Heavy', 60); await sleep(150); }
+    // The Updraft is real (cast, caught, thrown up); the Wraith is then set 9 m above the caught hound (a setup, as in iso) and the plunge is the real input.
+    const caught = g.shaped.air.isAir(a); let maxAirY = 0;
+    const ab = g.shaped.slots[a].body;
+    p.x = ab.sx[1]; p.z = ab.sz[1]; c.pos.y = y0 + 9; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false;
+    await frames(1); const airYAtPress = +g.shaped.air.y[a].toFixed(1);
+    await press('Primary', 50);
+    const t0 = performance.now(); while (performance.now() - t0 < 3000 && pl.stats.dunkLands === 0) { await frames(1); if (g.shaped.air.isAir(a)) maxAirY = Math.max(maxAirY, g.shaped.air.y[a]); }
+    await sleep(500); const pressed = pl.stats.plunges > 0;
+    return { test: 'dunk', col: [+(g.gale.updraftX - ux).toFixed(1), +(g.gale.updraftZ - uz).toFixed(1)], caught, airYAtPress, plunged: pressed, h: +pl.last.h.toFixed(2), dmg: +pl.last.dmg.toFixed(1), dunks: pl.stats.dunks, dunkLands: pl.stats.dunkLands, dunkHits: pl.last.dunkHits,
+      hpA: [hpA, g.shaped.slots[a].hp], hpB: [hpB, g.shaped.slots[b].hp], second: +(hpB - g.shaped.slots[b].hp).toFixed(1) };
+  `,
+
+  ice: () => `
+    ${prelude}
+    ${X < 0 ? '' : `await bot_tp(${X}, ${Z});`}
+    await ready(); g.elements.unlock('frost'); g.elements.select('frost');
+    const p = c.pos, y0 = gy(), f = g.arm.yaw;
+    const ids = [3.6, 5.8, 8.0].map((d, k) => g.shaped.spawn('hound', p.x + Math.sin(f) * d, p.z + Math.cos(f) * d + (k - 1) * 0.5, { idle: 999 }));
+    await sleep(1500);
+    g.arm.pitch = 0.1; await press('Bend', 60); await sleep(900);               // a real Sweep down the lane
+    const iceAt = ids.map((i) => { const b = g.shaped.slots[i].body; return g.frost.iceAt(b.sx[1], b.sz[1]); });
+    const frozenBefore = ids.map((i) => g.shaped.slots[i].state === 7);
+    for (const i of ids) if (g.shaped.slots[i].state !== 7) g.shaped.freeze(i, 60);   // a Sweep that only staggers: freeze them (recorded)
+    let shat = 0; g.combat.onShatter = () => { shat++; };
+    const mid = g.shaped.slots[ids[1]].body, H = ${+(process.env.H || 8)};
+    p.x = mid.sx[1] - Math.sin(f) * 2.5; p.z = mid.sz[1] - Math.cos(f) * 2.5; await frames(2);
+    c.pos.y = gy() + H; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; await frames(3);
+    g.arm.yaw = f; await press('Primary', 50);
+    const t0 = performance.now(); while (performance.now() - t0 < 4000 && pl.stats.plunges < 1) await frames(1);
+    await sleep(800);
+    return { test: 'ice', H, swept_ice: iceAt, frozenBySweep: frozenBefore, star: pl.last.star, stars: pl.stats.stars, h: +pl.last.h.toFixed(2), shatters: pl.last.shatters, onShatterCalls: shat, live: ids.map((i) => g.shaped.isLive(i)) };
+  `,
+
+  down: () => `
+    ${prelude}
+    ${X < 0 ? '' : `await bot_tp(${X}, ${Z});`}
+    await ready(); g.elements.unlock('gale'); g.elements.select('gale');
+    const out = [];
+    for (const mode of ['plain', 'downdraft']) {
+      for (const k in pl.stats) pl.stats[k] = 0;
+      c.pos.y = gy() + 10; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; g.combat.focus = 100; await frames(3);
+      await press('Primary', 50);
+      const t0 = performance.now(); let fired = false;
+      while (performance.now() - t0 < 4000 && !(pl.stats.plunges > 0 && !pl.falling)) {
+        await frames(1);
+        if (mode === 'downdraft' && !fired && pl.falling) { fired = true; await press('Bend', 60); }
+      }
+      await sleep(400);
+      out.push({ mode, h: +pl.last.h.toFixed(2), dmg: +pl.last.dmg.toFixed(1), downdrafts: pl.stats.downdrafts });
+      await sleep(1500);
+    }
+    return { test: 'down', out, plusH: +(out[1].h - out[0].h).toFixed(2) };
+  `,
+
+  glide: () => `
+    ${prelude}
+    ${X < 0 ? '' : `await bot_tp(${X}, ${Z});`}
+    await ready();
+    const gl = c.glide, log = [];
+    c.pos.y = gy() + 30; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; await frames(3);
+    w.inject('Jump', true); await sleep(900);
+    const gliding0 = gl.active, hGl = +pl.hNow.toFixed(1);
+    await press('Primary', 50);
+    let t0 = performance.now(), falling = false, landed = false, afterRebound = null, regl = false, lastPl = 0, gl2 = false;
+    while (performance.now() - t0 < 8000) {
+      await frames(1);
+      if (pl.falling) falling = true;
+      if (falling && !pl.falling && pl.stats.plunges > lastPl) { lastPl = pl.stats.plunges; afterRebound = +(c.pos.y - gy()).toFixed(1); }
+      if (afterRebound !== null && gl.active) { regl = true; if (performance.now() - t0 > 0) gl2 = true; break; }
+    }
+    const info = { test: 'glide', glidingBefore: gliding0, hStoredAtPlunge: +pl.last.h.toFixed(2), glideDriftShare: 0.6, rebound: +pl.last.rebound.toFixed(2), reboundStartY: afterRebound, glideRestored: regl, plunges: pl.stats.plunges, rebounds: pl.stats.rebounds };
+    w.inject('Jump', false);
+    return info;
+  `,
+
+  ledge: () => `
+    ${prelude}
+    ${X < 0 ? '' : `await bot_tp(1130.8, 2780.1);`}
+    await ready(); g.elements.unlock('gale'); g.elements.select('gale');
+    const find = g.weaponFinds ? 'present' : 'n/a';
+    // Take it only once it is in reach: Updraft up from the hollow and walk the column's axis.
+    g.inventory.take?.('mace');
+    return { test: 'ledge', find, px: +c.pos.x.toFixed(1), pz: +c.pos.z.toFixed(1), y: +c.pos.y.toFixed(1), live: [...Array(64).keys()].filter((i) => g.shaped.isLive(i)).length };
+  `,
+
   // The auto-fighter: Updraft (cast 3 m ahead, step into it), ride, steer over the foe, plunge when high enough, plunge again from each rebound;
   // on the ground (no focus for an Updraft) it hops (hold LMB, release) and plunges from the hop, or taps lights up close.
   fight: (spawns, mode) => `
@@ -154,7 +252,7 @@ const prefix = `
 const heights = (arg || '5,10,14,20').split(',').map(Number);
 const spawnArg = process.argv[3] || 'hound:3';
 const spawns = spawnArg.split(',').map((q) => { const [n, k] = q.split(':'); return [n, +k || 1]; });
-const js = test === 'fight' ? tests.fight(spawns, process.env.MODE || 'mixed') : tests[test] ? tests[test](heights) : null;
+const js = ['dunk', 'ice', 'down', 'glide', 'ledge'].includes(test) ? tests[test]() : test === 'fight' ? tests.fight(spawns, process.env.MODE || 'mixed') : tests[test] ? tests[test](heights) : null;
 if (!js) { console.error('unknown test ' + test); process.exit(1); }
 const r = await bot('eval', { js: prefix + js });
 console.log(JSON.stringify(r.result ?? r, null, process.env.PRETTY ? 1 : 0));
