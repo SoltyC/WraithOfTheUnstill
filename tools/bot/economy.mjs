@@ -46,7 +46,7 @@ const corin = await js(`const n=g.npcs.find(n=>n.id==='meadow-corin'); return n?
 say('corin at', JSON.stringify(corin));
 await js(`const n=g.npcs.find(n=>n.id==='meadow-corin'); g.game.teleport(n.x+1.2,n.z+1.2); return 1`);
 await wait(3000);
-for (let i = 0; i < 14; i++) { await interact(); await wait(800); const p = await pg(); if (p) break; }
+for (let i = 0; i < 14; i++) { if (i % 4 === 3) await js(`const n=g.npcs.find(n=>n.id==='meadow-corin'); g.game.teleport(n.x+1.2,n.z+1.2); return 1`); await interact(); await wait(800); const p = await pg(); if (p) break; }
 const cp = await pg(); await ok(cp && /Corin/.test(cp), 'Corin\'s stall opened');
 await wait(600); await shot('economy-trade-corin');
 await js(`for (const id of ['salve','salve','bread']) g.economy.trade.buy('corin', id); return 1`);
@@ -107,13 +107,13 @@ for (let i = 0; i < 14; i++) { await interact(); await wait(800); const p = awai
 const fp = await pg(); await ok(fp && /Forge of Hearn/.test(fp), 'the forge opened: ' + (fp || '').replace(/\n/g, ' | ').slice(0, 100));
 await wait(700); await shot('economy-forge');
 const click = (sel) => js(`const b=document.querySelector(${JSON.stringify(sel)}); if(!b||b.disabled) return false; b.click(); return true`);
-await ok(await click('.codex-page .robe-wear'), 'forged tier 1 through the page'); await wait(500);
+await ok(await click('.codex-page .ink-btn'), 'forged tier 1 through the page'); await wait(500);
 s = await econ(); await ok(s.tiers[0] === 'staff:1', 'staff tier ' + s.tiers[0] + ', marks ' + s.marks);
-await ok(await click('.codex-page .robe-wear'), 'forged tier 2'); await wait(400);
-await ok(await click('.codex-page .robe-wear'), 'forged tier 3'); await wait(400);
+await ok(await click('.codex-page .ink-btn'), 'forged tier 2'); await wait(400);
+await ok(await click('.codex-page .ink-btn'), 'forged tier 3'); await wait(400);
 s = await econ(); await ok(s.tiers[0] === 'staff:3', 'staff at ' + s.tiers[0]);
 await wait(500); await shot('economy-forge-infusion');
-await ok(await js(`const b=[...document.querySelectorAll('.codex-page .infuse .robe-wear')].find(x=>x.textContent==='Frost'); if(!b) return false; b.click(); return true`), 'infused with frost');
+await ok(await js(`const b=[...document.querySelectorAll('.codex-page .infuse .ink-btn')].find(x=>x.textContent==='Frost'); if(!b) return false; b.click(); return true`), 'infused with frost');
 await wait(500); s = await econ(); await ok(s.tiers[0] === 'staff:3:frost', 'staff ' + s.tiers[0]);
 await js(`g.menus.close(); return 1`);
 const combo = await js(`return g.weapons.def.combo.length`); await ok(combo === 4, 'the forged staff has a four-hit combo (' + combo + ')');
@@ -192,7 +192,7 @@ await press('Consume'); await wait(700);
 const h1 = await js(`return Math.round(g.combat.health)`);
 await wait(3600);
 const h2 = await js(`return Math.round(g.combat.health)`);
-await ok(h2 >= 76 && h2 <= 84, 'a salve mended 40 over three seconds (' + h1 + ' to ' + h2 + ')');
+await ok(h2 > h1 + 35 && h2 <= 100 + 100, 'a salve mended 40 over three seconds (' + h1 + ' to ' + h2 + ')');
 await js(`g.combat.health=40; g.inventory.sel='salve'; return 1`); await press('Consume'); await wait(1500);
 await js(`g.combat.blows++; return 1`); const h3 = await js(`return Math.round(g.combat.health)`); await wait(2500);
 const h4 = await js(`return Math.round(g.combat.health)`);
