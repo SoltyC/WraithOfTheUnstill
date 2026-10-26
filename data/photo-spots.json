@@ -4945,19 +4945,19 @@
       "id": "p8r-green-lantern",
       "biome": "meadow",
       "label": "The lantern on its post by the Green Shrine, dusk",
-      "time": 18.9,
+      "time": 19.4,
       "weather": "clear",
       "player": [
-        33,
-        985
+        22.5,
+        974.5
       ],
       "camera": {
         "mode": "follow",
-        "yaw": 1.77,
-        "pitch": 0.2,
-        "dist": 4
+        "yaw": 1.6,
+        "pitch": 0.1,
+        "dist": 6
       },
-      "hidePlayer": false
+      "hidePlayer": true
     }
   ]
 }

@@ -67,8 +67,7 @@ function lanternStand(b, facing, R) {
 }
 /** The paper lantern (on its hook at first; the system lifts the site): a felt shell round an ember. */
 function lantern(b, facing, R) {
-  b.box(0.55, 0, 1.8, 2.2, 0.17, 0.17, 0, MAT.CANVAS, 1, { solid: false, ...NS });
-  b.box(0.55, 0, 1.86, 2.14, 0.12, 0.12, 0, MAT.EMBER, 2, { solid: false, ...NS });
+  b.box(0.55, 0, 1.8, 2.2, 0.17, 0.17, 0, MAT.EMBER, 1, { solid: false, ...NS }); // the paper glows (a lit shell, not a dark one round an ember)
   b.drum(0.55, 0, 2.2, 2.26, 0.12, 0.03, 8, MAT.METAL, 3, { solid: false });
   b.drum(0.55, 0, 1.74, 1.8, 0.06, 0.12, 8, MAT.METAL, 4, { solid: false });
   stick(b, [0.55, 2.24, 0], [0.55, 2.3, 0], 0.012, 0.012, 4, MAT.METAL, 5);
