@@ -4905,7 +4905,7 @@
         "attack": "plunge",
         "height": 14,
         "at": 0.1,
-        "seconds": 0.72
+        "seconds": 0.6
       },
       "shaped": {
         "spawn": [
@@ -4943,12 +4943,12 @@
         "mode": "free",
         "pos": [
           1067.5,
-          729.2,
+          726.1,
           2690.3
         ],
         "yaw": -1.36,
-        "pitch": 0.02,
-        "fov": 0.85
+        "pitch": -0.16,
+        "fov": 0.95
       },
       "facing": 0.0,
       "weapon": {
@@ -4959,7 +4959,7 @@
         "launch": [
           0
         ],
-        "seconds": 0.82
+        "seconds": 0.9
       },
       "shaped": {
         "spawn": [

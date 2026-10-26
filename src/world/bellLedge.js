@@ -11,7 +11,7 @@ import { MAT } from './architecture.js';
 import { blob } from './blobStone.js';
 
 /** Where it stands, from the monastery's pad: this far behind the hall along its back (the ground is level there). */
-export const LEDGE = { back: 38, top: 14.6, beam: 17.7, hollow: 9, houndSpread: 3.2, wake: 10 };
+export const LEDGE = { back: 38, top: 14.6, beam: 18.8, hollow: 9, houndSpread: 3.2, wake: 10 };
 
 const TAU = Math.PI * 2;
 const frame = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, f) => [u * c + f * s, -u * s + f * c]; };

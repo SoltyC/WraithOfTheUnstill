@@ -85,8 +85,15 @@ const tests = {
     let updrafts = 0, dodged = 0, castAt = -9, hopAt = -9, tapT = 0, pressedAt = -9, state = 'go', hopDown = -1, maxChain = 0;
     const tick = () => {
       const now = g.clock.simTime;
-      let best = -1, bd = 1e9;
-      for (const i of ids) { if (!g.shaped.isLive(i)) continue; const b = g.shaped.slots[i].body, d = Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z); if (d < bd) { bd = d; best = i; } }
+      // The target: the live foe with the most others within 3.5 m of it (the heart of the pack), the nearer on a tie; the plunge is for packs.
+      let best = -1, bd = 1e9, bn = -1;
+      for (const i of ids) {
+        if (!g.shaped.isLive(i)) continue;
+        const b = g.shaped.slots[i].body, d = Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z);
+        let n = 0;
+        for (const j of ids) { if (j === i || !g.shaped.isLive(j)) continue; const o = g.shaped.slots[j].body; if (Math.hypot(o.sx[1] - b.sx[1], o.sz[1] - b.sz[1]) < 3.5) n++; }
+        if (n > bn || (n === bn && d < bd)) { bn = n; bd = d; best = i; }
+      }
       for (const i of ids) { const q = ids.indexOf(i); if (!g.shaped.isLive(i) && !killT[q]) killT[q] = +(now - t0).toFixed(2); }
       if (best < 0 || now - t0 > TIMEOUT) { set('Primary', false); set('MoveForward', false); state = 'done'; return; }
       const b = g.shaped.slots[best].body;
@@ -101,13 +108,13 @@ const tests = {
         set('MoveForward', bd > 1.2 && !pl.falling);
         g.arm.pitch = 0.5;
         const ready2 = pl.hNow >= (pl.chain > 0 ? 3 : 6) || (c.vel.y < 0 && pl.hNow >= 2.6);
-        if (!pl.falling && ready2 && bd < 3.2 && now - pressedAt > 0.25) { pressedAt = now; w.inject('Primary', true); setTimeout(() => w.inject('Primary', false), 40); }
+        if (!pl.falling && ready2 && bd < 4 && now - pressedAt > 0.25) { pressedAt = now; w.inject('Primary', true); setTimeout(() => w.inject('Primary', false), 40); }
         return;
       }
       if (pl.falling || g.weapons.machine.busy) { set('MoveForward', false); return; }
       // On the ground.
       const gale = MODE !== 'nogale' && g.combat.focus >= 24;
-      if (gale && bd < 9.5 && bd > 2.5 && now - castAt > 3.2) {
+      if (gale && bd < 11 && bd > 2.5 && now - castAt > 2.2) {
         g.elements.select('gale'); g.arm.pitch = 0.95; castAt = now; updrafts++;
         w.inject('Heavy', true); setTimeout(() => w.inject('Heavy', false), 50);
         set('MoveForward', true);                     // into the column

@@ -67,7 +67,7 @@ describe('the Bell-mace as a weapon in the game', () => {
     for (let i = 0; i < d.info.length; i += 4) slots.add(d.info[i]);
     expect(slots.has(SLOT.MACE)).toBe(true); expect(slots.has(SLOT.MACE_FIND)).toBe(true);
     // The bell's glowing material (7) is only on the mace and its great bell.
-    for (let i = 0; i < d.info.length; i += 4) if (d.info[i + 1] === 7) expect([SLOT.MACE, SLOT.MACE_FIND]).toContain(d.info[i]);
+    for (let i = 0; i < d.info.length; i += 4) if (d.info[i + 1] === 7 || d.info[i + 1] === 8) expect([SLOT.MACE, SLOT.MACE_FIND]).toContain(d.info[i]);
   });
   it('has photo spots for the ledge, the take, the glow at three heights, the toll, the dunk and the star', () => {
     const ids = spots.spots.map((s) => s.id).filter((id) => id.startsWith('p9w-mace-'));
