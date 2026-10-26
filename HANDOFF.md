@@ -115,21 +115,18 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 
 - **Rain:**
   - the underside of storm clouds is blotchy during a flash;
-  - wet streets at dusk are very dark, with little lamp reflection;
+  - wet streets at dusk are still dark away from the lamps (wet ground now mirrors the lamps and windows near it, but the cobbles between them stay black);
   - the robe isn't heavier when wet;
   - rain seen through a doorway from inside is hidden (the fade is global);
   - perf is about +1.3 ms per frame, measured on a shared GPU.
 - **Flow:**
   - tier 3 (from chains plus reactions) isn't proven in natural play;
   - fights started from zero barely raise Flow;
-  - the gold glow is faint at the default camera distance at noon;
   - the flowing Gust push wasn't re-measured after it was reduced.
   - The user must judge the feel. Tuning is live in the F1 overlay.
 - **Side quests:**
   - the glide medal times come from the ideal line;
   - the barley fight is unproven for a human;
-  - the lamp posts look like fence posts;
-  - the glide rings float with no supports;
   - the lamp's wind threshold is untuned.
 - **`npm run alloc`:** `controller.update` and `springArm.update` fail. This predates this work and is noted in DECISIONS.md.
 - **Phase 7 gate:** it still needs the user's own play-through and their sign-off in PROGRESS.md.
