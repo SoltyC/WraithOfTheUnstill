@@ -131,6 +131,11 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 - **`npm run alloc`:** `controller.update` and `springArm.update` fail. This predates this work and is noted in DECISIONS.md.
 - **Phase 7 gate:** it still needs the user's own play-through and their sign-off in PROGRESS.md.
 
+- **Polish follow-ups (lead review, 2026-10-26):**
+  - Ember tea is still barely visible on the robe at noon at the default camera distance (`screenshots/polish/buff-noon-after-tea.png`).
+  - The glide-ring masts read as tall, thin modern pylons. Rebuild them as shorter, tapered Shaper stone, with carved bands and the rings lower.
+  - The dropped-marks glow at night reads, but it's small at 30 m.
+
 ## 6. How to work here (tooling and conventions)
 
 - **Build:** `flock /tmp/wraith-build.lock npx vite build`. WSL has about 3 GB of RAM, so serialise builds.
