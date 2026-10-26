@@ -83,8 +83,10 @@ const tests = {
     const held = { Primary: false, MoveForward: false };
     const set = (n, d) => { if (held[n] !== d) { held[n] = d; w.inject(n, d); } };
     let updrafts = 0, dodged = 0, castAt = -9, hopAt = -9, tapT = 0, pressedAt = -9, state = 'go', hopDown = -1, maxChain = 0;
+    const LOG = ${process.env.LOG ? 1 : 0}, trace = []; let lastLog = -9;
     const tick = () => {
       const now = g.clock.simTime;
+      if (LOG && now - lastLog >= 0.5) { lastLog = now; trace.push([+(now - t0).toFixed(1), c.grounded ? 'G' : pl.falling ? 'F' : 'A', +(c.pos.y - gy()).toFixed(1), +g.combat.focus.toFixed(0), ids.filter((i) => g.shaped.isLive(i)).length, +pl.chain]); }
       // The target: the live foe with the most others within 3.5 m of it (the heart of the pack), the nearer on a tie; the plunge is for packs.
       let best = -1, bd = 1e9, bn = -1;
       for (const i of ids) {
@@ -138,7 +140,7 @@ const tests = {
     while (state !== 'done') { tick(); await frames(1); }
     const st = pl.stats, now = g.clock.simTime;
     set('Primary', false); set('MoveForward', false);
-    return { weapon: 'mace', mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
+    return { trace: LOG ? trace : undefined, weapon: 'mace', mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
       updrafts, plunges: st.plunges, plungesPerUpdraft: updrafts ? +(st.plunges / updrafts).toFixed(2) : null, plungeHits: st.hits, misses: st.misses, rebounds: st.rebounds, maxH: +st.maxH.toFixed(1), maxChain, dunks: st.dunks, stars: st.stars,
       swings: g.weapons.stats.swings, hits: g.weapons.stats.hits, dmgDealt: +g.weapons.stats.damage.toFixed(0), flowHits: [g.flow.counts[0], g.flow.counts[1], g.flow.counts[2]], flowChains: g.flow.counts[8], flowTierSecs: Array.from(g.flow.timeAt, (x) => +x.toFixed(1)), flowMax: g.flow.tier };
   `,
