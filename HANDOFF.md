@@ -90,7 +90,7 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
 
 1. ~~**Finish and merge weapons** (§3.1).~~ **Done, merged 2026-10-26** (`docs/weapons-playtest.md`).
 2. ~~**Finish and merge Remembrance and nooks** (§3.2).~~ **Done, merged 2026-10-26** (39 nooks, 46 entries). Nook `reward: {marks}` hooks wait for item 3.
-3. **Economy** (§11.3–11.8):
+3. ~~**Economy** (§11.3–11.8):~~ **Done, merged 2026-10-26** ("Economy — Done" in `docs/gameplay-design.md` §11; traders Corin and Osk, smith Garrow). Original scope:
    - extend `src/game/inventory.js` with **marks** (currency), materials and consumables;
    - **consumables:** salve, the shrine-water flask (refills at rested shrines), Ember tea, Rime tonic, Wind-bread and the Stillwater draught, used with **R** and cycled with **C**;
    - **trade screen** in the parchment codex style, opened from talk;
