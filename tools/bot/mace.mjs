@@ -61,6 +61,80 @@ const tests = {
     }
     return out;
   `,
+
+  // The auto-fighter: Updraft (cast 3 m ahead, step into it), ride, steer over the foe, plunge when high enough, plunge again from each rebound;
+  // on the ground (no focus for an Updraft) it hops (hold LMB, release) and plunges from the hop, or taps lights up close.
+  fight: (spawns, mode) => `
+    ${prelude}
+    ${X < 0 ? '' : `await bot_tp(${X}, ${Z});`}
+    const SPAWNS = ${JSON.stringify(spawns)}, TIMEOUT = ${+(process.env.TIMEOUT || 60)}, DIST = ${+(process.env.SEED_DIST || 7)}, MODE = ${JSON.stringify(mode)};
+    await ready();
+    g.elements.unlock('gale');
+    const p = c.pos, f = g.arm.yaw;
+    let k = 0, total = 0; for (const [, n] of SPAWNS) total += n;
+    const ids = [];
+    for (const [name, n] of SPAWNS) for (let q = 0; q < n; q++) {
+      const a = f + (k++ - (total - 1) / 2) * 0.55;
+      const i = g.shaped.spawn(name, p.x + Math.sin(a) * DIST, p.z + Math.cos(a) * DIST);
+      if (i >= 0) ids.push(i);
+    }
+    await sleep(2200);
+    const t0 = g.clock.simTime, h0 = g.combat.health, killT = [], alive0 = ids.length;
+    const held = { Primary: false, MoveForward: false };
+    const set = (n, d) => { if (held[n] !== d) { held[n] = d; w.inject(n, d); } };
+    let updrafts = 0, dodged = 0, castAt = -9, hopAt = -9, tapT = 0, pressedAt = -9, state = 'go', hopDown = -1, maxChain = 0;
+    const tick = () => {
+      const now = g.clock.simTime;
+      let best = -1, bd = 1e9;
+      for (const i of ids) { if (!g.shaped.isLive(i)) continue; const b = g.shaped.slots[i].body, d = Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z); if (d < bd) { bd = d; best = i; } }
+      for (const i of ids) { const q = ids.indexOf(i); if (!g.shaped.isLive(i) && !killT[q]) killT[q] = +(now - t0).toFixed(2); }
+      if (best < 0 || now - t0 > TIMEOUT) { set('Primary', false); set('MoveForward', false); state = 'done'; return; }
+      const b = g.shaped.slots[best].body;
+      g.arm.yaw = Math.atan2(b.sx[1] - p.x, b.sz[1] - p.z);
+      maxChain = Math.max(maxChain, pl.chain);
+      // Dodge a telegraphed lunge on the ground.
+      let threat = false;
+      for (const i of ids) { if (!g.shaped.isLive(i)) continue; const q = g.shaped.slots[i], qb = q.body; if ((q.state === S.TELEGRAPH || q.state === S.LUNGE) && Math.hypot(qb.sx[1] - p.x, qb.sz[1] - p.z) < 4.2) threat = true; }
+      if (threat && c.grounded && now - dodged > 0.9 && !pl.falling && g.weapons.machine.phase !== 1) { dodged = now; w.inject('Dodge', true); setTimeout(() => w.inject('Dodge', false), 50); }
+      if (!c.grounded) {
+        // In the air: over the foe and high enough (or coming down already): plunge.
+        set('MoveForward', bd > 1.2 && !pl.falling);
+        g.arm.pitch = 0.5;
+        const ready2 = pl.hNow >= (pl.chain > 0 ? 3 : 6) || (c.vel.y < 0 && pl.hNow >= 2.6);
+        if (!pl.falling && ready2 && bd < 3.2 && now - pressedAt > 0.25) { pressedAt = now; w.inject('Primary', true); setTimeout(() => w.inject('Primary', false), 40); }
+        return;
+      }
+      if (pl.falling || g.weapons.machine.busy) { set('MoveForward', false); return; }
+      // On the ground.
+      const gale = MODE !== 'nogale' && g.combat.focus >= 24;
+      if (gale && bd < 9.5 && bd > 2.5 && now - castAt > 3.2) {
+        g.elements.select('gale'); g.arm.pitch = 0.95; castAt = now; updrafts++;
+        w.inject('Heavy', true); setTimeout(() => w.inject('Heavy', false), 50);
+        set('MoveForward', true);                     // into the column
+        return;
+      }
+      if (now - castAt < 1.6) {
+        // Walk to the column's axis (it was cast 3 m or more ahead: the aim has a minimum range) and stand in it.
+        const dx = g.gale.updraftX - p.x, dz = g.gale.updraftZ - p.z, d = Math.hypot(dx, dz);
+        if (now - castAt > 0.15) g.arm.yaw = Math.atan2(dx, dz);
+        set('MoveForward', d > 0.7 && now - castAt > 0.15);
+        return;
+      }
+      set('MoveForward', bd > 1.9);
+      if (bd < 2.3) {
+        // Close: the hop (a heavy tap-and-hold) then the plunge, else lights.
+        if (hopDown < 0 && now - hopAt > 1.2) { w.inject('Primary', true); hopDown = now; hopAt = now; }
+        else if (hopDown >= 0 && now - hopDown > 0.4) { w.inject('Primary', false); hopDown = -1; }
+        else if (hopDown < 0 && now - tapT > 0.45) { tapT = now; w.inject('Primary', true); setTimeout(() => w.inject('Primary', false), 45); }
+      } else if (hopDown >= 0 && now - hopDown > 0.4) { w.inject('Primary', false); hopDown = -1; }
+    };
+    while (state !== 'done') { tick(); await frames(1); }
+    const st = pl.stats, now = g.clock.simTime;
+    set('Primary', false); set('MoveForward', false);
+    return { weapon: 'mace', mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
+      updrafts, plunges: st.plunges, plungesPerUpdraft: updrafts ? +(st.plunges / updrafts).toFixed(2) : null, plungeHits: st.hits, misses: st.misses, rebounds: st.rebounds, maxH: +st.maxH.toFixed(1), maxChain, dunks: st.dunks, stars: st.stars,
+      swings: g.weapons.stats.swings, hits: g.weapons.stats.hits, dmgDealt: +g.weapons.stats.damage.toFixed(0), flowHits: [g.flow.counts[0], g.flow.counts[1], g.flow.counts[2]], flowChains: g.flow.counts[8], flowTierSecs: Array.from(g.flow.timeAt, (x) => +x.toFixed(1)), flowMax: g.flow.tier };
+  `,
 };
 
 /** Move the Wraith (a real teleport request) and wait for the ground to be there. */
@@ -69,7 +143,9 @@ const prefix = `
 `;
 
 const heights = (arg || '5,10,14,20').split(',').map(Number);
-const js = tests[test] ? tests[test](heights) : null;
+const spawnArg = process.argv[3] || 'hound:3';
+const spawns = spawnArg.split(',').map((q) => { const [n, k] = q.split(':'); return [n, +k || 1]; });
+const js = test === 'fight' ? tests.fight(spawns, process.env.MODE || 'mixed') : tests[test] ? tests[test](heights) : null;
 if (!js) { console.error('unknown test ' + test); process.exit(1); }
 const r = await bot('eval', { js: prefix + js });
 console.log(JSON.stringify(r.result ?? r, null, process.env.PRETTY ? 1 : 0));
