@@ -37,7 +37,7 @@ export function addShelf(ctx) {
       const live = ctx.restored('frost');
       cairn.hidden = !live; cairn.y = ctx.seatY(ci, start.h);
       for (let k = 0; k < idx.length; k++) if (idx[k] >= 0) glow[idx[k] * 4 + 3] += (on[k] - glow[idx[k] * 4 + 3]) * Math.min(1, dt * 6);
-      if (!live) return;
+      if (!live) { if (course.running) { course.running = false; course.next = 0; lightAll(false); hud.line('shelf', ''); } return; }
       if (!course.running) reseat();
       const p = controller.pos;
       if (!course.running && ctx.dist2(p.x, p.z, start.pos[0], start.pos[1]) > 400 * 400) return;

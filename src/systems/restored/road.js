@@ -22,7 +22,7 @@ export function addRoad(ctx) {
   return {
     sync() { road.running = false; road.stage = 0; },
     tick(dt) {
-      if (!ctx.restored('meadow')) return;
+      if (!ctx.restored('meadow')) { if (road.running) { road.running = false; road.stage = 0; hud.line('road', ''); } return; }
       if (!road.running) reseat();
       const p = controller.pos, s = data.road.start;
       if (!road.running && ctx.dist2(p.x, p.z, s.pos[0], s.pos[1]) > (s.r + 20) * (s.r + 20)) return;
