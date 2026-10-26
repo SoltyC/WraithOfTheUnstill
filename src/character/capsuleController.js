@@ -65,6 +65,8 @@ export class CapsuleController {
     /** Upward acceleration from rising air (m/s², owner, per frame; the Gale's Updraft): lifts
      *  the body off the ground when it beats gravity. */
     this.lift = 0.5 - 0.5;
+    /** A committed plunge (game/weapons/plunge.js): m/s of a straight fall that holds the body's drift (0 = none; the owner sets it). */
+    this.plungeV = 0.5 - 0.5;
     this._acc = 0.5 - 0.5;
     /** Frame dt in seconds, set by the owner before update(). */
     this.dt = 0.5;
@@ -173,6 +175,8 @@ export class CapsuleController {
     } else if (dodging) {
       const u = 1 - this.dodgeT / T.dodgeTime, sp = T.dodgeSpeed * (1 - 0.65 * u * u);
       v.x = this.dodgeX * sp; v.z = this.dodgeZ * sp;
+    } else if (this.plungeV > 0 && !this.grounded) {
+      // A plunge in the air: the drift it was given is held (the fall is the only way down).
     } else {
       // Horizontal acceleration toward wish velocity.
       const tx = wx * T.walkSpeed * this.walkMul, tz = wz * T.walkSpeed * this.walkMul;
@@ -206,6 +210,7 @@ export class CapsuleController {
     gl.step(h);
     const gliding = gl.active;
     if (gliding) { v.x = gl.vx; v.z = gl.vz; v.y = gl.vy; this.yaw = gl.heading; }
+    else if (this.plungeV > 0 && !this.grounded) v.y = -this.plungeV;
     else {
       if (this.lift > 0) {
         if (this.grounded && this.lift > T.gravity) { v.y = Math.max(v.y, 2.5); this.grounded = false; }

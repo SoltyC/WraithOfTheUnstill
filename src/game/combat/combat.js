@@ -255,7 +255,10 @@ export function createCombat(ctx) {
     }
     if (gale.updraftEvent) {
       const dx = cx - gale.updraftX, dz = cz - gale.updraftZ, d = Math.sqrt(dx * dx + dz * dz);
-      if (d < T.updraftReach) strike(i, T.updraftDamage, dx / (d || 1), dz / (d || 1), true);
+      if (d < T.updraftReach) {
+        strike(i, T.updraftDamage, dx / (d || 1), dz / (d || 1), true);
+        if (shaped.isLive(i)) shaped.air.launch(i);       // the column throws what it catches up, and holds it there a moment (shaped/airborne.js)
+      }
     }
   }
 

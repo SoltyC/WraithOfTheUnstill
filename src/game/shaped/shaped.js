@@ -10,6 +10,7 @@ import { buildRig, createRigState, writeAlive, writeFall, writeHidden, startFall
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
 import * as BH from './behaviours.js';
+import { createAirborne } from './airborne.js';
 
 export const MAX_SHAPED = 8;
 /** Chunk records per slot (the largest archetype). */
@@ -35,7 +36,7 @@ export function createShaped(ctx) {
   for (let i = 0; i < MAX_SHAPED; i++) slots.push({ idx: i, arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
     cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0, hurt: 0, flinch: 0,
     // Behaviours: flush (flock, flushed, pass, side), territory (home, bound, aggro, away), support (songCool, pollenCool).
-    flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
+    idleR: 0, flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
   const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS) * CHUNK_FLOATS);
   // Shards: position, velocity, alive.
@@ -63,8 +64,13 @@ export function createShaped(ctx) {
     return slot.body;
   }
 
+  const air = createAirborne({ slots, isLive: (i) => { const st = slots[i].state; return st !== S.EMPTY && st !== S.FALLING && st !== S.RISING; } });
   const self = {
     slots, chunks,
+    /** The airborne state (shaped/airborne.js): an Updraft throws a body up; its AI is paused until it lands. */
+    air,
+    /** Poise counts for 1/poiseMul of its value in the next damage() (the Bell-mace's tall plunge; weapons.js sets and clears it). */
+    poiseMul: 1,
     /** Pollen curtains (support): up to 8 × (x, z, radius, strength 0..1), zeros when free. */
     pollen,
     /** Player (fields): position, velocity. Events out: hits on the player this frame. */
@@ -89,6 +95,7 @@ export function createShaped(ctx) {
       for (; i < MAX_SHAPED; i++) if (slots[i].state === S.EMPTY) break;
       if (i === MAX_SHAPED) return -1;
       const s = slots[i], A = ARCHETYPES[name];
+      air.clear(i);
       const b = bodyFor(s, name);
       b.place(x, z, Math.atan2(this.px - x, this.pz - z));
       b.rise = 0; b.crouch = 0; b.lift = 0; b.frozen = false; b.wantVx = 0; b.wantVz = 0;
@@ -100,7 +107,7 @@ export function createShaped(ctx) {
       ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.9;
       ts.stamp();
       s.flock = -1; s.flushed = false; s.pass = 0; s.side = 1; s.spawnFrame = frame; s.aggro = false; s.away = 0;
-      s.homeX = x; s.homeZ = z; s.bound = 0; s.songCool = 0; s.pollenCool = 0;
+      s.homeX = x; s.homeZ = z; s.bound = 0; s.songCool = 0; s.pollenCool = 0; s.idleR = o && o.idle ? o.idle : 0;
       switch (A.behaviour) {
         case 'flush': {
           // Stilled: crouched, motionless, unlit, until the flock flushes. A flock: given, else those spawned together.
@@ -155,7 +162,7 @@ export function createShaped(ctx) {
       const armour = ARCHETYPES[s.arch].armour;
       if (armour && s.state !== S.FROZEN && amount < 1e8) amount *= armour;
       s.hp -= amount;
-      s.hurt = 1;
+      s.hurt = 1; s.idleR = 0;
       if (s.state === S.STILLED && s.hp > 0) flushFlock(s.idx);           // struck: the flock breaks cover
       if (s.hp <= 0) {
         const shatter = s.state === S.FROZEN;
@@ -163,7 +170,7 @@ export function createShaped(ctx) {
         die(s, shatter ? 7 : 0);
         return true;
       }
-      const A = ARCHETYPES[s.arch], poise = A.poise || 0, b = s.body;
+      const A = ARCHETYPES[s.arch], poise = (A.poise || 0) / this.poiseMul, b = s.body;
       // A blow in the middle of the Chanter's song breaks it, whatever its poise.
       if (s.state === S.STAGGER && s.t < 0) { s.hurt = 1; }       // pinned (the glaive's thrust): the blow lands, the foot stays
       else if ((stagger && amount >= poise || s.state === S.SING) && s.state !== S.FROZEN) {
@@ -227,6 +234,7 @@ export function createShaped(ctx) {
         const rec = i * CHUNKS_PER;
         if (s.state === S.EMPTY) { writeHidden(chunks, rec, CHUNKS_PER); continue; }
         s.t += dt;
+        if (air.on[i] === 1) air.step(i, dt);
         if (s.state === S.FALLING) {
           const sink = Math.max(0, (s.t - FALL_TIME) / SINK_TIME);
           if (s.t >= FALL_TIME && s.fallSink === 0) {
@@ -242,7 +250,7 @@ export function createShaped(ctx) {
           if (sink >= 1) { s.state = S.EMPTY; writeHidden(chunks, rec, CHUNKS_PER); }
           continue;
         }
-        think(s, this, dt);
+        if (air.on[i] === 0) think(s, this, dt);       // (a body in the air is paused: shaped/airborne.js)
         const b = s.body;
         s.hurt = Math.max(0, s.hurt - dt * 5);
         if (s.flinch > 0) {
@@ -383,6 +391,11 @@ export function createShaped(ctx) {
   }
 
   function think(s, P, dt) {
+    // Asleep in its hollow (spawn option `idle`: the wake radius, m): it lies still until the Wraith comes within it.
+    if (s.idleR > 0 && s.state === S.STALK) {
+      if (Math.hypot(P.px - s.body.x, P.pz - s.body.z) > s.idleR) { s.body.wantVx = 0; s.body.wantVz = 0; s.body.crouch += (0.3 - s.body.crouch) * Math.min(1, dt * 3); s.glow = 0; return; }
+      s.idleR = 0; s.cool = 0.6;
+    }
     const bh = ARCHETYPES[s.arch].behaviour;
     if (bh !== undefined) {
       if (bh === 'flush') return thinkFlush(s, P, dt);
