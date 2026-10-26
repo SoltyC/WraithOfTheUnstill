@@ -31,7 +31,7 @@ if (part === 'chaff') {
   await shotAt('lantern-1-before', 1.8, 0.25, 6);
   await bot('face', { x: l[0] + 0.5, z: l[1], pitch: 0.4 });
   await js(`g.gale.castUpdraft=true; return 1`);
-  for (const [k, ms] of [[2, 2500], [3, 4000], [4, 6000]]) { await wait(ms); await shotAt('lantern-' + k + '-rise', 1.8, 0.45, 12); say('lantern', k); }
+  for (const [k, ms] of [[2, 2500], [3, 3500], [4, 3500]]) { await wait(ms); await shotAt('lantern-' + k + '-rise', 1.8, -0.2, 14); say('lantern', k); }
   await wait(6000);
   await shotAt('lantern-5-aloft', 1.8, 0.7, 30);
   ok((await flags('lantern-lit')).length === 1, 'lantern lit');

@@ -31,10 +31,10 @@ export function addLantern(ctx) {
       }
       // Up the hook's height: sinking by a negative amount lifts the site (the architecture seats pillars by seatY - sink).
       s.sink = t < 0 ? 0 : -l.rise * lanternRise(t, l.seconds);
-      const shown = !s.hidden && ctx.restored('meadow'), night = g.worldLights.night;
+      const shown = !s.hidden && ctx.restored("meadow"), dark = g.worldLights.night;
       glow[li * 4 + 3] = shown ? 1 : 0;
-      glow[li * 4 + 1] = shown ? 0.4 + 0.6 * night : 0;   // the shell burns, brighter after dark
-      lamp.y = l.h + 2 - s.sink; lamp.level = shown ? 0.25 + 0.75 * night : 0;
+      glow[li * 4 + 1] = shown ? 0.4 + 0.6 * dark : 0;   // the shell burns, brighter after dark
+      lamp.y = l.h + 2 - s.sink; lamp.level = shown ? 0.25 + 0.75 * dark : 0;
       if (t >= 0 || lit || !flags.has('meadow:lantern-told') || !ctx.restored('meadow')) return;
       if (!gale.updraftEvent) return;
       const p = controller.pos;
