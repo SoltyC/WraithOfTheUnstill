@@ -1,0 +1,515 @@
+{
+  "_review": "Meadow, after the release (docs/gameplay-design.md §7 'Restored world'): three follow-up requests from people the Wraith already knows, each continuing their first errand once the wind is back. Wyl asks for the Wind Road (a flight, systems/restored/road.js), Dunn for winnowing (a Gust that goes with the wind, systems/restored/chaff.js), Ketil for the lantern on the green (an Updraft after dark, systems/restored/lantern.js). Streams, banners and places are in data/restored.json. Merged after meadow-side.json (talkFirst/barksFirst go in front of the old tables). Dialogue follows docs/village/dialogue-style.md.",
+  "chapter": "meadow",
+  "title": "The Burning Night",
+  "places": {
+    "side-rw-road-start": {
+      "kind": "overlook",
+      "biome": "meadow",
+      "pos": [
+        128,
+        1060
+      ],
+      "h": 266.3,
+      "name": "The Hill Foot"
+    },
+    "side-rw-threshing": {
+      "pos": [
+        75,
+        1135
+      ],
+      "h": 270,
+      "name": "Dunn's Threshing Floor"
+    },
+    "side-rw-lantern-post": {
+      "pos": [
+        38,
+        984
+      ],
+      "h": 261.2,
+      "name": "The Lantern Post"
+    }
+  },
+  "names": {
+    "side-rw-road-start": "The Hill Foot"
+  },
+  "talkFirst": {
+    "meadow-wyl": [
+      {
+        "when": {
+          "flag": "meadow:road-thanked"
+        },
+        "say": "meadow.wyl.road.after"
+      },
+      {
+        "when": {
+          "flag": "meadow:road-flown"
+        },
+        "say": "meadow.wyl.road.done"
+      },
+      {
+        "when": {
+          "flag": "meadow:road-told"
+        },
+        "say": "meadow.wyl.road.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-glide-thanked",
+          "restored": "meadow"
+        },
+        "say": "meadow.wyl.road"
+      }
+    ],
+    "meadow-dunn": [
+      {
+        "when": {
+          "flag": "meadow:chaff-thanked"
+        },
+        "say": "meadow.dunn.chaff.after"
+      },
+      {
+        "when": {
+          "flag": "meadow:chaff-cleared"
+        },
+        "say": "meadow.dunn.chaff.done"
+      },
+      {
+        "when": {
+          "flag": "meadow:chaff-told"
+        },
+        "say": "meadow.dunn.chaff.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-flock-thanked",
+          "restored": "meadow"
+        },
+        "say": "meadow.dunn.chaff"
+      }
+    ],
+    "meadow-ketil": [
+      {
+        "when": {
+          "flag": "meadow:lantern-thanked"
+        },
+        "say": "meadow.ketil.lantern.after"
+      },
+      {
+        "when": {
+          "flag": "meadow:lantern-lit"
+        },
+        "say": "meadow.ketil.lantern.done"
+      },
+      {
+        "when": {
+          "flag": "meadow:lantern-told"
+        },
+        "say": "meadow.ketil.lantern.wait"
+      },
+      {
+        "when": {
+          "flag": "meadow:side-lamp-thanked",
+          "restored": "meadow"
+        },
+        "say": "meadow.ketil.lantern"
+      }
+    ]
+  },
+  "barksFirst": {
+    "meadow-hild": [
+      {
+        "when": {
+          "restored": "meadow"
+        },
+        "lines": [
+          "The washing dries before noon again. I had forgotten that it could.",
+          "Walk on the hill road if you can. The wind there is something to see."
+        ]
+      }
+    ],
+    "meadow-corin": [
+      {
+        "when": {
+          "restored": "meadow"
+        },
+        "lines": [
+          "My stall cloth snaps in the wind. Customers look up when they hear it. I let it."
+        ]
+      }
+    ],
+    "meadow-orm": [
+      {
+        "when": {
+          "restored": "meadow"
+        },
+        "lines": [
+          "The wind finds the ring now. The stones hum on windy nights, so Maud says. I have not stayed to hear it."
+        ]
+      }
+    ],
+    "meadow-maud": [
+      {
+        "when": {
+          "restored": "meadow"
+        },
+        "lines": [
+          "The loom threads lift on their own now. I have to weigh them down."
+        ]
+      }
+    ],
+    "meadow-wyl": [
+      {
+        "when": {
+          "restored": "meadow"
+        },
+        "lines": [
+          "Look at the banners on the hill. Someone hung them. I did not."
+        ]
+      }
+    ]
+  },
+  "dialogue": {
+    "meadow.wyl.road": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "The hill has a wind now. Have you stood at its foot? Banners hang there. The air climbs the wall like a stair.",
+        "Here is my idea. Start at the hill foot, east of the village. Ride the wind up past the manor. Then glide west over the lake and through my first ring at the Western Edge.",
+        "Do not touch the ground. Nobody has managed it. The lake took me, the one time I tried."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:road-told"
+        }
+      ]
+    },
+    "meadow.wyl.road.wait": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "Start at the banners on the east edge of the village. Climb the wall, then glide west. The Lake Ridge has banners too: its wind will top you up."
+      ]
+    },
+    "meadow.wyl.road.done": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "I watched you cross the lake. You never touched the ground.",
+        "I am hanging a pennant on the green, so we can all see which way it blows. Thank you."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:road-thanked"
+        }
+      ]
+    },
+    "meadow.wyl.road.after": {
+      "speaker": "meadow-wyl",
+      "lines": [
+        "The pennant on the green points at the Western Edge on most days. I take that as a sign."
+      ]
+    },
+    "meadow.dunn.chaff": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "The barley is quiet, so I cut it. The grain lies on the threshing floor with the chaff. For nine years I winnowed with a fan and a prayer.",
+        "The wind is back. Stand on the floor and send a Gust across it, with the wind behind you. The chaff goes, and the grain stays.",
+        "Into the wind it only swirls. Three Gusts should clear it."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:chaff-told"
+        }
+      ]
+    },
+    "meadow.dunn.chaff.wait": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "The threshing floor is north of the village, past the barley. Send the Gust the way the wind blows, not against it."
+      ]
+    },
+    "meadow.dunn.chaff.done": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "Clean grain. You can see the floor again.",
+        "Take two loaves. I baked them from last year's flour. They keep a long time."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:chaff-thanked"
+        }
+      ]
+    },
+    "meadow.dunn.chaff.after": {
+      "speaker": "meadow-dunn",
+      "lines": [
+        "I grind the new flour tonight. It smells like the wind."
+      ]
+    },
+    "meadow.ketil.lantern": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "The Fen Lamp is for the path. There is another light I want lit, for the people who are missing.",
+        "On windy nights we used to let a paper lantern go from the green. The wind took it up over the hill, and everyone watched it. Then the wind stopped.",
+        "It hangs on the post beside the Green Shrine. After dark, put an Updraft under it. The wind will do the rest."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:lantern-told"
+        }
+      ]
+    },
+    "meadow.ketil.lantern.wait": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "The lantern hangs on the post by the Green Shrine. Come after dark, take the Gale in hand, and cast an Updraft under it."
+      ]
+    },
+    "meadow.ketil.lantern.done": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "I saw it go up. Half the village stood on the green and watched.",
+        "It will rise every night from now on. Thank you."
+      ],
+      "then": [
+        {
+          "setFlag": "meadow:lantern-thanked"
+        }
+      ]
+    },
+    "meadow.ketil.lantern.after": {
+      "speaker": "meadow-ketil",
+      "lines": [
+        "I look up before I look at the Fen Lamp now."
+      ]
+    }
+  },
+  "lore": {
+    "meadow-lore-road": {
+      "title": "The Wind Road",
+      "text": "The wind climbs the west wall of the Hearn hill and the long ridge beyond the lake. Wyl's road joins them: up the hill, across the water, through the first ring at the Western Edge. As told by Wyl."
+    },
+    "meadow-lore-chaff": {
+      "title": "The Threshing Floor",
+      "text": "A circle of flags north of the village where the barley is beaten out. Wind carries off the chaff only if the Gust goes the way the wind goes. As told by Dunn."
+    }
+  },
+  "quests": [
+    {
+      "id": "meadow-wind-road",
+      "kind": "side",
+      "title": "The Wind Road",
+      "summary": "Wyl wants the Wraith to fly from the hill foot to the Western Edge without touching the ground.",
+      "start": {
+        "flag": "meadow:side-glide-thanked",
+        "restored": "meadow"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Wyl, the courier, in Hearn.",
+          "when": {
+            "flag": "meadow:road-told"
+          },
+          "goal": {
+            "npc": "meadow-wyl",
+            "radius": 7
+          }
+        },
+        {
+          "id": "foot",
+          "journal": "Go to the hill foot, on the east edge of Hearn. Banners hang where the wind climbs.",
+          "when": {
+            "near": {
+              "poi": "side-rw-road-start",
+              "r": 30
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-rw-road-start",
+            "radius": 25
+          }
+        },
+        {
+          "id": "fly",
+          "journal": "Fly the Wind Road without touching the ground. Ride the Hearn wind up past the manor hill, cross the lake, and glide through the first ring of the Western Edge.",
+          "when": {
+            "flag": "meadow:road-flown"
+          },
+          "goal": {
+            "dynamic": "next-road",
+            "radius": 8
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Wyl you flew it.",
+          "when": {
+            "flag": "meadow:road-thanked"
+          },
+          "goal": {
+            "npc": "meadow-wyl",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-road"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 40
+        }
+      ]
+    },
+    {
+      "id": "meadow-chaff",
+      "kind": "side",
+      "title": "The Chaff",
+      "summary": "Dunn has cut his barley. The wind is back, and the chaff needs it.",
+      "start": {
+        "flag": "meadow:side-flock-thanked",
+        "restored": "meadow"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Dunn, the farmer, in Hearn.",
+          "when": {
+            "flag": "meadow:chaff-told"
+          },
+          "goal": {
+            "npc": "meadow-dunn",
+            "radius": 7
+          }
+        },
+        {
+          "id": "floor",
+          "journal": "Go to Dunn's threshing floor, north of the village.",
+          "when": {
+            "near": {
+              "poi": "side-rw-threshing",
+              "r": 14
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-rw-threshing",
+            "radius": 12
+          }
+        },
+        {
+          "id": "winnow",
+          "journal": "Winnow the grain. Cast Gust (click) across the floor with the wind behind you. Three Gusts clear it.",
+          "when": {
+            "flag": "meadow:chaff-cleared"
+          },
+          "goal": {
+            "dynamic": "place:side-rw-threshing",
+            "radius": 6
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Dunn the grain is clean.",
+          "when": {
+            "flag": "meadow:chaff-thanked"
+          },
+          "goal": {
+            "npc": "meadow-dunn",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "lore": "meadow-lore-chaff"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 30
+        },
+        {
+          "item": {
+            "bread": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "meadow-lantern",
+      "kind": "side",
+      "title": "The Lantern on the Green",
+      "summary": "Ketil wants a paper lantern sent up from the green on the wind, as it used to be.",
+      "start": {
+        "flag": "meadow:side-lamp-thanked",
+        "restored": "meadow"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Ketil, the lamp-keeper, in Hearn.",
+          "when": {
+            "flag": "meadow:lantern-told"
+          },
+          "goal": {
+            "npc": "meadow-ketil",
+            "radius": 7
+          }
+        },
+        {
+          "id": "green",
+          "journal": "Go to the Green Shrine after dark. The lantern hangs on a post beside it.",
+          "when": {
+            "near": {
+              "poi": "side-rw-lantern-post",
+              "r": 12
+            }
+          },
+          "goal": {
+            "dynamic": "place:side-rw-lantern-post",
+            "radius": 10
+          }
+        },
+        {
+          "id": "raise",
+          "journal": "Take the Gale in hand (2) and cast Updraft (F) under the lantern. It only rises in the dark.",
+          "when": {
+            "flag": "meadow:lantern-lit"
+          },
+          "goal": {
+            "dynamic": "place:side-rw-lantern-post",
+            "radius": 5
+          }
+        },
+        {
+          "id": "report",
+          "journal": "Tell Ketil the lantern rose.",
+          "when": {
+            "flag": "meadow:lantern-thanked"
+          },
+          "goal": {
+            "npc": "meadow-ketil",
+            "radius": 7
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ],
+      "onDone": [
+        {
+          "marks": 30
+        }
+      ]
+    }
+  ]
+}

@@ -20,7 +20,7 @@ const GLIDE_CAM_FOLLOW = 2.2, GLIDE_CAM_BANK = 0.45, GLIDE_EXTRA_FOV = 0.14, WIN
  *           capsuleHalfHeight: number }} ctx
  */
 export function createPlayerSystem(ctx) {
-  const { controller, arm, capsule, playerPos, bodyParams, capsuleHalfHeight, material, wind } = ctx;
+  const { controller, arm, capsule, playerPos, bodyParams, capsuleHalfHeight, material, wind, streams } = ctx;
   let steerAcc = 0;
   return {
     name: 'player',
@@ -67,6 +67,8 @@ export function createPlayerSystem(ctx) {
           wind.sx = p0.x; wind.sz = p0.z; wind.sample();
           const up = -(wind.outX * gr.nx + wind.outZ * gr.nz) / Math.max(gr.ny, 0.2); // wind · uphill slope
           gl.rise = Math.max(0, wind.speed * WIND_MS * up) * Math.exp(-Math.max(0, above) / RIDGE_FADE);
+          // The restored biome's streams (game/restored/streams.js) lift on top, as strong as the wind is here.
+          if (streams) { streams.px = p0.x; streams.pz = p0.z; streams.above = above; streams.speed = wind.speed; streams.sample(); gl.rise += streams.total; }
         }
         controller.wishX = mx;
         controller.wishZ = mz;

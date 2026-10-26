@@ -29,6 +29,7 @@ export const glideTuning = {
   bankResponse: 3.5,   // 1/s
   turnCost: 0.05,      // fraction of the turn's lateral accel lost as speed
   enterHeight: 1.6,    // m above the ground to open the robe
+  enterHeightLift: 0.5, // … in rising air (a stream, a ridge wind): a hop is enough, the air takes the robe
   enterSpeed: 5.5,     // m/s horizontal, or a fall faster than enterFall, or rising air
   enterFall: 2.5,      // m/s
   enterBoost: 0.8,     // fraction of best the airspeed starts at, at least
@@ -64,7 +65,7 @@ export class Glide {
     const T = glideTuning;
     if (this.blocked) { this.active = false; return; }
     if (!this.active) {
-      if (!this.want || !this.airborne || this.height < T.enterHeight) return;
+      if (!this.want || !this.airborne || this.height < (this.rise > 0.5 ? T.enterHeightLift : T.enterHeight)) return;
       const hs = Math.sqrt(vx * vx + vz * vz);
       if (hs < T.enterSpeed && vy > -T.enterFall && this.lift <= 0 && this.rise <= 0.5) return;
       this.active = true;

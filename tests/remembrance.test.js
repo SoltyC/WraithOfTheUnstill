@@ -15,9 +15,9 @@ const make = (over = {}) => {
 };
 
 describe('Remembrance data', () => {
-  it('has 30 to 50 sound entries across every group', () => {
+  it('has 30 to 51 sound entries across every group', () => {
     expect(ENTRIES.length).toBeGreaterThanOrEqual(30);
-    expect(ENTRIES.length).toBeLessThanOrEqual(50);
+    expect(ENTRIES.length).toBeLessThanOrEqual(51);
     expect(checkEntries()).toEqual([]);
     for (const [id] of GROUPS) expect(ENTRIES.some((e) => e.group === id), id).toBe(true);
   });
@@ -39,7 +39,7 @@ describe('Remembrance data', () => {
   });
   it('reveals only places that exist', () => {
     const known = new Set(read('data/world/pois.json').pois.map((p) => p.id));
-    for (const f of ['frost', 'meadow', 'meadow-side']) for (const id in read(`data/quests/${f}.json`).places || {}) known.add(id);
+    for (const f of ['frost', 'meadow', 'meadow-side', 'frost-restored', 'meadow-restored']) for (const id in read(`data/quests/${f}.json`).places || {}) known.add(id);
     for (const e of ENTRIES) for (const id of e.reveal || []) expect(known.has(id), e.id + ' reveals ' + id).toBe(true);
   });
   it('fills the reaction table from the game\'s own rule, one entry per cell', () => {

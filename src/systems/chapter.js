@@ -7,6 +7,8 @@
 import frostData from '../../data/quests/frost.json';
 import meadowData from '../../data/quests/meadow.json';
 import sideData from '../../data/quests/meadow-side.json';
+import frostRestored from '../../data/quests/frost-restored.json';
+import meadowRestored from '../../data/quests/meadow-restored.json';
 import { createChapter, mergeChapters } from '../game/chapter.js';
 import { applyEcho } from '../game/echoes.js';
 import { surfTuning } from '../character/surf.js';
@@ -20,7 +22,7 @@ export function addChapterSystem(g) {
   const { loop, controller, scene, input, Action, params, ws, warden, wardenMod, frost, music, game, clock, capture } = g;
   g.surfTuning = surfTuning;
   const hud = g.hud = createHud();
-  const data = mergeChapters(frostData, meadowData, sideData);
+  const data = mergeChapters(frostData, meadowData, sideData, frostRestored, meadowRestored);
   // Places the data gives a kind and a biome (the Green Shrine in Hearn, the side quests' sites) join the baked ones: compass, map, travel.
   for (const id in data.places) { const p = data.places[id]; if (p.kind && p.biome && !g.pois.some((q) => q.id === id)) { g.pois.push({ id, kind: p.kind, biome: p.biome, pos: p.pos, h: p.h }); if (p.name) data.names[id] ||= p.name; } }
   const chapter = g.chapter = createChapter({
