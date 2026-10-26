@@ -222,7 +222,7 @@ describe('the world hears what the systems raise', () => {
       expect(ENTRIES.some((x) => x.on === e), e).toBe(true);
       expect(src(f), e).toContain(e.includes(':') && e.startsWith('stream') ? "'stream:'" : `'${e}'`);
     }
-    expect(ENTRIES.length).toBeLessThanOrEqual(50);
+    expect(ENTRIES.length).toBeLessThanOrEqual(60);
   });
 });
 

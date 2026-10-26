@@ -1,5 +1,5 @@
 // Bending in play (BRIEF §9): the element in hand (1–5, game/elements.js) takes a tap of Q (Bend),
-// a hold, and Heavy (F) — Frost: Sweep, Ribbon, Crystallize; Gale: Gust, Vortex, Updraft (LMB is
+// a hold, and Heavy (F) — Frost: Sweep, Ribbon, Crystallize; Gale: Gust, Vortex, Updraft; Stone: Shard, Ridge, Bloom (LMB is
 // the weapon since docs §11.1, game/weapons/). The aim
 // point; the speed streaks; and the photo spots' scripted bending sequence.
 
@@ -8,7 +8,7 @@ import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 /** @param {any} g  shared boot context */
 export function addBendingSystem(g) {
-  const { loop, game, input, Action, frost, frostMod, gale, elements, ribbon, crystals, streaks, controller, arm, combat, combatTuning, sfx, SFX, clock, ground, camera, shaped, wraithView, castFlash, capture, flow } = g;
+  const { loop, game, input, Action, frost, frostMod, gale, stone, stoneView, stoneFx, elements, ribbon, crystals, streaks, controller, arm, combat, combatTuning, sfx, SFX, clock, ground, camera, shaped, wraithView, castFlash, capture, flow } = g;
   let primaryHeld = 0;
   const HOLD = 0.22; // s: a shorter press is a tap (Sweep), a longer one holds the Ribbon
   /** Aim: where the camera's view ray meets the ground, kept within the verbs' range. → aim.x/y/z */
@@ -53,6 +53,28 @@ export function addBendingSystem(g) {
     }
     pushGaleFx(time);
   }
+  /** Stone after the Gale (it takes the light slots left free): its terrain mass is already in the ground query. */
+  const sfxAt = (x, y, z, gain, id) => { sfx.x = x; sfx.y = y; sfx.z = z; sfx.gain = gain; sfx.play(id); };
+  let ridgeSnd = 0;
+  function stepStone(dt, time) {
+    stone.x = controller.pos.x; stone.y = controller.pos.y; stone.z = controller.pos.z;
+    stone.aimX = Math.sin(arm.yaw); stone.aimZ = Math.cos(arm.yaw);
+    stone.tx = aim.x; stone.ty = aim.y; stone.tz = aim.z;
+    stone.dt = dt; stone.time = time;
+    stone.update();
+    pushStoneFx(time);
+    if (capture) return;
+    if (stone.shatterEvent) { sfxAt(stone.shatterX, stone.shatterY, stone.shatterZ, 1, SFX.SHATTER); sfxAt(stone.shatterX, stone.shatterY, stone.shatterZ, 0.7, SFX.THUD); }
+    if (stone.bloomEvent) { sfxAt(stone.bloomX, controller.pos.y, stone.bloomZ, 1.3, SFX.BOOM); sfxAt(stone.bloomX, controller.pos.y, stone.bloomZ, 1, SFX.CRUNCH); }
+    if (stone.splashEvent) sfxAt(stone.splashX, controller.pos.y, stone.splashZ, 0.6, SFX.WHOOSH);
+    ridgeSnd -= dt;
+    if (stone.ridgeAdvance > 0 && ridgeSnd <= 0) { ridgeSnd = 0.28; sfxAt(controller.pos.x + stone.aimX * 4, controller.pos.y, controller.pos.z + stone.aimZ * 4, 0.55, SFX.CRUNCH); }
+  }
+  /** The Stone's dust and chunks (render/stoneFx.js, the chunk view): the block and the clock. */
+  function pushStoneFx(time) {
+    if (stoneFx) { stoneFx.stone.set(stone.fx); stoneFx.stoneT.x = time; stoneFx.update(); }
+    if (stoneView) stoneView.update();
+  }
   /** The Gale's visuals (render/galeFx.js): its block, the time, the wind, and how much meadow lies
    *  under the caster (grass and petals for debris there, snow elsewhere). */
   function pushGaleFx(time) {
@@ -73,7 +95,7 @@ export function addBendingSystem(g) {
   function stepBendRoll() {
     const spec = bendRoll.spec, p = controller.pos, w = wraithView.wraith, dt = 1 / 60;
     const f = controller.yaw, fx = Math.sin(f), fz = Math.cos(f), rx = fz, rz = -fx;
-    const galeRoll = spec.element === 'gale';
+    const galeRoll = spec.element === 'gale', stoneRoll = spec.element === 'stone';
     for (let k = 0; k < 4 && bendRoll.t < spec.seconds; k++) {
       const t = bendRoll.t;
       if (galeRoll) {
@@ -93,6 +115,25 @@ export function addBendingSystem(g) {
         gale.dt = dt; gale.time = w.time; gale.lightBase = 0;
         gale.update();
         pushGaleFx(w.time);
+        bendRoll.t += dt;
+        continue;
+      }
+      if (stoneRoll) {
+        // Stone: a Shard thrown ahead-right, a Ridge dragged ahead-left (held), a Bloom further out.
+        stone.castShard = t === 0;
+        stone.ridgeHeld = t > 0.5 && t < 2.2;
+        stone.tx = p.x + fx * (10 + 4 * (t - 0.5)) - rx * (3.5 - 1.2 * (t - 0.5)); stone.tz = p.z + fz * (10 + 4 * (t - 0.5)) - rz * (3.5 - 1.2 * (t - 0.5));
+        if (Math.abs(t - 3.0) < dt * 0.5) { stone.tx = p.x + fx * 11 + rx * 3.5; stone.tz = p.z + fz * 11 + rz * 3.5; stone.castBloom = true; }
+        ground.qx = stone.tx; ground.qz = stone.tz; ground.sample(); stone.ty = ground.h;
+        w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = 0; w.vz = 0; w.yaw = f; w.grounded = true; w.dt = dt;
+        w.time = clock.simTime - (spec.seconds - t); wraithView.time = w.time;
+        w.cast = (stone.gesture > 0 || stone.ridgeHeld) ? 1 : 0;
+        wraithView.update();
+        const sa = f + 0.1;
+        stone.x = p.x; stone.y = p.y; stone.z = p.z; stone.aimX = Math.sin(sa); stone.aimZ = Math.cos(sa);
+        stone.dt = dt; stone.time = w.time;
+        stone.update();
+        pushStoneFx(w.time);
         bendRoll.t += dt;
         continue;
       }
@@ -160,29 +201,32 @@ export function addBendingSystem(g) {
     for (let k = 0; k < ELEMENTS.length; k++) {
       if (input.pressed[Action.Element1 + k] && elements.select(ELEMENTS[k]) && g.hud && !capture) g.hud.notice('Element', ELEMENT_NAMES[ELEMENTS[k]], '', 2);
     }
-    const isGale = elements.active === 'gale';
+    const isGale = elements.active === 'gale', isStone = elements.active === 'stone';
     if (able) {
       if (input.down[Action.Bend]) primaryHeld += dt;
-      if (input.released[Action.Bend] && primaryHeld < HOLD && combat.spend((isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
+      if (input.released[Action.Bend] && primaryHeld < HOLD && combat.spend((isStone ? combatTuning.costShard : isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
         // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
-        frost.power = gale.power = flow.power; frost.flowing = flow.flowing;
-        if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
-        g.remembrance?.cast(isGale ? 'gust' : 'sweep');
+        frost.power = gale.power = stone.power = flow.power; frost.flowing = stone.flowing = flow.flowing;
+        if (isStone) { stone.castShard = true; if (flow.flowing) carry(); }
+        else if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
+        g.remembrance?.cast(isStone ? 'shard' : isGale ? 'gust' : 'sweep');
         castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
       }
       if (!input.down[Action.Bend]) primaryHeld = 0;
     } else primaryHeld = 0;
     const holding = able && primaryHeld >= HOLD && combat.focus > 1;
-    if (holding && !frost.ribbonHeld && !gale.vortexHeld) g.remembrance?.cast(isGale ? 'vortex' : 'ribbon');   // the hold begins
-    frost.ribbonHeld = holding && !isGale;
+    if (holding && !frost.ribbonHeld && !gale.vortexHeld && !stone.ridgeHeld) g.remembrance?.cast(isStone ? 'ridge' : isGale ? 'vortex' : 'ribbon');   // the hold begins
+    frost.ribbonHeld = holding && !isGale && !isStone;
     gale.vortexHeld = holding && isGale;
-    if (able && input.pressed[Action.Heavy] && combat.spend((isGale ? combatTuning.costUpdraft : combatTuning.costCrystal) * flow.costMul)) {
-      if (isGale) gale.castUpdraft = true; else frost.castCrystal = true;
-      g.remembrance?.cast(isGale ? 'updraft' : 'crystal');
+    stone.ridgeHeld = holding && isStone;
+    if (able && input.pressed[Action.Heavy] && combat.spend((isStone ? combatTuning.costBloom : isGale ? combatTuning.costUpdraft : combatTuning.costCrystal) * flow.costMul)) {
+      stone.power = flow.power;
+      if (isStone) stone.castBloom = true; else if (isGale) gale.castUpdraft = true; else frost.castCrystal = true;
+      g.remembrance?.cast(isStone ? 'bloom' : isGale ? 'updraft' : 'crystal');
       arm.shake += 0.01; castFlash.v = 1; arm.kick += 0.02;
     }
     // The Wraith turns to face what it bends.
-    if (frost.castSweep || frost.castCrystal || frost.ribbonHeld || gale.castGust || gale.castUpdraft || gale.vortexHeld) controller.yaw = arm.yaw;
+    if (frost.castSweep || frost.castCrystal || frost.ribbonHeld || gale.castGust || gale.castUpdraft || gale.vortexHeld || stone.castShard || stone.castBloom || stone.ridgeHeld) controller.yaw = arm.yaw;
     updateAim();
     stepCarry(dt);
     const b = wraithView.wraith.body;
@@ -193,6 +237,7 @@ export function addBendingSystem(g) {
     frost.dt = dt; frost.time = clock.simTime;
     frost.update();
     stepGale(dt, clock.simTime);
+    stepStone(dt, clock.simTime);
     ribbon.time = clock.simTime;
     ribbon.update();
     if (frost.crystalsDirty) { crystals.dirty = true; frost.crystalsDirty = false; }

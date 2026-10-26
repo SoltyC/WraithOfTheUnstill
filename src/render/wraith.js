@@ -250,6 +250,8 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     /** Run the simulation (inputs already set on `wraith`) and upload the vertices and effects. */
     /** Glow colour of the hands (rgb; the Wraith's element light, or a Veiled's lantern). */
     handGlow: [0.25, 0.45, 0.6],
+    /** The hand-light's resting colour for the element in hand (systems/flow.js sets it; economy.js warms from it). */
+    handBase: [0.25, 0.45, 0.6],
     /** Flow on the body: the cloth's glow uniform, and the hand-light trail (a point every 40 ms, living 0.17–0.38 s). */
     _flowFx(t) {
       const L = this.flowLevel, k = L < 0.02 ? 0 : Math.min(1, L / 3), hg = this.flowColor;

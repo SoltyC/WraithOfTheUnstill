@@ -7,17 +7,20 @@ import { MAX_SHAPED } from '../shaped/shaped.js';
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
 import { FLOW_EVENT } from '../flow.js';
+import { createStoneHits } from './stoneHits.js';
 
 export const combatTuning = {
   health: 100, focus: 100,
   focusIdle: 6, focusMove: 14, focusSurf: 28,   // per second: movement and flow restore focus
   costSweep: 14, costRibbon: 16, costCrystal: 30, costDodge: 8,   // focus
   costGust: 10, costVortex: 14, costUpdraft: 24,                  // focus (the Vortex per second)
+  costShard: 9, costRidge: 12, costRidgeMetre: 0.5, costBloom: 26, // focus (the Ridge per second, plus per metre of wall)
   sweepDamage: 16, ribbonDps: 26, shatterMul: 3, freezeTime: 3,
   hitStopHit: 0.055, hitStopLight: 0.02, hitStopShatter: 0.12, hitStopHurt: 0.06,
   kickHit: 0.02, kickShatter: 0.06,      // camera punch (rad of FOV)
   lockRange: 20,
   gustDamage: 9, gustShove: 9, vortexReach: 7, vortexBite: 2.6, vortexPull: 7, vortexDps: 12, updraftDamage: 14, updraftReach: 2.6,
+  shardDamage: 18, shardShove: 7, bloomDamage: 22,                // Stone: the Shard's blow and shove, the Bloom's blow
   wardenSweepChip: 2.5, wardenRibbonChip: 0.6,   // the Warden's health per Sweep through it / per Ribbon tick (5 a second)
   deathTime: 2.4, reformTime: 1.6,
 };
@@ -29,6 +32,7 @@ export function createCombat(ctx) {
   const { shaped, frost, controller, ts, clock, teleport } = ctx;
   const warden = ctx.warden || null;
   const gale = ctx.gale || null;
+  const stone = ctx.stone || null;
   const flow = ctx.flow || null;     // Flow (game/flow.js): feeds it reactions, near misses and blows; reads what it gives
   const T = combatTuning;
   const sweepSeen = new Uint32Array(4 * MAX_SHAPED);   // last sweep id that hit each slot, per sweep slot
@@ -89,6 +93,7 @@ export function createCombat(ctx) {
       const cheap = flow !== null ? flow.costMul : 1;     // verbs cost less at Flow 2+
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * cheap * dt);
       if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * cheap * dt);
+      if (stone && stone.ridgeHeld) this.focus = Math.max(0, this.focus - (T.costRidge * dt + T.costRidgeMetre * stone.ridgeAdvance) * cheap);   // the Ridge: per second, plus per metre dragged
       this.wound += ((1 - this.health / this.maxHealth) - this.wound) * (1 - Math.exp(-dt * 3));
       ribbonTick -= dt; bodyTick -= dt;
       hits(dt);
@@ -143,6 +148,7 @@ export function createCombat(ctx) {
         }
       }
       if (gale !== null) { galeHits(i, cx, cz, dt); if (!shaped.isLive(i)) continue; }
+      if (stoneHits !== null) { stoneHits.hit(i, cx, cz, dt); if (!shaped.isLive(i)) continue; }
       // Crystallize: the formation freezes what it catches.
       if (frost.crystalEvent) {
         const dx = cx - frost.crystalX, dz = cz - frost.crystalZ;
@@ -260,6 +266,8 @@ export function createCombat(ctx) {
   }
 
   let ribbonTick = 0;
+  /** Stone's blows on the Shaped (combat/stoneHits.js), through the same strike. */
+  const stoneHits = stone === null ? null : createStoneHits({ shaped, stone, strike: (i, d, dx, dz, h) => strike(i, d, dx, dz, h), flow, FLOW_EVENT, tuning: T, maxShaped: MAX_SHAPED });
   /** A hit on slot i: frozen Shaped shatter (the reaction), others take damage and stagger. */
   function strike(i, dmg, dx, dz, heavy) {
     const frozen = shaped.isFrozen(i);

@@ -5,7 +5,8 @@
 import { surfTuning } from '../character/surf.js';
 import { FLOW_IN } from '../game/flow.js';
 
-const COLOURS = { frost: [0.28, 0.5, 0.8], gale: [0.45, 0.78, 0.55] };
+const HAND = { frost: [0.25, 0.45, 0.6], gale: [0.25, 0.45, 0.6], stone: [0.95, 0.6, 0.22] };
+const COLOURS = { frost: [0.28, 0.5, 0.8], gale: [0.45, 0.78, 0.55], stone: [0.82, 0.55, 0.22] };
 
 /** @param {any} g  shared boot context */
 export function addFlowSystem(g) {
@@ -32,7 +33,7 @@ export function addFlowSystem(g) {
     // On the body and in the world.
     const L = flow.show;
     const el = g.elements ? g.elements.active : 'frost';
-    if (el !== lastEl) { lastEl = el; const c = COLOURS[el] || COLOURS.frost; wraithView.flowColor = c; }
+    if (el !== lastEl) { lastEl = el; const c = COLOURS[el] || COLOURS.frost; wraithView.flowColor = c; const h = HAND[el] || HAND.frost; for (let q = 0; q < 3; q++) wraithView.handBase[q] = h[q]; }
     wraithView.flowLevel = L; wraithView.wraith.flow = L;
     streaks.flow = L; surfWake.flow = L;
     music.lift = L / 3;

@@ -82,7 +82,7 @@ export function createMenus(g) {
     } else if (tab === 'pouch') {
       econ.pouchTab(el('div', 'codex-page wide', sheet));
     } else if (tab === 'remembrance') {
-      remembranceTab({ el, listPage, rem: g.remembrance });
+      remembranceTab({ el, listPage, rem: g.remembrance, elements: g.elements });
     } else if (tab === 'robes') {
       const flags = chapter.graph.flags, vars = chapter.graph.vars;
       const worn = wornRobe(flags, vars).id;
