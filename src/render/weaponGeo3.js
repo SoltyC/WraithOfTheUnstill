@@ -35,7 +35,7 @@ function bell(B, cy, zc, zm, r) {
   B.use(WMAT.OLD, 0.55, 1); ringZ(B, cy, zm, r * 1.04, r * 0.07);                                // the lip, worn bright
   B.use(WMAT.OLD, 0.2); ringZ(B, cy, zc + len * 0.34, r * 0.6, r * 0.04); ringZ(B, cy, zc + len * 0.62, r * 0.72, r * 0.035);   // the waist bands
   B.use(WMAT.OLD, 0.8).blob(0, cy, zc - r * 0.05, r * 0.14, r * 0.14, r * 0.12, 6);                // the cap on the crown
-  B.use(WMAT.BELL, 0.9).tube([0, cy, zm - len * 0.3, 0, cy, zm - len * 0.33], [r * 0.7, r * 0.7], 14, true);   // inside the mouth: a disc that glows
+  B.use(WMAT.BELL, 0.9).blob(0, cy, zm - len * 0.3, r * 0.68, r * 0.68, len * 0.14, 10);   // inside the mouth: a dome that glows, brightest at its middle (the shader fades it toward the grazing sides)
 }
 
 /** The mace: grip at the origin, haft to 1.0, the bell's crown at 1.4, its mouth at 1.12 facing back down the haft. */

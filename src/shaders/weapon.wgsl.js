@@ -140,7 +140,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += sheen * 0.4 * skyRaw * pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0) * albedo;
   // The element's light along a cutting edge and the stone (an infused weapon; black = none).
   let ex = uniforms.fogParams.z * atmoExposure();
-  var emit = fragmentInputs.vTint * (edge * 0.9 + select(0.0, 0.35, mid == 0)) * 0.6;
+  var emit = fragmentInputs.vTint * (edge * 0.9 + select(0.0, 0.35, mid == 0)) * 0.6 * select(1.0, 0.0, mid == 8);   // (the Bell-mace's worn lip is bronze, not an element's edge: tint.x there is the glow)
   col += emit / max(ex, 1e-6);
   col += spellLit(wp, N, albedo, 0.0, ex);
   // The lantern's flame (material 6): emissive, hot at the middle and orange at the rim; the slot's tint.x is its brightness (flicker and flare from the view).
@@ -149,8 +149,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col = select(col, flameCol, mid == 6);
   // The Bell-mace's bell (material 7): bronze whose mouth glows from dull to white-gold with the height stored in it (the slot's tint.x, 0..1; the telegraph, docs/mace-design.md §2).
   let glow = clamp(fragmentInputs.vTint.x, 0.0, 1.0);
-  let bellCol = mix(vec3f(0.7, 0.32, 0.07), vec3f(1.0, 0.8, 0.42), glow) * (glow * glow * 1.7 + glow * 0.45) / max(ex, 1e-6);
-  col += select(vec3f(0.0), bellCol * (0.5 + 0.5 * heat) * select(0.1, 1.0, seed > 0.8), mid == 7);       // the glow is inside the mouth (seed 0.9); the flare only warms
+  let bellCol = mix(vec3f(0.7, 0.3, 0.06), vec3f(1.0, 0.68, 0.26), glow) * (glow * glow * 1.3 + glow * 0.7) / max(ex, 1e-6);
+  col += select(vec3f(0.0), bellCol * (0.5 + 0.5 * heat) * select(0.04, mix(0.1, 1.0, heat * heat), seed > 0.8), mid == 7);       // the glow is inside the mouth (seed 0.9); the flare only warms
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);
 }
