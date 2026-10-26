@@ -112,11 +112,11 @@ The cost is the same as the other weapons, from the same materials.
 ## 6. Where it comes from: the Bell Ledge
 
 - The Bell Ledge is planned in `docs/cross-biome.md` §3 (frost: "Updraft to the Bell Ledge shrine above the monastery") but not yet built. Build it here as a small site.
-- **Site:** a stone ledge about 14 m up the cliff behind the monastery. A Shaper bell frame stands on it, with the mace hung as its clapper.
+- **Site:** a stone ledge about 9.5 m up (an Updraft with the glide peaks at 10–12 m, so it can be landed on) the cliff behind the monastery. A Shaper bell frame stands on it, with the mace hung as its clapper.
   - It can't be reached by climbing; only an Updraft from the base gets you up.
   - It is visible from the monastery yard, so the lock is shown before the key.
 - **Needs:** Gale known (the flag from the Bellwether). "Take" from the bell frame.
-- **The first lesson is free:** two hounds idle in the hollow below the ledge. The way down is the first plunge (h ≈ 14 m, about 63 damage, a rebound to the second hound).
+- **The first lesson is free:** two hounds idle in the hollow below the ledge. The way down is the first plunge (h ≈ 9.5 m, about 48 damage, a rebound to the second hound).
   - Remembrance entry `rem:bell-ledge` ("The bell that fell to ring").
   - The site counts as a nook for the payoff log.
 - Fieldstone props come from `blobStone.js`, and the bell frame uses the existing Shaper stone language. Don't change the graphical style.

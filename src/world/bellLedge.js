@@ -1,4 +1,4 @@
-// The Bell Ledge (docs/mace-design.md §6, docs/cross-biome.md §3): a stone ledge 14.6 m up a bastion of
+// The Bell Ledge (docs/mace-design.md §6, docs/cross-biome.md §3): a stone ledge 9.5 m up a bastion of
 // dressed Shaper stone behind the monastery, with a bell frame standing on it. The great bell and the
 // mace hung in it as its clapper are the weapon mesh's (render/weaponGeo3.js, slot MACE_FIND); this
 // is the stone: the stepped bluff (courses of ashlar, the top paved), two carved pillars and a
@@ -11,7 +11,7 @@ import { MAT } from './architecture.js';
 import { blob } from './blobStone.js';
 
 /** Where it stands, from the monastery's pad: this far behind the hall along its back (the ground is level there). */
-export const LEDGE = { back: 38, top: 14.6, beam: 18.8, hollow: 9, houndSpread: 3.2, wake: 10 };
+export const LEDGE = { back: 38, top: 9.5, beam: 13.7, hollow: 9, houndSpread: 3.2, wake: 10 };
 
 const TAU = Math.PI * 2;
 const frame = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, f) => [u * c + f * s, -u * s + f * c]; };
@@ -20,18 +20,18 @@ const frame = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, 
 export function buildBellLedge(b, facing, R) {
   const P = frame(facing), T = LEDGE.top;
   // The bastion: three stepped courses of ashlar (the plinth builder lays the walls and paves each top), the last one the ledge.
-  b.box(0, 0, -3.2, 5.2, 6.0, 5.0, facing, MAT.STONE, 1, { drift: false });
-  { const [x, z] = P(0.5, -0.5); b.box(x, z, 5.2, 10.4, 5.0, 4.0, facing, MAT.STONE, 2, { drift: false }); }
-  { const [x, z] = P(0.5, -0.9); b.box(x, z, 10.4, T, 4.2, 3.4, facing, MAT.STONE, 3, { platform: true, drift: false }); }
+  b.box(0, 0, -3.2, 3.4, 6.0, 5.0, facing, MAT.STONE, 1, { drift: false });
+  { const [x, z] = P(0.5, -0.5); b.box(x, z, 3.4, 6.6, 5.0, 4.0, facing, MAT.STONE, 2, { drift: false }); }
+  { const [x, z] = P(0.5, -0.9); b.box(x, z, 6.6, T, 4.2, 3.4, facing, MAT.STONE, 3, { platform: true, drift: false }); }
   // Buttresses down the front face, battered toward the ground, and string courses between the stages.
   for (const u of [-3.4, 3.4]) {
     const [x, z] = P(u, 5.3);
-    b.frustum(x, z, -3.2, 10.4, 1.0, 1.2, 0.7, 0.55, facing, MAT.STONE, 20 + u);
+    b.frustum(x, z, -3.2, 6.6, 1.0, 1.2, 0.7, 0.55, facing, MAT.STONE, 20 + u);
   }
-  { const [x, z] = P(0.5, -0.5); b.box(x, z, 5.1, 5.35, 5.25, 4.25, facing, MAT.STONE, 30, { solid: false, drift: false }); }
-  { const [x, z] = P(0.5, -0.9); b.box(x, z, 10.3, 10.55, 4.45, 3.65, facing, MAT.STONE, 31, { solid: false, drift: false }); }
+  { const [x, z] = P(0.5, -0.5); b.box(x, z, 3.3, 3.55, 5.25, 4.25, facing, MAT.STONE, 30, { solid: false, drift: false }); }
+  { const [x, z] = P(0.5, -0.9); b.box(x, z, 6.5, 6.75, 4.45, 3.65, facing, MAT.STONE, 31, { solid: false, drift: false }); }
   // A carved band on the front of the middle stage: the Shapers' marks that tell what hangs above.
-  { const [x, z] = P(0.5, 3.55); b.box(x, z, 6.4, 8.9, 2.1, 0.12, facing, MAT.GLYPH, 32, { carve: 2, solid: false, drift: false, cap: false }); }
+  { const [x, z] = P(0.5, 3.55); b.box(x, z, 4.1, 5.9, 2.1, 0.12, facing, MAT.GLYPH, 32, { carve: 2, solid: false, drift: false, cap: false }); }
   // The bell frame on the ledge: two carved pillars and a lintel (the bell hangs from it, 3.1 m under).
   const ledgeZ = -0.9;
   for (const s of [-1, 1]) { const [x, z] = P(0.5 + s * 2.3, ledgeZ); b.box(x, z, T, LEDGE.beam + 0.55, 0.42, 0.42, facing, MAT.GLYPH, 40 + s, { carve: 1, drift: false }); }

@@ -25,7 +25,7 @@ export const weaponFinds = [
     text: 'The monastery\'s censer-flail, hung on an iron post by Isolde\'s fire and kept lit for nine winters. A bronze lantern on a chain: it swings in wide rings, sets what it strikes alight and lights the way at night, but it cannot strike what is close, and the ice does not love it.',
   },
   {
-    id: 'mace', slot: 15, at: [1136.4, 2787.2], yaw: 0, name: 'Bell-mace', place: 'The Bell Ledge', site: 'bell-ledge', lift: 14.6, hy: 4.5, gale: true, visible: true, glow: 0,
+    id: 'mace', slot: 15, at: [1136.4, 2787.2], yaw: 0, name: 'Bell-mace', place: 'The Bell Ledge', site: 'bell-ledge', lift: 9.5, hy: 4.5, gale: true, visible: true, glow: 0,
     text: 'A Shaper\'s bell on an oak haft, hung in the great bell as its clapper. It hits hard only for the height it has fallen: the bell glows and hums higher as it stores it, a plunge from the air tolls it out, and the toll throws you up to fall again. Slow and weak on the ground, it wants an Updraft.',
   },
 ];

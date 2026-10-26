@@ -27,7 +27,7 @@ describe('the Bell Ledge', () => {
     expect(find.needs).toBeUndefined();
     expect(weaponDefs[find.id]).toBe(weaponDefs.mace);
   });
-  it('builds without NaN; its only walkable top is the ledge, 14.6 m up, and it has walls to the ground', () => {
+  it('builds without NaN; its only walkable top is the ledge, 9.5 m up, and it has walls to the ground', () => {
     const built = buildArchitecture([site]);
     for (const v of built.positions) expect(Number.isFinite(v)).toBe(true);
     const tops = built.platforms.map((p) => p.top);
