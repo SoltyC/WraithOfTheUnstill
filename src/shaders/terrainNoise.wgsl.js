@@ -3,7 +3,10 @@
 // rotation, so CPU collision and GPU geometry agree to float precision. Edit both together;
 // tools/capture/parity-check.mjs verifies them on the GPU.
 
+import { DUNE_TYPES_WGSL } from './duneTypes.wgsl.js';
+
 export const TERRAIN_NOISE_WGSL = /* wgsl */ `
+${DUNE_TYPES_WGSL}
 fn tn_hashU32(xIn: u32) -> u32 {
   var x = xIn;
   x = x ^ (x >> 16u);
@@ -64,32 +67,41 @@ fn tn_duneProfile(p: f32) -> f32 {
 }
 
 // w0..w5 = frost, meadow, mire, dunes, ember, coast. wind = unit direction blown toward.
-fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f) -> f32 {
+// dune = (type coordinate, flat weight) from the bake's dune-type map. s = grid spacing of the clipmap
+// level (0.5 in parity checks): each feature fades out where the grid cannot carry its wavelength
+// (every fade is 1 for s ≤ 0.75, so the CPU twin needs none).
+fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f, s: f32) -> f32 {
   let u = x * wind.x + z * wind.y;
   let v = -x * wind.y + z * wind.x;
   let S = MESO_SEED;
   var h = 0.0;
   if (wA.w > 0.001) {
-    let phase = u / 140.0 + 0.9 * tn_fbm(u / 900.0, v / 600.0, 3, S + 1u) + 0.25 * tn_valueNoise(v / 170.0, u / 400.0, S + 2u);
-    let p = phase - floor(phase);
-    let seg = 0.7 + 0.3 * tn_fbm(v / 260.0, u / 700.0, 3, S + 3u);
-    let big = tn_duneProfile(p) * 22.0 * seg;
-    let ripple = 0.6 * tn_fbm(u / 18.0, v / 55.0, 3, S + 4u);
-    h += wA.w * (big + ripple);
+    let t3 = dune.x * 3.0;
+    let wDb = select(0.0, 1.0 - t3, t3 < 1.0);
+    let wDt = max(1.0 - abs(t3 - 1.0), 0.0);
+    let wDs = max(1.0 - abs(t3 - 2.0), 0.0);
+    let wDf = select(0.0, t3 - 2.0, t3 > 2.0);
+    var big = 0.0;
+    if (wDt > 0.001) { big += wDt * tn_transverseH(u, v) * tn_lodFade(140.0, s); }
+    if (wDb > 0.001) { big += wDb * tn_barchanH(u, v) * tn_lodFade(120.0, s); }
+    if (wDs > 0.001) { big += wDs * tn_starH(u, v) * tn_lodFade(500.0, s); }
+    if (wDf > 0.001) { big += wDf * tn_seifH(u, v) * tn_lodFade(115.0, s); }
+    let ripple = 0.6 * tn_fbm(u / 18.0, v / 55.0, 3, S + 4u) * tn_lodFade(140.0, s);
+    h += wA.w * (big * (1.0 - dune.y) + ripple * (1.0 - 0.8 * dune.y));
   }
   if (wA.x > 0.001) {
     let drift = 2.2 * tn_fbm(u / 160.0, v / 42.0, 4, S + 11u);
     let sastrugi = 0.55 * tn_fbm(u / 26.0, v / 6.0, 3, S + 12u);
-    h += wA.x * (drift + sastrugi);
+    h += (wA.x * tn_lodFade(42.0, s)) * (drift + sastrugi);
   }
   if (wB.x > 0.001) {
     let phase = u / 60.0 + 0.6 * tn_fbm(u / 500.0, v / 350.0, 3, S + 21u);
     let p = phase - floor(phase);
-    h += wB.x * (tn_duneProfile(p) * 3.2 * (0.6 + 0.4 * tn_fbm(v / 140.0, u / 300.0, 2, S + 22u)) + 0.4 * tn_fbm(x / 30.0, z / 30.0, 3, S + 23u));
+    h += (wB.x * tn_lodFade(60.0, s)) * (tn_duneProfile(p) * 3.2 * (0.6 + 0.4 * tn_fbm(v / 140.0, u / 300.0, 2, S + 22u)) + 0.4 * tn_fbm(x / 30.0, z / 30.0, 3, S + 23u));
   }
-  if (wA.y > 0.001) { h += wA.y * 1.1 * tn_fbm(x / 55.0, z / 55.0, 4, S + 31u); }
-  if (wA.z > 0.001) { h += wA.z * 0.35 * tn_fbm(x / 9.0, z / 9.0, 3, S + 41u); }
-  if (wB.y > 0.001) { h += wB.y * 0.25 * tn_fbm(u / 40.0, v / 12.0, 2, S + 51u); }
+  if (wA.y > 0.001) { h += (wA.y * tn_lodFade(8.0, s)) * 1.1 * tn_fbm(x / 55.0, z / 55.0, 4, S + 31u); }
+  if (wA.z > 0.001) { h += (wA.z * tn_lodFade(8.0, s)) * 0.35 * tn_fbm(x / 9.0, z / 9.0, 3, S + 41u); }
+  if (wB.y > 0.001) { h += (wB.y * tn_lodFade(8.0, s)) * 0.25 * tn_fbm(u / 40.0, v / 12.0, 2, S + 51u); }
   return h;
 }
 

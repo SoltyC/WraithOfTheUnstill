@@ -128,19 +128,19 @@ fn windAt(x: f32, z: f32) -> vec2f {
   return select(vec2f(1.0, 0.0), w / l, l > 1e-4);
 }
 
+// The bake's dune-type map (type coordinate, flat weight): the free .zw bytes of the 32 m wind map.
+fn duneAt(x: f32, z: f32) -> vec2f {
+  let u = (x + W_HALF) / CW - 0.5;
+  let v = (W_HALF - z) / CW - 0.5;
+  let i0 = clamp(i32(floor(u)), 0, NW - 1); let j0 = clamp(i32(floor(v)), 0, NW - 1);
+  let i1 = clamp(i0 + 1, 0, NW - 1); let j1 = clamp(j0 + 1, 0, NW - 1);
+  let fu = clamp(u - floor(u), 0.0, 1.0); let fv = clamp(v - floor(v), 0.0, 1.0);
+  return mix(mix(unpack4x8unorm(windMap[j0 * NW + i0]).zw, unpack4x8unorm(windMap[j0 * NW + i1]).zw, fu),
+             mix(unpack4x8unorm(windMap[j1 * NW + i0]).zw, unpack4x8unorm(windMap[j1 * NW + i1]).zw, fu), fv);
+}
+
 // LOD fade of a feature with wavelength lambda at grid spacing s (fully present while s ≤ λ/8).
 fn lodFade(lambda: f32, s: f32) -> f32 { return 1.0 - smoothstep(lambda / 8.0, lambda / 3.0, s); }
-
-fn mesoLod(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, s: f32) -> f32 {
-  if (s <= 0.75) { return tn_mesoHeight(x, z, wA, wB, wind); }
-  // Coarse levels: keep the layers whose wavelength the grid can carry.
-  let fadeDunes = lodFade(140.0, s);
-  let fadeDrift = lodFade(42.0, s);
-  let fadeSmall = lodFade(8.0, s);
-  let wA2 = vec4f(wA.x * fadeDrift, wA.y * fadeSmall, wA.z * fadeSmall, wA.w * fadeDunes);
-  let wB2 = vec2f(wB.x * lodFade(60.0, s), wB.y * fadeSmall);
-  return tn_mesoHeight(x, z, wA2, wB2, wind);
-}
 
 fn microH(x: f32, z: f32, wA: vec4f, wind: vec2f, s: f32) -> f32 {
   // Only grids that sample these features at ≥ 4 vertices per wavelength carry them (coarser
@@ -181,7 +181,7 @@ fn terrainH(x: f32, z: f32, s: f32) -> f32 {
   let wA = biomeAt(x, z, &wB);
   let wind = windAt(x, z);
   let alp = tn_alpineHeight(x, z, macroH, wA.x, lodFade(180.0, s), lodFade(60.0, s));
-  return macroH + mesoLod(x, z, wA, wB, wind, s) + alp + microH(x, z, wA, wind, s);
+  return macroH + tn_mesoHeight(x, z, wA, wB, wind, duneAt(x, z), s) + alp + microH(x, z, wA, wind, s);
 }
 `;
 

@@ -27,6 +27,8 @@ export class WorldData {
     /** @type {Uint8Array|null} */ this.biomeA = null;
     /** @type {Uint8Array|null} */ this.biomeB = null;
     /** @type {Uint8Array|null} */ this.wind = null;
+    /** Dune-type map (rg8, 32 m, same grid as the wind): type coordinate and flat weight; null = transverse, no flat. */
+    /** @type {Uint8Array|null} */ this.dunes = null;
     /** Raw u16 tiles by index tz*tiles+tx; null until resident. */
     this.tileData = new Array(this.tiles * this.tiles).fill(null);
     // Query fields (doubles from the start so their representation stays double).
@@ -36,6 +38,7 @@ export class WorldData {
     // Biome weights and wind at the last sample.
     this.w0 = 0.5; this.w1 = 0.5; this.w2 = 0.5; this.w3 = 0.5; this.w4 = 0.5; this.w5 = 0.5;
     this.windX = 0.5; this.windZ = 0.5;
+    this.duneT = 0.5; this.duneFlat = 0.5;
   }
 
   /** Mark a tile resident (called when both CPU data and GPU upload are done). */
@@ -111,6 +114,11 @@ export class WorldData {
     let wz = ((W[e00 + 1] * d00 + W[e10 + 1] * d10 + W[e01 + 1] * d01 + W[e11 + 1] * d11) - 128) / 127;
     const l = Math.sqrt(wx * wx + wz * wz) || 1;
     this.windX = wx / l; this.windZ = wz / l;
+    const D = this.dunes;
+    if (D === null) { this.duneT = 1 / 3; this.duneFlat = 0; } else {
+      this.duneT = (D[e00] * d00 + D[e10] * d10 + D[e01] * d01 + D[e11] * d11) / 255;
+      this.duneFlat = (D[e00 + 1] * d00 + D[e10 + 1] * d10 + D[e01 + 1] * d01 + D[e11 + 1] * d11) / 255;
+    }
   }
 
   /** Beyond the baked extent, macro falls below sea level over 2 km (shader twin: edgeFalloff). */
@@ -128,7 +136,7 @@ export class WorldData {
     this._macro();
     this._edgeFalloff();
     this._climate();
-    this.meso = mesoHeight(this.qx, this.qz, this.w0, this.w1, this.w2, this.w3, this.w4, this.w5, this.windX, this.windZ);
+    this.meso = mesoHeight(this.qx, this.qz, this.w0, this.w1, this.w2, this.w3, this.w4, this.w5, this.windX, this.windZ, this.duneT, this.duneFlat);
     this.meso += alpineHeight(this.qx, this.qz, this.macro, this.w0, 1, 1);
     this.h = this.macro + this.meso;
   }

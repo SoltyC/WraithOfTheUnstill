@@ -19,6 +19,8 @@ import { placePOIs } from './placement.mjs';
 import { carveStory, storyPOIs } from './story.mjs';
 import { carveHill, HILL } from './hill.mjs';
 import { bakeVillageMask } from './villageMask.mjs';
+import { carveRavines, KIND } from './ravines.mjs';
+import { bakeDuneMap } from './dunemap.mjs';
 import { forecourtPaving, forecourtBounds } from '../../src/world/manor.js';
 import { stairPaving } from '../../src/world/stair.js';
 import { villageLayout } from '../../src/world/village.js';
@@ -35,6 +37,7 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => { const m = /^-
 
 const log = (...a) => console.log('[bake]', ...a);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const sqrt = Math.sqrt;
 
 /** Catmull-Rom sample of an n×n cell-centred grid at fractional cell coords (u, v). */
 function bicubic(g, n, u, v) {
@@ -171,6 +174,22 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     if (h > 1) h += (1 - water) * 0.7 * gfbm(x / 22, z / 22, 3, seed + 401);
     h2[j * n2 + i] = Math.round(clamp((h + HEIGHT_OFFSET) * HEIGHT_SCALE, 0, 65535));
   }
+  // 7b. The erg's ravines (ravines.mjs), cut into the 2 m height; the surface follows (rock walls, sand floors).
+  const rav = carveRavines(h2, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, []);
+  {
+    const r = n2 / n4;
+    for (let j = 0; j < n4; j++) for (let i = 0; i < n4; i++) {
+      let wall = 0, floor = 0;
+      for (let b = 0; b < r; b++) for (let a = 0; a < r; a++) { const m = rav.mask[(j * r + b) * n2 + i * r + a]; if (m === KIND.wall) wall++; else if (m === KIND.floor) floor++; }
+      if (!wall && !floor) continue;
+      const c = j * n4 + i, o = c * 4, H2 = (ii, jj) => h2[clamp(jj, 0, n2 - 1) * n2 + clamp(ii, 0, n2 - 1)] / HEIGHT_SCALE - HEIGHT_OFFSET;
+      const ci = i * r + (r >> 1), cj = j * r + (r >> 1);
+      const gx = (H2(ci + r, cj) - H2(ci - r, cj)) / (2 * c4), gz = (H2(ci, cj + r) - H2(ci, cj - r)) / (2 * c4);
+      surface[o] = wall >= floor ? MATERIALS.rock : MATERIALS.sand;
+      surface[o + 2] = Math.round(clamp(sqrt(gx * gx + gz * gz) * 128, 0, 255));
+    }
+  }
+  log('ravines', rav.feats.length, 'features', Date.now() - t0, 'ms');
   // Overview (8 m): average of the 2 m grid.
   const k = n2 / n8, ov = new Uint16Array(n8 * n8);
   for (let j = 0; j < n8; j++) for (let i = 0; i < n8; i++) {
@@ -219,6 +238,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   write('hydro.rgba8', hydro);
   write('lake_level.u16', lakeLevel);
   write('wind.rg8', windMap);
+  write('dunes.rg8', bakeDuneMap(rav.feats, nw, cw, HALF));
   // 7. The meadow village's layout (src/world/village.js) on the carved ground, beside the stream.
   const h4at = (x, z) => {
     const u = (x + HALF) / c4 - 0.5, v = (HALF - z) / c4 - 0.5, i = clamp(Math.floor(u), 0, n4 - 2), j = clamp(Math.floor(v), 0, n4 - 2), fu = u - i, fv = v - j;
@@ -245,6 +265,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     surface: { file: 'surface.rgba8', texel: c4, size: n4, channels: ['material', 'wetness', 'slope×128', 'coastDistance/16 m'], materials: MATERIALS },
     hydro: { file: 'hydro.rgba8', texel: c4, size: n4, channels: ['river', 'lake', 'flowX', 'flowZ'], lakeLevel: 'lake_level.u16 (same encoding as height; 0 = no lake)' },
     wind: { file: 'wind.rg8', texel: cw, size: nw, encoding: 'unit vector the wind blows toward, ×127+128 (x east, z north)' },
+    dunes: { file: 'dunes.rg8', texel: cw, size: nw, encoding: 'u8 pairs on the wind grid: R type coordinate (barchan 0, transverse 1/3, star 2/3, seif 1) ×255, G flat weight ×255' },
     pois: 'pois.json',
     files,
   };

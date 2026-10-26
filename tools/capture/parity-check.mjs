@@ -73,7 +73,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   const w = new WorldData(m);
   const u8 = (f) => new Uint8Array(fs.readFileSync(path.join(dir, f)));
   w.overview = new Uint16Array(u8(m.height.overview.file).buffer);
-  w.biomeA = u8(m.biome.files[0]); w.biomeB = u8(m.biome.files[1]); w.wind = u8(m.wind.file);
+  w.biomeA = u8(m.biome.files[0]); w.biomeB = u8(m.biome.files[1]); w.wind = u8(m.wind.file); w.dunes = u8(m.dunes.file);
   for (let k = 0; k < gpu.resident.length; k++) if (gpu.resident[k]) {
     const tx = k % m.height.tiles, tz = (k / m.height.tiles) | 0;
     w.setTile(tx, tz, new Uint16Array(u8(`height/${tx}_${tz}.u16`).buffer));
