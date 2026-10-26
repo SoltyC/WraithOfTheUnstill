@@ -15,6 +15,7 @@ import { arc, bodyRadius } from './arcs.js';
 import { hitMat } from './affinity.js';
 import { tierDef } from './tiers.js';
 import { createBurn } from './burn.js';
+import { createPlunge } from './plunge.js';
 import { combatTuning } from '../combat/combat.js';
 
 /** Tuning shared by the weapons, edited from the dev overlay. */
@@ -40,11 +41,14 @@ export function createWeapons(ctx) {
   let tdBase = null, tdTier = -1, tdDef = null;     // the forge's def for the weapon in hand, rebuilt only when the weapon or its tier changes
   const w = combat.wh;
   const burn = createBurn({ shaped, combat, fx, ts, ground });
+  // The Bell-mace's plunge (plunge.js): its blow goes through this file's strike(), so the tea, the tiers and the affinities apply.
+  const plunge = createPlunge({ shaped, combat, controller, clock, ts, fx, flow, ground, inventory, machine: m, gale: ctx.gale || null, frost: ctx.frost || null, wind: ctx.wind || null, sfx, SFX,
+    strike: (i, a, dx, dz, f) => self.strike(i, a, dx, dz, f) });
   const nightOf = ctx.night || null;     // () => 0 (day) … 1 (night): the flame burns hotter in the dark
   let pinMask = 0, lastPhase = 0, flinging = false;
 
   const self = {
-    machine: m, pose, inventory, burn,
+    machine: m, pose, inventory, burn, plunge,
     /** Inputs (fields), set each frame by systems/weapons.js. */
     down: false, pressed: false, dodgePressed: false, swapPressed: false, able: true, aimYaw: 0.5 - 0.5, dt: 0.5 - 0.5,
     /** Out: a dodge may go now; the swing is cutting (the trail), and where the weapon is heading. */
@@ -65,7 +69,10 @@ export function createWeapons(ctx) {
       if (def !== curDef) { curDef = def; m.def = def; pose.def = def; m.reset(); if (def) pose.snapRest(); }
       st.swapT = Math.max(0, st.swapT - dt); this.swapT = st.swapT;
       const live = this.able && combat.dying === 0;
-      m.dt = dt; m.down = this.down && live; m.pressed = this.pressed && live && st.swapT <= 0; m.dodgePressed = this.dodgePressed; m.blocked = !live || st.swapT > 0;
+      // The bell in the air: a press with the air for it is the plunge's (plunge.js), not a swing.
+      plunge.dt = dt; plunge.pressed = this.pressed && live && st.swapT <= 0;
+      const forPlunge = live && st.swapT <= 0 && plunge.prepare(def);
+      m.dt = dt; m.down = this.down && live; m.pressed = this.pressed && live && st.swapT <= 0 && !forPlunge; m.dodgePressed = this.dodgePressed; m.blocked = !live || st.swapT > 0;
       // A blow on the Wraith knocks the weapon out of a windup or a charge (not out of the cut itself).
       if (combat.blows !== lastBlows) {
         lastBlows = combat.blows;
@@ -73,6 +80,7 @@ export function createWeapons(ctx) {
         if (p === PHASE.WINDUP || p === PHASE.CHARGE || p === PHASE.LOADED) m.reset();
       }
       m.update();
+      plunge.update(def);
       this.dodgeNow = m.dodgeNow;
       const night = nightOf !== null ? nightOf() : 0;
       burn.update(dt, night);
@@ -81,17 +89,17 @@ export function createWeapons(ctx) {
       if (m.activeEvent) this.onActive();
       const ph = m.phase, a = m.attack;
       // The heading: the swing follows the aim through the windup and the charge, then holds.
-      if (ph === PHASE.WINDUP || ph === PHASE.CHARGE || ph === PHASE.LOADED) this.steer(dt);
-      this.cutting = ph === PHASE.ACTIVE;
-      if (this.cutting) this.trailT = 0.18; else this.trailT = Math.max(0, this.trailT - dt);
-      if (ph === PHASE.ACTIVE && a !== null) this.cut(a);
+      if ((ph === PHASE.WINDUP || ph === PHASE.CHARGE || ph === PHASE.LOADED) && !m.plunge) this.steer(dt);
+      this.cutting = ph === PHASE.ACTIVE && !m.plunge;
+      if (this.cutting || (plunge.falling && plunge.hNow >= def.plunge.trailFrom)) this.trailT = 0.18; else this.trailT = Math.max(0, this.trailT - dt);
+      if (ph === PHASE.ACTIVE && a !== null && !m.plunge) this.cut(a);
       else if (lastPhase === PHASE.ACTIVE && a !== null) this.endCut(a);
       lastPhase = ph;
       this.bleed(dt);
       for (let i = 0; i < MAX_SHAPED; i++) if (chillT[i] > 0) chillT[i] -= dt;
       // The body: footing slows, the facing is held, the pose follows the machine.
       const busy = ph !== PHASE.IDLE;
-      controller.walkMul = busy ? (ph === PHASE.WINDUP ? def.move.windup : ph === PHASE.ACTIVE ? def.move.active : ph === PHASE.RECOVER ? def.move.recover : def.move.charge) : 1;
+      controller.walkMul = busy ? (a !== null && a.kneel ? 0 : ph === PHASE.WINDUP ? def.move.windup : ph === PHASE.ACTIVE ? def.move.active : ph === PHASE.RECOVER ? def.move.recover : def.move.charge) : 1;
       controller.faceLock = busy;
       if (busy) this.yaw = st.atkYaw;
       pose.m = m; pose.dt = dt; pose.time = clock.simTime;
@@ -132,10 +140,12 @@ export function createWeapons(ctx) {
 
     onActive() {
       const a = m.attack;
+      if (m.plunge) return;       // the bell has landed (plunge.js did the rest)
       hitMask = 0; pinMask = 0; impacted = false; brushed = false; passMark = 0; st.prevProg = 0;
       this.steer(0);
       controller.yaw = st.atkYaw;
       // The lunge: a step into the blow.
+      if (a.hop) plunge.hop(a);       // the Bell-mace's hop-swing leaves the Wraith in the air
       if (controller.grounded && a.lunge > 0) { controller.vel.x += Math.sin(st.atkYaw) * a.lunge; controller.vel.z += Math.cos(st.atkYaw) * a.lunge; }
       if (sfx !== null) {
         sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z;
@@ -186,6 +196,8 @@ export function createWeapons(ctx) {
       const frozen = shaped.isFrozen(i), heavy = m.heavy;
       hitMat.aff = def.affinity; hitMat.heavy = heavy; hitMat.frozen = frozen; hitMat.armour = A.armour || 0; hitMat.meadow = A.material === 'meadow';
       hitMat.resolve();
+      if (a.crown) { hitMat.pierce = 1; hitMat.glance = false; }       // a blow from above strikes the crown: no plate turns it (the Bell-mace's plunge)
+      if (a.shatter && frozen) hitMat.shatter = true;                   // the ice star breaks what it froze
       const inf = def.infusable ? inventory.infusion(def.id) : null;
       let dmg = a.dmg * (heavy ? m.power : 1) * (def.dmgMul || 1) * (buffs !== null ? buffs.damageMul : 1) * (inf === 'stone' ? 1.1 : 1) * hitMat.dmgMul * falloff * T.damageMul;
       if (hitMat.shatter) dmg = 1e9;
@@ -362,7 +374,7 @@ export function createWeapons(ctx) {
     get push() { return st.push; },
     get heading() { return st.atkYaw; },
     /** Clear everything (death, a load). */
-    reset() { m.reset(); burn.reset(); pinMask = 0; bleedT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
+    reset() { m.reset(); plunge.reset(); burn.reset(); pinMask = 0; bleedT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
   };
   return self;
 }

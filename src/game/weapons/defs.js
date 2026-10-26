@@ -13,8 +13,9 @@
 // follow-through) poses.
 
 import { glaiveDef, flailDef } from './defs2.js';
+import { maceDef } from './defs3.js';
 
-export const WEAPON_ID = { STAFF: 'staff', SICKLES: 'sickles', MAUL: 'maul', GLAIVE: 'glaive', FLAIL: 'flail' };
+export const WEAPON_ID = { STAFF: 'staff', SICKLES: 'sickles', MAUL: 'maul', GLAIVE: 'glaive', FLAIL: 'flail', MACE: 'mace' };
 
 /** Timings shared by all weapons (s). */
 export const weaponFeel = {
@@ -132,5 +133,5 @@ export const weaponDefs = {
   },
 };
 
-weaponDefs.glaive = glaiveDef; weaponDefs.flail = flailDef;      // defs2.js: the later families
-export const weaponList = [weaponDefs.staff, weaponDefs.sickles, weaponDefs.maul, weaponDefs.glaive, weaponDefs.flail];
+weaponDefs.glaive = glaiveDef; weaponDefs.flail = flailDef; weaponDefs.mace = maceDef;      // defs2.js, defs3.js: the later families
+export const weaponList = [weaponDefs.staff, weaponDefs.sickles, weaponDefs.maul, weaponDefs.glaive, weaponDefs.flail, weaponDefs.mace];
