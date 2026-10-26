@@ -11,7 +11,9 @@ import { QuestGraph } from './quests/questGraph.js';
 /**
  * One chapter's data from several data files (frost.json, meadow.json …): NPCs, quests and
  * barks are joined, keyed tables merged. The first file's title and chapter stay; `village`
- * (the meadow's people and fire plots) comes from whichever file has it.
+ * (the meadow's people and fire plots) comes from whichever file has it. A later file may put
+ * entries in front of a person's talk table and barks (`talkFirst`, `barksFirst`: the restored
+ * world's follow-ups take the floor once their conditions hold, and fall through to the old lines).
  * @param {any} base
  * @param {...any} more
  */
@@ -27,6 +29,12 @@ export function mergeChapters(base, ...more) {
       }
     }
     if (d.village) out.village = d.village;
+    for (const [from, to] of [['talkFirst', 'talk'], ['barksFirst', 'barks']]) {
+      for (const id in d[from] || {}) {
+        if (!out[to][id]) throw new Error(`chapter data: ${from} "${id}" has no ${to} table to go in front of`);
+        out[to][id] = [...d[from][id], ...out[to][id]];
+      }
+    }
   }
   return out;
 }

@@ -1,0 +1,2 @@
+2026-10-26T11:17:24.446Z 1/1 p8r-green-lantern: saved screenshots/restored/p8r-green-lantern.png
+2026-10-26T11:17:24.446Z Shots done: 1/1 spot(s) (p8r-green*) → screenshots/restored/.

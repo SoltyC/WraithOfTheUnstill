@@ -91,7 +91,8 @@ async function boot() {
   sysWorld.addWorldSystems(g);
   sysClimb.addClimbSystem(g);
   if (g.water) { g.controller.water = g.water; g.arm.water = g.water; } // swimming; the camera stays above the surface
-  loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind }));
+  g.streams = new (await import('./game/restored/streams.js')).Streams((await import('../data/restored.json')).default.streams, g.restoration); // the restored biomes' rising air (docs §7)
+  loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind, streams: g.streams }));
   (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
   (await import('./systems/weapons.js')).addWeaponSystem(g); // before the Wraith (the attack pose) and the creatures (the blows it lands)
@@ -119,6 +120,7 @@ async function boot() {
   (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)
   (await import('./systems/remembrance.js')).addRemembranceSystem(g); // before the nooks (their views remember)
   (await import('./systems/nooks.js')).addNookSystem(g); // after the architecture (their sites) and the nav (their places)
+  (await import('./systems/restored.js')).addRestoredSystem(g); // after the architecture (its sites), the quests' places and the side quests' goals
   (await import('./systems/robes.js')).addRobesSystem(g);
   (await import('./systems/barks.js')).addBarksSystem(g);
   (await import('./systems/bestiary.js')).addBestiarySystem(g);

@@ -1,0 +1,279 @@
+{
+  "_review": "Frost, after the release (docs/gameplay-design.md §7 'Restored world'): Varo, who watched the Warden for three years, now watches the wind, and sends the Wraith to the Shelf. The summit course is systems/restored/summit.js (rings and streams in data/restored.json; medals there too: tests/restored.test.js pins that the steps below ask for the same seconds). Merged after frost.json (systems/chapter.js mergeChapters: talkFirst/barksFirst go in front of the old tables). Dialogue follows docs/village/dialogue-style.md.",
+  "chapter": "frost",
+  "title": "First Snow",
+  "places": {
+    "rw-shelf": {
+      "kind": "overlook",
+      "biome": "frost",
+      "pos": [
+        1468,
+        2915
+      ],
+      "h": 907.3,
+      "name": "The Shelf"
+    }
+  },
+  "names": {
+    "rw-shelf": "The Shelf"
+  },
+  "talkFirst": {
+    "varo": [
+      {
+        "when": {
+          "flag": "restored:shelf-thanked"
+        },
+        "say": "varo.wind.after"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "shelf.best",
+            "gte": 1,
+            "lte": 100
+          }
+        },
+        "say": "varo.wind.gold"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "shelf.best",
+            "gte": 1,
+            "lte": 130
+          }
+        },
+        "say": "varo.wind.silver"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "shelf.best",
+            "gte": 1,
+            "lte": 180
+          }
+        },
+        "say": "varo.wind.bronze"
+      },
+      {
+        "when": {
+          "flag": "restored:shelf-told"
+        },
+        "say": "varo.wind.wait"
+      },
+      {
+        "when": {
+          "restored": "frost"
+        },
+        "say": "varo.wind"
+      }
+    ]
+  },
+  "barksFirst": {
+    "varo": [
+      {
+        "when": {
+          "flag": "restored:shelf-thanked"
+        },
+        "lines": [
+          "The pennant on my rise points the same way as the one on the Shelf. I check it before I check the sky."
+        ]
+      },
+      {
+        "when": {
+          "flag": "restored:shelf-told"
+        },
+        "lines": [
+          "Go in the morning. The wind is steadier before the sun is high."
+        ]
+      }
+    ]
+  },
+  "dialogue": {
+    "varo.wind": {
+      "speaker": "varo",
+      "lines": [
+        "I have been watching the Shelf, the ridge above the monastery. The snow streams off its edge like smoke.",
+        "The wind climbs the face under it. I stood there this morning and my cloak lifted off my shoulders.",
+        "Your robe will do more than that. Go to the cairn on the Shelf, run off the edge and open the robe. Six rings hang over the bowl.",
+        "You cannot reach them all by gliding down. Climb the face to get your height back. A gust lifts harder than a lull."
+      ],
+      "then": [
+        {
+          "setFlag": "restored:shelf-told"
+        }
+      ]
+    },
+    "varo.wind.wait": {
+      "speaker": "varo",
+      "lines": [
+        "The cairn is on the Shelf, east of the monastery. Climb the face in the wind, and bank your height before the long glide."
+      ]
+    },
+    "varo.wind.bronze": {
+      "speaker": "varo",
+      "lines": [
+        "I watched from the Rise. You went up the face like smoke, and you came down through every ring.",
+        "It can be faster. Wait for a gust before you start climbing, and leave the face the moment you have the height."
+      ],
+      "then": [
+        {
+          "setFlag": "restored:shelf-thanked"
+        }
+      ]
+    },
+    "varo.wind.silver": {
+      "speaker": "varo",
+      "lines": [
+        "I watched from the Rise. You did not waste a breath of it.",
+        "Gold is a few seconds more. Take the last glide at full speed, and dive."
+      ],
+      "then": [
+        {
+          "setFlag": "restored:shelf-thanked"
+        }
+      ]
+    },
+    "varo.wind.gold": {
+      "speaker": "varo",
+      "lines": [
+        "I counted it twice. Nobody should fly that fast.",
+        "I will hang a pennant on the Rise, so I can see what you saw. Thank you for waking the wind."
+      ],
+      "then": [
+        {
+          "setFlag": "restored:shelf-thanked"
+        }
+      ]
+    },
+    "varo.wind.after": {
+      "speaker": "varo",
+      "lines": [
+        "The wind comes through the Shelf every morning now. I used to stand and wait for nothing. This is better."
+      ]
+    }
+  },
+  "lore": {
+    "lore-shelf": {
+      "title": "The Shelf",
+      "text": "A ridge above the monastery where the snow streams off the edge. The Shapers' pilgrims called the air under it the stair: the wind climbs the face, and anything that spreads its cloak in it climbs too. As told by Varo."
+    }
+  },
+  "quests": [
+    {
+      "id": "shelf-stream",
+      "kind": "side",
+      "title": "The Shelf Stream",
+      "summary": "Varo has watched the wind climb the ridge above the monastery. He thinks a robe could ride it.",
+      "start": {
+        "restored": "frost"
+      },
+      "steps": [
+        {
+          "id": "ask",
+          "journal": "Talk to Varo at his rise, above the camp.",
+          "when": {
+            "flag": "restored:shelf-told"
+          },
+          "goal": {
+            "npc": "varo",
+            "radius": 8
+          }
+        },
+        {
+          "id": "shelf",
+          "journal": "Go to the Shelf, the ridge east of the monastery. A cairn with a pennant stands on its edge.",
+          "when": {
+            "near": {
+              "poi": "rw-shelf",
+              "r": 22
+            }
+          },
+          "goal": {
+            "dynamic": "place:rw-shelf",
+            "radius": 18
+          }
+        },
+        {
+          "id": "bronze",
+          "journal": "Fly all six rings from the Shelf. Run off the edge and open the robe. The wind climbs the face under the ridge: ride it to get your height back. The robe needs the wind, so wait for the gusts.",
+          "when": {
+            "var": {
+              "name": "shelf.best",
+              "gte": 1,
+              "lte": 180
+            }
+          },
+          "goal": {
+            "dynamic": "next-shelf-ring",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "marks": 10
+            }
+          ]
+        },
+        {
+          "id": "silver",
+          "journal": "Fly the rings in under 130 seconds. Leave the face as soon as you have the height.",
+          "when": {
+            "var": {
+              "name": "shelf.best",
+              "gte": 1,
+              "lte": 130
+            }
+          },
+          "goal": {
+            "dynamic": "next-shelf-ring",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "lore": "lore-shelf"
+            },
+            {
+              "marks": 15
+            }
+          ]
+        },
+        {
+          "id": "gold",
+          "journal": "Fly the rings in under 100 seconds. Time the climb to a gust, and dive on the last glide.",
+          "when": {
+            "var": {
+              "name": "shelf.best",
+              "gte": 1,
+              "lte": 100
+            }
+          },
+          "goal": {
+            "dynamic": "next-shelf-ring",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "marks": 25
+            }
+          ]
+        },
+        {
+          "id": "report",
+          "journal": "Tell Varo how it went.",
+          "when": {
+            "flag": "restored:shelf-thanked"
+          },
+          "goal": {
+            "npc": "varo",
+            "radius": 8
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

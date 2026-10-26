@@ -61,7 +61,7 @@ function fenLamp(b, facing, R) {
 
 /** A glide ring: stone hoop (radius `RING_R`) in the vertical plane across the course, ember studs that glow once it is flown through. */
 export const RING_R = 7;
-function glideRing(b, facing, R, lift = 0) {
+export function glideRing(b, facing, R, lift = 0) {
   const c = Math.cos(facing), s = Math.sin(facing), N = 28;
   const P = (u, y) => [u * c, y, -u * s];                       // u runs across the course (site-local right)
   // The support: a stone mast from the ground under the ring (the site hangs `lift` m up), forking into two arms that cradle the hoop's underside.
