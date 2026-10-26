@@ -64,12 +64,21 @@ export const RING_R = 7;
 export function glideRing(b, facing, R, lift = 0) {
   const c = Math.cos(facing), s = Math.sin(facing), N = 28;
   const P = (u, y) => [u * c, y, -u * s];                       // u runs across the course (site-local right)
-  // The support: a stone mast from the ground under the ring (the site hangs `lift` m up), forking into two arms that cradle the hoop's underside.
+  // The support: a tapered Shaper pier from the ground under the ring (the site hangs `lift` m up): a stepped footing, courses that
+  // narrow as they climb with a carved band between each, a capstone, and two stout arms that cradle the hoop's underside.
   if (lift > 1) {
-    const mw = 0.5 + lift * 0.02, top = -RING_R - 2.6;
-    stick(b, [0, -lift - 3, 0], [0, top, 0], mw, 0.42, 8, MAT.STONE, 90);
-    b.drum(0, 0, -lift - 3, -lift + 0.5, mw * 3.2, mw * 2.2, 10, MAT.STONE, 91, { solid: false });
-    for (const sg of [-1, 1]) { const a = Math.PI + sg * 0.66, [x, y, z] = P(Math.sin(a) * RING_R, Math.cos(a) * RING_R); stick(b, [0, top, 0], [x, y + 0.1, z], 0.42, 0.28, 6, MAT.STONE, 92 + (sg > 0 ? 1 : 0)); }
+    const y0 = -lift - 3, top = -RING_R - 2.6, r0 = Math.min(3.4, 1.2 + lift * 0.045), r1 = 0.75;
+    const n = Math.max(2, Math.ceil((top - y0) / 7)), dy = (top - y0) / n;
+    const rAt = (u) => r1 + (r0 - r1) * Math.pow(1 - u, 1.35);
+    b.drum(0, 0, y0, y0 + 0.9, r0 * 1.9, r0 * 1.6, 10, MAT.STONE, 90, { solid: false });
+    b.drum(0, 0, y0 + 0.9, y0 + 1.9, r0 * 1.45, r0 * 1.25, 10, MAT.STONE, 91, { solid: false });
+    for (let i = 0; i < n; i++) {
+      const ya = y0 + 1.9 * (i === 0 ? 1 : 0) + i * dy, yb = y0 + (i + 1) * dy - 0.5, ua = i / n, ub = (i + 1) / n;
+      b.drum(0, 0, ya, yb, rAt(ua), rAt(ub) * 1.02, 10, MAT.STONE, 100 + i);
+      b.drum(0, 0, yb, yb + 0.5, rAt(ub) + 0.18, rAt(ub) + 0.18, 10, MAT.GLYPH, 120 + i, { carve: 1, solid: false });
+    }
+    b.drum(0, 0, top - 0.1, top + 0.7, r1 + 0.5, r1 + 0.9, 10, MAT.STONE, 140, { solid: false });
+    for (const sg of [-1, 1]) { const a = Math.PI + sg * 0.66, [x, y, z] = P(Math.sin(a) * RING_R, Math.cos(a) * RING_R); stick(b, [0, top + 0.5, 0], [x, y + 0.1, z], 0.55, 0.3, 6, MAT.STONE, 92 + (sg > 0 ? 1 : 0)); }
   }
   for (let k = 0; k < N; k++) {
     const a0 = (k / N) * TAU, a1 = ((k + 1) / N) * TAU;
