@@ -2,7 +2,8 @@
 // windward face (data/restored.json `streams`): within `width` m of it the air climbs at up to `rise` m/s, in full up to
 // 0.6 × `top` m over the ground and gone by 1.2 × `top`. It is the wind's, so it breathes with it: the owner passes
 // k (the field's speed over its mean, 0.4 to 1.5) and a gust front doubles the climb a lull halves. It is the land's,
-// so it follows the restoration of its biome and is nothing while that biome is stilled. Allocation-free per call.
+// so it follows the restoration of its biome and is nothing while that biome is stilled. Allocation-free per call: the hot
+// query `sample()` takes its place and wind from fields (a double passed as an argument boxes when the call is not inlined).
 
 const MEAN_WIND = 0.5, K_MIN = 0.4, K_MAX = 1.5;
 
@@ -28,11 +29,13 @@ export class Streams {
     });
     /** Out: the stream that gave the most at the last query (-1 none), and its share 0..1 of its full rise there. */
     this.best = -1; this.share = 0.5 - 0.5; this.total = 0.5 - 0.5;
+    /** In, for sample(): the place (x, z), the metres over the ground, and the wind field's speed here. */
+    this.px = 0.5 - 0.5; this.pz = 0.5 - 0.5; this.above = 0.5 - 0.5; this.speed = 0.5;
   }
 
-  /** Distance from (x, z) to stream `i`'s line. */
-  distance(i, x, z) {
-    const s = this.seg[i]; let best = 1e18;
+  /** Distance from (px, pz) to stream `i`'s line. */
+  distance(i) {
+    const s = this.seg[i], x = this.px, z = this.pz; let best = 1e18;
     for (let o = 0; o < s.length; o += 5) {
       const dx = s[o + 2] - s[o], dz = s[o + 3] - s[o + 1];
       let t = s[o + 4] > 0 ? ((x - s[o]) * dx + (z - s[o + 1]) * dz) / s[o + 4] : 0;
@@ -43,13 +46,14 @@ export class Streams {
     return Math.sqrt(best);
   }
 
-  /** The rise (m/s) at (x, z), `above` m over the ground, in wind factor k. Sets `best` and `share`. */
-  rise(x, above, z, k) {
+  /** The rise (m/s) at (px, pz), `above` m over the ground, in the wind of `speed`: into `total`; `best` and `share` name the stream that gave most. */
+  sample() {
+    const k = windFactor(this.speed), above = this.above;
     let total = 0; this.best = -1; this.share = 0; this.total = 0;
     for (let i = 0; i < this.n; i++) {
       const s = this.list[i], r = this.restore[s.biome];
       if (!(r > 0.02)) continue;
-      const u = this.distance(i, x, z) / s.width;
+      const u = this.distance(i) / s.width;
       if (u >= 1) continue;
       const a = 1 - u * u, across = a * a;
       const h0 = s.top * 0.6, h1 = s.top * 1.2, v = above <= h0 ? 0 : above >= h1 ? 1 : (above - h0) / (h1 - h0), up = 1 - v * v * (3 - 2 * v);
@@ -58,6 +62,8 @@ export class Streams {
       total += s.rise * share * k;
     }
     this.total = total;
-    return total;
   }
+
+  /** Cold path (tests, tools): the rise at (x, z), `above` m over the ground, at wind factor k (1 = the mean wind). */
+  rise(x, above, z, k) { this.px = x; this.pz = z; this.above = above; this.speed = k * MEAN_WIND; this.sample(); return this.total; }
 }

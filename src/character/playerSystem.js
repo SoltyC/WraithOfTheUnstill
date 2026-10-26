@@ -4,7 +4,6 @@
 import { input, Action } from '../input/actions.js';
 import { clock } from '../core/clock.js';
 import { angleDelta } from '../core/scratch.js';
-import { windFactor } from '../game/restored/streams.js';
 
 /** Surf steering feel: mouse pixels → steer (fraction of carve grip), and how fast it recentres. */
 const SURF_STEER_PER_PX = 0.0032, SURF_STEER_RETURN = 2.6, SURF_KEY_STEER = 0.75;
@@ -69,7 +68,7 @@ export function createPlayerSystem(ctx) {
           const up = -(wind.outX * gr.nx + wind.outZ * gr.nz) / Math.max(gr.ny, 0.2); // wind · uphill slope
           gl.rise = Math.max(0, wind.speed * WIND_MS * up) * Math.exp(-Math.max(0, above) / RIDGE_FADE);
           // The restored biome's streams (game/restored/streams.js) lift on top, as strong as the wind is here.
-          if (streams) gl.rise += streams.rise(p0.x, above, p0.z, windFactor(wind.speed));
+          if (streams) { streams.px = p0.x; streams.pz = p0.z; streams.above = above; streams.speed = wind.speed; streams.sample(); gl.rise += streams.total; }
         }
         controller.wishX = mx;
         controller.wishZ = mz;

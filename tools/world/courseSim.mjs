@@ -30,7 +30,7 @@ export function flyCourse(rings, streamList, { dt = 1 / 30, wind = 0.5, restore 
       let bi = -1, bd = 1e9, bc = 1e9;
       for (let i = 0; i < st.n; i++) {
         if (!(st.restore[streamList[i].biome] > 0)) continue;
-        const d = st.distance(i, x, z), pts = streamList[i].pts;
+        st.px = x; st.pz = z; const d = st.distance(i), pts = streamList[i].pts;
         let ex = pts[0][0], ez = pts[0][1], ed = 1e9;
         for (const p of pts) { const q = Math.hypot(p[0] - R.pos[0], p[1] - R.pos[1]); if (q < ed) { ed = q; ex = p[0]; ez = p[1]; } }
         const cost = d + ed;

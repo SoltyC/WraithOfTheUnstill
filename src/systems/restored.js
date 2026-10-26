@@ -17,6 +17,7 @@ const dist2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
 export function addRestoredSystem(g) {
   const { loop, chapter, controller, clock, hud, capture, ws } = g;
   const graph = chapter.graph, flags = graph.flags;
+  g.restoredData = data;   // for the bots and the dev overlay
   const sitesIdx = new Map((g.archSites || []).map((s, i) => [s.id, i]));
   const SITES = g.archSites, A = g.architecture.sites;
   const restored = (biome) => ws.restoration[biome] === 'restored';

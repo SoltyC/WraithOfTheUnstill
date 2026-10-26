@@ -15,11 +15,15 @@ export function addRoad(ctx) {
     if (!c) { const s = table['side-rw-road-start']; goal.x = s.pos[0]; goal.z = s.pos[1]; goal.y = s.h; goal.name = 'The Hill Foot'; return goal; }
     goal.x = c.pos[0]; goal.z = c.pos[1]; goal.y = c.y !== undefined ? c.y - 6 : (table['side-rw-road-start'].h + 160); goal.name = c.name; return goal;
   };
+  // The last check is the side quest's first ring: it hangs over the ground the game really seats it on, not the baked height.
+  const ri = ctx.site('side-glide-ring-1'), last = data.road.checks[data.road.checks.length - 1];
+  const reseat = () => { if (ri >= 0 && ctx.A[ri * 4 + 3] > 0.5) last.y = ctx.A[ri * 4 + 1]; };
   const fmt = (s) => Math.round(s) + ' s';
   return {
     sync() { road.running = false; road.stage = 0; },
     tick(dt) {
       if (!ctx.restored('meadow')) return;
+      if (!road.running) reseat();
       const p = controller.pos, s = data.road.start;
       if (!road.running && ctx.dist2(p.x, p.z, s.pos[0], s.pos[1]) > (s.r + 20) * (s.r + 20)) return;
       ground.qx = p.x; ground.qz = p.z; ground.sample();

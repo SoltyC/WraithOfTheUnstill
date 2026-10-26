@@ -5,6 +5,8 @@
 import { bot, js } from './client.mjs';
 
 export { bot, js };
+/** An eval that may run for minutes (a pilot's flight). */
+export const jsLong = (code, wait = 280000) => bot('eval', { js: code }, wait).then((o) => o.result);
 export const T0 = Date.now();
 export const say = (...a) => console.log(((Date.now() - T0) / 1000).toFixed(0).padStart(4) + 's', ...a);
 export const wait = (ms) => bot('wait', { ms });
@@ -32,13 +34,13 @@ export async function at(x, z, faceX, faceZ, ms = 3500) {
  * `done`: an expression true when the course is over, `streams`: the list the pilot may work (page expression).
  * Returns { ms, landed, where, reached } when done or when the time is up.
  */
-export const pilot = ({ targets, done, streams = 'g.streams.list.filter(s => g.restoration[s.biome] > 0.5)', maxMs = 150000, launch = true, log = false }) => `
+export const pilot = ({ targets, done, streams = 'g.streams.list.filter(s => g.restoration[s.biome] > 0.5)', maxMs = 150000, launch = true, log = false, extra = 'null' }) => `
   const w = window.__wraith, inj = (k, d) => w.inject(k, d), c = g.controller, gl = c.glide, st = g.streams;
   const RATIO = 7.2 * 0.92, sleep = (ms) => new Promise(r => setTimeout(r, ms));
   const lines = ${streams};
   const t0 = performance.now(); let soar = null, dir = 1, flown = false, reached = 0, last = null, lt = 0, frame = 0, turned = 0; const trace = [];
   const groundAt = (x, z) => { g.ground.qx = x; g.ground.qz = z; g.ground.sample(); return g.ground.h; };
-  const distTo = (s, x, z) => st.distance(st.list.indexOf(s), x, z);
+  const distTo = (s, x, z) => { st.px = x; st.pz = z; return st.distance(st.list.indexOf(s)); };
   ${launch ? `inj('MoveForward', true); await sleep(250);` : `inj('Traverse', true);`}
   while (performance.now() - t0 < ${maxMs}) {
     await new Promise(r => requestAnimationFrame(r));
@@ -50,8 +52,8 @@ export const pilot = ({ targets, done, streams = 'g.streams.list.filter(s => g.r
     if (gl.active) flown = true;
     if (flown && !gl.active && c.grounded) break;
     let tx = T.x, tz = T.z, dive = false, flare = false;
-    const dist = Math.hypot(T.x - p.x, T.z - p.z), reach = (p.y - (T.y - T.r * 0.6)) * RATIO / 1.15;
-    if (gl.active && dist > reach && lines.length) {
+    const dist = Math.hypot(T.x - p.x, T.z - p.z), reach = (p.y - (T.y - T.r * 0.6)) * RATIO / 1.1;
+    if (gl.active && dist > reach && lines.length && !(T.final && dist < 260)) {
       let best = null, bc = 1e9;
       for (const s of lines) {
         const d = distTo(s, p.x, p.z); let ed = 1e9; for (const q of s.pts) ed = Math.min(ed, Math.hypot(q[0] - T.x, q[1] - T.z));
@@ -66,11 +68,12 @@ export const pilot = ({ targets, done, streams = 'g.streams.list.filter(s => g.r
         if ((Math.hypot(tx - p.x, tz - p.z) < 70 || agl < 22) && performance.now() - turned > 3500) { dir = -dir; turned = performance.now(); }
         flare = false;
       }
-    } else { soar = null; dive = (p.y - T.y) > dist / RATIO * 1.5; }
+    } else { soar = null; dive = (p.y - T.y) > dist / RATIO * 1.5; flare = !!T.final && dist < 260 && (p.y - T.y) < dist / RATIO * 0.8; }
     // Terrain avoidance: close to the ground the pilot turns downhill (a ridge pilot never flies at the face).
     if (gl.active && agl < 16) { const gx = groundAt(p.x + 10, p.z) - groundAt(p.x - 10, p.z), gz = groundAt(p.x, p.z + 10) - groundAt(p.x, p.z - 10), gm = Math.hypot(gx, gz) || 1; tx = p.x - gx / gm * 60; tz = p.z - gz / gm * 60; }
     const want = Math.atan2(tx - p.x, tz - p.z), have = gl.active ? gl.heading : c.yaw;
     let d = want - have; d -= Math.round(d / (2 * Math.PI)) * 2 * Math.PI;
+    if (gl.active) d -= gl.turnRate * 0.9;   // damp: lead the turn so the line is not overshot
     // The keys bank the robe at a fixed 0.75: pulse them for a finer line (duty = how far off the heading is).
     const duty = Math.min(1, Math.abs(d) / 0.35), on = (frame++ % 5) < Math.round(duty * 5);
     inj('MoveLeft', gl.active && d < 0 && on); inj('MoveRight', gl.active && d > 0 && on);
@@ -78,7 +81,7 @@ export const pilot = ({ targets, done, streams = 'g.streams.list.filter(s => g.r
     if (gl.active) g.arm.yaw = want;
     ${launch ? `inj('Jump', !flown && c.grounded && (Math.floor((performance.now() - t0) / 400) % 3 === 0));` : ''}
     last = [Math.round(p.x), Math.round(p.y), Math.round(p.z)];
-    ${log ? `if (performance.now() - lt > 1000) { lt = performance.now(); trace.push([Math.round((lt - t0) / 1000), ...last, Math.round(agl), +gl.rise.toFixed(1), +st.total.toFixed(1), +g.wind.speed.toFixed(2), +gl.speed.toFixed(1), +gl.vy.toFixed(1), soar && soar.id.slice(-4), Math.round(Math.hypot(T.x - p.x, T.z - p.z)), Math.round(T.y), gl.active ? 1 : 0]); }` : ''}
+    ${log ? `if (performance.now() - lt > 1000) { lt = performance.now(); trace.push([Math.round((lt - t0) / 1000), ...last, Math.round(agl), +gl.rise.toFixed(1), +st.total.toFixed(1), +g.wind.speed.toFixed(2), +gl.speed.toFixed(1), +gl.vy.toFixed(1), soar && soar.id.slice(-4), Math.round(Math.hypot(T.x - p.x, T.z - p.z)), Math.round(T.y), gl.active ? 1 : 0, ${extra}]); }` : ''}
   }
   for (const k of ['MoveForward','MoveBack','MoveLeft','MoveRight','Traverse','Jump']) inj(k, false);
   const q = c.pos;

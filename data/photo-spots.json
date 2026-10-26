@@ -4687,6 +4687,227 @@
         "seconds": 0.3,
         "finds": true
       }
+    },
+    {
+      "id": "p8r-shelf-cairn",
+      "biome": "frost",
+      "label": "The Shelf after the release: the cairn and its pennant on the edge, the first ring hanging over the bowl, golden hour",
+      "time": 17.4,
+      "weather": "clear",
+      "player": [
+        1470,
+        2917
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 4.62,
+        "pitch": 0.1,
+        "dist": 6
+      }
+    },
+    {
+      "id": "p8r-shelf-bowl",
+      "biome": "frost",
+      "label": "From the Shelf over the bowl: the course's rings hung over the snow, the monastery plateau far below",
+      "time": 16.6,
+      "weather": "clear",
+      "player": [
+        1478,
+        2910
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1496,
+          927,
+          2906
+        ],
+        "yaw": -1.55,
+        "pitch": -0.02,
+        "fov": 1.0
+      }
+    },
+    {
+      "id": "p8r-shelf-glide",
+      "biome": "frost",
+      "label": "Through the first ring off the Shelf, the robe open over the bowl",
+      "time": 16.8,
+      "weather": "clear",
+      "player": [
+        1440,
+        2915
+      ],
+      "surf": {
+        "glide": true,
+        "seconds": 3.2,
+        "height": 6,
+        "speed": 13,
+        "facing": -1.45,
+        "steer": 0.0,
+        "period": 6,
+        "rise": 0,
+        "camera": {
+          "yaw": -1.6,
+          "pitch": 0.2,
+          "dist": 7
+        }
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": -1.45,
+        "pitch": 0.15,
+        "dist": 6
+      }
+    },
+    {
+      "id": "p8r-shelf-banner",
+      "biome": "frost",
+      "label": "A banner at the foot of the Shelf stream: the pennant streams downwind, the face rising behind it",
+      "time": 11,
+      "weather": "clear",
+      "player": [
+        1346,
+        2866
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.68,
+        "pitch": 0.2,
+        "dist": 8
+      }
+    },
+    {
+      "id": "p8r-hill-banners",
+      "biome": "meadow",
+      "label": "The Hearn wind: banners along the foot of the manor hill, the wall climbing behind them",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        120,
+        1030
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.02,
+        "pitch": 0.22,
+        "dist": 7
+      }
+    },
+    {
+      "id": "p8r-hill-glide",
+      "biome": "meadow",
+      "label": "Riding the Hearn wind up the hill's west wall, the village below",
+      "time": 16.5,
+      "weather": "clear",
+      "player": [
+        128,
+        1000
+      ],
+      "surf": {
+        "glide": true,
+        "seconds": 3.4,
+        "height": 14,
+        "speed": 12,
+        "facing": 0.1,
+        "steer": 0.0,
+        "period": 6,
+        "rise": 3,
+        "camera": {
+          "yaw": -0.7,
+          "pitch": 0.2,
+          "dist": 8
+        }
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.1,
+        "pitch": 0.15,
+        "dist": 6
+      }
+    },
+    {
+      "id": "p8r-lake-ridge",
+      "biome": "meadow",
+      "label": "The Lake Ridge wind: banners on the west ridge above the lake, pennants east",
+      "time": 14.5,
+      "weather": "clear",
+      "player": [
+        -706,
+        1000
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.0,
+        "pitch": 0.2,
+        "dist": 7
+      }
+    },
+    {
+      "id": "p8r-road-edge",
+      "biome": "meadow",
+      "label": "The last glide of the Wind Road toward the Western Edge's first ring",
+      "time": 16.2,
+      "weather": "clear",
+      "player": [
+        -790,
+        640
+      ],
+      "surf": {
+        "glide": true,
+        "seconds": 3.2,
+        "height": 16,
+        "speed": 13,
+        "facing": -2.55,
+        "steer": 0.0,
+        "period": 6,
+        "rise": 0,
+        "camera": {
+          "yaw": -2.4,
+          "pitch": 0.2,
+          "dist": 7
+        }
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": -2.55,
+        "pitch": 0.15,
+        "dist": 6
+      }
+    },
+    {
+      "id": "p8r-chaff-floor",
+      "biome": "meadow",
+      "label": "Dunn's threshing floor with the chaff heaped on it, the barley behind",
+      "time": 10,
+      "weather": "clear",
+      "player": [
+        62,
+        1128
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.08,
+        "pitch": 0.2,
+        "dist": 8
+      }
+    },
+    {
+      "id": "p8r-green-lantern",
+      "biome": "meadow",
+      "label": "The lantern on its post by the Green Shrine, dusk",
+      "time": 20.2,
+      "weather": "clear",
+      "player": [
+        28,
+        990
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 2.1,
+        "pitch": 0.14,
+        "dist": 5
+      }
     }
   ]
 }
