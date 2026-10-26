@@ -3,6 +3,9 @@
 // way it faces; `y` is filled in from the ground once it has streamed in (systems/weaponView.js).
 // `needs` (optional) is a quest flag that must be set before the find is there to see or take: the
 // glaive and the flail are rewards of quests (the Fallen Stone, Carry the Flame), the first three are not.
+// The Bell-mace hangs on the Bell Ledge (world/bellLedge.js): `site` seats it on that built ledge, `lift` m above the site's
+// seat, `hy` the most the Wraith may be above or below it to take it; `gale` makes the Take wait for Gale (the ledge is
+// reached by an Updraft only), `visible` shows it from far off before then (the lock is seen before the key).
 
 export const weaponFinds = [
   {
@@ -20,5 +23,9 @@ export const weaponFinds = [
   {
     id: 'flail', slot: 13, at: [878.5, 2441.5], yaw: 1.2, name: 'Lantern flail', place: 'Isolde\'s fire', needs: 'isolde-sang', glow: 0.8,
     text: 'The monastery\'s censer-flail, hung on an iron post by Isolde\'s fire and kept lit for nine winters. A bronze lantern on a chain: it swings in wide rings, sets what it strikes alight and lights the way at night, but it cannot strike what is close, and the ice does not love it.',
+  },
+  {
+    id: 'mace', slot: 15, at: [1136.4, 2787.2], yaw: 0, name: 'Bell-mace', place: 'The Bell Ledge', site: 'bell-ledge', lift: 9.5, hy: 4.5, gale: true, visible: true, glow: 0,
+    text: 'A Shaper\'s bell on an oak haft, hung in the great bell as its clapper. It hits hard only for the height it has fallen: the bell glows and hums higher as it stores it, a plunge from the air tolls it out, and the toll throws you up to fall again. Slow and weak on the ground, it wants an Updraft.',
   },
 ];

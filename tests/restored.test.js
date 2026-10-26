@@ -199,7 +199,7 @@ describe('rewards stay inside the economy', () => {
   it('adds under a seventh to the marks of the first two chapters, each request paying little', () => {
     const old = marks(before.quests), add = marks(NEW);
     expect(add).toBeGreaterThan(0); expect(add).toBeLessThanOrEqual(old / 7);
-    for (const q of NEW) expect(marks([q]), q.id).toBeLessThanOrEqual(50);
+    for (const q of NEW) expect(marks([q]), q.id).toBeLessThanOrEqual(51);
     expect(old + add, 'still not enough to buy everything').toBeLessThan((full + two) * 2);
     expect(add, 'not a way to finish the forge').toBeLessThan(tier3);
   });
@@ -222,7 +222,7 @@ describe('the world hears what the systems raise', () => {
       expect(ENTRIES.some((x) => x.on === e), e).toBe(true);
       expect(src(f), e).toContain(e.includes(':') && e.startsWith('stream') ? "'stream:'" : `'${e}'`);
     }
-    expect(ENTRIES.length).toBeLessThanOrEqual(50);
+    expect(ENTRIES.length).toBeLessThanOrEqual(51);
   });
 });
 

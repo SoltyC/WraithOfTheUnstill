@@ -128,7 +128,7 @@ export class WorldStreamer {
     // CPU copy of the biome weights (frost, meadow, mire, dunes; rgba8, row 0 = north): where rocks stand.
     this.biomeA = m.biomeA;
     // CPU copy of the surface material map (byte 0 of rgba8, row 0 = north) for gameplay queries.
-    this.surfaceData = m.surface;
+    this.surfaceData = m.surface; this.hydroData = m.hydro;
     this.surfaceN = m.manifest.surface.size; this.surfaceTexel = m.manifest.surface.texel;
     // CPU copy of the wind climatology (RG8, row 0 = north) for weather consumers.
     this.windData = m.wind; this.dunesData = m.dunes; this.windN = m.manifest.wind.size; this.windTexel = m.manifest.wind.texel;
@@ -161,6 +161,17 @@ export class WorldStreamer {
     const col = Math.min(N - 1, Math.max(0, Math.floor((this.mqx + half) / this.surfaceTexel)));
     const row = Math.min(N - 1, Math.max(0, Math.floor((half - this.mqz) / this.surfaceTexel)));
     this.mat = d[(row * N + col) * 4];
+  }
+
+  /** A frozen lake (the bake's lake mask under frost: the tarns) at (mqx, mqz) → bool. */
+  frozenLakeAt() {
+    const d = this.hydroData, A = this.biomeA;
+    if (!d || !A) return false;
+    const half = this.manifest.worldSize / 2, N = 2048;
+    const col = Math.min(N - 1, Math.max(0, Math.floor((this.mqx + half) / 4))), row = Math.min(N - 1, Math.max(0, Math.floor((half - this.mqz) / 4)));
+    if (d[(row * N + col) * 4 + 1] === 0) return false;
+    const o = ((row >> 1) * 1024 + (col >> 1)) * 4;
+    return A[o] / Math.max(A[o] + A[o + 1] + A[o + 2] + A[o + 3], 13) >= 0.5;
   }
 
   /** Prevailing wind direction at (mqx, mqz) → windX, windZ (unit; fields, not arguments). */

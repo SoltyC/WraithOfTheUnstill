@@ -163,12 +163,16 @@ export function addBendingSystem(g) {
     const isGale = elements.active === 'gale';
     if (able) {
       if (input.down[Action.Bend]) primaryHeld += dt;
+      const plungeGust = isGale && g.weapons && g.weapons.plunge.falling && !g.weapons.plunge.downUsed;       // a Gust cast in a Bell-mace plunge fires down under the Wraith (the Downdraft)
       if (input.released[Action.Bend] && primaryHeld < HOLD && combat.spend((isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
-        // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
-        frost.power = gale.power = flow.power; frost.flowing = flow.flowing;
-        if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
-        g.remembrance?.cast(isGale ? 'gust' : 'sweep');
-        castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
+        if (plungeGust && g.weapons.plunge.downdraft(g.weapons.def)) { g.remembrance?.cast('gust'); castFlash.v = 1; arm.kick += 0.012; }
+        else {
+          // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
+          frost.power = gale.power = flow.power; frost.flowing = flow.flowing;
+          if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
+          g.remembrance?.cast(isGale ? 'gust' : 'sweep');
+          castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
+        }
       }
       if (!input.down[Action.Bend]) primaryHeld = 0;
     } else primaryHeld = 0;

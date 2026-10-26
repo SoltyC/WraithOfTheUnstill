@@ -4922,6 +4922,348 @@
         "pitch": 0.15,
         "dist": 6
       }
+    },
+    {
+      "id": "p9w-mace-ledge",
+      "biome": "frost",
+      "label": "The Bell Ledge from the monastery yard: a bastion of dressed stone behind the hall with a bell frame on its top, 14 m up, no way to climb it (the lock shown before the key)",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        1112.3,
+        2756.2
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1112.3,
+          735.6,
+          2756.2
+        ],
+        "yaw": 0.66,
+        "pitch": -0.08,
+        "fov": 0.9
+      },
+      "facing": 0.66,
+      "weapon": {
+        "id": "staff",
+        "attack": "carry",
+        "seconds": 0.3,
+        "finds": true
+      },
+      "hidePlayer": true
+    },
+    {
+      "id": "p9w-mace-take",
+      "biome": "frost",
+      "label": "The Take at the bell frame on the Bell Ledge: the great bell hangs from the lintel with the Bell-mace in it for a clapper",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        1135.64,
+        2784.93
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.32,
+        "pitch": 0.5,
+        "dist": 5.5
+      },
+      "facing": 0.32,
+      "weapon": {
+        "id": "staff",
+        "attack": "carry",
+        "seconds": 0.3,
+        "finds": true
+      }
+    },
+    {
+      "id": "p9w-mace-glow-4",
+      "biome": "frost",
+      "label": "The Bell-mace's bell 4 m up with the Wraith in the air: the glow of the telegraph at 4 m of stored height (no number)",
+      "time": 15,
+      "weather": "clear",
+      "player": [
+        1060,
+        2690
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1063.36,
+          731.0,
+          2687.48
+        ],
+        "yaw": -0.93,
+        "pitch": 0.12,
+        "fov": 0.75
+      },
+      "facing": 0.0,
+      "weapon": {
+        "id": "mace",
+        "attack": "carry",
+        "height": 4,
+        "seconds": 1.2
+      }
+    },
+    {
+      "id": "p9w-mace-glow-10",
+      "biome": "frost",
+      "label": "The Bell-mace's bell 10 m up with the Wraith in the air: the glow of the telegraph at 10 m of stored height (no number)",
+      "time": 15,
+      "weather": "clear",
+      "player": [
+        1060,
+        2690
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1063.36,
+          737.0,
+          2687.48
+        ],
+        "yaw": -0.93,
+        "pitch": 0.12,
+        "fov": 0.75
+      },
+      "facing": 0.0,
+      "weapon": {
+        "id": "mace",
+        "attack": "carry",
+        "height": 10,
+        "seconds": 1.2
+      }
+    },
+    {
+      "id": "p9w-mace-glow-18",
+      "biome": "frost",
+      "label": "The Bell-mace's bell 18 m up with the Wraith in the air: the glow of the telegraph at 18 m of stored height (no number)",
+      "time": 15,
+      "weather": "clear",
+      "player": [
+        1060,
+        2690
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1063.36,
+          745.0,
+          2687.48
+        ],
+        "yaw": -0.93,
+        "pitch": 0.12,
+        "fov": 0.75
+      },
+      "facing": 0.0,
+      "weapon": {
+        "id": "mace",
+        "attack": "carry",
+        "height": 18,
+        "seconds": 1.2
+      }
+    },
+    {
+      "id": "p9w-mace-toll",
+      "biome": "frost",
+      "label": "The toll: the Bell-mace's plunge from 14 m the instant it lands, a ring of spray and powder thrown out, the hounds under it struck",
+      "time": 14.5,
+      "weather": "clear",
+      "player": [
+        1060,
+        2690
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1067.5,
+          727.4,
+          2690.3
+        ],
+        "yaw": -1.36,
+        "pitch": 0.1,
+        "fov": 0.95
+      },
+      "facing": 0.0,
+      "weapon": {
+        "id": "mace",
+        "attack": "plunge",
+        "height": 14,
+        "at": 0.1,
+        "seconds": 0.62
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "hound",
+            -1.7,
+            0.9
+          ],
+          [
+            "hound",
+            1.8,
+            0.4
+          ],
+          [
+            "hound",
+            0.2,
+            -2.0
+          ]
+        ],
+        "seconds": 2.6
+      }
+    },
+    {
+      "id": "p9w-mace-dunk",
+      "biome": "frost",
+      "label": "The dunk: a hound thrown up by an Updraft is driven into the ground by the plunge, and where it lands a second impact throws the hound beside it",
+      "time": 14.5,
+      "weather": "clear",
+      "player": [
+        1060,
+        2690
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1067.5,
+          727.4,
+          2690.3
+        ],
+        "yaw": -1.36,
+        "pitch": 0.1,
+        "fov": 0.95
+      },
+      "facing": 0.0,
+      "weapon": {
+        "id": "mace",
+        "attack": "plunge",
+        "height": 9,
+        "at": 0.66,
+        "launch": [
+          0
+        ],
+        "seconds": 1.1
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "hound",
+            0,
+            0.3
+          ],
+          [
+            "hound",
+            0,
+            2.8
+          ],
+          [
+            "hound",
+            -2.0,
+            2.4
+          ]
+        ],
+        "seconds": 2.6
+      }
+    },
+    {
+      "id": "p9w-mace-star",
+      "biome": "frost",
+      "label": "The ice star: a plunge from 14 m onto a Crystallize sheet cracks the ice in six arms and shatters the three frozen hounds on them",
+      "time": 14,
+      "weather": "clear",
+      "player": [
+        1060,
+        2690
+      ],
+      "restoration": "restored",
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.9,
+        "pitch": 0.45,
+        "dist": 10.5
+      },
+      "facing": 0.0,
+      "weapon": {
+        "id": "mace",
+        "attack": "plunge",
+        "height": 14,
+        "at": 0.1,
+        "ice": [
+          0,
+          0
+        ],
+        "seconds": 0.8
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "hound",
+            1.92,
+            5.26
+          ],
+          [
+            "hound",
+            3.6,
+            -4.29
+          ],
+          [
+            "hound",
+            -5.52,
+            -0.97
+          ]
+        ],
+        "seconds": 2.6,
+        "freeze": [
+          0,
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "id": "p8r-chaff-floor",
+      "biome": "meadow",
+      "label": "Dunn's threshing floor with the chaff heaped on it, the barley behind",
+      "time": 11,
+      "weather": "clear",
+      "player": [
+        75,
+        1135
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.4,
+        "pitch": 0.45,
+        "dist": 13
+      },
+      "hidePlayer": true
+    },
+    {
+      "id": "p8r-green-lantern",
+      "biome": "meadow",
+      "label": "The lantern on its post by the Green Shrine, dusk",
+      "time": 19.4,
+      "weather": "clear",
+      "player": [
+        22.5,
+        974.5
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.6,
+        "pitch": 0.1,
+        "dist": 6
+      },
+      "hidePlayer": true
     }
   ]
 }

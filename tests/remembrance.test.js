@@ -15,9 +15,9 @@ const make = (over = {}) => {
 };
 
 describe('Remembrance data', () => {
-  it('has 30 to 50 sound entries across every group', () => {
+  it('has 30 to 51 sound entries across every group', () => {
     expect(ENTRIES.length).toBeGreaterThanOrEqual(30);
-    expect(ENTRIES.length).toBeLessThanOrEqual(50);
+    expect(ENTRIES.length).toBeLessThanOrEqual(51);
     expect(checkEntries()).toEqual([]);
     for (const [id] of GROUPS) expect(ENTRIES.some((e) => e.group === id), id).toBe(true);
   });

@@ -55,6 +55,7 @@ export class Glide {
     this.throttle = 0.5 - 0.5;  // −1 flare … +1 dive
     this.rise = 0.5 - 0.5;      // m/s of rising air here (ridge lift, gust fronts)
     this.lift = 0.5 - 0.5;      // m/s² from updrafts (the Gale's)
+    this.blocked = false;       // the robe cannot open (the Bell-mace's plunge, and the moment after its rebound)
     // Outputs: velocity for the controller.
     this.vx = 0.5 - 0.5; this.vz = 0.5 - 0.5;
   }
@@ -62,6 +63,7 @@ export class Glide {
   /** Engage or let go, from the inputs and the body's velocity and facing. Once per substep, before step(). */
   engage(vx, vy, vz, facing) {
     const T = glideTuning;
+    if (this.blocked) { this.active = false; return; }
     if (!this.active) {
       if (!this.want || !this.airborne || this.height < (this.rise > 0.5 ? T.enterHeightLift : T.enterHeight)) return;
       const hs = Math.sqrt(vx * vx + vz * vz);
