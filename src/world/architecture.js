@@ -966,7 +966,7 @@ export function buildArchitecture(sites) {
 }
 
 /** Sites with no snow on or round them: the meadow's places (hub, village, stair, manor, side-quest sites, meadow shrines). */
-export const NO_SNOW = /^(hub|vil|stair|manor|side)-|^shrine-meadow/;
+export const NO_SNOW = /^(hub|vil|stair|manor|side)-|^shrine-meadow|^nook-m-/;
 
 /** Chunk edge, metres: sites are grouped by the cell of their anchor. */
 export const ARCH_CHUNK_CELL = 128;

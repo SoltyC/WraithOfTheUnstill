@@ -9,6 +9,8 @@ import { ownedRobes, wornRobe } from '../../game/robes.js';
 import { BEASTS, sketchSvg } from '../../game/bestiary.js';
 import { createEconomyPages } from './trade.js';
 import { el, createCodex } from './codex.js';
+import { remembranceTab } from './remembrance.js';
+import { foundNookMarks } from '../../game/nooks.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
@@ -51,7 +53,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes'], ['arms', 'Arms'], ['pouch', 'Pouch']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes'], ['arms', 'Arms'], ['pouch', 'Pouch'], ['remembrance', 'Remembrance']], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -79,6 +81,8 @@ export function createMenus(g) {
       listPage([['Weapons', econ.armsTab()]], (pg, w) => econ.armsPage(pg, w), 'Only the staff.');
     } else if (tab === 'pouch') {
       econ.pouchTab(el('div', 'codex-page wide', sheet));
+    } else if (tab === 'remembrance') {
+      remembranceTab({ el, listPage, rem: g.remembrance });
     } else if (tab === 'robes') {
       const flags = chapter.graph.flags, vars = chapter.graph.vars;
       const worn = wornRobe(flags, vars).id;
@@ -120,6 +124,8 @@ export function createMenus(g) {
     }
     const dr = g.economy && g.economy.drop;
     if (dr && dr.active) marks.push({ x: dr.x, z: dr.z, name: dr.marks + ' marks', kind: 'place' });
+    // The nooks found (a nook not yet found is not on the map).
+    marks.push(...foundNookMarks(g.pois, chapter.graph.flags, view));
     for (const p of g.pois) if (p.kind === 'shrine' && p.biome === view) marks.push({ x: p.pos[0], z: p.pos[1], name: null, kind: chapter.shrines.has(p.id) ? 'shrine-lit' : 'shrine' });
     foot([['M', 'close'], ['J', 'journal'], ['Esc', 'back']]);
     const sw = el('div', 'codex-actions', sheet);

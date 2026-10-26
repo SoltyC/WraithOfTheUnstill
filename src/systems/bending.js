@@ -167,15 +167,18 @@ export function addBendingSystem(g) {
         // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
         frost.power = gale.power = flow.power; frost.flowing = flow.flowing;
         if (isGale) { gale.castGust = true; if (flow.flowing) carry(); } else frost.castSweep = true;
+        g.remembrance?.cast(isGale ? 'gust' : 'sweep');
         castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
       }
       if (!input.down[Action.Bend]) primaryHeld = 0;
     } else primaryHeld = 0;
     const holding = able && primaryHeld >= HOLD && combat.focus > 1;
+    if (holding && !frost.ribbonHeld && !gale.vortexHeld) g.remembrance?.cast(isGale ? 'vortex' : 'ribbon');   // the hold begins
     frost.ribbonHeld = holding && !isGale;
     gale.vortexHeld = holding && isGale;
     if (able && input.pressed[Action.Heavy] && combat.spend((isGale ? combatTuning.costUpdraft : combatTuning.costCrystal) * flow.costMul)) {
       if (isGale) gale.castUpdraft = true; else frost.castCrystal = true;
+      g.remembrance?.cast(isGale ? 'updraft' : 'crystal');
       arm.shake += 0.01; castFlash.v = 1; arm.kick += 0.02;
     }
     // The Wraith turns to face what it bends.

@@ -117,6 +117,8 @@ async function boot() {
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)
+  (await import('./systems/remembrance.js')).addRemembranceSystem(g); // before the nooks (their views remember)
+  (await import('./systems/nooks.js')).addNookSystem(g); // after the architecture (their sites) and the nav (their places)
   (await import('./systems/robes.js')).addRobesSystem(g);
   (await import('./systems/barks.js')).addBarksSystem(g);
   (await import('./systems/bestiary.js')).addBestiarySystem(g);
