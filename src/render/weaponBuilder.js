@@ -3,9 +3,9 @@
 // weaponGeo2.js (glaive, lantern flail). Local frames: a held weapon's origin is the grip and its
 // shaft runs along +y; blades curve toward +z.
 
-export const WMAT = { STONE: 0, OAK: 1, IRON: 2, FELT: 3, BRONZE: 4, PALE: 5, FLAME: 6 };
-/** Slots: 0 staff, 1 right sickle, 2 left sickle, 3 maul, 4 the reaper's stand, 5 the cold forge, 6 glaive, 7 flail haft, 8-9 its chain, 10 its lantern head, 11 the flame, 12 the glaive's find, 13 the flail's find. */
-export const SLOT = { STAFF: 0, SICKLE_R: 1, SICKLE_L: 2, MAUL: 3, STAND: 4, FORGE: 5, GLAIVE: 6, FLAIL: 7, CHAIN1: 8, CHAIN2: 9, HEAD: 10, FLAME: 11, GLAIVE_FIND: 12, FLAIL_FIND: 13, COUNT: 14 };
+export const WMAT = { STONE: 0, OAK: 1, IRON: 2, FELT: 3, BRONZE: 4, PALE: 5, FLAME: 6, BELL: 7 };
+/** Slots: 0 staff, 1 right sickle, 2 left sickle, 3 maul, 4 the reaper's stand, 5 the cold forge, 6 glaive, 7 flail haft, 8-9 its chain, 10 its lantern head, 11 the flame, 12 the glaive's find, 13 the flail's find, 14 the Bell-mace, 15 the Bell Ledge's bell with the mace hung in it. */
+export const SLOT = { STAFF: 0, SICKLE_R: 1, SICKLE_L: 2, MAUL: 3, STAND: 4, FORGE: 5, GLAIVE: 6, FLAIL: 7, CHAIN1: 8, CHAIN2: 9, HEAD: 10, FLAME: 11, GLAIVE_FIND: 12, FLAIL_FIND: 13, MACE: 14, MACE_FIND: 15, COUNT: 16 };
 
 export class Builder {
   constructor() {

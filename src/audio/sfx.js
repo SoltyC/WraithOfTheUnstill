@@ -6,12 +6,13 @@
 // wind field: the stilled steppe is silent, the release brings the wind back. The context starts
 // on the first key or pointer press (browser autoplay rules).
 
-export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, THUNDER: 10, FLOW_UP: 11, FLOW_DOWN: 12, SWISH: 13, CLANG: 14 };
+export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, THUNDER: 10, FLOW_UP: 11, FLOW_DOWN: 12, SWISH: 13, CLANG: 14, TOLL: 15 };
 const VOICES = 20;
 
 export function createSfx() {
   /** @type {AudioContext|null} */
   let ac = null;
+  let humOsc = null, humOsc2 = null, humGain = null, humGain2 = null;
   let master = null, windGain = null, windFilter = null, hissGain = null, hissFilter = null, rainGain = null, rainLowGain = null;
   const voices = [];
   let next = 0;
@@ -41,6 +42,10 @@ export function createSfx() {
       src.start(0, Math.random() * 2); osc.start();
       voices.push({ filt, ng, osc, og, pan });
     }
+    // The Bell-mace's hum: a quiet sine that rises two octaves with the height stored in the bell, and a steady overtone once the cap is reached.
+    humOsc = ac.createOscillator(); humOsc.type = 'sine'; humOsc.frequency.value = 110; humGain = ac.createGain(); humGain.gain.value = 0;
+    humOsc2 = ac.createOscillator(); humOsc2.type = 'triangle'; humOsc2.frequency.value = 330; humGain2 = ac.createGain(); humGain2.gain.value = 0;
+    humOsc.connect(humGain); humGain.connect(master); humOsc2.connect(humGain2); humGain2.connect(master); humOsc.start(); humOsc2.start();
     // Wind bed: low rushing noise, gusting.
     const ws = ac.createBufferSource(); ws.buffer = nb; ws.loop = true;
     windFilter = ac.createBiquadFilter(); windFilter.type = 'lowpass'; windFilter.frequency.value = 400; windFilter.Q.value = 0.7;
@@ -98,6 +103,8 @@ export function createSfx() {
     lx: 0.5, ly: 0.5, lz: 0.5, rx: 1.5 - 0.5, rz: 0.5 - 0.5,
     /** Sound position and loudness (fields) for the next play(). `tone` (0..2) picks the Flow cue's pitch. */
     x: 0.5, y: 0.5, z: 0.5, gain: 1.5 - 0.5, tone: 0,
+    /** The Bell-mace's hum (fields, applied by update()): level 0..1, pitch 0..1 of the stored height, and whether it is at the cap. */
+    hum: 0.5 - 0.5, humPitch: 0.5 - 0.5, humCap: false,
     /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss, rain. thunderDist: metres of the next THUNDER. */
     wind: 0.5 - 0.5, hiss: 0.5 - 0.5, rain: 0.5 - 0.5, shelter: 0.5 - 0.5, rainBed: 0.5 - 0.5, time: 0.5, thunderDist: 1000.5,
 
@@ -214,6 +221,24 @@ export function createSfx() {
           v.filt.type = 'highpass'; q.setValueAtTime(0.8, t); f.setValueAtTime(3000, t);
           ng.linearRampToValueAtTime(0.4 * g, t + 0.002); ng.exponentialRampToValueAtTime(0.001, t + 0.08);
           break;
+        case SFX.TOLL: {    // the Bell-mace's blow: a bronze bell struck, louder and longer the further it fell (tone 0..1 = stored height / 20 m)
+          const u = this.tone, base = 262 - 110 * u, ring = 0.9 + 3.2 * u;
+          v.osc.type = 'sine'; of.setValueAtTime(base, t);
+          og.linearRampToValueAtTime(0.7 * g, t + 0.004); og.exponentialRampToValueAtTime(0.001, t + ring);
+          v.filt.type = 'lowpass'; q.setValueAtTime(0.7, t); f.setValueAtTime(2200, t); f.exponentialRampToValueAtTime(260, t + 0.25);
+          ng.linearRampToValueAtTime(0.5 * g, t + 0.003); ng.exponentialRampToValueAtTime(0.001, t + 0.3);
+          // Upper partials of a cast bell (a minor third, a twelfth, a bright strike tone) on the next voices, dying faster.
+          const ratios = [2.4, 3.0, 5.43];
+          for (let k = 0; k < 3; k++) {
+            const w = voices[next]; next = (next + 1) % VOICES;
+            w.ng.gain.cancelScheduledValues(t); w.og.gain.cancelScheduledValues(t); w.osc.frequency.cancelScheduledValues(t);
+            w.ng.gain.setValueAtTime(0, t); w.og.gain.setValueAtTime(0, t);
+            w.pan.pan.setValueAtTime(pan, t);
+            w.osc.type = 'sine'; w.osc.frequency.setValueAtTime(base * ratios[k], t);
+            w.og.gain.linearRampToValueAtTime((0.3 - 0.07 * k) * g, t + 0.003); w.og.gain.exponentialRampToValueAtTime(0.001, t + ring * (0.7 - 0.18 * k));
+          }
+          break;
+        }
         case SFX.RUMBLE:    // the shockwave rolling past
           v.filt.type = 'lowpass'; q.setValueAtTime(0.6, t); f.setValueAtTime(260, t); f.linearRampToValueAtTime(900, t + 0.6); f.exponentialRampToValueAtTime(120, t + 3);
           ng.linearRampToValueAtTime(1.0 * g, t + 0.35); ng.exponentialRampToValueAtTime(0.001, t + 3.2);
@@ -230,6 +255,10 @@ export function createSfx() {
       windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust), t, 0.3);
       windFilter.frequency.setTargetAtTime(260 + 900 * this.wind * gust, t, 0.3);
       hissGain.gain.setTargetAtTime(this.hiss * 0.18, t, 0.04);
+      humGain.gain.setTargetAtTime(this.hum * 0.07, t, 0.06);
+      humOsc.frequency.setTargetAtTime(110 * Math.pow(4, this.humPitch), t, 0.05);              // two octaves, 110 to 440 Hz
+      humOsc2.frequency.setTargetAtTime(110 * Math.pow(4, this.humPitch) * 1.5, t, 0.05);      // a fifth above
+      humGain2.gain.setTargetAtTime(this.humCap ? this.hum * 0.05 : 0, t, 0.08);               // the steady overtone: more height adds nothing
       // Under a roof the patter is gone and a muffled drumming remains (the low bed lifts).
       rainGain.gain.setTargetAtTime(this.rain * 0.2 * (1 - this.shelter), t, 0.4);
       rainLowGain.gain.setTargetAtTime((this.rain * this.rain * 0.28) * (1 + 1.2 * this.shelter) + this.shelter * this.rainBed * 0.1, t, 0.4);

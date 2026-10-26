@@ -163,7 +163,7 @@ export function addChapterSystem(g) {
       let best = 1e9;
       for (let i = 0; i < targets.length; i++) {
         const t = targets[i];
-        if (t.hidden) continue;
+        if (t.hidden || (t.hy !== undefined && Math.abs(p.y - t.y) > t.hy)) continue;       // (hy: the most the Wraith may be above or below it: a find on a ledge)
         const dx = t.x - p.x, dz = t.z - p.z, d = dx * dx + dz * dz;
         if (d < t.r * t.r && d < best) { best = d; near = t; }
       }
