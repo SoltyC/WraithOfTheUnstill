@@ -8,8 +8,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, parseArgs, startServer, launchBrowser, openGame } from './harness.mjs';
 import { WorldData } from '../../src/world/worldData.js';
-import { TERRAIN_NOISE_WGSL } from '../../src/shaders/terrainNoise.wgsl.js';
-import { HEIGHT_WGSL } from '../../src/shaders/clipmap.wgsl.js';
+import { createServer } from 'vite';
+
+// The shader modules import JSON (materials); load them through Vite's SSR loader, which handles it
+// (plain Node needs import attributes).
+const vite = await createServer({ root: ROOT, logLevel: 'error', server: { middlewareMode: true }, appType: 'custom' });
+const { TERRAIN_NOISE_WGSL } = await vite.ssrLoadModule('/src/shaders/terrainNoise.wgsl.js');
+const { HEIGHT_WGSL } = await vite.ssrLoadModule('/src/shaders/clipmap.wgsl.js');
+await vite.close();
 
 const args = parseArgs();
 const N = Number(args.points ?? 4096), R = Number(args.radius ?? 500);

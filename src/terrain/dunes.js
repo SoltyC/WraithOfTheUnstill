@@ -44,9 +44,9 @@ export function barchanH(u, v) {
   return 11 * sc * Math.sqrt(e) * duneProfile(p);
 }
 
-/** Star megadunes, 45–80 m: three arms and a dome per 900 m cell (the union of 2 × 2 cells, so no seams). */
+/** Star megadunes, 45–80 m: three arms and a dome per 760 m cell (the union of 2 × 2 cells, so no seams). */
 export function starH(u, v) {
-  const S = DUNE_SEED + 20, P = 900;
+  const S = DUNE_SEED + 20, P = 760;
   const i0 = Math.floor(u / P - 0.5), j0 = Math.floor(v / P - 0.5);
   let best = 0;
   for (let dj = 0; dj < 2; dj++) for (let di = 0; di < 2; di++) {
@@ -55,7 +55,7 @@ export function starH(u, v) {
     const sc = 0.8 + 0.35 * hash2(ci, cj, S + 1);
     const a = u - (ci + 0.5) * P - (hash2(ci, cj, S + 2) - 0.5) * 200;
     const b = v - (cj + 0.5) * P - (hash2(ci, cj, S + 3) - 0.5) * 200;
-    const R = 330 * sc;
+    const R = 340 * sc;
     const r2 = a * a + b * b;
     if (r2 >= R * R) continue;
     // Arm directions: one from a hash, the other two 120° either side (no trigonometry).

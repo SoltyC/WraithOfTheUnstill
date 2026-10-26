@@ -42,7 +42,7 @@ export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast,
     let big = 0;
     if (wT > 0.001) big += wT * transverseH(u, v);
     if (wB > 0.001) big += wB * barchanH(u, v);
-    if (wS > 0.001) big += wS * starH(u, v);
+    if (wS > 0.001) big += wS * (starH(u, v) + 0.3 * transverseH(u, v));   // low ridges fill between the stars
     if (wF > 0.001) big += wF * seifH(u, v);
     const ripple = 0.6 * fbm(u / 18, v / 55, 3, S + 4);
     h += wDunes * (big * (1 - duneFlat) + ripple * (1 - 0.8 * duneFlat));

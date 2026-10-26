@@ -32,7 +32,7 @@ fn tn_barchanH(u: f32, v: f32) -> f32 {
 }
 
 fn tn_starH(u: f32, v: f32) -> f32 {
-  let S = DUNE_SEED + 20u; let P = 900.0;
+  let S = DUNE_SEED + 20u; let P = 760.0;
   let i0 = i32(floor(u / P - 0.5)); let j0 = i32(floor(v / P - 0.5));
   var best = 0.0;
   for (var dj = 0; dj < 2; dj++) {
@@ -42,7 +42,7 @@ fn tn_starH(u: f32, v: f32) -> f32 {
       let sc = 0.8 + 0.35 * tn_hash2(ci, cj, S + 1u);
       let a = u - (f32(ci) + 0.5) * P - (tn_hash2(ci, cj, S + 2u) - 0.5) * 200.0;
       let b = v - (f32(cj) + 0.5) * P - (tn_hash2(ci, cj, S + 3u) - 0.5) * 200.0;
-      let R = 330.0 * sc;
+      let R = 340.0 * sc;
       let r2 = a * a + b * b;
       if (r2 >= R * R) { continue; }
       var dx = tn_hash2(ci, cj, S + 4u) - 0.5 + 0.01; var dy = tn_hash2(ci, cj, S + 5u) - 0.5;
