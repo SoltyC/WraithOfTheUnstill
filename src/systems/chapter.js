@@ -18,6 +18,8 @@ import { createHud } from '../ui/hud/hud.js';
 const RESTORABLE = ['frost', 'meadow'];
 
 /** @param {any} g  shared boot context */
+const SEAT_KINDS = new Set(['camp-seat', 'spring-seat', 'road-seat', 'echo-seat']); // the dunes' seats (bake: seats.mjs), named places for quests
+
 export function addChapterSystem(g) {
   const { loop, controller, scene, input, Action, params, ws, warden, wardenMod, frost, music, game, clock, capture } = g;
   g.surfTuning = surfTuning;
@@ -54,7 +56,7 @@ export function addChapterSystem(g) {
   };
   chapter.attuned = (id) => chapter.graph.flags.has('attuned:' + id);
   // Saves: the chapter is the quest graph and the progression (save v2).
-  game.places = Object.fromEntries(g.pois.filter((p) => p.biome === 'frost' && ['camp', 'spring', 'overlook', 'den', 'monastery'].includes(p.kind)).map((p) => [p.id, { pos: p.pos }]));
+  game.places = Object.fromEntries(g.pois.filter((p) => (p.biome === 'frost' && ['camp', 'spring', 'overlook', 'den', 'monastery'].includes(p.kind)) || (p.biome === 'dunes' && SEAT_KINDS.has(p.kind))).map((p) => [p.id, { pos: p.pos }]));
   g.quests = chapter;
   g.progress = chapter;
 

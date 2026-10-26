@@ -68,6 +68,7 @@ export function carveRavines(h2, n2, c2, half, enc, roads = []) {
   const cut = (x, z, i, j, target, kind) => {
     const k = j * n2 + i;
     const g = orig[k] / enc.scale - enc.offset;
+    if (roadD.length) { const rd = dRoad(x, z); if (rd < 30) { if (rd <= 12) return; target = g + (target - g) * smooth(12, 30, rd); } }
     if (target >= g - 0.02) return;
     const q = Math.round((target + enc.offset) * enc.scale);
     if (q < h2[k]) h2[k] = q;
@@ -124,8 +125,8 @@ export function carveRavines(h2, n2, c2, half, enc, roads = []) {
     }
     const lp = lowpass(Gl, 18);
     for (let k = 0; k < c.n; k++) {
-      const ford = smooth(40, 130, dRoad(c.x[k], c.z[k]));
-      F[k] = lp[k] - D[k] * (0.1 + 0.9 * ford);
+      const ford = smooth(25, 110, dRoad(c.x[k], c.z[k]));
+      F[k] = lp[k] - D[k] * ford;
       W[k] *= 0.6 + 0.4 * ford;
     }
     if (def.parent) { // meet the parent's floor at the junction, then follow our own

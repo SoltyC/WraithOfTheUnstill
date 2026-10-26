@@ -87,7 +87,10 @@ fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f,
     if (wDs > 0.001) { big += wDs * (tn_starH(u, v) * tn_lodFade(500.0, s) + 0.3 * tn_transverseH(u, v) * tn_lodFade(140.0, s)); }
     if (wDf > 0.001) { big += wDf * tn_seifH(u, v) * tn_lodFade(115.0, s); }
     let ripple = 0.6 * tn_fbm(u / 18.0, v / 55.0, 3, S + 4u) * tn_lodFade(140.0, s);
-    h += wA.w * (big * (1.0 - dune.y) + ripple * (1.0 - 0.8 * dune.y));
+    let cold = min(4.0 * wA.x * wA.w, 1.0);
+    let sand = big * (1.0 - dune.y);
+    let fill = cold * select(0.0, 7.0 - sand, sand < 7.0);
+    h += wA.w * (sand + fill * 0.85 + ripple * (1.0 - 0.8 * dune.y) * (1.0 - 0.6 * cold));
   }
   if (wA.x > 0.001) {
     let drift = 2.2 * tn_fbm(u / 160.0, v / 42.0, 4, S + 11u);

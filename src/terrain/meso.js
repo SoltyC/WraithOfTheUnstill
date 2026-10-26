@@ -18,6 +18,8 @@ import { valueNoise, fbm } from './noise.js';
 import { duneProfile, transverseH, barchanH, starH, seifH } from './dunes.js';
 
 export const MESO_SEED = 0x6d65;
+/** Height (m) the snow fills the dune hollows to at the frost–dune border (cold erg). */
+const COLD_LEVEL = 7;
 
 /**
  * Meso height (m) at (x, z).
@@ -45,7 +47,11 @@ export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast,
     if (wS > 0.001) big += wS * (starH(u, v) + 0.3 * transverseH(u, v));   // low ridges fill between the stars
     if (wF > 0.001) big += wF * seifH(u, v);
     const ripple = 0.6 * fbm(u / 18, v / 55, 3, S + 4);
-    h += wDunes * (big * (1 - duneFlat) + ripple * (1 - 0.8 * duneFlat));
+    // The cold erg (frost–dune border): snow settles in the lee hollows first and the wind strips it from
+    // the crests, so the hollows fill toward a level and anything above it stays bare sand.
+    const cold = 4 * wFrost * wDunes > 1 ? 1 : 4 * wFrost * wDunes, sand = big * (1 - duneFlat);
+    const fill = cold * (sand < COLD_LEVEL ? COLD_LEVEL - sand : 0);
+    h += wDunes * (sand + fill * 0.85 + ripple * (1 - 0.8 * duneFlat) * (1 - 0.6 * cold));
   }
   if (wFrost > 0.001) {
     const drift = 2.2 * fbm(u / 160, v / 42, 4, S + 11);

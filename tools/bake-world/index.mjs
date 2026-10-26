@@ -20,6 +20,8 @@ import { carveStory, storyPOIs } from './story.mjs';
 import { carveHill, HILL } from './hill.mjs';
 import { bakeVillageMask } from './villageMask.mjs';
 import { carveRavines, KIND } from './ravines.mjs';
+import { carveDryStair } from './dryStair.mjs';
+import { seatPOIs } from './seats.mjs';
 import { bakeDuneMap } from './dunemap.mjs';
 import { forecourtPaving, forecourtBounds } from '../../src/world/manor.js';
 import { stairPaving } from '../../src/world/stair.js';
@@ -108,6 +110,10 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   const hill = carveHill(h4, n4, c4, HALF, (i, j) => { const c = j * n4 + i; return hy.river[c] > 0.05 || hy.lake[c] > 0; });
   log('hill', hill.route.length, 'm stair,', hill.route.rise, 'm rise', Date.now() - t0, 'ms');
 
+  // 2d. The Dry Stair (dryStair.mjs): the caravan road down the escarpment into the erg; the ravines ford it.
+  const dry = carveDryStair(h4, n4, c4, HALF);
+  log('dry stair', dry.length, 'm,', dry.drop, 'm drop', Date.now() - t0, 'ms');
+
   // Shared lookups on the 4 m grid.
   const at4 = (arr, x, z) => arr[clamp(Math.floor((HALF - z) / c4), 0, n4 - 1) * n4 + clamp(Math.floor((x + HALF) / c4), 0, n4 - 1)];
 
@@ -175,7 +181,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     h2[j * n2 + i] = Math.round(clamp((h + HEIGHT_OFFSET) * HEIGHT_SCALE, 0, 65535));
   }
   // 7b. The erg's ravines (ravines.mjs), cut into the 2 m height; the surface follows (rock walls, sand floors).
-  const rav = carveRavines(h2, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, []);
+  const rav = carveRavines(h2, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, [dry.dense]);
   {
     const r = n2 / n4;
     for (let j = 0; j < n4; j++) for (let i = 0; i < n4; i++) {
@@ -213,7 +219,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     },
   };
   const at4h = (x, z) => Math.round(h4[clamp(Math.floor((HALF - z) / c4), 0, n4 - 1) * n4 + clamp(Math.floor((x + HALF) / c4), 0, n4 - 1)] * 10) / 10;
-  const pois = placePOIs(world, seed, [...storyPOIs(h4, n4, c4, HALF), ...hill.pois.map((p) => ({ ...p, h: at4h(p.pos[0], p.pos[1]) }))]);
+  const pois = placePOIs(world, seed, [...storyPOIs(h4, n4, c4, HALF), ...hill.pois.map((p) => ({ ...p, h: at4h(p.pos[0], p.pos[1]) })), ...seatPOIs().map((p) => ({ ...p, h: at4h(p.pos[0], p.pos[1]) })), { id: 'dry-stair-foot', kind: 'road-seat', biome: 'dunes', pos: dry.points[dry.points.length - 1].slice(0, 2), h: at4h(...dry.points[dry.points.length - 1].slice(0, 2)) }]);
   log('pois', pois.length, Date.now() - t0, 'ms');
 
   // 9. Write.
@@ -257,7 +263,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   log('village mask', mask.size + '²', Date.now() - t0, 'ms');
   write('village_mask.rgba8', Buffer.from(mask.data.buffer, mask.data.byteOffset, mask.data.byteLength));
   write('village.json', Buffer.from(JSON.stringify(village) + '\n'));
-  write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run, hill.route] }, null, 2) + '\n'));
+  write('pois.json', Buffer.from(JSON.stringify({ version: BAKE_VERSION, pois, routes: [run, hill.route, { ...dry, dense: undefined }] }, null, 2) + '\n'));
   const manifest = {
     version: BAKE_VERSION, seed, worldSize: WORLD_SIZE, origin: 'centre; x east, z north; row 0 = north edge; cell-centred texels',
     height: { texel: c2, size: n2, tile: TILE, tiles, encoding: 'u16le: h = v / 32 - 128 (m)', overview: { file: 'height_overview.u16', texel: c8, size: n8 } },
