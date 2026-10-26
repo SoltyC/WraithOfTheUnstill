@@ -91,7 +91,7 @@ export function restoredSites(table, data, wind) {
   const R = data.summit.rings;
   R.forEach((r, k) => {
     const nx = R[k + 1] || null, pv = R[k - 1] || null, a = nx ? nx.pos : r.pos, b0 = pv ? pv.pos : r.pos;
-    sites.push({ id: 'rw-ring-' + (k + 1), at: r.pos, facing: nx || pv ? Math.atan2(a[0] - b0[0], a[1] - b0[1]) : 0, build: glideRing, footprint: 1, seatAt: 'center', lift: r.y - r.h, hidden: true });
+    sites.push({ id: 'rw-ring-' + (k + 1), at: r.pos, facing: nx || pv ? Math.atan2(a[0] - b0[0], a[1] - b0[1]) : 0, build: (b, f, R) => glideRing(b, f, R, r.y - r.h), footprint: 1, seatAt: 'center', lift: r.y - r.h, hidden: true });
   });
   const vr = table['varo-rise'];
   if (vr) sites.push({ id: 'rw-varo-pennant', at: [vr.pos[0] + 5, vr.pos[1] + 3], facing: fly('frost'), build: small, footprint: 1.2, seatAt: 'center', hidden: true });

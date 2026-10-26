@@ -4546,7 +4546,7 @@
       "id": "p9w-flail-hand",
       "biome": "meadow",
       "label": "The lantern flail carried at dusk: bronze lantern on its chain, flame lit",
-      "time": 17.0,
+      "time": 17,
       "weather": "clear",
       "player": [
         100,
@@ -4554,14 +4554,14 @@
       ],
       "camera": {
         "mode": "follow",
-        "yaw": 2.0,
+        "yaw": 2,
         "pitch": 0.06,
         "dist": 3.4
       },
       "weapon": {
         "id": "flail",
         "attack": "carry",
-        "seconds": 1.0
+        "seconds": 1
       }
     },
     {
@@ -4590,7 +4590,7 @@
         "spawn": [
           [
             "sedgerunner",
-            1.0,
+            1,
             2.3
           ]
         ],
@@ -4628,7 +4628,7 @@
           ],
           [
             "sedgerunner",
-            -2.0,
+            -2,
             1.4
           ],
           [
@@ -4686,6 +4686,54 @@
         "attack": "carry",
         "seconds": 0.3,
         "finds": true
+      }
+    },
+    {
+      "id": "p8p-glide-ring-mast",
+      "biome": "meadow",
+      "label": "A glide ring held on its stone mast, the slope falling away beneath it",
+      "time": 14,
+      "weather": "clear",
+      "player": [
+        -1038,
+        246
+      ],
+      "hidePlayer": true,
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          -1038,
+          145,
+          246
+        ],
+        "yaw": -0.57,
+        "pitch": -0.2,
+        "fov": 0.9
+      }
+    },
+    {
+      "id": "p8p-nook-cart-noon",
+      "biome": "meadow",
+      "label": "The burnt cart in sun: bed, pole, tarp and the propped spoked wheel",
+      "time": 11,
+      "weather": "clear",
+      "player": [
+        133.6,
+        1108.7
+      ],
+      "hidePlayer": true,
+      "restoration": "restored",
+      "camera": {
+        "mode": "free",
+        "pos": [
+          133.6,
+          274.3,
+          1108.7
+        ],
+        "yaw": 1.29,
+        "pitch": 0.22,
+        "fov": 0.9
       }
     },
     {
@@ -4874,47 +4922,6 @@
         "pitch": 0.15,
         "dist": 6
       }
-    },
-    {
-      "id": "p8r-chaff-floor",
-      "biome": "meadow",
-      "label": "Dunn's threshing floor with the chaff heaped on it, the barley behind",
-      "time": 10,
-      "weather": "clear",
-      "player": [
-        75,
-        1135
-      ],
-      "camera": {
-        "mode": "free",
-        "pos": [
-          62,
-          288,
-          1112
-        ],
-        "yaw": 0.62,
-        "pitch": -0.5,
-        "fov": 0.9
-      },
-      "hidePlayer": true
-    },
-    {
-      "id": "p8r-green-lantern",
-      "biome": "meadow",
-      "label": "The lantern on its post by the Green Shrine, dusk",
-      "time": 18.9,
-      "weather": "clear",
-      "player": [
-        33,
-        985
-      ],
-      "camera": {
-        "mode": "follow",
-        "yaw": 1.77,
-        "pitch": 0.2,
-        "dist": 4
-      },
-      "hidePlayer": false
     }
   ]
 }

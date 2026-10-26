@@ -10,7 +10,8 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 
 export const FX_TRAIL = 5;                   // hand-light trail points per hand (Flow)
-export const FX_GLOWS = 3 + 2 * FX_TRAIL;     // cowl, two fingertips, then the trails
+export const FX_WORLD = 8;                   // free glow sprites placed in the world (the dropped marks' beacon)
+export const FX_GLOWS = 3 + 2 * FX_TRAIL + FX_WORLD;     // cowl, two fingertips, the trails, then the world glows
 export const FX_SPRAY = 3072;
 export const FX_COUNT = FX_GLOWS + FX_SPRAY;
 export const SPRAY_LIFE = 1.1;

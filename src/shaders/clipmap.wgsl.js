@@ -466,6 +466,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       if (d >= lp.w) { continue; }
       let fall = (1.0 - d / lp.w) * (1.0 - d / lp.w) / (1.0 + d * d * 0.6);
       mcol += ms.albedo * lc.rgb * lc.w * fall * max(dot(ms.N, lv / d), 0.0) / max(exm, 1e-6) * 0.35;
+      // Wet ground and puddles mirror the lamps: a glossy lobe toward the eye, broad on wet cobbles, tight in a puddle.
+      if (ms.wetK > 0.02) {
+        let Hl = normalize(lv / d + V);
+        let sp = pow(max(dot(ms.N, Hl), 0.0), mix(18.0, 260.0, (1.0 - ms.rough) * (1.0 - ms.rough)));
+        mcol += lc.rgb * lc.w * fall * sp * ms.wetK * 2.2 * (1.0 + 0.25 * uniforms.wetParams.x) / max(exm, 1e-6) * 0.35;
+      }
     }
     col = mix(col, mcol, wMeadow);
     // Wet ground and puddles reflect (SSR: sky, lamps, the Wraith): Fresnel × the gloss.
