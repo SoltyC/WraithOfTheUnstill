@@ -4443,6 +4443,250 @@
         "pitch": -0.06,
         "fov": 0.9
       }
+    },
+    {
+      "id": "p9w-glaive-hand",
+      "biome": "meadow",
+      "label": "The Shaper glaive carried: a leaf blade on an ash shaft, bronze socket and cord tassel",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.9,
+        "pitch": 0.06,
+        "dist": 3.8
+      },
+      "weapon": {
+        "id": "glaive",
+        "attack": "carry",
+        "seconds": 0.5
+      }
+    },
+    {
+      "id": "p9w-glaive-sweep",
+      "biome": "meadow",
+      "label": "The glaive's wide arcs: a sedgerunner on each flank, caught in the cut",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.5,
+        "pitch": 0.1,
+        "dist": 4.4
+      },
+      "weapon": {
+        "id": "glaive",
+        "attack": "combo",
+        "gap": 0.28,
+        "seconds": 0.7
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "sedgerunner",
+            1.8,
+            1.6
+          ],
+          [
+            "sedgerunner",
+            -1.8,
+            1.6
+          ]
+        ],
+        "seconds": 0.5
+      }
+    },
+    {
+      "id": "p9w-glaive-thrust",
+      "biome": "frost",
+      "label": "The glaive's thrust: two hounds in the lane, the first pinned on the blade",
+      "time": 14,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.45,
+        "pitch": 0.12,
+        "dist": 5.2
+      },
+      "weapon": {
+        "id": "glaive",
+        "attack": "heavy",
+        "hold": 0.7,
+        "seconds": 1.2
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "hound",
+            0,
+            2.6
+          ],
+          [
+            "hound",
+            0,
+            4.2
+          ]
+        ],
+        "seconds": 3
+      }
+    },
+    {
+      "id": "p9w-flail-hand",
+      "biome": "meadow",
+      "label": "The lantern flail carried at dusk: bronze lantern on its chain, flame lit",
+      "time": 17.0,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 2.0,
+        "pitch": 0.06,
+        "dist": 3.4
+      },
+      "weapon": {
+        "id": "flail",
+        "attack": "carry",
+        "seconds": 1.0
+      }
+    },
+    {
+      "id": "p9w-flail-swing",
+      "biome": "meadow",
+      "label": "The lantern flail's swing at dusk: the lit head on the arc, a sedgerunner struck and catching",
+      "time": 18.6,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.45,
+        "pitch": 0.1,
+        "dist": 4.6
+      },
+      "weapon": {
+        "id": "flail",
+        "attack": "combo",
+        "gap": 0.45,
+        "seconds": 0.6
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "sedgerunner",
+            1.0,
+            2.3
+          ]
+        ],
+        "seconds": 0.5
+      }
+    },
+    {
+      "id": "p9w-flail-night",
+      "biome": "meadow",
+      "label": "The lantern flail at night: the flame lights the grass round the Wraith, burning sedgerunners lighting their own",
+      "time": 21.5,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.7,
+        "pitch": 0.18,
+        "dist": 6.5
+      },
+      "weapon": {
+        "id": "flail",
+        "attack": "heavy",
+        "hold": 0.6,
+        "seconds": 1.3
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "sedgerunner",
+            1.8,
+            1.8
+          ],
+          [
+            "sedgerunner",
+            -2.0,
+            1.4
+          ],
+          [
+            "sedgerunner",
+            0.3,
+            -2.2
+          ]
+        ],
+        "seconds": 0.5
+      }
+    },
+    {
+      "id": "p9w-find-glaive",
+      "biome": "meadow",
+      "label": "The Ring of Nine after the stonewright is thanked: the glaive planted in the middle of the ring, the stones standing round it",
+      "time": 16.4,
+      "weather": "clear",
+      "player": [
+        233,
+        738.5
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.25,
+        "pitch": 0.1,
+        "dist": 4.2
+      },
+      "facing": 0.88,
+      "weapon": {
+        "id": "staff",
+        "attack": "carry",
+        "seconds": 0.3,
+        "finds": true
+      }
+    },
+    {
+      "id": "p9w-find-flail",
+      "biome": "frost",
+      "label": "Isolde's fire at dusk: the lantern flail hung on an iron post, its flame lit (the Take glyph shows in play)",
+      "time": 18.2,
+      "weather": "clear",
+      "player": [
+        874,
+        2436.5
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.73,
+        "pitch": 0.1,
+        "dist": 4.6
+      },
+      "facing": 0.73,
+      "weapon": {
+        "id": "staff",
+        "attack": "carry",
+        "seconds": 0.3,
+        "finds": true
+      }
     }
   ]
 }

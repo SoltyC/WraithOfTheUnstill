@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const WEAPON_SLOTS = 6;
+export const WEAPON_SLOTS = 14;
 export const TRAIL_NODES = 28, TRAIL_COUNT = 2;
 
 export const weaponVertexWGSL = /* wgsl */ `
@@ -136,6 +136,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var emit = fragmentInputs.vTint * (edge * 0.9 + select(0.0, 0.35, mid == 0)) * 0.6;
   col += emit / max(ex, 1e-6);
   col += spellLit(wp, N, albedo, 0.0, ex);
+  // The lantern's flame (material 6): emissive, hot at the middle and orange at the rim; the slot's tint.x is its brightness (flicker and flare from the view).
+  let heat = pow(clamp(dot(Ng, V), 0.0, 1.0), 1.4);
+  let flameCol = mix(vec3f(1.0, 0.32, 0.06), vec3f(1.0, 0.82, 0.45), heat) * (0.5 + 2.2 * fragmentInputs.vTint.x) / max(ex, 1e-6);
+  col = select(col, flameCol, mid == 6);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);
 }

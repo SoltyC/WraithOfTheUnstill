@@ -14,6 +14,7 @@ import { WeaponPose } from './pose.js';
 import { arc, bodyRadius } from './arcs.js';
 import { hitMat } from './affinity.js';
 import { tierDef } from './tiers.js';
+import { createBurn } from './burn.js';
 import { combatTuning } from '../combat/combat.js';
 
 /** Tuning shared by the weapons, edited from the dev overlay. */
@@ -38,9 +39,12 @@ export function createWeapons(ctx) {
   let curDef = null;
   let tdBase = null, tdTier = -1, tdDef = null;     // the forge's def for the weapon in hand, rebuilt only when the weapon or its tier changes
   const w = combat.wh;
+  const burn = createBurn({ shaped, combat, fx, ts, ground });
+  const nightOf = ctx.night || null;     // () => 0 (day) … 1 (night): the flame burns hotter in the dark
+  let pinMask = 0, lastPhase = 0, flinging = false;
 
   const self = {
-    machine: m, pose, inventory,
+    machine: m, pose, inventory, burn,
     /** Inputs (fields), set each frame by systems/weapons.js. */
     down: false, pressed: false, dodgePressed: false, swapPressed: false, able: true, aimYaw: 0.5 - 0.5, dt: 0.5 - 0.5,
     /** Out: a dodge may go now; the swing is cutting (the trail), and where the weapon is heading. */
@@ -70,6 +74,8 @@ export function createWeapons(ctx) {
       }
       m.update();
       this.dodgeNow = m.dodgeNow;
+      const night = nightOf !== null ? nightOf() : 0;
+      burn.update(dt, night);
       if (def === null) { this.cutting = false; return; }
       if (m.startEvent) this.onStart();
       if (m.activeEvent) this.onActive();
@@ -79,6 +85,8 @@ export function createWeapons(ctx) {
       this.cutting = ph === PHASE.ACTIVE;
       if (this.cutting) this.trailT = 0.18; else this.trailT = Math.max(0, this.trailT - dt);
       if (ph === PHASE.ACTIVE && a !== null) this.cut(a);
+      else if (lastPhase === PHASE.ACTIVE && a !== null) this.endCut(a);
+      lastPhase = ph;
       this.bleed(dt);
       for (let i = 0; i < MAX_SHAPED; i++) if (chillT[i] > 0) chillT[i] -= dt;
       // The body: footing slows, the facing is held, the pose follows the machine.
@@ -119,12 +127,12 @@ export function createWeapons(ctx) {
       // Start from where the Wraith already faces, then ease to the aim.
       if (m.chained === 0) st.atkYaw = controller.yaw;
       this.stats.swings++; if (m.heavy) this.stats.heavies++;
-      hitMask = 0; impacted = false; brushed = false; passMark = 0; st.prevProg = 0;
+      hitMask = 0; pinMask = 0; impacted = false; brushed = false; passMark = 0; st.prevProg = 0;
     },
 
     onActive() {
       const a = m.attack;
-      hitMask = 0; impacted = false; brushed = false; passMark = 0; st.prevProg = 0;
+      hitMask = 0; pinMask = 0; impacted = false; brushed = false; passMark = 0; st.prevProg = 0;
       this.steer(0);
       controller.yaw = st.atkYaw;
       // The lunge: a step into the blow.
@@ -145,11 +153,12 @@ export function createWeapons(ctx) {
         st.prevProg = p;
         return;
       }
-      // Spin passes: clear the hit mask at each pass boundary.
-      const spin = heavy && def.heavy.kind === 'spin', passes = spin ? def.heavy.passes : 1;
-      if (passes > 1) { const pass = Math.min(passes - 1, Math.floor(p * passes)); if (pass !== passMark) { passMark = pass; hitMask = 0; } }
-      arc.px = controller.pos.x; arc.pz = controller.pos.z; arc.yaw = st.atkYaw; arc.inner = a.inner; arc.reach = a.reach;
-      for (let blade = 0; blade < (spin ? 2 : 1); blade++) {
+      // Spin passes (clear the hit mask at each boundary; `byAngle` makes them equal shares of the turn), a thrust's reach grows as it is driven.
+      const kind = heavy ? def.heavy.kind : '', spin = kind === 'spin', passes = spin ? def.heavy.passes : 1, blades = spin ? (def.heavy.blades || 2) : 1;
+      if (passes > 1) { const pass = Math.min(passes - 1, Math.floor((def.heavy.byAngle ? Math.pow(p, 1.6) : p) * passes)); if (pass !== passMark) { passMark = pass; hitMask = 0; } }
+      arc.px = controller.pos.x; arc.pz = controller.pos.z; arc.yaw = st.atkYaw; arc.inner = a.inner; arc.reach = kind === 'thrust' ? a.reach * (0.55 + 0.45 * p) : a.reach;
+      const tip = def.tip, tipAt = tip ? a.reach * tip.from : 1e9;
+      for (let blade = 0; blade < blades; blade++) {
         pose.q = st.prevProg;
         if (blade === 0) arc.a0 = pose.angle(); else arc.a0 = pose.angle2();
         pose.q = p;
@@ -162,11 +171,12 @@ export function createWeapons(ctx) {
             if (!arc.test()) continue;
             hitMask |= 1 << i;
             const dx = b.sx[j] - controller.pos.x, dz = b.sz[j] - controller.pos.z, dl = Math.sqrt(dx * dx + dz * dz) || 1;
-            this.strike(i, a, dx / dl, dz / dl, 1);
+            this.strike(i, a, dx / dl, dz / dl, arc.dist > tipAt ? tip.mul : 1);      // the glaive's tip bites harder
             break;
           }
         }
       }
+      if (a.scorch) this.orbitMark(a, p);
       st.prevProg = p;
     },
 
@@ -190,6 +200,48 @@ export function createWeapons(ctx) {
       // Cuts bleed.
       const af = def.affinity;
       if (af.bleed && !w.killed && !hitMat.glance && !frozen) { bleedT[i] = af.bleedTime; bleedDps[i] = af.bleed * (heavy ? 1.4 : 1); }
+      // Fire (the flail): what it strikes catches, sedge and turf worse, and worse again at night; ice thaws, unless the flame is frost-blue.
+      if (af.burn && !w.killed) {
+        const night = nightOf !== null ? nightOf() : 0, cold = inf === 'frost';
+        if (frozen && af.thaw && !cold) shaped.thaw(i);
+        burn.ignite(i, af.burn * (A.material === 'meadow' ? af.burnMeadow : 1) * (1 + af.burnNight * night) * (heavy ? 1.25 : 1) * (cold ? 0.5 : 1), af.burnTime + (heavy ? 1 : 0));
+      }
+      // The pin (the glaive's thrust): held where it stands, if the blow outweighs its poise (a long draw pins a brute).
+      if (a.pin && !flinging && !w.killed && !hitMat.glance && !frozen && a.dmg * (heavy ? m.power : 1) * (def.dmgMul || 1) >= (A.poise || 0)) {
+        if (shaped.pin(i, a.pin)) pinMask |= 1 << i;
+      }
+    },
+
+    /** The swing's active frames are over: the glaive's fling (tier 5) throws back what the thrust pinned; the flail's pyre ring (tier 5) is lit. */
+    endCut(a) {
+      if (a.fling && pinMask !== 0) {
+        const F = a.fling, ux = Math.sin(st.atkYaw), uz = Math.cos(st.atkYaw);
+        flinging = true;
+        for (let i = 0; i < MAX_SHAPED; i++) {
+          if ((pinMask & (1 << i)) === 0 || !shaped.isLive(i)) continue;
+          shaped.unpin(i); this.knockOv = F.knock; this.strike(i, a, ux, uz, F.frac); this.knockOv = 0;
+        }
+        flinging = false; pinMask = 0;
+      }
+      if (a.pyre) {
+        const px = controller.pos.x, pz = controller.pos.z;
+        burn.zone(px, pz, a.pyre.radius, a.pyre.time);
+        for (let c = 0; c < 24; c++) {
+          const ang = (c / 24) * Math.PI * 2, sp = 2 + Math.random() * 2;
+          fx.ex = px + Math.sin(ang) * a.pyre.radius * 0.9; fx.ey = controller.pos.y + 0.1; fx.ez = pz + Math.cos(ang) * a.pyre.radius * 0.9;
+          fx.evx = Math.sin(ang) * sp * 0.3; fx.evz = Math.cos(ang) * sp * 0.3; fx.evy = 1.5 + sp; fx.esize = 0.05 + 0.06 * Math.random(); fx.emit();
+        }
+        if (sfx !== null) { sfx.x = px; sfx.y = controller.pos.y + 0.5; sfx.z = pz; sfx.gain = 0.9; sfx.play(SFX.WHOOSH); }
+      }
+    },
+
+    /** The lantern in its orbit (the wheel, the whirl): the grass under its path lies singed. */
+    orbitMark(a, p) {
+      pose.q = p;
+      const ang = st.atkYaw + pose.angle(), R = a.reach * 0.8;
+      ts.bx = controller.pos.x + Math.sin(ang) * R; ts.bz = controller.pos.z + Math.cos(ang) * R; ts.bdx = Math.cos(ang); ts.bdz = -Math.sin(ang);
+      ts.bl = 0.9; ts.bw = 0.45; ts.bd = 0.01; ts.bc = 0.4; ts.bk = BRUSH.FLATTEN; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.1;
+      ts.stamp();
     },
 
     /** An infused blow's light reaction (tier 3+, forged): frost chills (the third blow freezes), gale feeds a breath of focus. */
@@ -284,7 +336,7 @@ export function createWeapons(ctx) {
         const px = Math.cos(st.atkYaw), pz = -Math.sin(st.atkYaw);
         ts.bx = cx; ts.bz = cz; ts.bdx = px; ts.bdz = pz; ts.bl = 0.8; ts.bw = 0.06; ts.bd = 0.04; ts.bc = 0.4; ts.bk = BRUSH.SCORE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.3;
         ts.stamp();
-      } else if (a.brush === 'cut') {
+      } else if (a.brush === 'cut' || a.brush === 'scorch') {
         ts.bx = cx; ts.bz = cz; ts.bdx = Math.sin(st.atkYaw); ts.bdz = Math.cos(st.atkYaw); ts.bl = 0.6; ts.bw = 0.9; ts.bd = 0.01; ts.bc = 0.3; ts.bk = BRUSH.FLATTEN; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.2;
         ts.stamp();
       }
@@ -310,7 +362,7 @@ export function createWeapons(ctx) {
     get push() { return st.push; },
     get heading() { return st.atkYaw; },
     /** Clear everything (death, a load). */
-    reset() { m.reset(); bleedT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
+    reset() { m.reset(); burn.reset(); pinMask = 0; bleedT.fill(0); chill.fill(0); chillT.fill(0); st.swapT = 0; st.push = 0; },
   };
   return self;
 }

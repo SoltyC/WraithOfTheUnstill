@@ -165,7 +165,8 @@ export function createShaped(ctx) {
       }
       const A = ARCHETYPES[s.arch], poise = A.poise || 0, b = s.body;
       // A blow in the middle of the Chanter's song breaks it, whatever its poise.
-      if ((stagger && amount >= poise || s.state === S.SING) && s.state !== S.FROZEN) {
+      if (s.state === S.STAGGER && s.t < 0) { s.hurt = 1; }       // pinned (the glaive's thrust): the blow lands, the foot stays
+      else if ((stagger && amount >= poise || s.state === S.SING) && s.state !== S.FROZEN) {
         s.state = S.STAGGER; s.t = 0; b.vx = kx * A.knock; b.vz = kz * A.knock; b.crouch = 0; b.lift = 0;
         if (this.lungeToken === s.idx) this.lungeToken = -1;
       } else if (s.state !== S.FROZEN && amount > 1) {
@@ -182,6 +183,20 @@ export function createShaped(ctx) {
       s.body.lift = 0; s.body.crouch = 0;
     },
     isFrozen(i) { return slots[i].state === S.FROZEN; },
+    /** Pin slot i where it stands for `seconds` (a stagger that does not slide and is not cut short by the next blow); false if it cannot be (frozen, rising, falling). */
+    pin(i, seconds) {
+      const s = slots[i];
+      if (s.state === S.EMPTY || s.state === S.FALLING || s.state === S.RISING || s.state === S.FROZEN) return false;
+      if (s.state === S.STAGGER && s.t < 0) { s.t = Math.min(s.t, -seconds); return true; }
+      s.state = S.STAGGER; s.t = -seconds; s.body.vx = 0; s.body.vz = 0; s.body.crouch = 0; s.body.lift = 0;
+      if (this.lungeToken === s.idx) this.lungeToken = -1;
+      return true;
+    },
+    /** Let a pinned slot go (its stagger runs out in a moment). */
+    unpin(i) { const s = slots[i]; if (s.state === S.STAGGER && s.t < 0) s.t = 0; },
+    isPinned(i) { return slots[i].state === S.STAGGER && slots[i].t < 0; },
+    /** Melt slot i out of the ice (a flame): it stirs on the next update. */
+    thaw(i) { const s = slots[i]; if (s.state === S.FROZEN) s.frozenFor = 0; },
     isLive(i) { const st = slots[i].state; return st !== S.EMPTY && st !== S.FALLING && st !== S.RISING; },
     /** Material chips off slot i: spray thrown along (dx, dz), and small mounds of it left in the snow. */
     chip(i, dx, dz, amount) {

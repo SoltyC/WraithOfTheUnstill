@@ -45,6 +45,20 @@ export const TIER_INFO = {
     { name: 'Counterweight', move: false, text: 'A further 12% damage, and the blows throw foes farther.' },
     { name: 'Groundbreaker', move: true, text: 'The smash rings out past its crater: everything within five metres is thrown back.' },
   ],
+  glaive: [null,
+    { name: 'Rising crescent', move: true, text: 'A fourth cut after the finisher: a rising crescent that throws a whole pack back.' },
+    { name: 'Honed edge', move: false, text: 'Every blow lands 12% harder.' },
+    { name: 'Infusion', move: true, text: 'The glaive can carry an element; its blows apply that element lightly.' },
+    { name: 'Ash-shod shaft', move: false, text: 'A further 12% damage, heavier knock, and the thrust holds a foe longer.' },
+    { name: 'Withdrawn fling', move: true, text: 'The thrust runs farther, and as it is drawn back everything it pinned is flung off the blade.' },
+  ],
+  flail: [null,
+    { name: 'Counter-wheel', move: true, text: 'A fourth blow after the wheel: the lantern spins back the other way, gathering what the first turn left.' },
+    { name: 'Heavier lantern', move: false, text: 'Every blow lands 12% harder.' },
+    { name: 'Infusion', move: true, text: 'The flail can carry an element; the flame takes its colour and its blows apply it lightly.' },
+    { name: 'Deep oil', move: false, text: 'A further 12% damage, and the fire burns hotter and longer.' },
+    { name: 'Pyre ring', move: true, text: 'The whirl ends with the flame flung to the ground: a ring of fire burns where the Wraith stood.' },
+  ],
 };
 
 /** Per weapon, per tier: edit a fresh clone of the def (T1/T3/T5 moves, T4 weight). */
@@ -66,6 +80,22 @@ const PATCH = {
     },
     4: (d) => { for (const a of d.combo) a.knock *= 1.3; d.heavy.knock *= 1.3; },
     5: (d) => { d.heavy.ring = { radius: 5, frac: 0.4, knock: 7 }; },
+  },
+  glaive: {
+    1: (d) => {
+      d.combo.push({ ...d.combo[2], dmg: 16, knock: 6.5, reach: 3.8, windup: 0.2, recover: 0.5, link: 0.7, lunge: 2.0,
+        wind: [-0.9, -0.3, 0, -0.1, 0.4, 0.3, -0.8, 0.15], strike: [0.9, 0.7, 0, 0.3, 0.6, 0.35, 0.85, -0.05], end: [1.0, 0.6, 0, 0.32, 0.58, 0.3, 0.95, -0.02] });
+    },
+    4: (d) => { for (const a of d.combo) a.knock *= 1.3; d.heavy.pin += 0.3; },
+    5: (d) => { d.heavy.fling = { knock: 9, frac: 0.4 }; d.heavy.reach = 5.0; d.heavy.pin = Math.max(d.heavy.pin, 1.4); },
+  },
+  flail: {
+    1: (d) => {
+      const w = d.combo[2];
+      d.combo.push({ ...w, dmg: 13, wind: mirror(w.wind), strike: mirror(w.strike), end: mirror(w.end), windup: 0.2, recover: 0.6 });
+    },
+    4: (d) => { d.affinity.burn *= 1.3; d.affinity.burnTime += 1.5; },
+    5: (d) => { d.heavy.pyre = { radius: 3.2, time: 4 }; },
   },
 };
 

@@ -46,3 +46,34 @@ Tool: `tools/bot/fight.mjs` (an in-page auto-fighter: turns to the nearest Shape
 ## Filmed (screenshots/weapons/, raw frames not committed)
 
 `sheet2-staff-combo-hit.jpg`, `sheet2-sickles-combo-hit.jpg`, `sheet2-maul-heavy-hit.jpg` (a live hound attacks and knocks the maul out of its windup, as designed), and `sheet2-{staff,sickles,maul}-heavy-frozen.jpg` (the heavies on a frozen hound: the hold, the strike, the shatter, the dent or crater). The earlier `sheet-*.jpg` are the first pass. Read for weight: anticipation and follow-through read in every move; the maul crater is large (about 5 m across, a deep pit) and the staff slam leaves the same crater when it follows a maul smash at the same spot, because the terrain state keeps it.
+
+## Glaive and lantern flail (2026-10-26, branch `claude/weapons2`)
+
+Same tool and set (`tools/bot/fight.mjs`, port 4177, Windows Chrome on the RTX 3060, full health, flow reset, mixed mode: lights with a heavy every 3.5 s). The bot is deterministic enough that four meadow runs were identical; read the numbers as relative.
+
+| Foes | Weapon | Time to clear | Hits | Taken | Flow reached |
+|---|---|---|---|---|---|
+| 3 sedgerunners (x4) | glaive | 7.9 s | 8 | 40 | 0 |
+| 3 sedgerunners (x4) | flail | 6.2 s | 3 | 30 | 0 |
+| 2 hedgewardens + 2 sedgerunners | glaive | 9.7 s | 26 | 40 | 0 |
+| 2 hedgewardens + 2 sedgerunners | flail | 10.1 s | 20 | 76 | 1 |
+| 3 hounds (x2) | glaive | 4.1-5.0 s | 10 | 0-12 | 1-2 |
+| 3 hounds (x2) | flail | 3.3-6.0 s | 6-8 | 0 | 1-2 |
+| brute + 2 hounds (x2) | glaive | 9.3-10.8 s | 15-16 | 0 | 3 |
+| brute + 2 hounds (x2) | flail | 7.1-7.4 s | 14 | 30 | 1-2 |
+| brute + 4 hounds (x2) | glaive | 9.6-9.9 s | 24-25 | 0-30 | 1-2 |
+| brute + 4 hounds (x2) | flail | 8.7-15.3 s | 16-19 | 0 | 3 |
+| 3 frozen hounds (heavy) | glaive | 2.4 s | 3 | 0 | (all three die) |
+| 3 frozen hounds (heavy) | flail | 12.3 s | 9 | 0 | (it thaws them) |
+
+Against the first three weapons' meadow figures (taken: staff 57, sickles 48, maul 43 against 3 sedgerunners; 96, 58, 58 against hedgewardens + sedgerunners):
+
+1. **The glaive is the answer to flankers.** The wide arcs reach both sides, so the sedgerunner pack costs 40 where the maul costs 43 and the staff 57, and the hedgewarden mix costs 40 (the best of the five). It also raised Flow most often (tier 3 against the brute): the long reach keeps the Wraith out of lunges, so the near-miss dodges that build Flow happen. It is not a damage weapon (9-15 a hit; 26 hits against the hedge mix) and the hedgewardens (poise 40) pin only on a nearly full draw.
+2. **The flail is the fire weapon.** It kills sedgerunners with 3 hits in 6.2 s because the burn does the work (sedge burns 1.8 times as hot), and burning packs spread to each other. It is the worst weapon against hedgewardens (76 taken: the turf armour is slow to burn, the hits are slow, and the dead zone lets the wardens inside the swing) and against frozen Shaped (12.3 s: it melts them out of the ice instead of shattering them, which is the price of fire). The brute fights cost 30 sometimes: the 1.1 m dead zone lets a brute's slam land when it steps under the head. A player should keep the foe at arm's length, which is the intended skill.
+3. **The weapons stay different.** Glaive: spacing, flanks, a pinning lane. Flail: fire and area, nothing too close, nothing frozen. Maul: armour and single bruisers. Sickles: crowds of small things at your feet. Staff: the steady middle. No weapon is best in all four fights.
+4. `gpuStats.late` stayed `[]` through every fight above, two teleports across biomes, both finds taken, and the flail's whirl at night (the weapon shader is the same, the 14 slots are one uniform array, and the head's light is a world-grid light).
+5. The finds were walked up to and taken with the bot (`press Interact`) once their flags were set: the glaive in the Ring of Nine after `meadow:side-stone-thanked`, the flail at Isolde's fire after `isolde-sang`.
+
+### Filmed (screenshots/weapons2/, raw frames not committed)
+
+`glaive-combo-side.jpg`, `glaive-heavy-side.jpg` (the thrust on a frozen hound: the draw, the lane, the shatter), `flail-combo-side.jpg`, and the photo spots `p9w-glaive-*`, `p9w-flail-*` (`p9w-flail-night.png`: the whirl at night, the lantern's flame and trail), `p9w-find-glaive.png`, `p9w-find-flail.png`. Read for weight: the glaive's draw (the shaft goes back, the blade tips up) and the thrust read at once; the flail's lantern lags the haft in the windup and whips out on the cut, the flame streaming back along its travel.

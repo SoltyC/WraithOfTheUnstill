@@ -12,7 +12,9 @@
 // a buffered press chains), then `wind` (cocked), `strike` (the end of the swing) and `end` (the
 // follow-through) poses.
 
-export const WEAPON_ID = { STAFF: 'staff', SICKLES: 'sickles', MAUL: 'maul' };
+import { glaiveDef, flailDef } from './defs2.js';
+
+export const WEAPON_ID = { STAFF: 'staff', SICKLES: 'sickles', MAUL: 'maul', GLAIVE: 'glaive', FLAIL: 'flail' };
 
 /** Timings shared by all weapons (s). */
 export const weaponFeel = {
@@ -130,4 +132,5 @@ export const weaponDefs = {
   },
 };
 
-export const weaponList = [weaponDefs.staff, weaponDefs.sickles, weaponDefs.maul];
+weaponDefs.glaive = glaiveDef; weaponDefs.flail = flailDef;      // defs2.js: the later families
+export const weaponList = [weaponDefs.staff, weaponDefs.sickles, weaponDefs.maul, weaponDefs.glaive, weaponDefs.flail];
