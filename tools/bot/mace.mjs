@@ -133,31 +133,63 @@ const tests = {
     ${prelude}
     ${X < 0 ? '' : `await bot_tp(${X}, ${Z});`}
     await ready();
-    const gl = c.glide, log = [];
-    c.pos.y = gy() + 30; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; await frames(3);
-    w.inject('Jump', true); await sleep(900);
-    const gliding0 = gl.active, hGl = +pl.hNow.toFixed(1);
+    const gl = c.glide, p = c.pos, f = g.arm.yaw, y0 = gy();
+    for (let d = 4; d <= 20; d += 2) g.shaped.spawn('hound', p.x + Math.sin(f) * d, p.z + Math.cos(f) * d, { idle: 999 });   // a row of sleepers along the glide
+    await sleep(1500);
+    c.pos.y = y0 + ${+(process.env.H || 18)}; c.vel.x = Math.sin(f) * 12; c.vel.y = -2; c.vel.z = Math.cos(f) * 12; c.grounded = false; await frames(3);
+    w.inject('Traverse', true); await sleep(900);
+    const glidingBefore = gl.active, hBefore = +pl.hNow.toFixed(1), vBefore = +Math.hypot(c.vel.x, c.vel.z).toFixed(1);
     await press('Primary', 50);
-    let t0 = performance.now(), falling = false, landed = false, afterRebound = null, regl = false, lastPl = 0, gl2 = false;
-    while (performance.now() - t0 < 8000) {
+    let t0 = performance.now(), landedAt = -1, reglideAt = -1, blockedSeen = false;
+    while (performance.now() - t0 < 7000) {
       await frames(1);
-      if (pl.falling) falling = true;
-      if (falling && !pl.falling && pl.stats.plunges > lastPl) { lastPl = pl.stats.plunges; afterRebound = +(c.pos.y - gy()).toFixed(1); }
-      if (afterRebound !== null && gl.active) { regl = true; if (performance.now() - t0 > 0) gl2 = true; break; }
+      if (pl.stats.rebounds > 0 && landedAt < 0) landedAt = performance.now() - t0;
+      if (landedAt >= 0) { if (gl.blocked) blockedSeen = true; if (gl.active && reglideAt < 0) { reglideAt = performance.now() - t0; break; } }
     }
-    const info = { test: 'glide', glidingBefore: gliding0, hStoredAtPlunge: +pl.last.h.toFixed(2), glideDriftShare: 0.6, rebound: +pl.last.rebound.toFixed(2), reboundStartY: afterRebound, glideRestored: regl, plunges: pl.stats.plunges, rebounds: pl.stats.rebounds };
-    w.inject('Jump', false);
-    return info;
+    w.inject('Traverse', false);
+    return { test: 'glide', glidingBefore, hBefore, speedBefore: vBefore, plunges: pl.stats.plunges, h: +pl.last.h.toFixed(2), hits: pl.last.hits, rebound: +pl.last.rebound.toFixed(2), rebounds: pl.stats.rebounds,
+      reboundAtMs: Math.round(landedAt), glideBlockedAfterRebound: blockedSeen, backInGlideAtMs: Math.round(reglideAt), gap: reglideAt > 0 ? Math.round(reglideAt - landedAt) : null };
   `,
 
   ledge: () => `
     ${prelude}
-    ${X < 0 ? '' : `await bot_tp(1130.8, 2780.1);`}
-    await ready(); g.elements.unlock('gale'); g.elements.select('gale');
-    const find = g.weaponFinds ? 'present' : 'n/a';
-    // Take it only once it is in reach: Updraft up from the hollow and walk the column's axis.
-    g.inventory.take?.('mace');
-    return { test: 'ledge', find, px: +c.pos.x.toFixed(1), pz: +c.pos.z.toFixed(1), y: +c.pos.y.toFixed(1), live: [...Array(64).keys()].filter((i) => g.shaped.isLive(i)).length };
+    const L = g.bellLedge; if (!L) return { test: 'ledge', error: 'no bellLedge system' };
+    const find = g.weaponFinds.find((f) => f.id === 'mace'), at = L.site.at, yaw = Math.atan2(at[0] - L.hollow.foot[0], at[1] - L.hollow.foot[1]);
+    const sx = L.hollow.foot[0] - Math.sin(yaw) * 3.5, sz = L.hollow.foot[1] - Math.cos(yaw) * 3.5;       // 3.5 m out from the foot of the bluff
+    g.chapter.graph.flags.delete('cleared:bell-ledge-hounds'); find.taken = false; g.weapons.reset();
+    await bot_tp(sx, sz);
+    g.combat.health = 100; g.combat.focus = 100; g.flow.reset(true); g.elements.unlock('gale'); g.elements.select('gale');
+    await sleep(2500);
+    const p = c.pos, y0 = gy(), hollowHounds = L.slots.map((i) => i >= 0 && g.shaped.isLive(i)), diag = { takenAfterTp: !!find.taken, cleared: g.chapter.graph.flags.has('cleared:bell-ledge-hounds'), spawned: L.spawned, flagsHasFn: typeof g.chapter.graph.flags.delete };
+    // The climb (Updraft + glide from the hollow) is tried first and its peak logged; the Bell Ledge's top (14.6 m) is then stood on by a setup move.
+    const held = {}; const set = (n, d) => { if (held[n] !== d) { held[n] = d; w.inject(n, d); } };
+    g.arm.yaw = yaw; g.arm.pitch = 0.95; await press('Heavy', 60); await sleep(150);
+    let maxY = 0, t0 = performance.now();
+    while (performance.now() - t0 < 6000) {
+      await frames(1);
+      const dx = g.gale.updraftX - p.x, dz = g.gale.updraftZ - p.z;
+      if (c.pos.y - y0 < 1.0 && performance.now() - t0 < 3000) { g.arm.yaw = Math.atan2(dx, dz); set('MoveForward', Math.hypot(dx, dz) > 0.5); set('Traverse', c.pos.y - y0 > 0.3); }
+      else { g.arm.yaw = yaw; set('MoveForward', true); set('Traverse', true); }
+      maxY = Math.max(maxY, c.pos.y - y0);
+    }
+    set('MoveForward', false); set('Traverse', false); await sleep(1500);
+    // Setup: stand on the ledge, take the mace (Interact), then step off over the first hound and plunge.
+    await bot_tp(at[0], at[1]); g.weapons.reset();
+    const hy = gy(); c.pos.y = hy + 0.3; c.vel.y = 0; await sleep(500);
+    const ledgeGround = +(c.pos.y - y0).toFixed(1);
+    find.taken = false; await sleep(500);
+    await press('Interact', 80); await sleep(900);
+    const took = !!find.taken;
+    const hb = g.shaped.slots[L.slots[0]]?.body; let plunge = null;
+    if (hb) {
+      g.shaped.slots[L.slots[0]].hp = 200; const hp0 = g.shaped.slots[L.slots[0]].hp;
+      p.x = hb.sx[1]; p.z = hb.sz[1]; c.pos.y = y0 + 14.6; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; await frames(3);
+      g.inventory.equip('mace'); await press('Primary', 50);
+      const t1 = performance.now(); while (performance.now() - t1 < 4000 && !(pl.stats.plunges > 0 && !pl.falling)) await frames(1);
+      await sleep(500);
+      plunge = { h: +pl.last.h.toFixed(2), dmg: +pl.last.dmg.toFixed(1), hits: pl.last.hits, hound0Hp: [hp0, g.shaped.slots[L.slots[0]].hp] };
+    }
+    return { test: 'ledge', diag, climbPeakM: +maxY.toFixed(1), ledgeTopM: 14.6, took, ledgeGroundM: ledgeGround, houndsSleeping: hollowHounds, plunge };
   `,
 
   // The auto-fighter: Updraft (cast 3 m ahead, step into it), ride, steer over the foe, plunge when high enough, plunge again from each rebound;
