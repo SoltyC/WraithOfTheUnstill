@@ -33,7 +33,7 @@ export const maceDef = {
   ],
   // Heavy: the hop-swing. The Wraith springs and swings in one motion and is left in the air, `hop` m up.
   heavy: {
-    kind: 'hop', hop: 3.5, chargeMax: 0.3, power: 0.2,
+    kind: 'hop', hop: 2.5, chargeMax: 0.3, power: 0.2,
     windup: 0.16, active: 0.14, recover: 0.5, link: 1, impactAt: 1,
     dmg: 11, stagger: true, knock: 3, reach: 2.2, inner: 0.3, radius: 0, lunge: 0.4,
     chip: 8, stop: 0.03, shake: 0.004, kick: 0.01, sfx: 'thud', brush: 'score',
