@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const WEAPON_SLOTS = 14;
+export const WEAPON_SLOTS = 16;
 export const TRAIL_NODES = 28, TRAIL_COUNT = 2;
 
 export const weaponVertexWGSL = /* wgsl */ `
@@ -79,7 +79,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var layer = MAT_STONE_DRESSED;
   var tile = 1.8;
   if (mid == 1) { layer = MAT_TIMBER; tile = 2.4; }
-  else if (mid == 2 || mid == 4) { layer = MAT_IRON; tile = 2.2; }
+  else if (mid == 2 || mid == 4 || mid == 7 || mid == 8) { layer = MAT_IRON; tile = 2.2; }
   else if (mid == 3) { layer = MAT_WOOL; tile = 3.0; }
   else if (mid == 5) { layer = MAT_STONE_PALE; tile = 1.6; }
   let ms = matUv(layer, fragmentInputs.vUv * tile + vec2f(hs * 7.0, hs * 3.0), N, wp);
@@ -107,6 +107,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   } else if (mid == 3) {
     albedo = matRetint(ms, layer, vec3f(0.2, 0.15, 0.1), 0.6) * (0.85 + 0.3 * hs);
     rough = 0.95;
+  } else if (mid == 7 || mid == 8) {
+    // The Bell-mace's bronze (8; 7 is the part that glows): old cast bronze gone dark, verdigris in the recesses, a worn brighter lip (edge).
+    albedo = matRetint(ms, layer, vec3f(0.13, 0.095, 0.05), 0.35) * (0.8 + 0.4 * hs);
+    albedo = mix(albedo, vec3f(0.06, 0.15, 0.115), clamp((1.0 - ms.ao) * 0.9 + (1.0 - ms.h) * 0.25, 0.0, 0.65));
+    rough = mix(0.45, 0.8, ms.rough);
+    sheen = 0.6;
+    if (edge > 0.5) { albedo = mix(albedo, vec3f(0.36, 0.25, 0.11), 0.7); rough = 0.35; sheen = 1.2; }
   } else {
     albedo = matRetint(ms, layer, vec3f(0.36, 0.25, 0.11), 0.3);
     rough = mix(0.32, 0.55, ms.rough);
@@ -133,13 +140,17 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += sheen * 0.4 * skyRaw * pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0) * albedo;
   // The element's light along a cutting edge and the stone (an infused weapon; black = none).
   let ex = uniforms.fogParams.z * atmoExposure();
-  var emit = fragmentInputs.vTint * (edge * 0.9 + select(0.0, 0.35, mid == 0)) * 0.6;
+  var emit = fragmentInputs.vTint * (edge * 0.9 + select(0.0, 0.35, mid == 0)) * 0.6 * select(1.0, 0.0, mid == 8);   // (the Bell-mace's worn lip is bronze, not an element's edge: tint.x there is the glow)
   col += emit / max(ex, 1e-6);
   col += spellLit(wp, N, albedo, 0.0, ex);
   // The lantern's flame (material 6): emissive, hot at the middle and orange at the rim; the slot's tint.x is its brightness (flicker and flare from the view).
   let heat = pow(clamp(dot(Ng, V), 0.0, 1.0), 1.4);
   let flameCol = mix(vec3f(1.0, 0.32, 0.06), vec3f(1.0, 0.82, 0.45), heat) * (0.5 + 2.2 * fragmentInputs.vTint.x) / max(ex, 1e-6);
   col = select(col, flameCol, mid == 6);
+  // The Bell-mace's bell (material 7): bronze whose mouth glows from dull to white-gold with the height stored in it (the slot's tint.x, 0..1; the telegraph, docs/mace-design.md §2).
+  let glow = clamp(fragmentInputs.vTint.x, 0.0, 1.0);
+  let bellCol = mix(vec3f(0.7, 0.3, 0.06), vec3f(1.0, 0.68, 0.26), glow) * (glow * glow * 1.3 + glow * 0.7) / max(ex, 1e-6);
+  col += select(vec3f(0.0), bellCol * (0.5 + 0.5 * heat) * select(0.04, mix(0.1, 1.0, heat * heat), seed > 0.8), mid == 7);       // the glow is inside the mouth (seed 0.9); the flare only warms
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);
 }

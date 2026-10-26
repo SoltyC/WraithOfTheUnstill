@@ -30,13 +30,14 @@ export function createDropBeacon(g) {
       }
       lit = true;
       const t = clock.simTime, day = 1 - (g.worldLights ? g.worldLights.night : 0);
-      q[3] = 1 + day * 1.1; q[4] = 1 + q[9] * 0.07; q[6] = t;
+      q[3] = 1 + day * 1.1; q[4] = 1 + q[9] * 0.07 + Math.max(0, q[9] - 20) * 0.05; q[6] = t;   // past 20 m the halo swells so it still reads across a field
+      const far = Math.min(q[9], 70) * 0.1;                                              // …and the column climbs, faint, to be found from afar
       q[5] = 0.85 + 0.15 * Math.sin(t * 11.3) * Math.sin(t * 7.1 + 1.3);
       const b = q[3], fl = q[5];
       put(0, 0.5, 0.65 * b, 1.2);                   // halo
       put(1, 0.42, 1.4 * fl, 0.26);                 // flame
-      put(2, 1.4, 0.7 * b * fl, 0.4);               // the column
-      put(3, 2.6, 0.5 * b * fl, 0.34);
+      put(2, 1.4 + far, 0.7 * b * fl, 0.4);         // the column
+      put(3, 2.6 + far * 2.2, 0.5 * b * fl, 0.34);
       for (let i = 0; i < EMBERS; i++) {
         q[7] = (t * 0.42 + i / EMBERS) % 1; q[8] = q[7] * 6.28 + i * 1.9;
         const a = Math.sin(q[7] * 3.1416) * b;

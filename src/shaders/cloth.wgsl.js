@@ -278,7 +278,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Ember tea: the hands are warm under their wraps (the linen glows like banked coals).
   if (uniforms.clothFrost.y > 0.002 && !inside) {
     // Banked coals under the wraps, and the whole figure rimmed in their warmth (it reads from behind, where the hands hide).
-    glow += vec3f(1.0, 0.5, 0.16) * uniforms.clothFrost.y * (select(0.0, 0.5, g >= 5 && g <= 8) + 0.33 * pow(1.0 - nv, 1.8));
+    // By day the white linen drowns an added glow, so the robe is tinted gold too (a multiply: it reads in sun, and is mild at dusk).
+    let warmK = uniforms.clothFrost.y;
+    col *= mix(vec3f(1.0), vec3f(1.2, 0.9, 0.55), 0.32 * warmK);
+    glow += vec3f(1.0, 0.5, 0.16) * warmK * (select(0.0, 0.5, g >= 5 && g <= 8) + 0.4 * pow(1.0 - nv, 1.6));
   }
   // Flow: the hem, the mantle's edge and the cuffs catch the element's light, a slow shimmer along the threads.
   if (uniforms.clothFlow.w > 0.002 && g <= 3) {

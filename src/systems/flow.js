@@ -22,7 +22,7 @@ export function addFlowSystem(g) {
     flow.grounded = controller.grounded; flow.swimming = controller.swimming;
     n[FLOW_IN.SPEED] = Math.sqrt(v.x * v.x + v.z * v.z); n[FLOW_IN.SURF_SPEED] = sf.speed; n[FLOW_IN.GLIDE_SPEED] = gl.speed;
     n[FLOW_IN.GRIP] = Math.abs(sf.latAccel) / surfTuning.latMax;
-    n[FLOW_IN.VY] = v.y; n[FLOW_IN.LIFT] = controller.lift;
+    n[FLOW_IN.VY] = g.weapons && g.weapons.plunge.falling ? 0 : v.y; n[FLOW_IN.LIFT] = controller.lift;       // (a plunge's 30 m/s is not a hard fall)
     flow.update();
     // A soft cue per tier change, at the Wraith.
     if (flow.tierEvent !== 0) {

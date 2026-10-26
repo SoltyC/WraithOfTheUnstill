@@ -49,7 +49,7 @@ export function createRain(scene, clipmap, atmo) {
   ShaderStore.ShadersStoreWGSL.rainFragmentShader = rainFragmentWGSL;
   ShaderStore.ShadersStoreWGSL.splashVertexShader = splashVertexWGSL;
   ShaderStore.ShadersStoreWGSL.splashFragmentShader = splashFragmentWGSL;
-  const rain = new Vector4(0, 0, 0, 0), wind = new Vector4(1, 0, 9, 0), splash = new Vector4(0, 0, 0, 0);
+  const rain = new Vector4(0, 0, 0, 0), wind = new Vector4(1, 0, 9, 0), splash = new Vector4(0, 0, 0, 0), shelterV = new Vector4(0, 0, 0, 0);
   const make = (name, uniforms, attributes, buffers) => {
     const mat = new ShaderMaterial(name, scene, { vertex: name, fragment: name }, {
       attributes,
@@ -72,8 +72,9 @@ export function createRain(scene, clipmap, atmo) {
     mat.backFaceCulling = false;
     return mat;
   };
-  const streakMat = make('rain', ['rainWind'], ['position']);
+  const streakMat = make('rain', ['rainWind', 'rainShelter'], ['position']);
   streakMat.setVector4('rainWind', wind);
+  streakMat.setVector4('rainShelter', shelterV);
   const splashMat = make('splash', ['splash'], ['position', 'uv']);
   splashMat.setVector4('splash', splash);
   const streaks = quadMesh(scene, 'rain', RAIN_COUNT, 1);
@@ -88,6 +89,8 @@ export function createRain(scene, clipmap, atmo) {
     /** Owner fields, set before update(): density 0..1, drift speed (m/s) and wind direction
      *  (unit x, z), fall speed (m/s), time (s), dt (s). */
     density: 0.5 - 0.5, windSpeed: 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5, fallSpeed: 9.5 - 0.5, time: 0.5, dt: 0.5 - 0.5,
+    /** 0..1: the camera is under a roof — only drops beyond a few metres fall (the rain seen out of a door). */
+    shelter: 0.5 - 0.5,
     fallT: 0.5 - 0.5, windTX: 0.5 - 0.5, windTZ: 0.5 - 0.5,
     update() {
       this.fallT += this.fallSpeed * this.dt;
@@ -97,7 +100,7 @@ export function createRain(scene, clipmap, atmo) {
       if (this.windTZ > WRAP_WIND) this.windTZ -= WRAP_WIND; else if (this.windTZ < -WRAP_WIND) this.windTZ += WRAP_WIND;
       rain.x = this.fallT; rain.y = this.density; rain.z = this.windTX; rain.w = this.windTZ;
       wind.x = this.windX; wind.y = this.windZ; wind.z = this.fallSpeed; wind.w = this.windSpeed;
-      splash.x = this.time; splash.y = Math.min(1, this.density * 1.15);
+      shelterV.x = this.shelter; splash.x = this.time; splash.y = Math.min(1, this.density * 1.15 * (1 - this.shelter));
     },
   };
 }
