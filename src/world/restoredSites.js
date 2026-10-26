@@ -38,16 +38,17 @@ function shelfCairn(b, facing, R) {
   cloth(b, (u, v) => { const [x, y, z] = P(1.6 + 0.2 * Math.sin(v * 6) * v * 0.4, 4.5 - u * 0.8 * (1 - 0.7 * v) - 0.2 * v * v, -0.4 + 0.05 + v * 2.8); return [x, y, z]; }, 1, 10, MAT.CANVAS, 42);
 }
 
-/** Dunn's threshing floor: a worn circle of flags with a flail post. */
+/** Dunn's threshing floor: a worn circle of flags on a low terrace (the hillside falls about a metre across it), a flail post. */
+const FL = 0.75;
 function floor(b, facing, R) {
-  b.drum(0, 0, -0.9, 0.06, 5.4, 5.4, 18, MAT.FLAG, 1, { solid: false });
-  for (let k = 0; k < 8; k++) { const a = (k / 8) * TAU; b.box(Math.cos(a) * 5.6, Math.sin(a) * 5.6, -0.9, 0.18, 0.5, 0.3, a + Math.PI / 2, MAT.STONE, 2 + k, { solid: false, ...NS }); }
-  stick(b, [-4.6, -0.2, 2.5], [-4.2, 1.7, 2.3], 0.05, 0.04, 5, MAT.WOOD, 12);
-  stick(b, [-4.2, 1.7, 2.3], [-3.0, 2.0, 1.5], 0.035, 0.03, 4, MAT.WOOD, 13);
+  b.drum(0, 0, -2.2, FL, 4.3, 4.3, 18, MAT.FLAG, 1, { solid: false });
+  for (let k = 0; k < 8; k++) { const a = (k / 8) * TAU; b.box(Math.cos(a) * 4.5, Math.sin(a) * 4.5, -2.2, FL + 0.5, 0.18, 0.3, a + Math.PI / 2, MAT.STONE, 2 + k, { solid: false, ...NS }); }
+  stick(b, [-3.6, FL - 0.1, 2.0], [-3.3, FL + 1.8, 1.8], 0.05, 0.04, 5, MAT.WOOD, 12);
+  stick(b, [-3.3, FL + 1.8, 1.8], [-2.2, FL + 2.1, 1.1], 0.035, 0.03, 4, MAT.WOOD, 13);
 }
-/** The chaff: straw heaps in the ring of the floor, drifting off. */
+/** The chaff: straw heaps on the floor, drifting off. */
 function chaff(b, facing, R) {
-  for (let k = 0; k < 7; k++) { const a = R() * TAU, r = 0.6 + R() * 3.4; b.drum(Math.cos(a) * r, Math.sin(a) * r, -0.3, 0.38 + R() * 0.3, 0.9 + R() * 0.5, 0.2, 9, MAT.THATCH, 1 + k, { solid: false }); }
+  for (let k = 0; k < 7; k++) { const a = R() * TAU, r = 0.5 + R() * 2.6; b.drum(Math.cos(a) * r, Math.sin(a) * r, FL - 0.1, FL + 0.35 + R() * 0.3, 0.9 + R() * 0.5, 0.2, 9, MAT.THATCH, 1 + k, { solid: false }); }
 }
 /** The winnowed grain: sacks stacked at the floor's edge. */
 function sacks(b, facing, R) {
@@ -98,7 +99,7 @@ export function restoredSites(table, data, wind) {
   const green = table['side-rw-road-start'];
   if (green) sites.push({ id: 'side-rw-windsock', at: [green.pos[0] + 4, green.pos[1] - 6], facing: fly('meadow'), build: tall, footprint: 1.4, seatAt: 'center', hidden: true });
   const c = data.chaff;
-  sites.push({ id: 'side-rw-floor', at: c.pos, facing: 0.4, build: floor, footprint: 5.4, seatAt: 'center' });
+  sites.push({ id: 'side-rw-floor', at: c.pos, facing: 0.4, build: floor, footprint: 4.3, seatAt: 'center' });
   sites.push({ id: 'side-rw-chaff', at: c.pos, facing: 0.4, build: chaff, footprint: 4, seatAt: 'center' });
   sites.push({ id: 'side-rw-sacks', at: [c.pos[0] + 6.4, c.pos[1] + 0.5], facing: 0.4, build: sacks, footprint: 1.4, seatAt: 'center', hidden: true });
   const l = data.lantern;

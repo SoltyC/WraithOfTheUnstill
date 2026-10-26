@@ -4773,7 +4773,7 @@
         ],
         "yaw": -1.55,
         "pitch": -0.02,
-        "fov": 1.0
+        "fov": 1
       }
     },
     {
@@ -4792,7 +4792,7 @@
         "height": 6,
         "speed": 13,
         "facing": -1.45,
-        "steer": 0.0,
+        "steer": 0,
         "period": 6,
         "rise": 0,
         "camera": {
@@ -4858,7 +4858,7 @@
         "height": 14,
         "speed": 12,
         "facing": 0.1,
-        "steer": 0.0,
+        "steer": 0,
         "period": 6,
         "rise": 3,
         "camera": {
@@ -4886,7 +4886,7 @@
       ],
       "camera": {
         "mode": "follow",
-        "yaw": 0.0,
+        "yaw": 0,
         "pitch": 0.2,
         "dist": 7
       }
@@ -4907,7 +4907,7 @@
         "height": 16,
         "speed": 13,
         "facing": -2.55,
-        "steer": 0.0,
+        "steer": 0,
         "period": 6,
         "rise": 0,
         "camera": {
@@ -4922,6 +4922,42 @@
         "pitch": 0.15,
         "dist": 6
       }
+    },
+    {
+      "id": "p8r-chaff-floor",
+      "biome": "meadow",
+      "label": "Dunn's threshing floor with the chaff heaped on it, the barley behind",
+      "time": 11,
+      "weather": "clear",
+      "player": [
+        75,
+        1135
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.4,
+        "pitch": 0.45,
+        "dist": 13
+      },
+      "hidePlayer": true
+    },
+    {
+      "id": "p8r-green-lantern",
+      "biome": "meadow",
+      "label": "The lantern on its post by the Green Shrine, dusk",
+      "time": 18.9,
+      "weather": "clear",
+      "player": [
+        33,
+        985
+      ],
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.77,
+        "pitch": 0.2,
+        "dist": 4
+      },
+      "hidePlayer": false
     }
   ]
 }
