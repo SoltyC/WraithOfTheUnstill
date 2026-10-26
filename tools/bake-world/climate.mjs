@@ -10,7 +10,7 @@ export const BIOMES = ['frost', 'meadow', 'mire', 'dunes', 'ember', 'coast'];
 /** Surface material ids (BRIEF §4.1 material map). */
 export const MATERIALS = { snow: 0, sand: 1, mud: 2, grass: 3, ash: 4, rock: 5, beach: 6, seabed: 7 };
 
-const reg = { north: 0, west: 0, east: 0, volcano: 0, centre: 0 };
+const reg = { north: 0, west: 0, east: 0, volcano: 0, centre: 0, ember: 0, eastB: 0 };
 
 /**
  * Soft biome weights at (x, z) given height h (m) and wetness w (0..1). Writes 6 weights that sum to 1.
@@ -21,8 +21,8 @@ export function biomeWeights(x, z, h, w, seed, out) {
   const coast = coastDistance(x, z, seed);
   // Snow line descends from the north; altitude pushes frost anywhere high.
   const frost = Math.max(reg.north, smooth(780, 1100, h + 120 * gfbm(x / 500, z / 500, 3, seed + 201)));
-  const ember = reg.volcano;
-  const dunes = reg.east * (1 - ember);
+  const ember = reg.ember;
+  const dunes = reg.eastB * (1 - ember);
   const mire = reg.west * (0.6 + 0.4 * w) * smooth(60, 25, h);
   const shore = smooth(260 + 120 * gfbm(x / 700, z / 700, 3, seed + 202), 0, coast) * smooth(-30, 2, h);
   let meadow = Math.max(0, reg.centre + reg.west * (1 - mire) * 0.7);
