@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Dune fights: WRAITH_URL=http://localhost:4175 node tools/bot/dune-fight.mjs frost|gale skitter:4|plateback:1,skitter:2|plateback:2.
 // Fight with a weapon through the bot: an in-page auto-fighter turns to the nearest Shaped, closes to the weapon's
 // reach, swings (lights, or heavies) and bend-steps away from telegraphed lunges, and reports hits, time to kill,
 // damage taken and Flow.   WRAITH_URL=http://localhost:4177 node tools/bot/fight.mjs <weapon> <light|heavy|mixed> <spawns>
@@ -15,7 +16,7 @@ await bot('teleport', { x: 1900, z: 900 });
 await new Promise((r) => setTimeout(r, 3000));
 const js = `
   const W = ${JSON.stringify(weapon)}, MODE = ${JSON.stringify(mode)}, SPAWNS = ${JSON.stringify(spawns)}, TIMEOUT = ${+(process.env.TIMEOUT || 60)}, DIST = ${+(process.env.SEED_DIST || 7)}, FROZEN = ${process.env.FROZEN ? 'true' : 'false'};
-  const ELEMENT = ${JSON.stringify(element)}; g.elements.unlock(ELEMENT); g.elements.select(ELEMENT);
+  const ELEMENT = ${JSON.stringify(element)}; g.elements.unlock(ELEMENT); if (ELEMENT === 'gale') g.elements.unlock('stone'); g.elements.select(ELEMENT);
   const inv = g.inventory; inv.give(W); inv.equip(W);
   g.weapons.machine.reset(); g.combat.health = 100; g.combat.focus = 100; g.combat.dying = 0;
   g.flow.reset(true);
@@ -36,7 +37,8 @@ const js = `
   const S = { STALK: 2, TELEGRAPH: 3, LUNGE: 4, STAGGER: 6, FROZEN: 7 };
   const t0 = g.clock.simTime, h0 = g.combat.health;
   const killT = [], alive0 = ids.length;
-  let heavyT = 0, tapT = 0, dodged = 0, downSince = -1, state = 'ready', castAt = -10, ribbonUntil = -1, crystals = 0, gusts = 0;
+  let heavyT = 0, tapT = 0, dodged = 0, downSince = -1, state = 'ready', castAt = -10, ribbonUntil = -1, crystals = 0, gusts = 0, shards = 0, shardAt = -10, stripped = 0, popped = 0;
+  const stripSeen = new Set(), popSeen = new Set();
   const held = { Primary: false, MoveForward: false, MoveBack: false };
   const set = (n, d) => { if (held[n] !== d) { held[n] = d; w.inject(n, d); } };
   const tick = () => {
@@ -44,11 +46,16 @@ const js = `
     let best = -1, bd = 1e9, cnt = 0;
     for (const i of ids) { if (!g.shaped.isLive(i)) continue; cnt++; const b = g.shaped.slots[i].body, d = Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z); if (d < bd) { bd = d; best = i; } }
     if (best < 0 || now - t0 > TIMEOUT) { set('Primary', false); set('MoveForward', false); set('MoveBack', false); w.inject('Bend', false); state = 'done'; return; }
+    for (const i of ids) { const q = g.shaped.slots[i]; if (q.arch === 'plateback') { if (q.st.seamK === 0 && !stripSeen.has(i)) { stripSeen.add(i); stripped++; } if (q.st.plateOff && !popSeen.has(i)) { popSeen.add(i); popped++; } } }
     const s = g.shaped.slots[best], b = s.body;
     g.arm.yaw = Math.atan2(b.sx[1] - p.x, b.sz[1] - p.z);
     const m = g.weapons.machine;
+    if (ELEMENT === 'gale' && s.arch === 'plateback' && s.st.seamK === 0 && !s.st.plateOff && bd < 12 && now - shardAt > 3 && g.combat.focus > 10) {
+      g.elements.select('stone'); w.inject('Bend', true); setTimeout(() => w.inject('Bend', false), 80); shardAt = now; shards++;
+    }
+    if (ELEMENT === 'gale' && now - shardAt > 1) g.elements.select('gale');
     if (ribbonUntil > 0 && now >= ribbonUntil) { w.inject('Bend', false); ribbonUntil = -1; w.inject('Heavy', true); setTimeout(() => w.inject('Heavy', false), 50); crystals++; }
-    if (ribbonUntil < 0 && bd < 8 && now - castAt > 5 && g.combat.focus > 40 && !m.busy) {
+    if (ribbonUntil < 0 && bd < 8 && now - castAt > 5 && now - shardAt > 1 && g.combat.focus > 40 && !m.busy) {
       castAt = now;
       if (ELEMENT === 'frost') { w.inject('Bend', true); ribbonUntil = now + 0.8; }
       else { w.inject('Bend', true); setTimeout(() => w.inject('Bend', false), 80); gusts++; }
@@ -72,7 +79,7 @@ const js = `
   };
   while (state !== 'done') { tick(); await new Promise((r) => requestAnimationFrame(r)); }
   const st = g.weapons.stats, now = g.clock.simTime;
-  return { element: ELEMENT, crystals, gusts, weapon: W, mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
+  return { element: ELEMENT, crystals, gusts, shards, stripped, popped, weapon: W, mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
     swings: st.swings, heavies: st.heavies, hits: st.hits, dmgDealt: +st.damage.toFixed(0), shatters: st.shatters, glances: st.glances, dodges: g.flow.counts[5], flowHits: [g.flow.counts[0], g.flow.counts[1], g.flow.counts[2]], flowTierSecs: Array.from(g.flow.timeAt, (x) => +x.toFixed(1)), flowMax: g.flow.tier };
 `;
 const r = await bot('eval', { js });

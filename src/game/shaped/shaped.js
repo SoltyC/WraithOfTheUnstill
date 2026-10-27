@@ -10,7 +10,7 @@ import { buildRig, createRigState, writeAlive, writeFall, writeHidden, startFall
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
 import * as BH from './behaviours.js';
-import { duneStep, stepPlate, strip, erupt, popPlate } from './dune.js';
+import { duneStep, stepPlate, writeStream, strip, erupt, popPlate } from './dune.js';
 import { createAirborne } from './airborne.js';
 
 export const MAX_SHAPED = 8;
@@ -289,6 +289,7 @@ export function createShaped(ctx) {
         s.wet = Math.max(0, s.wet - dt);
         // Glow channel: telegraph light 0..1, +2 when frozen solid (glazed ice in the shader).
         writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0), s.hurt);
+        writeStream(s, chunks, rec);
         stepPlate(s, chunks, rec, dt);
         for (let c = s.rig.count; c < CHUNKS_PER; c++) chunks[(rec + c) * CHUNK_FLOATS + 15] = 0;
         if (s.state === S.RISING) {

@@ -22,6 +22,14 @@ describe('dune Shaped', () => {
     shaped.strip(i); expect(s.state).toBe(S.STAGGER); step(1); expect(s.cover).toBe(false);
     shaped.erupt(i); expect(s.coverTime).toBeGreaterThan(2);
   });
+  it('detached plate records move independently of the body and do not return on collapse', () => {
+    const { shaped, step } = setup(), i = shaped.spawn('plateback', 0, 0); step(110);
+    const s = shaped.slots[i], c = s.rig.plate0, o = (i * 96 + c) * 16;
+    const x = shaped.chunks[o], y = shaped.chunks[o + 1]; shaped.popPlate(i);
+    s.body.x += 20; step(10);
+    expect(Math.abs(shaped.chunks[o] - x)).toBeLessThan(1); expect(shaped.chunks[o + 1]).toBeGreaterThan(y);
+    shaped.damage(i, 1e9, true, 0, 0); step(1); expect(shaped.chunks[o + 15]).toBe(0);
+  });
   it('uses the body heading to distinguish front from side and rear', () => {
     const b = { heading: 0 }; expect(frontal(b, 0, -1)).toBe(true); expect(frontal(b, 1, 0)).toBe(false); expect(frontal(b, 0, 1)).toBe(false);
   });
