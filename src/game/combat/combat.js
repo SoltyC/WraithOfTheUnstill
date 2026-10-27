@@ -240,6 +240,7 @@ export function createCombat(ctx) {
       if (along < 1 && along > -1.4 && across < gale.gustHW[k] + 0.5) {
         gustSeen[k * MAX_SHAPED + i] = gale.gustId[k];
         const soaked = s.wet > 0;
+        shaped.strip(i);
         strike(i, T.gustDamage, gale.gustDX[k], gale.gustDZ[k], true);
         if (flow !== null) flow.hit(soaked ? FLOW_EVENT.REACTION : FLOW_EVENT.STRIP);   // Gale over a soaked body rimes it; a bare strike strips
         if (!shaped.isLive(i)) return;

@@ -5826,6 +5826,12 @@
       "wet": 0.5,
       "puddle": 0.8,
       "rain": 0
-    }
+    },
+    {"id":"p9d9-bulge","biome":"dunes","label":"Skitter travelling beneath the sand","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["skitter",2,4]],"seconds":1.6,"cover":[0]},"camera":{"mode":"follow","yaw":0,"pitch":0.38,"dist":4.5}},
+    {"id":"p9d9-stream","biome":"dunes","label":"Skitter sand streaming before its lunge","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["skitter",2,4]],"seconds":1.6,"telegraph":[0]},"camera":{"mode":"follow","yaw":0,"pitch":0.3,"dist":4.5}},
+    {"id":"p9d9-plate-front","biome":"dunes","label":"Plate-back from the front","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["plateback",0,5]],"seconds":2},"camera":{"mode":"follow","yaw":0,"pitch":0.25,"dist":7}},
+    {"id":"p9d9-plate-side","biome":"dunes","label":"Plate-back from the side","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["plateback",0,5]],"seconds":2,"turn":[[0,1.57]]},"camera":{"mode":"follow","yaw":0,"pitch":0.25,"dist":7}},
+    {"id":"p9d9-plate-pop","biome":"dunes","label":"The ruin plate breaking free","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["plateback",0,5]],"seconds":2,"pop":[0]},"camera":{"mode":"follow","yaw":0,"pitch":0.25,"dist":7}},
+    {"id":"p9d9-rising","biome":"dunes","label":"Skitter and plate-back rising","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["skitter",-2,5],["plateback",2,6]],"seconds":0.8},"camera":{"mode":"follow","yaw":0,"pitch":0.25,"dist":8}}
   ]
 }

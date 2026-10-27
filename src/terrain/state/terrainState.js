@@ -208,24 +208,29 @@ export function createTerrainState(engine, opts) {
     debugEvictFar() {
       for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0 && !slotBusy[s] && pageDist(slotKey[s], this.px, this.pz) > KEEP_RADIUS) evict(s, this.time);
     },
-    /** Debug/test: async read of { fine, coarse } depression (m) at world (x, z); null where absent. */
+    /** Debug/test: async depression/displacement readback (m); null where absent. */
     async debugProbe(x, z) {
       const i = Math.floor(x * FINE_PER_M), j = Math.floor(z * FINE_PER_M);
       const inWin = i >= origin[0] && j >= origin[1] && i < origin[0] + FINE_N && j < origin[1] + FINE_N;
       const half = (w) => { const h = w & 0xffff, e = (h >> 10) & 31, m = h & 1023; return (h & 0x8000 ? -1 : 1) * (e ? (1 + m / 1024) * 2 ** (e - 15) : m * 2 ** -24); };
-      let fineV = null, coarseV = null;
+      let fineV = null, coarseV = null, fineDisplaced = null, coarseDisplaced = null;
       if (inWin) {
         const k = (((j % FINE_N) + FINE_N) % FINE_N) * FINE_N + (((i % FINE_N) + FINE_N) % FINE_N);
-        fineV = half(new Uint32Array((await fine[0].read(k * 4, 4)).buffer)[0]);
+        const word = new Uint32Array((await fine[0].read(k * 4, 4)).buffer)[0];
+        fineV = half(word); fineDisplaced = half(word >>> 16);
       }
       const c = Math.floor(x * COARSE_PER_M), d = Math.floor(z * COARSE_PER_M), off = WORLD_HALF * COARSE_PER_M;
       const key = Math.floor((d + off) / PAGE_N) * PAGES + Math.floor((c + off) / PAGE_N);
       const s = pageSlot[key];
       if (s >= 0) {
         const k = (s * PAGE_N + ((d + off) % PAGE_N)) * PAGE_N + ((c + off) % PAGE_N);
-        coarseV = half(new Uint32Array((await atlas[0].read(k * 4, 4)).buffer)[0]);
+        const word = new Uint32Array((await atlas[0].read(k * 4, 4)).buffer)[0];
+        coarseV = half(word); coarseDisplaced = half(word >>> 16);
       }
-      return { fine: fineV, coarse: coarseV, slot: s, stored: pageStored[key], loading: pageLoading[key] };
+      return { fine: fineV, coarse: coarseV, fineDisplaced, coarseDisplaced,
+        fineRelief: fineV === null ? null : fineDisplaced - fineV,
+        coarseRelief: coarseV === null ? null : coarseDisplaced - coarseV,
+        slot: s, stored: pageStored[key], loading: pageLoading[key] };
     },
 
     /**

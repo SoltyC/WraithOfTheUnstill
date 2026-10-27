@@ -1,3 +1,4 @@
+import { DUNE_ARCHETYPES } from './duneArchetypes.js';
 // Frost Shaped archetypes (BRIEF §8.3: per biome three — a fast swarmer, a mid-sized bruiser, a
 // ranged or area caster). Shapes for the procedural body (body.js) plus combat and look data.
 
@@ -135,3 +136,5 @@ export const MEADOW_ARCHETYPES = {
   },
 };
 Object.assign(ARCHETYPES, MEADOW_ARCHETYPES);
+
+Object.assign(ARCHETYPES, DUNE_ARCHETYPES);

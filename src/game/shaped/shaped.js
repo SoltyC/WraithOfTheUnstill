@@ -10,6 +10,7 @@ import { buildRig, createRigState, writeAlive, writeFall, writeHidden, startFall
 import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
 import * as BH from './behaviours.js';
+import { duneStep, stepPlate, writeStream, strip, erupt, popPlate } from './dune.js';
 import { createAirborne } from './airborne.js';
 
 export const MAX_SHAPED = 8;
@@ -29,14 +30,14 @@ const RISE_TIME = 1.5, FALL_TIME = 1.1, SINK_TIME = 2.6;
  * @param {{ ts: any, fx: any, ground: { qx: number, qz: number, h: number, sample: () => void } }} ctx
  */
 export function createShaped(ctx) {
-  const { ts, fx, ground } = ctx;
+  const { ts, fx, ground, frost } = ctx;
   const rigs = {};
   for (const k in ARCHETYPES) rigs[k] = buildRig(ARCHETYPES[k].shape, Math.min(CHUNKS_PER, ARCHETYPES[k].chunks), 1234 + k.length * 77, ARCHETYPES[k].rig);
   const slots = [];
   for (let i = 0; i < MAX_SHAPED; i++) slots.push({ idx: i, arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
     cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0, hurt: 0, flinch: 0,
     // Behaviours: flush (flock, flushed, pass, side), territory (home, bound, aggro, away), support (songCool, pollenCool).
-    idleR: 0, flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
+    cover: false, coverTime: 0, idleR: 0, flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
   const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS) * CHUNK_FLOATS);
   // Shards: position, velocity, alive.
@@ -100,6 +101,7 @@ export function createShaped(ctx) {
       b.place(x, z, Math.atan2(this.px - x, this.pz - z));
       b.rise = 0; b.crouch = 0; b.lift = 0; b.frozen = false; b.wantVx = 0; b.wantVz = 0;
       s.state = S.RISING; s.t = 0; s.hp = A.health; s.glow = 0; s.cool = 1 + rnd(); s.orbit = rnd() * Math.PI * 2; s.fallSink = 0;
+      s.cover = false; s.coverTime = 0; s.st.plateOff = false; s.st.seamK = 1;
       s.wet = 0; s.frozenFor = 0; s.sweepHit = 0; s.hurt = 0; s.flinch = 0;
       s.orbit = (i / MAX_SHAPED) * Math.PI * 2 * 3.3;   // a pack spreads round the Wraith
       // The hollow it rises out of: snow ploughed aside into a ring.
@@ -182,6 +184,9 @@ export function createShaped(ctx) {
       }
       return false;
     },
+    strip(i) { strip(slots[i]); if (slots[i].arch === 'skitter') this.pin(i, 0.8); },
+    erupt(i) { erupt(slots[i]); },
+    popPlate(i) { return popPlate(slots[i]); },
     /** Freeze slot i solid for `seconds` (wet Shaped freeze longer). */
     freeze(i, seconds) {
       const s = slots[i];
@@ -269,6 +274,7 @@ export function createShaped(ctx) {
           const min = ri + ARCHETYPES[o.arch].shape.hip * 0.9;
           if (d < min) { const push = (min - d) / min * 4; b.wantVx += ex / d * push; b.wantVz += ez / d * push; }
         }
+        if (s.arch === 'plateback' && s.st.plateOff) { b.wantVx *= 1.35; b.wantVz *= 1.35; }
         b.dt = dt; b.update();
         if (s.bound > 0) leashPos(s, b);
         // Prints where it steps.
@@ -277,11 +283,14 @@ export function createShaped(ctx) {
           ts.bx = b.ev[o]; ts.bz = b.ev[o + 1]; ts.bdx = b.ev[o + 2]; ts.bdz = b.ev[o + 3]; ts.bl = 0.03; ts.bw = 0.055; ts.bd = 0.035; ts.bc = 0.7;
           ts.stamp();
         }
-        const rise = s.state === S.RISING ? Math.min(1, s.t / RISE_TIME) : 1;
+        duneStep(s, ts, fx, frost, dt);
+        const rise = s.cover ? 0 : s.state === S.RISING ? Math.min(1, s.t / RISE_TIME) : 1;
         b.rise = 0.55 + 0.45 * rise;
         s.wet = Math.max(0, s.wet - dt);
         // Glow channel: telegraph light 0..1, +2 when frozen solid (glazed ice in the shader).
         writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0), s.hurt);
+        writeStream(s, chunks, rec);
+        stepPlate(s, chunks, rec, dt);
         for (let c = s.rig.count; c < CHUNKS_PER; c++) chunks[(rec + c) * CHUNK_FLOATS + 15] = 0;
         if (s.state === S.RISING) {
           // Snow gathering up into the body as it forms.

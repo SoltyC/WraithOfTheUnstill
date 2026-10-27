@@ -1,0 +1,15 @@
+{
+  "runtime": "Node V8, synthetic warm pool; not a Chrome allocation acceptance",
+  "helpers": {
+    "steps": 1000000,
+    "gcs": 0,
+    "heapGrowth": 29256
+  },
+  "pool": {
+    "frames": 100000,
+    "gc": 19,
+    "heapGrowth": 1457536
+  },
+  "priorPoolCollections": 608,
+  "fix": "Removed unused boxed numeric return from boneFrame; remaining shared body/AI allocations are open."
+}

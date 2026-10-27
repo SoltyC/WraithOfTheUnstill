@@ -23,8 +23,17 @@ export function addCreatureSystems(g) {
     }
     if (shapedRoll.t >= spec.seconds) {
       // Optional combat pose for the still: some Shaped frozen solid, the Wraith wounded.
+      if (spec.turn) for (const [k, angle] of spec.turn) shaped.slots[k].body.heading += angle;
+      if (spec.cover) for (const k of spec.cover) { const s = shaped.slots[k]; s.state = shapedMod.S.STALK; s.t = 0; s.cool = 20; s.coverTime = 0; }
+      if (spec.pop) for (const k of spec.pop) shaped.popPlate(k);
+      if (spec.turn || spec.cover || spec.pop) shaped.update();
+      if (spec.pop) for (let k = 0; k < 18; k++) shaped.update();
       if (spec.freeze) for (const k of spec.freeze) shaped.freeze(k, 1e6);
-      if (spec.telegraph) for (const k of spec.telegraph) { shaped.slots[k].state = shapedMod.S.TELEGRAPH; shaped.slots[k].glow = 1; shaped.slots[k].body.crouch = 1; shaped.update(); }
+      if (spec.telegraph) {
+        for (const k of spec.telegraph) { shaped.slots[k].state = shapedMod.S.TELEGRAPH; shaped.slots[k].t = 0; shaped.slots[k].glow = 1; shaped.slots[k].body.crouch = 1; }
+        for (let k = 0; k < 24; k++) { wraithView.time = clock.simTime - (24 - k) / 60; shaped.update(); }
+        wraithView.time = clock.simTime; wraithView.uploadFx();
+      }
       if (spec.wound !== undefined) { combat.health = combatTuning.health * (1 - spec.wound); combat.wound = spec.wound; }
       game.pendingShaped = null; shapedRoll.t = -1;
     }

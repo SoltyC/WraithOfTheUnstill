@@ -83,7 +83,7 @@ export async function createActors(g) {
   crystals.freeze();
   // The Shaped (Phase 5): creatures of the biome's material, and their renderer.
   const shapedMod = await import('../game/shaped/shaped.js');
-  const shaped = shapedMod.createShaped({ ts: terrainState, fx: wraithView, ground });
+  const shaped = shapedMod.createShaped({ ts: terrainState, fx: wraithView, ground, frost });
   const { createShapedView } = await import('../render/shapedView.js');
   const shapedView = createShapedView(scene, atmosphere, shaped.chunks);
   bindShadows(shapedView.material, shadows);

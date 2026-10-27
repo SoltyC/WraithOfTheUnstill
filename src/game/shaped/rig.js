@@ -8,13 +8,16 @@
 // Allocation-free per frame.
 
 import { MAX_LEGS } from './body.js';
+import { buildDune } from './rigDune.js';
 
 // Bone kinds.
 const SPINE = 0, HEAD = 1, TAIL = 2, UPPER = 3, LOWER = 4;
 // Chunk kinds (shader): packed snow, ice shard, glowing core (telegraph light).
 // Meadow kinds (4+) ride the same field: plaited sedge, turf sod, drystone, reed, seed-pod core
 // (amber), awn (thin spike trailing back), root (thin dark strand hanging down).
-export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3, SEDGE: 4, TURF: 5, STONE: 6, REED: 7, POD: 8, AWN: 9, ROOT: 10 };
+export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3, SEDGE: 4, TURF: 5, STONE: 6, REED: 7, POD: 8, AWN: 9, ROOT: 10,
+  /** Dune kinds (D9a, rigDune.js): packed sand, banded sandstone, carved ruin stone, a sandstone thorn. */
+  SAND: 11, SANDSTONE: 12, RUIN: 13, THORN: 14 };
 /** Floats per chunk record: (pos, sx), (fwd, sy), (up, sz), (seed, kind, glow, alpha). */
 export const CHUNK_FLOATS = 16;
 
@@ -27,6 +30,7 @@ function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5
  * @param {number} seed
  */
 export function buildRig(sh, count, seed, opt = {}) {
+  if (opt.variant === 'skitter' || opt.variant === 'plate') return buildDune(sh, count, seed, opt);
   if (opt.variant) return buildMeadow(sh, count, seed, opt);
   const r = mulberry(seed);
   // Proportions per archetype: torso girth and leg thickness (fractions of hip height), head
@@ -261,12 +265,14 @@ export function createRigState(rig) {
     dvx: new Float64Array(n), dvy: new Float64Array(n), dvz: new Float64Array(n),
     /** Last bone frames written (for handing chunks to the debris simulation). */
     fwd: new Float64Array(n * 3), up: new Float64Array(n * 3),
+    /** Dune extras (rigDune.js): the plate has come off (its chunks are the owner's debris), and the seams' fill 0..1 (a Gust blows them clear). */
+    plateOff: false, seamK: 1, plateAge: 0,
   };
 }
 
 const _f = new Float64Array(3), _u = new Float64Array(3), _o = new Float64Array(3);
 
-/** Bone frame for chunk c of body b → _o (origin), _f (forward, unit), _u (up, unit); returns length. */
+/** Bone frame for chunk c of body b → _o (origin), _f (forward, unit), _u (up, unit). */
 function boneFrame(b, rig, c) {
   const kind = rig.bone[c], i = rig.index[c], sh = b.shape;
   let ax, ay, az, bx, by, bz;
@@ -288,7 +294,6 @@ function boneFrame(b, rig, c) {
   const d = ux * fx + uy * fy + uz * fz; ux -= fx * d; uy -= fy * d; uz -= fz * d;
   const ul = Math.sqrt(ux * ux + uy * uy + uz * uz) || 1;
   _o[0] = ax; _o[1] = ay; _o[2] = az; _f[0] = fx; _f[1] = fy; _f[2] = fz; _u[0] = ux / ul; _u[1] = uy / ul; _u[2] = uz / ul;
-  return len;
 }
 
 /**
@@ -303,7 +308,9 @@ function boneFrame(b, rig, c) {
 /** Hurt flash (0..1) rides in each record's kind as a fraction (kind + 0.45 × hurt). */
 export function writeAlive(b, st, out, rec, rise, glow, hurt = 0) {
   const rig = st.rig;
+  const dune = rig.plate1 > 0, sK = st.seamK;
   for (let c = 0; c < rig.count; c++) {
+    if (dune && st.plateOff && c >= rig.plate0 && c < rig.plate1) continue;     // the plate is off: its chunks fly on their own (stepPlate)
     boneFrame(b, rig, c);
     const fx = _f[0], fy = _f[1], fz = _f[2], ux = _u[0], uy = _u[1], uz = _u[2];
     const rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx;
@@ -314,7 +321,7 @@ export function writeAlive(b, st, out, rec, rise, glow, hurt = 0) {
     const e = k * k * (3 - 2 * k);
     y -= (1 - e) * 1.1;
     const o = (rec + c) * CHUNK_FLOATS;
-    const sc = 0.35 + 0.65 * e;
+    const sc = (0.35 + 0.65 * e) * (dune && c >= rig.seam0 && c < rig.seam1 ? sK : 1);
     out[o] = x; out[o + 1] = y; out[o + 2] = z; out[o + 3] = rig.size[c * 3] * sc;
     out[o + 4] = fx; out[o + 5] = fy; out[o + 6] = fz; out[o + 7] = rig.size[c * 3 + 1] * sc;
     out[o + 8] = ux; out[o + 9] = uy; out[o + 10] = uz; out[o + 11] = rig.size[c * 3 + 2] * sc;
@@ -349,6 +356,7 @@ export function startFall(b, st, rnd, burst = 0) {
 export function writeFall(st, out, rec, dt, sink, ground) {
   const rig = st.rig;
   for (let c = 0; c < rig.count; c++) {
+    if (st.plateOff && c >= rig.plate0 && c < rig.plate1) { out[(rec + c) * CHUNK_FLOATS + 15] = 0; continue; }
     st.dvy[c] -= 14 * dt;
     st.dx[c] += st.dvx[c] * dt; st.dy[c] += st.dvy[c] * dt; st.dz[c] += st.dvz[c] * dt;
     ground.qx = st.dx[c]; ground.qz = st.dz[c]; ground.sample();

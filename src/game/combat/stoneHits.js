@@ -32,6 +32,8 @@ export function createStoneHits(ctx) {
           shardDone[k] = stone.shardId[k];
           if (stone.shardWet[k]) s.wet = 2.5;                               // carried through a Ribbon: it soaks
           const soaked = s.wet > 0 && !shaped.isFrozen(i);
+          shaped.erupt(i);
+          if (s.arch === 'plateback' && s.st.seamK === 0) shaped.popPlate(i);
           strike(i, T.shardDamage * stone.shardDmg[k], stone.shardDX[k], stone.shardDZ[k], true);
           if (flow !== null && soaked) flow.hit(FLOW_EVENT.REACTION);       // a wet body struck by stone
           stone.shardHit(k);
@@ -46,6 +48,7 @@ export function createStoneHits(ctx) {
         if (d < stone.bloomR * R && bloomSeen[i] !== stone.bloomId) {
           bloomSeen[i] = stone.bloomId; bloomCaught++;
           const frozen = shaped.isFrozen(i);
+          shaped.erupt(i);
           strike(i, T.bloomDamage, dx / (d || 1), dz / (d || 1), true);
           if (bloomCaught === 2 && flow !== null) flow.hit(FLOW_EVENT.REACTION);   // two at once
           if (!shaped.isLive(i)) return;
