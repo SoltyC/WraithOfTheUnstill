@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-27T09:34:48.686Z",
+  "label": "after-sand",
+  "note": "Headless target GPU; locked-PC timing is indicative, not sustained gate acceptance.",
+  "spot": "p9s1-star-mid",
+  "gpu": "nvidia / ampere",
+  "size": [
+    2560,
+    1440
+  ],
+  "renderScale": 1,
+  "dynamicRes": 0,
+  "gpuTimestampSupported": true,
+  "frameGpuMs": {
+    "samples": 172,
+    "mean": 27.749209481616354,
+    "median": 27.099872589111328,
+    "p95": 33.73561477661133
+  },
+  "computeGpuMs": {
+    "samples": 172,
+    "mean": 10.60577657888102,
+    "median": 13.051712036132812,
+    "p95": 14.088800430297852
+  },
+  "mainGpuMs": {
+    "samples": 172,
+    "mean": 0.6563899468543918,
+    "median": 0.6563839912414551,
+    "p95": 0.6604800224304199
+  },
+  "exposure": 0.35110992193222046,
+  "late": [],
+  "gpuErrors": 0,
+  "pos": [
+    2699.447493357654,
+    281.7914880405399,
+    1299.3066781602934
+  ]
+}

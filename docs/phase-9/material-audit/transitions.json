@@ -1,0 +1,117 @@
+{
+  "rows": [
+    {
+      "id": "p9s1-star-mid",
+      "weather": "clear",
+      "state": "clear",
+      "haze": 0,
+      "wet": 0,
+      "rain": 0,
+      "late": 0,
+      "errors": 0
+    },
+    {
+      "id": "p9s1-star-mid",
+      "weather": "rain",
+      "state": "overcast",
+      "haze": 0,
+      "wet": 0,
+      "rain": 0,
+      "late": 0,
+      "errors": 0
+    },
+    {
+      "id": "p9s1-star-mid",
+      "weather": "storm",
+      "state": "overcast",
+      "haze": 0,
+      "wet": 0,
+      "rain": 0,
+      "late": 0,
+      "errors": 0
+    },
+    {
+      "id": "p9s1-star-mid",
+      "weather": "clear",
+      "state": "clear",
+      "haze": 0,
+      "wet": 0,
+      "rain": 0,
+      "late": 0,
+      "errors": 0
+    },
+    {
+      "id": "p8-forest-floor",
+      "weather": "clear",
+      "state": "clear",
+      "haze": 0.0031999524694777378,
+      "wet": 0,
+      "rain": 0,
+      "late": 5,
+      "errors": 0
+    },
+    {
+      "id": "p8-forest-floor",
+      "weather": "rain",
+      "state": "rain",
+      "haze": 0.0031999993261953574,
+      "wet": 0.8999999999999999,
+      "rain": 0.6,
+      "late": 5,
+      "errors": 0
+    },
+    {
+      "id": "p8-forest-floor",
+      "weather": "storm",
+      "state": "storm",
+      "haze": 0.0031999999915914576,
+      "wet": 1,
+      "rain": 1,
+      "late": 5,
+      "errors": 0
+    },
+    {
+      "id": "p8-forest-floor",
+      "weather": "clear",
+      "state": "clear",
+      "haze": 0.0031999999998451123,
+      "wet": 0,
+      "rain": 0,
+      "late": 5,
+      "errors": 0
+    }
+  ],
+  "late": [
+    {
+      "kind": "render",
+      "label": "RenderPipeline_r32float_depth32float_samples1_textureState0",
+      "t": 144988.39999997616,
+      "stack": "Error\n    at o (http://localhost:4174/assets/index-jzlP2jlv.js:2:1203)\n    at n.createRenderPipeline (http://localhost:4174/assets/index-jzlP2jlv.js:2:2653)\n    at e._createRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:25490)\n    at e._draw (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:25020)\n    at e.drawElementsType (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:26503)\n    at e._draw (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:31229)\n    at e._processRendering (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:38182)\n    at e.render (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:44585)\n    at e.render (http://localhost:4174/assets/shaderMaterial-DbGaQskx.js:1:15792)"
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_r32float_depth32float_samples1_textureState0",
+      "t": 144989.69999992847,
+      "stack": "Error\n    at o (http://localhost:4174/assets/index-jzlP2jlv.js:2:1203)\n    at n.createRenderPipeline (http://localhost:4174/assets/index-jzlP2jlv.js:2:2653)\n    at e._createRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:25490)\n    at e._draw (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:25020)\n    at e.drawElementsType (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:26503)\n    at e._draw (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:31229)\n    at e._processRendering (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:38182)\n    at e.render (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:44585)\n    at e.render (http://localhost:4174/assets/shaderMaterial-DbGaQskx.js:1:15792)"
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 144997.5,
+      "stack": "Error\n    at o (http://localhost:4174/assets/index-jzlP2jlv.js:2:1203)\n    at n.createRenderPipeline (http://localhost:4174/assets/index-jzlP2jlv.js:2:2653)\n    at e._createRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:25490)\n    at e._draw (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:25020)\n    at e.drawElementsType (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:26503)\n    at e._draw (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:31229)\n    at e._processRendering (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:38182)\n    at e.render (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:44585)\n    at e.render (http://localhost:4174/assets/shaderMaterial-DbGaQskx.js:1:15792)"
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 144997.89999997616,
+      "stack": "Error\n    at o (http://localhost:4174/assets/index-jzlP2jlv.js:2:1203)\n    at n.createRenderPipeline (http://localhost:4174/assets/index-jzlP2jlv.js:2:2653)\n    at e._createRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:25490)\n    at e._draw (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:25020)\n    at e.drawElementsType (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:26503)\n    at e._draw (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:31229)\n    at e._processRendering (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:38182)\n    at e.render (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:44585)\n    at e.render (http://localhost:4174/assets/shaderMaterial-DbGaQskx.js:1:15792)"
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 144998.69999992847,
+      "stack": "Error\n    at o (http://localhost:4174/assets/index-jzlP2jlv.js:2:1203)\n    at n.createRenderPipeline (http://localhost:4174/assets/index-jzlP2jlv.js:2:2653)\n    at e._createRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:420:25490)\n    at e._draw (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:25020)\n    at e.drawElementsType (http://localhost:4174/assets/webgpuEngine.pure-B9qLngUe.js:432:26503)\n    at e._draw (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:31229)\n    at e._processRendering (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:38182)\n    at e.render (http://localhost:4174/assets/mesh-CgdNNZR2.js:3:44585)\n    at e.render (http://localhost:4174/assets/shaderMaterial-DbGaQskx.js:1:15792)"
+    }
+  ],
+  "errors": 0
+}
