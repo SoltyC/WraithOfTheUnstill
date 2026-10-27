@@ -2,11 +2,14 @@
 // barley (game/shaped/behaviours.js 'flush': motionless until the Wraith comes within ~9 m, then the whole
 // flock breaks at once). Break them all and the field is clear (`meadow:side-flock-cleared`).
 
+import { hasSpawnRoom } from '../../game/shaped/spawnRoom.js';
+
 const FLAG = 'meadow:side-flock-cleared';
 /** Offsets from the field's centre (m): a flock of three in the north, two in the south (spawned together they flush together). */
 const FLOCKS = [[[-14, 14], [-9, 19], [-18, 20]], [[16, -14], [20, -9]]];
 /** Not in a flock: a Chanter stands behind the south flock (a caster, so the field is not one role alone; its song mends the runners). */
 export const SUPPORT = [['chanter', 8, -30]];
+const COUNT = FLOCKS.reduce((n, flock) => n + flock.length, SUPPORT.length);
 
 export function addFlock(ctx) {
   const { g, flags } = ctx, { chapter, hud, music, shaped, shapedMod, capture } = g;
@@ -15,13 +18,14 @@ export function addFlock(ctx) {
   const slots = [];
   let spawned = false;
   return {
-    sync() { slots.length = 0; spawned = false; },
+    sync() { g.encounterLog.cancel('side-flock'); slots.length = 0; spawned = false; },
     tick() {
       if (flags.has(FLAG)) return;
       const step = ctx.stepOf('meadow-side-flock');
       if (!spawned) {
         // They lie down when the Wraith is told and comes within sight of the field (so none are spawned for nothing).
         if (!step || step === 'ask' || ctx.away('side-barley') > 90 || g.calm?.holds(place.pos[0], place.pos[1])) return;
+        if (!hasSpawnRoom(shaped, shapedMod.S.EMPTY, COUNT)) return;
         spawned = true; g.encounterLog.begin('side-flock');
         for (const flock of FLOCKS) for (const [dx, dz] of flock) {
           const k = shaped.spawn('sedgerunner', place.pos[0] + dx, place.pos[1] + dz);
@@ -37,10 +41,11 @@ export function addFlock(ctx) {
       }
       if (slots.length > 0) {
         // The Wraith gave up and left (or fell and was re-formed far away): the flock goes back to ground and lies down again next time.
-        if (ctx.away('side-barley') > 160) { for (const k of slots) shaped.damage(k, 1e9, false, 0, 0); slots.length = 0; spawned = false; }
+        if (ctx.away('side-barley') > 160) { g.encounterLog.cancel('side-flock'); for (const k of slots) shaped.damage(k, 1e9, false, 0, 0); slots.length = 0; spawned = false; }
         return;
       }
       flags.add(FLAG); chapter.raise('encounter:side-flock:clear'); g.encounterLog.end('side-flock'); music.sting('echo');
+      g.calm?.note(place.pos[0], place.pos[1]);
       if (!capture) hud.notice('Quiet', 'The barley is clear', 'Tell Dunn.', 5);
     },
   };

@@ -164,3 +164,15 @@ Targets:
 - Why night runs took no damage.
 - The bot was a melee-only chaser for the "staff" kit: its 0/3 clears against casters are the bot's limit as much as the design's.
 - Dunes, mire, ember, coast (no encounters in code).
+
+## 8. Lead lifecycle review (Codex, 2026-10-27)
+
+**Feature:** preserve complete encounter waves and quiet after a clear, and discard measurements for abandoned fights. This serves pillars 4 (quiet, but never empty) and 5 (learn by reading), in the minute and session loops, targeting readable challenge and relief.
+
+**Verdict: keep the lifecycle fixes; hold integration for the outstanding GPU review.** A shared allocation-free capacity check counts only EMPTY slots, matching `shaped.spawn`; first and later waves wait instead of silently dropping enemies when the pool is full. The Barley flock reserves all six slots and starts the calm window on clear. Abandoning it, ending an encounter or loading discards active telemetry; finished runs are recorded before encounter reset. Starting the first active run rebases health so earlier damage cannot contaminate its result.
+
+**Measured here:** main baseline 687/687 tests; merged encounter branch 749/749 tests, including 13 new lifecycle regressions and the existing 49 encounter rules tests. Locked production build passes. Later waves and forced starts bypass calm; automatic starts respect it. Full pools and FALLING bodies cannot skip waves or complete the Barley quest without spawning its enemies. Regression checks also cover weather ownership, death re-form, abandonment and load.
+
+**Smell review:** no additional combat or reward rule; no new treadmill, gate or opportunity-cost change. Dominant strategy, bare-verb fun and honest telegraphs in motion remain NOT ASSESSED here. The earlier measurements and caster-bot limitations above are historical results, not fresh runs of this revision.
+
+**Still required:** glide and frost-combat isolation films, visual review in motion, fresh bot runs including pool contention and the Barley clear, and GPU pipeline/performance checks. Windows `cmd.exe /c ver` failed with `UtilBindVsockAnyPort: socket failed 1`; GitHub fetch failed because `github.com` could not resolve. No new target-GPU or push claim is made. The branch is deliberately kept separate from main until the review is possible.

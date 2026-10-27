@@ -8,6 +8,7 @@
 
 import { createCalm } from './calm.js';
 import { worldState } from '../game/worldState.js';
+import { hasSpawnRoom } from '../game/shaped/spawnRoom.js';
 
 /**
  * Spawns are [archetype, angle (rad, from the direction given by `from`), radius (m)].
@@ -51,11 +52,12 @@ const dist2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
 export function addEncounterSystem(g) {
   const { loop, controller, chapter, hud, music, shaped, shapedMod, combat, clock, capture } = g;
   const graph = chapter.graph, flags = graph.flags, table = chapter.table;
-  for (const id in ENCOUNTERS) Object.assign(ENCOUNTERS[id], { id, slots: [], wave: -1, gap: 0, biome: table[ENCOUNTERS[id].at]?.biome ?? (ENCOUNTERS[id].quest.startsWith('meadow') ? 'meadow' : 'frost') });
+  for (const id in ENCOUNTERS) Object.assign(ENCOUNTERS[id], { id, slots: [], wave: -1, gap: 0, force: false, weatherSet: false, biome: table[ENCOUNTERS[id].at]?.biome ?? (ENCOUNTERS[id].quest.startsWith('meadow') ? 'meadow' : 'frost') });
   const calm = g.calm = createCalm(clock);
   g.startEncounter = (id) => { const e = ENCOUNTERS[id]; if (e) e.force = true; };
   /** Stand an encounter down without a clear (a load, the bot): slots forgotten, its weather released. */
   function reset(e) {
+    g.encounterLog.cancel(e.id);
     e.slots.length = 0; e.wave = -1; e.force = false; e.gap = 0; flags.delete('fighting:' + e.id);
     if (e.weatherSet) { e.weatherSet = false; if (worldState.weatherOverride === e.weather) worldState.weatherOverride = null; }
   }
@@ -80,6 +82,7 @@ export function addEncounterSystem(g) {
         if (!(e.force || (stepOf(e.quest) === e.step && (!e.flag || flags.has(e.flag))))) continue;
         if (dist2(p.x, p.z, pl.pos[0], pl.pos[1]) > e.near * e.near) continue;
         if (!e.force && calm.holds(pl.pos[0], pl.pos[1])) continue;
+        if (!hasSpawnRoom(shaped, shapedMod.S.EMPTY, e.waves[0].length)) continue;
         // A storm surge: the weather turns for the fight (unless a photo spot or the overlay already holds it).
         if (e.weather && !worldState.weatherOverride) { worldState.weatherOverride = e.weather; e.weatherSet = true; }
         e.wave = 0; spawnWave(e, p); flags.add('fighting:' + id); g.encounterLog.begin(id);
@@ -94,14 +97,14 @@ export function addEncounterSystem(g) {
       // A wave broken: the next rises after a breath; the last one clears the place.
       if (e.wave + 1 < e.waves.length) {
         e.gap += dt;
-        if (e.gap > 1.8) {
+        if (e.gap > 1.8 && hasSpawnRoom(shaped, shapedMod.S.EMPTY, e.waves[e.wave + 1].length)) {
           e.wave++; e.gap = 0; spawnWave(e, p);
           if (!capture) hud.notice('Shaped', e.wave + 1 === e.waves.length && id === 'den' ? 'The den mother' : 'More rise', e.wave + 1 === e.waves.length && id === 'den' ? 'Her rime turns blows aside. Freeze her first.' : null, 5);
         }
         continue;
       }
-      flags.add('cleared:' + id); reset(e); calm.note(pl.pos[0], pl.pos[1]);
-      chapter.raise('encounter:' + id + ':clear'); g.encounterLog.end(id);
+      flags.add('cleared:' + id); g.encounterLog.end(id); reset(e); calm.note(pl.pos[0], pl.pos[1]);
+      chapter.raise('encounter:' + id + ':clear');
       if (!capture) hud.notice('Quiet', e.name + ' cleared', null, 4);
     }
   }
@@ -129,7 +132,7 @@ export function addEncounterSystem(g) {
   }
 
   const navSync = g.navSync;
-  g.navSync = () => { navSync?.(); for (const id in ENCOUNTERS) reset(ENCOUNTERS[id]); calm.reset(); };
+  g.navSync = () => { navSync?.(); for (const id in ENCOUNTERS) reset(ENCOUNTERS[id]); calm.reset(); g.encounterLog.reset(); };
   g.encounters = ENCOUNTERS;
 
   loop.add({ name: 'encounters', update: () => { tick(clock.dt); respawnTick(); } });

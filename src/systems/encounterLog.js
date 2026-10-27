@@ -15,14 +15,14 @@ const N = 16;
 export function addEncounterLog(g) {
   const { loop, clock, combat, shaped, shapedMod, flow } = g;
   const on = new URLSearchParams(location.search).get('bot') === '1';
-  const none = { enabled: false, begin() {}, end() {}, results: [], active: () => [] };
+  const none = { enabled: false, begin() {}, end() {}, cancel() {}, reset() {}, results: [], active: () => [] };
   if (!on) return (g.encounterLog = none);
 
   const S = shapedMod.S;
   const id = new Array(N).fill(''), live = new Uint8Array(N);
   const secs = new Float64Array(N), tier = new Float64Array(N * 4), starve10 = new Float64Array(N), starve8 = new Float64Array(N);
   const deaths = new Int32Array(N), engaged = new Int32Array(N), maxAlive = new Int32Array(N), hits = new Int32Array(N);
-  const taken = new Float64Array(N), startAt = new Float64Array(N);
+  const taken = new Float64Array(N);
   const gustCost = combatTuning.costGust, dodgeCost = combatTuning.costDodge;
   let nLive = 0, lastHp = combat.health, wasDying = false;
 
@@ -42,10 +42,10 @@ export function addEncounterLog(g) {
       let free = -1;
       for (let k = 0; k < N; k++) { if (live[k] && id[k] === name) return; if (!live[k] && free < 0) free = k; }
       if (free < 0) return;
+      if (nLive === 0) { lastHp = combat.health; wasDying = combat.dying > 0; }
       id[free] = name; live[free] = 1; nLive++;
       secs[free] = 0; starve10[free] = 0; starve8[free] = 0; deaths[free] = 0; engaged[free] = 0; maxAlive[free] = 0; hits[free] = 0; taken[free] = 0;
       for (let t = 0; t < 4; t++) tier[free * 4 + t] = 0;
-      startAt[free] = clock.simTime;
     },
     end(name) {
       for (let k = 0; k < N; k++) {
@@ -62,7 +62,9 @@ export function addEncounterLog(g) {
     },
     /** Ids of the runs in progress. */
     active() { const o = []; for (let k = 0; k < N; k++) if (live[k]) o.push(id[k]); return o; },
-    reset() { self.results.length = 0; for (let k = 0; k < N; k++) live[k] = 0; nLive = 0; },
+    /** An abandoned fight is not a clear and must not keep accumulating time. */
+    cancel(name) { for (let k = 0; k < N; k++) if (live[k] && id[k] === name) { live[k] = 0; nLive--; return; } },
+    reset() { self.results.length = 0; live.fill(0); nLive = 0; lastHp = combat.health; wasDying = combat.dying > 0; },
   };
 
   loop.add({ name: 'encounterLog', update: () => {
