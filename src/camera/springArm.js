@@ -87,7 +87,8 @@ export class SpringArmCamera {
     this._snapped = true;
     this.zoom = this.zoomTarget;
     this.armLen = this.zoomTarget;
-    this.fov = armTuning.baseFov;
+    // A deferred player teleport can finish after a free-camera photo pose was applied.
+    if (!this.free) this.fov = armTuning.baseFov;
     this.prevVel.x = 0; this.prevVel.y = 0; this.prevVel.z = 0;
   }
 
