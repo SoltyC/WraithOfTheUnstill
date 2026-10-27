@@ -144,6 +144,14 @@ Same shape as Phase 8. Each ends in something reviewable on the 3060. The risky 
   - restored: warm gold with cooled shadows.
 - **Review with the user:** sand close-up, mid-field and far, at noon, golden hour and night.
 
+### D1a — Done (2026-10-27; integration review)
+
+The erg's near material now has CC0 scans, three-scale normals, self-shadowed ripples, rare glints and compacted/frozen/rain states. The six rain stages were recaptured after correcting wet absorption to remain visibly darker through eye adaptation: dry/wet foreground display luma 148.337/106.712, with no white-clipped pixels in the twelve before/after captures. Independent photo weather controls are tested. Main's photo spots are preserved unchanged with eleven sand entries appended.
+
+**Validation:** 700 tests passed; locked production build passed. Identical 2560×1440 star-field GPU timestamp medians: 25.55 ms before / 27.10 ms after (172 samples each; headless, indicative). Sand-view and sand weather checks reported no late pipelines or GPU errors. Entering the forest revealed five pre-existing render variants created late; no late compute pipeline appeared. That broader cold-entry defect remains open for the world gate and is recorded with stacks in `docs/phase-9/material-audit/transitions.json`.
+
+**Review artifacts:** `docs/phase-9/sand-review.md`, `sand-metrics.json`, `material-audit/`; `screenshots/sand-wet-fix-1280/` and `screenshots/material-audit/`. **Not assessed:** sustained unlocked-PC 60 FPS/1% lows, human judgement in motion. D1b retains far field, desert grade and sandstone walls. Integrate as a squash excluding full-size raw capture iterations.
+
 ### D2 — Dune geometry and avalanching sand (risky tech)
 
 - **Knife-edge crests:**

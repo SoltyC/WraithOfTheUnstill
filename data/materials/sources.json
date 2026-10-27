@@ -218,6 +218,20 @@
       "source": "polyhaven",
       "asset": "rusty_metal_04",
       "use": "fittings, sconces, railings — dark wrought iron"
+    },
+    {
+      "layer": 31,
+      "id": "sand-rippled",
+      "source": "polyhaven",
+      "asset": "aerial_beach_01",
+      "use": "the erg — wind-rippled fine sand (albedo/grain detail, retinted)"
+    },
+    {
+      "layer": 32,
+      "id": "sand-fine",
+      "source": "polyhaven",
+      "asset": "dense_sand",
+      "use": "the erg — fine compacted dune sand, grain detail"
     }
   ]
 }

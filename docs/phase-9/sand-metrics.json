@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-27",
+  "capture": "Windows Chrome headless, 2560x1440; reviewed1280x720",
+  "crop": [
+    100,
+    360,
+    1080,
+    340
+  ],
+  "metric": "FFmpeg signalstats YAVG (limited-range display luma, not linear luminance)",
+  "beforeWetAlbedoMultiplier": 0.5,
+  "afterWetAlbedoMultiplier": 0.32,
+  "before": [
+    {
+      "file": "p9s1-rain-1-dry.png",
+      "cropYavg": 148.337,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-2-first.png",
+      "cropYavg": 148.126,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-3-many.png",
+      "cropYavg": 147.154,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-4-merge.png",
+      "cropYavg": 135.327,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-5-wet.png",
+      "cropYavg": 132.881,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-6-drying.png",
+      "cropYavg": 132.9,
+      "whiteClippedFraction": 0.0
+    }
+  ],
+  "after": [
+    {
+      "file": "p9s1-rain-1-dry.png",
+      "cropYavg": 148.337,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-2-first.png",
+      "cropYavg": 147.998,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-3-many.png",
+      "cropYavg": 146.417,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-4-merge.png",
+      "cropYavg": 111.282,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-5-wet.png",
+      "cropYavg": 106.712,
+      "whiteClippedFraction": 0.0
+    },
+    {
+      "file": "p9s1-rain-6-drying.png",
+      "cropYavg": 106.684,
+      "whiteClippedFraction": 0.0
+    }
+  ],
+  "exposureReadbackBefore": {
+    "dry": 0.3888619840145111,
+    "fullyWet": 0.6039836406707764
+  },
+  "notes": [
+    "All six stages were recaptured after changing absorption.",
+    "All pixels with R,G,B >=250 count as white clipped.",
+    "Frame-time and star-field comparison are recorded separately."
+  ]
+}

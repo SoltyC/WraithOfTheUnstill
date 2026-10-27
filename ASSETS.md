@@ -38,6 +38,8 @@ local cache (outside the repository) and packs them into `data/textures/<id>.{al
 | earth | [dirt_floor](https://polyhaven.com/a/dirt_floor) | CC0 | tracks and yards — packed earth |
 | cobble-mossy | [mossy_cobblestone](https://polyhaven.com/a/mossy_cobblestone) | CC0 | the bridge and old lanes — mossy cobbles |
 | iron | [rusty_metal_04](https://polyhaven.com/a/rusty_metal_04) | CC0 | fittings, sconces, railings — dark wrought iron |
+| sand-rippled | [aerial_beach_01](https://polyhaven.com/a/aerial_beach_01) | CC0 | the erg (Phase 9 D1a) — wind-rippled fine sand: broad albedo and swell normals, retinted warm (shaders/sand.wgsl.js) |
+| sand-fine | [dense_sand](https://polyhaven.com/a/dense_sand) | CC0 | the erg (Phase 9 D1a) — fine compacted dune sand: mid and fine grain detail at two scales |
 
 ### Music (Phase 7)
 

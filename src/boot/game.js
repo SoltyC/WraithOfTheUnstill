@@ -20,6 +20,7 @@ export async function createGame(g) {
     },
     /** Photo-spot trail waiting for the world to settle (then stamped as footprints). */
     pendingTrail: null,
+    pendingFreeze: null,
     /** Photo-spot walk ({ speed, seconds, facing? }) waiting for the world to settle. */
     pendingWalk: null,
     /** True while a spot's walked-in pose is held (no Wraith updates). */
@@ -55,6 +56,7 @@ export async function createGame(g) {
     applySpot(spot) {
       spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
       this.pendingTrail = spot.trail || null;
+      this.pendingFreeze = spot.freeze || null;
       this.pendingWalk = spot.walk || null;
       this.pendingSurf = spot.surf || null;
       this.pendingBend = spot.bend || null;
@@ -65,7 +67,7 @@ export async function createGame(g) {
       weather.snap = true; post.post.resetHistory = true;
     },
     /** True when nothing a capture shows is still being written (spot trails, walks, brush queue). */
-    stateSettled() { return this.pendingTrail === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingWeapon === null && this.pendingShaped === null && this.pendingWarden === null && terrainState.pendingBrushes === 0; },
+    stateSettled() { return this.pendingTrail === null && this.pendingFreeze === null && this.pendingWalk === null && this.pendingSurf === null && this.pendingBend === null && this.pendingWeapon === null && this.pendingShaped === null && this.pendingWarden === null && terrainState.pendingBrushes === 0; },
     setPlayerVisible(on) {
       if (wraithView.isEnabled() === on) return;
       wraithView.setEnabled(on); engine.snapshotRenderingReset();
