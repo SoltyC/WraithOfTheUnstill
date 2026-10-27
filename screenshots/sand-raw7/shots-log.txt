@@ -1,0 +1,12 @@
+2026-10-27T01:19:47.725Z 1/11 p9s1-close-noon: saved screenshots/sand-raw7/p9s1-close-noon.png
+2026-10-27T01:20:05.303Z 2/11 p9s1-close-golden: saved screenshots/sand-raw7/p9s1-close-golden.png
+2026-10-27T01:20:17.306Z 3/11 p9s1-star-mid: saved screenshots/sand-raw7/p9s1-star-mid.png
+2026-10-27T01:20:29.216Z 4/11 p9s1-trail: saved screenshots/sand-raw7/p9s1-trail.png
+2026-10-27T01:20:41.154Z 5/11 p9s1-frozen: saved screenshots/sand-raw7/p9s1-frozen.png
+2026-10-27T01:20:59.059Z 6/11 p9s1-rain-1-dry: saved screenshots/sand-raw7/p9s1-rain-1-dry.png
+2026-10-27T01:21:16.691Z 7/11 p9s1-rain-2-first: saved screenshots/sand-raw7/p9s1-rain-2-first.png
+2026-10-27T01:21:34.313Z 8/11 p9s1-rain-3-many: saved screenshots/sand-raw7/p9s1-rain-3-many.png
+2026-10-27T01:21:52.097Z 9/11 p9s1-rain-4-merge: saved screenshots/sand-raw7/p9s1-rain-4-merge.png
+2026-10-27T01:22:09.945Z 10/11 p9s1-rain-5-wet: saved screenshots/sand-raw7/p9s1-rain-5-wet.png
+2026-10-27T01:22:21.982Z 11/11 p9s1-rain-6-drying: saved screenshots/sand-raw7/p9s1-rain-6-drying.png
+2026-10-27T01:22:21.983Z Shots done: 11/11 spot(s) (p9s1-*) → screenshots/sand-raw7/.

@@ -1,0 +1,2 @@
+2026-10-27T01:14:45.419Z 1/1 p9s1-close-golden: saved screenshots/sand-raw4/p9s1-close-golden.png
+2026-10-27T01:14:45.422Z Shots done: 1/1 spot(s) (p9s1-close-golden*) → screenshots/sand-raw4/.
