@@ -17,6 +17,7 @@ export const worldState = {
   weather: 'clear',
   /** A forced weather state (dev overlay, photo spots), or null for the natural cycle. */
   weatherOverride: null,
+  wetForce: -1, puddleForce: -1, rainForce: -1,
   /** A lightning strike to fire now (dev overlay, photo spots, the bot): { bearing (deg from the camera's view), dist (m), age (s into the strike), hold (keep it at that age) }, or null. */
   strike: null,
   /** @type {Record<string, 'stilled'|'restored'>} */
