@@ -86,6 +86,8 @@ export function createWeather() {
       w.cover += (tCover - w.cover) * k; w.snow += (tSnow - w.snow) * k; w.wind += (tWind - w.wind) * k;
       w.fog += (tFog - w.fog) * k; w.gust += (tGust - w.gust) * k;
       w.rain += (tRain - w.rain) * k; w.storm += (tStorm - w.storm) * k;
+      // Forced rain still soaks the surface when wetness itself is not pinned.
+      if (w.rainForce >= 0) w.rain = Math.min(1, w.rainForce);
       // Wetness: rain soaks the world, dry air takes it back (a captured rain shot is already wet).
       const wetT = Math.min(1, w.rain * 1.5), pudT = Math.min(1, Math.max(0, (w.rain - 0.3) * 1.6));
       if (w.snap) { w.wet = wetT; w.puddle = pudT; }
@@ -93,7 +95,8 @@ export function createWeather() {
         w.wet += (wetT - w.wet) * (1 - Math.exp(-w.dt / (wetT > w.wet ? WET_RISE : WET_DRY)));
         w.puddle += (pudT - w.puddle) * (1 - Math.exp(-w.dt / (pudT > w.puddle ? PUDDLE_RISE : PUDDLE_DRY)));
       }
-      if (w.wetForce >= 0) { w.wet = w.wetForce; w.puddle = w.puddleForce >= 0 ? w.puddleForce : w.wetForce; w.rain = w.rainForce >= 0 ? w.rainForce : w.rain; }
+      if (w.wetForce >= 0) w.wet = Math.min(1, w.wetForce);
+      if (w.puddleForce >= 0) w.puddle = Math.min(1, w.puddleForce);
       w.snap = false;
     },
   };

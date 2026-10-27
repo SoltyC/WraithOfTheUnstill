@@ -144,6 +144,10 @@ Same shape as Phase 8. Each ends in something reviewable on the 3060. The risky 
   - restored: warm gold with cooled shadows.
 - **Review with the user:** sand close-up, mid-field and far, at noon, golden hour and night.
 
+### D1a — Code built; visual and GPU review pending (2026-10-27)
+
+Sand scans, three-scale normals, self-shadowed ripples, glints, compacted/frozen states and rain wetting are on `claude/sand`. Lead review and the remaining checks are in `docs/phase-9/sand-review.md`. Local main `139ead6` is merged; main's 229 photo spots are preserved verbatim and eleven sand spots are appended. Independent weather-forcing controls and bounded drying are fixed. **696 tests and the locked production build pass.** Fully wet darkening, new GPU captures, star-field timing and late-pipeline checks remain pending; D1a is not accepted or integrated. D1b retains far-field shading, grade and sandstone walls.
+
 ### D2 — Dune geometry and avalanching sand (risky tech)
 
 - **Knife-edge crests:**

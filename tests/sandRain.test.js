@@ -42,4 +42,14 @@ describe('sand wetting under rain', () => {
     expect(dotCover(0.2)).toBeLessThan(dotCover(0.5));
     expect(uniformWet(0.2)).toBe(0);
   });
+  it('keeps local wetness bounded at dry crests and saturated hollows', () => {
+    for (const w of [0, 0.01, 0.5, 0.99, 1]) {
+      for (const pud of [0, 0.5, 1]) {
+        const crest = localWet(w, pud, 0), hollow = localWet(w, pud, 1);
+        expect(crest).toBeGreaterThanOrEqual(0);
+        expect(hollow).toBeLessThanOrEqual(1);
+        expect(hollow).toBeGreaterThanOrEqual(crest);
+      }
+    }
+  });
 });

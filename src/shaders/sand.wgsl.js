@@ -133,7 +133,7 @@ fn sandSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, L: vec3f)
   let dryK = smoothstep(0.0, 0.2, pud - rainW);
   if (dryK > 0.0) {
     let hold = 0.5 * (0.5 + 0.5 * noised(p * 0.35 + 3.0).x) + 0.5 * smoothstep(0.9, 0.99, Nc.y) - 0.35 * (rh / 0.009);
-    wl = rainW + dryK * (clamp(hold, 0.0, 1.0) - 0.5) * SR_DRY_HOLD;
+    wl = clamp(rainW + dryK * (clamp(hold, 0.0, 1.0) - 0.5) * SR_DRY_HOLD, 0.0, 1.0);
   }
   var wetMask = clamp(state.y, 0.0, 1.0);
   if (wl > 0.02 || pud > 0.04) {
@@ -155,12 +155,11 @@ fn sandSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, L: vec3f)
     let g = (d1.yz + d2.yz) * relief;
     N = normalize(vec3f(N.x - g.x * N.y, N.y, N.z - g.y * N.y));
   }
-  let wetRain = wetMask * smoothstep(0.0, 0.3, uniforms.wetParams.z + 0.15);
   // Wet: darker, cooler, tighter (the grain and ripples flatten), a glossy film while it still rains.
   alb *= mix(vec3f(1.0), vec3f(SR_WET_DARK * 0.96, SR_WET_DARK * 0.98, SR_WET_DARK * 1.06), wetMask);
   N = normalize(mix(N, Ng, wetMask * 0.35));
   o.rough = mix(o.rough, 0.38, wetMask);
-  o.wetK = clamp(wetMask * (0.18 + 0.82 * uniforms.wetParams.z * 1.6) + 0.0 * wetRain, 0.0, 1.0);
+  o.wetK = clamp(wetMask * (0.18 + 0.82 * uniforms.wetParams.z * 1.6), 0.0, 1.0);
   o.rshade = mix(o.rshade, 1.0, wetMask * 0.7);
 
   // Quartz glints: world-space cells of 4 mm (a stable hash — no crawl under TAA); one cell in ~600 holds a
