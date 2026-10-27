@@ -60,8 +60,8 @@ export const ridgeTuning = {
 };
 export const bloomTuning = {
   minRange: 3, maxRange: 14,
-  radius: 4.6,        // m: footprint radius (the pit is 0.42 of it, the rim peaks at 0.57)
-  depth: 1.1,         // m: bowl depth
+  radius: 5.2,        // m: footprint radius (the pit is 0.42 of it, the rim peaks at 0.57)
+  depth: 1.7,         // m: bowl depth
   curtain: 3.4,       // s the ejecta take to fall back
   mounds: 14,         // fall-back stamps (the curtain landing as state)
   launch: 1.9,        // m the foes are thrown (a visual pop), trap: s they are pinned in the crater
