@@ -5266,6 +5266,134 @@
       "hidePlayer": true
     },
     {
+      "id": "p9s-shard-flight",
+      "biome": "frost",
+      "label": "Stone's Shard mid-flight on the steppe: a plate of snow and earth torn from the ground, the scar behind it, crumbs trailing",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 0.3,
+        "element": "stone",
+        "only": "shard"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.35,
+        "pitch": 0.18,
+        "dist": 5
+      }
+    },
+    {
+      "id": "p9s-ridge-snow",
+      "biome": "frost",
+      "label": "Stone's Ridge on snow: a wall of displaced snow dragged up along the aim, flanked by its trench",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 3.0,
+        "element": "stone"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.5,
+        "pitch": 0.4,
+        "dist": 10
+      }
+    },
+    {
+      "id": "p9s-ridge-turf",
+      "biome": "meadow",
+      "label": "Stone's Ridge on turf: the sod heaved into a wall and the meadow's grass laid flat beside it",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "bend": {
+        "seconds": 3.0,
+        "element": "stone"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.5,
+        "pitch": 0.4,
+        "dist": 10
+      },
+      "restoration": "restored"
+    },
+    {
+      "id": "p9s-bloom",
+      "biome": "frost",
+      "label": "Stone's Bloom: the crater with its raised rim and the glittering curtain of ejecta falling back",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 0.9,
+        "element": "stone",
+        "only": "bloom"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.32,
+        "dist": 9
+      }
+    },
+    {
+      "id": "p9s-ridge-hounds",
+      "biome": "frost",
+      "label": "A Ridge between the Wraith and three hounds: the wall in the snow, the pack stalled on the far side",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 3.4,
+        "element": "stone"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.35,
+        "dist": 11
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "hound",
+            3,
+            14
+          ],
+          [
+            "hound",
+            6,
+            15
+          ],
+          [
+            "hound",
+            0,
+            16
+          ]
+        ],
+        "seconds": 3.4
+      }
+    },
+    {
       "id": "p9d0-lip-erg-golden",
       "biome": "dunes",
       "label": "From the Dry Stair lip over the erg, golden hour",

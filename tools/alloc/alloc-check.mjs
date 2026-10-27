@@ -20,6 +20,7 @@ import { createWind } from '../../src/world/wind.js';
 import { createFlow, FLOW_IN } from '../../src/game/flow.js';
 import { createShaped } from '../../src/game/shaped/shaped.js';
 import { createFrostBending } from '../../src/game/bending/frost.js';
+import { createStoneBending } from '../../src/game/bending/stone.js';
 import { createCombat } from '../../src/game/combat/combat.js';
 import { createInventory } from '../../src/game/inventory.js';
 import { createWeapons } from '../../src/game/weapons/weapons.js';
@@ -51,7 +52,20 @@ const sink = new Float64Array(1);
 const weather = createWeather(); weather.restored = 1; weather.dt = 0.0111;
 const mWeather = createWeather(); mWeather.meadowRestored = 1; mWeather.meadow = 0.7; mWeather.dt = 0.9;
 const lightning = createLightning(); lightning.storm = 1; lightning.dt = 0.0111;
+const stoneRig = (() => {
+  const ts = { bx: 0.5, bz: 0.5, bdx: 0.5, bdz: 0.5, bl: 0.5, bw: 0.5, bd: 0.5, bc: 0.5, bk: 0, bwet: 0.5, bbias: 0.5, bberm: 0.5, healScale: 1.5, stamp() {} };   // the real state's double fields
+  const gr = { qx: 0.5, qz: 0.5, h: 0.5, sample() { this.h = 0.5 - 0.5; } };
+  const st = createStoneBending({ ts, ground: gr, lights: new Float32Array(32), surfaceAt: () => 0 });
+  st.aimX = 1; st.aimZ = 0; st.tx = 9; st.tz = 0; st.ty = 0; return st;
+})();
 const cases = {
+  // Stone: Shard every 40 frames, a Ridge held in cycles, Bloom every 240 (casts, pools, mass field, fx block).
+  'stone.update (shard, ridge, bloom)': (i) => {
+    const st = stoneRig; st.dt = clock.dt; st.time += st.dt;
+    st.castShard = (i % 40) === 0; st.ridgeHeld = ((i >> 6) & 7) < 3; st.castBloom = (i % 240) === 7;
+    st.update();
+    sink[0] = st.mass.heightAt(5, 1);
+  },
   'ground.sample': (i) => { ground.qx = (i % 1000) * 0.2 - 100; ground.qz = (i % 777) * 0.2 - 70; ground.sample(); sink[0] = ground.h; },
   // dt comes from a mutable field, as in the game (a literal constant would hide boxing).
   // Walk in a wide loop that stays on the fine patch, as a real player does (leaving every

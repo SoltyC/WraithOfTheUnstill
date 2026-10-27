@@ -10,8 +10,8 @@ import { createRemembrance } from '../game/remembrance.js';
 
 /** Event names of a cast, by the surface under the Wraith (built once: a cast allocates nothing). */
 const CAST = {
-  snow: { sweep: 'cast:snow:frost', crystal: 'cast:snow:frost', ribbon: 'cast:snow:frost', gust: 'cast:snow:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex' },
-  grass: { sweep: 'cast:grass:frost', crystal: 'cast:grass:frost', ribbon: 'cast:grass:frost', gust: 'cast:grass:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex' },
+  snow: { sweep: 'cast:snow:frost', crystal: 'cast:snow:frost', ribbon: 'cast:snow:frost', gust: 'cast:snow:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex', shard: 'cast:snow:stone', ridge: 'cast:snow:stone', bloom: 'cast:any:bloom' },
+  grass: { sweep: 'cast:grass:frost', crystal: 'cast:grass:frost', ribbon: 'cast:grass:frost', gust: 'cast:grass:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex', shard: 'cast:grass:stone', ridge: 'cast:grass:stone', bloom: 'cast:any:bloom' },
 };
 
 /** @param {any} g  shared boot context */
@@ -47,7 +47,7 @@ export function addRemembranceSystem(g) {
   // Events: everything the quests hear (talk:<npc>, nook:<id>, use:<id>, echo:<id>, warden:released …) reaches the entries too.
   const raise = chapter.raise;
   chapter.raise = function (e) { raise.call(this, e); rem.event(e); };
-  /** A bend was cast (systems/bending.js): 'sweep' | 'crystal' | 'ribbon' | 'gust' | 'updraft' | 'vortex'. */
+  /** A bend was cast (systems/bending.js): 'sweep' | 'crystal' | 'ribbon' | 'gust' | 'updraft' | 'vortex' | 'shard' | 'ridge' | 'bloom'. */
   rem.cast = (verb) => { rem.event(CAST[ws.biome === 'meadow' ? 'grass' : 'snow'][verb]); };
   /** A frozen Shaped shattered (game/combat/combat.js). */
   rem.shattered = () => rem.event('react:shatter');

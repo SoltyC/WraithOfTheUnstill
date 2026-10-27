@@ -32,6 +32,8 @@ export class ShapedBody {
     this.wantVx = 0.5 - 0.5; this.wantVz = 0.5 - 0.5;
     /** Pose modifiers (0..1): crouch (telegraph), lift (m, airborne leap), rise (spawn), bob. */
     this.crouch = 0.5 - 0.5; this.lift = 0.5 - 0.5; this.rise = 1.5 - 0.5; this.frozen = false;
+    /** Pop (m): a launch from outside (Stone's Bloom), added to the lift without the leap's own logic. */
+    this.pop = 0.5 - 0.5;
     /** Rear (0..1): the front of the body rises, head high (the Warden's release). Lie (0..1):
      *  the body lowers onto its belly, legs folding under it. */
     this.rear = 0.5 - 0.5; this.lie = 0.5 - 0.5;
@@ -165,10 +167,10 @@ export class ShapedBody {
       }
     }
     // Airborne (a leap): feet tuck under the hips.
-    if (this.lift > 0.05) {
+    if (this.lift + this.pop > 0.05) {
       for (let l = 0; l < legs.length; l++) {
         this._home(l, 0); this.state[l] = PLANTED;
-        this.fx[l] = this._hx; this.fz[l] = this._hzz; this.fy[l] = this._groundAt(this._hx, this._hzz) + this.lift * 0.6;
+        this.fx[l] = this._hx; this.fz[l] = this._hzz; this.fy[l] = this._groundAt(this._hx, this._hzz) + (this.lift + this.pop) * 0.6;
       }
       return;
     }
@@ -210,7 +212,7 @@ export class ShapedBody {
     for (let i = 0; i < sh.spine; i++) {
       const g = this._groundAt(this.sx[i], this.sz[i]);
       const front = 1 - i / (sh.spine - 1);
-      this.sy[i] = g + base + this.lift + (this.rise < 1 ? (this.rise - 1) * sh.hip : 0) + this.rear * sh.hip * 0.95 * front * front;
+      this.sy[i] = g + base + this.lift + this.pop + (this.rise < 1 ? (this.rise - 1) * sh.hip : 0) + this.rear * sh.hip * 0.95 * front * front;
     }
     for (let i = 0; i < sh.tail; i++) {
       const g = this._groundAt(this.tx[i], this.tz[i]);

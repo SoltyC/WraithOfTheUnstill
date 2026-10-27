@@ -10,12 +10,13 @@ import { BUILT, ELEMENT_NAMES } from '../../game/elements.js';
 const SURFACE_NAMES = { snow: 'Snow', grass: 'Grass' };
 
 /** The table page: rows are the surfaces the Wraith can bend today, columns the elements it has. */
-function tablePage(pg, el, rem) {
+function tablePage(pg, el, rem, elements) {
   el('h2', null, pg, 'What the World Answers');
   el('p', 'summary', pg, 'Each ground answers each element in its own way. A cell fills the first time you bend it.');
   const t = el('table', 'rem-table', pg), head = el('tr', null, t);
   el('th', null, head);
-  const cols = [...BUILT];
+  // Stone's column waits for the Wraith to have bent it (granted by the dune Warden; `?stone=1` for testing).
+  const cols = [...BUILT].filter((c) => c !== 'stone' || !elements || elements.unlocked.has('stone'));
   for (const c of cols) el('th', null, head, ELEMENT_NAMES[c]);
   for (const s of Object.keys(SURFACE_NAMES)) {
     const row = el('tr', null, t);
@@ -28,14 +29,14 @@ function tablePage(pg, el, rem) {
 }
 
 /** Lists the Remembrance tab through the journal's list page (`listPage` from menus.js, `el` its element helper). */
-export function remembranceTab({ el, listPage, rem }) {
+export function remembranceTab({ el, listPage, rem, elements }) {
   const have = rem.list();
   const groups = GROUPS.map(([id, label]) => [label, have.filter((e) => e.group === id).map((e) => ({ ...e, title: e.title }))]);
   // The reaction table is always the first page of its group.
   const react = groups.find((g) => g[0] === GROUPS.find((x) => x[0] === 'reactions')[1]);
   react[1].unshift({ id: 'table', title: 'The Table', table: true });
   listPage(groups, (pg, it) => {
-    if (it.table) { tablePage(pg, el, rem); return; }
+    if (it.table) { tablePage(pg, el, rem, elements); return; }
     el('h2', null, pg, it.title);
     el('p', null, pg, it.text);
   }, 'Nothing remembered yet.');
