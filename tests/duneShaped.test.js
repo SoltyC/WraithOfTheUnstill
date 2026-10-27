@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createShaped, S } from '../src/game/shaped/shaped.js';
 import { BRUSH } from '../src/shaders/terrainState.wgsl.js';
-import { frontal } from '../src/game/shaped/dune.js';
+import { frontal, duneStep } from '../src/game/shaped/dune.js';
 import { createStoneHits } from '../src/game/combat/stoneHits.js';
 import { combatTuning } from '../src/game/combat/combat.js';
 import { world, target } from './weaponWorld.js';
@@ -14,10 +14,21 @@ function setup() {
   return { shaped, ts, frost, step };
 }
 describe('dune Shaped', () => {
+  it('a telegraph on frozen ground never raises or streams a burrow', () => {
+    let stamps = 0, emissions = 0;
+    const s = { arch: 'skitter', state: S.TELEGRAPH, coverTime: 0, body: { x: 0, y: 0, z: 0, heading: 0 } };
+    const ts = { stamp() { stamps++; } }, fx = { emit() { emissions++; } };
+    duneStep(s, ts, fx, { iceAt: () => true }, 1 / 60);
+    expect(s.cover).toBe(false);
+    expect(stamps).toBe(0); expect(emissions).toBe(0);
+    duneStep(s, ts, fx, { iceAt: () => false }, 1 / 60);
+    expect(s.cover).toBe(true);
+    expect(stamps).toBe(1); expect(emissions).toBeGreaterThan(0);
+  });
   it('travels under a terrain brush and stops burrowing on frozen ground or after Gust', () => {
     const { shaped, ts, frost, step } = setup(); const i = shaped.spawn('skitter', 0, 0), s = shaped.slots[i];
     step(110); expect(s.state).toBe(S.STALK); expect(s.cover).toBe(true);
-    const count = ts.count; step(5); expect(ts.count).toBeGreaterThan(count); expect(ts.kind).toBe(BRUSH.RIDGE);
+    const count = ts.count; step(5); expect(ts.count).toBeGreaterThan(count); expect(ts.kind).toBe(BRUSH.MOUND);
     frost.ice = true; step(1); expect(s.cover).toBe(false);
     frost.ice = false; step(1); expect(s.cover).toBe(true);
     shaped.strip(i); expect(s.state).toBe(S.STAGGER); step(1); expect(s.cover).toBe(false);

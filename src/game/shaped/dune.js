@@ -23,20 +23,20 @@ export function duneStep(s, ts, fx, frost, dt) {
   s.coverTime = Math.max(0, s.coverTime - dt);
   const ice = frost && frost.iceAt(b.x, b.z);
   s.cover = (s.state === 2 || s.state === 3) && s.coverTime === 0 && !ice;
-  if (!s.cover && s.state !== 3) return;
-  // A displaced mound and its depression move together, through the shared state brush.
+  if (!s.cover) return;
+  // The body pushes a dome above itself, filling its spawn hollow as it travels. A Ridge
+  // preserved that hollow and its lateral cuts, so a buried Skitter looked like a crater.
+  // Use one filling brush: overlapping plough/mound jobs have no guaranteed write order.
   ts.bx = b.x; ts.bz = b.z; ts.bdx = Math.sin(b.heading); ts.bdz = Math.cos(b.heading);
-  // One brush writes the crest and its two trenches together: overlapping brush jobs in a
-  // dispatch have no ordering guarantee, so a plough plus mound can race on the same texel.
-  ts.bl = 0.35; ts.bw = 0.7; ts.bd = 0.24; ts.bc = 0.2;
-  ts.bk = BRUSH.RIDGE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.65; ts.stamp();
+  ts.bl = 0.4; ts.bw = 0.65; ts.bd = 0.36; ts.bc = 0.2;
+  ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
   if (s.state === 3) {
     const dx = Math.sin(b.heading), dz = Math.cos(b.heading);
     for (let k = 0; k < 3; k++) {
       const side = (k - 1) * 0.33;
-      fx.ex = b.x + dz * side; fx.ez = b.z - dx * side; fx.ey = b.y + 0.12;
-      fx.evx = -dx * 1.7 + dz * side; fx.evz = -dz * 1.7 - dx * side; fx.evy = 0.8 + k * 0.15;
-      fx.esize = 0.16; fx.emit();
+      fx.ex = b.x + dz * side; fx.ez = b.z - dx * side; fx.ey = b.y + 0.40;
+      fx.evx = -dx * 1.1 + dz * side; fx.evz = -dz * 1.1 - dx * side; fx.evy = 0.25 + k * 0.1;
+      fx.esize = 0.20; fx.emit();
     }
   }
 }
@@ -62,12 +62,14 @@ export function stepPlate(s, chunks, rec, dt) {
 export function writeStream(s, out, rec) {
   if (s.arch !== 'skitter' || s.state !== 3 || !s.cover) return;
   const b = s.body, dx = Math.sin(b.heading), dz = Math.cos(b.heading);
-  for (let k = 0; k < 24; k++) {
-    const age = (s.t * 2.5 + k * 0.19) % 1, angle = k * 2.399;
-    const lateral = Math.cos(angle) * (0.25 + age * 0.6), back = Math.sin(angle) * (0.25 + age * 0.6);
+  for (let k = 0; k < 48; k++) {
+    // Three narrow streams spill from the crown, accelerated down its sides. Many small
+    // grains read as falling sand; a sparse ring of large airborne chunks read as pebbles.
+    const age = (s.t * 2.5 + k / 48) % 1, lane = (k % 3 - 1) * 0.22;
+    const spread = lane * (0.35 + age), back = 0.05 + age * age * 0.85;
     const o = (rec + k) * 16;
-    out[o] = b.x + dz * lateral - dx * back; out[o + 1] = b.y + 0.25 + 0.8 * age * (1 - age); out[o + 2] = b.z - dx * lateral - dz * back;
-    const size = 0.045 + (k % 4) * 0.012;
+    out[o] = b.x + dz * spread - dx * back; out[o + 1] = b.y + 0.39 + 0.12 * Math.sin(age * Math.PI) - age * age * 0.32; out[o + 2] = b.z - dx * spread - dz * back;
+    const size = 0.009 + (k % 4) * 0.002;
     out[o + 3] = size; out[o + 4] = dx; out[o + 5] = 0; out[o + 6] = dz; out[o + 7] = size * 1.4;
     out[o + 8] = 0; out[o + 9] = 1; out[o + 10] = 0; out[o + 11] = size;
     out[o + 12] = k * 17; out[o + 13] = 11; out[o + 14] = 0; out[o + 15] = Math.min(1, age * 5, (1 - age) * 5);

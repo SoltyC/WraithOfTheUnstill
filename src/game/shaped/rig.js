@@ -272,7 +272,7 @@ export function createRigState(rig) {
 
 const _f = new Float64Array(3), _u = new Float64Array(3), _o = new Float64Array(3);
 
-/** Bone frame for chunk c of body b → _o (origin), _f (forward, unit), _u (up, unit); returns length. */
+/** Bone frame for chunk c of body b → _o (origin), _f (forward, unit), _u (up, unit). */
 function boneFrame(b, rig, c) {
   const kind = rig.bone[c], i = rig.index[c], sh = b.shape;
   let ax, ay, az, bx, by, bz;
@@ -294,7 +294,6 @@ function boneFrame(b, rig, c) {
   const d = ux * fx + uy * fy + uz * fz; ux -= fx * d; uy -= fy * d; uz -= fz * d;
   const ul = Math.sqrt(ux * ux + uy * uy + uz * uz) || 1;
   _o[0] = ax; _o[1] = ay; _o[2] = az; _f[0] = fx; _f[1] = fy; _f[2] = fz; _u[0] = ux / ul; _u[1] = uy / ul; _u[2] = uz / ul;
-  return len;
 }
 
 /**
