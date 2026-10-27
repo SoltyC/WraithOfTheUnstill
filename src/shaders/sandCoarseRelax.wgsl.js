@@ -1,9 +1,11 @@
 // Coarse closed-form two-cell projections. Each phase owns disjoint pairs: no atomics,
 // ping-pong buffer or neighbour write race. A 32-row band bounds the cost per page visit.
+import { HEIGHT_REMAINDER_WGSL } from './heightRemainder.wgsl.js';
 import { DRY_REPOSE, WET_REPOSE } from '../terrain/state/relaxation.js';
 import { PAGE_N, COARSE_PER_M, WORLD_HALF } from '../terrain/state/layout.js';
 import { CLIPMAP_SAMPLE_WGSL } from './clipmapSample.wgsl.js';
 const common = /* wgsl */ `
+${HEIGHT_REMAINDER_WGSL}
 struct Job { page:vec2i, slot:i32, row:i32, enabled:u32, pad0:u32,pad1:u32,pad2:u32 };
 @group(0) @binding(0) var<storage,read_write> h:array<u32>;
 @group(0) @binding(1) var<storage,read> state:array<u32>;
@@ -22,7 +24,7 @@ fn put(k:u32,v:f32){
   let packed=pack2x16float(vec2f(max(-v,0.0),max(v,0.0)));
   let round=unpack2x16float(packed);
   h[k]=packed;
-  extra[k]=(extra[k]&65535u)|(pack2x16float(vec2f(0.0,v-(round.y-round.x)))&4294901760u);
+  extra[k]=(extra[k]&65535u)|packHeightRemainder(v-(round.y-round.x));
 }
 `;
 export const sandCoarseRelaxWGSL = (vertical,phase) => /* wgsl */ `${common}

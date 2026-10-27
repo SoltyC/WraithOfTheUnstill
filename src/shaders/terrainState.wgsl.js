@@ -3,6 +3,7 @@
 // in a frame all see the last write, so per-dispatch params would collide); workgroup_id.z picks
 // the job.
 
+import { HEIGHT_REMAINDER_WGSL } from './heightRemainder.wgsl.js';
 import { FINE_N, RATIO, PAGE_N, PAGES, WORLD_HALF, COARSE_PER_M, FINE_PER_M, NO_SLOT, TRANSFORM } from '../terrain/state/layout.js';
 import { DECAY, MATERIAL_COUNT, DITHER_X, DITHER_Z, DITHER_T, DITHER_A, DITHER_B } from '../terrain/state/healing.js';
 import { CREST, RIDGE_END, BOWL, RIM0, RIM1, TRENCH_EXT0, TRENCH_EXTK } from '../game/bending/stoneMass.js';
@@ -17,6 +18,7 @@ export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
 export const STATE_COMMON_WGSL = /* wgsl */ `
+${HEIGHT_REMAINDER_WGSL}
 const FINE_N: u32 = ${FINE_N}u;
 const RATIO: i32 = ${RATIO};
 const PAGE_N: u32 = ${PAGE_N}u;
@@ -155,7 +157,7 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let remainder = (h.y-h.x)-(round.y-round.x);
   atlas0[ci] = packed;
   atlas1[ci] = pack4x8unorm(sv);
-  atlas2[ci] = (pack4x8unorm(mv)&65535u)|(pack2x16float(vec2f(0.0,remainder))&4294901760u);
+  atlas2[ci] = (pack4x8unorm(mv)&65535u)|packHeightRemainder(remainder);
 }
 `;
 
@@ -194,7 +196,7 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let remainder = (h.y-h.x)-(round.y-round.x);
   fine0[k] = packed;
   fine1[k] = pack4x8unorm(sv);
-  fine2[k] = (pack4x8unorm(mv)&65535u)|(pack2x16float(vec2f(0.0,remainder))&4294901760u);
+  fine2[k] = (pack4x8unorm(mv)&65535u)|packHeightRemainder(remainder);
 }
 `;
 
@@ -389,7 +391,7 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   fine0[k] = packed;
   fine1[k] = packDither(t.s, n);
   let remainder=(t.h.y-t.h.x)-(rounded.y-rounded.x);
-  fine2[k] = (packDither(t.m, n) & 65535u) | (pack2x16float(vec2f(0.0,remainder)) & 4294901760u);
+  fine2[k] = (packDither(t.m, n) & 65535u) | packHeightRemainder(remainder);
 }
 `;
 
@@ -415,7 +417,7 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   atlas0[k] = packed;
   atlas1[k] = packDither(t.s, n);
   let remainder=(t.h.y-t.h.x)-(rounded.y-rounded.x);
-  atlas2[k] = (packDither(t.m,n)&65535u)|(pack2x16float(vec2f(0.0,remainder))&4294901760u);
+  atlas2[k] = (packDither(t.m,n)&65535u)|packHeightRemainder(remainder);
 }
 `;
 

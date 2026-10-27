@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-27T20:06:31.316Z",
+  "reports": [
+    {
+      "target": [
+        2605,
+        685
+      ],
+      "position": {
+        "x": 2605,
+        "y": 204.30059814453125,
+        "z": 685
+      },
+      "groundHeight": 204.30059814453125,
+      "maxFootError": 0,
+      "groundedFrames": 120,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "target": [
+        1415,
+        -1670
+      ],
+      "position": {
+        "x": 1415,
+        "y": 328.0152587890625,
+        "z": -1670
+      },
+      "groundHeight": 328.0152587890625,
+      "maxFootError": 0,
+      "groundedFrames": 120,
+      "gpuErrors": 0,
+      "late": []
+    }
+  ]
+}

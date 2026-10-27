@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-27T20:05:26.749Z",
+  "assessment": "Diagnostic views only: foreground/broad ridge composition does not establish the knife-edge silhouette or motion gate.",
+  "shots": [
+    {
+      "spot": {
+        "id": "p9d2-crest-500",
+        "biome": "dunes",
+        "label": "Diagnostic dune ridge geometry at 500 m (elevated camera)",
+        "time": 17.8,
+        "weather": "clear",
+        "hidePlayer": true,
+        "player": [
+          1544.4095225512606,
+          -1187.037086855466
+        ],
+        "camera": {
+          "mode": "free",
+          "pos": [
+            1544.4095225512606,
+            336.0152441543178,
+            -1187.037086855466
+          ],
+          "yaw": 3.403392041388943,
+          "pitch": 0.015998634876343527,
+          "fov": 0.7
+        }
+      },
+      "target": {
+        "x": 1415,
+        "z": -1670,
+        "h": 328.0152441543178
+      },
+      "setup": {
+        "settled": true,
+        "actualFov": 0.7,
+        "renderScale": 1,
+        "camera": [
+          1544.4095225512606,
+          336.0152441543178,
+          -1187.037086855466
+        ],
+        "gpuErrors": 0,
+        "late": []
+      },
+      "file": "screenshots/d2-crests-review/p9d2-crest-500.png"
+    },
+    {
+      "spot": {
+        "id": "p9d2-crest-2000",
+        "biome": "dunes",
+        "label": "Diagnostic dune ridge geometry at 2000 m (elevated camera)",
+        "time": 17.8,
+        "weather": "clear",
+        "hidePlayer": true,
+        "player": [
+          1932.6380902050423,
+          261.8516525781365
+        ],
+        "camera": {
+          "mode": "free",
+          "pos": [
+            1932.6380902050423,
+            336.0152441543178,
+            261.8516525781365
+          ],
+          "yaw": 3.403392041388943,
+          "pitch": 0.003999978666871465,
+          "fov": 0.7
+        }
+      },
+      "target": {
+        "x": 1415,
+        "z": -1670,
+        "h": 328.0152441543178
+      },
+      "setup": {
+        "settled": true,
+        "actualFov": 0.7,
+        "renderScale": 1,
+        "camera": [
+          1932.6380902050423,
+          336.0152441543178,
+          261.8516525781365
+        ],
+        "gpuErrors": 0,
+        "late": []
+      },
+      "file": "screenshots/d2-crests-review/p9d2-crest-2000.png"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "iterations": 8,
+  "date": "2026-10-27T19:58:56.970Z",
+  "ready": true,
+  "maxError": 1.405782412700063e-7,
+  "rms": 1.0329740460010255e-8,
+  "beforeMass": 1339.2897281646729,
+  "afterMass": 1339.2897189780488,
+  "massError": -0.000009186624083667994,
+  "packedMassError": -0.013738363224547356,
+  "packedCycles": 100,
+  "relativePackedMassError": -0.000010257947130957276,
+  "note": "Scratch float output before f16 store. Closed tile; iteration count recorded above. Headless indicative timing.",
+  "timing": {
+    "jobs": 120,
+    "samples": 126,
+    "relaxGpuTotalMs": 4.483072,
+    "maxBatchMs": 0.08396800000000049,
+    "errors": 0,
+    "late": [],
+    "adapter": "nvidia / ampere"
+  }
+}
