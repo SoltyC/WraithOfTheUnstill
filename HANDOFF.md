@@ -1,5 +1,18 @@
 # Handoff — 2026-10-27 (full)
 
+## Current continuation — 2026-10-28 (supersedes branch status below)
+
+The user's complete handoff goal continues. Main `72fceda` includes reviewed **D1a sand**, the **encounter audit/lifecycle fixes and three isolation films**, and **D9a Skitters/Plate-backs**. Main and both feature branches are pushed. Combined validation: **772 tests pass**, locked production build passes. The detailed operational tracker is `docs/phase-9/implementation-status.md`; read it before following historical worktree/port notes below.
+
+- Encounter target review: `docs/encounter-audit.md` §9. Staff + starting Frost clears cloister/stair/ring 3/3 each. Barley bot detours fix collision stalls: 3/3 repeated clears, all six spawned, 60 s calm. Failed pre-fix bot runs are preserved. Surf (120 s), glide (60 s) and combat (12 s) films are committed at 720p/60 under `screenshots/isolation/`; human enjoyment and surf-speed/night/blizzard telegraphs remain open.
+- Sand D1a: wet absorption corrected after exposure readback. Revised dry/wet foreground YAVG 148.337 / 106.712. Fixed-view headless GPU delta +1.55 ms; this does not pass the sustained-performance gate. Review and raw measurements: `docs/phase-9/sand-review.md`. Raw screenshot history was excluded from main.
+- D9a lead fixes: one filling MOUND brush replaces the hollow Ridge; GPU readback confirms +0.355 m relief. Frozen warnings do not stamp/emit. Dust now spills above the mound. Six fresh 1280 px captures are committed. Removing an unused boxed rig return reduces mixed-pool collections 608 → 19 / 100k simulated frames; **full-path zero allocation remains open**. `docs/phase-9/dune-shaped-review.md` distinguishes measured checks and remaining gates.
+- **Now D2**, primary implementing in `/home/sol/wraith-relax`, `codex/dune-relaxation`, preview 4176. CPU conservative reference and dirty scheduler have six property/regression tests; initial GPU ping-pong prototype runs with zero target errors/late pipelines and stays **disabled by default** pending correctness, timing, collision and visual verification. D2 is not finished or integrated.
+- Global pipeline gate: forest haze compute warm-up works. Five cold-entry late render variants remain; `src/core/gpuInstrument.js` now records WGSL shader names to identify them. No world-wide zero-late or sustained 1440p/60 acceptance is claimed.
+- Latest delegation rule: primary writes most code; only extremely easy/light tasks may go to Terra/Luna, and primary verifies all written code. Earlier Sonnet/Opus identity/trailer and delegate-all guidance is historical.
+- Full Windows Chrome/GitHub access works. Only one Windows GPU workload at a time; primary currently owns it on 4176. Preserve untracked captures. Builds use `/tmp/wraith-build.lock`. Continue D2 → D9b → D1b → D3 → D5/D6 → D7/D7b → D8 → D10 → D11 → glass blade/trade/forge → D12. Human-only gates are prepared, never falsely signed off.
+
+
 ## Codex continuation — 2026-10-27
 
 **Later access update:** the user enabled full access in Codex CLI. Windows commands, GitHub fetch/push and headless Windows Chrome now work. All checkpoints below were pushed; the sand branch now ends at **`e573210`** after saving six fresh 1280 px rain-stage captures in `/home/sol/wraith-sand/screenshots/sand-review-codex-1280/`. The bot reported `gpuStats.late: []` on the wet scene; the screenshot runner completed **6/6**. Fully wet sand still looks too close to dry sand, so fix its material/lighting response next. The earlier environment limitation below is historical and no longer blocks films or GPU review. Encounter films, full transition/pipeline checks and star-field comparison remain to do.
