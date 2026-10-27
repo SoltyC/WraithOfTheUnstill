@@ -1,5 +1,17 @@
 # Handoff — 2026-10-27 (full)
 
+## Codex continuation — 2026-10-27
+
+The original handoff below is retained. These updates supersede its branch status and delegation guidance:
+
+- **Latest user instruction:** do most implementation yourself; delegate only very easy code to a Luna subagent when useful for usage. No subagents were used in this continuation. The earlier Sonnet/Opus workflow and Claude session trailers describe the previous session; do not claim that identity or reuse its session URL for new Codex work.
+- **Main gameplay remains at `139ead6`.** Baseline: **687 tests passed**, locked production build passed. Existing untracked screenshot folders were preserved.
+- **Encounters:** `claude/encounters` now ends at **`b0955cc`**, with local main merged. Fixed whole-wave capacity (including FALLING slots), Barley calm after clear, abandoned/load telemetry and fresh-run health baselines. **749 tests passed**, locked build passed. Review: `/home/sol/wraith-encounters/docs/encounter-audit.md` §8. Main integration is pending the existing GPU review and glide/combat films. The design heading now accurately says review is pending.
+- **Sand:** `claude/sand` now ends at **`39613c8`**, with local main merged. Preserved main's **229 photo spots verbatim**, appending eleven sand spots (251 added lines, none removed against main). Fixed independent rain/wetness/puddle forcing and bounded drying in CPU and WGSL. **696 tests passed**, locked build passed. Review: `/home/sol/wraith-sand/docs/phase-9/sand-review.md`. Six existing 1280 px captures were inspected: fully wet sand still needs a fresh visual check for clearly uniform darkening. Existing dirty `sand-raw8` captures were left untouched. Use a squash and omit raw capture iterations when eventually integrating.
+- **Dune Shaped:** unchanged at `0770ec6`; D9a remains to build.
+- **Environment limitation:** Windows executables fail inside this restricted execution environment (`cmd.exe /c ver`: `UtilBindVsockAnyPort: socket failed 1`). GitHub fetch and push fail because `github.com` cannot resolve. The commits above exist **locally and are not pushed**. No new GPU play, films, frame timing or late-pipeline results were obtained or claimed.
+- **Exact next step:** restore the existing Windows Chrome/bot path, finish encounter films and review, verify fully wet sand darkening and star-field cost, then integrate and push these branches. D9a can be developed independently; D2 must still wait for sand integration. Both branch worktrees contain their own updated progress/review notes.
+
 This is the complete state of **The Wraith of the Unstill** at handoff, written for a new agent with **no prior context**. It covers:
 
 - what the game is and how the user wants work done (§0–§2);
