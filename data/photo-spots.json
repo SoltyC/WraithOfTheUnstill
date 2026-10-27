@@ -5276,14 +5276,15 @@
         1740
       ],
       "bend": {
-        "seconds": 0.62,
-        "element": "stone"
+        "seconds": 0.52,
+        "element": "stone",
+        "only": "shard"
       },
       "camera": {
         "mode": "follow",
-        "yaw": 0.5,
-        "pitch": 0.3,
-        "dist": 7
+        "yaw": 0.8,
+        "pitch": 0.25,
+        "dist": 6
       }
     },
     {
@@ -5340,14 +5341,15 @@
         1740
       ],
       "bend": {
-        "seconds": 4.3,
-        "element": "stone"
+        "seconds": 1.5,
+        "element": "stone",
+        "only": "bloom"
       },
       "camera": {
         "mode": "follow",
         "yaw": 0.2,
-        "pitch": 0.45,
-        "dist": 12
+        "pitch": 0.55,
+        "dist": 11
       }
     },
     {

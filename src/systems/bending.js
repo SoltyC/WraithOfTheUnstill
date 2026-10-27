@@ -120,10 +120,13 @@ export function addBendingSystem(g) {
       }
       if (stoneRoll) {
         // Stone: a Shard thrown ahead-right, a Ridge dragged ahead-left (held), a Bloom further out.
-        stone.castShard = t === 0;
-        stone.ridgeHeld = t > 0.5 && t < 2.2;
+        // `only` (the spot's spec): just one verb, for a clean shot.
+        const only = spec.only, tb = only === 'bloom' ? 0.15 : 3.0, tr = only === 'ridge' ? -0.4 : 0;
+        stone.castShard = t === 0 && (!only || only === 'shard');
+        stone.ridgeHeld = (!only || only === 'ridge') && t > 0.5 + tr && t < 2.2;
         stone.tx = p.x + fx * (10 + 4 * (t - 0.5)) - rx * (3.5 - 1.2 * (t - 0.5)); stone.tz = p.z + fz * (10 + 4 * (t - 0.5)) - rz * (3.5 - 1.2 * (t - 0.5));
-        if (Math.abs(t - 3.0) < dt * 0.5) { stone.tx = p.x + fx * 11 + rx * 3.5; stone.tz = p.z + fz * 11 + rz * 3.5; stone.castBloom = true; }
+        if (only === 'shard') { stone.tx = p.x + fx * 14; stone.tz = p.z + fz * 14; }
+        if ((!only || only === 'bloom') && Math.abs(t - tb) < dt * 0.5) { stone.tx = p.x + fx * (only ? 7.5 : 11) + rx * (only ? 0.5 : 3.5); stone.tz = p.z + fz * (only ? 7.5 : 11) + rz * (only ? 0.5 : 3.5); stone.castBloom = true; }
         ground.qx = stone.tx; ground.qz = stone.tz; ground.sample(); stone.ty = ground.h;
         w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = 0; w.vz = 0; w.yaw = f; w.grounded = true; w.dt = dt;
         w.time = clock.simTime - (spec.seconds - t); wraithView.time = w.time;

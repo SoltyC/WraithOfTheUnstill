@@ -151,7 +151,7 @@ describe('Shard', () => {
     expect(r.stamps.filter((s) => s.k === BRUSH.MOUND).length).toBeGreaterThan(3);
   });
   it('is real chunk geometry from the surface material', () => {
-    for (const [surf, kind] of [[SURF.SNOW, 0], [SURF.GRASS, 5], [SURF.ROCK, 6]]) {
+    for (const [surf, kind] of [[SURF.SNOW, 6], [SURF.GRASS, 5], [SURF.ROCK, 6]]) {
       const r = rig(surf);
       r.st.castShard = true; r.run(0.4);
       expect(r.st.chunks[13]).toBe(kind);

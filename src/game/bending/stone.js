@@ -20,7 +20,7 @@ export const SURF = { SNOW: 0, GRASS: 1, ROCK: 2, WATER: 3, SAND: 4, MUD: 5, ASH
 /** Per surface: chunk kind (shaders/shaped.wgsl.js: 0 packed snow, 5 turf, 6 stone), how much the ground gives (depth ×),
  *  how hard it heaves (height ×), bake material id for healing, and the sand-slump stub (D2). */
 export const SURFACE_INFO = [
-  { key: 'snow', kind: 0, give: 1, heave: 1, mat: 0, slump: 0 },
+  { key: 'snow', kind: 6, crumb: 0, give: 1, heave: 1, mat: 0, slump: 0 },
   { key: 'grass', kind: 5, give: 1, heave: 1, mat: 3, slump: 0 },
   { key: 'rock', kind: 6, give: 0.45, heave: 0.55, mat: 5, slump: 0 },
   { key: 'water', kind: 0, give: 0, heave: 0, mat: 7, slump: 0 },
@@ -32,13 +32,13 @@ export const SURFACE_INFO = [
 /** Arguments to the writer helpers, passed through here: a call with double arguments boxes them (the alloc check). */
 const A = new Float64Array(24);
 export const shardTuning = {
-  scarAhead: 2.3,     // m from the caster: where the plate is torn out
+  scarAhead: 3.6,     // m from the caster: where the plate is torn out
   scarHalf: 0.62,     // m: the scar's half width
   scarDepth: 0.2,     // m
   rise: 0.22,         // s the plate lifts out of the ground
-  lift: 1.15,         // m above the ground at the top of the rise
+  lift: 1.5,          // m above the ground at the top of the rise
   speed: 27, range: 30, gravity: 3.5,
-  size: 0.95,         // m: the plate's width
+  size: 1.5,          // m: the plate's width
   hitRadius: 1.05,    // m: against a body
   damage: 18, knock: 1, stagger: true,
   laneSpeed: 20, laneRange: 24, laneHeight: 0.45, laneDepth: 0.12, // Flow 3: skims low, ploughing a lane
@@ -60,13 +60,13 @@ export const ridgeTuning = {
 };
 export const bloomTuning = {
   minRange: 3, maxRange: 14,
-  radius: 3.1,        // m: footprint radius (the pit is 0.42 of it, the rim peaks at 0.57)
-  depth: 0.8,         // m: bowl depth
+  radius: 4.6,        // m: footprint radius (the pit is 0.42 of it, the rim peaks at 0.57)
+  depth: 1.1,         // m: bowl depth
   curtain: 3.4,       // s the ejecta take to fall back
-  mounds: 9,          // fall-back stamps (the curtain landing as state)
+  mounds: 14,         // fall-back stamps (the curtain landing as state)
   launch: 1.9,        // m the foes are thrown (a visual pop), trap: s they are pinned in the crater
   trap: 1.8, damage: 22, shove: 7, reach: 1.25,   // reach: × radius, the bodies caught
-  pieces: 12,         // real chunks thrown up
+  pieces: 16,         // real chunks thrown up
   lightRadius: 7, lightIntensity: 2.2,
 };
 
@@ -277,7 +277,7 @@ export function createStoneBending(ctx) {
 
   function writePlate() {
     const k = A[0], size = A[1], nx = A[2], ny = A[3], nz = A[4], fx0 = A[5], fy0 = A[6], fz0 = A[7];
-    const T = shardTuning, kind = SURFACE_INFO[sh.surf[k]].kind;
+    const T = shardTuning, kind = SURFACE_INFO[sh.surf[k]].kind, crumb = SURFACE_INFO[sh.surf[k]].crumb ?? kind;
     // Forward in the plate's plane: the flight direction with its normal part removed.
     let fx = fx0, fy = fy0, fz = fz0;
     const dn = fx * nx + fy * ny + fz * nz; fx -= nx * dn; fy -= ny * dn; fz -= nz * dn;
@@ -288,7 +288,7 @@ export function createStoneBending(ctx) {
     for (let c = 1; c < PLATE; c++) {
       const a = sh.t[k] * (5 + c * 2) + c * 2.1, r = 0.55 + 0.12 * c, back = -0.25 * c;
       const ox = Math.cos(a) * r, oz = Math.sin(a) * r;
-      (A[0] = o + c * 16, A[1] = sh.x[k] + ox * (-fz) + fx * back + nx * oz * 0.4, A[2] = sh.y[k] + fy * back + ny * oz * 0.4 + 0.05, A[3] = sh.z[k] + ox * fx + fz * back + nz * oz * 0.4, A[4] = size * 0.34, A[5] = fx, A[6] = fy, A[7] = fz, A[8] = size * 0.26, A[9] = nx, A[10] = ny, A[11] = nz, A[12] = size * 0.3, A[13] = k * 13.7 + 2 * c, A[14] = kind, A[15] = 0, A[16] = sh.phase[k] === 0 && sh.t[k] < 0.05 ? 0 : 1, set());
+      (A[0] = o + c * 16, A[1] = sh.x[k] + ox * (-fz) + fx * back + nx * oz * 0.4, A[2] = sh.y[k] + fy * back + ny * oz * 0.4 + 0.05, A[3] = sh.z[k] + ox * fx + fz * back + nz * oz * 0.4, A[4] = size * 0.34, A[5] = fx, A[6] = fy, A[7] = fz, A[8] = size * 0.26, A[9] = nx, A[10] = ny, A[11] = nz, A[12] = size * 0.3, A[13] = k * 13.7 + 2 * c, A[14] = crumb, A[15] = 0, A[16] = sh.phase[k] === 0 && sh.t[k] < 0.05 ? 0 : 1, set());
     }
   }
   function set() {
@@ -312,7 +312,7 @@ export function createStoneBending(ctx) {
     const vl = Math.sqrt((dvx) * (dvx) + (dvz) * (dvz)) || 1;
     for (let q = 0; q < 9; q++) {
       const a = (rn(), A[21]) * 6.283, sp = 2 + (rn(), A[21]) * 5;
-      (A[0] = x, A[1] = y + 0.1, A[2] = z, A[3] = Math.cos(a) * sp + dvx / vl * 3, A[4] = 2.5 + (rn(), A[21]) * 4, A[5] = Math.sin(a) * sp + dvz / vl * 3, A[6] = 0.12 + 0.2 * (rn(), A[21]), A[7] = info.kind, A[8] = surf, spawnDebris());
+      (A[0] = x, A[1] = y + 0.1, A[2] = z, A[3] = Math.cos(a) * sp + dvx / vl * 3, A[4] = 2.5 + (rn(), A[21]) * 4, A[5] = Math.sin(a) * sp + dvz / vl * 3, A[6] = 0.12 + 0.2 * (rn(), A[21]), A[7] = ((rn(), A[21]) < 0.5 ? info.kind : (info.crumb ?? info.kind)), A[8] = surf, spawnDebris());
     }
     ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 0.55; ts.bd = 0.14 * info.heave; ts.bc = 0.3;
     ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
@@ -487,7 +487,7 @@ export function createStoneBending(ctx) {
     mass.addCrater();
     for (let q = 0; q < T.pieces; q++) {
       const a = (rn(), A[21]) * 6.283, sp = 1 + (rn(), A[21]) * 3.2;
-      (A[0] = x + Math.cos(a) * R * 0.3, A[1] = gy + 0.2, A[2] = z + Math.sin(a) * R * 0.3, A[3] = Math.cos(a) * sp, A[4] = 5 + (rn(), A[21]) * 4, A[5] = Math.sin(a) * sp, A[6] = 0.14 + 0.22 * (rn(), A[21]), A[7] = info.kind, A[8] = surf, spawnDebris());
+      (A[0] = x + Math.cos(a) * R * 0.3, A[1] = gy + 0.2, A[2] = z + Math.sin(a) * R * 0.3, A[3] = Math.cos(a) * sp, A[4] = 5 + (rn(), A[21]) * 4, A[5] = Math.sin(a) * sp, A[6] = 0.2 + 0.3 * (rn(), A[21]), A[7] = ((rn(), A[21]) < 0.5 ? info.kind : (info.crumb ?? info.kind)), A[8] = surf, spawnDebris());
     }
   }
   function stepBloom(s, k, li) {
