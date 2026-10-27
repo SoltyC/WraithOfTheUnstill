@@ -5,6 +5,7 @@
 // sizes the backbuffer: setHardwareScalingLevel() would itself resize to the window.
 
 import { gpuStats } from '../core/gpuInstrument.js';
+import { preserveSnapshotSetting } from '../render/snapshotSetting.js';
 
 /**
  * @param {HTMLCanvasElement} canvas
@@ -28,6 +29,7 @@ export async function createEngine(canvas, qs) {
     deviceDescriptor: { requiredFeatures: ['timestamp-query'] },
   });
   await engine.initAsync({ jsPath: '', wasmPath: '' }, { jsPath: '', wasmPath: '' });
+  preserveSnapshotSetting(engine);
   // Reverse-Z: a 30 km far plane with a 10 cm near plane needs it to avoid z-fighting at range.
   engine.useReverseDepthBuffer = true;
 

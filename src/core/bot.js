@@ -252,9 +252,12 @@ export function startBot(w, qs) {
     const engine = g.engine, loop = g.loop, canvas = engine.getRenderingCanvas();
     const step = js ? new Function('t', 'i', 'g', 'w', 'cam', 'inject', js) : null;
     const prevScale = params.v.renderScale, prevDyn = params.v.dynamicRes;
+    const prevSnapshot = engine.snapshotRendering, prevWidth = canvas.style.width, prevHeight = canvas.style.height;
+    // A resize changes pass attachments. Cached shadow/main bundles must not be replayed
+    // across that change or asynchronous readback pass boundaries in a fixed-step film.
+    engine.stopRenderLoop(); engine.snapshotRendering = false;
     setParam('dynamicRes', 0); setParam('renderScale', 1);
     canvas.style.width = size[0] + 'px'; canvas.style.height = size[1] + 'px'; engine.resize();
-    engine.stopRenderLoop();
     loop.fixedDt = 1 / fps;
     const off = new OffscreenCanvas(size[0], size[1]), ctx = off.getContext('2d');
     const n = Math.round(seconds * fps);
@@ -283,6 +286,8 @@ export function startBot(w, qs) {
       if (g.trees) g.trees.hold = false;
       loop.fixedDt = 0; loop.last = performance.now();
       setParam('dynamicRes', prevDyn); setParam('renderScale', prevScale);
+      canvas.style.width = prevWidth; canvas.style.height = prevHeight; engine.resize();
+      engine.snapshotRendering = prevSnapshot;
       engine.runRenderLoop(loop._frame);
     }
     return { frames: n, failed, dir: `screenshots/${dir}/frames/${name}`, wallS: +((performance.now() - t0) / 1000).toFixed(1) };
