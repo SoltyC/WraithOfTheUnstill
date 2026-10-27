@@ -23,6 +23,8 @@ export function applySpot(spot, game) {
   setParam('timeOfDay', spot.time);
   // Spots force their weather (reproducible shots); 'auto' leaves the natural cycle.
   worldState.weatherOverride = spot.weather && spot.weather !== 'auto' ? spot.weather : null;
+  // Forced rain-wetness (dev / sand shots): wet, slow puddle value and rain intensity, 0..1 each, or absent.
+  worldState.wetForce = spot.wet ?? -1; worldState.puddleForce = spot.puddle ?? -1; worldState.rainForce = spot.rain ?? -1;
   // A lightning strike held at its moment for the shot: { bearing (deg from the view), dist (m), age (s) }.
   worldState.strike = spot.strike || null;
   // Spots show the land restored unless they ask for it stilled (the accepted gate looks).

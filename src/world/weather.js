@@ -59,6 +59,8 @@ export function createWeather() {
     state: 'clear',
     /** Forced state from the dev overlay or a photo spot, or null. */
     override: null,
+    /** Dev / photo-spot forcing (0..1, or -1 for none): sets wetness, the slow puddle value and the rain outright. */
+    wetForce: -1.5 + 0.5, puddleForce: -1.5 + 0.5, rainForce: -1.5 + 0.5,
     /** Inputs: frost restored (0/1), meadow restored (0/1), the meadow's weight under the camera
      *  (0 frost … 1 meadow, eased by the owner) and dt (s); snap jumps straight to the target
      *  (captures, loads). */
@@ -91,6 +93,7 @@ export function createWeather() {
         w.wet += (wetT - w.wet) * (1 - Math.exp(-w.dt / (wetT > w.wet ? WET_RISE : WET_DRY)));
         w.puddle += (pudT - w.puddle) * (1 - Math.exp(-w.dt / (pudT > w.puddle ? PUDDLE_RISE : PUDDLE_DRY)));
       }
+      if (w.wetForce >= 0) { w.wet = w.wetForce; w.puddle = w.puddleForce >= 0 ? w.puddleForce : w.wetForce; w.rain = w.rainForce >= 0 ? w.rainForce : w.rain; }
       w.snap = false;
     },
   };
