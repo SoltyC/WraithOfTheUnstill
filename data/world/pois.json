@@ -214,7 +214,7 @@
     },
     {
       "id": "dry-stair-lip",
-      "kind": "overlook",
+      "kind": "road-seat",
       "biome": "meadow",
       "pos": [
         1040,
@@ -224,7 +224,7 @@
     },
     {
       "id": "camp-wellhouse",
-      "kind": "camp",
+      "kind": "camp-seat",
       "biome": "dunes",
       "pos": [
         1800,
@@ -235,7 +235,7 @@
     },
     {
       "id": "oasis-well",
-      "kind": "spring",
+      "kind": "spring-seat",
       "biome": "dunes",
       "pos": [
         1830,
@@ -393,7 +393,7 @@
     },
     {
       "id": "echo-dunes-1",
-      "kind": "echo-stone",
+      "kind": "echo-seat",
       "biome": "dunes",
       "pos": [
         1250,
@@ -403,7 +403,7 @@
     },
     {
       "id": "echo-dunes-2",
-      "kind": "echo-stone",
+      "kind": "echo-seat",
       "biome": "dunes",
       "pos": [
         1590,
@@ -413,7 +413,7 @@
     },
     {
       "id": "echo-dunes-3",
-      "kind": "echo-stone",
+      "kind": "echo-seat",
       "biome": "dunes",
       "pos": [
         2300,
@@ -423,7 +423,7 @@
     },
     {
       "id": "echo-dunes-4",
-      "kind": "echo-stone",
+      "kind": "echo-seat",
       "biome": "dunes",
       "pos": [
         2530,
@@ -433,7 +433,7 @@
     },
     {
       "id": "echo-dunes-5",
-      "kind": "echo-stone",
+      "kind": "echo-seat",
       "biome": "dunes",
       "pos": [
         2150,
@@ -495,7 +495,7 @@
     },
     {
       "id": "dry-stair-foot",
-      "kind": "overlook",
+      "kind": "road-seat",
       "biome": "dunes",
       "pos": [
         1800,
