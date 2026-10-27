@@ -22,9 +22,13 @@ Reviewed the existing 1280 × 720 files in `screenshots/sand/`: close noon, clos
 
 ## Remaining checks
 
-1. Restore the existing Windows capture/bot path. `cmd.exe /c ver` fails at the WSL socket boundary (`UtilBindVsockAnyPort: socket failed 1`). GitHub DNS is also unavailable, so new commits cannot be pushed here.
+1. **Access restored later on 2026-10-27:** the user enabled full access in Codex CLI. Windows interoperability and GitHub access now work; the existing checkpoints were pushed. Headless Windows Chrome connected to the bot on port 4174. On the fully wet scene, the bot reported wetness 0.95, puddle 0.5, rain 0.8 and `gpuStats.late: []` (this is a startup check, not the full weather-transition gate).
 2. Capture the six rain stages again, recording exposure; make fully wet sand visibly darker while keeping drop dots legible and the existing style. Check the compacted and frozen shots too.
 3. Measure the star-field cost before and after, confirm `gpuStats.late == []`, and review clipped-pixel fractions.
 4. Integrate only after these checks. The branch contains **66 screenshot paths** absent from main, including full-size raw iterations; use the handoff's squash procedure and stage only the intended 1280 px review shots, source, tests, assets and docs. Do not merge raw capture history or stage `node_modules`.
 
 **Smell review:** this material response adds no combat, quest, economy or gating rules. Its visual feedback serves an existing terrain-state system. Fun, moving telegraphs, and the visual result of this revision are **NOT ASSESSED**; no new claims are made about performance or frame allocations.
+
+## Fresh capture verification after access was restored
+
+The existing `win-shots.sh` completed **6/6 rain-stage captures** on headless Windows Chrome at 2560 × 1440. Raw output is local in `screenshots/sand-review-codex/`; committed review copies are 1280 × 720 in `screenshots/sand-review-codex-1280/`. The raw capture log records saves from 08:23:08 to 08:24:33 UTC. The dry, first-drop and fully wet copies were visually inspected: the scene renders correctly and first drops are visible, but fully wet sand still appears too close to dry sand. The earlier change verdict stands; investigate material lighting and exposure before accepting D1a. Capture access is no longer a blocker. No performance gate is claimed.
