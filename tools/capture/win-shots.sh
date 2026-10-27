@@ -20,6 +20,10 @@ curl -sf -o /dev/null http://localhost:${PORT:-4173}/ || { echo "preview server 
 killChrome() {
   powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"name='chrome.exe'\" | Where-Object { \$_.CommandLine -match 'wraith-shots-${PORT:-4173}-' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" >/dev/null 2>&1
 }
+trap killChrome EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 saved() { local c=0; for id in $ids; do [ -f "screenshots/$dir/$id.png" ] && c=$((c + 1)); done; echo $c; }
 launch() { # $1 = first spot id, $2 = its index
   local prof="wraith-shots-${PORT:-4173}-$(date +%s%N)"
