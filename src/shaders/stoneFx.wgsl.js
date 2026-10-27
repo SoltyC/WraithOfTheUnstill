@@ -9,7 +9,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 
 export const SHARDS = 3, RIDGES = 3, BLOOMS = 2, PTS = 6;
-export const PER_SHARD = 36, PER_RIDGE = 70, PER_BLOOM = 190, PER_PUFF = 26, PER_SPLASH = 30;
+export const PER_SHARD = 36, PER_RIDGE = 70, PER_BLOOM = 250, PER_PUFF = 26, PER_SPLASH = 30;
 export const STONE_COUNT = SHARDS * PER_SHARD + RIDGES * PER_RIDGE + BLOOMS * PER_BLOOM + PER_PUFF + PER_SPLASH;
 const R0 = SHARDS * PER_SHARD, B0 = R0 + RIDGES * PER_RIDGE, P0 = B0 + BLOOMS * PER_BLOOM, S0 = P0 + PER_PUFF;
 
@@ -97,6 +97,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let b = j / ${PER_BLOOM}u; let k = j % ${PER_BLOOM}u;
     let A = uniforms.stone[30u + b]; let B = uniforms.stone[32u + b];
     let age = A.w; let R = B.x; mtl = B.z;
+    // Snow is the top layer: what the eruption throws is the dark earth and rock beneath it.
+    let earthy = select(mtl, 7.0, mtl < 0.5);
     if (age >= 0.0 && B.y > 0.0) {
       if (k < 150u) {
         // Ballistic with a soft gravity: up fast, then a long hang and fall (the curtain).
@@ -109,14 +111,15 @@ fn main(input: VertexInputs) -> FragmentInputs {
         if (tt > 0.0 && tt < life) {
           let y = vy * tt - 0.5 * g * tt * tt;
           p = A.xyz + vec3f(cos(a) * (rr + hv * tt), max(y, 0.0) + 0.05, sin(a) * (rr + hv * tt));
-          kind = kindFor(mtl, select(0.0, 0.9, h7 < 0.35));          // mostly glitter, some grit
-          if (kind < 1.5) { sx = 0.022 + 0.022 * h4; }
-          else if (kind < 2.5) { sx = 0.1 + 0.1 * h4; }
+          mtl = earthy;
+          kind = kindFor(mtl, select(0.0, 0.9, h7 < 0.35));          // mostly clods, some grit
+          if (kind < 1.5) { sx = 0.045 + 0.05 * h4 + 0.04 * h6 * h6; }
+          else if (kind < 2.5) { sx = 0.16 + 0.16 * h4; }
           else { sx = 0.04 + 0.03 * h4; }
           sy = sx; rot = h5 * 6.28 + tt * (2.0 + 5.0 * h6);
-          alpha = smoothstep(0.0, 0.06, tt) * (1.0 - smoothstep(life - 0.4, life, tt)) * select(1.0, 0.35, kind > 1.5 && kind < 2.5);
+          alpha = smoothstep(0.0, 0.06, tt) * (1.0 - smoothstep(life - 0.4, life, tt)) * select(1.0, 0.55, kind > 1.5 && kind < 2.5);
         }
-      } else {
+      } else if (k < 190u) {
         // The ring of dust blown out along the ground over the first second.
         let u = age / 1.1;
         if (u < 1.0) {
@@ -125,7 +128,19 @@ fn main(input: VertexInputs) -> FragmentInputs {
           p = A.xyz + vec3f(cos(a) * rr, 0.15 + 0.7 * h3 * sin(u * 3.14159), sin(a) * rr);
           kind = select(2.0, 3.0, mtl > 2.5 && mtl < 3.5);
           sx = 0.25 + 0.3 * h4 + 0.5 * u; sy = sx; rot = h5 * 6.28 + t;
-          alpha = (1.0 - u) * 0.38;
+          alpha = (1.0 - u) * 0.5;
+        }
+      } else {
+        // The eruption's burst: a billow of powder and soil dust thrown up and out in the first moments.
+        let u = age / 0.95;
+        if (u >= 0.0 && u < 1.0) {
+          let a = h1 * 6.283; let e = 1.0 - (1.0 - u) * (1.0 - u);
+          let rr = R * (0.1 + 0.55 * h2) * (0.3 + 0.7 * e);
+          p = A.xyz + vec3f(cos(a) * rr, 0.2 + (1.2 + 3.4 * h3) * sqrt(e) * (1.0 - 0.35 * u), sin(a) * rr);
+          mtl = select(mtl, earthy, h7 < 0.5);                  // half powder, half soil: it must read against the snow
+          kind = 2.0;
+          sx = 0.45 + 0.6 * h4 + 1.1 * u; sy = sx; rot = h5 * 6.28 + t * 0.6;
+          alpha = (1.0 - u) * smoothstep(0.0, 0.05, u) * 0.62;
         }
       }
     }
@@ -187,6 +202,7 @@ ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 
 fn grain(mtl: f32, seed: f32) -> vec3f {
+  if (mtl > 6.5) { return mix(vec3f(0.15, 0.115, 0.085), vec3f(0.3, 0.25, 0.19), seed); }  // the earth under the snow
   if (mtl < 0.5) { return vec3f(0.86, 0.9, 0.98); }                                       // snow
   if (mtl < 1.5) { return mix(vec3f(0.2, 0.15, 0.09), vec3f(0.3, 0.38, 0.14), seed); }  // turf and soil
   if (mtl < 2.5) { return mix(vec3f(0.36, 0.36, 0.34), vec3f(0.52, 0.5, 0.45), seed); } // rock

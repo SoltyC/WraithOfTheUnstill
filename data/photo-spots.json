@@ -5097,7 +5097,7 @@
         "attack": "plunge",
         "height": 14,
         "at": 0.1,
-        "seconds": 0.62
+        "seconds": 0.78
       },
       "shaped": {
         "spawn": [
@@ -5123,7 +5123,7 @@
     {
       "id": "p9w-mace-dunk",
       "biome": "frost",
-      "label": "The dunk: a hound thrown up by an Updraft is driven into the ground by the plunge, and where it lands a second impact throws the hound beside it",
+      "label": "The dunk, from a low side view (camera at ground height, 9 m to the side): a hound thrown up by an Updraft is driven into the ground by the plunge, and where it lands a second impact throws the hound beside it",
       "time": 14.5,
       "weather": "clear",
       "player": [
@@ -5134,13 +5134,13 @@
       "camera": {
         "mode": "free",
         "pos": [
-          1067.5,
-          727.4,
-          2690.3
+          1069.0,
+          724.9,
+          2691.0
         ],
-        "yaw": -1.36,
-        "pitch": 0.1,
-        "fov": 0.95
+        "yaw": -1.406,
+        "pitch": -0.14,
+        "fov": 1.0
       },
       "facing": 0.0,
       "weapon": {
@@ -5348,8 +5348,30 @@
       "camera": {
         "mode": "follow",
         "yaw": 0.6,
-        "pitch": 0.32,
-        "dist": 9
+        "pitch": 0.55,
+        "dist": 11
+      }
+    },
+    {
+      "id": "p9s-bloom-turf",
+      "biome": "meadow",
+      "label": "Stone's Bloom on turf (meadow): the same crater on grass, ejecta of soil and sod",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "bend": {
+        "seconds": 0.9,
+        "element": "stone",
+        "only": "bloom"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.55,
+        "dist": 11
       }
     },
     {

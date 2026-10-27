@@ -5,7 +5,7 @@
 
 import { FINE_N, RATIO, PAGE_N, PAGES, WORLD_HALF, COARSE_PER_M, FINE_PER_M, NO_SLOT, TRANSFORM } from '../terrain/state/layout.js';
 import { DECAY, MATERIAL_COUNT } from '../terrain/state/healing.js';
-import { CREST, RIDGE_END, BOWL, RIM0, RIM1 } from '../game/bending/stoneMass.js';
+import { CREST, RIDGE_END, BOWL, RIM0, RIM1, TRENCH_EXT0, TRENCH_EXTK } from '../game/bending/stoneMass.js';
 
 export const MAX_BRUSHES = 48;
 // StateParams layout (u32 words; floats bitcast): see terrainState.js writeParams().
@@ -320,8 +320,11 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     // The trench is a flank, not a cap: lateral distance, within the segment's length only (an end cap
     // would cut into the crest of the segments before it).
     let dperp = abs(rel.x * bd.y - rel.y * bd.x) / bd.z;
-    let flank = abs(dot(rel, bd.xy)) <= br.z + 0.02 && dperp > ${f(CREST)} && dperp < ${f(RIDGE_END)};
-    let tr = sin(3.14159265 * (dperp - ${f(CREST)}) / ${f(RIDGE_END - CREST)}) * select(0.0, 1.0, flank);
+    // It runs a little past the segment's end, fading (more with lateral distance): on a bend the flank strips fan apart and a square end steps.
+    let ext = ${f(TRENCH_EXT0)} + ${f(TRENCH_EXTK)} * dperp * bd.z;
+    let endFade = 1.0 - smoothstep(br.z, br.z + ext, abs(dot(rel, bd.xy)));
+    let flank = dperp > ${f(CREST)} && dperp < ${f(RIDGE_END)};
+    let tr = sin(3.14159265 * (dperp - ${f(CREST)}) / ${f(RIDGE_END - CREST)}) * select(0.0, 1.0, flank) * endFade;
     t.h.y = max(t.h.y, br.w * crest);
     t.h.x = max(t.h.x, br.w * ex.w * tr);
     t.m.y = max(t.m.y, 1.0 - smoothstep(${f(CREST)}, ${f(CREST * 1.3)}, d));      // crushes vegetation under the crest

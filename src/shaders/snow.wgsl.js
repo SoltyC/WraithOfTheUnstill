@@ -148,6 +148,18 @@ fn frostApplyState(o: ptr<function, FrostSurf>, wp: vec3f, st: vec2f, sv: vec4f,
     (*o).N = normalize(vec3f((*o).N.x - g.x, (*o).N.y, (*o).N.z - g.y));
     (*o).ao *= 1.0 - 0.25 * chunk * clamp(0.5 - 0.5 * n1.x, 0.0, 1.0);
   }
+  // Earth beneath: a hollow deeper than the snow layer (a Bloom's bowl) bares dark soil; the heaped
+  // rim of a deep hollow is spattered with it, the clean snow between catching the light.
+  let bare = smoothstep(0.45, 0.9, st.x) * snow;
+  let rimMass = smoothstep(0.18, 0.5, st.y) * snow;
+  if (bare + rimMass > 0.0) {
+    let en = noised(wp.xz / 0.3).x * 0.5 + 0.5 * noised(wp.xz / 0.07).x * fpFade(0.07, fp);
+    let earthCol = vec3f(0.17, 0.125, 0.085) * (0.7 + 0.6 * en);
+    let spatter = bare + rimMass * smoothstep(0.35, 0.6, en) * 0.8;
+    (*o).albedo = mix((*o).albedo * (1.0 + 0.05 * rimMass), earthCol, clamp(spatter, 0.0, 1.0));
+    (*o).rough = mix((*o).rough, 0.9, clamp(bare, 0.0, 1.0));
+    (*o).snow = (*o).snow * (1.0 - clamp(spatter, 0.0, 1.0));
+  }
   // Slush: meltwater through the snow. Grey-blue, translucent-dark, with a wet sheen that
   // pools in the low parts (patchy at the edges).
   let wet = clamp(sv.y, 0.0, 1.0) * (*o).snow;
