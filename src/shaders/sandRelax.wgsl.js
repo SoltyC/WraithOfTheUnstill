@@ -48,6 +48,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
       if (any(q < vec2i(0)) || any(q >= vec2i(i32(N)))) { continue; }
       let other = ${src}[u32(q.y) * N + u32(q.x)];
       if (other.w < 0.5) { continue; }
+      if (abs(v.x) + abs(other.x) < 0.000001) { continue; }
       let repose = mix(${DRY_REPOSE}, ${WET_REPOSE}, max(v.z, other.z));
       let limit = repose * length(vec2f(f32(x),f32(z))) / ${FINE_PER_M}.0;
       let dh = (v.x - other.x) + (v.y - other.y);

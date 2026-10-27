@@ -14,6 +14,7 @@
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
 import { createSandRelax } from './sandRelax.js';
+import { RELAX_TILE } from './relaxation.js';
 import { createStateCollision } from './stateCollision.js';
 import { createSandCoarseRelax } from './sandCoarseRelax.js';
 import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js';
@@ -429,6 +430,14 @@ export function createTerrainState(engine, opts) {
       if (nOut > 0) { ok = csOut.dispatch(maxGroups(P_OUT, nOut), maxGroupsY(P_OUT, nOut), nOut) && ok; passRan[0] |= ok; }
       if (ok && nIn > 0) { ok = csIn.dispatch(maxGroups(P_IN, nIn), maxGroupsY(P_IN, nIn), nIn) && ok; passRan[1] |= ok; }
       if (!ok) return; // pipelines still compiling: retry the whole step next frame
+      // Worker arrivals can restore unstable relief after the initial wake already ran.
+      // Requeue only incoming texels near the player; distant strips wake on approach.
+      if (relaxation) for (let k = 0; k < nIn; k++) {
+        const r = P_IN + k * 4, cx = next[0] + FINE_N / 2, cz = next[1] + FINE_N / 2;
+        const x0 = Math.max(pi[r], cx - RELAX_TILE), z0 = Math.max(pi[r + 1], cz - RELAX_TILE);
+        const x1 = Math.min(pi[r + 2], cx + RELAX_TILE), z1 = Math.min(pi[r + 3], cz + RELAX_TILE);
+        if (x0 < x1 && z0 < z1) relaxation.queue.mark(x0, z0, x1, z1);
+      }
       if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
       if (brushN > 0 && csBrush.dispatch(maxGroups(P_BRECT, brushN), maxGroupsY(P_BRECT, brushN), brushN)) {
         if (relaxation) for (let b = 0; b < brushN; b++) {

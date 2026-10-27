@@ -28,8 +28,14 @@ describe('conservative granular relaxation', () => {
     dry.height[0] = wet.height[0] = 1; wet.wet.fill(1);
     dry.run(); wet.run(); expect(dry.height[0]).toBeLessThan(1); expect(wet.height[0]).toBe(1);
     expect(WET_REPOSE).toBeGreaterThan(DRY_REPOSE);
-    const g = createRelaxationGrid(2, 1); g.base[0] = 2; g.run();
-    expect(g.height[0]).toBeLessThan(0); expect(sum(g.height)).toBeCloseTo(0, 12);
+    const g = createRelaxationGrid(2, 1); g.base[0] = 2; g.height[0] = 0.1; g.run();
+    expect(g.height[0]).toBeLessThan(0.1); expect(sum(g.height)).toBeCloseTo(0.1, 12);
+  });
+  it('does not erode untouched macro terrain when a restored neighbourhood wakes', () => {
+    const g = createRelaxationGrid(9, 0.02);
+    for (let i = 0; i < g.base.length; i++) g.base[i] = Math.sin(i) * 10;
+    g.run(100);
+    expect(g.height.every(h => h === 0)).toBe(true);
   });
   it('does not move frozen sand, snow, mud or transformed rock through a shared edge', () => {
     for (const m of [0, 2, 3, 5]) {
@@ -41,6 +47,20 @@ describe('conservative granular relaxation', () => {
   });
 });
 describe('bounded relaxation scheduling', () => {
+  it('wakes restored ground on approach without refreshing idle work forever', () => {
+    const q = createRelaxationQueue(); q.now = 1;
+    q.wake(-1, -1);
+    expect(q.take(-1000, -1000, 1000, 1000)).toBe(true);
+    expect(q.pending).toBe(25);
+    q.now += RELAX_LIFETIME + 1;
+    q.wake(-2, -2); // same negative-coordinate cell: settled idle work stays expired
+    expect(q.take(-1000, -1000, 1000, 1000)).toBe(false);
+    q.wake(1, 1);
+    expect(q.take(-1000, -1000, 1000, 1000)).toBe(true);
+    expect(q.pending).toBe(25);
+    q.reset(); q.wake(1, 1); // load at the same location must wake again
+    expect(q.take(-1000, -1000, 1000, 1000)).toBe(true);
+  });
   it('deduplicates writes, handles negative coordinates, expires and resets', () => {
     const q = createRelaxationQueue(8); q.now = 1;
     q.mark(-2, -2, -1, -1); q.mark(-2, -2, -1, -1);

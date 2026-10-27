@@ -27,6 +27,7 @@ export function createRelaxationGrid(n, spacing) {
             if (xx < 0 || xx >= n || zz >= n) continue;
             const j = zz * n + xx;
             if (!isSand(material[j]) || frozen[j]) continue;
+            if (Math.abs(height[i]) + Math.abs(height[j]) < 1e-6) continue;
             const slope = DRY_REPOSE + (WET_REPOSE - DRY_REPOSE) * Math.max(wet[i], wet[j]);
             const limit = slope * spacing * (d < 2 ? 1 : Math.SQRT2);
             const dh = base[i] + height[i] - base[j] - height[j];
@@ -45,8 +46,18 @@ export function createRelaxationGrid(n, spacing) {
  */
 export function createRelaxationQueue(capacity = 64) {
   const xs = new Int32Array(capacity), zs = new Int32Array(capacity), until = new Float64Array(capacity);
-  let cursor = 0, evict = 0;
+  let cursor = 0, evict = 0, wakeX = NaN, wakeZ = NaN;
   const q = { x: 0, z: 0, now: 0.5, pending: 0,
+    // Revisit old deformation as the player approaches, even without a new brush. Limit the
+    // neighbourhood to 25 tiles so a full-window reload cannot evict every recent writer.
+    wake(x, z) {
+      const stride = RELAX_TILE / 2;
+      const xx = Math.floor(x / stride), zz = Math.floor(z / stride);
+      if (xx === wakeX && zz === wakeZ) return;
+      wakeX = xx; wakeZ = zz;
+      q.mark(xx * stride - RELAX_TILE, zz * stride - RELAX_TILE,
+        xx * stride + RELAX_TILE, zz * stride + RELAX_TILE);
+    },
     mark(x0, z0, x1, z1) {
       const stride = RELAX_TILE / 2;
       for (let z = Math.floor(z0 / stride); z <= Math.floor(z1 / stride); z++) {
@@ -76,7 +87,7 @@ export function createRelaxationQueue(capacity = 64) {
       }
       return false;
     },
-    reset() { until.fill(0); cursor = 0; evict = 0; q.pending = 0; },
+    reset() { until.fill(0); cursor = 0; evict = 0; wakeX = NaN; wakeZ = NaN; q.pending = 0; },
   };
   return q;
 }

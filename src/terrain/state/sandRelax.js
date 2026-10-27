@@ -41,7 +41,9 @@ export function createSandRelax(engine, fine, surface, clipmap) {
         }
         return;
       }
-      if (!allowWork || !this.enabled || !queue.take(x,z,x + FINE_N,z + FINE_N)) return;
+      if (!allowWork || !this.enabled) return;
+      queue.wake(x + FINE_N / 2, z + FINE_N / 2);
+      if (!queue.take(x,z,x + FINE_N,z + FINE_N)) return;
       data[0] = queue.x; data[1] = queue.z; data[2] = x; data[3] = z; data[4] = 1;
       job.update(data);
       const groups = RELAX_TILE / 8;
