@@ -14,6 +14,7 @@
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
 import { createSandRelax } from './sandRelax.js';
+import { createStateCollision } from './stateCollision.js';
 import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js';
 import {
   FINE_N, FINE_PER_M, RATIO, PAGE_N, PAGE_M, PAGES, SLOTS, NO_SLOT, COARSE_PER_M, WORLD_HALF,
@@ -70,6 +71,7 @@ export function createTerrainState(engine, opts) {
   const passes = [csOut, csIn, csBrush, csHealFine, csHealCoarse];
   const passRan = new Uint8Array(5);
   const relaxation = opts.clipmap ? createSandRelax(engine, fine, opts.surface, opts.clipmap) : null;
+  const collision = opts.clipmap ? createStateCollision(engine,fine,opts.surface) : null;
 
   // Page bookkeeping (CPU).
   const pageSlot = new Int32Array(PAGES * PAGES).fill(-1);
@@ -152,7 +154,7 @@ export function createTerrainState(engine, opts) {
   }
 
   const self = {
-    fine, atlas, params, relaxation,
+    fine, atlas, params, relaxation, collision,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
     /** Healing speed multiplier (the 'Refill rate' art control). */
@@ -269,6 +271,7 @@ export function createTerrainState(engine, opts) {
     restore(pages) {
       gen++;
       if (relaxation) relaxation.queue.reset();
+      if (collision) collision.reset();
       for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0) { setSlot(slotKey[s], -1); slotKey[s] = -1; freeSlots++; }
       pageStored.fill(0); pageLoading.fill(0); arrivals.length = 0;
       qHead = 0; qCount = 0;
@@ -408,6 +411,7 @@ export function createTerrainState(engine, opts) {
         relaxation.originX = next[0]; relaxation.originZ = next[1]; relaxation.time = now;
         relaxation.update(false);
       }
+      if (collision && !collision.ready) collision.update();
       const warming = warmed < 5;
       if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming && !(relaxation && relaxation.enabled)) {
         if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
@@ -432,6 +436,14 @@ export function createTerrainState(engine, opts) {
       }
       if (healSlot >= 0 && csHealCoarse.dispatch(PAGE_N / 8, PAGE_N / 8, 1)) { slotHealed[healSlot] = now; healCursor = (healSlot + 1) % SLOTS; passRan[4] = 1; }
       if (relaxation) relaxation.update();
+      if (collision) {
+        collision.enabled = relaxation.enabled;
+        collision.originX = next[0]; collision.originZ = next[1]; collision.px = this.px; collision.pz = this.pz; collision.time = now;
+        // Continue streaming changing heights while relaxation is active; movement and fresh
+        // brushes also refresh the patch. Readbacks remain capped and asynchronous.
+        collision.dirty ||= brushN > 0 || moved || relaxation.queue.pending > 0;
+        collision.update();
+      }
       if (warming) {
         // Until every pipeline exists (WebGPU creates it on first dispatch), dispatch idle passes
         // as no-ops — their job counts are zero or this frame's dt/slot disables them — so none

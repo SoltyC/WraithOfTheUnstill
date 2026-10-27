@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-27T13:55:35.533Z",
+  "stood": true,
+  "covered": true,
+  "offset": 0.8746337890625,
+  "gpuOffset": 0.8746337890625,
+  "error": 0,
+  "collisionOffset": 0.8746337890625,
+  "age": 0.29596666673816685,
+  "reads": 47,
+  "readErrors": 0,
+  "ready": true,
+  "late": [],
+  "gpuErrors": 0,
+  "probes": [
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0.87255859375,
+      "coarseDisplaced": 0,
+      "fineRelief": 0.87255859375,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0.8759765625,
+      "coarseDisplaced": 0,
+      "fineRelief": 0.8759765625,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0.873046875,
+      "coarseDisplaced": 0,
+      "fineRelief": 0.873046875,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0.876953125,
+      "coarseDisplaced": 0,
+      "fineRelief": 0.876953125,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    }
+  ],
+  "resetDiscarded": true
+}

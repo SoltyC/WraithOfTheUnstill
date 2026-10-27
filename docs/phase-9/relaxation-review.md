@@ -25,7 +25,7 @@ JSON reports are under `docs/phase-9/relaxation/`. Final checkpoint tests/build 
 ## Required before D2 integration
 
 - Measure a representative full-speed writer workload and diagnose timing variance; keep it below the allocated GPU budget.
-- Make collision follow slumping Stone shapes, rather than leaving the old analytic Ridge solid while its sand falls away.
+- Extend collision validation to moving/surfing over a slumping Ridge, new casts in flight, reload and the full writer workload. The first streaming and standing checks pass below.
 - Complete coarse relaxation and wind/restoration-driven healing; verify a trail remains readable after 60 s and survives save/reload.
 - Check bounded scheduling reaches repose before dirty tiles expire, including eight active enemies and adjacent/overlapping writes. The current four-second queue lifetime is a prototype, not an accepted settling time.
 - Capture/review an avalanche in motion, and crest silhouettes at 500 m/2 km. Run CPU/GPU meso parity and bot crest standing checks.
@@ -38,3 +38,11 @@ JSON reports are under `docs/phase-9/relaxation/`. Final checkpoint tests/build 
 ## Saved checkpoint
 
 The owner-field revision passed **778/778 tests**, the locked build, and a fresh cold Windows Chrome run (`relaxation/checkpoint-gpu.json`). CPU/GPU maximum error 1.30e-7 m; 100 packed cycles relative drift **−0.000484%**; 120 jobs, zero GPU errors/late pipelines. Relaxation total 3.2246 ms / 120 jobs = **0.0269 ms/job**; maximum asynchronous batch 0.0614 ms. This better repeat does not erase the slower earlier sample or replace the full-speed/worst-case gate. The prototype remains disabled pending the required list above.
+
+## Collision streaming checkpoint
+
+A 129² quarter-metre sand-state patch now streams into collision at most 12.5 times/s while the prototype runs. Two reusable CPU arrays swap only after readback; generation checks discard replies after a reset/load. Sampling allocates nothing. Uncovered/non-sand points retain analytic collision. Fresh Ridge casts and raises remain solid immediately; once the snapshot includes them, their old analytic shapes stop holding up slumped sand. Normal cover queries retain all analytic shapes. Meaningful stationary relief refreshes once/s for healing.
+
+`tools/bot/state-collision.mjs` verifies the actual snapshot against four fine GPU texels, the ground query and standing, and forces an in-flight reset. Target report `relaxation/collision-gpu.json`: **0.874633789 m** CPU/GPU offset, **zero measured offset error**, standing passed, stale reply discarded, 47 readbacks, zero read errors/GPU errors/late pipelines. Reported snapshot age after the asynchronous probes was 0.296 s; it is not an input-latency measurement. Four new regressions cover mask/coverage, old versus new/raised Ridges and fallback. Full suite **782 tests passes**; locked build passes. Moving/latency, allocation and full-load performance gates remain open.
+
+The headless launcher now saves Chrome startup/console messages to `C:\Windows\Temp\wraith-bot-<port>.log`. The new cold-load readiness gate exposed the reserved WGSL identifier `patch`; corrected to `gridMin` before target verification.
