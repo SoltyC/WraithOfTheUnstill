@@ -11,6 +11,8 @@ export const BEASTS = [
   { id: 'brute', name: 'Drift brute', text: 'Heavy as a cornice. The crust along its back cracks and glows before it slams; step back from the ring, or over it.' },
   { id: 'seer', name: 'Frost seer', text: 'Keeps its distance and gathers light in its core, then throws shards in a fan at where you will be. Stone stops them.' },
   { id: 'denmother', name: 'The den mother', text: 'A brute grown old under rime that turns blows aside. Freeze her first; only then does she break.' },
+  { id: 'skitter', name: 'Skitter', text: 'A moving mound gives it away; sand streams off before it lunges. Gust strips its cover, and frost-bound ground keeps it above the sand.' },
+  { id: 'plateback', name: 'Plate-back', text: 'A scarab carrying broken ruin stone. Blows glance from the front; strike the flank, freeze wet seams and strike, or clear the seams with Gust and split them with Shard.' },
   { id: 'warden', name: 'The Frost Warden', text: 'A glacier that learned to walk, holding the steppe still in its water joints. The Shapers made it to keep the snows moving. It kept them still instead.' },
 ];
 

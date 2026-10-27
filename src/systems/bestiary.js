@@ -15,7 +15,7 @@ export function addBestiarySystem(g) {
     const p = controller.pos;
     for (let i = 0; i < shaped.slots.length; i++) {
       const s = shaped.slots[i];
-      if (!s.arch || vars['sketch:' + s.arch]) continue;
+      if (!s.arch || s.cover || vars['sketch:' + s.arch]) continue;
       if (s.state !== S.STALK && s.state !== S.TELEGRAPH && s.state !== S.RECOVER) continue;
       const b = s.body, dx = b.x - p.x, dz = b.z - p.z;
       if (dx * dx + dz * dz > 40 * 40) continue;

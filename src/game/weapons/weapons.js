@@ -1,3 +1,4 @@
+import { frontal } from '../shaped/dune.js';
 // The weapons in play (docs §11): the carried weapon's machine and pose, the swing's heading and
 // lunge, hit detection against the Shaped, material reactions, the ground a heavy strikes, bleeding
 // cuts and the Flow every connected hit feeds. Pure game logic over the boot objects it is given
@@ -198,6 +199,10 @@ export function createWeapons(ctx) {
       const frozen = shaped.isFrozen(i), heavy = m.heavy;
       hitMat.aff = def.affinity; hitMat.heavy = heavy; hitMat.frozen = frozen; hitMat.armour = A.armour || 0; hitMat.meadow = A.material === 'meadow';
       hitMat.resolve();
+      if (s.arch === 'plateback' && !s.st.plateOff) {
+        if (frozen && s.wet > 0) shaped.popPlate(i);
+        else if (!a.crown && frontal(s.body, dx, dz)) { hitMat.dmgMul *= 0.2; hitMat.glance = true; hitMat.shatter = false; }
+      }
       if (a.crown) { hitMat.pierce = 1; hitMat.glance = false; }       // a blow from above strikes the crown: no plate turns it (the Bell-mace's plunge)
       if (a.shatter && frozen) hitMat.shatter = true;                   // the ice star breaks what it froze
       const inf = def.infusable ? inventory.infusion(def.id) : null;

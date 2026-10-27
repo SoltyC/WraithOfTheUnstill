@@ -266,7 +266,7 @@ export function createRigState(rig) {
     /** Last bone frames written (for handing chunks to the debris simulation). */
     fwd: new Float64Array(n * 3), up: new Float64Array(n * 3),
     /** Dune extras (rigDune.js): the plate has come off (its chunks are the owner's debris), and the seams' fill 0..1 (a Gust blows them clear). */
-    plateOff: false, seamK: 1,
+    plateOff: false, seamK: 1, plateAge: 0,
   };
 }
 
@@ -357,6 +357,7 @@ export function startFall(b, st, rnd, burst = 0) {
 export function writeFall(st, out, rec, dt, sink, ground) {
   const rig = st.rig;
   for (let c = 0; c < rig.count; c++) {
+    if (st.plateOff && c >= rig.plate0 && c < rig.plate1) { out[(rec + c) * CHUNK_FLOATS + 15] = 0; continue; }
     st.dvy[c] -= 14 * dt;
     st.dx[c] += st.dvx[c] * dt; st.dy[c] += st.dvy[c] * dt; st.dz[c] += st.dvz[c] * dt;
     ground.qx = st.dx[c]; ground.qz = st.dz[c]; ground.sample();
