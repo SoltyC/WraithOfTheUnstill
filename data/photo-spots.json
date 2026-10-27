@@ -5348,8 +5348,30 @@
       "camera": {
         "mode": "follow",
         "yaw": 0.6,
-        "pitch": 0.32,
-        "dist": 9
+        "pitch": 0.55,
+        "dist": 11
+      }
+    },
+    {
+      "id": "p9s-bloom-turf",
+      "biome": "meadow",
+      "label": "Stone's Bloom on turf (meadow): the same crater on grass, ejecta of soil and sod",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "bend": {
+        "seconds": 0.9,
+        "element": "stone",
+        "only": "bloom"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.55,
+        "dist": 11
       }
     },
     {
