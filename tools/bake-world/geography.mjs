@@ -57,8 +57,17 @@ export function regions(x, z, seed, out) {
   const vx = wx - VOLCANO_X, vz = wz - VOLCANO_Z;
   out.volcano = 1 - smooth(1000, 2900, Math.sqrt(vx * vx + vz * vz));
   const used = out.north + out.west + out.east + out.volcano;
+  const eastRaw = out.east, vd = Math.sqrt(vx * vx + vz * vz);
   if (used > 1) { out.north /= used; out.west /= used; out.east /= used; out.volcano /= used; }
   out.centre = Math.max(0, 1 - out.north - out.west - out.east - out.volcano);
+  // D0, the grown erg. The macro partition above (heights, rivers, wind) is untouched; only the
+  // BIOME view changes east of x = 1000: the ember waste draws in (inner 1000 → 500 m, outer
+  // 2900 → 1300 m from the cone) and the dune region keeps its un-normalised share where the
+  // volcano used to claim it. `grow` keys on real x, so every weight west of x = 1000 is bit-identical
+  // (a + (b − a)·0 = a).
+  const grow = smooth(1000, 1400, x);
+  out.ember = out.volcano + ((1 - smooth(1000 - 500 * grow, 2900 - 1600 * grow, vd)) - out.volcano) * grow;
+  out.eastB = out.east + (eastRaw - out.east) * grow * smooth(-1500, -800, z);
 }
 
 export const VOLCANO_X = 2350, VOLCANO_Z = -2150;

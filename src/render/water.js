@@ -123,7 +123,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   // by tens of cm), and a level measured against it floated the stream over the grass.
   const wd = new WorldData(streamer.manifest);
   wd.overview = streamer.overview; wd.biomeA = streamer.biomeA;
-  wd.biomeB = new Uint8Array(wd.n8 * wd.n8 * 4); wd.wind = streamer.windData;
+  wd.biomeB = new Uint8Array(wd.n8 * wd.n8 * 4); wd.wind = streamer.windData; wd.dunes = streamer.dunesData;
   for (const [k, t] of tiles) wd.setTile(k % 16, (k / 16) | 0, t);
   const hFull = (x, z) => { wd.qx = x; wd.qz = z; wd.sample(); return wd.h; };
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {

@@ -1175,7 +1175,7 @@
     {
       "id": "p6-clear-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "clear",
       "player": [
@@ -1197,7 +1197,7 @@
     {
       "id": "p6-clear-noon",
       "biome": "frost",
-      "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "clear",
       "player": [
@@ -1219,7 +1219,7 @@
     {
       "id": "p6-clear-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "clear",
       "player": [
@@ -1241,7 +1241,7 @@
     {
       "id": "p6-clear-night",
       "biome": "frost",
-      "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "clear",
       "player": [
@@ -1263,7 +1263,7 @@
     {
       "id": "p6-overcast-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "overcast",
       "player": [
@@ -1285,7 +1285,7 @@
     {
       "id": "p6-overcast-noon",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "overcast",
       "player": [
@@ -1307,7 +1307,7 @@
     {
       "id": "p6-overcast-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "overcast",
       "player": [
@@ -1329,7 +1329,7 @@
     {
       "id": "p6-overcast-night",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "overcast",
       "player": [
@@ -1351,7 +1351,7 @@
     {
       "id": "p6-snowfall-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "snowfall",
       "player": [
@@ -1373,7 +1373,7 @@
     {
       "id": "p6-snowfall-noon",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "snowfall",
       "player": [
@@ -1395,7 +1395,7 @@
     {
       "id": "p6-snowfall-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "snowfall",
       "player": [
@@ -1417,7 +1417,7 @@
     {
       "id": "p6-snowfall-night",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "snowfall",
       "player": [
@@ -1439,7 +1439,7 @@
     {
       "id": "p6-blizzard-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "blizzard",
       "player": [
@@ -1461,7 +1461,7 @@
     {
       "id": "p6-blizzard-noon",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "blizzard",
       "player": [
@@ -1483,7 +1483,7 @@
     {
       "id": "p6-blizzard-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "blizzard",
       "player": [
@@ -1505,7 +1505,7 @@
     {
       "id": "p6-blizzard-night",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "blizzard",
       "player": [
@@ -5391,6 +5391,167 @@
           ]
         ],
         "seconds": 3.4
+      }
+    },
+    {
+      "id": "p9d0-lip-erg-golden",
+      "biome": "dunes",
+      "label": "From the Dry Stair lip over the erg, golden hour",
+      "time": 17.8,
+      "weather": "clear",
+      "player": [
+        1316,
+        407
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1316,
+          248.9,
+          407
+        ],
+        "yaw": 1.5,
+        "pitch": 0.05,
+        "fov": 1.0
+      }
+    },
+    {
+      "id": "p9d0-dry-stair-noon",
+      "biome": "dunes",
+      "label": "The Dry Stair, a caravan road down the escarpment, noon",
+      "time": 12.2,
+      "weather": "clear",
+      "player": [
+        1380,
+        470
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1380,
+          234.5,
+          470
+        ],
+        "yaw": 1.8,
+        "pitch": 0.12,
+        "fov": 1.0
+      }
+    },
+    {
+      "id": "p9d0-map-overhead",
+      "biome": "dunes",
+      "label": "The grown erg from high above: the Galleries, the Stride and the Dry Braids",
+      "time": 13.0,
+      "weather": "clear",
+      "player": [
+        2300,
+        500
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          2300,
+          3000,
+          500
+        ],
+        "yaw": 0.0,
+        "pitch": 1.5,
+        "fov": 1.1
+      }
+    },
+    {
+      "id": "p9d0-canyon-floor",
+      "biome": "dunes",
+      "label": "The Red Galleries from the floor, looking up the canyon",
+      "time": 11.5,
+      "weather": "clear",
+      "player": [
+        1520,
+        780
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1520,
+          110.3,
+          780
+        ],
+        "yaw": 3.0,
+        "pitch": -0.2,
+        "fov": 1.0
+      }
+    },
+    {
+      "id": "p9d0-canyon-rim",
+      "biome": "dunes",
+      "label": "The Red Galleries from the east rim, looking down into the canyon",
+      "time": 9.0,
+      "weather": "clear",
+      "player": [
+        1650,
+        780
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1650,
+          163.2,
+          780
+        ],
+        "yaw": -1.35,
+        "pitch": 0.3,
+        "fov": 1.0
+      }
+    },
+    {
+      "id": "p9d0-rift",
+      "biome": "dunes",
+      "label": "The Stride from its lip, looking down the rift",
+      "time": 15.5,
+      "weather": "clear",
+      "player": [
+        2090,
+        1330
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          2090,
+          184.8,
+          1330
+        ],
+        "yaw": 2.65,
+        "pitch": 0.25,
+        "fov": 1.0
+      }
+    },
+    {
+      "id": "p9d0-cold-erg",
+      "biome": "dunes",
+      "label": "The cold erg: snow in the lee hollows at the frost border",
+      "time": 16.5,
+      "weather": "clear",
+      "player": [
+        2150,
+        1700
+      ],
+      "hidePlayer": true,
+      "camera": {
+        "mode": "free",
+        "pos": [
+          2150,
+          490.0,
+          1700
+        ],
+        "yaw": 1.5,
+        "pitch": 0.02,
+        "fov": 1.0
       }
     }
   ]

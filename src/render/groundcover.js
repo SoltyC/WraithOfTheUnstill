@@ -48,14 +48,14 @@ export function createGroundCover(scene, clipmap, atmo, push, wind) {
     attributes: ['position'],
     uniforms: ['viewProjection', 'levels', 'villageBox', 'gcParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, 'gcAtlas'],
-    storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
+    storageBuffers: ['levelData', 'biomeA', 'windMap', 'surfaceMat', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); mat.setVector4('villageBox', atmo.villageBox);
   mat.setArray4('levels', clipmap.levels);
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
-  mat.setStorageBuffer('windMap', clipmap.buffers.wind);
+  mat.setStorageBuffer('windMap', clipmap.buffers.wind); mat.setStorageBuffer('surfaceMat', clipmap.buffers.surface);
   mat.setVector4('gcParams', params); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
   mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
   mat.setTexture('gcAtlas', canvasAtlasTexture(scene.getEngine(), scene, drawGroundAtlas(), 'ground-atlas'));

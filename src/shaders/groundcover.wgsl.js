@@ -13,7 +13,7 @@
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
-import { FIELD_WGSL } from './grass.wgsl.js';
+import { FIELD_WGSL, BARE_WGSL } from './grass.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WATER_LEVEL_DECL } from './atmoMaterial.wgsl.js';
 import { GC } from '../render/groundAtlas.js';
@@ -40,6 +40,7 @@ uniform grassPush: array<vec4f,8>;
 ${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
+var<storage, read> surfaceMat: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
 ${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vUv: vec2f;
@@ -49,7 +50,7 @@ varying vNormal: vec3f;
 varying vTint: vec3f;                // x = hue shift, y = value, z = translucency
 varying vAo: f32;
 
-${FIELD_WGSL}
+${FIELD_WGSL}${BARE_WGSL}
 ${WIND_WGSL}
 
 fn gcCanopy(p: vec2f) -> f32 { return textureSampleLevel(canopyTex, canopyTexSampler, (p + 4096.0) / 8192.0, 0.0).r; }
@@ -71,7 +72,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
 
   // What grows here.
   let bsn = borderSnow(root, gFrostShare(root.x, root.y));
-  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)));
+  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)) * smoothstep(0.2, 0.5, gFrostMeadow(root.x, root.y))) * (1.0 - gBareMaterial(root.x, root.y));
   let canopy = gcCanopy(root);
   let forest = smoothstep(0.15, 0.55, canopy);
   let rim = forest * (1.0 - forest) * 4.0;               // the forest's edge
