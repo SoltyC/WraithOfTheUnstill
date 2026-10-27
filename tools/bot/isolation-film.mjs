@@ -13,8 +13,8 @@ const base = process.env.WRAITH_URL || 'http://localhost:4177';
 const [, , which = 'surf', ...rest] = process.argv;
 const opt = (k, d) => { const i = rest.indexOf('--' + k); return i >= 0 ? rest[i + 1] : d; };
 const dry = rest.includes('--dry');
-const CHUNK = +opt('chunk', 30), CHUNKS = +opt('chunks', which === 'surf' ? 4 : 1);
-const RESET_EVERY = +opt('reset', which === 'surf' ? 2 : 1);
+const CHUNK = +opt('chunk', 30), CHUNKS = +opt('chunks', which === 'surf' || which === 'glide' ? 4 : 1);
+const RESET_EVERY = +opt('reset', which === 'surf' ? 2 : 999);
 const SIZE = [+opt('w', 1920), +opt('h', 1080)];
 const bot = async (cmd, a = {}) => {
   const { id } = await (await fetch(base + '/__wraith/bot/cmd', { method: 'POST', body: JSON.stringify({ do: cmd, ...a }) })).json();
@@ -34,7 +34,7 @@ const COMMON = `
     const n = Math.hypot(I.hx, I.hz) || 1, hx = I.hx / n, hz = I.hz / n;
     const tx = p.x - hx * back, ty = p.y + up, tz = p.z - hz * back;
     if (!I.cam) { I.cx = tx; I.cy = ty; I.cz = tz; I.cam = true; } else { I.cx += (tx - I.cx) * k; I.cy += (ty - I.cy) * k; I.cz += (tz - I.cz) * k; }
-    const gy = ground(I.cx, I.cz) + 1.2; if (I.cy < gy) I.cy = gy;
+    const gy = Math.max(ground(I.cx, I.cz) + 2.2, p.y + 2.4); if (I.cy < gy) I.cy = gy;   // never below the Wraith's shoulders: the snow berms rise round it
     cam.at(I.cx, I.cy, I.cz, p.x + hx * look, p.y + 1.2, p.z + hz * look, fov);
   };
   const tally = (dt) => { I.t += dt; I.tier[g.flow.tier] += dt; };
@@ -81,15 +81,17 @@ const glideDriver = () => `${COMMON}
         if ((Math.hypot(tx - p.x, tz - p.z) < 70 || agl < 22) && I.t - turned > 3.5) { dir = -dir; turned = I.t; }
       }
     } else soar = null;
+    const dive = gl.active && !soar && (p.y - T.y) > dist / RATIO * 1.5;
     if (gl.active && agl < 16) { const gx = ground(p.x + 10, p.z) - ground(p.x - 10, p.z), gz = ground(p.x, p.z + 10) - ground(p.x, p.z - 10), gm = Math.hypot(gx, gz) || 1; tx = p.x - gx / gm * 60; tz = p.z - gz / gm * 60; }
     if (course.next >= 4 || (flown && !gl.active && c.grounded)) { tx = 393; tz = 2766; }   // the rings done: down to the flat and the surf
     const want = Math.atan2(tx - p.x, tz - p.z), have = gl.active ? gl.heading : c.yaw;
     let d = wrap(want - have); if (gl.active) d -= gl.turnRate * 0.9;
     const duty = Math.min(1, Math.abs(d) / 0.35), on = (frame++ % 5) < Math.round(duty * 5);
     inj('MoveLeft', gl.active && d < 0 && on); inj('MoveRight', gl.active && d > 0 && on);
-    inj('MoveForward', !gl.active); if (gl.active || I.landed > 0) g.arm.yaw = want; else if (!flown) g.arm.yaw = want;
+    inj('MoveForward', !gl.active || dive); if (gl.active || I.landed > 0) g.arm.yaw = want; else if (!flown) g.arm.yaw = want;
     inj('Jump', !flown && c.grounded && (Math.floor(I.t / 0.4) % 3 === 0));
     I.soar = soar && soar.id;
+    if (Math.floor(I.t * 0.5) !== I.lg) { I.lg = Math.floor(I.t * 0.5); I.log.push([Math.round(I.t), Math.round(p.x), Math.round(p.y), Math.round(p.z), gl.active ? 1 : 0, c.grounded ? 1 : 0, course.next, Math.round(dist), Math.round(want * 100) / 100, +(gl.speed || 0).toFixed(1), +(gl.vy || 0).toFixed(1), soar ? 1 : 0]); }
     chase(cam, gl.active ? 13 : 8, gl.active ? 4.5 : 3.2, 12, 0.95, 0.06);
   };
 `;
@@ -176,7 +178,7 @@ async function setup() {
 const step = `w.isoStep(1 / 60, cam);`;
 const stats = () => ev(`const I = window.__wraith.iso, c = g.controller; const mean = (a) => a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(1) : 0;
   return { t: +I.t.toFixed(1), tierSecs: I.tier.map((x) => +x.toFixed(1)), surfMax: +I.maxSpeed.toFixed(1), surfMean: I.n ? +(I.speedSum / I.n).toFixed(1) : 0, glideMax: +I.vmax.toFixed(1), glideMean: mean(I.air), sinkMean: mean(I.sink), sinkMin: I.sink.length ? Math.min(...I.sink) : 0, sinkMax: I.sink.length ? Math.max(...I.sink) : 0,
-    lift: +(I.lift || 0).toFixed(1), rings: I.rings, soarT: +(I.soarT || 0).toFixed(1), sweeps: I.sweeps, crystals: I.crystals, heavies: I.heavies, shatters: g.shaped.shattered, alive: I.ids ? I.ids.filter((i) => g.shaped.isLive(i)).length : null,
+    lift: +(I.lift || 0).toFixed(1), log: ${process.env.DEBUG ? 'I.log' : 'undefined'}, rings: I.rings, soarT: +(I.soarT || 0).toFixed(1), sweeps: I.sweeps, crystals: I.crystals, heavies: I.heavies, shatters: g.shaped.shattered, alive: I.ids ? I.ids.filter((i) => g.shaped.isLive(i)).length : null,
     hp: +g.combat.health.toFixed(0), pos: [Math.round(c.pos.x), Math.round(c.pos.y), Math.round(c.pos.z)], flowNow: g.flow.tier, late: window.__wraith.gpuStats?.late?.length ?? null };`);
 
 const ctx = await setup();
@@ -194,7 +196,7 @@ let offset = 0;
 for (let c = 0; c < CHUNKS; c++) {
   if (c > 0 && ctx.resetJs && c % RESET_EVERY === 0) { await ev(ctx.resetJs); }
   const name = `${which}-c${c}`;
-  const r = await bot('film', { name, dir: 'isolation', seconds: CHUNK, fps: 60, size: SIZE, quality: 0.9, warm: c === 0 ? 40 : 6, js: step });
+  const r = await bot('film', { name, dir: 'isolation', seconds: CHUNK, fps: 60, size: SIZE, quality: 0.9, warm: c === 0 ? 40 : 30, js: step });
   console.log(JSON.stringify({ chunk: c, ...r }));
   const dir = path.resolve('screenshots/isolation/frames', name);
   for (const f of fs.readdirSync(dir).sort()) fs.renameSync(path.join(dir, f), path.join(root, 'f' + String(offset++).padStart(6, '0') + '.jpg'));
