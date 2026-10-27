@@ -23,8 +23,8 @@ import { SAND_WGSL } from './sand.wgsl.js';
 import { BORDER_WGSL } from './common.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
-export const CLIPMAP_N = 256;     // quads per level side
-export const CLIPMAP_LEVELS = 12; // finest 6.25 cm, coarsest 128 m spacing (half-extent 16 km)
+import { CLIPMAP_N, CLIPMAP_LEVELS } from '../terrain/clipmapLayout.js';
+export { CLIPMAP_N, CLIPMAP_LEVELS };
 
 /** Height functions shared by the clipmap shader and tools/capture/parity-check.mjs. */
 export const HEIGHT_WGSL = /* wgsl */ `

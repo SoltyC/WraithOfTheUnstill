@@ -13,6 +13,7 @@
 
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
+import { createSandRelax } from './sandRelax.js';
 import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js';
 import {
   FINE_N, FINE_PER_M, RATIO, PAGE_N, PAGE_M, PAGES, SLOTS, NO_SLOT, COARSE_PER_M, WORLD_HALF,
@@ -68,6 +69,7 @@ export function createTerrainState(engine, opts) {
   const csHealCoarse = mk('stateHealCoarse', stateHealCoarseWGSL, HEAL_COARSE_BINDINGS);
   const passes = [csOut, csIn, csBrush, csHealFine, csHealCoarse];
   const passRan = new Uint8Array(5);
+  const relaxation = opts.clipmap ? createSandRelax(engine, fine, opts.surface, opts.clipmap) : null;
 
   // Page bookkeeping (CPU).
   const pageSlot = new Int32Array(PAGES * PAGES).fill(-1);
@@ -150,7 +152,7 @@ export function createTerrainState(engine, opts) {
   }
 
   const self = {
-    fine, atlas, params,
+    fine, atlas, params, relaxation,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
     /** Healing speed multiplier (the 'Refill rate' art control). */
@@ -266,6 +268,7 @@ export function createTerrainState(engine, opts) {
      */
     restore(pages) {
       gen++;
+      if (relaxation) relaxation.queue.reset();
       for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0) { setSlot(slotKey[s], -1); slotKey[s] = -1; freeSlots++; }
       pageStored.fill(0); pageLoading.fill(0); arrivals.length = 0;
       qHead = 0; qCount = 0;
@@ -401,8 +404,12 @@ export function createTerrainState(engine, opts) {
       pi[P_ORIGIN] = next[0]; pi[P_ORIGIN + 1] = next[1];
       pu[P_COUNTS] = nOut; pu[P_COUNTS + 1] = nIn; pu[P_COUNTS + 2] = brushN;
 
+      if (relaxation) {
+        relaxation.originX = next[0]; relaxation.originZ = next[1]; relaxation.time = now;
+        relaxation.update(false);
+      }
       const warming = warmed < 5;
-      if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming) {
+      if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming && !(relaxation && relaxation.enabled)) {
         if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
         return;
       }
@@ -414,11 +421,17 @@ export function createTerrainState(engine, opts) {
       if (ok && nIn > 0) { ok = csIn.dispatch(maxGroups(P_IN, nIn), maxGroupsY(P_IN, nIn), nIn) && ok; passRan[1] |= ok; }
       if (!ok) return; // pipelines still compiling: retry the whole step next frame
       if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
-      if (brushN > 0 && csBrush.dispatch(maxGroups(P_BRECT, brushN), maxGroupsY(P_BRECT, brushN), brushN)) { qHead = (qHead + brushN) % QUEUE; qCount -= brushN; passRan[2] = 1; }
+      if (brushN > 0 && csBrush.dispatch(maxGroups(P_BRECT, brushN), maxGroupsY(P_BRECT, brushN), brushN)) {
+        if (relaxation) for (let b = 0; b < brushN; b++) {
+          const r = P_BRECT + b * 4;
+          relaxation.queue.mark(pi[r], pi[r + 1], pi[r + 2], pi[r + 3]);
+        }
+        qHead = (qHead + brushN) % QUEUE; qCount -= brushN; passRan[2] = 1; }
       if (healFine && csHealFine.dispatch(Math.ceil(FINE_N / 8), Math.ceil(FINE_N / HEAL_BANDS / 8), 1)) {
         bandHealed[bandCursor] = now; bandCursor = (bandCursor + 1) % HEAL_BANDS; passRan[3] = 1;
       }
       if (healSlot >= 0 && csHealCoarse.dispatch(PAGE_N / 8, PAGE_N / 8, 1)) { slotHealed[healSlot] = now; healCursor = (healSlot + 1) % SLOTS; passRan[4] = 1; }
+      if (relaxation) relaxation.update();
       if (warming) {
         // Until every pipeline exists (WebGPU creates it on first dispatch), dispatch idle passes
         // as no-ops — their job counts are zero or this frame's dt/slot disables them — so none

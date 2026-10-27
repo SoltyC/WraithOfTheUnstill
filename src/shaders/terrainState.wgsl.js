@@ -138,7 +138,9 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     for (var x = 0; x < RATIO; x++) {
       let k = fineIdx(c * RATIO + x, d * RATIO + y);
       let t = unpackTexel(fine0[k], fine1[k], fine2[k]);
-      h += t.h; sv += t.s; mv += t.m; transform = max(transform, t.s.w);
+      let remainder = unpack2x16float(fine2[k]).y;
+      h += t.h + vec2f(max(-remainder,0.0),max(remainder,0.0));
+      sv += t.s; mv += vec4f(t.m.xy,0.0,0.0); transform = max(transform, t.s.w);
     }
   }
   let n = 1.0 / f32(RATIO * RATIO);
@@ -222,6 +224,9 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let side = select(-1.0, 1.0, rel.x * bd.y - rel.y * bd.x > 0.0);
   let k = fineIdx(i, j);
   var t = unpackTexel(fine0[k], fine1[k], fine2[k]);
+  let remainder = unpack2x16float(fine2[k]).y;
+  t.h += vec2f(max(-remainder,0.0),max(remainder,0.0));
+  t.m = vec4f(t.m.xy,0.0,0.0);
   let program = u32(ex.x + 0.5);
   let hsh = cellHash(p, 0.03);
   // Turf (BRIEF §4.4: frost on grass = frosted, brittle): the sod barely gives — a quarter of the
@@ -365,7 +370,8 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   let n = ditherHash(i, j, sp.healDt.x);
   fine0[k] = pack2x16float(t.h);
   fine1[k] = packDither(t.s, n);
-  fine2[k] = packDither(t.m, n);
+  let remainder = unpack2x16float(w2).y * exp(-DECAY[min(m, ${MATERIAL_COUNT - 1}u) * 6u] * sp.healDt.x);
+  fine2[k] = (packDither(t.m, n) & 65535u) | (pack2x16float(vec2f(0.0,remainder)) & 4294901760u);
 }
 `;
 

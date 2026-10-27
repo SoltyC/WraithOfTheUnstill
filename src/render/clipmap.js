@@ -122,7 +122,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   let builtResidency = -1;
 
   return {
-    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers, spellLights, lightGrid,
+    mesh, material: mat, playerPos, levelData, params, levels, camGrid, buffers, spellLights, lightGrid,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
     /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
     stateBound: [],
