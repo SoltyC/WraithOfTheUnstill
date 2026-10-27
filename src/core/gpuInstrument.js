@@ -29,6 +29,7 @@ export const gpuStats = {
 };
 
 const sizes = new WeakMap();
+const moduleNames = new WeakMap();
 const listeners = [];
 
 /** @param {(p: LatePipeline) => void} fn */
@@ -49,9 +50,11 @@ function notePipeline(kind, desc) {
   gpuStats.pipelinesTotal++;
   if (!gpuStats.armed) return;
   const label = (desc && (desc.label || (desc.vertex && desc.vertex.entryPoint) || (desc.compute && desc.compute.entryPoint))) || '(unlabelled)';
-  const entry = { kind, label, t: performance.now(), stack: new Error().stack || '' };
+  const entry = { kind, label, t: performance.now(), stack: new Error().stack || '',
+    vertex: moduleNames.get(desc?.vertex?.module) || '', fragment: moduleNames.get(desc?.fragment?.module) || '',
+    compute: moduleNames.get(desc?.compute?.module) || '' };
   gpuStats.late.push(entry);
-  console.error('%c[late-pipeline] ' + kind + ' created after loading: ' + label, 'color:#ff5a4f;font-weight:bold');
+  console.error('%c[late-pipeline] ' + kind + ' created after loading: ' + label + ' ' + (entry.fragment || entry.compute), 'color:#ff5a4f;font-weight:bold');
   for (let i = 0; i < listeners.length; i++) listeners[i](entry);
 }
 
@@ -94,6 +97,15 @@ function instrumentDevice(device) {
   const ccpa = device.createComputePipelineAsync.bind(device);
   const cb = device.createBuffer.bind(device);
   const ct = device.createTexture.bind(device);
+  const csm = device.createShaderModule.bind(device);
+  // Babylon's generic pipeline labels hide which material was missed by warm-up. Its WGSL
+  // carries SHADER_NAME comments; retain only that short name, not shader source. This runs
+  // at shader creation, never in the per-frame draw path.
+  device.createShaderModule = (d) => {
+    const module = csm(d), name = /SHADER_NAME\s+([^\r\n]+)/.exec(d.code);
+    moduleNames.set(module, (name ? name[1] : d.label || '').slice(0, 160));
+    return module;
+  };
   device.createRenderPipeline = (d) => { notePipeline('render', d); return crp(d); };
   device.createRenderPipelineAsync = (d) => { notePipeline('render-async', d); return crpa(d); };
   device.createComputePipeline = (d) => { notePipeline('compute', d); return ccp(d); };
