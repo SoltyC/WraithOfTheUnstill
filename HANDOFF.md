@@ -142,6 +142,8 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
   - The bot never reliably flew the Shelf's last two rings or the Wind Road's finish ring. The medal times come from the route sim, so they need a human run.
 - **Dunes D0 follow-ups (lead review, 2026-10-27):** sharp dune crests and the canyon walls show a sawtooth edge (mesh resolution against a sharp profile; `screenshots/phase-09-d0/after-p9d0-canyon-floor.png`): fix with the D2 crest work and the D7b wall kit. The agent's shots missed the dune fields; the star field at (2700, 1300) reads well. Only 5.2 of the 8.1 km² lies west of x = 3300.
 
+- **Effects readability pass (lead review, 2026-10-27), for one small agent:** the Stone Bloom barely reads on snow (the crater is lost in flat light, the curtain is sparse light specks; ejecta on snow should be dark earth, and it wants a dust burst); the Bell-mace dunk shot is a high view (want a low side view of the slam and the second impact); the mace toll's ring is faint. Also the stair-step banding on the flank of a turf Ridge.
+
 ## 6. How to work here (tooling and conventions)
 
 - **Build:** `flock /tmp/wraith-build.lock npx vite build`. WSL has about 3 GB of RAM, so serialise builds.
