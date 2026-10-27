@@ -4,6 +4,10 @@ Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state
 
+> **Access restored later on 2026-10-27:** full access in Codex CLI resolved Windows execution and GitHub restrictions. All checkpoints are pushed. Headless Windows Chrome's bot works and six fresh sand rain screenshots completed; review copies are committed on `claude/sand` at `e573210`. Wet sand still needs stronger visual darkening. See the access update at the start of `HANDOFF.md`; environment-blocked notes below are historical.
+
+> **Codex continuation 2026-10-27:** `HANDOFF.md` starts with the current checkpoint. Encounter lifecycle fixes are committed locally at `b0955cc` (749 tests); sand weather/capture fixes at `39613c8` (696 tests). Both branches have local main merged and pass locked production builds. Main gameplay stays at `139ead6` while required GPU review is pending. Windows executable interoperability and GitHub DNS fail in the restricted execution environment; no new GPU results or successful pushes are claimed. Next steps and review documents are recorded in the handoff.
+
 > **Codex continuation 2026-10-27:** `claude/sand` has local main `139ead6` merged. Photo spots now preserve all 229 main entries exactly and append eleven sand entries. Independent weather overrides and bounded drying are fixed; 696 tests and the locked production build pass. See `docs/phase-9/sand-review.md` for the visual verdict and precise next steps. Main integration, fresh target-GPU review and pushing are pending because Windows interoperability and GitHub DNS fail in this execution environment. Existing dirty raw capture output was preserved. The encounter branch is separately checkpointed at `b0955cc` with 749 tests passing; dune enemies remain at their original WIP.
 
 > **Handoff 2026-10-27:** read `HANDOFF.md` first. It is the full current state: the user's rules, everything merged since Phase 7 (weapons, economy, Remembrance, restored world, the Bell-mace, Phase 9 D0 and D4), the three unfinished branches, ready-made agent briefs, the code map and the tooling. This log below covers Phases 0–7.
