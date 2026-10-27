@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-27T14:32:47.627Z",
+  "before": {
+    "stayedOff": true,
+    "errors": 0,
+    "late": []
+  },
+  "clips": [
+    {
+      "ok": true,
+      "frames": 60,
+      "failed": 0,
+      "dir": "screenshots/d2-snapshot-check/frames/resize-0",
+      "wallS": 3.3,
+      "ms": 3341
+    },
+    {
+      "ok": true,
+      "frames": 60,
+      "failed": 0,
+      "dir": "screenshots/d2-snapshot-check/frames/resize-1",
+      "wallS": 3.3,
+      "ms": 3281
+    }
+  ],
+  "after": {
+    "snapshot": true,
+    "errors": 0,
+    "late": []
+  }
+}
