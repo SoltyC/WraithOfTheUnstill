@@ -11,6 +11,8 @@ export function addLantern(ctx) {
   const l = data.lantern, li = site('side-rw-lantern');
   if (li < 0) return { tick() {} };
   const s = archSites[li];
+  // A lit paper lantern throws a little warm light (the Veiled's lantern kind), up on the hook and rising with it.
+  const lamp = g.worldLights.add({ x: l.pos[0] + 0.55, y: l.h + 2, z: l.pos[1], radius: 9, color: [1, 0.62, 0.3], intensity: 1.25, kind: 'lamp', level: 0 });
   let t = -1, nag = 0;
   const night = () => chapter.facts.night;
   return {
@@ -29,7 +31,10 @@ export function addLantern(ctx) {
       }
       // Up the hook's height: sinking by a negative amount lifts the site (the architecture seats pillars by seatY - sink).
       s.sink = t < 0 ? 0 : -l.rise * lanternRise(t, l.seconds);
-      glow[li * 4 + 3] = !s.hidden && ctx.restored('meadow') ? 1 : 0;
+      const shown = !s.hidden && ctx.restored("meadow"), dark = g.worldLights.night;
+      glow[li * 4 + 3] = shown ? 1 : 0;
+      glow[li * 4 + 1] = shown ? 0.4 + 0.6 * dark : 0;   // the shell burns, brighter after dark
+      lamp.y = l.h + 2 - s.sink; lamp.level = shown ? 0.25 + 0.75 * dark : 0;
       if (t >= 0 || lit || !flags.has('meadow:lantern-told') || !ctx.restored('meadow')) return;
       if (!gale.updraftEvent) return;
       const p = controller.pos;

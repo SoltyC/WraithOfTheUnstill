@@ -59,6 +59,13 @@ export const TIER_INFO = {
     { name: 'Deep oil', move: false, text: 'A further 12% damage, and the fire burns hotter and longer.' },
     { name: 'Pyre ring', move: true, text: 'The whirl ends with the flame flung to the ground: a ring of fire burns where the Wraith stood.' },
   ],
+  mace: [null,
+    { name: 'Long hop', move: true, text: 'The hop-swing springs four metres instead of two and a half: enough height to plunge from flat ground, with no Gale.' },
+    { name: 'Heavier bell', move: false, text: 'Every blow lands 12% harder.' },
+    { name: 'Infusion', move: true, text: 'The bell can carry an element. Frost: the third plunge in a chain freezes the toll\'s ring. Gale: each rebound throws two metres higher.' },
+    { name: 'Wide toll', move: false, text: 'A further 12% damage, and the toll rings 0.6 m wider.' },
+    { name: 'Thunderhead', move: true, text: 'Every plunge from twelve metres or more leaves a small Updraft where the bell struck, at any Flow.' },
+  ],
 };
 
 /** Per weapon, per tier: edit a fresh clone of the def (T1/T3/T5 moves, T4 weight). */
@@ -96,6 +103,11 @@ const PATCH = {
     },
     4: (d) => { d.affinity.burn *= 1.3; d.affinity.burnTime += 1.5; },
     5: (d) => { d.heavy.pyre = { radius: 3.2, time: 4 }; },
+  },
+  mace: {
+    1: (d) => { d.heavy.hop = 4; },
+    4: (d) => { d.plunge.tollBonus = 0.6; },
+    5: (d) => { d.plunge.thunder = true; },
   },
 };
 

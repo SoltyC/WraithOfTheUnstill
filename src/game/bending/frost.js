@@ -44,6 +44,8 @@ export const crystalTuning = {
   lightRadius: 6, lightIntensity: 2.4, lightHold: 0.6, lightFade: 3.5,
 };
 
+const LANE_LIFE = 12;     // s a Sweep's lane counts as ice
+
 /** Spell lights published to materials: 4 × (pos.xyz, radius), (colour.rgb, intensity). */
 export const SPELL_LIGHTS = 4;
 
@@ -77,8 +79,28 @@ export function createFrostBending(ctx) {
   const crystals = new Float32Array(CC * CK * 12);
   const cl = { x: new Float64Array(CC), y: new Float64Array(CC), z: new Float64Array(CC), age: new Float64Array(CC).fill(1e9), next: 0 };
 
+  // Ice on the ground, for the Bell-mace's star (weapons/plunge.js): the lanes the Sweeps cut (kept for LANE_LIFE s) and the formations' sheets.
+  const lanes = { ox: new Float64Array(SWEEPS), oz: new Float64Array(SWEEPS), dx: new Float64Array(SWEEPS), dz: new Float64Array(SWEEPS),
+    len: new Float64Array(SWEEPS), hw: new Float64Array(SWEEPS), age: new Float64Array(SWEEPS).fill(1e9) };
   const self = {
     lights, ribbonNodes, crystals,
+    /** Frozen water (a tarn) at (x, z), or null: the owner's hook (systems read the bake's lake mask). */
+    tarnAt: null,
+    /** Is the ground at (x, z) ice? A Sweep's lane (for a while after the cut), a Crystallize sheet (permanent), a frozen tarn. */
+    iceAt(x, z) {
+      for (let k = 0; k < SWEEPS; k++) {
+        if (lanes.age[k] > LANE_LIFE) continue;
+        const ex = x - lanes.ox[k], ez = z - lanes.oz[k], along = ex * lanes.dx[k] + ez * lanes.dz[k];
+        if (along > -1 && along < lanes.len[k] + 1 && Math.abs(-ex * lanes.dz[k] + ez * lanes.dx[k]) < lanes.hw[k] + 0.4) return true;
+      }
+      const R = crystalTuning.iceRadius * 0.95;
+      for (let c = 0; c < CC; c++) {
+        if (cl.age[c] > 1e8 || cl.age[c] < crystalTuning.iceSpread * 0.8) continue;
+        const ex = x - cl.x[c], ez = z - cl.z[c];
+        if (ex * ex + ez * ez < R * R) return true;
+      }
+      return this.tarnAt !== null && this.tarnAt(x, z);
+    },
     /** Sweeps for combat: per slot active, front x/z, direction x/z, half width, id (new per cast). */
     sweepActive: sw.active, sweepFX: new Float64Array(SWEEPS), sweepFZ: new Float64Array(SWEEPS), sweepDX: sw.dx, sweepDZ: sw.dz,
     sweepHW: new Float64Array(SWEEPS), sweepId: new Uint32Array(SWEEPS),
@@ -107,6 +129,7 @@ export function createFrostBending(ctx) {
     update() {
       this.gesture = Math.max(0, this.gesture - this.dt / 0.45);
       this.crystalEvent = false;
+      for (let k = 0; k < SWEEPS; k++) lanes.age[k] += this.dt;
       if (this.castSweep) { this.castSweep = false; startSweep(this); this.gesture = 1; }
       if (this.castCrystal) { this.castCrystal = false; startCrystals(this); this.gesture = 1; }
       lights.fill(0, 0, SPELL_LIGHTS * 8); // the verbs' slots only (world lights follow: systems/lights.js)
@@ -152,6 +175,8 @@ export function createFrostBending(ctx) {
     sw.dx[k] = s.aimX / l; sw.dz[k] = s.aimZ / l;
     sw.ox[k] = s.x + sw.dx[k] * 0.6; sw.oz[k] = s.z + sw.dz[k] * 0.6;
     sw.prev[k] = 0; sw.sc[k] = s.power; sw.lane[k] = s.flowing ? 1 : 0;
+    lanes.ox[k] = sw.ox[k]; lanes.oz[k] = sw.oz[k]; lanes.dx[k] = sw.dx[k]; lanes.dz[k] = sw.dz[k]; lanes.age[k] = 0;
+    lanes.len[k] = sweepTuning.range * s.power; lanes.hw[k] = sweepTuning.halfWidth1 * s.power;
     self.sweepId[k] = ++sweepSerial;
   }
 

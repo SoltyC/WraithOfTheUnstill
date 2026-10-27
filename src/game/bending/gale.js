@@ -66,7 +66,7 @@ export function createGaleBending(ctx) {
     dx: new Float64Array(GUSTS), dz: new Float64Array(GUSTS), prev: new Float64Array(GUSTS), burst: new Float64Array(GUSTS), sc: new Float64Array(GUSTS) };
   const vx = { x: 0, z: 0, y: 0, s: 0, t: 0, stamp: 0, burst: 0 };
   const up = { active: new Uint8Array(DRAFTS), x: new Float64Array(DRAFTS), z: new Float64Array(DRAFTS), y: new Float64Array(DRAFTS),
-    age: new Float64Array(DRAFTS), next: 0 };
+    age: new Float64Array(DRAFTS), str: new Float64Array(DRAFTS).fill(1), life: new Float64Array(DRAFTS).fill(updraftTuning.life), next: 0 };
   let serial = 0;
   const fx = new Float32Array(GALE_FX_VEC4 * 4);
   const ground1 = (x, z) => { ground.qx = x; ground.qz = z; ground.sample(); return ground.h; };
@@ -108,12 +108,43 @@ export function createGaleBending(ctx) {
         if (r >= T.radius * 1.3) continue;
         const h = y - up.y[k];
         if (h < -1 || h > T.height) continue;
-        const env = draftEnvelope(up.age[k]);
-        const radial = 1 - Math.min(1, r / (T.radius * 1.3)); // strongest on the axis
+        const env = draftEnvelope(up.age[k], up.life[k]) * up.str[k];
+        // A full-strength core over most of the visible column, fading at its rim: a body need not be dead on
+        // the axis to rise (the old axis-peaked falloff fell below gravity under 1 m off the axis).
+        const t = Math.min(1, Math.max(0, (r - 0.55 * T.radius * 1.3) / (0.45 * T.radius * 1.3)));
+        const radial = 1 - t * t * (3 - 2 * t);
         const top = 1 - Math.max(0, (h - T.height * 0.6) / (T.height * 0.4)); // thins at the top
-        a = Math.max(a, T.accel * env * radial * radial * (2 - radial) * top);
+        a = Math.max(a, T.accel * env * radial * top);
       }
       return a;
+    },
+
+    /** The active Updraft column that holds a body at (x, y, z), or −1 (the Bell-mace's plunge adds height from inside one). */
+    columnAt(x, y, z) {
+      const T = updraftTuning;
+      for (let k = 0; k < DRAFTS; k++) {
+        if (!up.active[k] || up.str[k] < 0.99) continue;           // (a small Thunderhead draft is not a column to spend)
+        const dx = x - up.x[k], dz = z - up.z[k], h = y - up.y[k];
+        if (dx * dx + dz * dz < T.radius * T.radius * 1.7 && h > -1 && h < T.height && draftEnvelope(up.age[k], up.life[k]) > 0.2) return k;
+      }
+      return -1;
+    },
+    /** Spend column k now (the plunge's height has taken it): it ends at once, leaving a ring burst. */
+    collapse(k) {
+      if (!up.active[k]) return;
+      up.active[k] = 0;
+      ts.bx = up.x[k]; ts.bz = up.z[k]; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = updraftTuning.radius * 1.4; ts.bd = updraftTuning.ring * 1.6; ts.bc = 0.4;
+      ts.bk = BRUSH.STRIP; ts.bwet = 0; ts.bbias = 0; ts.bberm = 1.3;
+      ts.stamp();
+      if (wind) wind.burst(up.x[k], up.z[k], 1.6);
+    },
+    /** A small Updraft at (x, z) of `power` (0..1 of the strength) for `life` s, with no focus spent (Flow 3 / Thunderhead). */
+    spawnDraft(x, z, power, life) {
+      const k = up.next; up.next = (up.next + 1) % DRAFTS;
+      up.active[k] = 1; up.x[k] = x; up.z[k] = z; up.y[k] = ground1(x, z); up.age[k] = 0; up.str[k] = power; up.life[k] = life;
+      ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = updraftTuning.radius * power; ts.bd = updraftTuning.ring * 0.6; ts.bc = 0.3;
+      ts.bk = BRUSH.STRIP; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.8;
+      ts.stamp();
     },
 
     update() {
@@ -209,7 +240,7 @@ export function createGaleBending(ctx) {
     clampAim(s, T.maxRange);
     const x = cx, z = cz;
     const k = up.next; up.next = (up.next + 1) % DRAFTS;
-    up.active[k] = 1; up.x[k] = x; up.z[k] = z; up.y[k] = ground1(x, z); up.age[k] = 0;
+    up.active[k] = 1; up.x[k] = x; up.z[k] = z; up.y[k] = ground1(x, z); up.age[k] = 0; up.str[k] = 1; up.life[k] = T.life;
     self.updraftEvent = true; self.updraftX = x; self.updraftZ = z;
     // The blown-out ring it leaves.
     ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = T.radius; ts.bd = T.ring; ts.bc = 0.4;
@@ -223,9 +254,9 @@ export function createGaleBending(ctx) {
     for (let k = 0; k < DRAFTS; k++) {
       if (!up.active[k]) continue;
       up.age[k] += dt;
-      if (up.age[k] > T.life) { up.active[k] = 0; continue; }
+      if (up.age[k] > up.life[k]) { up.active[k] = 0; continue; }
       if (li < SPELL_LIGHTS) {
-        const o = li * 8, env = draftEnvelope(up.age[k]);
+        const o = li * 8, env = draftEnvelope(up.age[k], up.life[k]) * up.str[k];
         lights[o] = up.x[k]; lights[o + 1] = up.y[k] + 2.5; lights[o + 2] = up.z[k]; lights[o + 3] = T.lightRadius;
         lights[o + 4] = 0.8; lights[o + 5] = 0.9; lights[o + 6] = 1.0; lights[o + 7] = T.lightIntensity * env;
         li++;
@@ -252,7 +283,7 @@ export function createGaleBending(ctx) {
     fx[28] = vortexTuning.radius; fx[29] = vx.t; fx[30] = 0; fx[31] = 0;
     for (let k = 0; k < DRAFTS; k++) {
       const o = (8 + k) * 4, o2 = (10 + k) * 4;
-      fx[o] = up.x[k]; fx[o + 1] = up.y[k]; fx[o + 2] = up.z[k]; fx[o + 3] = up.active[k] ? draftEnvelope(up.age[k]) : 0;
+      fx[o] = up.x[k]; fx[o + 1] = up.y[k]; fx[o + 2] = up.z[k]; fx[o + 3] = up.active[k] ? draftEnvelope(up.age[k], up.life[k]) * up.str[k] : 0;
       fx[o2] = updraftTuning.radius; fx[o2 + 1] = updraftTuning.height; fx[o2 + 2] = up.age[k]; fx[o2 + 3] = 0;
     }
   }
@@ -261,9 +292,9 @@ export function createGaleBending(ctx) {
 }
 
 /** An updraft's strength over its life: rises fast, holds, then dies away over the last 40 %. */
-export function draftEnvelope(age) {
+export function draftEnvelope(age, life = updraftTuning.life) {
   const T = updraftTuning;
-  if (age < 0 || age > T.life) return 0;
-  const a = Math.min(1, age / T.rise), b = Math.min(1, (T.life - age) / (T.life * 0.4));
+  if (age < 0 || age > life) return 0;
+  const a = Math.min(1, age / T.rise), b = Math.min(1, (life - age) / (life * 0.4));
   return a * b * b * (3 - 2 * b);
 }

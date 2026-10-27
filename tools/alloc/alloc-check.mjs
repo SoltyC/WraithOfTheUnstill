@@ -20,6 +20,7 @@ import { createWind } from '../../src/world/wind.js';
 import { createFlow, FLOW_IN } from '../../src/game/flow.js';
 import { createShaped } from '../../src/game/shaped/shaped.js';
 import { createFrostBending } from '../../src/game/bending/frost.js';
+import { createStoneBending } from '../../src/game/bending/stone.js';
 import { createCombat } from '../../src/game/combat/combat.js';
 import { createInventory } from '../../src/game/inventory.js';
 import { createWeapons } from '../../src/game/weapons/weapons.js';
@@ -51,7 +52,20 @@ const sink = new Float64Array(1);
 const weather = createWeather(); weather.restored = 1; weather.dt = 0.0111;
 const mWeather = createWeather(); mWeather.meadowRestored = 1; mWeather.meadow = 0.7; mWeather.dt = 0.9;
 const lightning = createLightning(); lightning.storm = 1; lightning.dt = 0.0111;
+const stoneRig = (() => {
+  const ts = { bx: 0.5, bz: 0.5, bdx: 0.5, bdz: 0.5, bl: 0.5, bw: 0.5, bd: 0.5, bc: 0.5, bk: 0, bwet: 0.5, bbias: 0.5, bberm: 0.5, healScale: 1.5, stamp() {} };   // the real state's double fields
+  const gr = { qx: 0.5, qz: 0.5, h: 0.5, sample() { this.h = 0.5 - 0.5; } };
+  const st = createStoneBending({ ts, ground: gr, lights: new Float32Array(32), surfaceAt: () => 0 });
+  st.aimX = 1; st.aimZ = 0; st.tx = 9; st.tz = 0; st.ty = 0; return st;
+})();
 const cases = {
+  // Stone: Shard every 40 frames, a Ridge held in cycles, Bloom every 240 (casts, pools, mass field, fx block).
+  'stone.update (shard, ridge, bloom)': (i) => {
+    const st = stoneRig; st.dt = clock.dt; st.time += st.dt;
+    st.castShard = (i % 40) === 0; st.ridgeHeld = ((i >> 6) & 7) < 3; st.castBloom = (i % 240) === 7;
+    st.update();
+    sink[0] = st.mass.heightAt(5, 1);
+  },
   'ground.sample': (i) => { ground.qx = (i % 1000) * 0.2 - 100; ground.qz = (i % 777) * 0.2 - 70; ground.sample(); sink[0] = ground.h; },
   // dt comes from a mutable field, as in the game (a literal constant would hide boxing).
   // Walk in a wide loop that stays on the fine patch, as a real player does (leaving every
@@ -90,13 +104,35 @@ const cases = {
     wp.weapons.update(); wp.shaped.dt = 1 / 60; wp.shaped.px = 0; wp.shaped.pz = 0; wp.shaped.update(); wp.combat.dt = 1 / 60; wp.combat.update();
     wp.clock.hitStop = 0;
   },
+  // The Bell-mace: a plunge from 9 m onto hounds (toll, rebound, a second plunge from the rebound, the dunk of one thrown up, the glow), flown by hand as the photo spots do.
+  'weapons.update (mace plunge, toll, rebound, dunk)': (i) => {
+    const k = i % 240, c = wpm.ctl, W = wpm.weapons;
+    W.able = true; W.dt = 1 / 60; W.aimYaw = 0; W.swapPressed = false; W.dodgePressed = false; W.down = false;
+    if (k === 1) for (let q = 0; q < 3; q++) if (!wpm.shaped.isLive(q)) wpm.shaped.spawn('hound', (q - 1) * 1.2, 1.8);
+    if (k === 2 && !process.env.NOPLUNGE) { c.pos.x = 0; c.pos.z = 1.8; c.pos.y = 9; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; c.plungeV = 0; }
+    if (k === 4 && wpm.shaped.air) wpm.shaped.air.launch(1);
+    W.pressed = k === 6 || k === 90;
+    W.update(); wpm.shaped.dt = 1 / 60; wpm.shaped.px = 0; wpm.shaped.pz = 0; wpm.shaped.update(); wpm.combat.dt = 1 / 60; wpm.combat.update(); wpm.clock.hitStop = 0;
+    if (!c.grounded) {
+      if (c.plungeV > 0) c.pos.y -= c.plungeV / 60; else if (k > 6) { c.vel.y -= 24 / 60; c.pos.y += c.vel.y / 60; }
+      if (c.pos.y <= 0) { c.pos.y = 0; c.grounded = true; c.vel.y = 0; }
+    }
+  },
+  // The same with no foes and no Shaped/combat stepping: only the weapon's own plunge path (commit, fall, the floor, a miss).
+  'weapons.update (mace plunge only: commit, fall, land)': (i) => {
+    const k = i % 120, c = wpm.ctl, W = wpm.weapons;
+    W.able = true; W.dt = 1 / 60; W.aimYaw = 0; W.swapPressed = false; W.dodgePressed = false; W.down = false;
+    if (k === 2 && !process.env.NOPLUNGE) { c.pos.x = 40; c.pos.z = 40; c.pos.y = 9; c.vel.x = 0; c.vel.y = 0; c.vel.z = 0; c.grounded = false; c.plungeV = 0; }
+    W.pressed = k === 6; W.update();
+    if (!c.grounded) { if (c.plungeV > 0) c.pos.y -= c.plungeV / 60; if (c.pos.y <= 0) { c.pos.y = 0; c.grounded = true; c.vel.y = 0; } }
+  },
   'frameStats.push': (i) => stats.push(8 + (i & 7)),
   'pool acquire/release': () => { const o = pool.acquire(); pool.release(o); },
 };
 
 const wind = createWind();
 const flow = createFlow();
-const wp = (() => {
+const makeWp = (weapon) => (() => {
   const gr = { qx: 0, qz: 0, h: 0, nx: 0, ny: 1, nz: 0, sample() { this.h = 0; }, sampleNormal() { this.nx = 0; this.ny = 1; this.nz = 0; } };
   const ts = { stamp() {} }, fx = { emit() {} }, clk = { hitStop: 0, simTime: 0, dt: 1 / 60 };
   const ctl2 = new CapsuleController(gr); ctl2.teleport(0, 0);
@@ -104,10 +140,11 @@ const wp = (() => {
   const frost = createFrostBending({ ts, fx, ground: gr });
   const fl = createFlow();
   const combat = createCombat({ shaped, frost, controller: ctl2, ts, clock: clk, flow: fl, teleport: () => {} });
-  const inventory = createInventory(); inventory.give('sickles'); inventory.give('maul'); inventory.carry('sickles', 1);
+  const inventory = createInventory(); inventory.give('sickles'); inventory.give('maul'); inventory.give('mace'); inventory.carry(weapon, 1); inventory.equip(weapon);
   const weapons = createWeapons({ shaped, combat, controller: ctl2, clock: clk, ts, fx, flow: fl, inventory, ground: gr });
-  return { shaped, combat, weapons, clock: clk };
+  return { shaped, combat, weapons, clock: clk, ctl: ctl2 };
 })();
+const wp = makeWp('sickles'), wpm = makeWp('mace');
 clock.dt = 1 / 90 + Math.random() * 1e-9; // a heap double, like the real clock
 const N = 2_000_000;
 let failed = false;
@@ -126,4 +163,5 @@ for (const [name, fn] of Object.entries(cases)) {
   if (!ok) failed = true;
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${name.padEnd(30)} gc events ${String(scav).padStart(4)}  heap delta ${(grew / 1024).toFixed(1)} KB over ${N} calls`);
 }
+console.log('mace plunge stats', JSON.stringify(wpm.weapons.plunge.stats));
 process.exit(failed ? 1 : 0);

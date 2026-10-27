@@ -46,8 +46,32 @@ export async function createActors(g) {
   // element in hand chosen by 1–5 (game/elements.js).
   const galeMod = await import('../game/bending/gale.js');
   const gale = galeMod.createGaleBending({ ts: terrainState, ground, wind: g.wind, lights: content.clipmap.spellLights });
+  // Stone bending (Phase 9 D4): Shard on a tap, Ridge while held, Bloom on Heavy. Its CPU mass field is
+  // added to every ground query (PatchGround.mass), so a Ridge is solid the frame it is stamped.
+  const stoneMod = await import('../game/bending/stone.js');
+  const stoneMass = (await import('../game/bending/stoneMass.js')).createStoneMass();
+  ground.mass = stoneMass;
+  const SURF = stoneMod.SURF;
+  const surfaceAt = (x, z) => {
+    const st = g.streamer, wa = g.water;
+    if (wa) {
+      wa.qx = x; wa.qz = z; wa.levelQ();
+      if (wa.lv === wa.lv) { ground.qx = x; ground.qz = z; ground.sample(); if (wa.lv > ground.h - 0.05) return SURF.WATER; }
+    }
+    st.mqx = x; st.mqz = z; st.sampleMaterial();
+    switch (st.mat) {
+      case 3: return SURF.GRASS;
+      case 5: return SURF.ROCK;
+      case 1: case 6: return SURF.SAND;
+      case 2: return SURF.MUD;
+      case 4: return SURF.ASH;
+      case 7: return SURF.WATER;
+      default: return SURF.SNOW;
+    }
+  };
+  const stone = stoneMod.createStoneBending({ ts: terrainState, ground, lights: content.clipmap.spellLights, frost, mass: stoneMass, surfaceAt });
   const { createElements } = await import('../game/elements.js');
-  const elements = createElements(qs.get('gale') === '1' ? ['frost', 'gale'] : ['frost']);
+  const elements = createElements(['frost', ...(qs.get('gale') === '1' ? ['gale'] : []), ...(qs.get('stone') === '1' ? ['stone'] : [])]);
   const { createRibbon } = await import('../render/ribbon.js');
   const ribbon = createRibbon(scene, atmosphere, frost.ribbonNodes, frostMod.ribbonTuning.radius);
   bindShadows(ribbon.material, shadows);
@@ -65,6 +89,12 @@ export async function createActors(g) {
   bindShadows(shapedView.material, shadows);
   shadows.addCaster(shapedView.mesh, shapedView.makeShadowMaterial, 2);
   shapedView.freeze();
+  // Stone's flying plates and thrown pieces: real chunks through the same pipeline, their own record pool; and its dust and glitter.
+  const stoneView = createShapedView(scene, atmosphere, stone.chunks, { name: 'stone' });
+  bindShadows(stoneView.material, shadows);
+  shadows.addCaster(stoneView.mesh, stoneView.makeShadowMaterial, 2);
+  stoneView.freeze();
+  const stoneFx = (await import('../render/stoneFx.js')).createStoneFx(scene, atmosphere);
   // The Frost Warden (Phase 5): a colossal Shaped with water joints; its own chunk view.
   const wardenMod = await import('../game/warden/warden.js');
   const warden = wardenMod.createWarden({ ts: terrainState, fx: wraithView, ground });
@@ -108,6 +138,8 @@ export async function createActors(g) {
   // under its belly the spikes off its back cannot reach.
   const blocker = { ax: 0.5, ay: 0.5, az: 0.5, bx: 0.5, by: 0.5, bz: 0.5, t: 0.5, solids: null, body: false,
     segBlocked() {
+      const st = stone;   // a Ridge is cover against shots and spikes
+      if (st.mass.count > 0) { st.ax = this.ax; st.ay = this.ay; st.az = this.az; st.bx = this.bx; st.by = this.by; st.bz = this.bz; if (st.segBlocked()) { this.t = st.t; return true; } }
       const so = this.solids;
       if (so !== null) { so.ax = this.ax; so.ay = this.ay; so.az = this.az; so.bx = this.bx; so.by = this.by; so.bz = this.bz; if (so.segBlocked()) { this.t = so.t; return true; } }
       if (this.body && warden.active) {
@@ -209,7 +241,7 @@ export async function createActors(g) {
   const { clock } = await import('../core/clock.js');
   const { createFlow, flowTuning } = await import('../game/flow.js');
   const flow = createFlow();
-  const combat = createCombat({ shaped, frost, gale, warden, controller, flow, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
+  const combat = createCombat({ shaped, frost, gale, stone, warden, controller, flow, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
   climb.spend = (c) => combat.spend(c);
   combat.sfx = sfx;
   combat.shrineX = monastery.pos[0]; combat.shrineZ = monastery.pos[1];
@@ -243,7 +275,7 @@ export async function createActors(g) {
 
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
-    bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
+    bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, stoneMod, stone, stoneMass, stoneView, stoneFx, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
     climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, flow, flowTuning, vignette, streaks, weaponView, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },

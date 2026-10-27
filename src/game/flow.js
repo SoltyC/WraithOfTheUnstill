@@ -128,6 +128,8 @@ export function createFlow() {
     },
     /** A dodge went through an attack's hit window (once per nearMissCool). */
     nearMiss() { if (d[13] > 0) return; d[13] = T.nearMissCool; this.hit(FLOW_EVENT.NEAR_MISS); },
+    /** A chain landed by something other than a change of traversal mode (the Bell-mace's rebound plunge): +chainGain, the streak step. */
+    chainHit() { if (this.paused) return; chain(this); },
     /** A blow landed on the Wraith: −1 tier, and a moment where nothing builds. */
     hurt() {
       if (this.paused) return;

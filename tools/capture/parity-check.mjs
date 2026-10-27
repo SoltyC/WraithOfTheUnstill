@@ -8,8 +8,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, parseArgs, startServer, launchBrowser, openGame } from './harness.mjs';
 import { WorldData } from '../../src/world/worldData.js';
-import { TERRAIN_NOISE_WGSL } from '../../src/shaders/terrainNoise.wgsl.js';
-import { HEIGHT_WGSL } from '../../src/shaders/clipmap.wgsl.js';
+import { createServer } from 'vite';
+
+// The shader modules import JSON (materials); load them through Vite's SSR loader, which handles it
+// (plain Node needs import attributes).
+const vite = await createServer({ root: ROOT, logLevel: 'error', server: { middlewareMode: true }, appType: 'custom' });
+const { TERRAIN_NOISE_WGSL } = await vite.ssrLoadModule('/src/shaders/terrainNoise.wgsl.js');
+const { HEIGHT_WGSL } = await vite.ssrLoadModule('/src/shaders/clipmap.wgsl.js');
+await vite.close();
 
 const args = parseArgs();
 const N = Number(args.points ?? 4096), R = Number(args.radius ?? 500);
@@ -73,7 +79,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   const w = new WorldData(m);
   const u8 = (f) => new Uint8Array(fs.readFileSync(path.join(dir, f)));
   w.overview = new Uint16Array(u8(m.height.overview.file).buffer);
-  w.biomeA = u8(m.biome.files[0]); w.biomeB = u8(m.biome.files[1]); w.wind = u8(m.wind.file);
+  w.biomeA = u8(m.biome.files[0]); w.biomeB = u8(m.biome.files[1]); w.wind = u8(m.wind.file); w.dunes = u8(m.dunes.file);
   for (let k = 0; k < gpu.resident.length; k++) if (gpu.resident[k]) {
     const tx = k % m.height.tiles, tz = (k / m.height.tiles) | 0;
     w.setTile(tx, tz, new Uint16Array(u8(`height/${tx}_${tz}.u16`).buffer));

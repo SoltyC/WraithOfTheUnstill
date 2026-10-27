@@ -1,0 +1,31 @@
+// The rule-placed POIs as they were baked before D0 (43f2e8a). The grown erg changes what the
+// placement rules would pick, and a meadow shrine must not jump across the world, so these are
+// pinned: [id, kind, biome, x, z]. New POIs go through placement.mjs's rules or story/ravines.
+export const PINNED = [
+  ['warden-mire', 'warden-arena', 'mire', -1212, -668],
+  ['warden-dunes', 'warden-arena', 'dunes', 2436, 1124],
+  ['warden-ember', 'warden-arena', 'ember', 3492, -2332],
+  ['warden-coast', 'warden-arena', 'coast', -956, -2908],
+  ['shrine-meadow-1', 'shrine', 'meadow', -540, 484],
+  ['shrine-meadow-2', 'shrine', 'meadow', -1436, -2204],
+  ['shrine-meadow-3', 'shrine', 'meadow', 1348, -348],
+  ['shrine-meadow-4', 'shrine', 'meadow', 132, -1404],
+  ['shrine-meadow-5', 'shrine', 'meadow', -1884, -956],
+  ['shrine-mire-1', 'shrine', 'mire', -1596, 964],
+  ['shrine-mire-2', 'shrine', 'mire', -2204, -1468],
+  ['shrine-mire-3', 'shrine', 'mire', -1372, -380],
+  ['shrine-mire-4', 'shrine', 'mire', -2428, 292],
+  ['shrine-mire-5', 'shrine', 'mire', -2236, -572],
+  ['shrine-dunes-1', 'shrine', 'dunes', 2820, 1028],
+  ['shrine-dunes-2', 'shrine', 'dunes', 1572, 356],
+  ['shrine-dunes-3', 'shrine', 'dunes', 3812, 420],
+  ['shrine-dunes-4', 'shrine', 'dunes', 1604, 1508],
+  ['shrine-dunes-5', 'shrine', 'dunes', 3044, 260],
+  ['shrine-ember-1', 'shrine', 'ember', 1892, -2364],
+  ['shrine-ember-2', 'shrine', 'ember', 1956, 132],
+  ['shrine-ember-3', 'shrine', 'ember', 3652, -1916],
+  ['shrine-ember-4', 'shrine', 'ember', 996, -1308],
+  ['shrine-ember-5', 'shrine', 'ember', 2948, -540],
+  ['shrine-coast-1', 'shrine', 'coast', -2012, -2812],
+  ['shrine-coast-2', 'shrine', 'coast', -3100, 1508],
+];

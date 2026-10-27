@@ -3,6 +3,7 @@
 // Deterministic: candidates come from a fixed grid scored by rules, ties broken by position.
 
 import { jitter } from './geography.mjs';
+import { PINNED } from './pinned.mjs';
 
 // Math.hypot is not guaranteed to round identically across engines; sqrt is.
 const dist = (ax, az, bx, bz) => Math.sqrt((ax - bx) * (ax - bx) + (az - bz) * (az - bz));
@@ -15,6 +16,8 @@ export function placePOIs(world, seed, fixed = []) {
   // The frost chapter's sites are laid out by hand (story.mjs): the monastery, its camp, shrines,
   // Echo stones and the Warden's arena. Everything else is placed by the rules below.
   const pois = fixed.slice();
+  // Rule-placed POIs keep their pre-D0 places (pinned.mjs): the grown erg must not move a meadow shrine.
+  for (const [id, kind, biome, x, z] of PINNED) if (!pois.some((q) => q.id === id)) pois.push({ id, kind, biome, pos: [x, z], h: Math.round(world.sample(x, z).h * 10) / 10 });
   const best = (filter, score, near) => {
     let top = null, topScore = -Infinity;
     for (let z = -3900; z <= 3900; z += 32) for (let x = -3900; x <= 3900; x += 32) {
@@ -27,7 +30,7 @@ export function placePOIs(world, seed, fixed = []) {
     return top;
   };
   const flat = (s) => s.slope < 0.12 && s.h > 2 && s.river === 0 && s.lake === 0;
-  const add = (id, kind, biome, p) => { if (p && !pois.some((q) => q.id === id)) pois.push({ id, kind, biome, pos: [p.x, p.z], h: Math.round(p.h * 10) / 10 }); };
+  const add = (id, kind, biome, p) => { if (/^(warden|shrine)-/.test(id)) return; /* pinned above */ if (p && !pois.some((q) => q.id === id)) pois.push({ id, kind, biome, pos: [p.x, p.z], h: Math.round(p.h * 10) / 10 }); };
 
   // (The Shapers' monastery and the frost sites: story.mjs.)
   // Hub settlement of the Veiled: centre of the meadow, near water.

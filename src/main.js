@@ -121,6 +121,7 @@ async function boot() {
   (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)
   (await import('./systems/remembrance.js')).addRemembranceSystem(g); // before the nooks (their views remember)
   (await import('./systems/nooks.js')).addNookSystem(g); // after the architecture (their sites) and the nav (their places)
+  (await import('./systems/bellLedge.js')).addBellLedgeSystem(g); // the Bell Ledge's sleeping hounds (after the architecture: its site)
   (await import('./systems/restored.js')).addRestoredSystem(g); // after the architecture (its sites), the quests' places and the side quests' goals
   (await import('./systems/robes.js')).addRobesSystem(g);
   (await import('./systems/barks.js')).addBarksSystem(g);
