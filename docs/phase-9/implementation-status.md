@@ -2,16 +2,17 @@
 
 User requested an active goal on 2026-10-27: finish the remaining HANDOFF work, including captures, bot play, integration and pushes. Keep user-only feel/acceptance gates explicit. The primary implements most changes; Terra and Luna may handle scoped work. Do not claim completion until the agent-verifiable list is done.
 
-## Current work
+## Current work (2026-10-28)
 
-- **Primary / sand (`/home/sol/wraith-sand`, port 4174):** independent weather controls are fixed. Fresh six-stage captures showed exposure cancelling wetness; absorption now 0.32 instead of 0.5. Recaptured in `screenshots/sand-wet-fix-1280/`. Foreground FFmpeg YAVG: dry 148.337, wet 106.712 (old wet 132.881). CPU/GPU before-fix exposure readback: dry 0.3889, wet 0.6040. `docs/phase-9/sand-metrics.json` records image measurements. Full validation, star-field before/after and weather/pipeline transition check precede squash integration; exclude raw screenshot history.
-- **Primary / encounters (`/home/sol/wraith-encounters`, port 4177):** lifecycle fixes at b0955cc; film/harness repairs at 69d4ff1. Combat setup had a duplicate `const I`; removed. Pulses now use simulation time; shatter telemetry uses cumulative weapon stats. Added `--kit frost` to audit staff + starting element, retaining historical `staff` melee-only runs. Remaining: runtime combat/glide pilot and films, current fight checks, review/integrate.
-- **Terra agent `/root/dune_shaped` (`/home/sol/wraith-shaped`, port 4175):** D9a prototype 7e4c7dd, 695 tests/build at initial checkpoint, requested to merge latest main. Has exclusive GPU slot for six Frost/Gale fight configurations and six photo spots. Must explicitly release it. Zero observed collections in isolated helpers; full shaped path has pre-existing/different-shape allocations and is not proven allocation-free. Lead review confirmed detached shell chunks are skipped by `writeAlive` before integrating ballistic offsets, so no redundant rewrite is needed. Bot must exercise Gust→Shard, not just Gust+staff.
-- **Main:** d26b0fa warms the dormant forest-haze compute pipeline at load, including compilation retries and replacement resources. Four focused tests, 691 full tests and locked build pass; GPU transition verification pending.
+- **D1a sand integrated** as `e491fa6`. Six revised rain stages show dry foreground YAVG 148.337 → wet 106.712; dry/wet white clipping 0%. Fixed star-field median GPU delta +1.55 ms (25.55 → 27.10 ms), indicative headless comparison, not sustained-performance acceptance. Review and measurement JSON are in `docs/phase-9/`. Main passed 700 tests at this checkpoint.
+- **Encounters ready for integration:** three reviewed 720p isolation films, fresh staff + Frost checks, all six Barley enemies and 60 s calm verified. Cloister/stair/ring 3/3 clears each; Barley corrected bot navigation 3/3. Original chase failures retained. Main merged through `984fa34`; 762 tests and locked build pass. Audit §9 records evidence and human-only limits.
+- **D9a lead review** in `/home/sol/wraith-shaped`: Terra finished its scoped implementation. Lead found a hollow where a moving mound should be; replaced the Ridge with one filling MOUND brush and fixed frozen telegraphs emitting sand. 710 tests passed before diagnostic readback extension. Fresh merged-sand captures/probes are running before integration. All outstanding code and visuals are verified by the primary.
+- **Pipeline gate:** dormant forest-haze compute now warms at load. Cold forest entry has zero late compute but five late render pipelines. Main `984fa34` adds shader names to diagnostics so the missing variants can be identified. World-wide zero-late acceptance remains open.
+- **D2:** worktree `/home/sol/wraith-relax` prepared; no implementation yet. It follows the first three integrations.
 
 ## GPU coordination
 
-Only one target-GPU capture/bot workload at a time. Terra currently owns the slot on port 4175. Primary stopped its Chrome on 4177 before granting it. Preview servers may coexist on 4173 (main), 4174 (sand), 4177 (encounters), 4175 (Terra); builds always use `/tmp/wraith-build.lock`. Do not launch a second Chrome until Terra releases the slot. No trailer modifications.
+Only one Windows target-GPU capture/bot workload at a time. Primary owns the slot; encounter Chrome has stopped and D9a captures run on 4175. Preview servers may coexist. Builds always use `/tmp/wraith-build.lock`. Preserve original untracked screenshots and exclude raw captures/frame sequences from commits. User's latest delegation rule: only extremely easy/light subtasks, with primary verification of every code change. No trailer modifications.
 
 ## Remaining ordered milestones
 
