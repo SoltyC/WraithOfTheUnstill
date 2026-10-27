@@ -100,11 +100,15 @@ const combatDriver = () => `${COMMON}
   const S = { TELEGRAPH: 3, LUNGE: 4 }, slots = g.shaped.slots, m = g.weapons.machine, reach = g.weapons.def.combo[0].reach;
   const held = { Primary: false, MoveForward: false, MoveBack: false };
   const set = (n, d) => { if (held[n] !== d) { held[n] = d; inj(n, d); } };
-  const tapAt = {}; const tap = (n, ms) => { inj(n, true); setTimeout(() => inj(n, false), ms); };
+  // Film time is fixed-step and may run slower than real time: release pulses on simulation
+  // time so casts and combo taps have the same duration in live and recorded runs.
+  const taps = {}; const tap = (n, ms) => { inj(n, true); taps[n] = I.t + ms / 1000; };
   let heavyT = -9, tapT = 0, dodged = -9, sweepT = -9, crysT = -9, downSince = -1; I.sweeps = 0; I.crystals = 0; I.shatters = 0; I.heavies = 0; I.cam = false; I.ids = [];
-  I.cax = 0; I.caz = 0;
+  I.cax = 0; I.caz = 0; I.shatterStart = g.weapons.stats.shatters;
   w.isoStep = (dt, cam) => {
     const p = c.pos, now = I.t; tally(dt);
+    for (const n in taps) if (I.t >= taps[n]) { inj(n, false); if (n in held) held[n] = false; delete taps[n]; }
+    I.shatters = g.weapons.stats.shatters - I.shatterStart;
     let best = -1, bd = 1e9, frozen = -1, fd = 1e9, live = 0;
     for (const i of I.ids) {
       if (!g.shaped.isLive(i)) continue; live++;
@@ -171,14 +175,14 @@ async function setup() {
   await ev(`g.clock.pinHour = 12.4; g.game.killShaped(); g.game.teleport(${process.env.AT_X || 860}, ${process.env.AT_Z || 2940}); ${settle}
     g.inventory.give('staff'); g.inventory.equip('staff'); g.weapons.machine.reset(); g.elements.select('frost'); g.combat.health = 100; g.combat.focus = 100; g.combat.dying = 0; g.flow.reset(true);
     return 1`);
-  await ev(combatDriver() + `const I = window.__wraith.iso, p = c.pos, f = g.arm.yaw; for (let k = 0; k < 3; k++) { const a = f + (k - 1) * 0.6; I.ids.push(g.shaped.spawn('hound', p.x + Math.sin(a) * 11, p.z + Math.cos(a) * 11)); } await new Promise((r) => setTimeout(r, 2200)); return I.ids`);
+  await ev(combatDriver() + `const p = c.pos, f = g.arm.yaw; for (let k = 0; k < 3; k++) { const a = f + (k - 1) * 0.6; I.ids.push(g.shaped.spawn('hound', p.x + Math.sin(a) * 11, p.z + Math.cos(a) * 11)); } await new Promise((r) => setTimeout(r, 2200)); return I.ids`);
   return {};
 }
 
 const step = `w.isoStep(1 / 60, cam);`;
 const stats = () => ev(`const I = window.__wraith.iso, c = g.controller; const mean = (a) => a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(1) : 0;
   return { t: +I.t.toFixed(1), tierSecs: I.tier.map((x) => +x.toFixed(1)), surfMax: +I.maxSpeed.toFixed(1), surfMean: I.n ? +(I.speedSum / I.n).toFixed(1) : 0, glideMax: +I.vmax.toFixed(1), glideMean: mean(I.air), sinkMean: mean(I.sink), sinkMin: I.sink.length ? Math.min(...I.sink) : 0, sinkMax: I.sink.length ? Math.max(...I.sink) : 0,
-    lift: +(I.lift || 0).toFixed(1), log: ${process.env.DEBUG ? 'I.log' : 'undefined'}, rings: I.rings, soarT: +(I.soarT || 0).toFixed(1), sweeps: I.sweeps, crystals: I.crystals, heavies: I.heavies, shatters: g.shaped.shattered, alive: I.ids ? I.ids.filter((i) => g.shaped.isLive(i)).length : null,
+    lift: +(I.lift || 0).toFixed(1), log: ${process.env.DEBUG ? 'I.log' : 'undefined'}, rings: I.rings, soarT: +(I.soarT || 0).toFixed(1), sweeps: I.sweeps, crystals: I.crystals, heavies: I.heavies, shatters: I.shatters, alive: I.ids ? I.ids.filter((i) => g.shaped.isLive(i)).length : null,
     hp: +g.combat.health.toFixed(0), pos: [Math.round(c.pos.x), Math.round(c.pos.y), Math.round(c.pos.z)], flowNow: g.flow.tier, late: window.__wraith.gpuStats?.late?.length ?? null };`);
 
 const ctx = await setup();

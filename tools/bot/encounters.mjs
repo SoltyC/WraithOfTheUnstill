@@ -4,8 +4,9 @@
 // from the in-page telemetry (`g.encounterLog`, src/systems/encounterLog.js): seconds to clear, deaths, health taken,
 // archetypes engaged, seconds at each Flow tier, focus starvation (share of time below the Gust cost 10 / the dodge cost 8),
 // the most Shaped alive at once.
-//   WRAITH_URL=http://localhost:4177 node tools/bot/encounters.mjs [ids|all] [--kit staff|best|both] [--runs 3] [--hour 13] [--label x]
+//   WRAITH_URL=http://localhost:4177 node tools/bot/encounters.mjs [ids|all] [--kit staff|frost|best|both] [--runs 3] [--hour 13] [--label x]
 // kits: staff = the start weapon, lights with a heavy every 3.5 s, bend-steps away from lunges (as tools/bot/fight.mjs);
+//       frost = the start staff plus Frost, to check the route with only the starting kit and element;
 //       best  = the glaive the same way, plus Frost's Sweep (Q tap) thrown at foes 4-13 m off whenever focus allows, and Crystallize (F) on brutes and the den mother.
 // Output also goes to docs/encounter-runs/<label>.jsonl. A run that is not cleared in 100 s of game time counts as failed.
 import fs from 'node:fs';
@@ -93,8 +94,8 @@ const fighterJs = (cfg) => `
     if (threat && now - dodged > 0.9 && m.phase !== 1 && m.phase !== 3) { dodged = now; tap('Dodge', 50); }
     // Armoured foes (brute, den mother): Crystallize (F) freezes them 3-10 m off, so the next heavy shatters.
     const arch = shapedSlots[best].arch;
-    if (CFG.kit === 'best' && (arch === 'denmother' || arch === 'brute') && bd > 2.5 && bd < 10 && now - crystalT > 4 && g.combat.focus >= 30 && !g.shaped.isFrozen(best) && !m.busy) { crystalT = now; crystals++; tap('Heavy', 60); }
-    if (CFG.kit === 'best' && bd > 4 && bd < 13 && now - sweepT > 1.1 && g.combat.focus >= 14 && !m.busy) { sweepT = now; sweeps++; tap('Bend', 45); }
+    if (CFG.kit !== 'staff' && (arch === 'denmother' || arch === 'brute') && bd > 2.5 && bd < 10 && now - crystalT > 4 && g.combat.focus >= 30 && !g.shaped.isFrozen(best) && !m.busy) { crystalT = now; crystals++; tap('Heavy', 60); }
+    if (CFG.kit !== 'staff' && bd > 4 && bd < 13 && now - sweepT > 1.1 && g.combat.focus >= 14 && !m.busy) { sweepT = now; sweeps++; tap('Bend', 45); }
     if (bd < reach + 0.4) {
       if (now - heavyT > 3.5) {
         if (m.phase === 0 && downSince < 0) { set('Primary', true); downSince = now; }
