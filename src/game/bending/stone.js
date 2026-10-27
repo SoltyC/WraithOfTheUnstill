@@ -29,6 +29,10 @@ export const SURFACE_INFO = [
   { key: 'ash', kind: 6, give: 0.8, heave: 0.8, mat: 4, slump: 0 },  // STUB (Phase 11)
 ];
 
+/** Arguments to the writer helpers, passed through here: a call with double arguments boxes them (the alloc check). */
+const A = new Float64Array(24);
+const h2 = (a, b) => Math.sqrt(a * a + b * b);
+const h3 = (a, b, c) => Math.sqrt(a * a + b * b + c * c);
 export const shardTuning = {
   scarAhead: 2.3,     // m from the caster: where the plate is torn out
   scarHalf: 0.62,     // m: the scar's half width
@@ -85,9 +89,10 @@ export function createStoneBending(ctx) {
   const chunks = new Float32Array(STONE_CHUNKS * 16);
   const fx = new Float32Array(STONE_FX_VEC4 * 4);
   fx[34 * 4 + 3] = 99; fx[35 * 4 + 3] = 99;   // no puff, no splash yet
-  let seed = 7, serial = 0;
-  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  const ground1 = (x, z) => { ground.qx = x; ground.qz = z; ground.sample(); return ground.h; };
+  let serial = 0;
+  const seedA = new Uint32Array(1); seedA[0] = 7;   // a typed slot: a context `let` holding a double boxes every write
+  function rn() { seedA[0] = Math.imul(seedA[0], 1664525) + 1013904223; A[21] = seedA[0] / 4294967296; }
+  function gs() { ground.qx = A[22]; ground.qz = A[23]; ground.sample(); A[22] = ground.h; }
   const rateOf = (surf) => DECAY[SURFACE_INFO[surf].mat * 6 + 1];
 
   // Shards: per slot flight state.
@@ -105,11 +110,10 @@ export function createStoneBending(ctx) {
     sdx: new Float64Array(RIDGES * MAXSEG), sdz: new Float64Array(RIDGES * MAXSEG), sh: new Float64Array(RIDGES * MAXSEG), swelled: new Uint8Array(RIDGES * MAXSEG), age: new Float64Array(RIDGES), cur: -1, next: 0 };
   const bl = { on: new Uint8Array(BLOOMS), t: new Float64Array(BLOOMS), x: new Float64Array(BLOOMS), z: new Float64Array(BLOOMS), y: new Float64Array(BLOOMS), r: new Float64Array(BLOOMS),
     surf: new Uint8Array(BLOOMS), mound: new Int32Array(BLOOMS), next: 0, id: new Uint32Array(BLOOMS) };
-  let cx = 0, cz = 0;
   const clampAim = (s, min, max) => {
     const ax = s.tx - s.x, az = s.tz - s.z, d = Math.sqrt(ax * ax + az * az) || 1;
     const k = d > max ? max / d : d < min ? min / d : 1;
-    cx = s.x + ax * k; cz = s.z + az * k;
+    A[18] = s.x + ax * k; A[19] = s.z + az * k;
   };
 
   const self = {
@@ -119,7 +123,7 @@ export function createStoneBending(ctx) {
     x: 0.5, y: 0.5, z: 0.5, aimX: 0.5, aimZ: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, dt: 0.5, time: 0.5,
     castShard: false, castBloom: false, ridgeHeld: false,
     /** Flow (game/flow.js): power scales the verbs (1 = none); `flowing` (Flow 3) makes the Shard skim and plough a lane. */
-    power: 1, flowing: false,
+    power: 1.5 - 0.5, flowing: false,
     /** Gesture for the body: 1 right after a cast, decaying; held by the Ridge. */
     gesture: 0.5 - 0.5,
     /** Ridge length dragged this frame (m): combat charges focus for it. */
@@ -131,7 +135,6 @@ export function createStoneBending(ctx) {
     shardHit(k) { sh.kill[k] = 1; },
     /** Blooms for combat: the one that went off this frame (bloomEvent): centre, footprint radius, id. */
     bloomX: 0.5, bloomZ: 0.5, bloomR: 0.5, bloomId: 0, bloomHot: 0, bloomCX: bl.x, bloomCZ: bl.z, bloomCR: bl.r, bloomAge: bl.t, bloomOn: bl.on,
-    ridgeStrength: 0,
     /** Casts a cast-side check: the surface a verb would act on at (x, z). */
     surfaceAt,
 
@@ -143,20 +146,20 @@ export function createStoneBending(ctx) {
       this.shatterEvent = false; this.bloomEvent = false; this.splashEvent = false; this.ridgeAdvance = 0; this.bloomHot = 0;
       if (this.castShard) { this.castShard = false; startShard(this); this.gesture = 1; }
       if (this.castBloom) { this.castBloom = false; startBloom(this); this.gesture = 1; }
-      stepRidgeInput(this, dt);
+      stepRidgeInput(this);
       let li = 0;
-      for (let k = 0; k < SHARDS; k++) li = stepShard(this, k, dt, li);
-      for (let k = 0; k < RIDGES; k++) li = stepRidge(this, k, dt, li);
-      for (let k = 0; k < BLOOMS; k++) li = stepBloom(this, k, dt, li);
-      stepDebris(dt);
+      for (let k = 0; k < SHARDS; k++) li = stepShard(this, k, li);
+      for (let k = 0; k < RIDGES; k++) li = stepRidge(this, k, li);
+      for (let k = 0; k < BLOOMS; k++) li = stepBloom(this, k, li);
+      stepDebris();
       if (frost !== null && frost.crystalEvent) frostenRidges(frost.crystalX, frost.crystalZ);
-      restamp(this, dt);
+      restamp(this);
       if (rd.cur >= 0 && rd.held[rd.cur]) this.gesture = Math.max(this.gesture, 0.8);
       writeFx(this);
     },
 
     /** Is the segment a→b (fields ax…bz) blocked by standing mass at the height the line passes it? The shot's cover. Out: `t`. */
-    ax: 0.5, ay: 0.5, az: 0.5, bx: 0.5, by: 0.5, bz: 0.5, t: 2,
+    ax: 0.5, ay: 0.5, az: 0.5, bx: 0.5, by: 0.5, bz: 0.5, t: 2.5 - 0.5,
     segBlocked() {
       this.t = 2;
       if (mass.count === 0) return false;
@@ -166,12 +169,12 @@ export function createStoneBending(ctx) {
         const u = i / n, x = this.ax + dx * u, z = this.az + dz * u;
         const off = mass.heightAt(x, z);
         if (off < 0.35) continue;
-        if (this.ay + dy * u < ground1(x, z) + 0.15) { this.t = (i - 1) / n; return true; }   // ground1 already includes the mass
+        if (this.ay + dy * u < (A[22] = x, A[23] = z, gs(), A[22]) + 0.15) { this.t = (i - 1) / n; return true; }   // ground1 already includes the mass
       }
       return false;
     },
     /** Push body position (x, z) out of standing mass (swarmers are blocked by a Ridge) → pushX/pushZ (zero when clear). */
-    pushX: 0, pushZ: 0,
+    pushX: 0.5 - 0.5, pushZ: 0.5 - 0.5,
     pushOut(x, z, minOff) {
       this.pushX = 0; this.pushZ = 0;
       if (mass.count === 0) return false;
@@ -195,7 +198,7 @@ export function createStoneBending(ctx) {
     const T = shardTuning;
     let k = 0;
     for (let i = 0; i < SHARDS; i++) if (!sh.on[i]) { k = i; break; } else if (sh.t[i] > sh.t[k]) k = i;
-    const px = s.x + s.aimX * T.scarAhead, pz = s.z + s.aimZ * T.scarAhead, gy = ground1(px, pz);
+    const px = s.x + s.aimX * T.scarAhead, pz = s.z + s.aimZ * T.scarAhead, gy = (A[22] = px, A[23] = pz, gs(), A[22]);
     const surf = surfaceAt(px, pz), info = SURFACE_INFO[surf];
     if (surf === SURF.WATER) {   // stone on water: it only splashes
       s.splashEvent = true; s.splashX = px; s.splashZ = pz; sh.on[k] = 0;
@@ -206,8 +209,8 @@ export function createStoneBending(ctx) {
     ts.bk = BRUSH.PRESS; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.9;
     ts.stamp();
     sh.on[k] = 1; sh.phase[k] = 0; sh.t[k] = 0; sh.x[k] = px; sh.y[k] = gy; sh.z[k] = pz; sh.gy[k] = gy; sh.surf[k] = surf;
-    sh.lane[k] = s.flowing ? 1 : 0; sh.kill[k] = 0; sh.run[k] = 0; sh.wet[k] = 0; sh.spin[k] = rnd() * 6.28;
-    const dist = Math.max(4, Math.min(T.range, Math.hypot(s.tx - px, s.tz - pz)));
+    sh.lane[k] = s.flowing ? 1 : 0; sh.kill[k] = 0; sh.run[k] = 0; sh.wet[k] = 0; sh.spin[k] = (rn(), A[21]) * 6.28;
+    const dist = Math.max(4, Math.min(T.range, h2(s.tx - px, s.tz - pz)));
     sh.tx[k] = s.aimX; sh.tz[k] = s.aimZ; sh.tyy[k] = s.ty + 0.9 - gy; sh.vx[k] = dist;   // until the throw: the aim distance
     sh.dmgMul[k] = s.power;
     self.shardId[k] = ++serial;
@@ -225,7 +228,8 @@ export function createStoneBending(ctx) {
     }
   }
 
-  function stepShard(s, k, dt, li) {
+  function stepShard(s, k, li) {
+    const dt = s.dt;
     if (!sh.on[k]) { chunkHide(k * PLATE, PLATE); return li; }
     const T = shardTuning;
     sh.t[k] += dt;
@@ -248,48 +252,49 @@ export function createStoneBending(ctx) {
       ribbonCarry(k);
       const ox = sh.x[k], oz = sh.z[k];
       sh.x[k] += sh.vx[k] * dt; sh.y[k] += sh.vy[k] * dt; sh.z[k] += sh.vz[k] * dt;
-      sh.run[k] += Math.hypot(sh.x[k] - ox, sh.z[k] - oz);
-      const g = ground1(sh.x[k], sh.z[k]);
+      sh.run[k] += h2(sh.x[k] - ox, sh.z[k] - oz);
+      const g = (A[22] = sh.x[k], A[23] = sh.z[k], gs(), A[22]);
       if (lane) {
         sh.y[k] = g + T.laneHeight;
         // The lane: a plough through the surface behind the plate (Flow 3: surf behind it).
-        const sl = Math.hypot(sh.x[k] - ox, sh.z[k] - oz);
+        const sl = h2(sh.x[k] - ox, sh.z[k] - oz);
         ts.bx = (sh.x[k] + ox) * 0.5; ts.bz = (sh.z[k] + oz) * 0.5; ts.bdx = sh.tx[k]; ts.bdz = sh.tz[k]; ts.bl = sl * 0.5 + 0.05;
         ts.bw = 0.7; ts.bd = T.laneDepth; ts.bc = 0.6; ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.9;
         ts.stamp();
       }
-      const cliff = lane && g - ground1(sh.x[k] + sh.tx[k] * 1.5, sh.z[k] + sh.tz[k] * 1.5) > 1.2;
+      const cliff = lane && g - (A[22] = sh.x[k] + sh.tx[k] * 1.5, A[23] = sh.z[k] + sh.tz[k] * 1.5, gs(), A[22]) > 1.2;
       if (sh.kill[k] === 1 || sh.run[k] > (lane ? T.laneRange : T.range) || (!lane && sh.y[k] <= g + 0.12) || cliff) {
-        shatter(s, k, sh.x[k], Math.max(sh.y[k], g), sh.z[k]); sh.on[k] = 0; chunkHide(k * PLATE, PLATE); return li;
+        (A[0] = k, A[1] = sh.x[k], A[2] = Math.max(sh.y[k], g), A[3] = sh.z[k], shatter(s)); sh.on[k] = 0; chunkHide(k * PLATE, PLATE); return li;
       }
-      const v = Math.hypot(sh.vx[k], sh.vy[k], sh.vz[k]) || 1;
+      const v = h3(sh.vx[k], sh.vy[k], sh.vz[k]) || 1;
       fx0 = sh.vx[k] / v; fy0 = sh.vy[k] / v; fz0 = sh.vz[k] / v;
       // The plate's normal wobbles round the flight line, a tumbling slab.
       const spin = sh.spin[k] + sh.t[k] * 7;
-      nx = -fz0 * Math.sin(spin) * 0.35; nz = fx0 * Math.sin(spin) * 0.35; ny = 1; const nl = Math.hypot(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
+      nx = -fz0 * Math.sin(spin) * 0.35; nz = fx0 * Math.sin(spin) * 0.35; ny = 1; const nl = h3(nx, ny, nz); nx /= nl; ny /= nl; nz /= nl;
     }
-    writePlate(k, T.size, nx, ny, nz, fx0, fy0, fz0);
-    if (li < SPELL_LIGHTS) li = light(li, sh.x[k], sh.y[k] + 0.2, sh.z[k], T.lightRadius, T.lightIntensity * (sh.phase[k] === 0 ? sh.t[k] / T.rise : 1));
+    (A[0] = k, A[1] = T.size, A[2] = nx, A[3] = ny, A[4] = nz, A[5] = fx0, A[6] = fy0, A[7] = fz0, writePlate());
+    if (li < SPELL_LIGHTS) li = (A[0] = li, A[1] = sh.x[k], A[2] = sh.y[k] + 0.2, A[3] = sh.z[k], A[4] = T.lightRadius, A[5] = T.lightIntensity * (sh.phase[k] === 0 ? sh.t[k] / T.rise : 1), light());
     return li;
   }
 
-  function writePlate(k, size, nx, ny, nz, fx0, fy0, fz0) {
+  function writePlate() {
+    const k = A[0], size = A[1], nx = A[2], ny = A[3], nz = A[4], fx0 = A[5], fy0 = A[6], fz0 = A[7];
     const T = shardTuning, kind = SURFACE_INFO[sh.surf[k]].kind;
     // Forward in the plate's plane: the flight direction with its normal part removed.
     let fx = fx0, fy = fy0, fz = fz0;
     const dn = fx * nx + fy * ny + fz * nz; fx -= nx * dn; fy -= ny * dn; fz -= nz * dn;
-    const fl = Math.hypot(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl;
+    const fl = h3(fx, fy, fz) || 1; fx /= fl; fy /= fl; fz /= fl;
     const o = k * PLATE * 16;
-    set(o, sh.x[k], sh.y[k], sh.z[k], size, fx, fy, fz, T.size * 0.24, nx, ny, nz, size * 0.9, k * 13.7 + 1, kind, 0, 1);
+    (A[0] = o, A[1] = sh.x[k], A[2] = sh.y[k], A[3] = sh.z[k], A[4] = size, A[5] = fx, A[6] = fy, A[7] = fz, A[8] = T.size * 0.24, A[9] = nx, A[10] = ny, A[11] = nz, A[12] = size * 0.9, A[13] = k * 13.7 + 1, A[14] = kind, A[15] = 0, A[16] = 1, set());
     // Two lumps torn off with it, trailing and tumbling.
     for (let c = 1; c < PLATE; c++) {
       const a = sh.t[k] * (5 + c * 2) + c * 2.1, r = 0.55 + 0.12 * c, back = -0.25 * c;
       const ox = Math.cos(a) * r, oz = Math.sin(a) * r;
-      set(o + c * 16, sh.x[k] + ox * (-fz) + fx * back + nx * oz * 0.4, sh.y[k] + fy * back + ny * oz * 0.4 + 0.05, sh.z[k] + ox * fx + fz * back + nz * oz * 0.4, size * 0.34,
-        fx, fy, fz, size * 0.26, nx, ny, nz, size * 0.3, k * 13.7 + 2 * c, kind, 0, sh.phase[k] === 0 && sh.t[k] < 0.05 ? 0 : 1);
+      (A[0] = o + c * 16, A[1] = sh.x[k] + ox * (-fz) + fx * back + nx * oz * 0.4, A[2] = sh.y[k] + fy * back + ny * oz * 0.4 + 0.05, A[3] = sh.z[k] + ox * fx + fz * back + nz * oz * 0.4, A[4] = size * 0.34, A[5] = fx, A[6] = fy, A[7] = fz, A[8] = size * 0.26, A[9] = nx, A[10] = ny, A[11] = nz, A[12] = size * 0.3, A[13] = k * 13.7 + 2 * c, A[14] = kind, A[15] = 0, A[16] = sh.phase[k] === 0 && sh.t[k] < 0.05 ? 0 : 1, set());
     }
   }
-  function set(o, px, py, pz, sx, fx, fy, fz, sy, ux, uy, uz, sz, sd, kind, glow, alpha) {
+  function set() {
+    const o = A[0], px = A[1], py = A[2], pz = A[3], sx = A[4], fx = A[5], fy = A[6], fz = A[7], sy = A[8], ux = A[9], uy = A[10], uz = A[11], sz = A[12], sd = A[13], kind = A[14], glow = A[15], alpha = A[16];
     // Record: (pos, right extent), (forward, up extent), (up, forward extent), (seed, kind, glow, alpha).
     chunks[o] = px; chunks[o + 1] = py; chunks[o + 2] = pz; chunks[o + 3] = sx;
     chunks[o + 4] = fx; chunks[o + 5] = fy; chunks[o + 6] = fz; chunks[o + 7] = sy;
@@ -299,28 +304,31 @@ export function createStoneBending(ctx) {
   function chunkHide(first, n) { for (let i = 0; i < n; i++) chunks[(first + i) * 16 + 15] = 0; }
 
   /** A plate breaks: pieces thrown out that land as displaced mass, a mound where it hit, a puff. */
-  function shatter(s, k, x, y, z) {
+  function shatter(s) {
+    const k = A[0], x = A[1], y = A[2], z = A[3];
     const surf = sh.surf[k], info = SURFACE_INFO[surf];
     const hitSurf = surfaceAt(x, z);
     s.shatterEvent = true; s.shatterX = x; s.shatterY = y; s.shatterZ = z; s.shatterSurf = hitSurf;
     if (hitSurf === SURF.WATER) { s.splashEvent = true; s.splashX = x; s.splashZ = z; return; }
     const dvx = sh.vx[k], dvz = sh.vz[k];
-    const vl = Math.hypot(dvx, dvz) || 1;
+    const vl = h2(dvx, dvz) || 1;
     for (let q = 0; q < 9; q++) {
-      const a = rnd() * 6.283, sp = 2 + rnd() * 5;
-      spawnDebris(x, y + 0.1, z, Math.cos(a) * sp + dvx / vl * 3, 2.5 + rnd() * 4, Math.sin(a) * sp + dvz / vl * 3, 0.12 + 0.2 * rnd(), info.kind, surf);
+      const a = (rn(), A[21]) * 6.283, sp = 2 + (rn(), A[21]) * 5;
+      (A[0] = x, A[1] = y + 0.1, A[2] = z, A[3] = Math.cos(a) * sp + dvx / vl * 3, A[4] = 2.5 + (rn(), A[21]) * 4, A[5] = Math.sin(a) * sp + dvz / vl * 3, A[6] = 0.12 + 0.2 * (rn(), A[21]), A[7] = info.kind, A[8] = surf, spawnDebris());
     }
     ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 0.55; ts.bd = 0.14 * info.heave; ts.bc = 0.3;
     ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
     ts.stamp();
   }
 
-  function spawnDebris(x, y, z, vx, vy, vz, size, kind, surf) {
+  function spawnDebris() {
+    const x = A[0], y = A[1], z = A[2], vx = A[3], vy = A[4], vz = A[5], size = A[6], kind = A[7], surf = A[8];
     const i = db.next; db.next = (db.next + 1) % DEBRIS;
     db.on[i] = 1; db.x[i] = x; db.y[i] = y; db.z[i] = z; db.vx[i] = vx; db.vy[i] = vy; db.vz[i] = vz; db.size[i] = size; db.kind[i] = kind; db.surf[i] = surf;
-    db.spin[i] = rnd() * 6.28; db.t[i] = 0; db.fade[i] = 1;
+    db.spin[i] = (rn(), A[21]) * 6.28; db.t[i] = 0; db.fade[i] = 1;
   }
-  function stepDebris(dt) {
+  function stepDebris() {
+    const dt = self.dt;
     const base = SHARDS * PLATE;
     for (let i = 0; i < DEBRIS; i++) {
       const o = (base + i) * 16;
@@ -332,7 +340,7 @@ export function createStoneBending(ctx) {
       } else {
         db.vy[i] -= 16 * dt;
         db.x[i] += db.vx[i] * dt; db.y[i] += db.vy[i] * dt; db.z[i] += db.vz[i] * dt;
-        const g = ground1(db.x[i], db.z[i]);
+        const g = (A[22] = db.x[i], A[23] = db.z[i], gs(), A[22]);
         if (db.y[i] <= g + db.size[i] * 0.3 && db.vy[i] < 0) {
           db.y[i] = g + db.size[i] * 0.3; db.fade[i] = 0.999;
           const info = SURFACE_INFO[db.surf[i]];
@@ -344,13 +352,13 @@ export function createStoneBending(ctx) {
         }
       }
       const a = db.spin[i] + db.t[i] * 6, ca = Math.cos(a), sa = Math.sin(a), sz = db.size[i] * (db.fade[i] < 1 ? Math.max(0.2, db.fade[i]) : 1);
-      set(o, db.x[i], db.y[i], db.z[i], sz, ca, 0.3, sa, sz * 0.6, -sa * 0.4, 1, ca * 0.4, sz * 0.9, i * 7.3, db.kind[i], 0, 1);
+      (A[0] = o, A[1] = db.x[i], A[2] = db.y[i], A[3] = db.z[i], A[4] = sz, A[5] = ca, A[6] = 0.3, A[7] = sa, A[8] = sz * 0.6, A[9] = -sa * 0.4, A[10] = 1, A[11] = ca * 0.4, A[12] = sz * 0.9, A[13] = i * 7.3, A[14] = db.kind[i], A[15] = 0, A[16] = 1, set());
     }
   }
 
   // ---- Ridge ---------------------------------------------------------------------------------
   /** The hold begins and ends the current wall. */
-  function stepRidgeInput(s, dt) {
+  function stepRidgeInput(s) {
     const held = s.ridgeHeld;
     if (held && (rd.cur < 0 || !rd.held[rd.cur])) startRidge(s);
     if (!held && rd.cur >= 0 && rd.held[rd.cur]) rd.held[rd.cur] = 0;
@@ -363,7 +371,8 @@ export function createStoneBending(ctx) {
     rd.dx[k] = s.aimX; rd.dz[k] = s.aimZ; rd.str[k] = 0; rd.sc[k] = s.power;
     rd.surf[k] = surfaceAt(rd.hx[k], rd.hz[k]);
   }
-  function stepRidge(s, k, dt, li) {
+  function stepRidge(s, k, li) {
+    const dt = s.dt;
     if (!rd.on[k]) return li;
     const T = ridgeTuning;
     rd.age[k] += dt;
@@ -391,8 +400,8 @@ export function createStoneBending(ctx) {
       rd.str[k] = Math.min(1, rd.str[k] + dt / 0.25);
       if (rd.burst[k] <= 0 && SURFACE_INFO[rd.surf[k]].heave > 0) {
         rd.burst[k] = T.burst;
-        const info = SURFACE_INFO[rd.surf[k]], g = ground1(rd.hx[k], rd.hz[k]);
-        spawnDebris(rd.hx[k], g + 0.4, rd.hz[k], (rnd() - 0.5) * 3, 3 + rnd() * 2, (rnd() - 0.5) * 3, 0.1 + 0.12 * rnd(), info.kind, rd.surf[k]);
+        const info = SURFACE_INFO[rd.surf[k]], g = (A[22] = rd.hx[k], A[23] = rd.hz[k], gs(), A[22]);
+        (A[0] = rd.hx[k], A[1] = g + 0.4, A[2] = rd.hz[k], A[3] = ((rn(), A[21]) - 0.5) * 3, A[4] = 3 + (rn(), A[21]) * 2, A[5] = ((rn(), A[21]) - 0.5) * 3, A[6] = 0.1 + 0.12 * (rn(), A[21]), A[7] = info.kind, A[8] = rd.surf[k], spawnDebris());
       }
       rd.burst[k] -= dt;
     } else rd.str[k] = Math.max(0, rd.str[k] - dt / T.settle);
@@ -401,7 +410,7 @@ export function createStoneBending(ctx) {
       const j = k * MAXSEG + i;
       if (rd.swelled[j] === 0 && rd.age[k] - rd.st[j] >= T.swell) {
         rd.swelled[j] = 1;
-        stampRidge(rd.sx[j], rd.sz[j], rd.sdx[j], rd.sdz[j], rd.sh[j], T.step * 0.5 * 1.1);
+        (A[0] = rd.sx[j], A[1] = rd.sz[j], A[2] = rd.sdx[j], A[3] = rd.sdz[j], A[4] = rd.sh[j], A[5] = T.step * 0.5 * 1.1, stampRidge());
         mass.raise(rd.mi[j], rd.sh[j]);
       }
     }
@@ -410,10 +419,11 @@ export function createStoneBending(ctx) {
       for (let i = 0; i < rd.n[k]; i++) if (rd.swelled[k * MAXSEG + i] === 0) done = false;
       if (done) rd.on[k] = 0;
     }
-    if (li < SPELL_LIGHTS && rd.str[k] > 0.05) li = light(li, rd.hx[k], ground1(rd.hx[k], rd.hz[k]) + 0.9, rd.hz[k], T.lightRadius, T.lightIntensity * rd.str[k]);
+    if (li < SPELL_LIGHTS && rd.str[k] > 0.05) li = (A[0] = li, A[1] = rd.hx[k], A[2] = (A[22] = rd.hx[k], A[23] = rd.hz[k], gs(), A[22]) + 0.9, A[3] = rd.hz[k], A[4] = T.lightRadius, A[5] = T.lightIntensity * rd.str[k], light());
     return li;
   }
-  function stampRidge(x, z, dx, dz, H, hl) {
+  function stampRidge() {
+    const x = A[0], z = A[1], dx = A[2], dz = A[3], H = A[4], hl = A[5];
     const T = ridgeTuning;
     ts.bx = x; ts.bz = z; ts.bdx = dx; ts.bdz = dz; ts.bl = hl; ts.bw = T.halfWidth; ts.bd = H; ts.bc = 0.4;
     ts.bk = BRUSH.RIDGE; ts.bwet = 0; ts.bbias = 0; ts.bberm = TRENCH_RATIO;
@@ -429,7 +439,7 @@ export function createStoneBending(ctx) {
     const j = k * MAXSEG + rd.n[k]++, hl = sl * 0.5 * 1.1;
     rd.sx[j] = mx; rd.sz[j] = mz; rd.sdx[j] = sx; rd.sdz[j] = sz; rd.sh[j] = H; rd.st[j] = rd.age[k]; rd.swelled[j] = 0;
     rd.mi[j] = mass.addRidge(mx, mz, sx, sz, hl, T.halfWidth, H * T.firstSwell, rateOf(rd.surf[k]));
-    stampRidge(mx, mz, sx, sz, H * T.firstSwell, hl);
+    (A[0] = mx, A[1] = mz, A[2] = sx, A[3] = sz, A[4] = H * T.firstSwell, A[5] = hl, stampRidge());
   }
 
   // The Frost combination: a Crystallize cast near a wall freezes it to an ice rampart that keeps its shape.
@@ -440,7 +450,7 @@ export function createStoneBending(ctx) {
       if (!rd.on[k] && rd.n[k] === 0) continue;
       for (let i = 0; i < rd.n[k]; i++) {
         const j = k * MAXSEG + i;
-        if (Math.hypot(rd.sx[j] - fx0, rd.sz[j] - fz0) > R || mass.k.frozen[rd.mi[j]]) continue;
+        if (h2(rd.sx[j] - fx0, rd.sz[j] - fz0) > R || mass.k.frozen[rd.mi[j]]) continue;
         mass.freeze(rd.mi[j]);
         ts.bx = rd.sx[j]; ts.bz = rd.sz[j]; ts.bdx = rd.sdx[j]; ts.bdz = rd.sdz[j]; ts.bl = ridgeTuning.step * 0.55; ts.bw = ridgeTuning.halfWidth * 0.5; ts.bd = 0; ts.bc = 0;
         ts.bk = BRUSH.FREEZE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
@@ -450,14 +460,13 @@ export function createStoneBending(ctx) {
     }
   }
   /** Frozen walls are re-stamped now and then so the GPU copy keeps the shape the CPU holds. */
-  let restampT = 0;
-  function restamp(s, dt) {
-    restampT += dt;
-    if (restampT < 20) return;
-    restampT = 0;
+  function restamp(s) {
+    A[20] += s.dt;                        // (a closure `let` holding a double would box every write)
+    if (A[20] < 20) return;
+    A[20] = 0;
     for (let k = 0; k < RIDGES; k++) {
       if (!frozenAt[k]) continue;
-      for (let i = 0; i < rd.n[k]; i++) { const j = k * MAXSEG + i; if (mass.k.frozen[rd.mi[j]]) stampRidge(rd.sx[j], rd.sz[j], rd.sdx[j], rd.sdz[j], rd.sh[j], ridgeTuning.step * 0.55); }
+      for (let i = 0; i < rd.n[k]; i++) { const j = k * MAXSEG + i; if (mass.k.frozen[rd.mi[j]]) (A[0] = rd.sx[j], A[1] = rd.sz[j], A[2] = rd.sdx[j], A[3] = rd.sdz[j], A[4] = rd.sh[j], A[5] = ridgeTuning.step * 0.55, stampRidge()); }
     }
   }
 
@@ -465,8 +474,8 @@ export function createStoneBending(ctx) {
   function startBloom(s) {
     const T = bloomTuning;
     clampAim(s, T.minRange, T.maxRange);
-    const x = cx, z = cz, k = bl.next; bl.next = (bl.next + 1) % BLOOMS;
-    const surf = surfaceAt(x, z), info = SURFACE_INFO[surf], gy = ground1(x, z);
+    const x = A[18], z = A[19], k = bl.next; bl.next = (bl.next + 1) % BLOOMS;
+    const surf = surfaceAt(x, z), info = SURFACE_INFO[surf], gy = (A[22] = x, A[23] = z, gs(), A[22]);
     const R = T.radius * s.power;
     bl.on[k] = 1; bl.t[k] = 0; bl.x[k] = x; bl.z[k] = z; bl.y[k] = gy; bl.r[k] = R; bl.surf[k] = surf; bl.mound[k] = 0; bl.id[k] = ++serial;
     s.bloomEvent = true; s.bloomX = x; s.bloomZ = z; s.bloomR = R; s.bloomId = bl.id[k]; s.bloomHot = 1;
@@ -477,11 +486,12 @@ export function createStoneBending(ctx) {
     ts.stamp();
     mass.addCrater(x, z, R, depth, rateOf(surf));
     for (let q = 0; q < T.pieces; q++) {
-      const a = rnd() * 6.283, sp = 1 + rnd() * 3.2;
-      spawnDebris(x + Math.cos(a) * R * 0.3, gy + 0.2, z + Math.sin(a) * R * 0.3, Math.cos(a) * sp, 5 + rnd() * 4, Math.sin(a) * sp, 0.14 + 0.22 * rnd(), info.kind, surf);
+      const a = (rn(), A[21]) * 6.283, sp = 1 + (rn(), A[21]) * 3.2;
+      (A[0] = x + Math.cos(a) * R * 0.3, A[1] = gy + 0.2, A[2] = z + Math.sin(a) * R * 0.3, A[3] = Math.cos(a) * sp, A[4] = 5 + (rn(), A[21]) * 4, A[5] = Math.sin(a) * sp, A[6] = 0.14 + 0.22 * (rn(), A[21]), A[7] = info.kind, A[8] = surf, spawnDebris());
     }
   }
-  function stepBloom(s, k, dt, li) {
+  function stepBloom(s, k, li) {
+    const dt = s.dt;
     if (!bl.on[k]) return li;
     const T = bloomTuning;
     bl.t[k] += dt;
@@ -493,17 +503,18 @@ export function createStoneBending(ctx) {
       const due = Math.min(T.mounds, Math.floor(Math.max(0, t - 0.9) / (T.curtain - 0.9) * T.mounds));
       while (bl.mound[k] < due) {
         bl.mound[k]++;
-        const a = rnd() * 6.283, r = bl.r[k] * (0.4 + 0.35 * rnd());   // the curtain lands on the rim
-        ts.bx = bl.x[k] + Math.cos(a) * r; ts.bz = bl.z[k] + Math.sin(a) * r; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 0.55 + 0.35 * rnd(); ts.bd = 0.07 * info.heave; ts.bc = 0;
+        const a = (rn(), A[21]) * 6.283, r = bl.r[k] * (0.4 + 0.35 * (rn(), A[21]));   // the curtain lands on the rim
+        ts.bx = bl.x[k] + Math.cos(a) * r; ts.bz = bl.z[k] + Math.sin(a) * r; ts.bdx = 1; ts.bdz = 0; ts.bl = 0; ts.bw = 0.55 + 0.35 * (rn(), A[21]); ts.bd = 0.07 * info.heave; ts.bc = 0;
         ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
         ts.stamp();
       }
     }
-    if (li < SPELL_LIGHTS) li = light(li, bl.x[k], bl.y[k] + 1.5, bl.z[k], T.lightRadius, T.lightIntensity * Math.max(0, 1 - t / 1.6));
+    if (li < SPELL_LIGHTS) li = (A[0] = li, A[1] = bl.x[k], A[2] = bl.y[k] + 1.5, A[3] = bl.z[k], A[4] = T.lightRadius, A[5] = T.lightIntensity * Math.max(0, 1 - t / 1.6), light());
     return li;
   }
 
-  function light(li, x, y, z, radius, intensity) {
+  function light() {
+    const li = A[0], x = A[1], y = A[2], z = A[3], radius = A[4], intensity = A[5];
     // First free slot (the verbs before us have cleared and filled theirs this frame).
     let i = li;
     while (i < SPELL_LIGHTS && lights[i * 8 + 7] !== 0) i++;
@@ -523,14 +534,14 @@ export function createStoneBending(ctx) {
     for (let k = 0; k < SHARDS; k++) {
       const o = k * 4, o2 = (3 + k) * 4;
       if (!sh.on[k]) { fx[o + 3] = 0; continue; }
-      const v = Math.hypot(sh.vx[k], sh.vy[k], sh.vz[k]) || 1;
+      const v = h3(sh.vx[k], sh.vy[k], sh.vz[k]) || 1;
       fx[o] = sh.x[k]; fx[o + 1] = sh.y[k]; fx[o + 2] = sh.z[k]; fx[o + 3] = sh.phase[k] === 0 ? Math.min(1, sh.t[k] / shardTuning.rise) * 0.4 : 1;
       fx[o2] = sh.vx[k] / v; fx[o2 + 1] = sh.vy[k] / v; fx[o2 + 2] = sh.vz[k] / v; fx[o2 + 3] = sh.surf[k];
     }
     for (let k = 0; k < RIDGES; k++) {
       const o = (6 + k) * 4, o2 = (9 + k) * 4;
       if (!rd.on[k] || rd.str[k] <= 0) { fx[o + 3] = 0; continue; }
-      fx[o] = rd.hx[k]; fx[o + 1] = ground1(rd.hx[k], rd.hz[k]); fx[o + 2] = rd.hz[k]; fx[o + 3] = rd.str[k];
+      fx[o] = rd.hx[k]; fx[o + 1] = (A[22] = rd.hx[k], A[23] = rd.hz[k], gs(), A[22]); fx[o + 2] = rd.hz[k]; fx[o + 3] = rd.str[k];
       fx[o2] = rd.surf[k]; fx[o2 + 1] = rd.len[k]; fx[o2 + 2] = rd.age[k]; fx[o2 + 3] = 0;
       // Six points along the dragged path (from the segments), for the wall's dust and glitter.
       const n = rd.n[k];
@@ -538,7 +549,7 @@ export function createStoneBending(ctx) {
         const q = (12 + k * PTS + p) * 4;
         if (n === 0) { fx[q] = rd.hx[k]; fx[q + 1] = fx[o + 1]; fx[q + 2] = rd.hz[k]; fx[q + 3] = 1; continue; }
         const j = k * MAXSEG + Math.min(n - 1, Math.round(p / (PTS - 1) * (n - 1)));
-        fx[q] = rd.sx[j]; fx[q + 1] = ground1(rd.sx[j], rd.sz[j]); fx[q + 2] = rd.sz[j]; fx[q + 3] = 1;
+        fx[q] = rd.sx[j]; fx[q + 1] = (A[22] = rd.sx[j], A[23] = rd.sz[j], gs(), A[22]); fx[q + 2] = rd.sz[j]; fx[q + 3] = 1;
       }
     }
     for (let k = 0; k < BLOOMS; k++) {
@@ -551,7 +562,7 @@ export function createStoneBending(ctx) {
     const o = 34 * 4;
     if (s.shatterEvent) { fx[o] = s.shatterX; fx[o + 1] = s.shatterY; fx[o + 2] = s.shatterZ; fx[o + 3] = 0; fx[36 * 4] = s.shatterSurf; }
     else fx[o + 3] = Math.min(99, fx[o + 3] + s.dt);
-    if (s.splashEvent) { fx[o + 4] = s.splashX; fx[o + 5] = ground1(s.splashX, s.splashZ); fx[o + 6] = s.splashZ; fx[o + 7] = 0; }
+    if (s.splashEvent) { fx[o + 4] = s.splashX; fx[o + 5] = (A[22] = s.splashX, A[23] = s.splashZ, gs(), A[22]); fx[o + 6] = s.splashZ; fx[o + 7] = 0; }
     else fx[o + 7] = Math.min(99, fx[o + 7] + s.dt);
   }
 
