@@ -12,6 +12,12 @@ export function buildFlowTools(g, el) {
   for (const t of [0, 1, 2, 3]) btns.append(el('button', { onclick: () => flow.setValue(t) }, 'Set ' + t));
   btns.append(el('button', { onclick: () => flow.reset(true) }, 'Reset stats'));
   root.append(btns);
+  // Elements (testing): grant an element before its Warden's release (Stone: the dune Warden, later).
+  if (g.elements) {
+    const eb = el('div', { class: 'btns' });
+    for (const e of ['gale', 'stone']) eb.append(el('button', { onclick: () => { g.elements.unlock(e); g.elements.select(e); } }, 'Grant ' + e));
+    root.append(el('h3', null, 'Elements'), eb);
+  }
   for (const k in flowTuning) {
     const v = flowTuning[k];
     if (typeof v !== 'number') continue;

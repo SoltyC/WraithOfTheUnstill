@@ -20,6 +20,8 @@ export class PatchGround {
     this.ready = false;
     /** Patches installed so far (diagnostics). */
     this.installs = 0;
+    /** Terrain mass the bending writes (game/bending/stoneMass.js heightAt) or null: added to every height, so a Ridge is collision the moment it is stamped. */
+    this.mass = null;
   }
 
   /** Install a patch from the worker. */
@@ -59,10 +61,13 @@ export class PatchGround {
 
   /** Height at (qx, qz) → h. Fine patch first, then coarse, then anchors; 0 if none covers it. */
   sample() {
-    if (this._from(this.f)) return;
-    if (this._from(this.c)) return;
-    for (let k = 0; k < this.anchors.length; k++) if (this._from(this.anchors[k])) return;
-    this.h = 0;
+    if (!this._from(this.f) && !this._from(this.c)) {
+      let found = false;
+      for (let k = 0; k < this.anchors.length && !found; k++) found = this._from(this.anchors[k]);
+      if (!found) this.h = 0;
+    }
+    const m = this.mass;
+    if (m !== null && m.count > 0) this.h += m.heightAt(this.qx, this.qz);
   }
 
   /** Normal at (qx, qz) → nx/ny/nz, from central differences at the active patch spacing. */

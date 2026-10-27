@@ -34,7 +34,23 @@ export function createPlungeFx(ctx) {
       for (let c = 0; c < n; c++) {
         const a = c / n * Math.PI * 2 + rnd(), sp = (1.2 + 1.8 * u) * (0.5 + rnd());
         fx.ex = x + Math.sin(a) * 0.3; fx.ey = gy + 0.05; fx.ez = z + Math.cos(a) * 0.3;
-        fx.evx = Math.sin(a) * sp * 1.4; fx.evz = Math.cos(a) * sp * 1.4; fx.evy = 1 + rnd() * (1.5 + 3 * u); fx.esize = 0.05 + 0.08 * rnd();
+        fx.evx = Math.sin(a) * sp * 1.4; fx.evz = Math.cos(a) * sp * 1.4; fx.evy = 1 + rnd() * (1.5 + 3 * u); fx.esize = 0.08 + 0.12 * rnd();
+        fx.emit();
+      }
+      // The toll ring: a brief shock ring of fine powder racing out along the ground (esize 0.3-0.5 m is the fx's shock class),
+      // and a wall of snow or powder thrown outward in billows. Both grow with the stored height.
+      const rn = 40 + Math.round(60 * u), front = (R + 1.4) * 4.6;
+      for (let c = 0; c < rn; c++) {
+        const a = c / rn * Math.PI * 2 + rnd() * 0.12, sa = Math.sin(a), ca = Math.cos(a), v = front * (0.85 + 0.3 * rnd());
+        fx.ex = x + sa * 0.5; fx.ey = gy + 0.12 + 0.25 * rnd(); fx.ez = z + ca * 0.5;
+        fx.evx = sa * v; fx.evz = ca * v; fx.evy = 0.3 + 0.8 * rnd(); fx.esize = 0.32 + 0.14 * rnd();
+        fx.emit();
+      }
+      const bn = 10 + Math.round(14 * u);
+      for (let c = 0; c < bn; c++) {
+        const a = c / bn * Math.PI * 2 + rnd() * 0.5, sa = Math.sin(a), ca = Math.cos(a), v = (3.5 + 3.5 * u) * (0.7 + 0.6 * rnd());
+        fx.ex = x + sa * 0.6; fx.ey = gy + 0.2 + 0.3 * rnd(); fx.ez = z + ca * 0.6;
+        fx.evx = sa * v; fx.evz = ca * v; fx.evy = 0.9 + 1.8 * rnd() * (0.5 + u); fx.esize = 0.55 + 0.45 * rnd() * (0.5 + 0.5 * u);
         fx.emit();
       }
       if (wind !== null) wind.burst(x, z, 0.6 + u);

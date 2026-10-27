@@ -1175,7 +1175,7 @@
     {
       "id": "p6-clear-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "clear",
       "player": [
@@ -1197,7 +1197,7 @@
     {
       "id": "p6-clear-noon",
       "biome": "frost",
-      "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "clear",
       "player": [
@@ -1219,7 +1219,7 @@
     {
       "id": "p6-clear-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "clear",
       "player": [
@@ -1241,7 +1241,7 @@
     {
       "id": "p6-clear-night",
       "biome": "frost",
-      "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, clear, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "clear",
       "player": [
@@ -1263,7 +1263,7 @@
     {
       "id": "p6-overcast-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "overcast",
       "player": [
@@ -1285,7 +1285,7 @@
     {
       "id": "p6-overcast-noon",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "overcast",
       "player": [
@@ -1307,7 +1307,7 @@
     {
       "id": "p6-overcast-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "overcast",
       "player": [
@@ -1329,7 +1329,7 @@
     {
       "id": "p6-overcast-night",
       "biome": "frost",
-      "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, overcast, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "overcast",
       "player": [
@@ -1351,7 +1351,7 @@
     {
       "id": "p6-snowfall-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "snowfall",
       "player": [
@@ -1373,7 +1373,7 @@
     {
       "id": "p6-snowfall-noon",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "snowfall",
       "player": [
@@ -1395,7 +1395,7 @@
     {
       "id": "p6-snowfall-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "snowfall",
       "player": [
@@ -1417,7 +1417,7 @@
     {
       "id": "p6-snowfall-night",
       "biome": "frost",
-      "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, snowfall, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "snowfall",
       "player": [
@@ -1439,7 +1439,7 @@
     {
       "id": "p6-blizzard-dawn",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, dawn: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 6.6,
       "weather": "blizzard",
       "player": [
@@ -1461,7 +1461,7 @@
     {
       "id": "p6-blizzard-noon",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, noon: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 12.5,
       "weather": "blizzard",
       "player": [
@@ -1483,7 +1483,7 @@
     {
       "id": "p6-blizzard-dusk",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, dusk: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 17.5,
       "weather": "blizzard",
       "player": [
@@ -1505,7 +1505,7 @@
     {
       "id": "p6-blizzard-night",
       "biome": "frost",
-      "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day × every weather)",
+      "label": "Frost Steppe, blizzard, night: the Wraith walking out across the steppe (gate: every time of day \u00d7 every weather)",
       "time": 23,
       "weather": "blizzard",
       "player": [
@@ -4773,7 +4773,7 @@
         ],
         "yaw": -1.55,
         "pitch": -0.02,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {
@@ -4792,7 +4792,7 @@
         "height": 6,
         "speed": 13,
         "facing": -1.45,
-        "steer": 0,
+        "steer": 0.0,
         "period": 6,
         "rise": 0,
         "camera": {
@@ -4858,7 +4858,7 @@
         "height": 14,
         "speed": 12,
         "facing": 0.1,
-        "steer": 0,
+        "steer": 0.0,
         "period": 6,
         "rise": 3,
         "camera": {
@@ -4886,7 +4886,7 @@
       ],
       "camera": {
         "mode": "follow",
-        "yaw": 0,
+        "yaw": 0.0,
         "pitch": 0.2,
         "dist": 7
       }
@@ -4907,7 +4907,7 @@
         "height": 16,
         "speed": 13,
         "facing": -2.55,
-        "steer": 0,
+        "steer": 0.0,
         "period": 6,
         "rise": 0,
         "camera": {
@@ -4994,14 +4994,14 @@
         "mode": "free",
         "pos": [
           1063.36,
-          731,
+          731.0,
           2687.48
         ],
         "yaw": -0.93,
         "pitch": 0.12,
         "fov": 0.75
       },
-      "facing": 0,
+      "facing": 0.0,
       "weapon": {
         "id": "mace",
         "attack": "carry",
@@ -5024,14 +5024,14 @@
         "mode": "free",
         "pos": [
           1063.36,
-          737,
+          737.0,
           2687.48
         ],
         "yaw": -0.93,
         "pitch": 0.12,
         "fov": 0.75
       },
-      "facing": 0,
+      "facing": 0.0,
       "weapon": {
         "id": "mace",
         "attack": "carry",
@@ -5054,14 +5054,14 @@
         "mode": "free",
         "pos": [
           1063.36,
-          745,
+          745.0,
           2687.48
         ],
         "yaw": -0.93,
         "pitch": 0.12,
         "fov": 0.75
       },
-      "facing": 0,
+      "facing": 0.0,
       "weapon": {
         "id": "mace",
         "attack": "carry",
@@ -5091,13 +5091,13 @@
         "pitch": 0.1,
         "fov": 0.95
       },
-      "facing": 0,
+      "facing": 0.0,
       "weapon": {
         "id": "mace",
         "attack": "plunge",
         "height": 14,
         "at": 0.1,
-        "seconds": 0.62
+        "seconds": 0.78
       },
       "shaped": {
         "spawn": [
@@ -5114,7 +5114,7 @@
           [
             "hound",
             0.2,
-            -2
+            -2.0
           ]
         ],
         "seconds": 2.6
@@ -5123,7 +5123,7 @@
     {
       "id": "p9w-mace-dunk",
       "biome": "frost",
-      "label": "The dunk: a hound thrown up by an Updraft is driven into the ground by the plunge, and where it lands a second impact throws the hound beside it",
+      "label": "The dunk, from a low side view (camera at ground height, 9 m to the side): a hound thrown up by an Updraft is driven into the ground by the plunge, and where it lands a second impact throws the hound beside it",
       "time": 14.5,
       "weather": "clear",
       "player": [
@@ -5134,15 +5134,15 @@
       "camera": {
         "mode": "free",
         "pos": [
-          1067.5,
-          727.4,
-          2690.3
+          1069.0,
+          724.9,
+          2691.0
         ],
-        "yaw": -1.36,
-        "pitch": 0.1,
-        "fov": 0.95
+        "yaw": -1.406,
+        "pitch": -0.14,
+        "fov": 1.0
       },
-      "facing": 0,
+      "facing": 0.0,
       "weapon": {
         "id": "mace",
         "attack": "plunge",
@@ -5167,7 +5167,7 @@
           ],
           [
             "hound",
-            -2,
+            -2.0,
             2.4
           ]
         ],
@@ -5191,7 +5191,7 @@
         "pitch": 0.45,
         "dist": 10.5
       },
-      "facing": 0,
+      "facing": 0.0,
       "weapon": {
         "id": "mace",
         "attack": "plunge",
@@ -5266,6 +5266,156 @@
       "hidePlayer": true
     },
     {
+      "id": "p9s-shard-flight",
+      "biome": "frost",
+      "label": "Stone's Shard mid-flight on the steppe: a plate of snow and earth torn from the ground, the scar behind it, crumbs trailing",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 0.3,
+        "element": "stone",
+        "only": "shard"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 1.35,
+        "pitch": 0.18,
+        "dist": 5
+      }
+    },
+    {
+      "id": "p9s-ridge-snow",
+      "biome": "frost",
+      "label": "Stone's Ridge on snow: a wall of displaced snow dragged up along the aim, flanked by its trench",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 3.0,
+        "element": "stone"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.5,
+        "pitch": 0.4,
+        "dist": 10
+      }
+    },
+    {
+      "id": "p9s-ridge-turf",
+      "biome": "meadow",
+      "label": "Stone's Ridge on turf: the sod heaved into a wall and the meadow's grass laid flat beside it",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "bend": {
+        "seconds": 3.0,
+        "element": "stone"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.5,
+        "pitch": 0.4,
+        "dist": 10
+      },
+      "restoration": "restored"
+    },
+    {
+      "id": "p9s-bloom",
+      "biome": "frost",
+      "label": "Stone's Bloom: the crater with its raised rim and the glittering curtain of ejecta falling back",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 0.9,
+        "element": "stone",
+        "only": "bloom"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.55,
+        "dist": 11
+      }
+    },
+    {
+      "id": "p9s-bloom-turf",
+      "biome": "meadow",
+      "label": "Stone's Bloom on turf (meadow): the same crater on grass, ejecta of soil and sod",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        800
+      ],
+      "bend": {
+        "seconds": 0.9,
+        "element": "stone",
+        "only": "bloom"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.55,
+        "dist": 11
+      }
+    },
+    {
+      "id": "p9s-ridge-hounds",
+      "biome": "frost",
+      "label": "A Ridge between the Wraith and three hounds: the wall in the snow, the pack stalled on the far side",
+      "time": 15.2,
+      "weather": "clear",
+      "player": [
+        100,
+        1740
+      ],
+      "bend": {
+        "seconds": 3.4,
+        "element": "stone"
+      },
+      "camera": {
+        "mode": "follow",
+        "yaw": 0.6,
+        "pitch": 0.35,
+        "dist": 11
+      },
+      "shaped": {
+        "spawn": [
+          [
+            "hound",
+            3,
+            14
+          ],
+          [
+            "hound",
+            6,
+            15
+          ],
+          [
+            "hound",
+            0,
+            16
+          ]
+        ],
+        "seconds": 3.4
+      }
+    },
+    {
       "id": "p9d0-lip-erg-golden",
       "biome": "dunes",
       "label": "From the Dry Stair lip over the erg, golden hour",
@@ -5285,7 +5435,7 @@
         ],
         "yaw": 1.5,
         "pitch": 0.05,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {
@@ -5308,14 +5458,14 @@
         ],
         "yaw": 1.8,
         "pitch": 0.12,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {
       "id": "p9d0-map-overhead",
       "biome": "dunes",
       "label": "The grown erg from high above: the Galleries, the Stride and the Dry Braids",
-      "time": 13,
+      "time": 13.0,
       "weather": "clear",
       "player": [
         2300,
@@ -5329,7 +5479,7 @@
           3000,
           500
         ],
-        "yaw": 0,
+        "yaw": 0.0,
         "pitch": 1.5,
         "fov": 1.1
       }
@@ -5352,16 +5502,16 @@
           110.3,
           780
         ],
-        "yaw": 3,
+        "yaw": 3.0,
         "pitch": -0.2,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {
       "id": "p9d0-canyon-rim",
       "biome": "dunes",
       "label": "The Red Galleries from the east rim, looking down into the canyon",
-      "time": 9,
+      "time": 9.0,
       "weather": "clear",
       "player": [
         1650,
@@ -5377,7 +5527,7 @@
         ],
         "yaw": -1.35,
         "pitch": 0.3,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {
@@ -5400,7 +5550,7 @@
         ],
         "yaw": 2.65,
         "pitch": 0.25,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {
@@ -5418,12 +5568,12 @@
         "mode": "free",
         "pos": [
           2150,
-          490,
+          490.0,
           1700
         ],
         "yaw": 1.5,
         "pitch": 0.02,
-        "fov": 1
+        "fov": 1.0
       }
     },
     {

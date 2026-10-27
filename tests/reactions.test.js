@@ -38,11 +38,39 @@ describe('reaction table', () => {
     expect(names(REACTIONS.grass.frost.brush)).toContain('FREEZE');
     expect(REACTIONS.grass.frost.writes).toContain('flatten');
   });
-  it('flags cross reactions, only gust-over-slush implemented', () => {
-    expect(Object.keys(CROSS).sort()).toEqual(['gustSlush', 'updraftRibbon', 'vortexSnow']);
+  it('flags cross reactions: gust-over-slush and the Stone pairs on the surfaces that exist are implemented', () => {
+    expect(Object.keys(CROSS).sort()).toEqual(['bloomVortex', 'gustSlush', 'ridgeFrost', 'shardRibbon', 'updraftRibbon', 'vortexSnow']);
     expect(CROSS.gustSlush.implemented).toBe(true);
+    expect(CROSS.ridgeFrost.implemented).toBe(true);
+    expect(CROSS.shardRibbon.implemented).toBe(true);
+    expect(CROSS.bloomVortex.implemented).toBe(false);   // needs sand (D1)
+    expect(CROSS.bloomVortex.stub).toBeTruthy();
     expect(CROSS.gustSlush.brush).toBe('FLATTEN');
     expect(CROSS.vortexSnow.implemented).toBe(false);
     expect(CROSS.updraftRibbon.implemented).toBe(false);
+  });
+});
+
+describe('the Stone column (D4)', () => {
+  const BUILT_SURFACES = ['snow', 'grass', 'water'];   // the surfaces that exist now (rock reads as snow here)
+  it('gives every Stone cell a brush or an explicit nothing', () => {
+    for (const s of SURFACES) {
+      const x = REACTIONS[s].stone;
+      expect(Boolean(x.nothing) !== (names(x.brush).length > 0), `${s}+stone: exactly one of a brush and an explicit nothing`).toBe(true);
+    }
+  });
+  it('implements the built surfaces with the Stone programs, and stubs the later ones explicitly', () => {
+    for (const s of ['snow', 'grass']) {
+      expect(names(REACTIONS[s].stone.brush), s).toEqual(expect.arrayContaining(['PRESS', 'MOUND', 'RIDGE', 'CRATER']));
+      expect(REACTIONS[s].stone.stub, s).toBeUndefined();
+    }
+    expect(REACTIONS.water.stone.nothing).toBe(true);
+    expect(REACTIONS.water.stone.result).toMatch(/splash/i);
+    for (const s of SURFACES.filter((x) => !BUILT_SURFACES.includes(x))) expect(REACTIONS[s].stone.stub, s).toBeTruthy();
+  });
+  it('says what snow, grass and water do with Stone in the table\'s own words', () => {
+    expect(REACTIONS.snow.stone.result).toMatch(/snow and earth/i);
+    expect(REACTIONS.grass.stone.result).toMatch(/turf/i);
+    expect(REACTIONS.grass.stone.writes).toContain('flatten');   // the turf regrows (the blades recover)
   });
 });

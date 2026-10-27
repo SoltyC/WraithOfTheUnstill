@@ -1,0 +1,2 @@
+2026-10-27T00:28:20.307Z 1/1 p9s-shard-flight: saved screenshots/stone/p9s-shard-flight.png
+2026-10-27T00:28:20.309Z Shots done: 1/1 spot(s) (p9s-shard*) → screenshots/stone/.

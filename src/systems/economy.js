@@ -20,7 +20,7 @@ import { BRUSH } from '../shaders/terrainState.wgsl.js';
 /** Materials a placed elite leaves besides its marks. */
 const ELITE_MATS = { denmother: { 'rime-core': 2 } };
 /** The warm hand-light of Ember tea, and the default (cold) one it fades back to. */
-const WARM = [1.0, 0.62, 0.25], COLD = [0.25, 0.45, 0.6];
+const WARM = [1.0, 0.62, 0.25], COLD0 = [0.25, 0.45, 0.6];
 
 /** @param {any} g  shared boot context */
 export function addEconomySystem(g) {
@@ -191,7 +191,7 @@ export function addEconomySystem(g) {
     // Strength warms the hand-light (it cools over the last seconds); defence is the robe's frost (creatures.js reads `sheen`).
     const warm = buffs.left[0] > 0 ? Math.min(1, buffs.left[0] / 4) : 0;
     d[9] += (warm - d[9]) * (1 - Math.exp(-4 * clock.realDt));
-    const hg = wraithView.handGlow;
+    const hg = wraithView.handGlow, COLD = wraithView.handBase || COLD0;   // the element's hand-light (Stone: ochre)
     if (d[9] > 0.005 || hg[0] !== COLD[0]) {
       const k = d[9] < 0.005 ? 0 : d[9];
       hg[0] = COLD[0] + (WARM[0] - COLD[0]) * k; hg[1] = COLD[1] + (WARM[1] - COLD[1]) * k; hg[2] = COLD[2] + (WARM[2] - COLD[2]) * k;
