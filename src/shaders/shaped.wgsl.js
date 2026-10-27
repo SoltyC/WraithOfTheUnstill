@@ -41,11 +41,11 @@ fn main(input: VertexInputs) -> FragmentInputs {
     // Bundles pinch toward their ends (sedge a little, reed stalks more).
     let pinch = select(0.3, 0.5, mk == 7);
     v = vec3f(v.x * (1.0 - pinch * abs(v.z)), v.y * (1.0 - pinch * abs(v.z)), v.z);
-  } else if (mk == 6) {
-    // Drystone: a slab, cube-ish with chipped corners.
+  } else if (mk == 6 || mk == 12 || mk == 13) {
+    // Drystone / sandstone / ruin plate: a slab, cube-ish with chipped corners.
     v = sign(v) * pow(abs(v), vec3f(0.6)) * 0.82 * (0.92 + 0.12 * hs(v * 2.3 + seed));
-  } else if (mk == 9) {
-    // Awn: a spike tapering to a point trailing backward (-z).
+  } else if (mk == 9 || mk == 14) {
+    // Awn / sandstone thorn: a spike tapering to a point trailing backward (-z).
     let t = 1.0 - 0.85 * max(-v.z, 0.0);
     v = vec3f(v.x * t, v.y * t, v.z);
   } else if (mk == 10) {
@@ -141,6 +141,29 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       // Seed-pod husk around the amber light.
       albedo = vec3f(0.50, 0.27, 0.09);
       trans = 0.3;
+    } else if (kind == 11) {
+      // Packed sand: warm, fine-grained, drifted in faint ripples; paler on top where the wind has dried it.
+      let gr = noised(wp.xz * 14.0 + vec2f(sd, 0.0)).x;
+      let rip = 0.5 + 0.5 * sin(lv.y * 14.0 + gr * 3.0 + sd);
+      albedo = mix(vec3f(0.60, 0.45, 0.27), vec3f(0.78, 0.63, 0.40), clamp(up * 0.7 + 0.25 * gr + 0.15 * rip, 0.0, 1.0));
+      trans = 0.18 * up;
+    } else if (kind == 12 || kind == 14) {
+      // Sandstone: banded strata (rust, buff, cream), the bands wandering with the stone; thorns are the darker ends.
+      let wob = noised(vec2f(lv.x * 2.5 + sd, lv.z * 2.5)).x;
+      let band = 0.5 + 0.5 * sin((lv.y + wob * 0.35) * 13.0 + sd * 0.7);
+      let thin = 0.5 + 0.5 * sin((lv.y + wob * 0.2) * 41.0 + sd);
+      albedo = mix(vec3f(0.50, 0.27, 0.15), vec3f(0.80, 0.62, 0.40), band) * (0.88 + 0.16 * thin);
+      if (kind == 14) { albedo = albedo * 0.82; }
+    } else if (kind == 13) {
+      // Ruin plate: pale carved limestone, dark incised lines (a stepped glyph band and edge rules), wind-polished, rust streaks.
+      let g = lv.xz * 5.0 + vec2f(sd, 0.0);
+      let cell = abs(fract(g) - 0.5);
+      let step = smoothstep(0.42, 0.48, max(cell.x, cell.y)) * (1.0 - smoothstep(0.0, 0.2, abs(lv.z) - 0.55));
+      let edge = smoothstep(0.78, 0.92, max(abs(lv.x), abs(lv.z)));
+      let wear = noised(wp.xz * 6.0 + vec2f(sd, 2.0)).x;
+      var stone = mix(vec3f(0.62, 0.55, 0.43), vec3f(0.74, 0.68, 0.55), 0.5 + 0.5 * wear);
+      stone = mix(stone, vec3f(0.55, 0.33, 0.20), clamp(0.35 * (0.5 - wear) + 0.2 * (1.0 - up) - 0.05, 0.0, 0.4));
+      albedo = stone * (1.0 - 0.45 * max(step, edge * 0.7));
     } else {
       // Root: thin, dark, ropy.
       albedo = vec3f(0.11, 0.075, 0.045) * (0.7 + 0.6 * (0.5 + 0.5 * sin(lv.y * 30.0 + sd)));
