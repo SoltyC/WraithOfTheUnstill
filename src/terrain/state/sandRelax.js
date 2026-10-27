@@ -1,7 +1,7 @@
 // GPU owner for the bounded D2 prototype. All pipelines warm with an inactive job at load.
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
-import { createRelaxationQueue, RELAX_TILE } from './relaxation.js';
+import { createRelaxationQueue, RELAX_TILE, RELAX_ITERATIONS } from './relaxation.js';
 import { FINE_N } from './layout.js';
 import { sandRelaxLoadWGSL, sandRelaxABWGSL, sandRelaxBAWGSL, sandRelaxStoreWGSL } from '../../shaders/sandRelax.wgsl.js';
 export function createSandRelax(engine, fine, surface, clipmap) {
@@ -21,7 +21,7 @@ export function createSandRelax(engine, fine, surface, clipmap) {
   });
   const warmed = new Uint8Array(4);
   let ready = false;
-  return { queue, enabled: false, jobs: 0, iterations: 4, originX: 0, originZ: 0, time: 0.5,
+  return { queue, enabled: false, jobs: 0, iterations: RELAX_ITERATIONS, originX: 0, originZ: 0, time: 0.5,
     get ready() { return ready; },
     // Diagnostics allocate/read back only when explicitly requested by the bot.
     async debugRead() { return a.read(); },

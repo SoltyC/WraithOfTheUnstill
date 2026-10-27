@@ -1,3 +1,4 @@
+import { sandHealingScale } from '../terrain/state/healing.js';
 // Per-frame world rendering inputs, after the actors: atmosphere, clipmap, shadows, the post
 // chain, rocks; then weather, restoration (and the grade), ground blow / dust / falling snow /
 // sound, the terrain state and its writers, render scale and the shadow strength. Also the
@@ -224,6 +225,7 @@ export async function addEnvironmentSystems(g) {
     terrainState.time = clock.simTime;
     // Falling snow fills depressions (BRIEF §4.3: weather writes too): refill runs faster under it.
     terrainState.healScale = params.v.refillRate * (1 + 5 * weather.snow);
+    terrainState.sandHealScale = sandHealingScale(ws.restoration.dunes === 'restored', g.wind ? g.wind.strength : 0);
     footprints.enabled = toggles.on.footprints !== false;
     footprints.px = controller.pos.x; footprints.pz = controller.pos.z;
     footprints.grounded = controller.grounded && !arm.free && content.capsule.isEnabled();

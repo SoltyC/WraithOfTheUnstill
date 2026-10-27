@@ -15,6 +15,7 @@ import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
 import { createSandRelax } from './sandRelax.js';
 import { createStateCollision } from './stateCollision.js';
+import { createSandCoarseRelax } from './sandCoarseRelax.js';
 import '@babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.js';
 import {
   FINE_N, FINE_PER_M, RATIO, PAGE_N, PAGE_M, PAGES, SLOTS, NO_SLOT, COARSE_PER_M, WORLD_HALF,
@@ -39,7 +40,7 @@ const BF = 12;
 
 /**
  * @param {import('@babylonjs/core').WebGPUEngine} engine
- * @param {{ surface: StorageBuffer, base: string }} opts
+ * @param {{ surface: StorageBuffer, base: string, clipmap?: any }} opts
  */
 export function createTerrainState(engine, opts) {
   const sb = (bytes, label) => new StorageBuffer(engine, bytes, undefined, label);
@@ -72,6 +73,7 @@ export function createTerrainState(engine, opts) {
   const passRan = new Uint8Array(5);
   const relaxation = opts.clipmap ? createSandRelax(engine, fine, opts.surface, opts.clipmap) : null;
   const collision = opts.clipmap ? createStateCollision(engine,fine,opts.surface) : null;
+  const coarseRelaxation = opts.clipmap ? createSandCoarseRelax(engine,atlas,opts.surface,opts.clipmap) : null;
 
   // Page bookkeeping (CPU).
   const pageSlot = new Int32Array(PAGES * PAGES).fill(-1);
@@ -110,7 +112,7 @@ export function createTerrainState(engine, opts) {
   function setSlot(key, slot) {
     pageSlot[key] = slot;
     tableData[key] = slot < 0 ? NO_SLOT : slot;
-    if (slot >= 0) { slotKey[slot] = key; freeSlots--; }
+    if (slot >= 0) { slotKey[slot] = key; freeSlots--; if(coarseRelaxation)coarseRelaxation.resetSlot(slot); }
     tableDirty = true;
   }
   /** Map key to a free slot; a fresh page (not a reload, which uploads its record) is zeroed if
@@ -154,11 +156,11 @@ export function createTerrainState(engine, opts) {
   }
 
   const self = {
-    fine, atlas, params, relaxation, collision,
+    fine, atlas, params, relaxation, collision, coarseRelaxation,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
     /** Healing speed multiplier (the 'Refill rate' art control). */
-    healScale: 1.5 - 0.5,
+    healScale: 1.5 - 0.5, sandHealScale: 1.5 - 0.5,
     /** Benchmarks: follow (followX, followZ) instead of the player. */
     followOverride: false, followX: 0.5, followZ: 0.5,
     /** Stats for the dev overlay. */
@@ -177,7 +179,7 @@ export function createTerrainState(engine, opts) {
         // arrived (update() holds brushes over loading pages), so nothing of either is lost.
         if (pageStored[key]) {
           pageStored[key] = 0; this.stats.stored--; pageLoading[key] = 1;
-          worker.postMessage({ type: 'load', key, time: this.time, gen });
+          worker.postMessage({ type: 'load', key, time: this.time, sandScale: this.sandHealScale, gen });
           continue;
         }
         if (allocSlot(key, this.time, true) < 0) ok = false;
@@ -272,6 +274,7 @@ export function createTerrainState(engine, opts) {
       gen++;
       if (relaxation) relaxation.queue.reset();
       if (collision) collision.reset();
+      if (coarseRelaxation) coarseRelaxation.reset();
       for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0) { setSlot(slotKey[s], -1); slotKey[s] = -1; freeSlots++; }
       pageStored.fill(0); pageLoading.fill(0); arrivals.length = 0;
       qHead = 0; qCount = 0;
@@ -352,7 +355,7 @@ export function createTerrainState(engine, opts) {
         const key = pz * PAGES + px;
         if (pageStored[key] && !pageLoading[key] && pageSlot[key] < 0) {
           pageStored[key] = 0; pageLoading[key] = 1; this.stats.stored--;
-          worker.postMessage({ type: 'load', key, time: now, gen });
+          worker.postMessage({ type: 'load', key, time: now, sandScale: this.sandHealScale, gen });
         } else if (pageSlot[key] >= 0) slotUsed[pageSlot[key]] = now;
       }
       // Keep a reserve of free slots: evict the least recently used page outside KEEP_RADIUS.
@@ -380,6 +383,7 @@ export function createTerrainState(engine, opts) {
         const s = (healCursor + k) % SLOTS;
         if (slotKey[s] >= 0 && !slotBusy[s]) { healSlot = s; break; }
       }
+      pf[P_HEALDT + 2] = this.sandHealScale; pf[P_HEALDT + 3] = now;
       pi[P_SLOT] = healSlot;
       if (healSlot >= 0) {
         pageOriginCoarse(slotKey[healSlot], og);
@@ -412,6 +416,7 @@ export function createTerrainState(engine, opts) {
         relaxation.update(false);
       }
       if (collision && !collision.ready) collision.update();
+      if (coarseRelaxation && !coarseRelaxation.ready) coarseRelaxation.update();
       const warming = warmed < 5;
       if (nOut === 0 && nIn === 0 && brushN === 0 && !healFine && healSlot < 0 && !moved && !warming && !(relaxation && relaxation.enabled)) {
         if (flushing) { const w = flushWait.splice(0); for (const r of w) r(); }
@@ -436,6 +441,11 @@ export function createTerrainState(engine, opts) {
       }
       if (healSlot >= 0 && csHealCoarse.dispatch(PAGE_N / 8, PAGE_N / 8, 1)) { slotHealed[healSlot] = now; healCursor = (healSlot + 1) % SLOTS; passRan[4] = 1; }
       if (relaxation) relaxation.update();
+      if (coarseRelaxation) {
+        coarseRelaxation.enabled = relaxation.enabled; coarseRelaxation.slot = healSlot;
+        if (healSlot >= 0) { coarseRelaxation.pageX = pi[P_SLOT + 1]; coarseRelaxation.pageZ = pi[P_SLOT + 2]; }
+        coarseRelaxation.update();
+      }
       if (collision) {
         collision.enabled = relaxation.enabled;
         collision.originX = next[0]; collision.originZ = next[1]; collision.px = this.px; collision.pz = this.pz; collision.time = now;

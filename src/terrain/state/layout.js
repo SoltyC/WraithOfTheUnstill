@@ -15,8 +15,8 @@
 // per word — the fine window is 64 MB per plane, under WebGPU's 128 MiB binding limit):
 //   word 0: depression (m), displaced mass (m)                       — pack2x16float
 //   word 1: compaction, wetness, frozen, transform id (/255, never heals) — pack4x8unorm
-//   word 2: molten, flatten (unorm8); fine-only relaxation remainder (f16 in high half)                            — pack4x8unorm
-// Coarse word 2 keeps its high half zero; scroll-out folds the fine remainder into height.
+//   word 2: molten, flatten (unorm8); relaxation remainder (f16 in high half)                            — pack4x8unorm
+// The spare high half carries height-rounding error through relaxation, scrolling and save.
 // Word 1 holds everything a surface shader needs besides height (one storage binding: WebGPU
 // allows few per stage). Thermal is split into frozen and molten so every channel rests at 0
 // and freshly zeroed buffers are untouched ground. Transform ids: TRANSFORM below.

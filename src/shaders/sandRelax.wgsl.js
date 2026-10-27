@@ -2,8 +2,7 @@
 // undirected interior edge has exactly equal/opposite flux. No flux crosses the tile boundary.
 import { DRY_REPOSE, WET_REPOSE, RELAX_RATE, RELAX_TILE } from '../terrain/state/relaxation.js';
 import { FINE_N, FINE_PER_M, WORLD_HALF } from '../terrain/state/layout.js';
-import { CLIPMAP_N, CLIPMAP_LEVELS } from '../terrain/clipmapLayout.js';
-const V = CLIPMAP_N + 1;
+import { CLIPMAP_SAMPLE_WGSL } from './clipmapSample.wgsl.js';
 const common = /* wgsl */ `
 struct Job { tile: vec2i, origin: vec2i, enabled: u32, pad0: u32, pad1: u32, pad2: u32 };
 @group(0) @binding(0) var<storage, read_write> fine0: array<u32>;
@@ -20,18 +19,7 @@ fn key(p: vec2i) -> u32 {
   let q = ((p % ${FINE_N}) + ${FINE_N}) % ${FINE_N};
   return u32(q.y * ${FINE_N} + q.x);
 }
-fn baseHeight(p: vec2f) -> f32 {
-  for (var l = 0u; l < ${CLIPMAP_LEVELS}u; l++) {
-    let s = cp[l].z;
-    if (s <= 0.0) { continue; }
-    let uv = (p - cp[l].xy) / s + vec2f(${CLIPMAP_N / 2}.0);
-    if (any(uv < vec2f(0.0)) || any(uv >= vec2f(${CLIPMAP_N}.0))) { continue; }
-    let cell = vec2u(floor(uv)); let f = fract(uv);
-    let k = (l * ${V}u + cell.y) * ${V}u + cell.x;
-    return mix(mix(levels[k].x, levels[k + 1u].x, f.x), mix(levels[k + ${V}u].x, levels[k + ${V + 1}u].x, f.x), f.y);
-  }
-  return 0.0;
-}
+${CLIPMAP_SAMPLE_WGSL}
 `;
 export const sandRelaxLoadWGSL = /* wgsl */ `${common}
 @compute @workgroup_size(8,8,1)

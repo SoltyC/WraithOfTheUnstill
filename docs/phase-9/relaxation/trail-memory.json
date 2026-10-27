@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-27T14:53:06.339Z",
+  "before": {
+    "fine": 0.044677734375,
+    "coarse": 0,
+    "fineDisplaced": 0,
+    "coarseDisplaced": 0,
+    "fineRelief": -0.044677734375,
+    "coarseRelief": 0,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0,
+    "compaction": 0.8980392156862745,
+    "wet": 0,
+    "frozen": 0,
+    "sandHealScale": 0.8240000000000001,
+    "time": 86.56283333333404
+  },
+  "cameraY": 150.23201293945314,
+  "stages": [
+    {
+      "elapsed": 20,
+      "fine": 0.04302978515625,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.04302978515625,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0,
+      "compaction": 0.8823529411764706,
+      "wet": 0,
+      "frozen": 0,
+      "sandHealScale": 0.8240000000000001,
+      "time": 106.61660000002445
+    },
+    {
+      "elapsed": 40,
+      "fine": 0.0413818359375,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.0413818359375,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0,
+      "compaction": 0.8745098039215686,
+      "wet": 0,
+      "frozen": 0,
+      "sandHealScale": 0.8240000000000001,
+      "time": 126.63020000004818
+    },
+    {
+      "elapsed": 60,
+      "fine": 0.03985595703125,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.03985595703125,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0,
+      "compaction": 0.8431372549019608,
+      "wet": 0,
+      "frozen": 0,
+      "sandHealScale": 0.8240000000000001,
+      "time": 146.57370000004823
+    }
+  ],
+  "saved": {
+    "ok": true,
+    "saves": 1,
+    "error": null
+  },
+  "loaded": {
+    "probe": {
+      "fine": 0.01068878173828125,
+      "coarse": 0.01262664794921875,
+      "fineDisplaced": 0.003009796142578125,
+      "coarseDisplaced": 0.0029926300048828125,
+      "fineRelief": -0.007678985595703125,
+      "coarseRelief": -0.009634017944335938,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0,
+      "compaction": 0.28627450980392155,
+      "wet": 0,
+      "frozen": 0,
+      "sandHealScale": 0.8240000000000001,
+      "time": 150.81406666676259
+    },
+    "late": [],
+    "gpuErrors": 0
+  },
+  "note": "Real simulation-time retention, then IndexedDB save/codec/load in the same page. A fresh-page reload is a separate gate."
+}

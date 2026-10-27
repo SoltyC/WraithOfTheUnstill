@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createRelaxationGrid, createRelaxationQueue, DRY_REPOSE, WET_REPOSE, RELAX_TILE } from '../src/terrain/state/relaxation.js';
+import { createRelaxationGrid, createRelaxationQueue, DRY_REPOSE, WET_REPOSE, RELAX_TILE, RELAX_LIFETIME, projectTalusPairs } from '../src/terrain/state/relaxation.js';
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 describe('conservative granular relaxation', () => {
   it('conserves signed mass and remains bounded for mixed positive and negative relief', () => {
@@ -46,12 +46,28 @@ describe('bounded relaxation scheduling', () => {
     q.mark(-2, -2, -1, -1); q.mark(-2, -2, -1, -1);
     expect(q.take(-1000, -1000, 1000, 1000)).toBe(true); expect(q.pending).toBe(1);
     expect(q.x).toBeLessThan(0); expect(q.z).toBeLessThan(0);
-    q.now = 6; expect(q.take(-1000, -1000, 1000, 1000)).toBe(false);
+    q.now = 2 + RELAX_LIFETIME; expect(q.take(-1000, -1000, 1000, 1000)).toBe(false);
     q.mark(0, 0, 10, 10); q.reset(); expect(q.take(-1000, -1000, 1000, 1000)).toBe(false);
   });
   it('stays bounded under a huge write and discards tiles outside the fine window', () => {
     const q = createRelaxationQueue(4); q.mark(0, 0, RELAX_TILE * 4, RELAX_TILE * 4);
     expect(q.take(-1000, -1000, 1000, 1000)).toBe(true); expect(q.pending).toBe(4);
     expect(q.take(2000, 2000, 3000, 3000)).toBe(false);
+  });
+});
+
+describe('coarse closed-form pairs',()=>{
+  it('projects a pair directly to repose with equal and opposite mass',()=>{
+    const g=createRelaxationGrid(2,0.25);g.height[0]=3;
+    projectTalusPairs(g,false,0);
+    expect(sum(g.height)).toBeCloseTo(3,12);
+    expect(g.height[0]-g.height[1]).toBeCloseTo(DRY_REPOSE*0.25,12);
+  });
+  it('keeps paired sweeps conservative and honors wet/frozen/material barriers',()=>{
+    const g=createRelaxationGrid(17,0.25);g.height[144]=3;g.height[145]=-1;g.frozen[145]=1;
+    g.height[143]=2;g.material[143]=5;
+    for(let i=0;i<100;i++)for(const axis of [false,true])for(const phase of [0,1])projectTalusPairs(g,axis,phase);
+    expect(sum(g.height)).toBeCloseTo(4,10);expect(g.height[145]).toBe(-1);expect(g.height[143]).toBe(2);
+    const wet=createRelaxationGrid(2,1);wet.wet.fill(1);wet.height[0]=1;projectTalusPairs(wet,false,0);expect(wet.height[0]).toBe(1);
   });
 });

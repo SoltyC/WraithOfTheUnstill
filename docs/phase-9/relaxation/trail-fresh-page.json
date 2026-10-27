@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-27T14:57:32.168Z",
+  "reconnected": true,
+  "slot": "slot3",
+  "pages": 1,
+  "probe": {
+    "fine": 0.0106964111328125,
+    "coarse": 0.01265716552734375,
+    "fineDisplaced": 0.003009796142578125,
+    "coarseDisplaced": 0.003009796142578125,
+    "fineRelief": -0.007686614990234375,
+    "coarseRelief": -0.009647369384765625,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0
+  },
+  "late": [],
+  "gpuErrors": 0
+}

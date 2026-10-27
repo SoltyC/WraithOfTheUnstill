@@ -5,6 +5,8 @@ export const DRY_REPOSE = Math.tan(34 * Math.PI / 180);
 export const WET_REPOSE = Math.tan(60 * Math.PI / 180);
 export const RELAX_RATE = 1 / 16;
 export const RELAX_TILE = 128;
+export const RELAX_ITERATIONS = 8;
+export const RELAX_LIFETIME = 30;
 const DX = [1, 0, 1, -1], DZ = [0, 1, 1, 1];
 export const isSand = (m) => m === 1 || m === 6;
 
@@ -57,7 +59,7 @@ export function createRelaxationQueue(capacity = 64) {
             for (let k = 0; k < capacity; k++) if (until[k] <= q.now) { slot = k; break; }
           }
           if (slot < 0) { slot = evict; evict = (evict + 1) % capacity; }
-          xs[slot] = x; zs[slot] = z; until[slot] = q.now + 4;
+          xs[slot] = x; zs[slot] = z; until[slot] = q.now + RELAX_LIFETIME;
         }
       }
     },
@@ -77,4 +79,24 @@ export function createRelaxationQueue(capacity = 64) {
     reset() { until.fill(0); cursor = 0; evict = 0; q.pending = 0; },
   };
   return q;
+}
+
+/** Cheaper coarse oracle: disjoint pairs settle directly to their shared repose. Alternating
+ * horizontal/vertical parity phases propagate the result without racing adjacent writes.
+ */
+export function projectTalusPairs(grid,vertical,phase,rowStart=0,rowCount=grid.n) {
+  const {n,height,base,wet,frozen,material,spacing}=grid;
+  for(let z=rowStart+(vertical?phase:0);z<Math.min(n,rowStart+rowCount);z+=vertical?2:1){
+    for(let x=vertical?0:phase;x<n;x+=vertical?1:2){
+      const xx=x+(vertical?0:1),zz=z+(vertical?1:0);
+      if(xx>=n||zz>=n)continue;
+      const i=z*n+x,j=zz*n+xx;
+      if(frozen[i]||frozen[j]||!isSand(material[i])||!isSand(material[j]))continue;
+      if(Math.abs(height[i])+Math.abs(height[j])<1e-6)continue;
+      const limit=(DRY_REPOSE+(WET_REPOSE-DRY_REPOSE)*Math.max(wet[i],wet[j]))*spacing;
+      const dh=(height[i]-height[j])+(base[i]-base[j]);
+      const flow=Math.sign(dh)*Math.max(0,Math.abs(dh)-limit)*0.5;
+      height[i]-=flow;height[j]+=flow;
+    }
+  }
 }
