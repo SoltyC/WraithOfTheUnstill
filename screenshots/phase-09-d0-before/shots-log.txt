@@ -1,2 +1,0 @@
-2026-10-26T20:53:02.687Z 1/1 p1-monastery-golden: saved screenshots/phase-09-d0-before/p1-monastery-golden.png
-2026-10-26T20:53:02.688Z Shots done: 1/1 spot(s) (p1-monastery-golden*) → screenshots/phase-09-d0-before/.
