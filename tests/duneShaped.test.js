@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createShaped, S } from '../src/game/shaped/shaped.js';
+import { BRUSH } from '../src/shaders/terrainState.wgsl.js';
 import { frontal } from '../src/game/shaped/dune.js';
 import { createStoneHits } from '../src/game/combat/stoneHits.js';
 import { combatTuning } from '../src/game/combat/combat.js';
@@ -7,7 +8,7 @@ import { world, target } from './weaponWorld.js';
 
 const ground = { qx: 0, qz: 0, h: 0, sample() { this.h = 0; } };
 function setup() {
-  const ts = { count: 0, stamp() { this.count++; } }, fx = { emit() {} }, frost = { ice: false, iceAt() { return this.ice; } };
+  const ts = { count: 0, kind: -1, stamp() { this.count++; this.kind = this.bk; } }, fx = { emit() {} }, frost = { ice: false, iceAt() { return this.ice; } };
   const shaped = createShaped({ ts, fx, ground, frost }); shaped.px = 30;
   const step = (n) => { for (let k = 0; k < n; k++) { shaped.dt = 1 / 60; shaped.update(); } };
   return { shaped, ts, frost, step };
@@ -16,7 +17,7 @@ describe('dune Shaped', () => {
   it('travels under a terrain brush and stops burrowing on frozen ground or after Gust', () => {
     const { shaped, ts, frost, step } = setup(); const i = shaped.spawn('skitter', 0, 0), s = shaped.slots[i];
     step(110); expect(s.state).toBe(S.STALK); expect(s.cover).toBe(true);
-    const count = ts.count; step(5); expect(ts.count).toBeGreaterThan(count);
+    const count = ts.count; step(5); expect(ts.count).toBeGreaterThan(count); expect(ts.kind).toBe(BRUSH.RIDGE);
     frost.ice = true; step(1); expect(s.cover).toBe(false);
     frost.ice = false; step(1); expect(s.cover).toBe(true);
     shaped.strip(i); expect(s.state).toBe(S.STAGGER); step(1); expect(s.cover).toBe(false);

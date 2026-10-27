@@ -26,10 +26,10 @@ export function duneStep(s, ts, fx, frost, dt) {
   if (!s.cover && s.state !== 3) return;
   // A displaced mound and its depression move together, through the shared state brush.
   ts.bx = b.x; ts.bz = b.z; ts.bdx = Math.sin(b.heading); ts.bdz = Math.cos(b.heading);
-  ts.bl = 0.35; ts.bw = 0.7; ts.bd = 0.18; ts.bc = 0.2;
-  ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = 0; ts.bberm = 1; ts.stamp();
-  // Heap the raised centre after cutting the channel; the following plough clears its wake.
-  ts.bl = 0.2; ts.bw = 0.5; ts.bd = 0.24; ts.bc = 0; ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
+  // One brush writes the crest and its two trenches together: overlapping brush jobs in a
+  // dispatch have no ordering guarantee, so a plough plus mound can race on the same texel.
+  ts.bl = 0.35; ts.bw = 0.7; ts.bd = 0.24; ts.bc = 0.2;
+  ts.bk = BRUSH.RIDGE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.65; ts.stamp();
   if (s.state === 3) {
     const dx = Math.sin(b.heading), dz = Math.cos(b.heading);
     for (let k = 0; k < 3; k++) {
