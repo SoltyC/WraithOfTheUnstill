@@ -140,7 +140,7 @@ Tests: **443/443** pass on the main branch (`npx vitest run`). `npx vite build` 
   - ~~Threshing floor inside a bush~~: fixed (no trees within 9 m of the floor; floor now a low terrace on the slope; chaff cleared by three Gusts and the sacks appear: `chaff-1..4`, `p8r-chaff-floor`). The photo spots `p8r-chaff-floor` and `p8r-green-lantern` are restored (the merge `a278458` had dropped them).
   - ~~Ketil's lantern post unfindable~~: the post stood between two houses, so it moved to (28, 974) on the green (`data/restored.json`, `meadow-restored.json`); the paper shell now glows and throws a little warm world light; the Updraft lifts it (`lantern-1-before`, `-3-rise`, `p8r-green-lantern`). The aloft lantern itself is only a faint glow high in `lantern-3/4-rise.png`.
   - The bot never reliably flew the Shelf's last two rings or the Wind Road's finish ring. The medal times come from the route sim, so they need a human run.
-- **Bell-mace (in progress, `claude/mace`, `/home/sol/wraith-mace`):** spec `docs/mace-design.md`.
+- **Dunes D0 follow-ups (lead review, 2026-10-27):** sharp dune crests and the canyon walls show a sawtooth edge (mesh resolution against a sharp profile; `screenshots/phase-09-d0/after-p9d0-canyon-floor.png`): fix with the D2 crest work and the D7b wall kit. The agent's shots missed the dune fields; the star field at (2700, 1300) reads well. Only 5.2 of the 8.1 km² lies west of x = 3300.
 
 ## 6. How to work here (tooling and conventions)
 
