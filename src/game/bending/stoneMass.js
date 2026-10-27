@@ -18,6 +18,9 @@ export const MASS_MAX = 256;
  *  both flanks that supplies the mass (the crest and trench cross-section areas are equal). */
 export const CREST = 0.68;
 export const RIDGE_END = 1.9;                 // the brush reaches 1.9 half-widths
+/** The trench runs past each segment's end by TRENCH_EXT0 + TRENCH_EXTK m per metre of lateral distance, fading out: along a bend the
+ *  segments' flank strips fan apart (a gap of lateral × turn angle) and, cut square, left stair-steps down the outer flank. */
+export const TRENCH_EXT0 = 0.3, TRENCH_EXTK = 0.12;
 const TWO_OVER_PI = 2 / Math.PI;
 /** Trench depth ÷ crest height that conserves mass: crest area (16/15)·CREST, trench 2·(1.9−CREST)·2/π. */
 export const TRENCH_RATIO = (CREST * 16 / 15) / (2 * (RIDGE_END - CREST) * TWO_OVER_PI);
@@ -92,14 +95,16 @@ export function createStoneMass() {
           const along = rx * k.dx[i] + rz * k.dz[i], a = along < -k.hl[i] ? -k.hl[i] : along > k.hl[i] ? k.hl[i] : along;
           const px = rx - k.dx[i] * a, pz = rz - k.dz[i] * a;
           const d = Math.sqrt(px * px + pz * pz) / hw;
-          if (d >= RIDGE_END) continue;   // (a flank point within the segment's length has d = its lateral distance)
-          const c = H * crestAt(d);
-          if (c > disp) disp = c;
-          // The trench is a flank (lateral distance, within the segment's length): see RIDGE in terrainState.wgsl.js.
-          if ((along <= k.hl[i] + 0.02 && along >= -k.hl[i] - 0.02)) {
-            const dp = Math.abs(rx * k.dz[i] - rz * k.dx[i]) / hw;
-            const t = H * TRENCH_RATIO * trenchAt(dp);
-            if (t > depr) depr = t;
+          if (d < RIDGE_END) { const c = H * crestAt(d); if (c > disp) disp = c; }
+          // The trench is a flank (lateral distance, along the segment's length and a fading way past it): see RIDGE in terrainState.wgsl.js.
+          const dp = Math.abs(rx * k.dz[i] - rz * k.dx[i]) / hw;
+          if (dp > CREST && dp < RIDGE_END) {
+            const hl = k.hl[i], ext = TRENCH_EXT0 + TRENCH_EXTK * dp * hw, al = along < 0 ? -along : along;
+            if (al < hl + ext) {
+              let u = (al - hl) / ext; u = u < 0 ? 0 : u; const ef = 1 - u * u * (3 - 2 * u);
+              const t = H * TRENCH_RATIO * trenchAt(dp) * ef;
+              if (t > depr) depr = t;
+            }
           }
         } else {
           const d = Math.sqrt(rx * rx + rz * rz) / hw;
@@ -118,7 +123,7 @@ export function createStoneMass() {
     k.kind[i] = kind; k.on[i] = 1; k.cx[i] = a[0]; k.cz[i] = a[1]; k.t0[i] = self.time; k.fac[i] = 1; k.frozen[i] = 0;
     if (kind === RIDGE) { k.dx[i] = a[2]; k.dz[i] = a[3]; k.hl[i] = a[4]; k.hw[i] = a[5]; k.H[i] = a[6]; k.rate[i] = a[7]; }
     else { k.dx[i] = 1; k.dz[i] = 0; k.hl[i] = 0; k.hw[i] = a[2]; k.H[i] = a[3]; k.rate[i] = a[4]; }
-    k.reach[i] = k.hl[i] + k.hw[i] * (kind === RIDGE ? RIDGE_END : RIM1);
+    k.reach[i] = k.hl[i] + k.hw[i] * (kind === RIDGE ? RIDGE_END : RIM1) + (kind === RIDGE ? TRENCH_EXT0 + TRENCH_EXTK * RIDGE_END * k.hw[i] : 0);
     self.count++;
     return i;
   }
