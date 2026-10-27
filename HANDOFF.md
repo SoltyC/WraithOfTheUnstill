@@ -1,179 +1,523 @@
-# Handoff — 2026-10-27
+# Handoff — 2026-10-27 (full)
 
-This is the state of **The Wraith of the Unstill** (a Babylon.js WebGPU action RPG) at handoff, written for a new agent with no prior context. Read this file first, then:
+This is the complete state of **The Wraith of the Unstill** at handoff, written for a new agent with **no prior context**. It covers:
 
-- `BRIEF.md` (the spec);
-- `DECISIONS.md` (architecture and the user's direction);
-- `docs/gameplay-design.md` (the gameplay design, with "— Done" notes per system);
-- `docs/phase-9/plan.md` and `docs/phase-9/dunes-design.md` (the current phase).
+- what the game is and how the user wants work done (§0–§2);
+- the machine and its tooling (§3);
+- everything built so far (§4);
+- the three unfinished branches, and how to finish them (§5);
+- the next work, with briefs ready to paste (§6);
+- open issues (§7);
+- a map of the code and data (§8–§9);
+- the agent workflow (§10) and pitfalls already learned the hard way (§11).
 
-- **Repo:** `github.com/SoltyC/WraithOfTheUnstill`.
-- **Local checkout:** `/home/sol/WraithOfTheUnstill`. This is WSL2 on the user's Windows PC (RTX 3060, target 1440p/60). WSL has about 4 GB of RAM.
-- **Main working branch:** `claude/wraithoftheunstill-phase-7`. Everything merged lives here and is pushed.
-  - Tests: **687/687** (`npx vitest run --maxWorkers=2`).
-  - `flock /tmp/wraith-build.lock npx vite build` passes.
-- **Three work-in-progress branches** are pushed and have local worktrees (§3). Nothing is running: all agents and preview servers were stopped at handoff.
+Other source documents, in reading order:
+
+1. `BRIEF.md`: the spec, owned by the user. Don't edit it.
+2. `DECISIONS.md`: architecture decisions and the user's direction.
+3. `docs/gameplay-design.md`: the gameplay design, with a "— Done" note per built system.
+4. `docs/phase-9/plan.md` and `docs/phase-9/dunes-design.md`: the current phase.
+5. `PLAN.md` (phase plans up to Phase 8) and `PROGRESS.md` (the session log up to Phase 7). `PROGRESS.md` defers to this file.
 
 ---
 
-## 1. How the user wants work done (standing preferences; follow them)
+## 0. Quick start (the first 15 minutes)
 
-- **Don't change the graphical style.** Fixes and new surfaces must match the existing look.
-- **Fixed difficulty.** No world-tier scaling and no difficulty selector. Open biome order after the frost.
-- **Don't modify the trailer.**
-- **Commit and push after each part.** Usage limits cut sessions off at any moment, so unpushed work is lost.
-- **Play the game with the bot** to find problems, and look at the screenshots critically.
-- **Save usage.**
-  - Sonnet subagents build, each in its own git worktree and preview port. The lead (Opus) reviews their diffs and shots, merges, tests, builds and pushes.
-  - **At most 2–3 agents at once.** Each is scoped to about an hour, with a tight brief listing exactly what to read.
-  - Start a fresh agent from the pushed commit instead of resuming one with a long transcript.
-  - Agents look at **1280 px downscaled shots** and commit only 1280 px shots. Full-size shots bloated history by 230 MB once; that branch was squash-merged.
-- **If an agent can't solve something, the lead fixes it.** (The user said so; it was done for the Bell Ledge height and the glide-ring supports.) Don't just re-send the agent or leave it untested.
-- **Never commit `node_modules`.**
-  - `.gitignore` says `node_modules` (no slash), because worktrees symlink it.
-  - Use explicit `git add <paths>`, never `-A`.
-  - Check `git diff --stat` for `node_modules` before every merge. Merging a symlink once deleted the real `node_modules`.
-- The user's email is for attribution only.
-- **Commit trailer:**
+1. Run:
+   ```bash
+   cd /home/sol/WraithOfTheUnstill
+   git status
+   git log --oneline -5
+   git worktree list
+   ```
+   - The main branch is `claude/wraithoftheunstill-phase-7`, and it should be clean apart from untracked `screenshots/*` folders, which are old local captures. Leave them.
+   - Expect three extra worktrees (§5).
+2. Run `npx vitest run --maxWorkers=2`; expect **687 passed**. Then run `flock /tmp/wraith-build.lock npx vite build`; it should pass.
+3. Nothing should be listening on ports 4173–4178 (`ss -ltnp | grep 417`). If something is, it's stale: kill it by PID.
+4. Read §1 (the user's rules) and §5 (unfinished work), then start on §6, item 1.
+5. Use your own session URL in commit trailers (§1).
+
+## 1. The user's rules and preferences (follow all of them)
+
+These were stated by the user over many sessions. Quotes are the user's words.
+
+- **"Don't change the graphical style."** New surfaces and fixes must match the existing look: procedural Shaper stone, cloth Wraith, painterly vegetation, ACES grade. Improve readability; never restyle.
+- **Fixed difficulty.** No world-tier scaling and no difficulty selector. Each biome has a fixed level (frost 0, meadow 0, mire 1, dunes 1, ember 2, coast 3; `docs/cross-biome.md`). Accessibility assists are separate settings.
+- **Open biome order after the frost.** A biome's critical path needs only Frost plus that biome's own element.
+- **Don't modify the trailer** (`tools/bot/trailer*.{mjs,py}` and its output).
+- **Commit and push after each part.** Usage limits cut sessions off at random. Push often, and checkpoint the agents' worktrees when a limit is near (§10.5).
+- **Supervise long jobs; never stall silently.** The user watches the clock. Stream progress, and wait up to about 25 minutes on captures with a monitor that reports each line.
+- **Play the game with the bot** (§3.4) to find gameplay problems, and look at the screenshots critically. The bot has found real bugs that screenshots missed.
+- **Save usage** (user, 2026-10-24 and 2026-10-27):
+  - **Sonnet subagents build** in git worktrees, and **the lead (you, Opus) reviews**: diffs, two or three key shots, numbers. Then the lead merges, tests, builds and pushes.
+  - **"You need to create the agents"**: delegate the hands-on building, including an agent merging main into its own branch, instead of doing it yourself.
+  - **"If the agent cannot do things by itself … you should fix it yourself"**: when an agent reports something it couldn't solve, the lead fixes it. Don't re-send it or leave it untested.
+  - **At most 2–3 agents at once.** Each is scoped to finish in about an hour, with a brief that lists exactly what to read. Parallel agents don't save usage; they only spend it faster.
+  - **A fresh agent beats resuming a long one** after a limit reset: the resume re-reads the whole transcript with a cold cache. Resume only short or mid-edit ones.
+  - Agents downscale shots to **1280 px before looking**, and commit only 1280 px shots.
+- **"Do what you think is best and will achieve the best graphical result"** (2026-10-26): for design calls the user delegates to you, decide and record the decision. Don't ask.
+- **The dunes are puzzle-based, unlike the frost** (2026-10-26), **with ravines.** See `docs/phase-9/dunes-design.md`.
+- **The Long Walker** (the dune Warden) must feel unlike the other Wardens (`docs/gameplay-design.md` §5.1).
+- **Rain on sand** (2026-10-27): it should look like real life. Individual drop dots appear first, then spread and merge until the sand is uniformly darker; it dries unevenly. This is built on `claude/sand` and needs review (§5.2).
+- **The Bell-mace** (2026-10-27): like a falling-damage mace, an Updraft paired with a plunge for more damage, plus unique combos. Built and merged (§4).
+- **Never commit `node_modules`** (§11).
+- **The user's email** is context for attribution only. Never send it anywhere.
+- **Commit trailer:** end every commit with these lines. A new session uses its own session URL in place of this one.
   ```
   Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
   Claude-Session: https://claude.ai/code/session_017jhdvvBvrzx8cfqxy6tEiT
   ```
-  Agents use `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` with the same session line. A new session should use its own session URL.
+  Agents use `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>` and the same session line.
 
-## 2. Done and merged (newest first)
+## 2. The game in one page
 
-For each one, the design and its "— Done" note are in the docs named.
+The pitch is in `BRIEF.md` §2. An elemental-bending action RPG where **the ground is the canvas**:
 
-| Work | Docs / where |
+- Snow, grass, sand, mud and ash all remember. Feet, spells, creatures and weather write into one shared **terrain state** that slowly heals.
+- The player is **the Wraith**, an empty Shaper robe animated by the world's last motion.
+- In each biome a colossal **Warden** holds the element in stillness. The Wraith **releases** it rather than killing it. The biome is then **restored** (wind, weather and moving dunes return), and the Wraith learns the element.
+- The world is one seamless map of about 8 × 8 km.
+
+| Biome | Element (verbs) | Traversal | Status |
+|---|---|---|---|
+| Frost Steppe (north) | Frost: Sweep, Ribbon, Crystallize | snow-surf | **Built.** Frost Warden, monastery, camp, quests, side quests, restored state. |
+| Highland Meadow (centre) | Gale: Gust, Vortex, Updraft | glide | **Built.** Hearn village hub, the Bellwether (Warden), side quests, restored state. |
+| Glass Dunes (east basin) | Stone: Shard, Ridge, Bloom | sand-surf | **Phase 9, in progress.** Geography and Stone verbs merged; sand material, enemies, crests, surf, ruins, Warden and quests to do. |
+| Mirefen, Ember Waste, Coast | Tide, Ember, all | skim, ash-skate, wave | Later phases (10–12). |
+
+**Controls** (`docs/gameplay-design.md` §11.1; the action map is in `src/input/actions.js`):
+
+| Input | Action |
 |---|---|
-| **Effects readability:** Bloom earth burst; deep snow pits (over 0.45 m) show earth; the toll's powder ring; the low dunk shot; Ridge trench seams | `screenshots/fx/` |
-| **Phase 9 D4, Stone verbs:** Shard, Ridge, Bloom; the Stone reaction column; cross-element Ridge+Frost and Shard+Ribbon; Flow hooks. Unlocked by `?stone=1` or the F1 overlay until the dune Warden is released. | `plan.md` "D4 — Done"; `src/game/bending/stone.js`, `stoneMass.js`, `combat/stoneHits.js`; `screenshots/stone/` |
-| **Phase 9 D0, the erg:** 8.1 km² of dune-dominant ground; dune-type map (barchans, transverse, stars, seifs); the ravines (Red Galleries canyon, slot trenches, wadis, the Stride rift); the Dry Stair; the cold erg; no grass on sand; seats for later sites. Squash-merged. | `plan.md` "D0 — Done"; `tools/bake-world/{dunemap,ravines,seats,pinned}.mjs`; `src/terrain/dunes.js`; `tests/d0Diff.test.js`; `screenshots/phase-09-d0/` |
-| **Polish:** threshing floor, Ketil's lantern, tea at noon, glide-ring supports (pier up to 22 m, a plumb-stone above), drop glow, cobbles, rain through doorways, maul poise window (1.2 s) | `screenshots/polish2/` |
-| **The Bell-mace** (sixth weapon): the plunge (damage 18+3.2h, cap 20 m), rebound, Updraft launch, the dunk (Shaped airborne state), the ice star, Downdraft, glide plunge, Flow effects, tiers, the Bell Ledge find above the monastery. The lead also changed two things for the whole game: **the Updraft's lift is full across a 1.4 m core, and air control is 0.7 while rising air lifts you** (both easier for everyone). | `docs/mace-design.md`; §11.2 "Bell-mace — Done"; `docs/weapons-playtest.md` |
-| **Restored-world play:** wind streams, the Shelf glide course, the Wind Road, Hearn's post-release requests | `gameplay-design.md` §7 |
-| Glaive and lantern flail; staff, sickles and maul; economy (marks, traders, forge, consumables, save v3); Remembrance and 39 nooks; Flow; side quests; rain and storm | §11, §6, §3; `docs/weapons-playtest.md` |
-| Design docs | `docs/gameplay-design.md`, `docs/cross-biome.md` (fixed biome levels), `docs/phase-9/{plan,dunes-design}.md` with figures, `.claude/skills/wraith-design/` (run it before designing or reviewing gameplay) |
+| LMB tap / hold | Weapon light combo / charged heavy |
+| LMB in the air with the Bell-mace | The plunge |
+| Q tap / hold | Element quick / sustained verb |
+| F | Element heavy verb |
+| RMB hold | Traverse: surf, or glide in the air. While locked on: guard. |
+| Ctrl | Bend-step dodge |
+| 1–5 | Select element |
+| Wheel / X | Cycle the two carried weapons |
+| R / C | Use / cycle consumable |
+| Tab | Lock-on |
+| E | Interact |
+| Space | Jump |
+| M | Map |
+| J | Journal |
+| Esc | Pause codex |
+| F1 or ` | Dev overlay |
 
-## 3. In progress: pushed WIP branches (each has a worktree; finish, review, merge)
+**Systems built so far, with their specs:**
 
-All three were **stopped mid-task** at handoff. Each has a checkpoint commit `… WIP: checkpoint for handoff`.
+- **Flow** (§3): movement and combat momentum, shown on the body, never a HUD.
+- **Six weapon families** (§11.2): staff, sickles, maul, glaive, lantern flail, Bell-mace. The glass blade is due in Phase 9.
+- **The economy** (§11.3–11.8): marks, materials, traders Corin and Osk, the smith Garrow's forge tiers I–V with infusion, consumables, threads, robes as armour, a death drop, save v3.
+- **Remembrance and nooks** (§6): 50+ entries and 39 nooks.
+- **Restored-world play** (§7).
+- **Side quests and quest direction on the compass.**
+- **Rain and storm.**
+- **The calm-after-fights rule and the encounter audit** (§5.1, unmerged).
 
-### 3.1 `claude/encounters`, worktree `/home/sol/wraith-encounters` (port 4177), almost done
+Pillars and the design-review checklist live in the project skill `.claude/skills/wraith-design/`. Run it (the `WraithOfTheUnstill:wraith-design` skill) before designing or reviewing any gameplay.
+
+## 3. The machine and the tooling
+
+### 3.1 Hardware and OS
+
+- Windows 11 PC with an **RTX 3060 (12 GB)**. **WSL2 Ubuntu is capped at 4 GB RAM and 4 CPUs** (`/mnt/c/Users/soltc/.wslconfig`).
+- The target is **2560×1440 at 60 FPS sustained**, with 1% lows ≥ 45. This supersedes BRIEF §3; the user decided it.
+- WSL has no sudo and no GPU Vulkan. Headless Chromium in WSL only works on SwiftShader, which is slow and useless for timings. **Real-GPU shots and bot play use Windows Chrome**, launched from WSL by the scripts below.
+- **The PC is often locked** (the user works through Claude Code Remote Control), so **headless Windows Chrome** is used. It renders on the real GPU at about 10 s per shot. Bench numbers taken while the PC is locked are suspect.
+- **ffmpeg** is a Windows exe at `/mnt/c/ffmpeg/bin/ffmpeg.exe`. Give it output paths through `$(wslpath -w path)`. There's no PIL in WSL.
+
+### 3.2 Build, test, serve
+
+| Task | Command |
+|---|---|
+| Build | `flock /tmp/wraith-build.lock npx vite build` (always under the lock; RAM is tight and agents share it) |
+| Test | `npx vitest run --maxWorkers=2`. The `architecture.test.js` checksum test can time out under load: rerun before you believe a failure. |
+| Preview | `npx vite preview --port <P> --host 0.0.0.0`. **Main uses 4173; worktrees use 4174–4178, one each.** Restart it after `vite.config.js` changes, and **rebuild after editing `data/photo-spots.json`.** |
+| Bake the world | `npm run bake` / `npm run bake:verify`, under the build lock |
+| Allocation check | `npm run alloc`. `controller.update`, `springArm.update` and `weapons.update` fail; that predates this work. |
+| Kill a server | **by PID only**: `ss -ltnp \| grep 4174`, then `kill <pid>`. **Never `pkill -f`** with a pattern that matches your own shell. |
+
+### 3.3 Screenshots (real GPU)
+
+- `PORT=<P> tools/capture/win-shots.sh <spot-prefix> <dir>` captures every photo spot whose id starts with the prefix into `screenshots/<dir>/`, at 2560×1440 PNG (about 7 MB each).
+  - It kills old capture Chromes, uses a fresh profile, relaunches on a stall, resumes at the first missing file, and runs headless.
+  - It skips files that already exist, so delete them or use a new dir to reshoot.
+  - An empty prefix fails.
+- **Photo spots** live in `data/photo-spots.json` (about 216 of them). The fields include `id`, `biome`, `time`, `weather`, `player`, `camera` (`follow`: yaw, pitch, dist; or `free`: pos, yaw, pitch, fov; **positive pitch looks down**), `restoration`, `bend`, `weapon` and `shaped`.
+  - Edit this file with **minimal text edits**: Python `json.dump` reformats the whole file and causes merge conflicts.
+  - Ids must stay unique.
+- **Downscale before looking:**
+  ```bash
+  /mnt/c/ffmpeg/bin/ffmpeg.exe -loglevel error -y -i in.png -vf scale=1000:-1 -q:v 4 "$(wslpath -w out.jpg)"
+  ```
+
+### 3.4 The bot (playing the game)
+
+- **Launch:** `PORT=<P> tools/bot/play.sh [spot]` opens headless Windows Chrome on the preview with `?bot=1`. `PORT=<P> tools/bot/play.sh stop` closes it.
+- **Commands:** `WRAITH_URL=http://localhost:<P> node tools/bot/bot.mjs <cmd> '<json>'`. They include:
+  - `state`;
+  - `eval {"js": "..."}`: the async body sees `g`, the game context;
+  - `hold`, `press`, `look`, `face`, `aim`;
+  - `walkTo {x, z, roads}`, `talkTo {id}`, `follow`;
+  - `teleport {x, z}`, `spot {id}`;
+  - `shot {name}`, which saves `screenshots/bot/<name>.png` with the HUD;
+  - `perf`;
+  - `film`, which renders fixed 1/60 s steps to JPEG frames (see `filmRun` in `src/core/bot.js`).
+- **Useful handles in `eval`:**
+  - `g.controller` (pos, vel, grounded, glide, lift);
+  - `g.arm` (yaw, pitch, zoomTarget);
+  - `g.ground` (qx, qz, `sample()`, h): terrain only, and only where it's loaded;
+  - `g.wraithGround`: terrain plus built solids;
+  - `g.gale`, `g.shaped`, `g.combat`, `g.flow`, `g.inventory`, `g.weaponFinds`, `g.elements`, `g.chapter`.
+- **Rules:**
+  - Keep a single eval under 240 s, because undici times out at 5 minutes.
+  - **Never run two bot processes on one page.**
+  - Grip inputs must be held inside an in-page eval loop, because `hold` releases its keys.
+- **Scripts in `tools/bot/`:**
+
+  | Script | What it does |
+  |---|---|
+  | `fight.mjs` | auto-fighter: spawns foes, logs time, damage taken and Flow |
+  | `mace.mjs` | `iso`, `fight`, `dunk`, `ice`, `down`, `glide`, `ledge` (use `DIRECT=1 START=8` for the ledge) |
+  | `encounters.mjs` | on the encounters branch |
+  | `restored-*.mjs` | the restored-world courses |
+  | `side-*.mjs` | the side quests |
+  | `weapons-film.mjs` | films weapon moves |
+  | `trailer.mjs`, `trailer-cut.py` | **don't modify** |
+
+- **Films:** encode with the Windows ffmpeg. Send videos to the user as **720p two-pass** copies, because SendUserFile caps at 30 MB.
+
+### 3.5 Target-perf runs (only when the user asks for numbers)
+
+The user opens `http://localhost:4173/?bench=1&res=2560x1440` in Windows Chrome while `npm run preview` runs. Results land in `perf/runs/`. In-game, `?bench=weather` and the F1 overlay show GPU timings, and `gpuStats.late` must stay `[]`: no pipeline may be created mid-play.
+
+## 4. Done and merged on `claude/wraithoftheunstill-phase-7` (newest first)
+
+Each row says where its spec and "— Done" note live. Everything here is pushed.
+
+| Work | Key facts | Where |
+|---|---|---|
+| **Effects readability** | Stone's Bloom throws dark earth with a dust burst. **Snow pits deeper than 0.45 m show earth (all craters).** The Bell-mace toll is a powder ring scaled by height. The dunk shot is a low side view. The Ridge trench seams are fixed. | `src/shaders/stoneFx.wgsl.js`, `snow.wgsl.js`, `wraithFx.wgsl.js`, `game/weapons/plungeFx.js`; `screenshots/fx/` |
+| **Phase 9 D4, Stone verbs** | Shard (Q tap, 9 focus): a torn plate, staggers, shatters frozen foes. Ridge (Q hold, 12/s plus 0.5/m): walkable at once (a CPU brush copy), blocks shots, pushes swarmers. Bloom (F, 26): a crater of 1.7 m by 5.2 m that pins foes for 1.8 s. A full Stone reaction column; sand, mud and ash are stubs. Ridge+Frost and Shard+Ribbon are built. Flow 2+ is cheaper and bigger; at Flow 3 the Shard skims and carries you. **Dev-gated: `?stone=1` or "Grant stone" in F1** until the dune Warden grants it. | `plan.md` "D4 — Done"; `src/game/bending/stone.js`, `stoneMass.js`, `combat/stoneHits.js`, `render/stoneFx.js`; `tests/stone.test.js`; `screenshots/stone/` |
+| **Phase 9 D0, the erg** (squash-merged) | 8.1 km² dune-dominant, of which 5.2 lies west of x = 3300. Frost and meadow are byte-identical west of x = 1000 (`tests/d0Diff.test.js`). Dune-type map `dunes.rg8` at 32 m: barchans at the margin, transverse in the basin, star dunes of 45–80 m at the heart near (2700, 1300), seifs south. Ravines: the Red Galleries canyon, the Needle and Hourglass slot trenches, the Dry Braids wadis, the Stride rift. The Dry Stair road (906 m at 12 %). The cold erg. No grass on sand. Seats (positions only) for the camp, ruins, glass, echoes, caves and the arena ring. CPU/GPU parity under 2 mm. | `plan.md` "D0 — Done"; `tools/bake-world/{dunemap,ravines,ravinesData,seats,pinned}.mjs`, `src/terrain/dunes.js`, `src/shaders/duneTypes.wgsl.js`; `screenshots/phase-09-d0/` |
+| **Polish** | Threshing floor cleared; Ketil's lantern moved to (28, 974) and lit; ember tea reads at noon; **glide rings: a pier up to 22 m, above that a carved plumb-stone and no pier**; the dropped-marks glow reads at 60 m; cobbles lighter; rain visible through doorways (`rainShelter`); **maul poise window of 1.2 s per weapon** (no stagger-lock). | `screenshots/polish2/`; `src/world/sideSites.js` (`PIER_MAX`) |
+| **The Bell-mace** | Found on the Bell Ledge, a 9.5 m bastion behind the monastery at about (1136, 2787), reached by Updraft (needs Gale). Plunge damage is 18 + 3.2h (h = stored fall, cap 20 m), with a toll radius of 1.6 + 0.16h, crown strikes (ignores plates and shields), and a 0.55 s kneel on a miss. Rebound 0.5h with 30 % decay. Inside an Updraft column: +4 m. The dunk drives an airborne foe into the ground (second impact at 60 %). The ice star shatters frozen foes on ice. Downdraft (a Gust in the fall): +5 m. Glide plunge. Flow 2/3 effects and tiers I–V. **Two whole-game changes by the lead:** the Updraft lifts at full strength across a 1.4 m core (`gale.js` `liftAt`), and air control is 0.7 inside rising air (`capsuleController.js` `liftControl`). Bot results: the ledge was reached and taken, then a plunge killed a hound (2 of 3 runs). In frost fights the mace is slower than the others with this bot, which is unproven. | `docs/mace-design.md`, §11.2 "Bell-mace — Done", `docs/weapons-playtest.md`; `src/game/weapons/plunge*.js`, `defs3.js`, `shaped/airborne.js`, `world/bellLedge.js`, `systems/bellLedge.js` |
+| **Restored-world play** | Wind streams lift the glide when restored. The Shelf Stream course (frost, Varo): 6 rings, medals at 180/130/100 s. The Wind Road (meadow). Hearn requests: Wyl's flight, Dunn's chaff, Ketil's lantern. 150 marks in total. | §7 "Restored world — Done"; `data/restored.json`, `src/game/restored/`, `src/systems/restored/` |
+| **Glaive and lantern flail** | The glaive pins along a lane. The flail burns (spreads, hotter on sedge) and thaws frozen foes. Found at the Ring of Nine and at Isolde's fire. | §11.2 |
+| **Economy** | Marks (about 1,212 across frost and meadow), traders, the forge (I/III/V change moves), consumables, flask, threads, robes, death drop, save v3. | §11.3–11.8 |
+| **Weapons framework** | Staff, sickles and maul; the state machine, poses, trails, affinity, finds. | §11.2; `src/game/weapons/` |
+| **Remembrance and nooks** | 50+ entries (`data/remembrance.json`, flags `rem:<id>`; the tests cap the count at 60) and 39 nooks. | §6 |
+| **Flow; side quests and compass direction; rain and thunderstorm; Phases 0–8** | | §3; `PROGRESS.md` |
+| **Design docs** | `docs/gameplay-design.md`; `docs/cross-biome.md`; `docs/phase-9/plan.md` and `dunes-design.md`, with figures in `docs/phase-9/figures/` (generators in `tools/world/dunes*.mjs`, renderer `tools/world/renderFigures.mjs`, which needs `LD_LIBRARY_PATH=$HOME/.local/wraith-libs/root/usr/lib/x86_64-linux-gnu`); `docs/mace-design.md`; `docs/encounter-audit-plan.md`; `docs/weapons-playtest.md`. | |
+
+## 5. Unfinished work: three pushed WIP branches with local worktrees
+
+All three agents were **stopped mid-task** at handoff. Each branch ends with a commit `… WIP: checkpoint for handoff (agent stopped)`, and everything is pushed to origin.
+
+**To work on one:**
+
+1. `cd /home/sol/wraith-<name>`
+2. `git status`
+3. Check that `node_modules` is a symlink (`ls -la node_modules`). If it's missing: `ln -s /home/sol/WraithOfTheUnstill/node_modules node_modules`.
+
+### 5.1 `claude/encounters`: worktree `/home/sol/wraith-encounters`, port 4177, about 90 % done
 
 - **Plan:** `docs/encounter-audit-plan.md`.
-- **Done:**
-  - `docs/encounter-audit.md`: inventory, before and after numbers, verdicts, NOT ASSESSED;
-  - role mixes in the one-role frost encounters, new meadow encounters, a storm surge, and the calm-after-peaks rule (`src/systems/calm.js`);
-  - telemetry: `src/systems/encounterLog.js`, `tools/bot/encounters.mjs`;
-  - tests in `tests/encounters.test.js`;
-  - the §4.2 "Encounter audit — Done" note.
+- **Changes (21 files):**
+  - `docs/encounter-audit.md` (166 lines): the inventory of every hostile spawner, the before and after numbers from `docs/encounter-runs/*.jsonl`, a verdict per encounter, a smell walk, NOT ASSESSED;
+  - `src/systems/encounters.js`: role mixes, new meadow encounters, a storm surge, `arena` and `kind` fields;
+  - `src/systems/calm.js`: the calm-after-peaks rule;
+  - `src/systems/encounterLog.js`: telemetry with `?bot=1`;
+  - small hooks in `bellwetherFight.js`, `flame.js`, `side/flock.js` and `chapter.js`;
+  - `tests/encounters.test.js`;
+  - the §4.2 "Encounter audit — Done" note;
+  - the tools `encounters.mjs`, `isolation-film.mjs` and `isolation-encode.sh`, and `tools/world/arena.mjs`.
 - **Left:**
-  - The **isolation films** (`tools/bot/isolation-film.mjs`). The surf film is made (`screenshots/isolation/surf-720p.mp4`); the glide and frost-combat films are not. Make them as 720p two-pass mp4s under 15 MB; frames stay uncommitted.
-  - Then merge main, run the tests and the build, and review.
-  - **Send the three films to the user.** They are for the user to judge the feel.
+  1. **Isolation films** (§9 of the design):
+     - surf an empty slope for 2 minutes: done, `screenshots/isolation/surf-720p.mp4`;
+     - **glide** off a ridge, with a stream lift if restored: not done;
+     - **frost combat**, 3 hounds with staff and Frost, including a Sweep, a freeze and a shatter: not done.
 
-### 3.2 `claude/sand`, worktree `/home/sol/wraith-sand` (port 4174), D1a built, needs review
+     Use `tools/bot/isolation-film.mjs` and `isolation-encode.sh`. Make 720p two-pass mp4s under 15 MB, and keep the frames (`screenshots/isolation/frames/`) uncommitted. Look at sample frames; reshoot clipping or dead stretches.
+  2. Merge `origin/claude/wraithoftheunstill-phase-7` (expect small conflicts), then run the tests and the build.
+  3. **Lead review:**
+     - read the audit's verdicts;
+     - check that no encounter is a single role (Wardens and named hunts are listed exceptions);
+     - check the calm rule (60 s, 120 m) doesn't block story-forced waves;
+     - check the meadow encounters sit on existing quest steps.
+  4. Merge into main, then **send the three films to the user** (SendUserFile, 720p). They are for the user to judge feel.
 
-- **Built** (commit `87668cb`):
-  - `src/shaders/sand.wgsl.js`: scans, three-scale normals, self-shadowed wind ripples, glints, wet, compacted and frozen states;
-  - **rain on sand (the user's request):** first individual drop dimples, then more, merging into uniformly dark wet sand, then uneven drying (crests first) with faint pits left.
-- **Shots** in `screenshots/sand/`: `p9s1-close-*`, `-star-mid`, `-trail`, `-frozen`, and the rain sequence `p9s1-rain-1-dry` … `-6-drying`.
+### 5.2 `claude/sand`: worktree `/home/sol/wraith-sand`, port 4174, D1a built, needs review
+
+- **Spec:** `plan.md` D1. The user's rain requirement is in §1.
+- **Built** (commit `87668cb`, then the WIP commit):
+  - `src/shaders/sand.wgsl.js` (197 lines), wired in `clipmap.wgsl.js`;
+  - scans `data/textures/sand-{fine,rippled}.{alb,nrm,hgt}.webp`, documented in `ASSETS.md` and `data/materials/sources.json`;
+  - three-scale normals, self-shadowed wind ripples, rare quartz glints;
+  - the wet, compacted and frozen states;
+  - **rain on sand:** `src/world/sandRain.js` (62 lines) plus hooks in `weather.js`, `environment.js` and `worldState.js`, and `tests/sandRain.test.js`;
+  - photo spots `p9s1-*`.
+- **Shots** in `screenshots/sand/` (check they are 1280 px):
+  - `p9s1-close-noon`, `p9s1-close-golden`;
+  - `p9s1-star-mid` (the star field);
+  - `p9s1-trail` (compacted);
+  - `p9s1-frozen`;
+  - the rain sequence `p9s1-rain-1-dry`, `-2-first`, `-3-many`, `-4-merge`, `-5-wet`, `-6-drying`.
 - **Left:**
-  - **Review the shots critically.** The sand must read as fine sand, not clay or plastic. The first rain dots must read as individual drops, not noise or glitter; fix it yourself if not.
-  - Measure frame cost at the star field (2700, 1300).
-  - Write the "D1a — Done" note in `plan.md`.
-  - Merge main, test, build.
-  - Check for large files before merging. This checkpoint has 66 files; squash-merge if the history is heavy.
-- **Not in D1a** (D1b, later): far-field dune shading at 2–4 km, the stilled and restored grade, sandstone strata on the canyon walls.
+  1. **Review the shots yourself:**
+     - The sand must read as fine sand, not clay or plastic, with ripples raked by a low sun.
+     - No blown whites at noon.
+     - Blue shadows on the warm sand.
+     - **The first rain dots must read as individual raindrops**, not noise or glitter. They should merge to an evenly dark wet surface and dry from the crests.
+     - If anything fails, fix it yourself (§1).
+  2. **Warning:** `data/photo-spots.json` shows 339 changed lines, so it was probably reformatted. Before merging, re-apply only the new `p9s1-*` spots onto main's file with a minimal text edit. Otherwise every later merge conflicts.
+  3. Measure the frame cost at the star field (2700, 1300) before and after, with the bot's `perf`. Confirm `gpuStats.late` is `[]`.
+  4. Write the "D1a — Done" note in `plan.md` with NOT ASSESSED. Merge main, test, build.
+  5. Check the history size before merging:
+     ```bash
+     git rev-list --objects origin/claude/wraithoftheunstill-phase-7..HEAD \
+       | git cat-file --batch-check='%(objecttype) %(objectsize) %(rest)' \
+       | awk '$1=="blob" && $2>1e6'
+     ```
+     If it's heavy (full-size PNGs), use `git merge --squash`.
+- **Not in D1a** (D1b, a later job): dune shading at 2–4 km, the stilled and restored grade for sand, sandstone strata on the canyon walls.
 
-### 3.3 `claude/dune-shaped`, worktree `/home/sol/wraith-shaped` (port 4175), D9a just started
+### 5.3 `claude/dune-shaped`: worktree `/home/sol/wraith-shaped`, port 4175, D9a barely started
 
-- **Spec:** `plan.md` D9.
-- **This job:** Skitters (a swarmer that travels under the sand as a terrain-state bulge, with sand streaming before it lunges) and Plate-backs (a bruiser with a ruin-stone shell that glances frontal hits; frozen seams or Gust then Shard pop the plate; the flank lands; the Bell-mace plunge ignores plates). Every fight must be winnable with Frost only.
-- **Done:** a rig and shader start only (`src/game/shaped/rigDune.js`, `shaped.wgsl.js`).
-- **Probably simplest:** start a fresh agent with the D9a brief: build both, bestiary and Remembrance entries, tests, bot fights near (1900, 900), and `p9d9-*` shots. Put new behaviour in new files; `shaped.js` is about 750 of its 800 lines.
+- **Done:** `src/game/shaped/rigDune.js` (121 lines), a dune rig start, plus small edits to `rig.js` and `shaped.wgsl.js`.
+- **Recommended:** start a **fresh agent** in this worktree with the D9a brief in §6.1. It can keep or rewrite `rigDune.js`.
 
-## 4. What to do next, in order
+## 6. What to do next, in order, with briefs
 
-1. Finish and merge §3.1 (encounters plus films; send the films to the user), §3.2 (sand) and §3.3 (Skitters and Plate-backs).
-2. **D2, crests and avalanching sand.** Start it only after the sand branch is merged, because both touch `terrainState.wgsl.js` and the surface shaders.
-   - Knife-edge crests without stair-stepping. This also fixes the **sawtooth edges on sharp crests and canyon walls** seen in D0.
-   - Collision parity.
-   - The granular relaxation pass: talus at 34°, conservative, in a dirty rectangle, under 0.4 ms.
-   - Sand healing.
-   - This is the risky tech of the phase, and it underpins the dune puzzles' "sand flows" (G1).
-3. **D9b:** Whirlers (the caster) and the Glass-sworn (the elite).
-4. Then, per the plan's order and parallel tracks:
-   - D3 sand-surf;
-   - D5 and D6 light and weather;
-   - D7 and D7b ruins, glass and the ravine wall kit;
-   - D8 scrub and the oasis;
-   - D10 the Long Walker (follow `gameplay-design.md` §5.1, not the old D10 text);
-   - D11 camp and quests, the puzzle-based design in `dunes-design.md`, not a frost-style quest list;
-   - D12 gate.
-   - The glass blade weapon is part of Phase 9.
+1. Finish §5.1, §5.2 and §5.3 (the D9a brief is below). Run **at most three agents**.
+2. **D2, crests and avalanching sand** (brief §6.2). **Start it only after `claude/sand` is merged**, because both touch `terrainState.wgsl.js`, `clipmap.wgsl.js` and the surface shading.
+3. **D9b, Whirlers and the Glass-sworn** (brief §6.3), after D9a.
+4. **D1b, the far field and grade**, after D1a.
+5. Then, following the plan's order and parallel tracks (`plan.md`, "Order, estimate and checkpoints"):
+   - **D3, sand-surf.** The user plays it to judge feel.
+   - **D5 and D6:** heat shimmer and mirage, the sandstorm, the moving erg.
+   - **D7 and D7b:** ruins and glass; the ravine wall kit, which also fixes the sawtooth canyon walls; sandfalls; arches and hoodoos.
+   - **D8:** scrub, the margin, the oasis.
+   - **D10, the Long Walker.** Follow `gameplay-design.md` §5.1, **not** the old D10 text.
+   - **D11, the camp and quests.** Use the **puzzle design** in `dunes-design.md`: the sand grammar G1–G9; Into the Erg; the Silent Instruments hub (Sun Gate, Hourglass, Singing Dunes); Follow the Glass; The Well Rises; the five side sites; the people Sarai, Hesper, Iven, Nadra and Pell.
+   - **The glass blade weapon** and the caravan trader and smith.
+   - **D12, the gate.**
+6. At the end of Phase 9, the user plays the gate.
 
-## 5. Known open issues
+### 6.1 Brief: D9a, Skitters and Plate-backs (paste into a fresh Sonnet agent; worktree `/home/sol/wraith-shaped`, branch `claude/dune-shaped`, port 4175)
+
+> Build Phase 9 D9a: the first two dune Shaped, about 1.5 h.
+>
+> **Read only:**
+> - `docs/phase-9/plan.md` D9 (the spec);
+> - `docs/gameplay-design.md` §4.1 (each enemy pushes the player one way; the material decides the right element, with at least two valid answers) and §11.2 (affinity, glances);
+> - `.claude/skills/wraith-design/references/encounter.md`;
+> - the existing Shaped: `src/game/shaped/{archetypes,behaviours,body,rig,shaped,airborne,rigDune}.js` (`rigDune.js` is a WIP start; keep or rewrite it);
+> - how hounds, brutes, seers, sedgerunners and hedgewardens telegraph and armour;
+> - `src/game/weapons/affinity.js`, `src/game/combat/{reactions,combat,stoneHits}.js`.
+>
+> **Build:**
+> 1. **Skitters (swarmer).** They travel *under* the sand as a moving bulge, through the terrain-state brush path. Sand streams off the bulge before they erupt to lunge. A Gust strips their cover (they surface stunned). Frozen or frost-bound ground stops them burrowing. Stone's Shard or Bloom erupts them. Hound-tier health.
+> 2. **Plate-backs (bruiser).** A slow scarab with a ruin-stone shell. Frontal weapon hits glance. To pop the plate: frozen seams (Ribbon then Crystallize) plus a strike, which needs no Gale; or Gust the seams then Shard; or attack the flank or rear. The Bell-mace plunge ignores plates. Once the plate is off, it's faster and vulnerable.
+> 3. Both rise from and slump back into the sand. They're built from packed sand, sandstone and ruin fragments in the existing Shaped style.
+> 4. Bestiary and Remembrance entries.
+> 5. Tests for each answer, stability at 8 active, and zero-alloc steps.
+>
+> **Bot fights near (1900, 900):** 4 Skitters; 1 Plate-back plus 2 Skitters; 2 Plate-backs. Run each with staff plus Frost, then with Gale. Log time, damage taken and which answer was used. Every fight must be winnable with Frost only.
+>
+> **Shots:** 1280 px `p9d9-*` into `screenshots/dune-shaped/`: the bulge travelling, sand streaming before the lunge, a Plate-back from the front and the side, a plate popping, both rising.
+>
+> **Rules:** put new behaviour in new files (`shaped.js` is about 750 of its 800 lines). Don't touch the sand shader files. Plus the standard rules in §10.2.
+
+### 6.2 Brief: D2, crests and avalanching sand (after the sand merge; new worktree)
+
+> Build Phase 9 D2, the risky tech.
+>
+> **Read only:** `docs/phase-9/plan.md` D2; `dunes-design.md` G1 ("sand flows") and §7 (ravines); `src/shaders/terrainState.wgsl.js`, `src/terrain/state/` (healing); `src/terrain/meso.js`, `dunes.js`; `src/shaders/clipmap.wgsl.js`, `sand.wgsl.js`; `tools/capture/parity-bot.mjs`.
+>
+> **Build:**
+> 1. **Knife-edge crests.** No stair-stepping or sawtooth on sharp crests. This is the D0 defect: see `screenshots/phase-09-d0/after-p9d0-canyon-floor.png` and the star field at (2700, 1300). Sharpen the analytic crest normal in the fragment shader, geomorph between rings, and tune the far-ring LOD bias for silhouettes. Check a dusk crest silhouette at 500 m and 2 km.
+> 2. **Collision parity.** The Wraith stands on crests correctly, and `parity-bot.mjs` passes.
+> 3. **The granular relaxation pass.** On sand texels, where the slope of depression plus displaced exceeds 34°, mass moves downhill. It must be conservative, stable and deterministic, run in a dirty rectangle around active writers for a few iterations per frame, and cost **under 0.4 ms** (measured). Snow doesn't relax; mud keeps its shape. Use a cheaper closed form on the coarse pages.
+> 4. **Sand healing.** Prints soften and re-ripple over minutes, driven by the wind, and a trail still reads after 60 s.
+> 5. **Tests:** mass conservation, no slope left above repose after N iterations, determinism.
+> 6. **A film** of an avalanche in motion (720p) for the user.
+>
+> Standard rules as in §10.2.
+
+### 6.3 Brief: D9b, Whirlers and the Glass-sworn (after D9a)
+
+> **Whirlers (caster):** a spinning sand column around a glass core. They throw blinding sand blasts (a screen dust burst) and call small dust devils. Vortex reverses their spin and holds them. Frost binds them into a brittle pillar that shatters.
+>
+> **The Glass-sworn (elite):** half-fused to glass, refractive and very hard. Immune to Shard until frozen (thermal shock), then it shatters spectacularly.
+>
+> Same reading, tests, bot fights and shot rules as D9a.
+
+## 7. Known open issues and NOT ASSESSED items
 
 - **Needs the user's hands** (bot results are only indicative):
-  - the Phase 7 gate play-through and sign-off in `PROGRESS.md`;
-  - weapon and plunge feel;
+  - the **Phase 7 gate**: play from waking to the Frost Warden's release, save, reload, and sign off in `PROGRESS.md`;
+  - the feel of weapons, the plunge and Stone;
   - whether the Bell-mace is too slow in frost fights (the bot plays it badly);
-  - the Shelf's last two rings and the Wind Road finish (the bot never flew them reliably; medal times are from a simulation);
-  - Flow tier 3 in natural play.
-- **`npm run alloc`:**
-  - `controller.update`, `springArm.update` and `weapons.update` fail. These predate this work.
-  - `stone.update` has a small residue (12 scavenges per 2M calls).
-  - The plunge has a small residue (about 1.1 MB per 3300 plunges).
-- **Not wired:** the Bell-mace's Warden damage cap of 56 exists only in `plungeDamage()`, because weapons don't hit Wardens yet.
+  - the Shelf's last two rings and the Wind Road finish (medal times come from a simulation);
+  - Flow tier 3 in natural play;
+  - whether the mace's hum pitch reads.
+- **Allocations** (`npm run alloc`):
+  - `controller.update`, `springArm.update` and `weapons.update` fail; that predates this work;
+  - `stone.update` has a residue of 12 scavenges per 2M calls;
+  - the plunge has a residue of about 1.1 MB per 3300 plunges.
+- **Not wired:** the Bell-mace's Warden cap of 56 exists only in `plungeDamage(P, h, warden)`, because weapons don't hit Wardens yet. Wire it when a Warden takes weapon hits.
+- **Pipelines:** one atmosphere god-ray compute pipeline appears late after a weather change, independent of recent work. Chase it; the rule is `gpuStats.late == []`.
 - **Visuals:**
-  - the aloft Ketil lantern is only a faint glow;
-  - the toll ring reads as haze, not a crisp line;
-  - storm-cloud undersides are blotchy during a flash;
-  - the robe isn't heavier when wet.
-- **Pipelines:** one atmosphere god-ray compute pipeline appears late after a weather change, independent of recent work. It's worth chasing; the rule is the late-pipeline count reads 0.
-- **D0:** only 5.2 of the erg's 8.1 km² lies west of x = 3300; the rest is under the east ring. Frozen sand staying firm waits for the sand state.
+  - the aloft lantern is only a faint glow;
+  - the toll ring reads as haze;
+  - storm-cloud undersides are blotchy in a flash;
+  - the robe isn't heavier when wet;
+  - **sawtooth edges on sharp dune crests and canyon walls** (D2 and D7b);
+  - Stone's Shard plate is small at distance.
+- **D0:**
+  - only 5.2 of the 8.1 km² lies west of x = 3300;
+  - frozen sand staying firm waits for the sand state;
+  - the cold-erg shot shows the snow slope meeting sand rather than filled hollows;
+  - the canyon's south end follows the escarpment, not x 1470–1540.
+- **Stone:**
+  - walking and surfing on a Ridge has only been unit-tested;
+  - the Warden's breath against a Ridge;
+  - the Flow-3 Shard in play;
+  - sand slump, mud and ash are stubs.
+- **Phase 6 and 7 leftovers** are in `PROGRESS.md` ("Phase 6 open", "Phase 7 open").
 
-## 6. Tooling and conventions
+## 8. Code map (`src/`)
 
-- **Build:** `flock /tmp/wraith-build.lock npx vite build`. Serialise builds.
-- **Tests:** `npx vitest run --maxWorkers=2`. One architecture checksum test can time out under load; rerun before you believe it.
-- **Serve:**
-  - `npx vite preview --port <P> --host 0.0.0.0`. Main uses 4173; each worktree gets its own port from 4174–4178.
-  - Kill previews by PID.
-  - **Never `pkill -f`** with a pattern that matches your own shell.
-  - Rebuild after editing `data/photo-spots.json`.
-- **Bot:**
-  - Launch: `PORT=<P> tools/bot/play.sh [spot]` (`stop` closes it).
-  - Commands: `WRAITH_URL=http://localhost:<P> node tools/bot/bot.mjs <cmd> '{json}'`. They include `state`, `eval {js}`, `hold`, `press`, `teleport {x,z}`, `spot`, `shot {name}`, `perf` and `film`.
-  - In `eval`, `g` is the game context (`g.controller`, `g.arm`, `g.ground`, `g.wraithGround` (which includes built solids), `g.gale`, `g.shaped`, …).
-  - Keep a single eval under 240 s, because undici times out at 5 minutes.
-  - Never run two bot processes on one page.
-  - Fight harness: `tools/bot/fight.mjs`. Mace: `tools/bot/mace.mjs`. Encounters: `tools/bot/encounters.mjs`.
-- **Shots:**
-  - `PORT=<P> tools/capture/win-shots.sh <spot-prefix> <dir>` runs headless Windows Chrome on the 3060. It skips existing files, and an empty prefix fails.
-  - Downscale with `/mnt/c/ffmpeg/bin/ffmpeg.exe -i in.png -vf scale=1280:-1 out.jpg`. It is a Windows exe, so give output paths through `wslpath -w`.
-  - There's no PIL in WSL.
-- **Bake:** `npm run bake` and `npm run bake:verify`. Run them under the build lock.
-- **Film:** the bot's `film` uses fixed 1/60 s steps (see `filmRun` in `src/core/bot.js`). Encode with the Windows ffmpeg. Send videos to the user as 720p two-pass copies; SendUserFile caps at 30 MB.
-- **Worktrees:**
-  - Create one with `git worktree add -q -b claude/<area> /home/sol/wraith-<area>`, then symlink `node_modules` from the main tree.
-  - Merge pattern: `git merge --no-ff` (or `--squash` if history is heavy), test, build, push, then `git worktree remove --force` and `git branch -d`.
-  - `screenshots/phase-01/bake-preview.png` is generated. A local copy of an old modification is backed up in the session scratchpad; it's safe to ignore.
-- **Code rules** (BRIEF and DECISIONS):
+| Dir | What's there |
+|---|---|
+| `main.js`, `boot/` | Startup: `engine.js`, `world.js` (world and keep-outs), `actors.js`, `game.js` (the game facade `g`). `main.js` registers systems in run order. |
+| `core/` | The loop, systems, params, pools and scratch (allocation-free helpers), `bot.js` (the bot and `filmRun`), `bench*.js`, gpu instrumentation, dynamic resolution, shots. |
+| `systems/` | One module per concern, run each frame: `bending.js` (frost, gale, stone, and the Updraft lift → controller), `weapons.js`, `weaponView.js`, `encounters.js`, `chapter.js` (quests and talk), `economy.js`, `economyDrop.js`, `flow.js`, `remembrance.js`, `restored/`, `side/`, `storm.js`, `environment.js`, `npcs.js`, `villagers.js`, `villageFire.js`, `wardenFight.js`, `bellwetherFight.js`, `bellLedge.js`, `macePhoto.js`, `nooks.js`, `trials.js`, `echoTrials.js`, `audio.js`, `nav.js`, … |
+| `game/` | Rules and state: `bending/` (`frost.js`, `gale.js`, `stone.js`, `stoneMass.js`), `combat/` (`combat.js`, `reactions.js` (the reaction table), `stoneHits.js`), `weapons/` (`defs*.js`, `machine.js`, `pose.js`, `weapons.js`, `plunge*.js`, `tiers.js`, `finds.js`, `affinity.js`, `burn.js`), `shaped/` (`archetypes.js`, `behaviours.js`, `body.js`, `rig.js`, `airborne.js`, `shaped.js`), `economy/`, `save/` (v3), `quests/`, `warden/`, `bellwether/`, `fire/`, `restored/`, `flow.js`, `elements.js` (`BUILT`), `inventory.js`, `remembrance.js`, `nav.js`, `echoes.js`, `robes.js`. |
+| `character/` | `capsuleController.js` (movement, gravity 24, `airControl` 0.25, `liftControl` 0.7, `liftMax` 13), `glide.js`, `surf.js`, `surfWake.js`, `veiled.js` (NPCs), `wraith/` (cloth). |
+| `terrain/` | `meso.js` (CPU mesoscale height, mirrored in WGSL), `dunes.js`, `state/` (terrain-state healing). |
+| `world/` | `worldData.js` and `world.worker.js` (baked data), `streamer.js`, `architecture.js` (the procedural Shaper stone builder: box, drum, frustum), `sideSites.js` (glide rings), `restoredSites.js`, `bellLedge.js`, `nookSites.js`, `blobStone.js`, `village*.js`, `manor.js`, `stair.js`, `camp.js`, `solids.js`, `weather*.js`, `wind.js`, `lightning.js`, `sandRain.js` (on the sand branch). |
+| `render/` | The Babylon/WebGPU renderers: `clipmap.js`, `grass.js`, `trees.js`, `water.js`, `rain.js`, `atmosphere*.js`, `wraith.js`, `weaponGeo*.js`, `weaponBuilder.js`, `stoneFx.js`, `galeFx.js`, `shapedView.js`, `architecture.js`, … |
+| `shaders/` | WGSL as JS modules: `clipmap.wgsl.js`, `snow.wgsl.js`, `meadow.wgsl.js`, `sand.wgsl.js` (sand branch), `terrainState.wgsl.js` (brushes, including RIDGE and CRATER), `duneTypes.wgsl.js`, `weapon.wgsl.js`, `cloth.wgsl.js`, `wraithFx.wgsl.js`, `stoneFx.wgsl.js`, `shaped.wgsl.js`, `rain.wgsl.js`, `post/`, … |
+| `post/` | The HDR post chain: TAA, bloom, fog, compose, grades (ACES chosen). |
+| `ui/` | `hud/` (the compass), `menus/` (the parchment codex: journal, map, trade, forge, Remembrance), `overlay/` (the F1 dev overlay, flowTools), `photoSpots.js`. |
+| `input/actions.js` | The action map. |
+| `audio/` | `music.js` (the user's nine cues), `sfx.js` (procedural cues, including the toll). |
+
+## 9. Data, tools and docs
+
+- **`data/`:**
+  - `world/`: the baked world (`manifest.json`, height tiles, biome, surface, hydro and wind maps, `dunes.rg8`, `pois.json` with routes and seats, `village.json`). It's regenerated by `npm run bake`; never hand-edit it.
+  - `quests/`: `frost.json`, `frost-restored.json`, `meadow.json`, `meadow-side.json`, `meadow-restored.json`. Text is drafts for the user's review.
+  - `photo-spots.json`, `remembrance.json`, `nooks.json`, `restored.json`.
+  - `textures/` (scans as webp) and `materials/sources.json`; `audio/`.
+- **`tools/`:**
+  - `bake-world/` (the bake);
+  - `bot/` (§3.4);
+  - `capture/` (`win-shots.sh`, `capture.mjs`, `harness.mjs`, `parity-check.mjs`, `parity-bot.mjs`, `perf-run.mjs`, `save-gate.mjs`, `frame-alloc-probe.mjs`, `heap-profile.mjs`);
+  - `alloc/` (`alloc-check.mjs`, behind `npm run alloc`);
+  - `world/` (`sample.mjs`, `route.mjs`, `payoff.mjs`, `nookfind.mjs`, `placeNooks.mjs`, `courseSim.mjs`, `lift.mjs`, and the dune figure generators);
+  - `textures/build.mjs`;
+  - `winchrome/` (the Windows Chrome bridge);
+  - `audio/`.
+- **`docs/`:** listed in §4. Also `docs/village/` and `docs/phase-9/world-map.png`.
+- **Root:** `BRIEF.md` (the user's spec; don't edit), `PLAN.md`, `PROGRESS.md`, `DECISIONS.md`, `PERF.md`, `ASSETS.md` (every external asset with its licence; CC0 scans).
+- **Skill:** `.claude/skills/wraith-design/`: `SKILL.md` plus `references/` (`smells.md`, `systems.md`, `encounter.md`, `warden-brief.md`, `quest-template.md`, `playtest.md`).
+
+## 10. Agent workflow (how the lead runs Sonnet agents)
+
+### 10.1 Setting up a job
+
+```bash
+cd /home/sol/WraithOfTheUnstill
+git worktree add -q -b claude/<area> /home/sol/wraith-<area>
+```
+
+Give each worktree its own preview port (4174–4178), and keep **at most three running**. Spawn the agent with the Agent tool: model `sonnet`, `run_in_background: true`.
+
+### 10.2 What every brief includes
+
+- The worktree, branch and port; "never touch `/home/sol/WraithOfTheUnstill`"; which other agents run on which ports and files.
+- **"Read only:"** a precise list of doc sections and source files.
+- Numbered build items, with acceptance criteria and measurements.
+- Bot playtests with numbers. Shots at **1280 px only** (downscale before looking, commit only 1280 px), read critically.
+- **The rules:**
   - zero per-frame allocations;
-  - no doubles passed as call arguments in hot code;
+  - no doubles as call arguments in hot code;
   - one params write per system per frame;
-  - warm every pipeline at load, so the late-pipeline count reads 0;
+  - warm pipelines at load (`gpuStats.late` `[]`);
   - files of 200–400 lines, 800 at most;
-  - WGSL uniform arrays written `array<vec4f,8>`.
+  - WGSL `array<vec4f,8>`;
+  - the build under `flock`;
+  - `vitest --maxWorkers=2`;
+  - kill servers by PID, never `pkill -f`;
+  - **never commit `node_modules`**: explicit `git add <paths>` and `git diff --stat` before each commit;
+  - commit and push after each item, with the Sonnet trailer;
+  - timebox a blocker to about 20–30 minutes, then write NOT ASSESSED;
+  - **merge the latest `origin/claude/wraithoftheunstill-phase-7` before reporting**;
+  - write a "— Done" note with a NOT ASSESSED list;
+  - **report in 10–15 lines**, and make no claim without a measurement.
 
-## 7. Worktrees on this machine
+### 10.3 Reviewing a report
+
+1. Check for `node_modules`: `git diff --name-only HEAD origin/claude/<b> | grep -c node_modules` must print 0.
+2. Check the history size (the command in §5.2, step 5). Squash-merge if it's heavy.
+3. Look at **two or three key shots**, downscaled. Check that the feature actually shows: in D0 the agent's shots missed the dunes entirely, so the lead shot them.
+4. Read the numbers against the targets. Question anything that "can't be reached" or "is slowest everywhere".
+5. Fix what the agent couldn't (§1). Examples from this session:
+   - the Bell Ledge was unreachable because the Updraft's axis core was too thin;
+   - the glide rings sat on pylon-like piers;
+   - the Stone shots were badly timed.
+
+### 10.4 Merging
+
+From the main checkout:
+
+```bash
+git fetch -q origin
+git merge --no-ff origin/claude/<b>   # or --squash, then commit
+npx vitest run --maxWorkers=2
+flock /tmp/wraith-build.lock npx vite build
+git push origin claude/wraithoftheunstill-phase-7
+git worktree remove --force /home/sol/wraith-<b>
+git branch -d claude/<b>              # -D after a squash
+```
+
+Then update this file. If `data/photo-spots.json` conflicts, take main's file and append the branch's new spot objects with a minimal edit, keeping ids unique. If `screenshots/phase-01/bake-preview.png` blocks a merge, it's a generated file: back it up, then `git checkout -- <file>`.
+
+### 10.5 When a usage limit is near or hits
+
+1. Checkpoint every worktree:
+   ```bash
+   git status --porcelain | cut -c4- | grep -v node_modules | xargs git add --
+   ```
+   Check that nothing over 15 MB is staged and no `node_modules`, then commit `WIP: checkpoint …` and push.
+2. Kill the previews by PID.
+3. After the reset, resume short agents with a message, or start fresh agents with a status note.
+
+## 11. Pitfalls already learned
+
+- **`node_modules` symlink:** `.gitignore` once said `node_modules/`, which doesn't match a symlink. An agent committed its link, and merging it deleted the real `node_modules` in main, after which vitest silently exited 216. Now `.gitignore` says `node_modules`. Always check before merging. Fix with `npm ci` if it happens.
+- **Full-size shots** (about 7 MB each) bloat the history. One branch carried 230 MB and was squash-merged.
+- **Reformatting `photo-spots.json`** causes conflicts in every later merge. Use minimal edits.
+- **Bot heights:** `g.ground` only knows loaded tiles (zeros elsewhere), and it doesn't include built solids; `g.wraithGround` does. Bot "height above start" is misleading on slopes, so use absolute `y` against `find.y`.
+- **The Updraft's minimum aim range is 3 m.** You step into the column rather than cast it under yourself.
+- **Shot timing:** a photo spot's `bend.seconds` or `weapon.seconds` decides what's on screen. Many weak shots were simply mistimed or framed too far away.
+- **The PC is often locked:** use headless Windows Chrome (`win-shots.sh` and `play.sh` already do). Don't trust bench numbers taken while it's locked.
+- **`vitest` without `--maxWorkers=2`** can exhaust the 4 GB with agents running.
+- **The `architecture.test.js` frost checksum** can time out under load. Rerun it alone.
+
+## 12. Worktrees and ports at handoff
 
 | Worktree | Branch | Port | State |
 |---|---|---|---|
-| `/home/sol/wraith-encounters` | `claude/encounters` | 4177 | §3.1, almost done |
-| `/home/sol/wraith-sand` | `claude/sand` | 4174 | §3.2, needs review |
-| `/home/sol/wraith-shaped` | `claude/dune-shaped` | 4175 | §3.3, just started |
+| `/home/sol/WraithOfTheUnstill` | `claude/wraithoftheunstill-phase-7` (main) | 4173 | clean, pushed, 687 tests |
+| `/home/sol/wraith-encounters` | `claude/encounters` | 4177 | §5.1, about 90 % done |
+| `/home/sol/wraith-sand` | `claude/sand` | 4174 | §5.2, built, needs review |
+| `/home/sol/wraith-shaped` | `claude/dune-shaped` | 4175 | §5.3, barely started |
+
+No servers or agents are running.
