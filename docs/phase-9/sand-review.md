@@ -1,6 +1,6 @@
 # D1a review — 2026-10-27 (Codex)
 
-**Verdict: change; code checkpointed, visual acceptance pending.** The feature makes sand show footsteps, freezing and the progression from individual rain drops to a wet surface, serving pillar 2 (the world remembers and answers), with sensation and readable material state in the second-to-minute loop. The established material style is retained.
+**Current verdict: keep the corrected wet response; star-field/pipeline review pending before integration.** The feature makes sand show footsteps, freezing and the progression from individual rain drops to a wet surface, serving pillar 2 (the world remembers and answers), with sensation and readable material state in the second-to-minute loop. The established material style is retained. The earlier change verdict and access failures below describe the initial review; the latest measured correction is at the end of this document.
 
 ## Existing captures reviewed
 
@@ -32,3 +32,11 @@ Reviewed the existing 1280 × 720 files in `screenshots/sand/`: close noon, clos
 ## Fresh capture verification after access was restored
 
 The existing `win-shots.sh` completed **6/6 rain-stage captures** on headless Windows Chrome at 2560 × 1440. Raw output is local in `screenshots/sand-review-codex/`; committed review copies are 1280 × 720 in `screenshots/sand-review-codex-1280/`. The raw capture log records saves from 08:23:08 to 08:24:33 UTC. The dry, first-drop and fully wet copies were visually inspected: the scene renders correctly and first drops are visible, but fully wet sand still appears too close to dry sand. The earlier change verdict stands; investigate material lighting and exposure before accepting D1a. Capture access is no longer a blocker. No performance gate is claimed.
+
+## Wet response correction
+
+GPU readback showed adapted exposure increasing from **0.3889 dry to 0.6040 wet**, substantially cancelling the original 0.5 wet-albedo multiplier. Changed only sand's pore absorption to **0.32**; no exposure/grade change. Re-captured all six stages at 2560 × 1440, with committed 1280 px copies in `screenshots/sand-wet-fix-1280/`. The reviewed fully wet frame is uniformly darker and keeps ripple/grain detail; dots remain separate at the first stage. The dry frame is unchanged.
+
+FFmpeg signalstats YAVG on the identical foreground crop (100, 360, 1080, 340) is **148.337 dry**, **147.998 first drops**, **146.417 many drops**, **111.282 merging**, **106.712 wet**, **106.684 drying**. Old wet was 132.881. These are display-luma measurements, not linear luminance; full-frame R/G/B ≥250 white clipping is **0% in all twelve before/after frames**. Detailed measurements: `docs/phase-9/sand-metrics.json`. Initial `gpuStats.late` remained empty through the old-material sequence. Full star-field and weather-transition verification follows the currently serialized dune-enemy GPU job.
+
+Validation after merging main's haze-pipeline warmup: 698 tests passed in the full 700-test run, with two known 5 s architecture timeouts under load. Re-running `tests/architecture.test.js` alone passed **16/16**; no assertion failure remained. Locked production build passes. This is not yet the D1a performance acceptance.

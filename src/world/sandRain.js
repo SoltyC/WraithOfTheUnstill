@@ -17,7 +17,7 @@ export const SAND_RAIN = {
   spreadFrom: 0.22, spreadSpan: 0.4,   // blotches between drops
   uniFrom: 0.62, uniTo: 0.95,          // fully wet
   dryHold: 0.5,                        // how much topography skews the wetness while drying
-  wetDark: 0.5,                       // albedo multiplier of fully wet sand
+  wetDark: 0.32,                      // pore absorption; stays darker through the meter's +0.75-stop headroom
 };
 
 const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
