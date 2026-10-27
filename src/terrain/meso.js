@@ -6,8 +6,8 @@
 // prevailing wind direction (unit, the direction the wind blows toward).
 //
 // Layers (each built in the wind frame: u along the wind, v across it):
-//   dunes  — transverse dunes ~140 m apart, gentle stoss slope, steep lee slip face, crests
-//            broken into barchan-like segments; plus metre-scale secondary ripples
+//   dunes  — by the bake's dune-type map (terrain/dunes.js): barchans, transverse ridges ~140 m apart,
+//            star megadunes, seif dunes, flattened over playas and ravine floors; plus metre ripples
 //   frost  — wind drifts (tens of metres) and sastrugi ridges (metres), both stretched downwind
 //   ember  — smaller ash dunes ~60 m apart
 //   meadow — soft hummocks;  mire — tussocks;  coast — near-flat with faint swash bars
@@ -15,15 +15,11 @@
 // Allocation-free: plain numbers in and out (callers write the result into a field).
 
 import { valueNoise, fbm } from './noise.js';
+import { duneProfile, transverseH, barchanH, starH, seifH } from './dunes.js';
 
 export const MESO_SEED = 0x6d65;
-
-/** Asymmetric dune profile over one period p ∈ [0,1): rises to the crest at 0.72, then a slip face. */
-function duneProfile(p) {
-  if (p < 0.72) { const t = p / 0.72; return t * t * (3 - 2 * t) * 0.92 + t * 0.08; }
-  const t = (p - 0.72) / 0.28;            // slip face: steep, slightly concave
-  return 1 - t * (2 - t);
-}
+/** Height (m) the snow fills the dune hollows to at the frost–dune border (cold erg). */
+const COLD_LEVEL = 7;
 
 /**
  * Meso height (m) at (x, z).
@@ -31,21 +27,31 @@ function duneProfile(p) {
  * @param {number} wFrost @param {number} wMeadow @param {number} wMire
  * @param {number} wDunes @param {number} wEmber @param {number} wCoast
  * @param {number} windX @param {number} windZ  unit vector
+ * @param {number} duneT  dune-type coordinate from the bake (0 barchan, 1/3 transverse, 2/3 star, 1 seif)
+ * @param {number} duneFlat  0..1 flat weight (playa, pan, ravine floor, arena): dunes fade out
  */
-export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast, windX, windZ) {
+export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast, windX, windZ, duneT = 1 / 3, duneFlat = 0) {
   const u = x * windX + z * windZ;        // along wind
   const v = -x * windZ + z * windX;       // across wind
   let h = 0;
   const S = MESO_SEED;
 
   if (wDunes > 0.001) {
-    // Crest lines wander with low-frequency noise; amplitude breaks into segments along v.
-    const phase = u / 140 + 0.9 * fbm(u / 900, v / 600, 3, S + 1) + 0.25 * valueNoise(v / 170, u / 400, S + 2);
-    const p = phase - Math.floor(phase);
-    const seg = 0.7 + 0.3 * fbm(v / 260, u / 700, 3, S + 3);
-    const big = duneProfile(p) * 22 * seg;
+    // Types blend along the bake's axis (barchan — transverse — star — seif); ripples run on all.
+    const t3 = duneT * 3;
+    const wB = t3 < 1 ? 1 - t3 : 0, wT = 1 - Math.abs(t3 - 1) > 0 ? 1 - Math.abs(t3 - 1) : 0;
+    const wS = 1 - Math.abs(t3 - 2) > 0 ? 1 - Math.abs(t3 - 2) : 0, wF = t3 > 2 ? t3 - 2 : 0;
+    let big = 0;
+    if (wT > 0.001) big += wT * transverseH(u, v);
+    if (wB > 0.001) big += wB * barchanH(u, v);
+    if (wS > 0.001) big += wS * (starH(u, v) + 0.3 * transverseH(u, v));   // low ridges fill between the stars
+    if (wF > 0.001) big += wF * seifH(u, v);
     const ripple = 0.6 * fbm(u / 18, v / 55, 3, S + 4);
-    h += wDunes * (big + ripple);
+    // The cold erg (frost–dune border): snow settles in the lee hollows first and the wind strips it from
+    // the crests, so the hollows fill toward a level and anything above it stays bare sand.
+    const cold = 4 * wFrost * wDunes > 1 ? 1 : 4 * wFrost * wDunes, sand = big * (1 - duneFlat);
+    const fill = cold * (sand < COLD_LEVEL ? COLD_LEVEL - sand : 0);
+    h += wDunes * (sand + fill * 0.85 + ripple * (1 - 0.8 * duneFlat) * (1 - 0.6 * cold));
   }
   if (wFrost > 0.001) {
     const drift = 2.2 * fbm(u / 160, v / 42, 4, S + 11);

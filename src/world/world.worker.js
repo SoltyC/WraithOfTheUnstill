@@ -1,7 +1,7 @@
 // World worker (BRIEF §4.2 streaming): fetches and decodes baked data, holds the CPU world
 // (WorldData) and computes collision patches, so height math and its garbage never touch the main
 // thread. Protocol (all large arrays transferred, never copied twice):
-//   → { type:'init', base }                          ← { type:'init', manifest, overview, biomeA, biomeB, wind, surface, hydro }
+//   → { type:'init', base }                          ← { type:'init', manifest, overview, biomeA, biomeB, wind, dunes, surface, hydro }
 //   → { type:'tile', tx, tz }                        ← { type:'tile', tx, tz, data: Uint16Array }
 //   → { type:'resident', tx, tz }                    (GPU upload done: tile now used for collision)
 //   → { type:'patch', id, cx, cz, n, step, anchor? } ← { type:'patch', id, x0, z0, n, step, heights: Float32Array, anchor, cx, cz }
@@ -24,16 +24,17 @@ self.onmessage = async (e) => {
     if (m.type === 'init') {
       base = m.base;
       const manifest = await (await fetch(base + 'manifest.json')).json();
-      const [ov, ba, bb, wd, sf, hy] = await Promise.all([
+      const [ov, ba, bb, wd, sf, hy, du] = await Promise.all([
         fetchBytes(manifest.height.overview.file), fetchBytes(manifest.biome.files[0]), fetchBytes(manifest.biome.files[1]),
         fetchBytes(manifest.wind.file), fetchBytes(manifest.surface.file), fetchBytes(manifest.hydro.file),
+        fetchBytes(manifest.dunes.file),
       ]);
       world = new WorldData(manifest);
       world.overview = new Uint16Array(ov.buffer);
-      world.biomeA = ba; world.biomeB = bb; world.wind = wd;
+      world.biomeA = ba; world.biomeB = bb; world.wind = wd; world.dunes = du;
       // Copies for the main thread (GPU upload); the worker keeps its own for collision.
-      const out = { type: 'init', manifest, overview: world.overview.slice(), biomeA: ba.slice(), biomeB: bb.slice(), wind: wd.slice(), surface: sf, hydro: hy };
-      self.postMessage(out, [out.overview.buffer, out.biomeA.buffer, out.biomeB.buffer, out.wind.buffer, sf.buffer, hy.buffer]);
+      const out = { type: 'init', manifest, overview: world.overview.slice(), biomeA: ba.slice(), biomeB: bb.slice(), wind: wd.slice(), dunes: du.slice(), surface: sf, hydro: hy };
+      self.postMessage(out, [out.overview.buffer, out.biomeA.buffer, out.biomeB.buffer, out.wind.buffer, out.dunes.buffer, sf.buffer, hy.buffer]);
     } else if (m.type === 'tile') {
       const bytes = await fetchBytes(`height/${m.tx}_${m.tz}.u16`);
       const data = new Uint16Array(bytes.buffer);

@@ -27,6 +27,16 @@ export const vertsPerBlade = (seg) => (seg + 1) * 2;
 /** Field lookups shared with the ground cover (shaders/groundcover.wgsl.js): hashes, the rendered
  *  ground height, the meadow weight, the wind direction, value noise. Needs levels, levelData,
  *  biomeA and windMap declared. */
+/** Needs surfaceMat declared (grass and ground cover only). */
+export const BARE_WGSL = /* wgsl */ `
+/** The baked surface material (4 m): none of the meadow's grass or ground cover grows on sand, beach, rock or seabed. */
+fn gBareMaterial(x: f32, z: f32) -> f32 {
+  let i = clamp(i32((x + 4096.0) / 4.0), 0, 2047); let j = clamp(i32((4096.0 - z) / 4.0), 0, 2047);
+  let m = surfaceMat[j * 2048 + i] & 255u;
+  return select(0.0, 1.0, m == 1u || m == 5u || m == 6u || m == 7u);
+}
+`;
+
 export const FIELD_WGSL = /* wgsl */ `
 ${BORDER_WGSL}
 const V: u32 = ${CLIPMAP_N + 1}u;
@@ -59,6 +69,11 @@ fn gMeadow(x: f32, z: f32) -> f32 {
   return a.y / max(a.x + a.y + a.z + a.w, 0.05);
 }
 /** Frost share of frost + meadow at (x, z) (the border's snow patches). */
+fn gFrostMeadow(x: f32, z: f32) -> f32 {
+  let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
+  let a = unpack4x8unorm(biomeA[j * N8 + i]);
+  return a.x + a.y;
+}
 fn gFrostShare(x: f32, z: f32) -> f32 {
   let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
   let a = unpack4x8unorm(biomeA[j * N8 + i]);
@@ -90,6 +105,7 @@ uniform grassPush: array<vec4f,8>;  // the Wraith and its trail: x, y, z, streng
 ${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
+var<storage, read> surfaceMat: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
 ${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vT: f32;                     // 0 root … 1 tip
@@ -104,7 +120,7 @@ varying vFrost: f32;                 // rime from the frost verbs (terrain state
 ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
 
-${FIELD_WGSL}
+${FIELD_WGSL}${BARE_WGSL}
 ${WIND_WGSL}
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
@@ -131,7 +147,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // Density: the meadow, patches, not on steep ground.
   // At the frost border the meadow is wherever the snow has gone (its patches), not the 8 m weight.
   let bsn = borderSnow(root, gFrostShare(root.x, root.y));
-  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)));
+  // (the frost border's patches only where there is frost or meadow to speak of: not across the dune basin)
+  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)) * smoothstep(0.2, 0.5, gFrostMeadow(root.x, root.y))) * (1.0 - gBareMaterial(root.x, root.y));
   let patchN = vn(root * 0.05) * 0.7 + vn(root * 0.21) * 0.3;
   // Under the crowns the grass thins to a few shade-tolerant tufts (the forest floor shows).
   let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;

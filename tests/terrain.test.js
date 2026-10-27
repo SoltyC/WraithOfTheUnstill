@@ -34,7 +34,7 @@ function loadWorld() {
   const w = new WorldData(m);
   const u8 = (f) => new Uint8Array(fs.readFileSync('data/world/' + f));
   w.overview = new Uint16Array(u8(m.height.overview.file).buffer);
-  w.biomeA = u8(m.biome.files[0]); w.biomeB = u8(m.biome.files[1]); w.wind = u8(m.wind.file);
+  w.biomeA = u8(m.biome.files[0]); w.biomeB = u8(m.biome.files[1]); w.wind = u8(m.wind.file); w.dunes = u8(m.dunes.file);
   return { w, m, u8 };
 }
 

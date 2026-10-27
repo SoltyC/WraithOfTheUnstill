@@ -91,6 +91,33 @@ Same shape as Phase 8. Each ends in something reviewable on the 3060. The risky 
   - (Shrines are being generalised now by the side-quest work.)
 - Acceptance: the bake is reproducible; the parity check passes on the new meso; frost and meadow shots are pixel-identical; there is no grass on sand.
 
+### D0 — Done (2026-10-27, branch `claude/d0`)
+
+**Built**
+- **Bigger erg:** the volcano's *biome* reach shrinks east of x = 1000 (inner 1000 to 500 m, outer 2900 to 1300 m; the macro partition, heights, rivers and wind are untouched). Dune-dominant area (weight over half) is **8.10 km²**, was 4.33; of that 5.20 km² lies west of x = 3300 (the rest is under the east ring). Rule-placed POIs are pinned (`pinned.mjs`) so no shrine or Warden moved.
+- **Diff test** (`tests/d0Diff.test.js`, hashes from the pre-D0 bake): biome weights west of x = 1000, the surface map west of x = 1000, the height tiles west of x = 512, the village mask, `village.json`, the hill stair and the hub/manor/stair-foot POIs are byte-identical.
+- **Dune-type map** (`dunes.rg8`, 32 m; `dunemap.mjs`): R = type coordinate (barchan 0, transverse 1/3, star 2/3, seif 1), G = flat weight (playas, six pans, ravine floors and rims, the arena, the interdune belt that hides the transverse/seif seam). The meso reads it on the CPU (`terrain/dunes.js`) and the GPU (`duneTypes.wgsl.js`; it rides in the free `.zw` bytes of the wind buffer, so no binding changed). **Deviation:** there is no phase-seed byte; the meso hashes its cells by position.
+- **Ravines** (`ravines.mjs`, `carveRavines`, 2 m, cut-only): the Red Galleries with three side galleries (ledged strata at multiples of 12 m above sea level), two slot trenches (10 m wide, 38 and 34 m deep, no wall kit), three braided wadis, the Stride (about 60 m deep, two land bridges). The canyon's south end bends SE to follow the escarpment foot instead of staying at x 1470-1540.
+- **The Dry Stair** (`dryStair.mjs`): A* over an 8 m grid, then graded onto h4: 906 m, 107.8 m drop, 12 % grade, carved only east of x = 1030. The canyon fords it (cuts fade out within about 110 m of the road and never touch the road corridor).
+- **Cold erg:** in `mesoHeight` snow fills dune hollows to 7 m where frost and dune weights overlap and crests stay bare.
+- **No grass on sand:** grass and ground cover mask the baked material (sand, rock, beach, seabed). This also fixed the real cause of grass across the basin: the frost-border term gave 0.85 meadow weight everywhere outside frost.
+- **Seats** (positions only, `seats.mjs`): the camp and Wellhouse, oasis, ruins (Long Walker, Sunken Temple, aqueduct, Sun Gate), sites, five glass fields, five echo seats, four cave mouths, the arena ring. Kinds are `*-seat` so nothing in nav or echo trials picks them up yet.
+- **Helpers:** `chapter.js` places include the dunes' seats. Photo spots and encounters were already keyed by id and biome; `encounters.js` was not touched.
+
+**Measured**
+- `bake:verify` OK (267 files), the bake is reproducible. `npx vitest run`: 662 tests pass (new: `tests/dunes.test.js`, `tests/d0Diff.test.js`).
+- **CPU/GPU parity (Windows GPU, `tools/capture/parity-bot.mjs`):** max 1.56 mm over 4096 points at the heart; 1.12 mm (barchans), 1.30 mm (seif), 1.71 mm (cold erg), 1.16 mm (canyon). All pass (gate 10 mm). The SwiftShader route (`parity-check.mjs`) cannot allocate on this box.
+- Shots in `screenshots/phase-09-d0/` (1280 px): `before-*` is the pre-D0 build, `after-*` is D0, `main-*` is the merged main without D0.
+
+**NOT ASSESSED**
+- **Pixel-identical frost and meadow shots:** not achievable by shot comparison. Two shots of the *same* build differ (meadow PSNR 29.5 dB) and D0 against main is 28.0 dB (meadow) and 40.7 dB (frost). The data-level diff test is the evidence.
+- Frozen sand staying firm: there is no sand state yet (D1/D2).
+- The cold-erg shot is weak (it shows the slope into the sand, not hollows filled with snow); the look is D1.
+- Wall zig-zag where canyon bends flip the nearest spine point; wadi cut banks and flowers; sandfalls, arches, hoodoos (D7b).
+- `gpuStats.late` was seen non-empty only from my own parity compute pipelines; a clean run was not taken.
+- Performance on the 3060: the meso now evaluates up to four dune types and a 2 x 2 star loop; not benchmarked.
+- The overhead map is mostly frost and cloud at that height; the erg is the lower right.
+
 ### D1 — Sand material (the proving ground of this phase)
 
 `shaders/surfaces/sand.wgsl.js` behind the surface interface from M0 (evaluated only where the sand weight is above 0).

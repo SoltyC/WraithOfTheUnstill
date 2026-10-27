@@ -1,0 +1,11 @@
+{
+  "note": "SHA-256 of the pre-D0 bake (commit 43f2e8a), west of x=1000 only where a region is named. tests/d0Diff.test.js.",
+  "biomeAWest": "eb1b75fe6672c6f61cfe206640d22e5372cb1261c0e994d0c89e61a28bb56442",
+  "biomeBWest": "a551730c3cf7b9275413f8745a481d1410c8e239c6079b21ae12fd2252fe3a4b",
+  "surfaceWest": "0a363461029a33c8a13e2133f12fbcc9047ff5e0cba3d3ba0a6501c1327fcf22",
+  "villageMask": "f18dffc450f834176cfc88acca72a72dc91d1bdedad3de2619ac488ea67e18f1",
+  "village": "be2e85d58cb3f0153e2bc8634a9b46bf5bdfd4cca15f7e8c3f97a55b7600f02b",
+  "hillStair": "98a4beabd0dbabb629d1b457fd78126e425e9b70a4325ccbbb754ed7bf742248",
+  "hillPois": "11db0350974db39b6f1c522a279a49bba4044290da4cc9d4115f4310a191cb03",
+  "heightTilesWest": "43690a9bce43cd2363cdafb2bb4d13a12559130597299e002abb37ece497b56a"
+}
