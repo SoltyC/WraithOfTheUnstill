@@ -2,6 +2,8 @@
 
 ## Codex continuation — 2026-10-27
 
+**Later access update:** the user enabled full access in Codex CLI. Windows commands, GitHub fetch/push and headless Windows Chrome now work. All checkpoints below were pushed; the sand branch now ends at **`e573210`** after saving six fresh 1280 px rain-stage captures in `/home/sol/wraith-sand/screenshots/sand-review-codex-1280/`. The bot reported `gpuStats.late: []` on the wet scene; the screenshot runner completed **6/6**. Fully wet sand still looks too close to dry sand, so fix its material/lighting response next. The earlier environment limitation below is historical and no longer blocks films or GPU review. Encounter films, full transition/pipeline checks and star-field comparison remain to do.
+
 The original handoff below is retained. These updates supersede its branch status and delegation guidance:
 
 - **Latest user instruction:** do most implementation yourself; delegate only very easy code to a Luna subagent when useful for usage. No subagents were used in this continuation. The earlier Sonnet/Opus workflow and Claude session trailers describe the previous session; do not claim that identity or reuse its session URL for new Codex work.
