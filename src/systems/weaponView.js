@@ -22,6 +22,7 @@ export function addWeaponViewSystem(g) {
   const { loop, wraithView, weapons, inventory, weaponView: V, ground, controller, clock } = g;
   const wraith = wraithView.wraith, body = wraith.body;
   let trailing = [false, false], reseat = 0;
+  let wasVisible = wraithView.isEnabled();
   const head = new FlailHead();
   // Doubles in an object, not closure variables (a closure variable holding a double boxes on every write).
   const fl = { flare: 0.5 - 0.5, lastT: -1, t: 0.5 - 0.5, dt: 0.5 - 0.5, zx: 0.5, zy: 0.5, zz: 0.5, flame: 0.5 };
@@ -57,7 +58,7 @@ export function addWeaponViewSystem(g) {
     // Everything in hand hidden, then the weapon carried.
     V.show = false; V.tr = 0; V.tg = 0; V.tb = 0;
     for (let k = 0; k < HELD.length; k++) V.place(HELD[k]);
-    if (def === null) return;
+    if (def === null || !wraithView.isEnabled()) return;
     // A fresh draw grows out of the hand.
     const grow = weapons.swapT > 0 ? 1 - weapons.swapT / weaponFeel.swapTime : 1;
     const sc = grow * grow * (3 - 2 * grow);
@@ -145,7 +146,7 @@ export function addWeaponViewSystem(g) {
   function feedTrail(time) {
     const def = inventory.def;
     if (def === null) return;
-    const tr = def.trail, on = weapons.trailT > 0.06;
+    const tr = def.trail, on = wraithView.isEnabled() && weapons.trailT > 0.06;
     // An infused weapon cuts in its element's colour; a forged one leaves a stronger trail (tier by tier).
     const inf = inventory.infusion(def.id), fall = weapons.plunge.falling, el = fall && g.elements ? g.elements.active : null;
     const tint = inf === 'frost' || el === 'frost' ? TRAIL_FROST : inf === 'gale' || el === 'gale' ? TRAIL_GALE : tr.tint;       // a fall's trail is in the element in hand
@@ -178,7 +179,7 @@ export function addWeaponViewSystem(g) {
       pyre = WL.add({ x: NaN, y: NaN, z: NaN, radius: 11, color: [1, 0.45, 0.15], intensity: 7, kind: 'fire', level: 0 });
       for (let i = 0; i < BURN_LAMPS; i++) burnLamps.push(WL.add({ x: NaN, y: NaN, z: NaN, radius: 5, color: [1, 0.45, 0.14], intensity: 4, kind: 'fire', level: 0 }));
     }
-    const def = inventory.def, on = def !== null && def.id === 'flail' && weapons.swapT < 0.25 && g.game.pendingWeapon === null;
+    const def = inventory.def, on = wraithView.isEnabled() && def !== null && def.id === 'flail' && weapons.swapT < 0.25 && g.game.pendingWeapon === null;
     lamp.level = on ? Math.min(1, fl.flame) : 0;
     if (on) { lamp.x = fl.zx; lamp.y = fl.zy; lamp.z = fl.zz; lamp.radius = 8 + 5 * WL.night + 3 * fl.flare; }
     const bz = weapons.burn, zt = bz.zt[0] > bz.zt[1] ? 0 : 1;
@@ -212,7 +213,8 @@ export function addWeaponViewSystem(g) {
     reseat -= clock.realDt; if (reseat <= 0) reseat = 1.5;
     placeFinds();
     lights();
-    if (g.game.pendingWeapon === null && !(g.game.wraithHeld && g.capture)) g.weaponViewSample(clock.simTime);
+    const visible = wraithView.isEnabled(), changed = visible !== wasVisible; wasVisible = visible;
+    if (changed || (g.game.pendingWeapon === null && !(g.game.wraithHeld && g.capture))) g.weaponViewSample(clock.simTime);
     V.update(clock.simTime);
   } });
 }
