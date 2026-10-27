@@ -111,6 +111,7 @@ async function boot() {
   (await import('./systems/npcs.js')).addNpcSystems(g);
   (await import('./systems/nav.js')).addNavSystem(g);
   (await import('./systems/trials.js')).addTrialsSystem(g);
+  (await import('./systems/encounterLog.js')).addEncounterLog(g); // ?bot=1 telemetry; before the spawners that call it
   (await import('./systems/encounters.js')).addEncounterSystem(g);
   (await import('./systems/villagers.js')).addVillagerSystem(g);
   (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
