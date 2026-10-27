@@ -42,6 +42,7 @@ export async function addEnvironmentSystems(g) {
     // A load, a teleport and a capture show the weather outright, not easing in from the old place.
     if (pendingTp.active || g.capture) weather.snap = true;
     weather.override = ws.weatherOverride;
+    weather.wetForce = ws.wetForce; weather.puddleForce = ws.puddleForce; weather.rainForce = ws.rainForce;
     weather.dt = clock.dt;
     weather.update();
     ws.weather = weather.state;
@@ -228,6 +229,13 @@ export async function addEnvironmentSystems(g) {
     footprints.grounded = controller.grounded && !arm.free && content.capsule.isEnabled();
     footprints.update();
     if (game.pendingTrail !== null && game.worldSettled()) { footprints.stampTrail(game.pendingTrail); game.pendingTrail = null; }
+    // A photo spot's frozen patch ({ freeze: [x, z, radius] }): a round FREEZE stamp (sand shots).
+    if (game.pendingFreeze !== null && game.worldSettled()) {
+      const fz = game.pendingFreeze; game.pendingFreeze = null;
+      terrainState.bx = fz[0]; terrainState.bz = fz[1]; terrainState.bdx = 1; terrainState.bdz = 0;
+      terrainState.bl = 0; terrainState.bw = fz[2]; terrainState.bd = 0; terrainState.bc = 0.5;
+      terrainState.bk = 3; terrainState.bwet = 0; terrainState.bbias = 0; terrainState.bberm = 0; terrainState.stamp();
+    }
     terrainState.update();
   } });
 

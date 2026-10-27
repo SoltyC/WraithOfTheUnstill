@@ -19,6 +19,7 @@ import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js
 import { SNOW_WGSL } from './snow.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { MEADOW_WGSL } from './meadow.wgsl.js';
+import { SAND_WGSL } from './sand.wgsl.js';
 import { BORDER_WGSL } from './common.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
@@ -347,6 +348,7 @@ ${MATERIALS_DECL}
 ${MATERIALS_WGSL}
 ${SNOW_WGSL}
 ${MEADOW_WGSL}
+${SAND_WGSL}
 ${BORDER_WGSL}
 
 @fragment
@@ -476,6 +478,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col = mix(col, mcol, wMeadow);
     // Wet ground and puddles reflect (SSR: sky, lamps, the Wraith): Fresnel × the gloss.
     ssrMask = max(ssrMask, wMeadow * ms.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ms.N, V), 0.0), 5.0)) * 0.85);
+  }
+  // Sand of the erg (D1a, shaders/sand.wgsl.js) over the clay view, by dune weight; cliff walls keep the clay.
+  let wSand = smoothstep(0.3, 0.7, wA.w / max(wSum, 0.001)) * (1.0 - sea) * (1.0 - smoothstep(0.42, 0.58, slope));
+  if (wSand > 0.001) {
+    let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
+                              fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
+    let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
+    let scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
+    col = mix(col, scol, wSand);
+    ssrMask = max(ssrMask, wSand * ss.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
   }
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
