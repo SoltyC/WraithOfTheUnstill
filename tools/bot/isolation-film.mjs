@@ -59,18 +59,20 @@ const glideDriver = () => `${COMMON}
   const gl = c.glide, st = g.streams, RATIO = 7.2 * 0.92;
   const lines = st.list.filter((s) => g.restoration[s.biome] > 0.5);
   const distTo = (s, x, z) => { st.px = x; st.pz = z; return st.distance(st.list.indexOf(s)); };
-  let soar = null, dir = 1, flown = false, turned = -9, frame = 0; I.cam = false; I.landed = 0; I.rings = 0; I.soarT = 0; I.lift = 0;
+  let soar = null, dir = 1, flown = false, turned = -9, frame = 0; I.cam = false; I.landed = 0; I.rings = 0; I.soarT = 0; I.lift = 0; I.surfT = 0;
   w.isoStep = (dt, cam) => {
     const p = c.pos; tally(dt);
-    const course = g.shelfCourse, T0 = course.rings[Math.min(course.next, course.rings.length - 1)], T = { x: T0.x, y: T0.y, z: T0.z, r: T0.r };
+    const course = g.shelfCourse, T0 = course.rings[Math.min(course.next, course.rings.length - 1)], exiting = I.t > 45;
+    const T = exiting ? { x: 950, y: ground(950, 2700), z: 2700, r: 8 } : { x: T0.x, y: T0.y, z: T0.z, r: T0.r };
     I.rings = course.next;
     const gh = ground(p.x, p.z), agl = p.y - gh;
     inj('Traverse', !c.grounded && !c.swimming || (flown && !gl.active && c.grounded && I.landed > 0.5));
     if (gl.active) { flown = true; I.air.push(+gl.speed.toFixed(1)); I.sink.push(+gl.vy.toFixed(1)); I.vmax = Math.max(I.vmax, gl.speed); I.lift = Math.max(I.lift, gl.rise || 0); }
     if (flown && !gl.active && c.grounded) I.landed += dt;
+    if (c.surf.active) I.surfT += dt;
     let tx = T.x, tz = T.z;
     const dist = Math.hypot(T.x - p.x, T.z - p.z), reach = (p.y - (T.y - T.r * 0.6)) * RATIO / 1.1;
-    if (gl.active && dist > reach && lines.length) {
+    if (!exiting && gl.active && dist > reach && lines.length) {
       let best = null, bc = 1e9;
       for (const s of lines) { const d = distTo(s, p.x, p.z); let ed = 1e9; for (const q of s.pts) ed = Math.min(ed, Math.hypot(q[0] - T.x, q[1] - T.z)); if (d < agl * RATIO * 0.75 + 40 && d + ed < bc) { bc = d + ed; best = s; } }
       if (best) {
@@ -124,8 +126,8 @@ const combatDriver = () => `${COMMON}
       for (const i of I.ids) { if (!g.shaped.isLive(i)) continue; const q = slots[i], qb = q.body; if ((q.state === S.TELEGRAPH || q.state === S.LUNGE) && Math.hypot(qb.sx[1] - p.x, qb.sz[1] - p.z) < 4.2) threat = true; }
       if (threat && now - dodged > 0.9 && m.phase !== 1 && m.phase !== 3) { dodged = now; tap('Dodge', 50); }
       const isFrozen = g.shaped.isFrozen(tgt);
-      if (!isFrozen && now - crysT > 3 && best >= 0 && bd > 3 && bd < 9 && g.combat.focus >= 30 && !m.busy) { crysT = now; I.crystals++; tap('Heavy', 60); }
-      else if (!isFrozen && now - sweepT > 1.4 && bd > 4.5 && bd < 13 && g.combat.focus >= 14 && !m.busy) { sweepT = now; I.sweeps++; tap('Bend', 45); }
+      if (!isFrozen && I.sweeps > 0 && now - sweepT > 0.5 && now - crysT > 3 && best >= 0 && bd > 3 && bd < 9 && g.combat.focus >= 30 && !m.busy) { crysT = now; I.crystals++; tap('Heavy', 60); }
+      else if (!isFrozen && now - sweepT > 1.4 && (I.sweeps === 0 || bd > 4.5) && bd < 13 && g.combat.focus >= 14 && !m.busy) { sweepT = now; I.sweeps++; tap('Bend', 45); }
       if (d < reach + 0.4) {
         if (isFrozen || now - heavyT > 3.5) {
           if (m.phase === 0 && downSince < 0) { set('Primary', true); downSince = now; }
@@ -182,7 +184,7 @@ async function setup() {
 const step = `w.isoStep(1 / 60, cam);`;
 const stats = () => ev(`const I = window.__wraith.iso, c = g.controller; const mean = (a) => a.length ? +(a.reduce((x, y) => x + y, 0) / a.length).toFixed(1) : 0;
   return { t: +I.t.toFixed(1), tierSecs: I.tier.map((x) => +x.toFixed(1)), surfMax: +I.maxSpeed.toFixed(1), surfMean: I.n ? +(I.speedSum / I.n).toFixed(1) : 0, glideMax: +I.vmax.toFixed(1), glideMean: mean(I.air), sinkMean: mean(I.sink), sinkMin: I.sink.length ? Math.min(...I.sink) : 0, sinkMax: I.sink.length ? Math.max(...I.sink) : 0,
-    lift: +(I.lift || 0).toFixed(1), log: ${process.env.DEBUG ? 'I.log' : 'undefined'}, rings: I.rings, soarT: +(I.soarT || 0).toFixed(1), sweeps: I.sweeps, crystals: I.crystals, heavies: I.heavies, shatters: I.shatters, alive: I.ids ? I.ids.filter((i) => g.shaped.isLive(i)).length : null,
+    lift: +(I.lift || 0).toFixed(1), log: ${process.env.DEBUG ? 'I.log' : 'undefined'}, rings: I.rings, soarT: +(I.soarT || 0).toFixed(1), landedSecs: +(I.landed || 0).toFixed(1), surfSecs: +(I.surfT || 0).toFixed(1), sweeps: I.sweeps, crystals: I.crystals, heavies: I.heavies, shatters: I.shatters, alive: I.ids ? I.ids.filter((i) => g.shaped.isLive(i)).length : null,
     hp: +g.combat.health.toFixed(0), pos: [Math.round(c.pos.x), Math.round(c.pos.y), Math.round(c.pos.z)], flowNow: g.flow.tier, late: window.__wraith.gpuStats?.late?.length ?? null };`);
 
 const ctx = await setup();

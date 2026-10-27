@@ -176,3 +176,25 @@ Targets:
 **Smell review:** no additional combat or reward rule; no new treadmill, gate or opportunity-cost change. Dominant strategy, bare-verb fun and honest telegraphs in motion remain NOT ASSESSED here. The earlier measurements and caster-bot limitations above are historical results, not fresh runs of this revision.
 
 **Still required:** glide and frost-combat isolation films, visual review in motion, fresh bot runs including pool contention and the Barley clear, and GPU pipeline/performance checks. Windows `cmd.exe /c ver` failed with `UtilBindVsockAnyPort: socket failed 1`; GitHub fetch failed because `github.com` could not resolve. No new target-GPU or push claim is made. The branch is deliberately kept separate from main until the review is possible.
+
+## 9. Target-GPU continuation (Codex, 2026-10-28)
+
+The Windows Chrome/RTX 3060 path works again. The lifecycle fixes are kept. Three fresh staff + Frost daytime runs per encounter are recorded in `docs/encounter-runs/lead-frost-day.jsonl`: cloister 3/3 clears, mean 31.1 s and no damage; stair-wardens 3/3, 22.4 s and 28 damage; ring-ambush 3/3, 22.9 s and 56 damage. No deaths or focus starvation; maximum simultaneous enemies 2, 2 and 3. Every successful clear started 60 s of calm. This corrects the earlier melee-only bot limitation without removing the caster role.
+
+The original Barley check cleared 1/3 runs: in two runs the bot stopped against field collision with two hidden runners remaining. Those failures remain in the raw data. The harness now detects a stalled chase and makes a short alternating detour with a jump. It preserves world collision, health, damage and quest rules. Repeat results in `lead-flock-navigation.jsonl`: **3/3 clears**, mean 25.7 s (23.6–27.2), mean damage 13.3 (10–20), no deaths or focus starvation, maximum six active. All three clears start 60 s calm. The detour fired 3, 0 and 1 times respectively.
+
+### Isolation films and visual review
+
+All three committed films are H.264, 1280×720, fixed 60 fps and below 15 MB. Probe results are in `docs/encounter-runs/isolation-media.json`. Local 1920×1080 copies and source frames are excluded from git; the requested local 1440p capture was not produced.
+
+| Film | Duration | Size, bytes | Measured behavior |
+|---|---:|---:|---|
+| `screenshots/isolation/surf-720p.mp4` | 120 s | 13,188,643 | Speed maximum 22.5 m/s, mean 15.3; tier seconds 37.2 / 20.3 / 64.6 / 0 |
+| `screenshots/isolation/glide-720p.mp4` | 60 s | 13,192,247 | Airspeed maximum 21 m/s, mean 13.8; mean vertical speed −1 m/s; lift 8.4; 33.9 s soaring, 14.2 s landed, 7.1 s surfing |
+| `screenshots/isolation/combat-720p.mp4` | 12 s | 7,227,045 | Staff and Frost: 1 Sweep, 2 Crystallizes, 2 heavies, 1 shatter; all three hounds released, health 100 |
+
+Telemetry includes setup/warm-up time (surf 122.2 s, glide 62.2 s, combat 12.7 s). It is not a frame-time benchmark. The glide driver deliberately leaves the lift after 45 s to land and return to surf. The combat driver casts Sweep before freezing so the film contains the three required verbs.
+
+Sample frames reviewed at 1280 px: combat frames 80, 240 and 480; glide 300, 1800 and 3150, saved in `screenshots/isolation/review/`. The combat camera keeps the Wraith, frozen hound and terrain marks readable. The glide shows the stream approach, open flight, landing and slope; no camera clipping in those samples. Night/blizzard combat readability and human enjoyment remain **NOT ASSESSED**. The initial surf recording reported one late pipeline before the later haze warm-up fix; fresh glide/combat recordings reported zero. Cold forest entry still reports five late render pipelines on main, tracked separately from this encounter change. No claim of world-wide pipeline acceptance or sustained 60 fps is made.
+
+**Smells:** no added combat complexity, rewards, scaling or grind. Caster pursuit works with the starting Frost kit in the fresh checks. A dominant strategy across all encounters, telegraph reading at surf speed, human focus budgets and whether the verbs feel fun still require the broader gameplay/human gates. Existing historical day/night measurements above are retained.

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "surf",
+    "programs": [],
+    "streams": [
+      {
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "60/1",
+        "nb_frames": "7200"
+      }
+    ],
+    "format": {
+      "duration": "120.000000",
+      "size": "13188643"
+    }
+  },
+  {
+    "name": "glide",
+    "programs": [],
+    "streams": [
+      {
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "60/1",
+        "nb_frames": "3600"
+      }
+    ],
+    "format": {
+      "duration": "60.000000",
+      "size": "13192247"
+    }
+  },
+  {
+    "name": "combat",
+    "programs": [],
+    "streams": [
+      {
+        "width": 1280,
+        "height": 720,
+        "avg_frame_rate": "60/1",
+        "nb_frames": "720"
+      }
+    ],
+    "format": {
+      "duration": "12.000000",
+      "size": "7227045"
+    }
+  }
+]

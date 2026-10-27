@@ -108,14 +108,15 @@ Each biome has three archetypes in fixed roles, plus an elite. The **material de
   - no hostile spawns for a while after a release or a hard fight (Left 4 Dead's relax phase [S]);
   - music and ambience carry the pacing; no spawning director.
 
-### Encounter audit — Code built; GPU review and isolation films pending (2026-10-27, branch `claude/encounters`)
+### Encounter audit — Implementation and isolation films built (Codex review, 2026-10-28)
 
 - **Audited** every armed encounter in frost and meadow against §4.2 with bot runs (3 per cell, two kits, day and night): `docs/encounter-audit.md`, data in `docs/encounter-runs/`. Telemetry: `src/systems/encounterLog.js` (`?bot=1`), harness `tools/bot/encounters.mjs`.
 - **Changed:** the three one-role frost fights got a second role (a seer behind the cloister hounds and at the spring, a brute on the tarn); the Barley flock got a chanter; `camp-raid` is a storm surge (a blizzard while it lasts) so two guarded sites no longer follow each other; the meadow has two armed encounters (`stair-wardens` on the main path, `ring-ambush` on the Ring of Nine side quest) where it had none; every encounter carries an `arena` and a `kind`, and `ROUTES` keeps kinds from repeating (`tests/encounters.test.js`).
 - **Calm after peaks** is a rule now (`src/systems/calm.js`): no new rising within 120 m for 60 s after a clear, a Warden release or a re-form. Story-forced waves are exempt.
 - **Not built:** the Old Hedge (the meadow elite) does not exist; the meadow caster is a support caster (no shards).
-- **Not assessed:** feel to a human, telegraphs at speed or in the blizzard, human focus starvation, the flock with its chanter on the page. See the audit's list.
-- **Lifecycle review (Codex, 2026-10-27):** whole waves and the Barley flock wait for enough EMPTY slots; sinking bodies still occupy slots. Barley clears start calm. Abandoning or loading cancels telemetry; a fresh run samples its starting health. Regression tests: `tests/encounterLifecycle.test.js`. Full suite: **749 passed**, locked Vite build passed. Main was merged locally at `139ead6`; GitHub DNS and Windows executable interoperability were unavailable in the restricted execution environment. New bot measurements, the glide/combat films and main-branch integration remain pending.
+- **Fresh review:** the committed surf, glide and Frost-combat isolation films are encoded at 720p/60 and sampled visually. Staff + starting Frost clears the cloister, stair and ring in 3/3 daytime runs each. The Barley checks and bot-navigation correction are documented in the audit §9.
+- **Not assessed:** feel to a human, telegraphs at speed or in the blizzard, human focus starvation. See the audit's list.
+- **Lifecycle review (Codex, 2026-10-27):** whole waves and the Barley flock wait for enough EMPTY slots; sinking bodies still occupy slots. Barley clears start calm. Abandoning or loading cancels telemetry; a fresh run samples its starting health. Regression tests: `tests/encounterLifecycle.test.js`. Full suite: **749 passed**, locked Vite build passed. That test count is the historical lifecycle checkpoint. Windows GPU access and pushes now work; audit §9 records the subsequent measurements and films. Current integration validation is recorded there.
 
 ### 4.3 Death and fairness
 

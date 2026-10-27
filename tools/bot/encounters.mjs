@@ -25,7 +25,7 @@ const bot = async (cmd, a = {}) => {
 const S = createWorldSampler();
 
 // Where each encounter's place is, and the way the Wraith comes to it (the bearing it arrives from, rad, world heading).
-const info = (await bot('eval', { js: `const o = {}; for (const id in g.encounters) { const e = g.encounters[id], pl = g.chapter.table[e.at]; o[id] = { at: e.at, x: pl.pos[0], z: pl.pos[1], near: e.near }; } return o;` })).result;
+const info = (await bot('eval', { js: `const o = {}; for (const id in g.encounters) { const e = g.encounters[id], pl = g.chapter.table[e.at]; o[id] = { at: e.at, x: pl.pos[0], z: pl.pos[1], near: e.near }; } const field = g.chapter.table['side-barley']; if (field) o['side-flock'] = { at: 'side-barley', x: field.pos[0], z: field.pos[1], near: 90 }; return o;` })).result;
 const FROM = { cloister: 3.45 + 3.14, 'camp-raid': 0.6, 'varo-hounds': 5.6, 'spring-hounds': 1.2, 'escort-ambush': 1.3, den: 3.14, 'stair-wardens': 5.2, 'ring-ambush': 5.0 };
 // Explicit starts where the 36 m ring is walled in (Hearn's streets at the foot of the stair): the end of the main road.
 const START = { 'stair-wardens': [136, 883] };
@@ -43,9 +43,11 @@ function startFor(id) {
 
 const fighterJs = (cfg) => `
   const CFG = ${JSON.stringify(cfg)};
+  const wallStart = performance.now();
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms)), frame = () => new Promise((r) => requestAnimationFrame(r));
-  const flags = g.chapter.graph.flags, e = g.encounters[CFG.id], inv = g.inventory;
-  g.game.killShaped(); flags.delete('cleared:' + CFG.id); flags.delete('fighting:' + CFG.id);
+  const flags = g.chapter.graph.flags, e = g.encounters[CFG.id] || { wave: 0 }, inv = g.inventory;
+  const clearFlag = CFG.id === 'side-flock' ? 'meadow:side-flock-cleared' : 'cleared:' + CFG.id;
+  g.game.killShaped(); g.navSync(); flags.delete(clearFlag); flags.delete('fighting:' + CFG.id);
   g.endEncounter(CFG.id); g.calm.reset();
   g.encounterLog.reset();
   g.clock.pinHour = CFG.hour;
@@ -56,7 +58,10 @@ const fighterJs = (cfg) => `
   g.weapons.machine.reset(); g.combat.health = g.combat.maxHealth; g.combat.focus = 100; g.combat.dying = 0; g.flow.reset(true);
   g.elements.select('frost');
   g.arm.yaw = Math.atan2(CFG.px - g.controller.pos.x, CFG.pz - g.controller.pos.z);
-  g.startEncounter(CFG.id);
+  if (CFG.id === 'side-flock') {
+    const graph = g.chapter.graph, quest = graph.byId.get('meadow-side-flock');
+    graph.quests['meadow-side-flock'] = { state: 'active', step: quest.steps.findIndex((s) => s.id === 'flush') };
+  } else g.startEncounter(CFG.id);
   const def = g.weapons.def, reach = def.combo[0].reach;
   const S = { STALK: 2, TELEGRAPH: 3, LUNGE: 4 };
   const held = { Primary: false, MoveForward: false, MoveBack: false };
@@ -64,11 +69,13 @@ const fighterJs = (cfg) => `
   const tap = (n, ms) => { w.inject(n, true); setTimeout(() => w.inject(n, false), ms); };
   const t0 = g.clock.simTime, h0 = g.combat.health;
   let heavyT = 0, tapT = 0, dodged = -9, downSince = -1, sweepT = -9, sweeps = 0, crystalT = -9, crystals = 0, started = false, deathsSeen = 0, wasDying = false;
+  let moveCheck = t0, moveX = g.controller.pos.x, moveZ = g.controller.pos.z, avoidUntil = -1, avoidSign = 1, unstucks = 0;
   const shapedSlots = g.shaped.slots;
   while (true) {
     const now = g.clock.simTime, p = g.controller.pos;
-    if (flags.has('cleared:' + CFG.id)) break;
+    if (flags.has(clearFlag)) break;
     if (now - t0 > CFG.timeout) break;
+    if (performance.now() - wallStart > 220000) break;
     if (g.combat.dying > 0) { set('Primary', false); set('MoveForward', false); set('MoveBack', false); wasDying = true; await frame(); continue; }
     if (wasDying) { wasDying = false; deathsSeen++; g.combat.focus = 100; }
     let best = -1, bd = 1e9;
@@ -89,6 +96,15 @@ const fighterJs = (cfg) => `
     const m = g.weapons.machine;
     set('MoveForward', bd > reach * 0.72 + 0.3 && !m.busy);
     set('MoveBack', bd < 0.8 && !m.busy);
+    // Village walls and field edges are real collision. If a direct chase stalls, jump and
+    // take an alternating short detour rather than swinging forever at distant hidden prey.
+    if (now - moveCheck > 1.5) {
+      if (bd > 4 && !m.busy && Math.hypot(p.x - moveX, p.z - moveZ) < 0.5) {
+        avoidUntil = now + 1.25; avoidSign = -avoidSign; unstucks++; tap('Jump', 80);
+      }
+      moveCheck = now; moveX = p.x; moveZ = p.z;
+    }
+    if (now < avoidUntil) { g.arm.yaw += avoidSign * 1.1; set('MoveForward', true); }
     let threat = false;
     for (let i = 0; i < shapedSlots.length; i++) { if (!g.shaped.isLive(i)) continue; const q = shapedSlots[i], qb = q.body; if ((q.state === S.TELEGRAPH || q.state === S.LUNGE) && Math.hypot(qb.sx[1] - p.x, qb.sz[1] - p.z) < 4.2) threat = true; }
     if (threat && now - dodged > 0.9 && m.phase !== 1 && m.phase !== 3) { dodged = now; tap('Dodge', 50); }
@@ -105,12 +121,12 @@ const fighterJs = (cfg) => `
     await frame();
   }
   set('Primary', false); set('MoveForward', false); set('MoveBack', false);
-  const cleared = flags.has('cleared:' + CFG.id);
+  const cleared = flags.has(clearFlag), quietLeft = g.calm.left(CFG.px, CFG.pz);
   if (!cleared) g.encounterLog.end(CFG.id);
   const res = g.encounterLog.results.filter((r) => r.id === CFG.id).pop() || null;
   const left = g.shaped.alive, surv = []; { const p = g.controller.pos; for (let i = 0; i < 8; i++) { const q = shapedSlots[i]; if (q.state === 0) continue; const b = q.body; surv.push([q.arch, q.state, Math.round(b.sx[1]), Math.round(b.sz[1]), Math.round(Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z)), Math.round(q.hp)]); } }
   g.game.killShaped(); g.endEncounter(CFG.id); g.calm.reset();
-  return { cleared, res, left, surv: cleared ? undefined : surv, at: [Math.round(g.controller.pos.x), Math.round(g.controller.pos.z)], sweeps, crystals, wall: +(g.clock.simTime - t0).toFixed(1), flowMax: g.flow.tier, hp: +g.combat.health.toFixed(0), deathsSeen };
+  return { cleared, res, left, quietLeft, surv: cleared ? undefined : surv, at: [Math.round(g.controller.pos.x), Math.round(g.controller.pos.z)], sweeps, crystals, unstucks, wall: +(g.clock.simTime - t0).toFixed(1), flowMax: g.flow.tier, hp: +g.combat.health.toFixed(0), deathsSeen };
 `;
 
 const ids = want === 'all' ? Object.keys(info) : want.split(',');
