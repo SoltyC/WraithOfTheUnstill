@@ -22,7 +22,7 @@ export function createFog(post, scene, atmo, shadows) {
   noiseLo.wrapU = Constants.TEXTURE_WRAP_ADDRESSMODE; noiseLo.wrapV = Constants.TEXTURE_WRAP_ADDRESSMODE;
   const csNoiseLo = computePass(engine, 'cloudNoiseLo', cloudNoiseLoCS, [['src', 'tex', noise], ['outTex', 'storageTex', noiseLo]]);
   let noiseBuilt = 0; // 1: base built, 2: far level built too
-  let cloudTex, shaftTex, hazeTex, cs, csHaze, qw = 1, qh = 1, hw = 1, hh = 1;
+  let cloudTex, shaftTex, hazeTex, cs, csHaze, qw = 1, qh = 1, hw = 1, hh = 1, hazeWarmed = false;
   const build = (W, H) => {
     if (cloudTex) { cloudTex.dispose(); shaftTex.dispose(); hazeTex.dispose(); }
     qw = Math.ceil(W / 4); qh = Math.ceil(H / 4);
@@ -39,6 +39,7 @@ export function createFog(post, scene, atmo, shadows) {
     csHaze = computePass(engine, 'hazeShafts', hazeShaftCS, [['P', 'buffer', post.paramsBuf], ['depthTex', 'tex', post.depthTex],
       ['shadowData', 'buffer', shadows.shadowData], ['shadowMap0', 'tex', shadows.maps[0]], ['shadowMap1', 'tex', shadows.maps[1]],
       ['shadowMap2', 'tex', shadows.maps[2]], ['hazeOut', 'storageTex', hazeTex]]);
+    hazeWarmed = false;
     fog.cloudTex = cloudTex; fog.shaftTex = shaftTex; fog.hazeTex = hazeTex;
   };
   const fog = {
@@ -59,6 +60,10 @@ export function createFog(post, scene, atmo, shadows) {
     run() {
       if (noiseBuilt === 0) { if (csNoise.dispatch(64, 64, 1)) noiseBuilt = 1; }
       else if (noiseBuilt === 1) { if (csNoiseLo.dispatch(16, 16, 1)) noiseBuilt = 2; }
+      // This pass is normally dormant outside forests. Dispatch a single workgroup during
+      // loading so entering haze cannot create its pipeline in the middle of play. Retry
+      // while asynchronous shader compilation is pending, also with fog toggled off.
+      if (!hazeWarmed) hazeWarmed = csHaze.dispatch(1, 1, 1);
       if (!fog.on) return;
       cs.dispatch(Math.ceil(qw / 8), Math.ceil(qh / 8), 1);
       if (fog.haze.density > 1e-6 && fog.shaftsOn) csHaze.dispatch(Math.ceil(hw / 8), Math.ceil(hh / 8), 1);
