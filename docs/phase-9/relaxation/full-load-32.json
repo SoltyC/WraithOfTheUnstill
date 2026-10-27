@@ -1,20 +1,20 @@
 {
-  "date": "2026-10-27T20:08:10.030Z",
+  "date": "2026-10-27T20:30:35.360Z",
   "iterations": 32,
   "finePasses": 10,
   "frames": 240,
-  "seconds": 5.6406999999283585,
+  "seconds": 2.504399999976215,
   "activeBefore": 8,
   "activeAfter": 8,
   "jobs": 240,
-  "writes": 1146,
+  "writes": 588,
   "writesByKind": [
-    381,
-    77,
+    56,
+    168,
     0,
     0,
     0,
-    688,
+    364,
     0,
     0,
     0,
@@ -27,21 +27,36 @@
     0
   ],
   "pendingMax": 64,
-  "collisionReads": 36,
+  "collisionReads": 28,
   "speed": {
     "min": 5.2,
-    "max": 25.572153914547094,
-    "mean": 8.231289050910412
+    "max": 25.71394608879204,
+    "mean": 11.769743693874553
   },
   "samples": 239,
   "incomplete": 0,
+  "spikes": [
+    {
+      "sample": 203,
+      "frame": 707,
+      "ms": 0.5375999999999976,
+      "passes": 10
+    },
+    {
+      "sample": 218,
+      "frame": 722,
+      "ms": 0.5242880000000127,
+      "passes": 10
+    }
+  ],
   "fineGpuMs": {
-    "mean": 0.13145332217573044,
-    "p95": 0.14643199999999368,
-    "max": 0.14950399999999675
+    "mean": 0.1532315313807536,
+    "p95": 0.3717119999999987,
+    "max": 0.5375999999999976
   },
   "gpuErrors": 0,
   "late": [],
   "collisionErrors": 0,
+  "retirementErrors": 0,
   "note": "Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs. Human feel and sustained 1440p/60 are not assessed."
 }

@@ -47,6 +47,19 @@ describe('conservative granular relaxation', () => {
   });
 });
 describe('bounded relaxation scheduling', () => {
+  it('retires empty work and rejects delayed results after writes, reuse or restore', () => {
+    const q = createRelaxationQueue(1);
+    q.mark(0,0,0,0); q.take(-1000,-1000,1000,1000);
+    const old = q.generation;
+    q.mark(0,0,0,0); q.retire(0,old);
+    expect(q.take(-1000,-1000,1000,1000)).toBe(true);
+    q.mark(128,128,128,128); q.take(-1000,-1000,1000,1000);
+    q.retire(0,old); expect(q.take(-1000,-1000,1000,1000)).toBe(true);
+    q.retire(q.slot,q.generation); expect(q.take(-1000,-1000,1000,1000)).toBe(false);
+    q.reset(); q.mark(0,0,0,0); q.take(-1000,-1000,1000,1000);
+    q.retire(0,old); expect(q.take(-1000,-1000,1000,1000)).toBe(true);
+    q.retire(0,0); expect(q.take(-1000,-1000,1000,1000)).toBe(true);
+  });
   it('wakes restored ground on approach without refreshing idle work forever', () => {
     const q = createRelaxationQueue(); q.now = 1;
     q.wake(-1, -1);

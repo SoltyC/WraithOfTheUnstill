@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-27T20:34:25.958856+00:00",
+  "measurement": "Windows GPU Engine counter, before stopping the stale renderer",
+  "staleCapture": {
+    "browserPid": 81260,
+    "gpuPid": 97360,
+    "enginePercent": 47.53618080639773,
+    "profile": "wraith-sh-7342",
+    "previewPort": 4174,
+    "captureDirectory": "sand-raw8"
+  },
+  "currentBot": {
+    "browserPid": 101200,
+    "gpuPid": 25612,
+    "enginePercent": 40.478570179591635,
+    "previewPort": 4176
+  },
+  "action": "Stopped only the stale headless capture process tree; preserved all screenshot files. Other user applications were left running.",
+  "limitation": "An isolated single-renderer repeat still exceeded the 0.4 ms budget; removing this contention alone does not prove the gate passes."
+}

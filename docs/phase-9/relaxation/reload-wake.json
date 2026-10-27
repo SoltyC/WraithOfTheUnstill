@@ -1,13 +1,13 @@
 {
-  "date": "2026-10-27T19:45:57.160Z",
+  "date": "2026-10-27T20:28:02.171Z",
   "pages": 1,
   "before": {
-    "fine": 0.0001354217529296875,
-    "coarse": 0.00027823448181152344,
+    "fine": 0.0001373291015625,
+    "coarse": 0.0002808570861816406,
     "fineDisplaced": 1.69921875,
     "coarseDisplaced": 1.7060546875,
-    "fineRelief": 1.6990833282470703,
-    "coarseRelief": 1.7057764530181885,
+    "fineRelief": 1.6990814208984375,
+    "coarseRelief": 1.7057738304138184,
     "slot": 0,
     "stored": 0,
     "loading": 0
@@ -15,15 +15,15 @@
   "after": {
     "fine": 0,
     "coarse": 0,
-    "fineDisplaced": 1.29296875,
+    "fineDisplaced": 0.806640625,
     "coarseDisplaced": 0.7216796875,
-    "fineRelief": 1.29296875,
+    "fineRelief": 0.806640625,
     "coarseRelief": 0.7216796875,
     "slot": 0,
     "stored": 0,
     "loading": 0
   },
-  "jobs": 481,
+  "jobs": 480,
   "gpuErrors": 0,
   "late": [],
   "note": "In-memory snapshot/restore of actual packed GPU pages; no post-restore brush. This checks solver wake, not IndexedDB."

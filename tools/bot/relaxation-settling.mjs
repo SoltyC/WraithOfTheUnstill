@@ -25,9 +25,10 @@ const setup = await ev(`
 `);
 console.log(JSON.stringify({setup}));
 let elapsed = 0;
+const progressLog = [];
 for (let chunk = 0; chunk < 30 && elapsed < 35; chunk++) {
   const progress = await ev(`for(let i=0;i<120;i++)await new Promise(resolve=>requestAnimationFrame(resolve));return {elapsed:g.terrainState.time-w.settleCheck.start,jobs:g.terrainState.relaxation.jobs-w.settleCheck.jobs,pending:g.terrainState.relaxation.queue.pending};`);
-  elapsed = progress.elapsed; console.log(JSON.stringify({chunk,...progress}));
+  progressLog.push({chunk,...progress}); elapsed = progress.elapsed; console.log(JSON.stringify({chunk,...progress}));
 }
 if (elapsed < 35) throw new Error('Not enough simulation time for expiry check');
 const result = await ev(`
@@ -50,7 +51,7 @@ const result = await ev(`
  return {before:check.before,after,jobs,elapsed:ts.time-check.start,allMaxDegrees:Math.atan(maxSlope)*180/Math.PI,
    activeMaxDegrees:Math.atan(activeMax)*180/Math.PI,gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late};
 `);
-const report = { date: new Date().toISOString(), iterations, ...result, note: 'Real-time isolated mound; slope checked after the 30 s dirty lifetime, including diagonals. This is not an eight-enemy overlapping-write settling gate.' };
+const report = { date: new Date().toISOString(), iterations, ...result, progress: progressLog, note: 'Real-time isolated mound; slope checked after the 30 s dirty lifetime, including diagonals. This is not an eight-enemy overlapping-write settling gate.' };
 fs.writeFileSync('docs/phase-9/relaxation/settling-'+iterations+'.json', JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));
 if (report.activeMaxDegrees > 34.1 || report.gpuErrors || report.late.length) process.exitCode = 1;

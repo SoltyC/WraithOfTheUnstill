@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Real-time diagnostic: seeded maximum-speed surf, eight Shaped, normal terrain writers.
 import fs from 'node:fs';
-const iterations = Number(process.argv[2] || 8);
+import { RELAX_ITERATIONS } from '../../src/terrain/state/relaxation.js';
+const iterations = Number(process.argv[2] || RELAX_ITERATIONS);
 if (!Number.isInteger(iterations) || iterations < 2 || iterations > 64 || iterations % 2) throw new Error('Use an even iteration count from 2 to 64');
 const finePasses = 2 + 2 * Math.floor(iterations / 8) + iterations % 8;
 const base = process.env.WRAITH_URL || 'http://127.0.0.1:4176';
@@ -24,7 +25,7 @@ const result = await ev(`
  g.game.spawnShaped('skitter',4);g.game.spawnShaped('plateback',4);
  const activeBefore=g.shaped.slots.filter(s=>s.state!==0).length;
  const oldIterations=r.iterations,oldUpdate=r.update,oldStamp=ts.stamp,proto=GPUCommandEncoder.prototype,oldPass=proto.beginComputePass;
- const sampleMs=[],samplePasses=[],writes=new Uint32Array(16);
+ const sampleMs=[],samplePasses=[],writes=new Uint32Array(16),sampleStart=timer.count;
  let measuring=false,stampCount=0,speedMax=0,speedMin=Infinity,speedTotal=0,pendingMax=0;
  timer.active=true;timer.sampleEvery=1;timer.debugPasses=true;
  timer.byLabel=new Proxy(Object.create(null),{set(obj,key,value){
@@ -50,14 +51,15 @@ const result = await ev(`
  }
  await w.gpuStats.device.queue.onSubmittedWorkDone();for(let i=0;i<10;i++)await frame();
  timer.active=false;timer.debugPasses=false;timer.byLabel={};
+ const spikes=sampleMs.map((ms,i)=>({sample:i-sampleStart,frame:timer.frameOf[i%timer.frameOf.length],ms,passes:samplePasses[i]})).filter(v=>v.ms>=0.4);
  const samples=sampleMs.filter((_,i)=>samplePasses[i]===${finePasses}).sort((a,b)=>a-b),incomplete=samplePasses.filter(n=>n!==${finePasses}).length;
  return {iterations:${iterations},finePasses:${finePasses},frames:240,seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
    jobs:r.jobs-jobs0,writes:stampCount,writesByKind:Array.from(writes),pendingMax,collisionReads:ts.collision.reads-reads0,
-   speed:{min:speedMin,max:speedMax,mean:speedTotal/240},samples:samples.length,incomplete,
+   speed:{min:speedMin,max:speedMax,mean:speedTotal/240},samples:samples.length,incomplete,spikes,
    fineGpuMs:{mean:samples.reduce((a,b)=>a+b,0)/samples.length,p95:samples[Math.floor(samples.length*0.95)],max:samples.at(-1)},
-   gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late,collisionErrors:ts.collision.errors,
+   gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late,collisionErrors:ts.collision.errors,retirementErrors:r.activityErrors,
    note:'Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs. Human feel and sustained 1440p/60 are not assessed.'};
 `);
 fs.writeFileSync('docs/phase-9/relaxation/full-load-'+iterations+'.json', JSON.stringify({ date: new Date().toISOString(), ...result }, null, 2) + '\n');
 console.log(JSON.stringify(result, null, 2));
-if (result.activeBefore !== 8 || result.jobs < 200 || result.samples < 200 || result.incomplete || result.writes === 0 || result.gpuErrors || result.late.length || result.collisionErrors || result.fineGpuMs.max >= 0.4) process.exitCode = 1;
+if (result.activeBefore !== 8 || result.jobs < 200 || result.samples < 200 || result.incomplete || result.writes === 0 || result.gpuErrors || result.late.length || result.collisionErrors || result.retirementErrors || result.fineGpuMs.max >= 0.4) process.exitCode = 1;
