@@ -52,14 +52,16 @@ export function createStoneMass() {
   const self = {
     /** Shapes alive, the last query's displaced and depression parts, and the clock/heal scale (set by the owner). */
     count: 0, disp: 0, depr: 0, time: 0, healScale: 1,
+    /** Arguments of addRidge (cx, cz, dx, dz, hl, hw, H, rate), addCrater (cx, cz, hw, H, rate) and raise (H): doubles passed to a call box, so they come through here. */
+    arg: new Float64Array(8),
     /** Shape arrays for cover tests and the Frost combination (read only). */
     k,
     /** Record a ridge segment (capsule from (cx, cz) along (dx, dz), half length hl, footprint half-width hw, height H) → index. */
-    addRidge(cx, cz, dx, dz, hl, hw, H, rate) { return put(RIDGE, cx, cz, dx, dz, hl, hw, H, rate); },
+    addRidge() { return put(RIDGE); },
     /** Record a crater (centre, footprint radius hw, bowl depth H) → index. */
-    addCrater(cx, cz, hw, H, rate) { return put(CRATER, cx, cz, 1, 0, 0, hw, H, rate); },
+    addCrater() { return put(CRATER); },
     /** A later, taller stamp over the same segment (the swell): height H from now on. */
-    raise(i, H) { if (k.on[i]) k.H[i] = Math.max(k.H[i], H); },
+    raise(i) { if (k.on[i]) k.H[i] = Math.max(k.H[i], self.arg[0]); },
     /** Frozen shapes do not heal on the CPU either (the Frost combination re-stamps them). */
     freeze(i) { k.frozen[i] = 1; },
     clear() { k.on.fill(0); self.count = 0; head = 0; },
@@ -111,11 +113,12 @@ export function createStoneMass() {
       return disp - depr;
     },
   };
-  function put(kind, cx, cz, dx, dz, hl, hw, H, rate) {
-    const i = head; head = (head + 1) % MASS_MAX;
-    k.kind[i] = kind; k.on[i] = 1; k.cx[i] = cx; k.cz[i] = cz; k.dx[i] = dx; k.dz[i] = dz; k.hl[i] = hl; k.hw[i] = hw; k.H[i] = H;
-    k.rate[i] = rate; k.t0[i] = self.time; k.fac[i] = 1; k.frozen[i] = 0;
-    k.reach[i] = hl + hw * (kind === RIDGE ? RIDGE_END : RIM1);
+  function put(kind) {
+    const a = self.arg, i = head; head = (head + 1) % MASS_MAX;
+    k.kind[i] = kind; k.on[i] = 1; k.cx[i] = a[0]; k.cz[i] = a[1]; k.t0[i] = self.time; k.fac[i] = 1; k.frozen[i] = 0;
+    if (kind === RIDGE) { k.dx[i] = a[2]; k.dz[i] = a[3]; k.hl[i] = a[4]; k.hw[i] = a[5]; k.H[i] = a[6]; k.rate[i] = a[7]; }
+    else { k.dx[i] = 1; k.dz[i] = 0; k.hl[i] = 0; k.hw[i] = a[2]; k.H[i] = a[3]; k.rate[i] = a[4]; }
+    k.reach[i] = k.hl[i] + k.hw[i] * (kind === RIDGE ? RIDGE_END : RIM1);
     self.count++;
     return i;
   }
