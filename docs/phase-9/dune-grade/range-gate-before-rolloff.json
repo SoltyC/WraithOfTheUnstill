@@ -1,0 +1,192 @@
+{
+  "date": "2026-10-28T11:33:22.955Z",
+  "reports": [
+    {
+      "name": "p9d1b-range-north",
+      "file": "screenshots/dune-grade-gates/p9d1b-range-north.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        3000,
+        600,
+        -1100
+      ],
+      "biome": "dunes",
+      "wet": 0,
+      "restoration": {
+        "value": 1,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 154.48780248507646,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          0,
+          299,
+          19614,
+          37188,
+          0,
+          0
+        ],
+        "duneSamples": [
+          0,
+          299,
+          19614,
+          15459,
+          0,
+          0
+        ],
+        "sandSamples": 28493,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-range-south",
+      "file": "screenshots/dune-grade-gates/p9d1b-range-south.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2950,
+        550,
+        2050
+      ],
+      "biome": "frost",
+      "wet": 0,
+      "restoration": {
+        "value": 0.10588235294117647,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3249541,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 166.26606373337697,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          0,
+          4386,
+          19062,
+          25819,
+          1354,
+          80
+        ],
+        "duneSamples": [
+          0,
+          0,
+          19062,
+          20881,
+          1031,
+          0
+        ],
+        "sandSamples": 21963,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-range-east",
+      "file": "screenshots/dune-grade-gates/p9d1b-range-east.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        1200,
+        550,
+        900
+      ],
+      "biome": "meadow",
+      "wet": 0,
+      "restoration": {
+        "value": 0.37450980392156863,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3154772,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 163.11390439584977,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          0,
+          0,
+          20640,
+          25132,
+          0,
+          3450
+        ],
+        "duneSamples": [
+          0,
+          0,
+          18632,
+          21030,
+          0,
+          1823
+        ],
+        "sandSamples": 33993,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Depth32float copied from actual frame without a diagnostic pipeline. Reverse-Z sky=0; 3px erosion excludes TAA silhouettes. Opaque geometry mask includes props, not only terrain. Sand-clipped count classifies opaque pixels by the bake material beneath their reconstructed world position. Distance is actual GPU-depth Euclidean range, sampled every 8px; dune bins require >70% dune weight. Clipping threshold any RGB >=253. Foreground luma is a fixed 20–80% x / 55–95% y opaque crop. Captures are review copies of verified 2560x1440 renders."
+}

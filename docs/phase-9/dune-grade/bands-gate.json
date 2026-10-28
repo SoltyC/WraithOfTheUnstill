@@ -1,0 +1,192 @@
+{
+  "date": "2026-10-28T12:29:10.545Z",
+  "reports": [
+    {
+      "name": "p9d1b-bands-bands-normal",
+      "file": "screenshots/dune-grade-gates/p9d1b-bands-bands-normal.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2950,
+        550,
+        2050
+      ],
+      "biome": "frost",
+      "wet": 0,
+      "restoration": {
+        "value": 0.10588235294117647,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3250418,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 164.96776580260152,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          0,
+          4393,
+          19067,
+          25819,
+          1355,
+          79
+        ],
+        "duneSamples": [
+          0,
+          0,
+          19067,
+          20883,
+          1030,
+          0
+        ],
+        "sandSamples": 21965,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-bands-bands-no-shadow",
+      "file": "screenshots/dune-grade-gates/p9d1b-bands-bands-no-shadow.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2950,
+        550,
+        2050
+      ],
+      "biome": "frost",
+      "wet": 0,
+      "restoration": {
+        "value": 0.10588235294117647,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3250418,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 164.9698973977914,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          0,
+          4393,
+          19067,
+          25819,
+          1355,
+          79
+        ],
+        "duneSamples": [
+          0,
+          0,
+          19067,
+          20883,
+          1030,
+          0
+        ],
+        "sandSamples": 21965,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-bands-bands-no-rock",
+      "file": "screenshots/dune-grade-gates/p9d1b-bands-bands-no-rock.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2950,
+        550,
+        2050
+      ],
+      "biome": "frost",
+      "wet": 0,
+      "restoration": {
+        "value": 0.10588235294117647,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3250418,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 164.98194076637708,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          0,
+          4393,
+          19067,
+          25819,
+          1355,
+          79
+        ],
+        "duneSamples": [
+          0,
+          0,
+          19067,
+          20883,
+          1030,
+          0
+        ],
+        "sandSamples": 21965,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Depth32float copied from actual frame without a diagnostic pipeline. Reverse-Z sky=0; 3px erosion excludes TAA silhouettes. Opaque geometry mask includes props, not only terrain. Sand-clipped count classifies opaque pixels by the bake material beneath their reconstructed world position. Distance is actual GPU-depth Euclidean range, sampled every 8px; dune bins require >70% dune weight. Clipping threshold any RGB >=253. Foreground luma is a fixed 20–80% x / 55–95% y opaque crop. Captures are review copies of verified 2560x1440 renders."
+}

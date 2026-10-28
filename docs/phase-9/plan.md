@@ -152,6 +152,12 @@ The erg's near material now has CC0 scans, three-scale normals, self-shadowed ri
 
 **Review artifacts:** `docs/phase-9/sand-review.md`, `sand-metrics.json`, `material-audit/`; `screenshots/sand-wet-fix-1280/` and `screenshots/material-audit/`. **Not assessed:** sustained unlocked-PC 60 FPS/1% lows, human judgement in motion. D1b retains far field, desert grade and sandstone walls. Integrate as a squash excluding full-size raw capture iterations.
 
+### D1b — Done (material implementation, 2026-10-28)
+
+Independent dune restoration/grade, distance-normal retention and baked-rock sandstone are integrated. A dune-only hue-preserving LUT shoulder prevents sunset bloom clipping; zero dune weight retains frost/meadow output. Repetitive sine bands were rejected in favour of irregular restrained beds. Wet/dry foreground luma is 156.84→118.18 restored and 159.36→121.51 stilled; current 1440p depth-masked surface clipping is zero. Six measured far views contain 15,457 sampled dune points at 2–4 km, covering noon/golden/night and both restoration states. Canyon noon/dawn checks pass the material/error gates. Main 789 tests (784 tracked +5 local), build and cold 1440p check pass, with no late pipelines/errors.
+
+Fixed-scene 1440p GPU medians ~15.1 ms close, 11.3 ms mid, 12.6 ms canyon. NOT ASSESSED: sustained gameplay/1% lows, human aesthetics. D2 sharp crests, D7b canyon geometry, the cold-erg boundary and D5/D6 weather are separate unfinished work; the biome is not visually complete. Evidence: dune-grade-review.md and dune-grade/*.json.
+
 ### D2 — Dune geometry and avalanching sand (risky tech)
 
 - **Knife-edge crests:**

@@ -38,7 +38,7 @@ export async function createActors(g) {
   surfWake.surf = controller.surf;
   /** Frost restoration 0 (stilled) … 1 (restored): read by the wind, grade, spindrift and dust. */
   const { worldState: ws } = await import('../game/worldState.js');
-  const restoration = { value: ws.restoration.frost === 'restored' ? 1 : 0, frost: ws.restoration.frost === 'restored' ? 1 : 0, meadow: ws.restoration.meadow === 'restored' ? 1 : 0 };
+  const restoration = { value: ws.restoration.frost === 'restored' ? 1 : 0, frost: ws.restoration.frost === 'restored' ? 1 : 0, meadow: ws.restoration.meadow === 'restored' ? 1 : 0, dunes: ws.restoration.dunes === 'restored' ? 1 : 0 };
   // Frost bending (Phase 4): Sweep on a tap of Primary, Ribbon while held, Crystallize on Heavy.
   const frostMod = await import('../game/bending/frost.js');
   const frost = frostMod.createFrostBending({ ts: terrainState, fx: wraithView, ground, lights: content.clipmap.spellLights });
