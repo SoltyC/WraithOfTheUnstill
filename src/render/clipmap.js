@@ -94,7 +94,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
     uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', ...ENV_UNIFORMS],
-    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS, 'rockMask'],
     storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });

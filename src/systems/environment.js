@@ -92,21 +92,23 @@ export async function addEnvironmentSystems(g) {
   }
   // Grades (post/grades.js): the LUT is rebuilt only when the blended grade moves.
   const { blendGrade } = await import('../post/grades.js');
-  let lastGradeR = -1, lastGradeS = -1;
+  let lastGradeR=-1,lastGradeM=-1,lastGradeMR=-1,lastGradeD=-1,lastGradeDR=-1,lastGradeS=-1;
   // The land under the camera (biome weights, eased): which biome the player is in, and how much of
   // each one's restoration (and grade) applies here — borders blend.
-  let bwF = 1, bwM = 0, rMeadow = ws.restoration.meadow === 'restored' ? 1 : 0, rFrost = restoration.value, biomeT = 0;
+  let bwF = 1, bwM = 0, bwD = 0, rDunes = ws.restoration.dunes === 'restored' ? 1 : 0, rMeadow = ws.restoration.meadow === 'restored' ? 1 : 0, rFrost = restoration.value, biomeT = 0;
   loop.add({ name: 'restoration', update: () => {
     biomeT -= clock.realDt;
+    if(restoration.snap)biomeT=0;
     if (biomeT <= 0) {
       biomeT = 0.25;
       streamer.mqx = camera.position.x; streamer.mqz = camera.position.z; streamer.sampleBiome();
-      const k = pendingTp.active ? 1 : 0.35;
-      bwF += (streamer.bw0 - bwF) * k; bwM += (streamer.bw1 - bwM) * k;
-      ws.biome = bwM > bwF ? 'meadow' : 'frost';
+      const k = pendingTp.active || restoration.snap || g.capture ? 1 : 0.35;
+      bwF += (streamer.bw0 - bwF) * k; bwM += (streamer.bw1 - bwM) * k; bwD += (streamer.bw3-bwD)*k;
+      ws.biome = bwD>bwF && bwD>bwM ? 'dunes' : bwM > bwF ? 'meadow' : 'frost';
     }
     // A load or a photo spot sets the state outright (restoration.snap): no easing in.
-    if (restoration.snap) { restoration.snap = false; rFrost = ws.restoration.frost === 'restored' ? 1 : 0; rMeadow = ws.restoration.meadow === 'restored' ? 1 : 0; }
+    if (restoration.snap) { restoration.snap = false; rFrost = ws.restoration.frost === 'restored' ? 1 : 0; rMeadow = ws.restoration.meadow === 'restored' ? 1 : 0; rDunes=ws.restoration.dunes==='restored'?1:0; }
+    rDunes+=((ws.restoration.dunes==='restored'?1:0)-rDunes)*(1-Math.exp(-clock.realDt*1.5));
         rMeadow += ((ws.restoration.meadow === 'restored' ? 1 : 0) - rMeadow) * (1 - Math.exp(-clock.realDt * 1.5));
     const target = ws.restoration.frost === 'restored' ? 1 : 0;
     if (warden.active && warden.state === wardenMod.W.RELEASE) rFrost = Math.max(rFrost, warden.restore);
@@ -114,15 +116,17 @@ export async function addEnvironmentSystems(g) {
     if (warden.restore >= 1 && ws.restoration.frost !== 'restored') ws.restoration.frost = 'restored';
     // restoration.value: the restoration of the land here (frost and meadow by weight at the camera).
     const mW = bwM / Math.max(bwF + bwM, 1e-3);
-    restoration.value = rFrost + (rMeadow - rFrost) * mW;
-    restoration.frost = rFrost; restoration.meadow = rMeadow;
+    const dW=bwD/Math.max(bwF+bwM+bwD,1e-3);
+    restoration.value = (rFrost + (rMeadow - rFrost) * mW)*(1-dW)+rDunes*dW;
+    restoration.frost = rFrost; restoration.meadow = rMeadow; restoration.dunes=rDunes;
     const r = rFrost, gs = params.v.gradeStrength;
     // The ice halo (sky shader) belongs to the stilled air: gone with the first wind, hidden by a deck.
     env.env.artParams.y = Math.max(0, 1 - restoration.value * 1.6) * Math.max(0, 1 - weather.cover * 1.4);
-    const mBlend = bwM / Math.max(bwF + bwM, 1e-3), gKey = r + mBlend * 7.3 + rMeadow * 13.1;
-    if (Math.abs(gKey - lastGradeR) > 0.002 || gs !== lastGradeS) {
-      lastGradeR = gKey; lastGradeS = gs;
-      blendGrade(post.post.grade, r, gs, mBlend, rMeadow);
+    const mBlend = bwM / Math.max(bwF + bwM, 1e-3);
+    // Compare independent inputs; a weighted scalar key can cancel two simultaneous changes.
+    if (Math.abs(r-lastGradeR)>.002 || Math.abs(mBlend-lastGradeM)>.002 || Math.abs(rMeadow-lastGradeMR)>.002 || Math.abs(dW-lastGradeD)>.002 || Math.abs(rDunes-lastGradeDR)>.002 || gs!==lastGradeS) {
+      lastGradeR=r;lastGradeM=mBlend;lastGradeMR=rMeadow;lastGradeD=dW;lastGradeDR=rDunes;lastGradeS=gs;
+      blendGrade(post.post.grade, r, gs, mBlend, rMeadow,dW,rDunes);
       post.post.gradeDirty = true;
     }
   } });

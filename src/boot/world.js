@@ -50,6 +50,9 @@ export async function createWorld(g) {
   const atmosphere = createAtmosphere(scene, camera, streamer.buffers.biomeA, villageMask);
   const matLib = await matLibP;
   const content = createWorldScene(scene, streamer.buffers, atmosphere, matLib);
+  const { createRockMaskTexture }=await import('../render/rockMask.js');
+  content.clipmap.rockMask=createRockMaskTexture(scene,streamer);
+  content.clipmap.material.setTexture('rockMask',content.clipmap.rockMask);
   const [{ createShadows }, { bindShadows }] = await Promise.all([import('../render/shadows.js'), import('../render/shadowBindings.js')]);
   const shadows = createShadows(scene, camera, { clipmap: content.clipmap, capsule: content.capsule });
   bindShadows(content.clipmap.material, shadows);
