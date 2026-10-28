@@ -517,3 +517,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 - **The dropped marks show as** a terrain press, a candle-light, sparks and a mark on the map page, not on the compass (the compass is for quest goals; a new kind of goal there is a larger change).
 - **Fixed prices, no scaling,** no haggling, stock by quest condition, restock one a shrine rest: all of §11.4's "named Veiled with their own stock that grows as their quests are done".
 - `tools/capture/economy-pages.mjs` takes page shots of the DOM pages (the bot's canvas `shot` does not paint them).
+
+
+2026-10-28 — D1b: share the bake's unchanged 12 m strata scalar; use a one-time 4 MiB R8 baked rock mask rather than a ninth fragment storage binding. Replace repetitive sine bedding with irregular low-contrast beds. A dune-camera-weighted, hue-preserving soft LUT shoulder uses the existing parameter padding to prevent sunset bloom/grade clipping; zero dune weight preserves frost/meadow output. No geometry, exposure or biome weather changes. Evidence: docs/phase-9/dune-grade-review.md.

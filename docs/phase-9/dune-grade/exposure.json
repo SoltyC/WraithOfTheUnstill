@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-28T09:14:44.355Z",
+  "reports": [
+    {
+      "name": "p9d1b-close-12-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-close-12-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-close-17.8-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-close-17.8-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-close-23-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-close-23-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-mid-12-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-mid-12-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-mid-17.8-stilled",
+      "clippedPct": 0.814,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-mid-17.8-restored",
+      "clippedPct": 2.835,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-mid-23-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-mid-23-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-far-12-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-far-12-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-far-17.8-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-far-17.8-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-far-23-stilled",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    },
+    {
+      "name": "p9d1b-far-23-restored",
+      "clippedPct": 0.0,
+      "threshold": "any RGB channel >=253",
+      "scope": "whole frame, including sun/sky"
+    }
+  ]
+}

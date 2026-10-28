@@ -1,0 +1,192 @@
+{
+  "date": "2026-10-28T11:38:51.525Z",
+  "reports": [
+    {
+      "name": "p9d1b-isolate-normal",
+      "file": "screenshots/dune-grade-gates/p9d1b-isolate-normal.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "wet": 0,
+      "restoration": {
+        "value": 0.7196561026402608,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 22062,
+      "opaqueClippedPct": 0.9124801576305129,
+      "sandClippedPixels": 6108,
+      "wholeClippedPct": 3.271999782986111,
+      "foregroundMeanLuma": 111.23449133551304,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-isolate-no-lut",
+      "file": "screenshots/dune-grade-gates/p9d1b-isolate-no-lut.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "wet": 0,
+      "restoration": {
+        "value": 0.7196561026402608,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 20428,
+      "opaqueClippedPct": 0.8448982259122527,
+      "sandClippedPixels": 5791,
+      "wholeClippedPct": 2.4317220052083335,
+      "foregroundMeanLuma": 102.39094286893392,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-isolate-no-bloom",
+      "file": "screenshots/dune-grade-gates/p9d1b-isolate-no-bloom.png",
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "wet": 0,
+      "restoration": {
+        "value": 0.7196561026402608,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2416376,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 1.1893446180555556,
+      "foregroundMeanLuma": 83.37946715528814,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20298,
+          7199,
+          8360,
+          1748,
+          103,
+          2
+        ],
+        "duneSamples": [
+          20298,
+          7199,
+          2845,
+          1186,
+          2,
+          0
+        ],
+        "sandSamples": 27555,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Depth32float copied from actual frame without a diagnostic pipeline. Reverse-Z sky=0; 3px erosion excludes TAA silhouettes. Opaque geometry mask includes props, not only terrain. Sand-clipped count classifies opaque pixels by the bake material beneath their reconstructed world position. Distance is actual GPU-depth Euclidean range, sampled every 8px; dune bins require >70% dune weight. Clipping threshold any RGB >=253. Foreground luma is a fixed 20–80% x / 55–95% y opaque crop. Captures are review copies of verified 2560x1440 renders."
+}

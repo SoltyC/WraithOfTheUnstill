@@ -1,0 +1,216 @@
+{
+  "date": "2026-10-28T08:40:54.215Z",
+  "reports": [
+    {
+      "name": "p9d1b-close-12-restored",
+      "file": "screenshots/dune-grade-scout/p9d1b-close-12-restored.png",
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "size": [
+        1280,
+        720
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "grade": [
+        0.029999999329447746,
+        0.1599999964237213,
+        -0.05999999865889549,
+        1,
+        0.9200000166893005,
+        0.9700000286102295,
+        1.0800000429153442,
+        0,
+        1.024999976158142,
+        1,
+        0.9549999833106995,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wind": 0.6,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-mid-12-restored",
+      "file": "screenshots/dune-grade-scout/p9d1b-mid-12-restored.png",
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "size": [
+        1280,
+        720
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 0.7196561026402608,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "grade": [
+        0.21222352981567383,
+        0.017024613916873932,
+        -0.07121375948190689,
+        1,
+        0.9340171813964844,
+        0.9756068587303162,
+        1.0687862634658813,
+        0,
+        1.0123845338821411,
+        0.9985982775688171,
+        0.9732223749160767,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wind": 0.4385219151207902,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-far-12-restored",
+      "file": "screenshots/dune-grade-scout/p9d1b-far-12-restored.png",
+      "camera": [
+        2732.5,
+        467.997,
+        -111.658
+      ],
+      "size": [
+        1280,
+        720
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "grade": [
+        0.029999999329447746,
+        0.1599999964237213,
+        -0.05999999865889549,
+        1,
+        0.9200000166893005,
+        0.9700000286102295,
+        1.0800000429153442,
+        0,
+        1.024999976158142,
+        1,
+        0.9549999833106995,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wind": 0.6,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-far4-12-restored",
+      "file": "screenshots/dune-grade-scout/p9d1b-far4-12-restored.png",
+      "camera": [
+        3000,
+        1000,
+        -2700
+      ],
+      "size": [
+        1280,
+        720
+      ],
+      "biome": "meadow",
+      "restoration": {
+        "value": 0,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "grade": [
+        0.44999998807907104,
+        -0.10000000149011612,
+        0,
+        1,
+        0.9700000286102295,
+        0.9900000095367432,
+        1.0299999713897705,
+        0,
+        1,
+        0.9900000095367432,
+        0.9700000286102295,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wind": 0.024,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "p9d1b-wall-12-restored",
+      "file": "screenshots/dune-grade-scout/p9d1b-wall-12-restored.png",
+      "camera": [
+        1520,
+        110.3,
+        780
+      ],
+      "size": [
+        1280,
+        720
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 0.9117647058823529,
+        "frost": 0,
+        "meadow": 0,
+        "dunes": 1,
+        "snap": false
+      },
+      "grade": [
+        0.06705882400274277,
+        0.137058824300766,
+        -0.05470588058233261,
+        1,
+        0.9244117736816406,
+        0.9717646837234497,
+        1.0755882263183594,
+        0,
+        1.0227941274642944,
+        0.9991176724433899,
+        0.956323504447937,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "wind": 0.5491764705882353,
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "All render dimensions are recorded. Far/far4 are candidate views only; distance/readability requires image and range review before acceptance. Opposite Frost restoration is deliberate to detect desert-state inheritance."
+}

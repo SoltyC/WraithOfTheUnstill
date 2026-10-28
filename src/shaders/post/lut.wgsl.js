@@ -40,6 +40,15 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   c *= mix(vec3f(1.0), p1.xyz, sh * sh);
   let hi = smoothstep(0.25, 0.9, l2);
   c *= mix(vec3f(1.0), p2.xyz, hi);
+  // Dune sun haze can remain very bright after ACES and the warm grade. Preserve hue and
+  // headroom for grain with a smooth shoulder, rather than clipping individual channels.
+  // The owner clears pad.x outside dunes, preserving the accepted frost/meadow path.
+  let shoulder = smoothstep(0.0, 0.7, G_.pad.x);
+  let peak = max(c.r, max(c.g, c.b));
+  if (shoulder > 0.0 && peak > 0.82) {
+    let rolled = 0.82 + 0.12 * (1.0 - exp(-(peak - 0.82) / 0.12));
+    c *= mix(1.0, rolled / peak, shoulder);
+  }
   c = clamp(c, vec3f(0.0), vec3f(1.0));
   let outc = mix(inp, c, p0.w);
   textureStore(outLut, vec2u(id.x, id.y), vec4f(toSrgb(outc), 1.0));
