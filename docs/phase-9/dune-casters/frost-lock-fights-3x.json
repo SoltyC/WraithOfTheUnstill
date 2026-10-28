@@ -1,0 +1,500 @@
+{
+  "date": "2026-10-28T08:24:54.897Z",
+  "reports": [
+    {
+      "frozenTargets": 1,
+      "frozenArchetypes": [
+        "whirler"
+      ],
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ]
+      ],
+      "seconds": 1.9,
+      "killed": "1/1",
+      "killT": [
+        1.85
+      ],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 65,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        6.6,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 0,
+      "repeat": 1
+    },
+    {
+      "frozenTargets": 1,
+      "frozenArchetypes": [
+        "glasssworn"
+      ],
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "glasssworn",
+          1
+        ]
+      ],
+      "seconds": 1,
+      "killed": "1/1",
+      "killT": [
+        0.98
+      ],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 120,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        5.7,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 0,
+      "repeat": 1
+    },
+    {
+      "frozenTargets": 2,
+      "frozenArchetypes": [
+        "glasssworn",
+        "whirler"
+      ],
+      "maxBlind": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 2,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ],
+        [
+          "glasssworn",
+          1
+        ],
+        [
+          "skitter",
+          2
+        ]
+      ],
+      "seconds": 7.6,
+      "killed": "4/4",
+      "killT": [
+        7.63,
+        3.41,
+        5.47,
+        4.42
+      ],
+      "damageTaken": 25,
+      "hp": 75,
+      "swings": 12,
+      "heavies": 2,
+      "hits": 9,
+      "dmgDealt": 244,
+      "shatters": 2,
+      "glances": 0,
+      "dodges": 1,
+      "flowHits": [
+        7,
+        2,
+        2
+      ],
+      "flowTierSecs": [
+        9.7,
+        2.7,
+        0,
+        0
+      ],
+      "flowMax": 0,
+      "repeat": 1
+    },
+    {
+      "frozenTargets": 1,
+      "frozenArchetypes": [
+        "whirler"
+      ],
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ]
+      ],
+      "seconds": 1.8,
+      "killed": "1/1",
+      "killT": [
+        1.84
+      ],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 65,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        6.6,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 0,
+      "repeat": 2
+    },
+    {
+      "frozenTargets": 1,
+      "frozenArchetypes": [
+        "glasssworn"
+      ],
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "glasssworn",
+          1
+        ]
+      ],
+      "seconds": 1.2,
+      "killed": "1/1",
+      "killT": [
+        1.16
+      ],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 120,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        5.9,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 0,
+      "repeat": 2
+    },
+    {
+      "frozenTargets": 2,
+      "frozenArchetypes": [
+        "glasssworn",
+        "whirler"
+      ],
+      "maxBlind": 0.9873100000858307,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 2,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ],
+        [
+          "glasssworn",
+          1
+        ],
+        [
+          "skitter",
+          2
+        ]
+      ],
+      "seconds": 7.8,
+      "killed": "4/4",
+      "killT": [
+        7.85,
+        0.92,
+        5.68,
+        6.57
+      ],
+      "damageTaken": 8,
+      "hp": 92,
+      "swings": 16,
+      "heavies": 3,
+      "hits": 14,
+      "dmgDealt": 236,
+      "shatters": 2,
+      "glances": 0,
+      "dodges": 1,
+      "flowHits": [
+        11,
+        3,
+        2
+      ],
+      "flowTierSecs": [
+        7.6,
+        3.2,
+        1.8,
+        0
+      ],
+      "flowMax": 3,
+      "repeat": 2
+    },
+    {
+      "frozenTargets": 1,
+      "frozenArchetypes": [
+        "whirler"
+      ],
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ]
+      ],
+      "seconds": 1.8,
+      "killed": "1/1",
+      "killT": [
+        1.82
+      ],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 65,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        6.6,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 0,
+      "repeat": 3
+    },
+    {
+      "frozenTargets": 1,
+      "frozenArchetypes": [
+        "glasssworn"
+      ],
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "glasssworn",
+          1
+        ]
+      ],
+      "seconds": 1.1,
+      "killed": "1/1",
+      "killT": [
+        1.1
+      ],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 104,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        5.8,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 1,
+      "repeat": 3
+    },
+    {
+      "frozenTargets": 2,
+      "frozenArchetypes": [
+        "glasssworn",
+        "whirler"
+      ],
+      "maxBlind": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 2,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ],
+        [
+          "glasssworn",
+          1
+        ],
+        [
+          "skitter",
+          2
+        ]
+      ],
+      "seconds": 8.1,
+      "killed": "4/4",
+      "killT": [
+        8.06,
+        0.9,
+        5.95,
+        5.95
+      ],
+      "damageTaken": 17,
+      "hp": 83,
+      "swings": 13,
+      "heavies": 2,
+      "hits": 9,
+      "dmgDealt": 238,
+      "shatters": 2,
+      "glances": 0,
+      "dodges": 3,
+      "flowHits": [
+        7,
+        2,
+        2
+      ],
+      "flowTierSecs": [
+        11.3,
+        1.5,
+        0,
+        0
+      ],
+      "flowMax": 1,
+      "repeat": 3
+    }
+  ]
+}

@@ -32,7 +32,7 @@ describe('Whirler and Glass-sworn material answers',()=>{
     s.state=S.TELEGRAPH;s.t=.3;step(1);shaped.freeze(i,3);step(1);const spin=s.spin;step(20);expect(s.spin).toBe(spin);expect(s.state).toBe(S.FROZEN);
     const o=i*96*16,xyz=Array.from(shaped.chunks.slice(o,o+3));shaped.damage(i,1e9,true,0,0);expect(Array.from(s.st.dx).every(Number.isFinite)).toBe(true);
     expect([s.st.dx[0],s.st.dy[0],s.st.dz[0]]).toEqual(xyz);expect(s.state).toBe(S.FALLING);
-    const width=shaped.chunks[(i*96+8)*16+3];step(1);expect(shaped.chunks[(i*96+8)*16+3]).toBeCloseTo(width,5);
+    const width=shaped.chunks[(i*96+8)*16+3];step(1);expect(shaped.chunks[(i*96+8)*16+3]).toBeCloseTo(width,5);expect(shaped.chunks[(i*96+8)*16+14]).toBe(2);
   });
   it('a real combat Vortex reverses and pins the Whirler without requiring a kill',()=>{
     const w=world('staff',{},null,{gale:true}),i=target(w,'whirler',5),s=w.shaped.slots[i];

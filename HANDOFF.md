@@ -1,5 +1,7 @@
 # Handoff — 2026-10-27 (full)
 
+> **Latest D9b review — 2026-10-28:** 3/3 staff/Frost clears each single/new mixed fight; both alternate live material answers verified; corrected 420-frame film and five cold captures have zero GPU errors/late pipelines. 786 tests/build pass. Frozen debris keeps size/material. Full allocations, sustained performance and night/storm/surf-speed readability remain open, so D9b remains unintegrated on claude/dune-shaped. D1b grade work has begun independently on codex/dune-grade; its visual review is pending. See docs/phase-9/dune-casters-review.md.
+
 > **D9b implementation checkpoint — 2026-10-28:** Whirler/Glass-sworn code, bounded dust devils and powder, material answers, bestiary and eight regressions are built in /home/sol/wraith-shaped on claude/dune-shaped. 786 tests/build pass. Cold 1280 captures and input-driven Frost/staff clears have zero GPU errors/late pipelines; 1440p eight-caster powder cost is ~0.68–0.69 ms. D9b is not integrated: debris-size fix/frozen-glass shader need fresh GPU/film review; repeated balance, alternative live answers and full allocations remain open (15 GC/100k mixed frames). Read docs/phase-9/dune-casters-review.md. D2 stays disabled on codex/dune-relaxation, pushed through 67597d8; recording is stopped under the user's latest instruction. Earlier pending-approval text is historical.
 
 ## Current continuation — 2026-10-28 (supersedes branch status below)

@@ -263,7 +263,7 @@ export function createRigState(rig) {
   return {
     rig,
     // Last displayed sizes, including a bound Whirler pillar or a rising body.
-    poseSize:new Float32Array(rig.size),
+    poseSize:new Float32Array(rig.size), frozenPose:false,
     // Debris (after death): world position, velocity, rest flag.
     dx: new Float64Array(n), dy: new Float64Array(n), dz: new Float64Array(n),
     dvx: new Float64Array(n), dvy: new Float64Array(n), dvz: new Float64Array(n),
@@ -312,6 +312,7 @@ function boneFrame(b, rig, c) {
 /** Hurt flash (0..1) rides in each record's kind as a fraction (kind + 0.45 × hurt). */
 export function writeAlive(b, st, out, rec, rise, glow, hurt = 0) {
   const rig = st.rig;
+  st.frozenPose=glow>1.5;
   const dune = rig.plate1 > 0, sK = st.seamK;
   for (let c = 0; c < rig.count; c++) {
     if (dune && st.plateOff && c >= rig.plate0 && c < rig.plate1) continue;     // the plate is off: its chunks fly on their own (stepPlate)
@@ -376,7 +377,7 @@ export function writeFall(st, out, rec, dt, sink, ground) {
     out[o] = st.dx[c]; out[o + 1] = st.dy[c] - sink * st.poseSize[c * 3 + 1] * 1.2; out[o + 2] = st.dz[c]; out[o + 3] = st.poseSize[c * 3] * sc;
     out[o + 4] = st.fwd[c * 3]; out[o + 5] = st.fwd[c * 3 + 1]; out[o + 6] = st.fwd[c * 3 + 2]; out[o + 7] = st.poseSize[c * 3 + 1] * sc;
     out[o + 8] = st.up[c * 3]; out[o + 9] = st.up[c * 3 + 1]; out[o + 10] = st.up[c * 3 + 2]; out[o + 11] = st.poseSize[c * 3 + 2] * sc;
-    out[o + 12] = rig.cseed[c]; out[o + 13] = rig.kind[c]; out[o + 14] = 0; out[o + 15] = 1 - sink;
+    out[o + 12] = rig.cseed[c]; out[o + 13] = rig.kind[c]; out[o + 14] = st.frozenPose ? 2 : 0; out[o + 15] = 1 - sink;
   }
 }
 

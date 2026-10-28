@@ -1,5 +1,7 @@
 # Phase 9 execution tracker
 
+> **Latest D9b review — 2026-10-28:** 3/3 staff/Frost clears each single/new mixed fight; both alternate live material answers verified; corrected 420-frame film and five cold captures have zero GPU errors/late pipelines. 786 tests/build pass. Frozen debris keeps size/material. Full allocations, sustained performance and night/storm/surf-speed readability remain open, so D9b remains unintegrated on claude/dune-shaped. D1b grade work has begun independently on codex/dune-grade; its visual review is pending. See docs/phase-9/dune-casters-review.md.
+
 User requested an active goal on 2026-10-27: finish the remaining HANDOFF work, including captures, bot play, integration and pushes. Keep user-only feel/acceptance gates explicit. The primary implements most changes; Terra and Luna may handle scoped work. Do not claim completion until the agent-verifiable list is done.
 
 ## Current work (2026-10-28)
