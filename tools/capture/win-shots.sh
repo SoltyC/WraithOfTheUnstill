@@ -19,6 +19,7 @@ curl -sf -o /dev/null http://localhost:${PORT:-4173}/ || { echo "preview server 
 
 killChrome() {
   powershell.exe -NoProfile -Command "Get-CimInstance Win32_Process -Filter \"name='chrome.exe'\" | Where-Object { \$_.CommandLine -match 'wraith-shots-${PORT:-4173}-' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue }" >/dev/null 2>&1
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w tools/winchrome/cleanup-profiles.ps1)" -Prefix "wraith-shots-${PORT:-4173}-" >/dev/null 2>&1
 }
 trap killChrome EXIT
 trap 'exit 130' INT

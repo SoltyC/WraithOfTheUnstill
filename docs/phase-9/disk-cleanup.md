@@ -1,0 +1,9 @@
+# Disk cleanup continuation — 2026-10-28
+
+The user clarified that disposable data should be cleared on the normal C: drive rather than moved to D:. All temporary automation profiles from the short-lived D: archive and D: test root have been deleted; empty task-created directories were removed. The existing unrelated local-model installation directory was not touched.
+
+Inventory found ~121.75 GiB in the user's Temp directory, mostly old Wraith headless Chrome profiles, plus 4.41 GiB of NVIDIA DX cache. Cleanup selects only inactive Wraith bot/shots/sh/bench profile names with Chrome Local State and Default metadata, validates absolute paths below the intended Temp root, and skips reparse points and active profiles. Personal Chrome profiles, downloads, source files and game captures are outside this scope. 561 profiles were selected; final free-space numbers will follow completion. NVIDIA cache was left intact because clearing the stale automation data provides ample room without forcing shader recompilation.
+
+Medal's registered per-user Update.exe --uninstall --silent completed with exit 0; the install directory and uninstall entry are gone. Adobe Creative Cloud remains installed, and C:\adobeTemp (~5.60 GiB) is ACL-protected: Users have read/execute while Administrators/TrustedInstaller control removal. No new elevation or security-setting change is assumed.
+
+The underlying leak is fixed for future runs: bot/play.sh and capture/win-shots.sh invoke a bounded PowerShell profile cleaner after terminating their matching browser processes. The helper only accepts wraith-bot-<port>- or wraith-shots-<port>- prefixes, skips active profiles, checks Chrome metadata and refuses paths outside LocalAppData/Temp. Native Windows filesystem smoke test passes: owned fixture removed, unrelated fixture preserved, malformed prefix rejected. Both shell scripts pass bash -n and git diff --check. No trailer code or output changed.
