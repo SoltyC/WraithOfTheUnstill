@@ -553,3 +553,6 @@ Then update this file. If `data/photo-spots.json` conflicts, take main's file an
 | `/home/sol/wraith-shaped` | `claude/dune-shaped` | 4175 | §5.3, barely started |
 
 No servers or agents are running.
+
+
+28 October D1b checkpoint: `codex/dune-grade` at `69f8bb8` (worktree `/home/sol/wraith-dune-grade`) now includes distance-normal retention and sandstone restricted to the baked rock mask; the initial slope-only bands were rejected. Shared 12 m strata value leaves the bake unchanged. Full suite 783 passes and production build passes; 5 cold scout + 18 lighting-matrix views at 1280×720 have zero GPU errors/late compilation. Sixteen matrix frames have no RGB channel >=253; sunset-facing mid frames measure 0.814% / 2.835%, including sun/sky. Still IN PROGRESS, unintegrated: wet-sand regression, terrain-only sunset clipping, a measured unobstructed 2–4 km view, sustained target-resolution timing and human aesthetics. Canyon sawteeth remain D7b geometry. See its `docs/phase-9/dune-grade-review.md` and JSON/captures. Bot stopped and C: profile cleared; no temporary data remains on D:. C: free space verified about 121 GiB; Medal absent. D2/D9b gates remain unchanged.
