@@ -1,0 +1,212 @@
+{
+  "date": "2026-10-28T20:52:03.999Z",
+  "solver": true,
+  "wet": 0,
+  "frozen": true,
+  "wetMeasured": 0,
+  "frameMs": {
+    "samples": 180,
+    "mean": 15.959999999735091,
+    "p99": 18.399999976158142,
+    "max": 19.5
+  },
+  "gpuMs": {
+    "samples": 179,
+    "mean": 15.938821409001697,
+    "p99": 16.507423400878906,
+    "max": 16.626367568969727
+  },
+  "start": [
+    1900,
+    150.5782928466797,
+    900
+  ],
+  "end": [
+    1900,
+    150.21390410505126,
+    921.0473450105819
+  ],
+  "seconds": 3.0851000000238926,
+  "frames": 180,
+  "active": 180,
+  "grounded": 180,
+  "peak": 11.002943632846247,
+  "stamps": 0,
+  "grains": 0,
+  "materials": [
+    0,
+    180,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "collision": {
+    "covered": 180,
+    "maxAge": 0.14780000007153404,
+    "errors": 0
+  },
+  "samples": [
+    {
+      "i": 0,
+      "time": 33.17773333330944,
+      "pos": [
+        1900,
+        150.57833726309843,
+        900.0013551556882
+      ],
+      "speed": 0.10831658975424976,
+      "modelSpeed": 0.10831658975424976,
+      "throttle": 0,
+      "normal": [
+        0.09855627870527105,
+        0.9945824849045038,
+        -0.03305057713491988
+      ],
+      "heading": 0,
+      "material": 1,
+      "active": true,
+      "lean": 0,
+      "grounded": true,
+      "blend": 0.09516258196404041
+    },
+    {
+      "i": 30,
+      "time": 33.63663333328562,
+      "pos": [
+        1900,
+        150.59923433686566,
+        900.6944951154186
+      ],
+      "speed": 2.7739691100572226,
+      "modelSpeed": 2.7739691100572226,
+      "throttle": 1,
+      "normal": [
+        0.10077200877335557,
+        0.9945906460479333,
+        -0.025188271908513585
+      ],
+      "heading": 0,
+      "material": 1,
+      "active": true,
+      "lean": 0,
+      "grounded": true,
+      "blend": 0.9421556791251615
+    },
+    {
+      "i": 60,
+      "time": 34.108133333285636,
+      "pos": [
+        1900,
+        150.62064109472544,
+        902.5836959816227
+      ],
+      "speed": 5.07588080160872,
+      "modelSpeed": 5.07588080160872,
+      "throttle": 1,
+      "normal": [
+        0.07919648212049585,
+        0.99685849609477,
+        -0.001027610534956025
+      ],
+      "heading": 0,
+      "material": 1,
+      "active": true,
+      "lean": 0,
+      "grounded": true,
+      "blend": 0.9966540345425288
+    },
+    {
+      "i": 90,
+      "time": 34.5885333332618,
+      "pos": [
+        1900,
+        150.56219699843726,
+        905.4900832600453
+      ],
+      "speed": 7.0871899354371815,
+      "modelSpeed": 7.0871899354371815,
+      "throttle": 1,
+      "normal": [
+        0.06840586951095802,
+        0.9971224477139884,
+        0.03267202597504334
+      ],
+      "heading": 0,
+      "material": 1,
+      "active": true,
+      "lean": 0,
+      "grounded": true,
+      "blend": 0.999806454900442
+    },
+    {
+      "i": 120,
+      "time": 35.072333333333326,
+      "pos": [
+        1900,
+        150.46786418142585,
+        909.4140556402278
+      ],
+      "speed": 8.74926935547943,
+      "modelSpeed": 8.74926935547943,
+      "throttle": 1,
+      "normal": [
+        0.12963585700897495,
+        0.991346103934368,
+        0.020674786376114074
+      ],
+      "heading": 0,
+      "material": 1,
+      "active": true,
+      "lean": 0,
+      "grounded": true,
+      "blend": 0.9999898699064015
+    },
+    {
+      "i": 150,
+      "time": 35.560533333261795,
+      "pos": [
+        1900,
+        150.38447708974613,
+        913.9628288814467
+      ],
+      "speed": 9.992605010428472,
+      "modelSpeed": 9.992605010428472,
+      "throttle": 1,
+      "normal": [
+        0.13481101731874262,
+        0.9908268240248472,
+        0.009391187481906916
+      ],
+      "heading": 0,
+      "material": 1,
+      "active": true,
+      "lean": 0,
+      "grounded": true,
+      "blend": 0.9999994426096307
+    }
+  ],
+  "output": [
+    2560,
+    1440
+  ],
+  "internal": [
+    1792,
+    1008
+  ],
+  "renderScale": 0.7,
+  "gpuErrors": 0,
+  "late": [],
+  "file": "screenshots/d3-first-input-surface-frozen-final/after-run.png",
+  "note": "Normal Traverse/forward inputs from rest, optional right carve,recorded number of real rAF frames on actual dunes. Explicit diagnostic sand grant; solver flag recorded; solver disabled afterward. Traversal reset to rest with fixed body/camera yaw0; no positive speed or active-state injection. Not three authored slip faces, whole persistence, performance, allocation or human-feel acceptance."
+}

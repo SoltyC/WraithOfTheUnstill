@@ -532,3 +532,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D3 wake prototype: use one material-selected PLOUGH writer/FX pool, keep snow tuning/placement. Sand's swept cap trails outside the fine foot-normal stencil (1.65×half-width+0.30m) so the surfer does not continually climb its own freshly raised front lip; collision/ground normals stay enabled and unchanged. Controlled600-frame actual-input peak5.05→13.36m/s with collision;828tests/build. Eight-second diagnostic film reviewed in samples, no human/whole-graphics/whole-performance signoff. Sheets/crest streams/audio/wet-frozen/persistence/three-face runs remain open. See docs/phase-9/sand-surf-review.md.
+
+
+2026-10-29 — D3 surface response: feed global weather wetness through shared wake owner fields; wet loose spray falls to zero and cut depth eases to55%. Use the existing collision snapshot's spare fourth float for frozen fraction (one extra compute binding to existing fine1, no new buffer/readback size/save format). GPU PLOUGH preserves frozen sand crust; covered CPU wake skips cuts/spray and never leaves a stale shared brush program. Snow unchanged.830tests/build, five-point GPU frozen/dry oracle and short actual-input wet/frozen runs pass; disabled/missing snapshot coverage, local-only wet patches, whole D3/D2/D12 gates remain open.

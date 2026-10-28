@@ -35,7 +35,7 @@ export function addWraithSystem(g) {
     if (game.wraithHeld || game.pendingBend !== null || game.pendingWeapon !== null) return;
     surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded;
     surfWake.enabled = toggles.on.footprints !== false;
-    surfWake.update();
+    surfWake.wet = weather.wet; surfWake.update();
     wraithView.update();
     wraithFootfalls();
   } });
@@ -67,7 +67,7 @@ export function addWraithSystem(g) {
       w.time = clock.simTime - (spec.seconds - surfRoll.t); wraithView.time = w.time;
       w.surf = sf.blend; w.surfLean = sf.lean; w.glide = gl.blend; w.glideBank = gl.bank;
       surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded; surfWake.enabled = true;
-      surfWake.update();
+      surfWake.wet = weather.wet; surfWake.update();
       wraithView.update();
       surfRoll.t += dt;
     }

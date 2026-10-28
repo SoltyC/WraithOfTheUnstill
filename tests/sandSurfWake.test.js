@@ -2,13 +2,13 @@ import {describe,it,expect} from 'vitest';
 import {Surf} from '../src/character/surf.js';
 import {createSurfWake} from '../src/character/surfWake.js';
 import {FX_SPRAY,SPRAY_LIFE} from '../src/shaders/wraithFx.wgsl.js';
-function make(material,speed,lat,flow=0){
+function make(material,speed,lat,flow=0,wet=0,frozen=0){
  const surf=new Surf();surf.material=material;surf.sandUnlocked=true;surf.selectSurface();
  surf.active=true;surf.speed=speed;surf.blend=1;surf.latAccel=lat;
- const stamps=[],ts={stamp(){stamps.push({x:this.bx,z:this.bz,halfLength:this.bl,width:this.bw,depth:this.bd,berm:this.bberm,bias:this.bbias,kind:this.bk});}};
+ const stamps=[],ts={collision:{view:{frozen,sample(){return true;}}},stamp(){stamps.push({x:this.bx,z:this.bz,halfLength:this.bl,width:this.bw,depth:this.bd,berm:this.bberm,bias:this.bbias,kind:this.bk});}};
  const fx={count:0,emit(){this.count++;}},wake=createSurfWake(ts,fx);
- wake.surf=surf;wake.grounded=true;wake.enabled=true;wake.x=1900;wake.z=900;wake.y=150;wake.flow=flow;
- wake.update();wake.z+=.5;wake.update();return {stamps,fx,wake};
+ wake.surf=surf;wake.grounded=true;wake.enabled=true;wake.x=1900;wake.z=900;wake.y=150;wake.flow=flow;wake.wet=wet;
+ wake.update();wake.z+=.5;wake.update();return {stamps,fx,wake,ts};
 }
 describe('material-specific shared surf wake',()=>{
  it('preserves the snow groove and gives sand a wider shallower cut with a heavier berm',()=>{
@@ -29,6 +29,14 @@ describe('material-specific shared surf wake',()=>{
   const {fx}=make(1,32,11,3);
   expect(fx.count).toBeGreaterThan(20);expect(fx.count).toBeLessThanOrEqual(32);
   expect(fx.count*60*SPRAY_LIFE).toBeLessThan(FX_SPRAY);
+ });
+ it('damps wet sand cuts and loose spray, suppresses frozen cuts, and preserves snow',()=>{
+  const dry=make(1,20,11),damp=make(1,20,11,0,.5),wet=make(1,20,11,0,1),ice=make(1,20,11,0,0,1);
+  expect(damp.fx.count).toBeLessThan(dry.fx.count);expect(damp.fx.count).toBeGreaterThan(0);
+  expect(wet.fx.count).toBe(0);expect(wet.stamps[0].depth).toBeCloseTo(dry.stamps[0].depth*.55,12);
+  expect(ice.fx.count).toBe(0);expect(ice.stamps).toHaveLength(0);expect(ice.ts.bk).toBeUndefined();
+  expect(make(0,20,15,0,1,1).stamps[0].depth).toBeCloseTo(.29,12);
+  expect(make(0,20,15,0,1,1).fx.count).toBe(make(0,20,15).fx.count);
  });
  it('does not connect teleports or inactive traversal with a long scar',()=>{
   const {wake,stamps}=make(1,20,0);const before=stamps.length;

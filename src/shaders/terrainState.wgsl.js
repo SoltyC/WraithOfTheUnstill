@@ -246,7 +246,10 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let hsh = cellHash(p, 0.03);
   // Turf (BRIEF §4.4: frost on grass = frosted, brittle): the sod barely gives — a quarter of the
   // depth, little thrown mass — the blades are laid flat, and frost replaces slush and wetness.
-  let turf = materialAt(p.x, p.y) == 3u;
+  let material = materialAt(p.x, p.y);
+  let turf = material == 3u;
+  // Frozen sand holds its crust under a surf/Sweep plough, including before CPU readback.
+  if (program == ${BRUSH.PLOUGH}u && (material == 1u || material == 6u) && t.s.z > 0.5) { return; }
   let give = select(1.0, 0.25, turf);
   if (program == ${BRUSH.PRESS}u) {
     // Footprint: a near-flat floor; the displaced mass rises as a granular berm (≈45 % of the
