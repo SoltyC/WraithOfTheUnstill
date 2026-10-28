@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-28T12:44:59.888Z",
+  "size": [
+    2560,
+    1440
+  ],
+  "post": [
+    2560,
+    1440
+  ],
+  "biome": "dunes",
+  "restoration": {
+    "value": 0.9999999999999982,
+    "frost": 0,
+    "meadow": 0,
+    "dunes": 0.9999999999999982
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Cold main launch after D1b merge; close sand spot; 789 tests (784 tracked +5 preserved local-LLM tests) and production build pass. Human/full-world gates unchanged."
+}
