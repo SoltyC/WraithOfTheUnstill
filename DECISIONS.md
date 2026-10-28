@@ -529,3 +529,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D3 controller prototype: keep one Surf/CapsuleController and static per-material tuning. Snow values preserved; sand1/washed sand6 stay locked until a future explicit Walker grant. Prototype sand forward flat14m/s, cap32,1.5g slope coupling,11m/s2 grip,0.52rad max lean. Lower-cap transitions and glide landing carry momentum. Owner-field hot calls replace numeric argument calls; wrappers remain for diagnostics.824tests/build pass, no target-GPU/feel/graphics acceptance. D2 remains disabled; its data-path stress must later cover32m/s. See sand-surf-review.md.
+
+
+2026-10-29 — D3 wake prototype: use one material-selected PLOUGH writer/FX pool, keep snow tuning/placement. Sand's swept cap trails outside the fine foot-normal stencil (1.65×half-width+0.30m) so the surfer does not continually climb its own freshly raised front lip; collision/ground normals stay enabled and unchanged. Controlled600-frame actual-input peak5.05→13.36m/s with collision;828tests/build. Eight-second diagnostic film reviewed in samples, no human/whole-graphics/whole-performance signoff. Sheets/crest streams/audio/wet-frozen/persistence/three-face runs remain open. See docs/phase-9/sand-surf-review.md.
