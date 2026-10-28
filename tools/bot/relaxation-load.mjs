@@ -18,6 +18,7 @@ async function ev(js) {
 }
 const result = await ev(`
  const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+ const canvas=g.engine.getRenderingCanvas();canvas.style.width='2560px';canvas.style.height='1440px';g.engine.resize();
  g.arm.setFree(false);g.game.teleport(1900,900);
  for(let i=0;i<600&&!g.game.worldSettled();i++)await frame();
  g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();
@@ -73,7 +74,7 @@ const result = await ev(`
  const samples=sampleMs.filter((_,i)=>samplePasses[i]===${finePasses}).sort((a,b)=>a-b),incomplete=samplePasses.filter(n=>n!==${finePasses}).length;
  const combined=sampleCombined.filter(Number.isFinite).sort((a,b)=>a-b);
  const combinedPeak=sampleCombined.indexOf(combined.at(-1));
- return {combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:26},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
+ return {renderSize:{width:g.engine.getRenderWidth(),height:g.engine.getRenderHeight()},combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:26},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
    jobs:r.jobs-jobs0,writes:stampCount,writesByKind:Array.from(writes),pendingMax,collisionReads:ts.collision.reads-reads0,
    speed:{min:speedMin,max:speedMax,mean:speedTotal/${frames}},samples:samples.length,incomplete,spikes,maxSampleStages:sampleStages[sampleMs.indexOf(Math.max(...sampleMs.filter(Number.isFinite)))],
    fineGpuMs:{mean:samples.reduce((a,b)=>a+b,0)/samples.length,p95:samples[Math.floor(samples.length*0.95)],max:samples.at(-1)},
