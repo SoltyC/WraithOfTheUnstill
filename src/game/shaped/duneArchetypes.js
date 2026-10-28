@@ -1,6 +1,17 @@
 // Six-legged dune Shaped, scaled from the same procedural skeleton as the frost creatures.
 const legs = (upper, lower, reach) => [0, 1, 2].flatMap((at) => [-1, 1].map((side) => ({ at, side, upper, lower, reach, kneeBack: at > 0, group: (at + (side > 0 ? 1 : 0)) % 2 })));
 export const DUNE_ARCHETYPES = {
+  whirler: {
+    shape: { spine:3,spacing:.28,hip:1.1,legs:[],tail:0,tailSpacing:.2,headUp:.2,stride:1,swing:.2,lift:.1,maxSpeed:3.2,accel:7,turnRate:3 },
+    health:65,chunks:96,rig:{variant:'whirler'},role:'ranged',keep:9,shardDamage:8,knock:1.2,material:'dune',
+  },
+  glasssworn: {
+    shape: { spine:3,spacing:.5,hip:1.35,legs:[
+      {at:1,side:-1,upper:.8,lower:.85,reach:.38,kneeBack:true,group:0},
+      {at:1,side:1,upper:.8,lower:.85,reach:.38,kneeBack:true,group:1}],
+      tail:0,tailSpacing:.2,headUp:.35,stride:1.1,swing:.4,lift:.18,maxSpeed:6,accel:10,turnRate:3 },
+    health:120,chunks:96,rig:{variant:'glass'},role:'flank',poise:22,armour:.4,knock:.7,material:'dune',
+  },
   skitter: {
     shape: { spine: 4, spacing: 0.28, hip: 0.55, legs: legs(0.32, 0.34, 0.26), tail: 3, tailSpacing: 0.17, headUp: 0.08, stride: 0.55, swing: 0.24, lift: 0.1, maxSpeed: 7.5, accel: 14, turnRate: 4.5 },
     health: 40, chunks: 96, rig: { girth: 0.55, leg: 0.13, head: 0.42, variant: 'skitter' }, role: 'flank', knock: 2.2, material: 'dune',

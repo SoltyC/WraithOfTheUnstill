@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-28T08:15:04.366Z",
+  "reports": [
+    {
+      "frozenTargets": 1,
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ]
+      ],
+      "seconds": 1.8,
+      "killed": "1/1",
+      "killT": [],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 65,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        6.6,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 0
+    },
+    {
+      "frozenTargets": 1,
+      "maxBlind": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "glasssworn",
+          1
+        ]
+      ],
+      "seconds": 0.9,
+      "killed": "1/1",
+      "killT": [],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 2,
+      "heavies": 1,
+      "hits": 1,
+      "dmgDealt": 118,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        0,
+        1,
+        1
+      ],
+      "flowTierSecs": [
+        5.7,
+        0,
+        0,
+        0
+      ],
+      "flowMax": 1
+    },
+    {
+      "frozenTargets": 2,
+      "maxBlind": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 2,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "mixed",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ],
+        [
+          "glasssworn",
+          1
+        ],
+        [
+          "skitter",
+          2
+        ]
+      ],
+      "seconds": 11.6,
+      "killed": "4/4",
+      "killT": [
+        null,
+        0.87,
+        5.11,
+        6.53
+      ],
+      "damageTaken": 46,
+      "hp": 54,
+      "swings": 17,
+      "heavies": 2,
+      "hits": 11,
+      "dmgDealt": 237,
+      "shatters": 1,
+      "glances": 0,
+      "dodges": 1,
+      "flowHits": [
+        9,
+        2,
+        2
+      ],
+      "flowTierSecs": [
+        13.6,
+        2.7,
+        0,
+        0
+      ],
+      "flowMax": 1
+    }
+  ]
+}

@@ -13,6 +13,8 @@ export const BEASTS = [
   { id: 'denmother', name: 'The den mother', text: 'A brute grown old under rime that turns blows aside. Freeze her first; only then does she break.' },
   { id: 'skitter', name: 'Skitter', text: 'A moving mound gives it away; sand streams off before it lunges. Gust strips its cover, and frost-bound ground keeps it above the sand.' },
   { id: 'plateback', name: 'Plate-back', text: 'A scarab carrying broken ruin stone. Blows glance from the front; strike the flank, freeze wet seams and strike, or clear the seams with Gust and split them with Shard.' },
+  { id: 'whirler', name: 'Whirler', text: 'Sand tightens round a glass heart before it throws a blinding blast. Step clear of its small whorls. Frost binds the column into a brittle pillar; Vortex turns its spin back and holds it.' },
+  { id: 'glasssworn', name: 'Glass-sworn', text: 'A body half fused into amber glass. Stone plates glance from it until cold cracks the glass. Freeze it, then strike with a weapon or Shard.' },
   { id: 'warden', name: 'The Frost Warden', text: 'A glacier that learned to walk, holding the steppe still in its water joints. The Shapers made it to keep the snows moving. It kept them still instead.' },
 ];
 

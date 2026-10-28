@@ -1,0 +1,97 @@
+[
+  {
+    "id": "p9d9b-whirler",
+    "file": "screenshots/dune-casters-review/p9d9b-whirler.png",
+    "size": [
+      1280,
+      720
+    ],
+    "gpuErrors": 2,
+    "late": [],
+    "blind": 0,
+    "bodies": [
+      {
+        "arch": "whirler",
+        "state": 2,
+        "spin": 14.576133333047219,
+        "hp": 65
+      }
+    ]
+  },
+  {
+    "id": "p9d9b-whirler-warning",
+    "file": "screenshots/dune-casters-review/p9d9b-whirler-warning.png",
+    "size": [
+      1280,
+      720
+    ],
+    "gpuErrors": 2,
+    "late": [],
+    "blind": 0.4814199999570847,
+    "bodies": [
+      {
+        "arch": "whirler",
+        "state": 2,
+        "spin": 20.998766667048145,
+        "hp": 65
+      }
+    ]
+  },
+  {
+    "id": "p9d9b-whirler-frozen",
+    "file": "screenshots/dune-casters-review/p9d9b-whirler-frozen.png",
+    "size": [
+      1280,
+      720
+    ],
+    "gpuErrors": 2,
+    "late": [],
+    "blind": 0,
+    "bodies": [
+      {
+        "arch": "whirler",
+        "state": 7,
+        "spin": 8.066666666666658,
+        "hp": 65
+      }
+    ]
+  },
+  {
+    "id": "p9d9b-glass",
+    "file": "screenshots/dune-casters-review/p9d9b-glass.png",
+    "size": [
+      1280,
+      720
+    ],
+    "gpuErrors": 2,
+    "late": [],
+    "blind": 0,
+    "bodies": [
+      {
+        "arch": "glasssworn",
+        "state": 3,
+        "spin": 0,
+        "hp": 120
+      }
+    ]
+  },
+  {
+    "id": "p9d9b-glass-frozen",
+    "file": "screenshots/dune-casters-review/p9d9b-glass-frozen.png",
+    "size": [
+      1280,
+      720
+    ],
+    "gpuErrors": 2,
+    "late": [],
+    "blind": 0,
+    "bodies": [
+      {
+        "arch": "glasssworn",
+        "state": 7,
+        "spin": 0,
+        "hp": 120
+      }
+    ]
+  }
+]

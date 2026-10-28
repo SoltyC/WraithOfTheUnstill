@@ -252,6 +252,7 @@ export function createCombat(ctx) {
     if (vs > 0.2) {
       const ex = gale.vortexX - cx, ez = gale.vortexZ - cz, d = Math.sqrt(ex * ex + ez * ez) || 1;
       if (d < T.vortexReach) {
+        if(s.arch==='whirler')shaped.reverseWhirler(i);
         const pull = T.vortexPull * vs * Math.min(1, d / 2); // to the column, not through it
         b.vx += ex / d * pull * dt * 6; b.vz += ez / d * pull * dt * 6;
         if (d < T.vortexBite && vortexCd[i] <= 0) {

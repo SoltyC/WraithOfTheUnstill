@@ -114,6 +114,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let l = dot(e, vec3f(0.2126, 0.7152, 0.0722));
   let g = hash3(vec3f(fragmentInputs.position.xy, uniforms.params.z)) - 0.5;
   e += vec3f(g * uniforms.params.y * 4.0 * l * (1.0 - l));
+  // A short warm sand veil. Preserve silhouettes and cap obscuration; no hard whiteout.
+  let dust=clamp(uniforms.params2.w,0.0,1.0);
+  let swirl=hash3(vec3f(floor(fragmentInputs.position.xy/5.0),floor(uniforms.params.z*0.3)));
+  let edge=smoothstep(0.05,0.65,length(fragmentInputs.position.xy*uniforms.viewport.zw-vec2f(0.5)));
+  e=mix(e,vec3f(0.61,0.47,0.29),dust*(0.12+0.22*edge+0.12*swirl));
   // Dither away 8-bit banding in the sky gradients.
   let n = fract(52.9829189 * fract(dot(fragmentInputs.position.xy, vec2f(0.06711056, 0.00583715)))) - 0.5;
   e += vec3f(n / 255.0);

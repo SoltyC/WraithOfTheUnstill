@@ -1,5 +1,7 @@
 # Progress
 
+> **D9b implementation checkpoint — 2026-10-28:** Whirler/Glass-sworn code, bounded dust devils and powder, material answers, bestiary and eight regressions are built in /home/sol/wraith-shaped on claude/dune-shaped. 786 tests/build pass. Cold 1280 captures and input-driven Frost/staff clears have zero GPU errors/late pipelines; 1440p eight-caster powder cost is ~0.68–0.69 ms. D9b is not integrated: debris-size fix/frozen-glass shader need fresh GPU/film review; repeated balance, alternative live answers and full allocations remain open (15 GC/100k mixed frames). Read docs/phase-9/dune-casters-review.md. D2 stays disabled on codex/dune-relaxation, pushed through 67597d8; recording is stopped under the user's latest instruction. Earlier pending-approval text is historical.
+
 Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state

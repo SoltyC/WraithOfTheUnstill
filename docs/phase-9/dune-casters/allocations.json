@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-28T08:08:05.833Z",
+  "reports": [
+    {
+      "name": "caster",
+      "frames": 100000,
+      "gcs": 0,
+      "heapGrowth": 1479656
+    },
+    {
+      "name": "mixedPool",
+      "frames": 100000,
+      "gcs": 15,
+      "heapGrowth": 1378032
+    }
+  ],
+  "note": "Node V8 warm CPU diagnostic, excludes browser renderer/API allocation floor. Isolated caster and real eight-body mixed pool are reported separately."
+}

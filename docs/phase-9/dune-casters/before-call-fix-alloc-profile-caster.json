@@ -1,0 +1,50 @@
+[
+  [
+    "step file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:35 <- caster file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:17 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    1013920
+  ],
+  [
+    "think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- caster file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:17 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    205520
+  ],
+  [
+    "step file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:35 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    188560
+  ],
+  [
+    "throwShard file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:377 <- shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- caster file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:17 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0",
+    125200
+  ],
+  [
+    "hypot :0 <- throwShard file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:377 <- shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- caster file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:17 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1",
+    87840
+  ],
+  [
+    "think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    36640
+  ],
+  [
+    "post node:inspector:115 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:15 <- Promise :0 <- post file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:15 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0",
+    30248
+  ],
+  [
+    "throwShard file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:377 <- shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    22400
+  ],
+  [
+    "hypot :0 <- throwShard file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:377 <- shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0",
+    15920
+  ],
+  [
+    "writeWhirler file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:76 <- caster file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:17 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    4744
+  ],
+  [
+    " node:inspector:66 <- post node:inspector:115 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:15 <- Promise :0 <- post file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:15 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1",
+    736
+  ],
+  [
+    "#onMessage node:inspector:84 <-  node:inspector:66 <- post node:inspector:115 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:15 <- Promise :0 <- post file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:15",
+    496
+  ]
+]

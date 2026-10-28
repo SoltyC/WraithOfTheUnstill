@@ -120,6 +120,7 @@ export function addCreatureSystems(g) {
       pf.update();
     }
     shaped.px = controller.pos.x; shaped.pz = controller.pos.z; shaped.pvx = controller.vel.x; shaped.pvz = controller.vel.z;
+    shaped.pdodging = controller.dodgeT > 0;
     shaped.pgrounded = controller.grounded && controller.dodgeT <= 0;
     if (game.pendingShaped !== null) {
       if (game.worldSettled() && game.pendingTrail === null) stepShapedRoll();
@@ -127,7 +128,9 @@ export function addCreatureSystems(g) {
       shaped.dt = clock.dt; shaped.time = clock.simTime;
       shaped.update();
     }
+    if(g.post)g.post.post.sandBlind=controller.dodgeT>0||combat.dying>0?0:shaped.blind;
     shapedView.update();
+    g.duneCasterDust.update();
   } });
   // The Frost Warden in live play: it waits dormant in its arena (the ground there is kept known
   // by an anchor patch, so it stands from afar), or lies where it was released (saves). Photo

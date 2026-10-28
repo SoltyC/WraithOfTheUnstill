@@ -208,7 +208,7 @@ export function createWeapons(ctx) {
       const inf = def.infusable ? inventory.infusion(def.id) : null;
       let dmg = a.dmg * (heavy ? m.power : 1) * (def.dmgMul || 1) * (buffs !== null ? buffs.damageMul : 1) * (inf === 'stone' ? 1.1 : 1) * hitMat.dmgMul * falloff * T.damageMul;
       if (hitMat.shatter) dmg = 1e9;
-      else if (hitMat.armour > 0) dmg = dmg * hitMat.pierce / hitMat.armour;     // shaped.damage multiplies the armour back in
+      else if (!frozen && hitMat.armour > 0) dmg = dmg * hitMat.pierce / hitMat.armour;     // shaped.damage multiplies the armour back in
       w.i = i; w.dmg = dmg; w.dx = dx; w.dz = dz; w.stagger = a.stagger || inf === 'stone';
       if (w.stagger && poiseBy[i] === def.id && poiseT[i] > 0) w.stagger = false; w.knock = (this.knockOv > 0 ? this.knockOv : a.pull ? -a.pull : a.knock) * (inf === 'gale' ? 1.7 : 1); w.chip = a.chip * T.impactChip * (inf === 'stone' ? 1.5 : 1);
       w.stop = a.stop * T.hitStopMul * (hitMat.glance ? 0.4 : 1); w.shake = a.shake * T.shakeMul; w.kick = a.kick * T.shakeMul;

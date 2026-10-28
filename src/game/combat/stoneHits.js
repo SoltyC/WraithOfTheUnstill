@@ -34,10 +34,12 @@ export function createStoneHits(ctx) {
           const soaked = s.wet > 0 && !shaped.isFrozen(i);
           shaped.erupt(i);
           if (s.arch === 'plateback' && s.st.seamK === 0) shaped.popPlate(i);
-          strike(i, T.shardDamage * stone.shardDmg[k], stone.shardDX[k], stone.shardDZ[k], true);
+          // Fused glass turns a stone plate aside until thermal shock opens it.
+          if(s.arch!=='glasssworn'||shaped.isFrozen(i)) strike(i, T.shardDamage * stone.shardDmg[k], stone.shardDX[k], stone.shardDZ[k], true);
           if (flow !== null && soaked) flow.hit(FLOW_EVENT.REACTION);       // a wet body struck by stone
           stone.shardHit(k);
           if (!shaped.isLive(i)) return;
+          if(s.arch==='glasssworn'&&!shaped.isFrozen(i))continue;
           b.vx += stone.shardDX[k] * T.shardShove; b.vz += stone.shardDZ[k] * T.shardShove;
         }
       }

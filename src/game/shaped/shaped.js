@@ -11,6 +11,7 @@ import { BRUSH } from '../../shaders/terrainState.wgsl.js';
 import { SFX } from '../../audio/sfx.js';
 import * as BH from './behaviours.js';
 import { duneStep, stepPlate, writeStream, strip, erupt, popPlate } from './dune.js';
+import { createDuneCaster, writeWhirler, DEVIL_COUNT, DEVIL_CHUNKS } from './duneCaster.js';
 import { createAirborne } from './airborne.js';
 
 export const MAX_SHAPED = 8;
@@ -37,13 +38,13 @@ export function createShaped(ctx) {
   for (let i = 0; i < MAX_SHAPED; i++) slots.push({ idx: i, arch: null, body: null, rig: null, st: null, state: S.EMPTY, t: 0, hp: 0, glow: 0,
     cool: 0, lungeX: 0, lungeZ: 0, hitDone: false, orbit: 0, fallSink: 0, wet: 0, frozenFor: 0, sweepHit: 0, hurt: 0, flinch: 0,
     // Behaviours: flush (flock, flushed, pass, side), territory (home, bound, aggro, away), support (songCool, pollenCool).
-    cover: false, coverTime: 0, idleR: 0, flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
+    renderRise:0.5, spin: 0.5, reverse: 0.5, cover: false, coverTime: 0, idleR: 0, flock: -1, flushed: false, pass: 0, side: 1, spawnFrame: -1, homeX: 0, homeZ: 0, bound: 0, aggro: false, away: 0, songCool: 0, pollenCool: 0 });
   /** Chunk records for the renderer (MAX_SHAPED × CHUNKS_PER). */
-  const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS) * CHUNK_FLOATS);
+  const chunks = new Float32Array((MAX_SHAPED * CHUNKS_PER + MAX_SHOTS + DEVIL_COUNT * DEVIL_CHUNKS) * CHUNK_FLOATS);
   // Shards: position, velocity, alive.
   const shot = { x: new Float64Array(MAX_SHOTS), y: new Float64Array(MAX_SHOTS), z: new Float64Array(MAX_SHOTS),
     vx: new Float64Array(MAX_SHOTS), vy: new Float64Array(MAX_SHOTS), vz: new Float64Array(MAX_SHOTS),
-    live: new Uint8Array(MAX_SHOTS), dmg: new Float64Array(MAX_SHOTS), next: 0 };
+    kind: new Uint8Array(MAX_SHOTS), live: new Uint8Array(MAX_SHOTS), dmg: new Float64Array(MAX_SHOTS), next: 0 };
   // Pollen curtains (support): a fixed pool, published as (x, z, radius, strength) × POLLEN_MAX.
   const PM = BH.POLLEN_MAX;
   const pl = { x: new Float64Array(PM), z: new Float64Array(PM), r: new Float64Array(PM), age: new Float64Array(PM),
@@ -66,8 +67,10 @@ export function createShaped(ctx) {
   }
 
   const air = createAirborne({ slots, isLive: (i) => { const st = slots[i].state; return st !== S.EMPTY && st !== S.FALLING && st !== S.RISING; } });
+  const whirls=new Float32Array(16*8);
+  const caster=createDuneCaster(ts,ground,whirls);
   const self = {
-    slots, chunks,
+    slots, chunks, whirls,
     /** The airborne state (shaped/airborne.js): an Updraft throws a body up; its AI is paused until it lands. */
     air,
     /** Poise counts for 1/poiseMul of its value in the next damage() (the Bell-mace's tall plunge; weapons.js sets and clears it). */
@@ -76,9 +79,9 @@ export function createShaped(ctx) {
     pollen,
     /** Player (fields): position, velocity. Events out: hits on the player this frame. */
     px: 0.5, pz: 0.5, pvx: 0.5, pvz: 0.5, dt: 0.5, time: 0.5,
-    hits: 0, hitDamage: 0.5 - 0.5,
+    blind: 0.5, hits: 0, hitDamage: 0.5 - 0.5,
     /** The Wraith is on the ground (slams and shockwaves pass under a jump). */
-    pgrounded: true,
+    pgrounded: true, pdodging: false,
     /** The pack's lunge token: one hound attacks at a time while the rest circle (−1 free). */
     lungeToken: -1,
     /** A shattering kill happened this frame (owner: the big hit-stop and punch) at (bx, by, bz). */
@@ -101,7 +104,7 @@ export function createShaped(ctx) {
       b.place(x, z, Math.atan2(this.px - x, this.pz - z));
       b.rise = 0; b.crouch = 0; b.lift = 0; b.frozen = false; b.wantVx = 0; b.wantVz = 0;
       s.state = S.RISING; s.t = 0; s.hp = A.health; s.glow = 0; s.cool = 1 + rnd(); s.orbit = rnd() * Math.PI * 2; s.fallSink = 0;
-      s.cover = false; s.coverTime = 0; s.st.plateOff = false; s.st.seamK = 1;
+      s.spin = 0; s.reverse = 0; s.cover = false; s.coverTime = 0; s.st.plateOff = false; s.st.seamK = 1;
       s.wet = 0; s.frozenFor = 0; s.sweepHit = 0; s.hurt = 0; s.flinch = 0;
       s.orbit = (i / MAX_SHAPED) * Math.PI * 2 * 3.3;   // a pack spreads round the Wraith
       // The hollow it rises out of: snow ploughed aside into a ring.
@@ -186,6 +189,7 @@ export function createShaped(ctx) {
     },
     strip(i) { strip(slots[i]); if (slots[i].arch === 'skitter') this.pin(i, 0.8); },
     erupt(i) { erupt(slots[i]); },
+    reverseWhirler(i) { const s=slots[i]; if(s.arch!=='whirler'||!this.isLive(i)||this.isFrozen(i))return; s.reverse=.25; s.spin-=this.dt*8; this.pin(i,.25); },
     popPlate(i) { return popPlate(slots[i]); },
     /** Freeze slot i solid for `seconds` (wet Shaped freeze longer). */
     freeze(i, seconds) {
@@ -234,6 +238,7 @@ export function createShaped(ctx) {
       stepPollen(dt);
       if (this.lungeToken >= 0) { const ts0 = slots[this.lungeToken].state; if (ts0 !== S.TELEGRAPH && ts0 !== S.LUNGE) this.lungeToken = -1; }
       stepShots(this, dt);
+      caster.dt=dt;caster.step(this,chunks,MAX_SHAPED*CHUNKS_PER+MAX_SHOTS);
       for (let i = 0; i < MAX_SHAPED; i++) {
         const s = slots[i];
         const rec = i * CHUNKS_PER;
@@ -289,6 +294,7 @@ export function createShaped(ctx) {
         s.wet = Math.max(0, s.wet - dt);
         // Glow channel: telegraph light 0..1, +2 when frozen solid (glazed ice in the shader).
         writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0), s.hurt);
+        s.renderRise=rise;writeWhirler(s,chunks,rec);
         writeStream(s, chunks, rec);
         stepPlate(s, chunks, rec, dt);
         for (let c = s.rig.count; c < CHUNKS_PER; c++) chunks[(rec + c) * CHUNK_FLOATS + 15] = 0;
@@ -312,12 +318,13 @@ export function createShaped(ctx) {
     },
     /** Throw a shard from (sx, sy, sz) at (tx, ty, tz) at shotSpeed, wounding shotDmg (fields in;
      *  the Warden's volley uses the same pool). */
-    sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, shotSpeed: 14.5, shotDmg: 12.5,
+    sx: 0.5, sy: 0.5, sz: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, shotSpeed: 14.5, shotDmg: 12.5, shotKind: 1,
     /** Line-of-sight test against built stone (fields ax…bz → t; segBlocked()), or null: shards
      *  (the Warden's volleys, the seers') break on walls and pillars instead of passing through. */
     blocker: null,
     shoot() {
-      throwShard(this.sx, this.sy, this.sz, this.tx, this.ty, this.tz, this.shotSpeed, this.shotDmg);
+      throwShard();
+      this.shotKind=1;
       if (this.sfx) { this.sfx.x = this.sx; this.sfx.y = this.sy; this.sfx.z = this.sz; this.sfx.gain = 1; this.sfx.play(SFX.SHARD); }
     },
     /** Count of living (or rising) Shaped. */
@@ -346,10 +353,10 @@ export function createShaped(ctx) {
       }
       const dx = shot.x[k] - P.px, dz = shot.z[k] - P.pz;
       ground.qx = shot.x[k]; ground.qz = shot.z[k]; ground.sample();
-      if (dx * dx + dz * dz < 0.36 && shot.y[k] - ground.h < 1.9) { P.hits++; P.hitDamage += shot.dmg[k]; shot.live[k] = 0; chunks[o + 15] = 0; continue; }
+      if (dx * dx + dz * dz < 0.36 && shot.y[k] - ground.h < 1.9) { P.hits++; P.hitDamage += shot.dmg[k]; if(shot.kind[k]===11&&!P.pdodging)P.blind=1; shot.live[k] = 0; chunks[o + 15] = 0; continue; }
       if (shot.y[k] <= ground.h + 0.05) {
         // Buried in the snow: a scored gash along its flight, a puff of powder.
-        const sx = shot.x[k] - ox, sz = shot.z[k] - oz, sl = Math.hypot(sx, sz) || 1;
+        const sx = shot.x[k] - ox, sz = shot.z[k] - oz, sl = Math.sqrt(sx*sx+sz*sz) || 1;
         ts.bx = shot.x[k]; ts.bz = shot.z[k]; ts.bdx = sx / sl; ts.bdz = sz / sl; ts.bl = 0.35; ts.bw = 0.06; ts.bd = 0.06; ts.bc = 0.3;
         ts.bk = BRUSH.SCORE; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
         ts.stamp();
@@ -358,16 +365,18 @@ export function createShaped(ctx) {
         shot.live[k] = 0; chunks[o + 15] = 0; continue;
       }
       // Render: a long ice shard pointing along its flight.
-      const v = Math.hypot(shot.vx[k], shot.vy[k], shot.vz[k]) || 1;
+      const v = Math.sqrt(shot.vx[k]*shot.vx[k]+shot.vy[k]*shot.vy[k]+shot.vz[k]*shot.vz[k]) || 1;
       const ux = shot.vx[k] / v, uy = shot.vy[k] / v, uz = shot.vz[k] / v;
-      let fx2 = -uz, fz2 = ux; const fl = Math.hypot(fx2, fz2) || 1; fx2 /= fl; fz2 /= fl;
+      let fx2 = -uz, fz2 = ux; const fl = Math.sqrt(fx2*fx2+fz2*fz2) || 1; fx2 /= fl; fz2 /= fl;
       chunks[o] = shot.x[k]; chunks[o + 1] = shot.y[k]; chunks[o + 2] = shot.z[k]; chunks[o + 3] = 0.09;
       chunks[o + 4] = fx2; chunks[o + 5] = 0; chunks[o + 6] = fz2; chunks[o + 7] = 0.6;
       chunks[o + 8] = ux; chunks[o + 9] = uy; chunks[o + 10] = uz; chunks[o + 11] = 0.09;
-      chunks[o + 12] = k * 13.7; chunks[o + 13] = 1; chunks[o + 14] = 0.6; chunks[o + 15] = 1;
+      chunks[o + 12] = k * 13.7; chunks[o + 13] = shot.kind[k]; chunks[o + 14] = 0.6; chunks[o + 15] = 1;
     }
   }
-  function throwShard(x, y, z, tx, ty, tz, speed, dmg) {
+  function throwShard() {
+    const x=self.sx,y=self.sy,z=self.sz,speed=self.shotSpeed,dmg=self.shotDmg;
+    let tx=self.tx,ty=self.ty,tz=self.tz;
     // Lobbed shards would otherwise drop over a wall onto whoever shelters behind it: if stone
     // stands on the straight line to the target (aimed at the chest), it is thrown into the stone.
     const bl = self.blocker;
@@ -376,10 +385,10 @@ export function createShaped(ctx) {
       if (bl.segBlocked()) { const t = Math.max(0, bl.t - 0.02); tx = x + (tx - x) * t; ty = y + (ty + 0.4 - y) * t; tz = z + (tz - z) * t; }
     }
     const k = shot.next; shot.next = (shot.next + 1) % MAX_SHOTS;
-    const dx = tx - x, dz = tz - z, d = Math.hypot(dx, dz) || 1, t = d / speed;
+    const dx = tx - x, dz = tz - z, d = Math.sqrt(dx*dx+dz*dz) || 1, t = d / speed;
     shot.x[k] = x; shot.y[k] = y; shot.z[k] = z;
     shot.vx[k] = dx / t; shot.vz[k] = dz / t; shot.vy[k] = (ty - y) / t + 1.5 * t;   // lands on target
-    shot.live[k] = 1; shot.dmg[k] = dmg;
+    shot.live[k] = 1; shot.dmg[k] = dmg; shot.kind[k]=self.shotKind;
   }
 
   function die(s, burst) {
@@ -405,6 +414,7 @@ export function createShaped(ctx) {
       if (Math.hypot(P.px - s.body.x, P.pz - s.body.z) > s.idleR) { s.body.wantVx = 0; s.body.wantVz = 0; s.body.crouch += (0.3 - s.body.crouch) * Math.min(1, dt * 3); s.glow = 0; return; }
       s.idleR = 0; s.cool = 0.6;
     }
+    if(s.arch==='whirler')return caster.think(s,P);
     const bh = ARCHETYPES[s.arch].behaviour;
     if (bh !== undefined) {
       if (bh === 'flush') return thinkFlush(s, P, dt);
@@ -523,7 +533,7 @@ export function createShaped(ctx) {
         ground.qx = tx; ground.qz = tz; ground.sample();
         for (let k = -1; k <= 1; k++) {
           const ox = -uz * k * 1.1, oz = ux * k * 1.1;
-          throwShard(b.hx, b.hy + 0.15, b.hz, tx + ox, ground.h + 0.9, tz + oz, 16, A.shardDamage);
+          self.sx=b.hx;self.sy=b.hy+.15;self.sz=b.hz;self.tx=tx+ox;self.ty=ground.h+.9;self.tz=tz+oz;self.shotSpeed=16;self.shotDmg=A.shardDamage;self.shotKind=1;throwShard();
         }
         if (P.sfx) { P.sfx.x = b.hx; P.sfx.y = b.hy; P.sfx.z = b.hz; P.sfx.gain = 0.8; P.sfx.play(SFX.SHARD); }
         s.state = S.RECOVER; s.t = 0;
@@ -754,5 +764,6 @@ export function createShaped(ctx) {
     }
   }
 
+  self.blind=0;
   return self;
 }

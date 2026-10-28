@@ -135,6 +135,8 @@ export function createPost(scene, camera) {
     bloomIntensity: 0, bloomOn: false,
     /** Post-TAA sharpening (0..1). */
     sharpen: 0.35,
+    /** Brief sand-on-camera veil, after TAA; the UI is composed separately. */
+    sandBlind: 0,
     lutOn: true,
     /** Grade parameters (see shaders/post/lut.wgsl.js), written by the owner; set gradeDirty. */
     grade: gradeData,
@@ -218,7 +220,7 @@ export function createPost(scene, camera) {
       for (let i = 0; i < passes.length; i++) passes[i]();
       frame++;
       displayParams.x = post.tonemapper; displayParams.y = post.grain; displayParams.z = frame % 1024; displayParams.w = post.lutOn ? 1 : 0;
-      displayParams2.x = post.sharpen; displayParams2.y = post.bloomIntensity; displayParams2.z = post.bloomOn ? 1 : 0;
+      displayParams2.x = post.sharpen; displayParams2.y = post.bloomIntensity; displayParams2.z = post.bloomOn ? 1 : 0; displayParams2.w = post.sandBlind;
       engine.restoreDefaultFramebuffer();
       effectRenderer.render(display);
     },

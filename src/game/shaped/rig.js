@@ -9,6 +9,7 @@
 
 import { MAX_LEGS } from './body.js';
 import { buildDune } from './rigDune.js';
+import { buildGlassRig } from './rigGlass.js';
 
 // Bone kinds.
 const SPINE = 0, HEAD = 1, TAIL = 2, UPPER = 3, LOWER = 4;
@@ -17,7 +18,7 @@ const SPINE = 0, HEAD = 1, TAIL = 2, UPPER = 3, LOWER = 4;
 // (amber), awn (thin spike trailing back), root (thin dark strand hanging down).
 export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3, SEDGE: 4, TURF: 5, STONE: 6, REED: 7, POD: 8, AWN: 9, ROOT: 10,
   /** Dune kinds (D9a, rigDune.js): packed sand, banded sandstone, carved ruin stone, a sandstone thorn. */
-  SAND: 11, SANDSTONE: 12, RUIN: 13, THORN: 14 };
+  SAND: 11, SANDSTONE: 12, RUIN: 13, THORN: 14, GLASS: 15 };
 /** Floats per chunk record: (pos, sx), (fwd, sy), (up, sz), (seed, kind, glow, alpha). */
 export const CHUNK_FLOATS = 16;
 
@@ -30,6 +31,7 @@ function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5
  * @param {number} seed
  */
 export function buildRig(sh, count, seed, opt = {}) {
+  if (opt.variant === 'whirler' || opt.variant === 'glass') return buildGlassRig(sh, count, seed, opt);
   if (opt.variant === 'skitter' || opt.variant === 'plate') return buildDune(sh, count, seed, opt);
   if (opt.variant) return buildMeadow(sh, count, seed, opt);
   const r = mulberry(seed);
@@ -260,6 +262,8 @@ export function createRigState(rig) {
   const n = rig.count;
   return {
     rig,
+    // Last displayed sizes, including a bound Whirler pillar or a rising body.
+    poseSize:new Float32Array(rig.size),
     // Debris (after death): world position, velocity, rest flag.
     dx: new Float64Array(n), dy: new Float64Array(n), dz: new Float64Array(n),
     dvx: new Float64Array(n), dvy: new Float64Array(n), dvz: new Float64Array(n),
@@ -326,6 +330,7 @@ export function writeAlive(b, st, out, rec, rise, glow, hurt = 0) {
     out[o + 4] = fx; out[o + 5] = fy; out[o + 6] = fz; out[o + 7] = rig.size[c * 3 + 1] * sc;
     out[o + 8] = ux; out[o + 9] = uy; out[o + 10] = uz; out[o + 11] = rig.size[c * 3 + 2] * sc;
     out[o + 12] = rig.cseed[c]; out[o + 13] = rig.kind[c] + 0.45 * hurt; out[o + 14] = glow; out[o + 15] = e > 0.01 ? 1 : 0;
+    st.poseSize[c*3]=out[o+3];st.poseSize[c*3+1]=out[o+7];st.poseSize[c*3+2]=out[o+11];
     // Remember the frame and position for a death hand-off.
     st.fwd[c * 3] = fx; st.fwd[c * 3 + 1] = fy; st.fwd[c * 3 + 2] = fz;
     st.up[c * 3] = ux; st.up[c * 3 + 1] = uy; st.up[c * 3 + 2] = uz;
@@ -360,7 +365,7 @@ export function writeFall(st, out, rec, dt, sink, ground) {
     st.dvy[c] -= 14 * dt;
     st.dx[c] += st.dvx[c] * dt; st.dy[c] += st.dvy[c] * dt; st.dz[c] += st.dvz[c] * dt;
     ground.qx = st.dx[c]; ground.qz = st.dz[c]; ground.sample();
-    const rest = ground.h + rig.size[c * 3 + 1] * 0.35;
+    const rest = ground.h + st.poseSize[c * 3 + 1] * 0.35;
     if (st.dy[c] < rest) {
       st.dy[c] = rest;
       st.dvy[c] = st.dvy[c] < -1.5 ? -st.dvy[c] * 0.25 : 0;
@@ -368,9 +373,9 @@ export function writeFall(st, out, rec, dt, sink, ground) {
     }
     const o = (rec + c) * CHUNK_FLOATS;
     const sc = 1 - 0.5 * sink;
-    out[o] = st.dx[c]; out[o + 1] = st.dy[c] - sink * rig.size[c * 3 + 1] * 1.2; out[o + 2] = st.dz[c]; out[o + 3] = rig.size[c * 3] * sc;
-    out[o + 4] = st.fwd[c * 3]; out[o + 5] = st.fwd[c * 3 + 1]; out[o + 6] = st.fwd[c * 3 + 2]; out[o + 7] = rig.size[c * 3 + 1] * sc;
-    out[o + 8] = st.up[c * 3]; out[o + 9] = st.up[c * 3 + 1]; out[o + 10] = st.up[c * 3 + 2]; out[o + 11] = rig.size[c * 3 + 2] * sc;
+    out[o] = st.dx[c]; out[o + 1] = st.dy[c] - sink * st.poseSize[c * 3 + 1] * 1.2; out[o + 2] = st.dz[c]; out[o + 3] = st.poseSize[c * 3] * sc;
+    out[o + 4] = st.fwd[c * 3]; out[o + 5] = st.fwd[c * 3 + 1]; out[o + 6] = st.fwd[c * 3 + 2]; out[o + 7] = st.poseSize[c * 3 + 1] * sc;
+    out[o + 8] = st.up[c * 3]; out[o + 9] = st.up[c * 3 + 1]; out[o + 10] = st.up[c * 3 + 2]; out[o + 11] = st.poseSize[c * 3 + 2] * sc;
     out[o + 12] = rig.cseed[c]; out[o + 13] = rig.kind[c]; out[o + 14] = 0; out[o + 15] = 1 - sink;
   }
 }
