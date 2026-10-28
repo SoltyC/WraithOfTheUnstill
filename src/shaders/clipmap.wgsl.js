@@ -1,3 +1,4 @@
+import { DUNE_CREST_CODEC_WGSL, DUNE_CREST_NORMAL_WGSL } from './duneCrest.wgsl.js';
 // Clipmap terrain (BRIEF §4.2). One static N×N grid drawn as LEVELS thin instances (level index in
 // the instance matrix translation x). Each level is a full square around its snapped origin; the
 // vertex shader sinks the part the next finer level covers below it, so no trim strips are needed.
@@ -177,14 +178,16 @@ fn edgeFalloff(h: f32, x: f32, z: f32) -> f32 {
   return mix(h, -60.0, smoothstep(0.0, 2000.0, out));
 }
 
-fn terrainH(x: f32, z: f32, s: f32) -> f32 {
+fn terrainField(x: f32, z: f32, s: f32) -> vec4f {
   let macroH = edgeFalloff(select(macroDetail(x, z), macroOverview(x, z), s >= 8.0), x, z);
   var wB = vec2f(0.0);
   let wA = biomeAt(x, z, &wB);
   let wind = windAt(x, z);
   let alp = tn_alpineHeight(x, z, macroH, wA.x, lodFade(180.0, s), lodFade(60.0, s));
-  return macroH + tn_mesoHeight(x, z, wA, wB, wind, duneAt(x, z), s) + alp + microH(x, z, wA, wind, s);
+  let meso=tn_mesoField(x,z,wA,wB,wind,duneAt(x,z),s);
+  return vec4f(macroH + meso.x + alp + microH(x, z, wA, wind, s),meso.yzw);
 }
+fn terrainH(x:f32,z:f32,s:f32)->f32{return terrainField(x,z,s).x;}
 `;
 
 export const clipmapVertexWGSL = /* wgsl */ `
@@ -210,6 +213,8 @@ varying vBiomeB: vec2f;
 varying vWind: vec2f;
 varying vLake: f32;
 varying vNormalC: vec3f;
+varying vCrest: vec4f;
+varying vCrestSpacing: f32;
 
 const W_HALF: f32 = 4096.0;
 const N8: i32 = 1024; const C8: f32 = 8.0;
@@ -258,6 +263,7 @@ fn biomeAt(x: f32, z: f32, wB: ptr<function, vec2f>) -> vec4f {
 
 fn levelSample(level: u32, i: u32, j: u32) -> vec4f { return levelData[(level * V + j) * V + i]; }
 
+${DUNE_CREST_CODEC_WGSL}
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   let level = u32(vertexInputs.world3.x + 0.5);
@@ -268,11 +274,12 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var p = L.xy + vertexInputs.position.xz * s;
   let d0 = levelSample(level, i, j);
   var h = d0.x;
+  var crest=unpackDuneCrest(d0.w);
   var nxz = d0.yz;
   // Morph toward the parent grid in the outer band (camera-relative distance, continuous).
   let cam = uniforms.camGrid.xz;
   let dist = max(abs(p.x - cam.x), abs(p.y - cam.y)) / s;
-  let band = 24.0;
+  let band = 8.0;
   var alpha = clamp((dist - (HALF - 1.0 - band)) / band, 0.0, 1.0);
   if (level == ${CLIPMAP_LEVELS - 1}u) { alpha = 0.0; }
   if (alpha > 0.0) {
@@ -286,6 +293,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let dp = levelSample(level + 1u, pi, pj);
     p = mix(p, t, alpha);
     h = mix(h, dp.x, alpha);
+    crest=mix(crest,unpackDuneCrest(dp.w),alpha);
     nxz = mix(nxz, dp.yz, alpha);
   }
   let n = normalize(vec3f(nxz.x, sqrt(max(1.0 - dot(nxz, nxz), 0.0)), nxz.y));
@@ -306,6 +314,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vWorldPos = wp;
   vertexOutputs.vNormal = n;
   vertexOutputs.vLevel = f32(level);
+  vertexOutputs.vCrest=crest;vertexOutputs.vCrestSpacing=s*(1.0+alpha);
   vertexOutputs.vWind = windAtV(p.x, p.y);
   // Large-scale normal (three levels coarser, bilinear): free of the micro layer, so the
   // material's rock/ice masks follow landforms, not individual sastrugi.
@@ -320,7 +329,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vNormalC = vec3f(nc.x, sqrt(max(1.0 - dot(nc, nc), 0.0)), nc.y);
   vertexOutputs.vLake = lakeAt(p.x, p.y);
   var wB = vec2f(0.0);
-  vertexOutputs.vBiomeA = biomeAt(p.x, p.y, &wB);
+  vertexOutputs.vBiomeA = biomeAt(p.x,p.y,&wB);
   vertexOutputs.vBiomeB = wB;
 }
 `;
@@ -339,6 +348,8 @@ varying vBiomeB: vec2f;
 varying vWind: vec2f;
 varying vLake: f32;
 varying vNormalC: vec3f;
+varying vCrest: vec4f;
+varying vCrestSpacing: f32;
 ${COMMON_WGSL}
 ${GRID_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -351,6 +362,7 @@ ${SNOW_WGSL}
 ${MEADOW_WGSL}
 ${SAND_WGSL}
 ${SANDSTONE_WGSL}
+${DUNE_CREST_NORMAL_WGSL}
 ${BORDER_WGSL}
 
 @fragment
@@ -363,6 +375,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let V = normalize(camPos - wp);
   var N = normalize(fragmentInputs.vNormal);
   matDpx = dpdx(wp); matDpy = dpdy(wp);
+  // Differentiate the cached unwrapped phase before material branches (uniform derivatives).
+  let phase=fragmentInputs.vCrest.x/max(fragmentInputs.vCrest.w,0.0001);
+  let phaseDx=dpdx(phase);let phaseDy=dpdy(phase);
+  let det=matDpx.x*matDpy.z-matDpx.z*matDpy.x;var crestGradient=vec2f(0.0);
+  if(abs(det)>1e-12){crestGradient=vec2f(phaseDx*matDpy.z-phaseDy*matDpx.z,matDpx.x*phaseDy-matDpy.x*phaseDx)/det;}
   let dist = length(camPos - wp);
 
   // Clay albedo tinted by biome (debug-readable, not final materials).
@@ -493,7 +510,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (wSand > 0.001) {
     let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
-    let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
+    let crestN=duneCrestNormal(Ngs,fragmentInputs.vCrest,crestGradient,fragmentInputs.vCrestSpacing,dist,fp);
+    let ss = sandSurface(wp, crestN, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
     let scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
     col = mix(col, scol, wSand);
     ssrMask = max(ssrMask, wSand * ss.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
@@ -519,7 +537,7 @@ attribute world3: vec4f;
 uniform viewProjection: mat4x4f;
 uniform levels: array<vec4f,16>;
 uniform camGrid: vec4f;
-uniform shadowLevels: vec4f;          // x, y = the levels this cascade draws (first, last)
+uniform shadowLevels: vec4f;          // xy = first/last level, z = caster grid half-width
 var<storage, read> levelData: array<vec4f>;
 varying vWorldPos: vec3f;
 
@@ -544,8 +562,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var h = levelSample(level, i, j).x;
   let cam = uniforms.camGrid.xz;
   let dist = max(abs(p.x - cam.x), abs(p.y - cam.y)) / s;
-  let band = 24.0;
-  var alpha = clamp((dist - (HALF - 1.0 - band)) / band, 0.0, 1.0);
+  let band = 8.0;
+  let visibleHalf=uniforms.shadowLevels.z;
+  var alpha = clamp((dist - (visibleHalf - 1.0 - band)) / band, 0.0, 1.0);
   if (level == ${CLIPMAP_LEVELS - 1}u) { alpha = 0.0; }
   if (alpha > 0.0) {
     let ti = i - (i & 1u);
@@ -559,7 +578,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   }
   if (level > 0u) {
     let F = uniforms.levels[level - 1u];
-    let ext = F.z * HALF - F.z * 0.5;
+    let ext = F.z * visibleHalf - F.z * 0.5;
     if (abs(p.x - F.x) < ext && abs(p.y - F.y) < ext) { h -= 200.0; }
   }
   let wp = vec3f(p.x, h, p.y);

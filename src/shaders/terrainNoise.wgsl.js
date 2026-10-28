@@ -70,11 +70,12 @@ fn tn_duneProfile(p: f32) -> f32 {
 // dune = (type coordinate, flat weight) from the bake's dune-type map. s = grid spacing of the clipmap
 // level (0.5 in parity checks): each feature fades out where the grid cannot carry its wavelength
 // (every fade is 1 for s ≤ 0.75, so the CPU twin needs none).
-fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f, s: f32) -> f32 {
+fn tn_mesoField(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f, s: f32) -> vec4f {
   let u = x * wind.x + z * wind.y;
   let v = -x * wind.y + z * wind.x;
   let S = MESO_SEED;
   var h = 0.0;
+  var crest=vec3f(0.0,0.0,-1.0);
   if (wA.w > 0.001) {
     let t3 = dune.x * 3.0;
     let wDb = select(0.0, 1.0 - t3, t3 < 1.0);
@@ -82,10 +83,18 @@ fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f,
     let wDs = max(1.0 - abs(t3 - 2.0), 0.0);
     let wDf = select(0.0, t3 - 2.0, t3 > 2.0);
     var big = 0.0;
-    if (wDt > 0.001) { big += wDt * tn_transverseH(u, v) * tn_lodFade(140.0, s); }
+    if (wDt > 0.001) {
+      let f=tn_transverseField(u,v);let fade=tn_lodFade(140.0,s);
+      big += wDt * f.x * fade;
+      if(wDt>0.999 && wA.w>0.999 && wA.x<0.001 && dune.y<0.01){crest=vec3f(f.y,f.z*wDt*fade*(1.0-dune.y)*wA.w,0.0);}
+    }
     if (wDb > 0.001) { big += wDb * tn_barchanH(u, v) * tn_lodFade(120.0, s); }
     if (wDs > 0.001) { big += wDs * (tn_starH(u, v) * tn_lodFade(500.0, s) + 0.3 * tn_transverseH(u, v) * tn_lodFade(140.0, s)); }
-    if (wDf > 0.001) { big += wDf * tn_seifH(u, v) * tn_lodFade(115.0, s); }
+    if (wDf > 0.001) {
+      let f=tn_seifField(u,v);let fade=tn_lodFade(115.0,s);
+      big += wDf * f.x * fade;
+      if(wDf>0.999 && wA.w>0.999 && wA.x<0.001 && dune.y<0.01){crest=vec3f(f.y,f.z*wDf*fade*(1.0-dune.y)*wA.w,1.0);}
+    }
     let ripple = 0.6 * tn_fbm(u / 18.0, v / 55.0, 3, S + 4u) * tn_lodFade(140.0, s);
     let cold = min(4.0 * wA.x * wA.w, 1.0);
     let sand = big * (1.0 - dune.y);
@@ -105,7 +114,11 @@ fn tn_mesoHeight(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f,
   if (wA.y > 0.001) { h += (wA.y * tn_lodFade(8.0, s)) * 1.1 * tn_fbm(x / 55.0, z / 55.0, 4, S + 31u); }
   if (wA.z > 0.001) { h += (wA.z * tn_lodFade(8.0, s)) * 0.35 * tn_fbm(x / 9.0, z / 9.0, 3, S + 41u); }
   if (wB.y > 0.001) { h += (wB.y * tn_lodFade(8.0, s)) * 0.25 * tn_fbm(u / 40.0, v / 12.0, 2, S + 51u); }
-  return h;
+  return vec4f(h,crest);
+}
+
+fn tn_mesoHeight(x:f32,z:f32,wA:vec4f,wB:vec2f,wind:vec2f,dune:vec2f,s:f32)->f32{
+  return tn_mesoField(x,z,wA,wB,wind,dune,s).x;
 }
 
 // Twin of alpineHeight in src/terrain/meso.js.

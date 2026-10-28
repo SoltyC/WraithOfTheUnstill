@@ -1,0 +1,294 @@
+{
+  "date": "2026-10-28T15:13:55.555Z",
+  "reports": [
+    {
+      "id": "p9d2-transverse-0",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2506.4692138974824,
+        186.21230620114702,
+        296.78370954254723
+      ],
+      "target": [
+        2961.0413557625156,
+        166.21230620114702,
+        505.024358408795
+      ],
+      "expectedSlant": 500.399840127872,
+      "nearestTargetMiss": 4.036399591608025,
+      "nearest": {
+        "pos": [
+          2957.2064365216,
+          166.0661036142085,
+          506.27517449534093
+        ],
+        "pixel": [
+          1264,
+          718
+        ],
+        "range": 497.4500851599536
+      },
+      "centreDepth": 0.00013539537030737847,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-0.png"
+    },
+    {
+      "id": "p9d2-transverse-1",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2461.381211577525,
+        190.03745377842174,
+        486.5923125908605
+      ],
+      "target": [
+        2961.0413557625156,
+        166.21230620114702,
+        505.024358408795
+      ],
+      "expectedSlant": 500.5673158098509,
+      "nearestTargetMiss": 3.4238735811731176,
+      "nearest": {
+        "pos": [
+          2957.998761605666,
+          166.08945340643575,
+          506.58974599255544
+        ],
+        "pixel": [
+          1270,
+          718
+        ],
+        "range": 497.59661881932544
+      },
+      "centreDepth": 0.0001529271830804646,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-1.png"
+    },
+    {
+      "id": "p9d2-transverse-2",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2514.751619322419,
+        191.13446443904508,
+        254.02437986784497
+      ],
+      "target": [
+        2970.7357923205627,
+        166.65277365696764,
+        459.1546652359475
+      ],
+      "expectedSlant": 500.59899438927096,
+      "nearestTargetMiss": 3.468144956143505,
+      "nearest": {
+        "pos": [
+          2967.4748521545807,
+          166.5572332736201,
+          457.9777324826184
+        ],
+        "pixel": [
+          1278,
+          718
+        ],
+        "range": 497.1512203349886
+      },
+      "centreDepth": 0.00015175508451648057,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-2.png"
+    },
+    {
+      "id": "p9d2-transverse-3",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2470.9613860517966,
+        191.53806723831124,
+        444.1365815132445
+      ],
+      "target": [
+        2970.7357923205627,
+        166.65277365696764,
+        459.1546652359475
+      ],
+      "expectedSlant": 500.6188948058488,
+      "nearestTargetMiss": 3.557047958959523,
+      "nearest": {
+        "pos": [
+          2967.4058508825597,
+          166.5554502244849,
+          457.9078258913253
+        ],
+        "pixel": [
+          1286,
+          718
+        ],
+        "range": 497.2633959841436
+      },
+      "centreDepth": 0.000156617839820683,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-3.png"
+    },
+    {
+      "id": "p9d2-transverse-4",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        962.4007790225535,
+        304.6849100739092,
+        431.29617513705693
+      ],
+      "target": [
+        2961.0413557625156,
+        166.21230620114702,
+        505.024358408795
+      ],
+      "expectedSlant": 2004.787934426807,
+      "nearestTargetMiss": 4.610205482624315,
+      "nearest": {
+        "pos": [
+          2957.1625669858013,
+          165.94926475594522,
+          507.5022206761053
+        ],
+        "pixel": [
+          1272,
+          718
+        ],
+        "range": 2001.0321165280745
+      },
+      "centreDepth": 0.000044254902604734525,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-4.png"
+    },
+    {
+      "id": "p9d2-transverse-5",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        1142.752788302382,
+        302.773297104549,
+        -327.93823705619616
+      ],
+      "target": [
+        2961.0413557625156,
+        166.21230620114702,
+        505.024358408795
+      ],
+      "expectedSlant": 2004.6568046018544,
+      "nearestTargetMiss": 6.015113279974214,
+      "nearest": {
+        "pos": [
+          2955.3017921377495,
+          165.9929866298374,
+          506.81066635924043
+        ],
+        "pixel": [
+          1268,
+          718
+        ],
+        "range": 2000.212107850419
+      },
+      "centreDepth": 0.00004408962922752835,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-5.png"
+    },
+    {
+      "id": "p9d2-transverse-6",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        1599.2646035104342,
+        204.66179045366587,
+        -1017.5303433153881
+      ],
+      "target": [
+        2977.0958482162964,
+        166.11085455266704,
+        432.1527465743622
+      ],
+      "expectedSlant": 2000.3715091599468,
+      "nearestTargetMiss": 2.1404041516078727,
+      "nearest": {
+        "pos": [
+          2975.0082778109377,
+          166.3189245152814,
+          431.7283804287424
+        ],
+        "pixel": [
+          1276,
+          720
+        ],
+        "range": 1998.6224458598188
+      },
+      "centreDepth": 0.00004044996603624895,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-6.png"
+    },
+    {
+      "id": "p9d2-transverse-7",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        971.6381672454975,
+        303.84191058906356,
+        399.08233034513546
+      ],
+      "target": [
+        2970.7357923205627,
+        166.65277365696764,
+        459.1546652359475
+      ],
+      "expectedSlant": 2004.6996930443654,
+      "nearestTargetMiss": 9.750791230986826,
+      "nearest": {
+        "pos": [
+          2960.988773059039,
+          166.79710619527526,
+          459.38425892958986
+        ],
+        "pixel": [
+          1278,
+          718
+        ],
+        "range": 1994.9770509589932
+      },
+      "centreDepth": 0.000044490872824098915,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-transverse-interior/p9d2-transverse-7.png"
+    }
+  ],
+  "note": "Camera targets are actual CPU phase crests with local maxima along the view; read-only ray scout selected candidate horizons. GPU-depth search is 65x65px around aim at stride2, not a collision parity oracle. Miss measures the closest sampled rendered surface to the exact CPU point; jitter and pixel sampling remain approximate. Review images1280px from actual2560x1440 render. No crest/motion acceptance inferred from capture success."
+}

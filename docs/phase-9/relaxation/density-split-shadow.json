@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-28T13:39:54.975Z",
+  "reports": [
+    {
+      "id": "p9s1-close-noon",
+      "size": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "samples": [
+        {
+          "n": 239,
+          "medianMs": 16.937055587768555,
+          "p95Ms": 17.01702308654785,
+          "maxMs": 17.0532169342041
+        },
+        {
+          "n": 239,
+          "medianMs": 17.000511169433594,
+          "p95Ms": 17.13692855834961,
+          "maxMs": 17.188735961914062
+        },
+        {
+          "n": 239,
+          "medianMs": 16.99964714050293,
+          "p95Ms": 17.086271286010742,
+          "maxMs": 17.70751953125
+        }
+      ],
+      "passes": 28,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "id": "p9s1-star-mid",
+      "size": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "samples": [
+        {
+          "n": 239,
+          "medianMs": 13.396191596984863,
+          "p95Ms": 13.475711822509766,
+          "maxMs": 13.761856079101562
+        },
+        {
+          "n": 239,
+          "medianMs": 13.40236759185791,
+          "p95Ms": 13.489184379577637,
+          "maxMs": 13.527999877929688
+        },
+        {
+          "n": 239,
+          "medianMs": 13.400320053100586,
+          "p95Ms": 13.468832015991211,
+          "maxMs": 13.508000373840332
+        }
+      ],
+      "passes": 28,
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "id": "p9d0-canyon-floor",
+      "size": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "samples": [
+        {
+          "n": 239,
+          "medianMs": 14.82198429107666,
+          "p95Ms": 14.899040222167969,
+          "maxMs": 15.232288360595703
+        },
+        {
+          "n": 239,
+          "medianMs": 14.827712059020996,
+          "p95Ms": 14.890080451965332,
+          "maxMs": 14.961888313293457
+        },
+        {
+          "n": 239,
+          "medianMs": 14.833919525146484,
+          "p95Ms": 14.892671585083008,
+          "maxMs": 14.95587158203125
+        }
+      ],
+      "passes": 28,
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Three 240-frame repeats per static scene on headless Windows RTX3060 at verified 2560x1440 and scale1. Whole-frame timestamp span, not a before/after attribution or sustained gameplay/1% low gate. Weather/combat/streaming and unlocked presentation remain unassessed."
+}

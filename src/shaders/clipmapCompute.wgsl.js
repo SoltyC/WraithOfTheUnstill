@@ -1,3 +1,4 @@
+import { DUNE_CREST_CODEC_WGSL } from './duneCrest.wgsl.js';
 // Clipmap level update (compute). For every dirty level, evaluates the terrain height function at
 // each grid vertex (pass "heights"), then derives normals from neighbouring grid heights
 // (pass "normals"). Output per vertex: vec4(height, nx, nz, 0) in levelData, laid out
@@ -30,6 +31,7 @@ export const clipmapHeightsWGSL = /* wgsl */ `
 ${COMMON}
 ${TERRAIN_NOISE_WGSL}
 ${HEIGHT_WGSL}
+${DUNE_CREST_CODEC_WGSL}
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) id: vec3u) {
   let level = id.z;
@@ -39,7 +41,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let s = L.z;
   let x = L.x + (f32(id.x) - HALF) * s;
   let z = L.y + (f32(id.y) - HALF) * s;
-  levelData[(level * V + id.y) * V + id.x] = vec4f(terrainH(x, z, s), 0.0, 0.0, 0.0);
+  let field=terrainField(x,z,s);
+  levelData[(level * V + id.y) * V + id.x] = vec4f(field.x,0.0,0.0,packDuneCrest(field.yzw));
 }
 `;
 
@@ -65,7 +68,8 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let gz = (hAt(level, i, ju) - hAt(level, i, jd)) / (f32(ju - jd) * s);
   let n = normalize(vec3f(-gx, 1.0, -gz));
   let k = (level * V + id.y) * V + id.x;
-  levelData[k] = vec4f(levelData[k].x, n.x, n.z, 0.0);
+  // Preserve height and cached crest metadata; neighbouring invocations read height here.
+  levelData[k].y=n.x;levelData[k].z=n.z;
 }
 `;
 

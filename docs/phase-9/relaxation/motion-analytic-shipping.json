@@ -1,0 +1,141 @@
+{
+  "date": "2026-10-28T14:58:05.199Z",
+  "reports": [
+    {
+      "name": "close",
+      "size": [
+        2560,
+        1440
+      ],
+      "internalSize": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "distance": 96,
+      "frames": 480,
+      "elapsedMs": 7280.700000047684,
+      "gpuMs": {
+        "n": 479,
+        "median": 15.103103637695312,
+        "p95": 15.17523193359375,
+        "p99": 15.202943801879883,
+        "max": 15.229503631591797
+      },
+      "mainMs": {
+        "n": 479,
+        "median": 0.6574079990386963,
+        "p95": 0.6594560146331787,
+        "p99": 0.6615039706230164,
+        "max": 0.6635519862174988
+      },
+      "renderTargetsMs": {
+        "n": 479,
+        "median": 12.823552131652832,
+        "p95": 12.890111923217773,
+        "p99": 12.917759895324707,
+        "max": 12.942336082458496
+      },
+      "computeMs": {
+        "n": 479,
+        "median": 1.473088026046753,
+        "p95": 1.4833920001983643,
+        "p99": 1.8762240409851074,
+        "max": 1.9085439443588257
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "crest500",
+      "size": [
+        2560,
+        1440
+      ],
+      "internalSize": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "distance": 96,
+      "frames": 480,
+      "elapsedMs": 4316.199999928474,
+      "gpuMs": {
+        "n": 479,
+        "median": 8.97158432006836,
+        "p95": 9.062335968017578,
+        "p99": 9.0863037109375,
+        "max": 9.098591804504395
+      },
+      "mainMs": {
+        "n": 479,
+        "median": 0.6584320068359375,
+        "p95": 0.6615039706230164,
+        "p99": 0.6635519862174988,
+        "max": 0.66457599401474
+      },
+      "renderTargetsMs": {
+        "n": 479,
+        "median": 5.158912181854248,
+        "p95": 5.248000144958496,
+        "p99": 5.265408039093018,
+        "max": 5.276671886444092
+      },
+      "computeMs": {
+        "n": 479,
+        "median": 2.974047899246216,
+        "p95": 3.1027839183807373,
+        "p99": 3.1309759616851807,
+        "max": 3.152575969696045
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "crest2000",
+      "size": [
+        2560,
+        1440
+      ],
+      "internalSize": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "distance": 96,
+      "frames": 480,
+      "elapsedMs": 4637.199999928474,
+      "gpuMs": {
+        "n": 479,
+        "median": 9.631775856018066,
+        "p95": 9.721664428710938,
+        "p99": 9.749279975891113,
+        "max": 9.958368301391602
+      },
+      "mainMs": {
+        "n": 479,
+        "median": 0.6584320068359375,
+        "p95": 0.6604800224304199,
+        "p99": 0.6615039706230164,
+        "max": 0.6635519862174988
+      },
+      "renderTargetsMs": {
+        "n": 479,
+        "median": 5.641215801239014,
+        "p95": 5.672959804534912,
+        "p99": 5.697535991668701,
+        "max": 5.8275837898254395
+      },
+      "computeMs": {
+        "n": 479,
+        "median": 3.1964480876922607,
+        "p95": 3.256511926651001,
+        "p99": 3.276992082595825,
+        "max": 3.5163838863372803
+      },
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Frame-stepped 96m free-camera sweeps at verified2560x1440, scale1. Close camera follows CPU ground; crest cameras keep the CPU target in view. Measures clipmap rebuild/morph/shadow cost with physics disabled and no enemies. Render-target timing includes HDR scene plus shadow cascades, not shadows alone. No D3 gameplay, sustained combat/weather or human feel acceptance."
+}

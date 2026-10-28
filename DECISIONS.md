@@ -520,3 +520,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-28 — D1b: share the bake's unchanged 12 m strata scalar; use a one-time 4 MiB R8 baked rock mask rather than a ninth fragment storage binding. Replace repetitive sine bedding with irregular low-contrast beds. A dune-camera-weighted, hue-preserving soft LUT shoulder uses the existing parameter padding to prevent sunset bloom/grade clipping; zero dune weight preserves frost/meadow output. No geometry, exposure or biome weather changes. Evidence: docs/phase-9/dune-grade-review.md.
+
+
+2026-10-29 — D2 prototype crest rendering: 512-cell/11-level visible clipmap keeps the16,384m outer half-width and6.25cm finest spacing. Static centre-first/ring topology omits only deeply hidden cells with a two-cell origin guard; a separate256-cell shadow grid shares height storage. This uses two static visible draws and about32.1MiB extra level storage to improve distant crests. Analytic phase/amplitude uses existing levelData.w, with no extra fragment binding/noise evaluation. Shipping0.7 TAAU remains the previously agreed configuration; native1 failures are retained. Unintegrated pending final motion/parity/allocation gates; not a whole-biome acceptance decision. See docs/phase-9/crest-review.md.

@@ -166,3 +166,6 @@ The 32-step full-size Ridge walking check passes: **360/360 grounded and covered
 The first post-merge baseline produced two GPU errors because the load harness resized while recorded snapshots were active. It is retained as current-before-snapshot-suppression.json and is not acceptance evidence. The harness now disables snapshots before its forced canvas resize; fresh-cold repeats above have zero errors. Their resolution is recorded; older window-only reports remain historical.
 
 Next: crest geometry/normal/motion presentation and full browser allocation attribution; compute spikes remain unresolved, with no default-iteration or enabling change. Human feel and D12 whole-world gates remain open.
+
+
+29 October rendering continuation: see crest-review.md for the denser clipmap/ring topology, separate shadow grid, analytic crest metadata, rejected experiments and measured native/shipping configurations. Full suite810 and build pass; source remains unintegrated with physics disabled/default32. Three shipping0.7 pre-final-normal stress repeats pass0.4ms/0.20s; native1 failures remain. Final shader parity, motion, writer and allocation gates are still open.

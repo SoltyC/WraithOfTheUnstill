@@ -5,6 +5,8 @@ import { RELAX_ITERATIONS } from '../../src/terrain/state/relaxation.js';
 const iterations = Number(process.argv[2] || RELAX_ITERATIONS);
 if (!Number.isInteger(iterations) || iterations < 2 || iterations > 64 || iterations % 2) throw new Error('Use an even iteration count from 2 to 64');
 const mode=process.argv[3]||'live';
+const renderScale=Number(process.env.RENDER_SCALE||1);
+if(!(renderScale>=.5&&renderScale<=1))throw new Error('RENDER_SCALE must be .5..1');
 if(!['live','synthetic26'].includes(mode))throw new Error('Use live or synthetic26');
 const frames=mode==='synthetic26'?480:240;
 const finePasses = 2 + 2 * Math.floor(iterations / 8) + iterations % 8;
@@ -18,6 +20,7 @@ async function ev(js) {
 }
 const result = await ev(`
  const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+ g.clock.frozen=false;
  g.toggles.on.snapshot=false;g.engine.snapshotRendering=false;
  const canvas=g.engine.getRenderingCanvas();canvas.style.width='2560px';canvas.style.height='1440px';g.engine.resize();
  g.arm.setFree(false);g.game.teleport(1900,900);
@@ -25,7 +28,7 @@ const result = await ev(`
  g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();
  const ts=g.terrainState,r=ts.relaxation,timer=w.gpuTimer;
  r.enabled=false;ts.restore([]);g.stone.mass.clear();
- w.params.v.refillRate=0;w.params.v.dynamicRes=0;w.params.v.renderScale=1;w.params.version++;
+ w.params.v.refillRate=0;w.params.v.dynamicRes=0;w.params.v.renderScale=${renderScale};w.params.version++;
  for(let i=0;i<90;i++)await frame();
  g.game.spawnShaped('skitter',4);g.game.spawnShaped('plateback',4);
  const activeBefore=g.shaped.slots.filter(s=>s.state!==0).length;
@@ -75,7 +78,7 @@ const result = await ev(`
  const samples=sampleMs.filter((_,i)=>samplePasses[i]===${finePasses}).sort((a,b)=>a-b),incomplete=samplePasses.filter(n=>n!==${finePasses}).length;
  const combined=sampleCombined.filter(Number.isFinite).sort((a,b)=>a-b);
  const combinedPeak=sampleCombined.indexOf(combined.at(-1));
- return {renderSize:{width:g.engine.getRenderWidth(),height:g.engine.getRenderHeight()},combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:26},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
+ return {renderSize:{width:g.engine.getRenderWidth(),height:g.engine.getRenderHeight(),internalWidth:g.post.post.width,internalHeight:g.post.post.height,renderScale:g.post.post.renderScale},combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:26},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
    jobs:r.jobs-jobs0,writes:stampCount,writesByKind:Array.from(writes),pendingMax,collisionPendingMax,collisionReads:ts.collision.reads-reads0,
    speed:{min:speedMin,max:speedMax,mean:speedTotal/${frames}},samples:samples.length,incomplete,spikes,maxSampleStages:sampleStages[sampleMs.indexOf(Math.max(...sampleMs.filter(Number.isFinite)))],
    fineGpuMs:{mean:samples.reduce((a,b)=>a+b,0)/samples.length,p95:samples[Math.floor(samples.length*0.95)],max:samples.at(-1)},
@@ -84,4 +87,4 @@ const result = await ev(`
 `);
 fs.writeFileSync('docs/phase-9/relaxation/full-load-'+iterations+(mode==='live'?'':'-'+mode)+'.json', JSON.stringify({ date: new Date().toISOString(), ...result }, null, 2) + '\n');
 console.log(JSON.stringify(result, null, 2));
-if (result.activeBefore !== 8 || result.jobs < 200 || result.samples < 200 || result.incomplete || result.writes === 0 || result.gpuErrors || result.late.length || result.collisionErrors || result.retirementErrors || result.fineGpuMs.max >= 0.4 || result.combinedGpuMs.max >= 0.4 || (mode==='synthetic26' && (result.synthetic.covered<frames*.95 || result.synthetic.distance/result.seconds<24 || result.synthetic.maxAge>.2))) process.exitCode = 1;
+if (!Number.isFinite(result.seconds) || result.seconds <= 1 || result.activeBefore !== 8 || result.jobs < 200 || result.samples < 200 || result.incomplete || result.writes === 0 || result.gpuErrors || result.late.length || result.collisionErrors || result.retirementErrors || result.fineGpuMs.max >= 0.4 || result.combinedGpuMs.max >= 0.4 || (mode==='synthetic26' && (result.synthetic.covered<frames*.95 || !Number.isFinite(result.synthetic.distance/result.seconds) || result.synthetic.distance/result.seconds<24 || result.synthetic.maxAge>.2))) process.exitCode = 1;

@@ -1,0 +1,258 @@
+{
+  "date": "2026-10-28T13:23:43.285Z",
+  "reports": [
+    {
+      "id": "p9d2-field-0",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        3500,
+        755.0131614201728,
+        450
+      ],
+      "target": [
+        3500,
+        761.0131614201728,
+        -50
+      ],
+      "expectedSlant": 500.03599870409334,
+      "nearestTargetMiss": 2.6140056031748036,
+      "nearest": {
+        "pos": [
+          3500.617693108329,
+          760.3660237698075,
+          -47.5438458153382
+        ],
+        "pixel": [
+          1276,
+          716
+        ],
+        "range": 497.5730229713296
+      },
+      "centreDepth": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-0.png"
+    },
+    {
+      "id": "p9d2-field-1",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        3146.516803446442,
+        393.96339083045024,
+        -96.64568273967888
+      ],
+      "target": [
+        3500.0701940397157,
+        674.2270654733624,
+        -450.1990733329526
+      ],
+      "expectedSlant": 573.1908297629578,
+      "nearestTargetMiss": 3.6883352317467284,
+      "nearest": {
+        "pos": [
+          3499.123978808859,
+          675.9943836308099,
+          -447.10309528894203
+        ],
+        "pixel": [
+          1272,
+          734
+        ],
+        "range": 571.5712545498973
+      },
+      "centreDepth": 0.00017488098819740117,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-1.png"
+    },
+    {
+      "id": "p9d2-field-2",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        3199.0055449182564,
+        668.3527912918458,
+        -103.2464771235006
+      ],
+      "target": [
+        3552.5589355115303,
+        741.0363878900578,
+        -456.7998677167743
+      ],
+      "expectedSlant": 505.2552871711999,
+      "nearestTargetMiss": 1.449477295198767,
+      "nearest": {
+        "pos": [
+          3552.096172638295,
+          741.3018627881156,
+          -455.45214443992825
+        ],
+        "pixel": [
+          1276,
+          722
+        ],
+        "range": 504.027172388264
+      },
+      "centreDepth": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-2.png"
+    },
+    {
+      "id": "p9d2-field-3",
+      "nominalPlanarRange": 500,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2846.9822996547928,
+        289.4129375215228,
+        -598.658780788453
+      ],
+      "target": [
+        3200.5356902480667,
+        472.2141163783963,
+        -952.2121713817268
+      ],
+      "expectedSlant": 532.3685480862508,
+      "nearestTargetMiss": 4.7540060911944995,
+      "nearest": {
+        "pos": [
+          3200.07365905538,
+          473.4101167250761,
+          -947.6343242607712
+        ],
+        "pixel": [
+          1264,
+          732
+        ],
+        "range": 529.4453701563733
+      },
+      "centreDepth": 0.00018788487068377435,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-3.png"
+    },
+    {
+      "id": "p9d2-field-4",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2138.345373138435,
+        465.30200149720866,
+        957.4136946563206
+      ],
+      "target": [
+        3552.5589355115303,
+        741.0363878900578,
+        -456.7998677167743
+      ],
+      "expectedSlant": 2018.9178913069848,
+      "nearestTargetMiss": 1.2786171215750437,
+      "nearest": {
+        "pos": [
+          3553.211472300538,
+          741.1714025856058,
+          -455.70861682235886
+        ],
+        "pixel": [
+          1276,
+          720
+        ],
+        "range": 2018.6294043766186
+      },
+      "centreDepth": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-4.png"
+    },
+    {
+      "id": "p9d2-field-5",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2586.531826579353,
+        439.5754450370056,
+        991.5396603363102
+      ],
+      "target": [
+        3351.8986913095328,
+        638.5402507265368,
+        -856.2194046862631
+      ],
+      "expectedSlant": 2009.8723824917524,
+      "nearestTargetMiss": 5.426480789906521,
+      "nearest": {
+        "pos": [
+          3354.6261035312077,
+          633.8579819337475,
+          -855.9291026222777
+        ],
+        "pixel": [
+          1272,
+          706
+        ],
+        "range": 2010.187889859294
+      },
+      "centreDepth": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-5.png"
+    },
+    {
+      "id": "p9d2-field-6",
+      "nominalPlanarRange": 2000,
+      "size": [
+        2560,
+        1440
+      ],
+      "camera": [
+        3204.7147873934864,
+        407.25760323911396,
+        1331.2605425377237
+      ],
+      "target": [
+        3204.714787393487,
+        470.8366054123974,
+        -668.7394574622764
+      ],
+      "expectedSlant": 2001.0103171941296,
+      "nearestTargetMiss": 8.059698465266374,
+      "nearest": {
+        "pos": [
+          3207.3270566832375,
+          465.26992833226706,
+          -663.5291892547467
+        ],
+        "pixel": [
+          1272,
+          704
+        ],
+        "range": 1995.6348182666663
+      },
+      "centreDepth": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d2-field-baseline/p9d2-field-6.png"
+    }
+  ],
+  "note": "Camera targets are actual CPU seif phase crests with local maxima along the view; read-only ray scout selected candidate horizons. GPU-depth search is 65x65px around aim at stride2, not a collision parity oracle. Miss measures the closest sampled rendered surface to the exact CPU point; jitter and pixel sampling remain approximate. Review images1280px from actual2560x1440 render. No crest/motion acceptance inferred from capture success."
+}
