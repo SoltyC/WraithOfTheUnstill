@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-28T05:11:27.774Z",
+  "width": 2560,
+  "height": 1440,
+  "samples": [
+    {
+      "on": false,
+      "n": 179,
+      "median": 17.969919204711914,
+      "p95": 18.223295211791992,
+      "max": 18.99171257019043
+    },
+    {
+      "on": true,
+      "n": 179,
+      "median": 18.170879364013672,
+      "p95": 18.45145606994629,
+      "max": 18.90185546875
+    },
+    {
+      "on": false,
+      "n": 179,
+      "median": 17.947872161865234,
+      "p95": 18.260704040527344,
+      "max": 18.77187156677246
+    },
+    {
+      "on": true,
+      "n": 179,
+      "median": 18.163135528564453,
+      "p95": 18.508512496948242,
+      "max": 19.016704559326172
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Fixed-view 1440p headless RTX 3060 alternating mesh off/on. Whole-frame timestamps include the world; differences are indicative and do not establish sustained gameplay performance or the independent D2 relaxation budget."
+}

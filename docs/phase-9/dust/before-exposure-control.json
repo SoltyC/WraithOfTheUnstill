@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-28T05:04:33.763Z",
+  "setup": {
+    "width": 1264,
+    "height": 569,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "wind": {
+    "meanRgbDifference": 6.375244247439805,
+    "maxRgbSum": 89,
+    "pixelsAboveSix": 718953,
+    "emitted": 5,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "stilled": {
+    "meanRgbDifference": 0.7902466018553536,
+    "maxRgbSum": 50,
+    "pixelsAboveSix": 1360,
+    "emitted": 5,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "puff": {
+    "meanRgbDifference": 0.09471563480234033,
+    "maxRgbSum": 129,
+    "pixelsAboveSix": 5016,
+    "emitted": 6,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "wet": {
+    "meanRgbDifference": 1.3320314527670871,
+    "maxRgbSum": 29,
+    "pixelsAboveSix": 4608,
+    "emitted": 6,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "frozen": {
+    "meanRgbDifference": 2.0540783297368246,
+    "maxRgbSum": 64,
+    "pixelsAboveSix": 195132,
+    "emitted": 6,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "end": {
+    "gpuErrors": 0,
+    "late": [],
+    "pending": 0
+  },
+  "note": "Fixed-time pixel comparisons use disabled grain/TAA/jitter and fixed shadow-noise index. They verify visible contribution and suppression, not gameplay feel or sustained frame performance."
+}

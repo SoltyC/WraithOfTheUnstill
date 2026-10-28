@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-28T05:08:42.352Z",
+  "result": {
+    "ok": true,
+    "frames": 360,
+    "failed": 0,
+    "dir": "screenshots/sand-dust-review/frames/frames/dust",
+    "wallS": 16,
+    "ms": 16037
+  },
+  "end": {
+    "gpuErrors": 0,
+    "late": [],
+    "events": 10
+  },
+  "note": "Six-second diagnostic material film: restored ground blow and two actual mound writes. Not a D2 slumping or human-feel acceptance film.",
+  "actualFrameDirectory": "screenshots/sand-dust-reviewframes/frames/dust",
+  "encoded": "screenshots/sand-dust-review/sand-dust-720p.mp4",
+  "reviewedFrames": [
+    105,
+    240,
+    330
+  ]
+}

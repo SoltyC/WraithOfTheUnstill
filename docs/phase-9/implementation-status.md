@@ -4,6 +4,8 @@ User requested an active goal on 2026-10-27: finish the remaining HANDOFF work, 
 
 ## Current work (2026-10-28)
 
+- **User-requested sand dust added on main:** one bounded 2,112-quad draw for low wind wisps and completed-brush puffs. The actual GPU material function returns dry 1, rain 0.2 0.8856976, rain 0.5 0.1713077, fully wet/frozen/non-sand 0. Five reviewed captures plus 6 s 720p/60 film; indicative 1440p median cost +0.201/+0.215 ms. **783 tests pass** (778 tracked plus five preserved local-model tests), locked build, zero GPU errors/late pipelines. `dust-review.md` records the image-only comparison's limits and the accepted live-buffer oracle. This is independent of D2 and D6 sandstorms. WSL recovery is complete. Continue the ordered D2 gates below; no physics or human gates were signed off by this addition.
+
 - **D1a sand integrated** as `e491fa6`. Six revised rain stages show dry foreground YAVG 148.337 → wet 106.712; dry/wet white clipping 0%. Fixed star-field median GPU delta +1.55 ms (25.55 → 27.10 ms), indicative headless comparison, not sustained-performance acceptance. Review and measurement JSON are in `docs/phase-9/`. Main passed 700 tests at this checkpoint.
 - **Encounters integrated** as `bbb3898`: three reviewed 720p isolation films, fresh staff + Frost checks, all six Barley enemies and 60 s calm verified. Cloister/stair/ring 3/3 clears each; Barley corrected bot navigation 3/3. Original chase failures retained. Main merged through `984fa34`; 762 tests and locked build pass. Audit §9 records evidence and human-only limits.
 - **D9a lead review** in `/home/sol/wraith-shaped`: Terra finished its scoped implementation. Lead found a hollow where a moving mound should be; replaced the Ridge with one filling MOUND brush and fixed frozen telegraphs emitting sand. 710 tests passed before diagnostic readback extension. Fresh merged-sand captures and readback verify +0.355 m raised relief. Dust now emits above the mound. 772 tests and build pass; shared rig allocation fix reduces pool collections 608 → 19 / 100k frames; zero full-path allocation remains open. Integrated into main as `72fceda`. All outstanding code and visuals are verified by the primary.
@@ -13,7 +15,7 @@ User requested an active goal on 2026-10-27: finish the remaining HANDOFF work, 
 
 ## GPU coordination
 
-Only one Windows target-GPU capture/bot workload at a time. Primary owns the slot; encounter and D9a Chromes have stopped; D2 bot runs on 4176. Preview servers may coexist. Builds always use `/tmp/wraith-build.lock`. Preserve original untracked screenshots and exclude raw captures/frame sequences from commits. User's latest delegation rule: only extremely easy/light subtasks, with primary verification of every code change. No trailer modifications.
+Only one Windows target-GPU capture/bot workload at a time. Primary owns the slot; use a fresh readiness handshake after starting any bot. The sand-dust checkpoint used main on 4173; stop its owned bot before resuming D2 on 4176. Preview servers may coexist. Builds always use `/tmp/wraith-build.lock`. Preserve original untracked screenshots and exclude raw captures/frame sequences from commits. User's latest delegation rule: only extremely easy/light subtasks, with primary verification of every code change. No trailer modifications.
 
 ## Remaining ordered milestones
 

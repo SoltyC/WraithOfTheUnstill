@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-28T05:07:52.175Z",
+  "setup": {
+    "width": 1264,
+    "height": 569,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "wind": {
+    "meanRgbDifference": 0.3359978087250562,
+    "maxRgbSum": 84,
+    "pixelsAboveSix": 31595,
+    "emitted": 7,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "stilled": {
+    "meanRgbDifference": 0.0350437142666459,
+    "maxRgbSum": 65,
+    "pixelsAboveSix": 1477,
+    "emitted": 7,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "puff": {
+    "meanRgbDifference": 0.09050039672828933,
+    "maxRgbSum": 144,
+    "pixelsAboveSix": 5783,
+    "emitted": 8,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "wet": {
+    "meanRgbDifference": 0.025743772848954048,
+    "maxRgbSum": 22,
+    "pixelsAboveSix": 843,
+    "emitted": 8,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "frozen": {
+    "meanRgbDifference": 0.05626636040725828,
+    "maxRgbSum": 55,
+    "pixelsAboveSix": 4135,
+    "emitted": 8,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "end": {
+    "gpuErrors": 0,
+    "late": [],
+    "pending": 0,
+    "frozenByte": 255
+  },
+  "note": "Fixed-time comparisons disable grain/TAA/jitter, fix shadow-noise index and snap analytic exposure with the meter disabled. Small background pixel differences remain; wet/frozen contribution must stay below 60% of dry-puff difference and below 0.06 mean RGB. This verifies visible contribution and suppression, not human feel or sustained frame performance."
+}

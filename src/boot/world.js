@@ -162,6 +162,9 @@ export async function createWorld(g) {
   content.clipmap.bindState(terrainState);
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
+  const sandDust = (await import('../render/sandDust.js')).createSandDust(scene, content.clipmap, atmosphere, wind, terrainState);
+  bindShadows(sandDust.material, shadows);
+  terrainState.brushFx = sandDust.bursts;
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
 }
