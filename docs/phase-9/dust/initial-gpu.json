@@ -1,0 +1,14 @@
+{
+  "gpuErrors": 0,
+  "late": [],
+  "events": 8,
+  "dust": {
+    "_isDirty": true,
+    "_x": 62.613399999976835,
+    "_y": 0,
+    "_z": 1,
+    "_w": 0
+  },
+  "width": 1264,
+  "height": 569
+}

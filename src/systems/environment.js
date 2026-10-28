@@ -187,6 +187,12 @@ export async function addEnvironmentSystems(g) {
     spindrift.strength = Math.min(1.5, Math.max(0, (w - 0.15) / 0.5) * (1 + 0.6 * weather.snow * weather.gust));
     spindrift.drift.z = 0.4 + w;
     spindrift.update();
+    // Dune air follows its own release state; footprints/verbs can lift dust even while stilled.
+    const sd = g.sandDust;
+    sd.time = clock.simTime; sd.wet = weather.wet;
+    sd.restored = ws.restoration.dunes === 'restored' ? 1 : 0;
+    sd.windStrength = params.v.windStrength * weather.wind * (0.04 + 0.96 * sd.restored);
+    sd.update();
     // Stilled air holds its ice grains motionless; as it is restored they drift off and thin.
     const r = restoration.value;
     dust.moving += clock.dt * (r * (0.6 + 0.4 * params.v.windStrength) + 2.5 * warden.gust);
@@ -285,6 +291,7 @@ export async function addEnvironmentSystems(g) {
   reg({ key: 'sky', label: 'sky', group: 'System', on: true, onChange: meshToggle(content.sky) });
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
+  reg({ key: 'sandDust', label: 'sand dust', group: 'System', on: true, onChange: meshToggle(g.sandDust.mesh) });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
   reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });
   reg({ key: 'rain', label: 'rain (streaks, splashes)', group: 'System', on: true, onChange: (on) => { g.rain.mesh.setEnabled(on); g.rain.splashMesh.setEnabled(on); engine.snapshotRenderingReset(); } });

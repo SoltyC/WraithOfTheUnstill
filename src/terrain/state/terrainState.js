@@ -158,6 +158,8 @@ export function createTerrainState(engine, opts) {
 
   const self = {
     fine, atlas, params, relaxation, collision, coarseRelaxation,
+    /** Optional visual sink, notified only after brush dispatch succeeds. */
+    brushFx: null,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
     /** Healing speed multiplier (the 'Refill rate' art control). */
@@ -279,6 +281,7 @@ export function createTerrainState(engine, opts) {
       for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0) { setSlot(slotKey[s], -1); slotKey[s] = -1; freeSlots++; }
       pageStored.fill(0); pageLoading.fill(0); arrivals.length = 0;
       qHead = 0; qCount = 0;
+      if (this.brushFx) this.brushFx.reset();
       const list = [];
       for (const p of pages) {
         const key = +p.key, words = new Uint32Array(p.data.buffer.slice(p.data.byteOffset, p.data.byteOffset + p.data.byteLength));
@@ -444,7 +447,15 @@ export function createTerrainState(engine, opts) {
           const r = P_BRECT + b * 4;
           relaxation.queue.mark(pi[r], pi[r + 1], pi[r + 2], pi[r + 3]);
         }
-        qHead = (qHead + brushN) % QUEUE; qCount -= brushN; passRan[2] = 1; }
+        const fx = this.brushFx;
+        if (fx) for (let b = 0; b < brushN; b++) {
+          const o = ((qHead + b) % QUEUE) * BF;
+          fx.time = now; fx.x = brushQ[o]; fx.z = brushQ[o + 1];
+          fx.dx = brushQ[o + 2]; fx.dz = brushQ[o + 3]; fx.halfLength = brushQ[o + 4];
+          fx.width = brushQ[o + 5]; fx.depth = brushQ[o + 6]; fx.kind = brushQ[o + 8]; fx.emit();
+        }
+        qHead = (qHead + brushN) % QUEUE; qCount -= brushN; passRan[2] = 1;
+      }
       if (healFine && csHealFine.dispatch(Math.ceil(FINE_N / 8), Math.ceil(FINE_N / HEAL_BANDS / 8), 1)) {
         bandHealed[bandCursor] = now; bandCursor = (bandCursor + 1) % HEAL_BANDS; passRan[3] = 1;
       }

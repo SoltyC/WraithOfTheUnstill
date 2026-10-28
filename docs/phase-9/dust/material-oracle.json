@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-28T05:13:03.047Z",
+  "dry": [
+    1,
+    0.885697603225708,
+    0.1713077425956726,
+    0,
+    0
+  ],
+  "frozen": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "The unchanged looseSand shader body is run as a diagnostic compute function against actual surface/fine-state/window buffers. Columns are dry, rain 0.2, rain 0.5, rain 1, non-sand."
+}
