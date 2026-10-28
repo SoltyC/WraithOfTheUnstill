@@ -38,4 +38,6 @@ export function blendGrade(out, r, strength, meadow = 0, rMeadow = r, dunes = 0,
     }
   }
   out[3] = strength;
+  // Optional LUT shoulder belongs to the camera biome; always clear it outside dunes.
+  out[12] = dunes;
 }

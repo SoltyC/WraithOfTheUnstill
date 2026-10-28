@@ -415,3 +415,6 @@ Terrain profile (2026-10-10, `p8-forest-floor`, 0.7): toggling the terrain at re
 - **Per-cascade levels** (cascade 0 levels 0–6, cascade 2 levels 4–11, cascade 3 levels 7–11; skipped levels exit before any data read): ~1.5 ms.
 - **Meadow layers skipped where their landform mask is ~0.**
 - **Result:** `p8-forest-floor` 16.4 → 15.6 ms, `p8-meadow-noon` 15.3 → 14.05 ms.
+
+
+2026-10-28 D1b fixed views, Windows headless RTX3060, verified 2560×1440 scale1: three 240-frame GPU timestamp repeats each. Close median 15.042/15.062/15.073 ms; mid 11.269/11.256/11.261; canyon 12.637/12.640/12.640; highest observed span 15.715 ms, 27 passes, zero errors/late pipelines. One 4 MiB R8 rock mask, no new per-frame upload or draw. Static diagnostic only: sustained world/combat/weather/streaming performance and presentation/1% lows remain open. docs/phase-9/dune-grade/perf.json.
