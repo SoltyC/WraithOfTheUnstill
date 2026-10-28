@@ -1,0 +1,638 @@
+{
+  "date": "2026-10-28T06:06:43.825Z",
+  "report": [
+    {
+      "id": "p9d2-silhouette-500-a",
+      "setup": {
+        "camera": [
+          3052.5,
+          369.46,
+          1837.343
+        ],
+        "fov": 0.55,
+        "width": 2560,
+        "height": 1440,
+        "gpuErrors": 0,
+        "late": []
+      },
+      "shot": {
+        "ok": true,
+        "file": "screenshots/d2-silhouette-raw/p9d2-silhouette-500-a.png",
+        "t": 25.14,
+        "tod": 17.8,
+        "pos": [
+          3052.5,
+          365.46,
+          1837.34
+        ],
+        "camYaw": -2.62,
+        "camPitch": -0.02,
+        "health": 100,
+        "focus": 100,
+        "flow": {
+          "v": 0,
+          "tier": 0,
+          "show": 0,
+          "streak": 0,
+          "secs": [
+            22.19,
+            0,
+            0,
+            0
+          ],
+          "counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "weapon": {
+          "held": "staff",
+          "carried": [
+            "staff",
+            null
+          ],
+          "owned": [
+            "staff"
+          ],
+          "phase": 0,
+          "combo": 0,
+          "heavy": false,
+          "stats": {
+            "swings": 0,
+            "heavies": 0,
+            "hits": 0,
+            "damage": 0,
+            "shatters": 0,
+            "glances": 0
+          }
+        },
+        "econ": {
+          "marks": 2,
+          "mats": {
+            "rime-core": 0,
+            "hedge-heart": 0,
+            "turf-amber": 0
+          },
+          "pouch": {
+            "salve": 0,
+            "tea": 0,
+            "tonic": 0,
+            "bread": 0,
+            "draught": 0
+          },
+          "sel": "flask",
+          "flask": {
+            "charges": 3,
+            "max": 3
+          },
+          "threads": 0,
+          "maxHealth": 100,
+          "using": null,
+          "buffs": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drop": null,
+          "purse": 8.11,
+          "tiers": [
+            "staff:0"
+          ]
+        },
+        "element": "frost",
+        "unlocked": [
+          "frost"
+        ],
+        "climbing": false,
+        "talking": false,
+        "line": null,
+        "task": null,
+        "perf": {
+          "frames": 60,
+          "meanMs": 11.49,
+          "fps": 87.04,
+          "p50": 10.9,
+          "p95": 12.7,
+          "max": 48.9,
+          "renderScale": 1
+        },
+        "log": [
+          "2.2 bot ready",
+          "2.26 TASK Ribbon (hold click) onto the stone",
+          "2.73 NOTICE [Journal] A sketch: a hound",
+          "3.34 NOTICE [Remembered] Hounds Hunt in Turns",
+          "21.9 NOTICE [Errand] The Stones That Listen — Maud the weaver says three stones on the lake shore are asking for something, now that the wind is back.",
+          "21.9 NOTICE [Errand] The Shelf Stream — Varo has watched the wind climb the ridge above the monastery. He thinks a robe could ride it."
+        ],
+        "quests": {
+          "empty-robe": "active:wake",
+          "meadow-side-echoes": "active:ask",
+          "shelf-stream": "active:ask"
+        },
+        "near": [],
+        "fire": {
+          "burning": 0,
+          "smouldering": 0,
+          "saved": 0,
+          "lost": 0,
+          "threatened": 0,
+          "total": 154,
+          "out": 0
+        },
+        "bell": {
+          "phase": 0,
+          "vents": [
+            0,
+            0,
+            0
+          ],
+          "valves": 0,
+          "galeIn": 12,
+          "hint": ""
+        },
+        "ms": 1206
+      }
+    },
+    {
+      "id": "p9d2-silhouette-500-b",
+      "setup": {
+        "camera": [
+          1982.5,
+          467.997,
+          -1410.696
+        ],
+        "fov": 0.55,
+        "width": 2560,
+        "height": 1440,
+        "gpuErrors": 0,
+        "late": []
+      },
+      "shot": {
+        "ok": true,
+        "file": "screenshots/d2-silhouette-raw/p9d2-silhouette-500-b.png",
+        "t": 28.09,
+        "tod": 17.8,
+        "pos": [
+          1982.5,
+          347.71,
+          -1410.7
+        ],
+        "camYaw": -2.62,
+        "camPitch": -0.04,
+        "health": 100,
+        "focus": 100,
+        "flow": {
+          "v": 0,
+          "tier": 0,
+          "show": 0,
+          "streak": 0,
+          "secs": [
+            24.29,
+            0,
+            0,
+            0
+          ],
+          "counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "weapon": {
+          "held": "staff",
+          "carried": [
+            "staff",
+            null
+          ],
+          "owned": [
+            "staff"
+          ],
+          "phase": 0,
+          "combo": 0,
+          "heavy": false,
+          "stats": {
+            "swings": 0,
+            "heavies": 0,
+            "hits": 0,
+            "damage": 0,
+            "shatters": 0,
+            "glances": 0
+          }
+        },
+        "econ": {
+          "marks": 2,
+          "mats": {
+            "rime-core": 0,
+            "hedge-heart": 0,
+            "turf-amber": 0
+          },
+          "pouch": {
+            "salve": 0,
+            "tea": 0,
+            "tonic": 0,
+            "bread": 0,
+            "draught": 0
+          },
+          "sel": "flask",
+          "flask": {
+            "charges": 3,
+            "max": 3
+          },
+          "threads": 0,
+          "maxHealth": 100,
+          "using": null,
+          "buffs": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drop": null,
+          "purse": 8.21,
+          "tiers": [
+            "staff:0"
+          ]
+        },
+        "element": "frost",
+        "unlocked": [
+          "frost"
+        ],
+        "climbing": false,
+        "talking": false,
+        "line": null,
+        "task": null,
+        "perf": {
+          "frames": 60,
+          "meanMs": 9.6,
+          "fps": 104.13,
+          "p50": 9,
+          "p95": 10,
+          "max": 46.1,
+          "renderScale": 1
+        },
+        "log": [
+          "25.88 NOTICE [Marks] + 2 — 2 in the pouch"
+        ],
+        "quests": {
+          "empty-robe": "active:wake",
+          "meadow-side-echoes": "active:ask",
+          "shelf-stream": "active:ask"
+        },
+        "near": [],
+        "fire": {
+          "burning": 0,
+          "smouldering": 0,
+          "saved": 0,
+          "lost": 0,
+          "threatened": 0,
+          "total": 154,
+          "out": 0
+        },
+        "bell": {
+          "phase": 0,
+          "vents": [
+            0,
+            0,
+            0
+          ],
+          "valves": 0,
+          "galeIn": 12,
+          "hint": ""
+        },
+        "ms": 1141
+      }
+    },
+    {
+      "id": "p9d2-silhouette-2000-a",
+      "setup": {
+        "camera": [
+          405,
+          341.998,
+          -876.609
+        ],
+        "fov": 0.55,
+        "width": 2560,
+        "height": 1440,
+        "gpuErrors": 0,
+        "late": []
+      },
+      "shot": {
+        "ok": true,
+        "file": "screenshots/d2-silhouette-raw/p9d2-silhouette-2000-a.png",
+        "t": 31.25,
+        "tod": 17.8,
+        "pos": [
+          405,
+          286.74,
+          -876.61
+        ],
+        "camYaw": 2.62,
+        "camPitch": -0.01,
+        "health": 100,
+        "focus": 100,
+        "flow": {
+          "v": 0,
+          "tier": 0,
+          "show": 0,
+          "streak": 0,
+          "secs": [
+            26.95,
+            0,
+            0,
+            0
+          ],
+          "counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "weapon": {
+          "held": "staff",
+          "carried": [
+            "staff",
+            null
+          ],
+          "owned": [
+            "staff"
+          ],
+          "phase": 0,
+          "combo": 0,
+          "heavy": false,
+          "stats": {
+            "swings": 0,
+            "heavies": 0,
+            "hits": 0,
+            "damage": 0,
+            "shatters": 0,
+            "glances": 0
+          }
+        },
+        "econ": {
+          "marks": 2,
+          "mats": {
+            "rime-core": 0,
+            "hedge-heart": 0,
+            "turf-amber": 0
+          },
+          "pouch": {
+            "salve": 0,
+            "tea": 0,
+            "tonic": 0,
+            "bread": 0,
+            "draught": 0
+          },
+          "sel": "flask",
+          "flask": {
+            "charges": 3,
+            "max": 3
+          },
+          "threads": 0,
+          "maxHealth": 100,
+          "using": null,
+          "buffs": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drop": null,
+          "purse": 8.31,
+          "tiers": [
+            "staff:0"
+          ]
+        },
+        "element": "frost",
+        "unlocked": [
+          "frost"
+        ],
+        "climbing": false,
+        "talking": false,
+        "line": null,
+        "task": null,
+        "perf": {
+          "frames": 60,
+          "meanMs": 15.44,
+          "fps": 64.77,
+          "p50": 15.3,
+          "p95": 21.5,
+          "max": 49.4,
+          "renderScale": 1
+        },
+        "log": [],
+        "quests": {
+          "empty-robe": "active:wake",
+          "meadow-side-echoes": "active:ask",
+          "shelf-stream": "active:ask"
+        },
+        "near": [],
+        "fire": {
+          "burning": 0,
+          "smouldering": 0,
+          "saved": 0,
+          "lost": 0,
+          "threatened": 0,
+          "total": 154,
+          "out": 0
+        },
+        "bell": {
+          "phase": 0,
+          "vents": [
+            0,
+            0,
+            0
+          ],
+          "valves": 0,
+          "galeIn": 12,
+          "hint": ""
+        },
+        "ms": 1206
+      }
+    },
+    {
+      "id": "p9d2-silhouette-2000-b",
+      "setup": {
+        "camera": [
+          2732.5,
+          467.997,
+          -111.658
+        ],
+        "fov": 0.55,
+        "width": 2560,
+        "height": 1440,
+        "gpuErrors": 0,
+        "late": []
+      },
+      "shot": {
+        "ok": true,
+        "file": "screenshots/d2-silhouette-raw/p9d2-silhouette-2000-b.png",
+        "t": 33.51,
+        "tod": 17.8,
+        "pos": [
+          2732.5,
+          164.03,
+          -111.66
+        ],
+        "camYaw": -2.62,
+        "camPitch": -0.01,
+        "health": 100,
+        "focus": 100,
+        "flow": {
+          "v": 0,
+          "tier": 0,
+          "show": 0,
+          "streak": 0,
+          "secs": [
+            29.06,
+            0,
+            0,
+            0
+          ],
+          "counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "weapon": {
+          "held": "staff",
+          "carried": [
+            "staff",
+            null
+          ],
+          "owned": [
+            "staff"
+          ],
+          "phase": 0,
+          "combo": 0,
+          "heavy": false,
+          "stats": {
+            "swings": 0,
+            "heavies": 0,
+            "hits": 0,
+            "damage": 0,
+            "shatters": 0,
+            "glances": 0
+          }
+        },
+        "econ": {
+          "marks": 2,
+          "mats": {
+            "rime-core": 0,
+            "hedge-heart": 0,
+            "turf-amber": 0
+          },
+          "pouch": {
+            "salve": 0,
+            "tea": 0,
+            "tonic": 0,
+            "bread": 0,
+            "draught": 0
+          },
+          "sel": "flask",
+          "flask": {
+            "charges": 3,
+            "max": 3
+          },
+          "threads": 0,
+          "maxHealth": 100,
+          "using": null,
+          "buffs": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "drop": null,
+          "purse": 8.39,
+          "tiers": [
+            "staff:0"
+          ]
+        },
+        "element": "frost",
+        "unlocked": [
+          "frost"
+        ],
+        "climbing": false,
+        "talking": false,
+        "line": null,
+        "task": null,
+        "perf": {
+          "frames": 60,
+          "meanMs": 9.59,
+          "fps": 104.33,
+          "p50": 8.8,
+          "p95": 10.3,
+          "max": 47.3,
+          "renderScale": 1
+        },
+        "log": [],
+        "quests": {
+          "empty-robe": "active:wake",
+          "meadow-side-echoes": "active:ask",
+          "shelf-stream": "active:ask"
+        },
+        "near": [],
+        "fire": {
+          "burning": 0,
+          "smouldering": 0,
+          "saved": 0,
+          "lost": 0,
+          "threatened": 0,
+          "total": 154,
+          "out": 0
+        },
+        "bell": {
+          "phase": 0,
+          "vents": [
+            0,
+            0,
+            0
+          ],
+          "valves": 0,
+          "galeIn": 12,
+          "hint": ""
+        },
+        "ms": 1156
+      }
+    }
+  ]
+}

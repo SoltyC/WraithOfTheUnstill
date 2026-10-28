@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-28T05:51:12.858Z",
+  "iterations": 8,
+  "finePasses": 4,
+  "frames": 480,
+  "mode": "synthetic26",
+  "synthetic": {
+    "distance": 130.341999999853,
+    "covered": 476,
+    "maxAge": 0.1354999999998654,
+    "nominalSpeed": 26
+  },
+  "seconds": 5.171100000021056,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 480,
+  "writes": 2348,
+  "writesByKind": [
+    365,
+    647,
+    0,
+    0,
+    0,
+    1336,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionReads": 59,
+  "speed": {
+    "min": 5.2,
+    "max": 25.85658229705057,
+    "mean": 8.457259436045588
+  },
+  "samples": 479,
+  "incomplete": 0,
+  "spikes": [],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.006143999999999927
+    },
+    {
+      "pass": 1,
+      "ms": 0.016383999999999954
+    },
+    {
+      "pass": 2,
+      "ms": 0.27891200000000005
+    },
+    {
+      "pass": 3,
+      "ms": 0.005759999999999987
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.04353175782881021,
+    "p95": 0.04505600000000021,
+    "max": 0.3071999999999999
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Synthetic26 mode adds an actual PLOUGH writer and moving collision readback centre at a nominal 26 m/s along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

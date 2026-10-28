@@ -16,6 +16,14 @@ export function createStateCollision(engine,fine,surface) {
   const cs=new ComputeShader('stateCollision',engine,{computeSource:stateCollisionWGSL},{bindingsMapping:mapping});
   cs.setStorageBuffer('fine0',fine[0]);cs.setStorageBuffer('fine2',fine[2]);cs.setStorageBuffer('surface',surface);cs.setStorageBuffer('job',job);cs.setStorageBuffer('output',output);
   let gen=0, next=0, last=-Infinity;
+  // One read may be in flight. Reuse its metadata and callbacks instead of allocating two
+  // closures per refresh; the WebGPU/Babylon read promise itself remains API overhead.
+  let readTime=0.5,readGeneration=0,readX=0.5,readZ=0.5,readTarget=null;
+  function readDone(){
+    if(readGeneration===gen){view.install(readTarget,readX,readZ,STATE_GRID_STEP,STATE_GRID_N,readTime);self.reads++;}
+    readTarget=null;self.pending=false;
+  }
+  function readFailed(){readTarget=null;self.pending=false;self.errors++;self.dirty=true;}
   const self={view,enabled:false,ready:false,pending:false,reads:0,errors:0,
     originX:0,originZ:0,px:0.5,pz:0.5,time:0.5,dirty:false,
     reset(){gen++;view.clear();last=-Infinity;},
@@ -30,11 +38,8 @@ export function createStateCollision(engine,fine,surface) {
       data[0]=self.originX;data[1]=self.originZ;data[2]=Math.round(x0*FINE_PER_M);data[3]=Math.round(z0*FINE_PER_M);data[4]=1;job.update(data);
       if(!cs.dispatch(Math.ceil(STATE_GRID_N/8),Math.ceil(STATE_GRID_N/8),1))return;
       last=self.time;self.pending=true;self.dirty=false;
-      const time=self.time,generation=gen,target=buffers[next];next=1-next;
-      output.read(0,bytes,target).then(()=>{
-        if(generation===gen){view.install(target,x0,z0,STATE_GRID_STEP,STATE_GRID_N,time);self.reads++;}
-        self.pending=false;
-      },()=>{self.pending=false;self.errors++;self.dirty=true;});
+      readTime=self.time;readGeneration=gen;readX=x0;readZ=z0;readTarget=buffers[next];next=1-next;
+      output.read(0,bytes,readTarget).then(readDone,readFailed);
     },
   };
   return self;

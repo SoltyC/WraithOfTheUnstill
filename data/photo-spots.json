@@ -5834,6 +5834,98 @@
     {"id":"p9d9-plate-pop","biome":"dunes","label":"The ruin plate breaking free","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["plateback",0,5]],"seconds":2,"pop":[0]},"camera":{"mode":"follow","yaw":0,"pitch":0.25,"dist":7}},
     {"id":"p9d9-rising","biome":"dunes","label":"Skitter and plate-back rising","time":9,"weather":"clear","player":[1900,900],"shaped":{"spawn":[["skitter",-2,5],["plateback",2,6]],"seconds":0.8},"camera":{"mode":"follow","yaw":0,"pitch":0.25,"dist":8}},
     {"id":"p9d2-crest-500","biome":"dunes","label":"Diagnostic dune ridge geometry at 500 m (elevated camera)","time":17.8,"weather":"clear","hidePlayer":true,"player":[1544.4095225512606,-1187.037086855466],"camera":{"mode":"free","pos":[1544.4095225512606,336.0152441543178,-1187.037086855466],"yaw":3.403392041388943,"pitch":0.015998634876343527,"fov":0.7}},
-    {"id":"p9d2-crest-2000","biome":"dunes","label":"Diagnostic dune ridge geometry at 2000 m (elevated camera)","time":17.8,"weather":"clear","hidePlayer":true,"player":[1932.6380902050423,261.8516525781365],"camera":{"mode":"free","pos":[1932.6380902050423,336.0152441543178,261.8516525781365],"yaw":3.403392041388943,"pitch":0.003999978666871465,"fov":0.7}}
+    {"id":"p9d2-crest-2000","biome":"dunes","label":"Diagnostic dune ridge geometry at 2000 m (elevated camera)","time":17.8,"weather":"clear","hidePlayer":true,"player":[1932.6380902050423,261.8516525781365],"camera":{"mode":"free","pos":[1932.6380902050423,336.0152441543178,261.8516525781365],"yaw":3.403392041388943,"pitch":0.003999978666871465,"fov":0.7}},
+    {
+      "id": "p9d2-silhouette-500-a",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 500-a",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        3052.5,
+        1837.343
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          3052.5,
+          369.46,
+          1837.343
+        ],
+        "yaw": -2.617994,
+        "pitch": -0.018649,
+        "fov": 0.55
+      }
+    },
+    {
+      "id": "p9d2-silhouette-500-b",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 500-b",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        1982.5,
+        -1410.696
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1982.5,
+          467.997,
+          -1410.696
+        ],
+        "yaw": -2.617994,
+        "pitch": -0.039979,
+        "fov": 0.55
+      }
+    },
+    {
+      "id": "p9d2-silhouette-2000-a",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 2000-a",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        405,
+        -876.609
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          405,
+          341.998,
+          -876.609
+        ],
+        "yaw": 2.617994,
+        "pitch": -0.01,
+        "fov": 0.55
+      }
+    },
+    {
+      "id": "p9d2-silhouette-2000-b",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 2000-b",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        2732.5,
+        -111.658
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          2732.5,
+          467.997,
+          -111.658
+        ],
+        "yaw": -2.617994,
+        "pitch": -0.01,
+        "fov": 0.55
+      }
+    }
   ]
 }

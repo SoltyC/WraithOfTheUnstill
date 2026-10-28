@@ -10,7 +10,7 @@ async function ev(js) {
   if (!reply.ok) throw new Error(reply.error);
   return reply.result;
 }
-const setup = await ev(`
+const setup = process.argv[3] === 'resume' ? await ev('return {before:w.settleCheck.before,start:w.settleCheck.start};') : await ev(`
  const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
  g.arm.setFree(false);g.game.teleport(1900,900);for(let i=0;i<600&&!g.game.worldSettled();i++)await frame();
  g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();
@@ -26,7 +26,7 @@ const setup = await ev(`
 console.log(JSON.stringify({setup}));
 let elapsed = 0;
 const progressLog = [];
-for (let chunk = 0; chunk < 30 && elapsed < 35; chunk++) {
+for (let chunk = 0; chunk < 60 && elapsed < 35; chunk++) {
   const progress = await ev(`for(let i=0;i<120;i++)await new Promise(resolve=>requestAnimationFrame(resolve));return {elapsed:g.terrainState.time-w.settleCheck.start,jobs:g.terrainState.relaxation.jobs-w.settleCheck.jobs,pending:g.terrainState.relaxation.queue.pending};`);
   progressLog.push({chunk,...progress}); elapsed = progress.elapsed; console.log(JSON.stringify({chunk,...progress}));
 }

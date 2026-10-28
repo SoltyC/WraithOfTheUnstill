@@ -6,6 +6,8 @@ const label = process.argv[2] || 'prototype-gpu';
 const iterations = Number(process.argv[3] || 4);
 if (!Number.isInteger(iterations) || iterations < 2 || iterations > 64 || iterations % 2) throw new Error('Use an even iteration count from 2 to 64');
 if(!/^[a-z0-9-]+$/i.test(label))throw new Error('Use a simple report label');
+const scenario = process.argv[4] || 'dry';
+if(!['dry','wet','frozen'].includes(scenario))throw new Error('Use dry, wet or frozen');
 const base = process.env.WRAITH_URL || 'http://127.0.0.1:4176';
 async function ev(js) {
   const {id} = await (await fetch(base + '/__wraith/bot/cmd',{method:'POST',body:JSON.stringify({do:'eval',js})})).json();
@@ -19,9 +21,13 @@ const setup = await ev(`
   for(let i=0;i<60;i++)await frame();
   g.game.killShaped();w.params.v.refillRate=0;w.params.version++;g.terrainState.healScale=0;
   const r=g.terrainState.relaxation;r.enabled=false;
-  const ts=g.terrainState;
+  const ts=g.terrainState;ts.restore([]);g.stone.mass.clear();for(let i=0;i<60;i++)await frame();
   ts.bx=1904;ts.bz=900;ts.bdx=1;ts.bdz=0;ts.bl=0;ts.bw=0.5;ts.bd=2;ts.bc=0.2;ts.bk=5;ts.stamp();
   for(let i=0;i<30;i++)await frame();
+  if('${scenario}'!=='dry'){
+    ts.bx=1904;ts.bz=900;ts.bdx=1;ts.bdz=0;ts.bl=0;ts.bw=1.5;ts.bd=0;ts.bc=1;
+    ts.bk='${scenario}'==='wet'?4:3;ts.bwet=1;ts.stamp();for(let i=0;i<30;i++)await frame();
+  }
   const raw=await ts.params.read(0,16);const origin=new Int32Array(raw.buffer,raw.byteOffset,4);
   w.relaxOrigin=[origin[0],origin[1]];
   w.relaxRun=async(iterations)=>{
@@ -62,7 +68,7 @@ const timing = await ev(`
   await new Promise(resolve=>setTimeout(resolve,200));
   return {jobs:r.jobs-jobs0,samples:timer.count-start,relaxGpuTotalMs:timer.byLabel.sandRelax || 0,maxBatchMs,errors:w.gpuStats.gpuErrors,late:w.gpuStats.late,adapter:w.gpuStats.adapterInfo};
 `);
-const report = {iterations,date:new Date().toISOString(),ready:setup.ready,maxError,rms:Math.sqrt(squared/g.height.length),beforeMass,afterMass,massError:afterMass-beforeMass,packedMassError:packed.mass-beforeMass,packedCycles:packed.cycles,relativePackedMassError:(packed.mass-beforeMass)/Math.max(1,Math.abs(beforeMass)),note:'Scratch float output before f16 store. Closed tile; iteration count recorded above. Headless indicative timing.',timing};
+const report = {scenario,iterations,date:new Date().toISOString(),ready:setup.ready,maxError,rms:Math.sqrt(squared/g.height.length),beforeMass,afterMass,massError:afterMass-beforeMass,packedMassError:packed.mass-beforeMass,packedCycles:packed.cycles,relativePackedMassError:(packed.mass-beforeMass)/Math.max(1,Math.abs(beforeMass)),note:'Scratch float output before f16 store. Closed tile; iteration count recorded above. Headless indicative timing.',timing};
 fs.mkdirSync('docs/phase-9/relaxation',{recursive:true});fs.writeFileSync('docs/phase-9/relaxation/'+label+'.json',JSON.stringify(report,null,2)+'\n');
 console.log(JSON.stringify(report,null,2));
 if(maxError>0.0001 || Math.abs(packed.mass-beforeMass)>Math.max(0.01,Math.abs(beforeMass)*1e-5) || timing.jobs < 100 || timing.errors || timing.late.length) process.exitCode=1;

@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-28T05:50:50.296Z",
+  "reports": [
+    {
+      "name": "queue",
+      "calls": 1000000,
+      "gcs": 0,
+      "heapGrowth": 25824
+    },
+    {
+      "name": "collision",
+      "calls": 1000000,
+      "gcs": 0,
+      "heapGrowth": 29192
+    },
+    {
+      "name": "dust",
+      "calls": 1000000,
+      "gcs": 0,
+      "heapGrowth": 41560
+    }
+  ],
+  "note": "Warm Node V8 hot queue, CPU collision sampling and bounded dust event paths. Excludes Babylon/WebGPU dispatch and asynchronous readback promises, which require a browser allocation profile."
+}

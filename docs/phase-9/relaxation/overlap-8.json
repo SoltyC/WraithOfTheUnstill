@@ -1,0 +1,191 @@
+{
+  "date": "2026-10-28T05:50:07.824Z",
+  "iterations": 8,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "elapsed": 35.55289999994022,
+  "jobs": 2838,
+  "maxDegrees": 34.03088015215741,
+  "tiles": [
+    {
+      "x": 1903.4,
+      "z": 899.4,
+      "degrees": 34.02389937339846
+    },
+    {
+      "x": 1904,
+      "z": 899.4,
+      "degrees": 34.02389937339846
+    },
+    {
+      "x": 1904.6,
+      "z": 899.4,
+      "degrees": 34.02389937339846
+    },
+    {
+      "x": 1903.4,
+      "z": 900,
+      "degrees": 34.03088015215741
+    },
+    {
+      "x": 1904.6,
+      "z": 900,
+      "degrees": 34.03088015215741
+    },
+    {
+      "x": 1903.4,
+      "z": 900.6,
+      "degrees": 34.03088015215741
+    },
+    {
+      "x": 1904,
+      "z": 900.6,
+      "degrees": 34.03088015215741
+    },
+    {
+      "x": 1904.6,
+      "z": 900.6,
+      "degrees": 34.03088015215741
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "progress": [
+    {
+      "elapsed": 1.3223999999746638,
+      "jobs": 123,
+      "pending": 16
+    },
+    {
+      "elapsed": 2.6563000000685406,
+      "jobs": 246,
+      "pending": 16
+    },
+    {
+      "elapsed": 3.995800000068016,
+      "jobs": 369,
+      "pending": 16
+    },
+    {
+      "elapsed": 5.281800000066141,
+      "jobs": 492,
+      "pending": 16
+    },
+    {
+      "elapsed": 6.635100000017474,
+      "jobs": 615,
+      "pending": 16
+    },
+    {
+      "elapsed": 7.918300000063823,
+      "jobs": 736,
+      "pending": 16
+    },
+    {
+      "elapsed": 9.185600000015029,
+      "jobs": 857,
+      "pending": 16
+    },
+    {
+      "elapsed": 10.501899999965758,
+      "jobs": 980,
+      "pending": 16
+    },
+    {
+      "elapsed": 11.8123999999641,
+      "jobs": 1103,
+      "pending": 16
+    },
+    {
+      "elapsed": 13.105200000033847,
+      "jobs": 1226,
+      "pending": 16
+    },
+    {
+      "elapsed": 14.369200000032492,
+      "jobs": 1348,
+      "pending": 16
+    },
+    {
+      "elapsed": 15.652700000030904,
+      "jobs": 1471,
+      "pending": 16
+    },
+    {
+      "elapsed": 16.94299999998168,
+      "jobs": 1594,
+      "pending": 16
+    },
+    {
+      "elapsed": 18.201100000003862,
+      "jobs": 1716,
+      "pending": 16
+    },
+    {
+      "elapsed": 19.52970000002665,
+      "jobs": 1839,
+      "pending": 16
+    },
+    {
+      "elapsed": 20.780600000001527,
+      "jobs": 1960,
+      "pending": 16
+    },
+    {
+      "elapsed": 22.071700000023952,
+      "jobs": 2083,
+      "pending": 16
+    },
+    {
+      "elapsed": 23.33959999999854,
+      "jobs": 2206,
+      "pending": 16
+    },
+    {
+      "elapsed": 24.668800000044826,
+      "jobs": 2329,
+      "pending": 16
+    },
+    {
+      "elapsed": 25.977700000020036,
+      "jobs": 2452,
+      "pending": 16
+    },
+    {
+      "elapsed": 27.296700000018973,
+      "jobs": 2575,
+      "pending": 16
+    },
+    {
+      "elapsed": 28.59859999999344,
+      "jobs": 2698,
+      "pending": 16
+    },
+    {
+      "elapsed": 29.867999999968674,
+      "jobs": 2819,
+      "pending": 4
+    },
+    {
+      "elapsed": 31.26589999994394,
+      "jobs": 2830,
+      "pending": 0
+    },
+    {
+      "elapsed": 32.57780000003822,
+      "jobs": 2830,
+      "pending": 0
+    },
+    {
+      "elapsed": 33.900800000037066,
+      "jobs": 2830,
+      "pending": 0
+    },
+    {
+      "elapsed": 35.179200000011974,
+      "jobs": 2830,
+      "pending": 0
+    }
+  ],
+  "note": "Eight live frozen Skitters remain present while eight overlapping full-size Skitter MOUND brush writes settle after writers stop. This does not represent continued impacts while a surface is being disturbed."
+}
