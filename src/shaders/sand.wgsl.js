@@ -60,10 +60,13 @@ fn sandSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, L: vec3f)
   let wet0 = uniforms.wetParams.x; let pud = uniforms.wetParams.y;
   // The dune under the foot: the slip face (steep, leeward of the wind) is smooth; the stoss and the
   // flats are rippled. Nc is the smoothed terrain normal.
-  let gw = dot(Nc.xz, SAND_WIND) / max(Nc.y, 0.2);          // > 0 faces downwind
+  // At a kilometre-scale footprint, the three-level-coarser normal can erase the dune's
+  // actual slip face. Retain its drawn meso slope once the fine surface is unresolved.
+  let shapeN=normalize(mix(Nc,Ng,smoothstep(0.5,2.0,fp)));
+  let gw = dot(shapeN.xz, SAND_WIND) / max(shapeN.y, 0.2);          // > 0 faces downwind
   let slip = smoothstep(0.2, 0.55, gw);
   let stoss = smoothstep(0.02, 0.28, -gw);
-  let flatK = smoothstep(0.93, 0.99, Nc.y);
+  let flatK = smoothstep(0.93, 0.99, shapeN.y);
   o.ripK = (1.0 - slip) * clamp(0.62 + 0.38 * max(stoss, flatK), 0.0, 1.0);
   o.cool = slip;
   // Compacted sand loses its ripples; frozen sand is firm.
@@ -80,7 +83,8 @@ fn sandSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, L: vec3f)
   if (wB > 0.01) { tB = mdPlanar(MAT_SAND_FINE, p + vec2f(5.3, 2.1), 0.55, Ng); }
   if (wC > 0.01) { tC = mdPlanar(MAT_SAND_FINE, p + vec2f(-8.7, 19.3), 5.0, Ng); }
   let swell = mix(tA.N, tA2.N, 0.5);
-  var N = normalize(Ng + (swell - Ng) * 0.35 + (tB.N - Ng) * wB * 0.9 + (tC.N - Ng) * wC * 1.3);
+  let swellK=0.35*(1.0-smoothstep(0.35,1.5,fp));
+  var N = normalize(Ng + (swell - Ng) * swellK + (tB.N - Ng) * wB * 0.9 + (tC.N - Ng) * wC * 1.3);
 
   // Albedo: a warm dry base, the scans' own variation kept (retinted), large patches of gold and rust.
   let base = vec3f(0.53, 0.36, 0.185);

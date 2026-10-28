@@ -20,6 +20,7 @@ import { SNOW_WGSL } from './snow.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { MEADOW_WGSL } from './meadow.wgsl.js';
 import { SAND_WGSL } from './sand.wgsl.js';
+import { SANDSTONE_WGSL } from './sandstone.wgsl.js';
 import { BORDER_WGSL } from './common.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
@@ -349,6 +350,7 @@ ${MATERIALS_WGSL}
 ${SNOW_WGSL}
 ${MEADOW_WGSL}
 ${SAND_WGSL}
+${SANDSTONE_WGSL}
 ${BORDER_WGSL}
 
 @fragment
@@ -479,8 +481,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Wet ground and puddles reflect (SSR: sky, lamps, the Wraith): Fresnel × the gloss.
     ssrMask = max(ssrMask, wMeadow * ms.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ms.N, V), 0.0), 5.0)) * 0.85);
   }
-  // Sand of the erg (D1a, shaders/sand.wgsl.js) over the clay view, by dune weight; cliff walls keep the clay.
-  let wSand = smoothstep(0.3, 0.7, wA.w / max(wSum, 0.001)) * (1.0 - sea) * (1.0 - smoothstep(0.42, 0.58, slope));
+  // Exposed dune walls share the existing light/atmosphere path; upward faces retain D1a sand.
+  let wDune=smoothstep(0.3,0.7,wA.w/max(wSum,0.001))*(1.0-sea);
+  if(wDune>0.001 && slope>0.38){
+    let stone=sandstoneLight(wp,N,L,key,vis*cs,uniforms.envMisc.w,skyUp,fp);
+    let rockUv=clamp(vec2f(wp.x+4096.0,4096.0-wp.z)/8192.0,vec2f(0.0),vec2f(1.0));
+    let rock=textureSampleLevel(rockMask,rockMaskSampler,rockUv,0.0).r;
+    col=mix(col,stone,wDune*smoothstep(0.38,0.55,slope)*rock);
+  }
+  let wSand = wDune * (1.0 - smoothstep(0.42, 0.58, slope));
   if (wSand > 0.001) {
     let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));

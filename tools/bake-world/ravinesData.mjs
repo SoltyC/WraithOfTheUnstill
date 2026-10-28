@@ -3,7 +3,7 @@
 // the canyon's south end bends SE to follow the escarpment's foot (the foot leaves x ≈ 1500 there).
 
 /** Pitch (m) of the canyon walls' ledges: strata at multiples of this above sea level, so they line up. */
-export const STRATA = 12;
+export { SANDSTONE_STRATA as STRATA } from '../../src/terrain/geology.js';
 
 /** The Red Galleries: the main canyon along the escarpment foot, plus three side galleries. Floor half-widths
  *  run from w0 to w1 (40–120 m floors), depth is the wall height below the lower rim (30–80 m). */
