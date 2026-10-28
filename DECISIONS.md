@@ -523,3 +523,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D2 prototype crest rendering: 512-cell/11-level visible clipmap keeps the16,384m outer half-width and6.25cm finest spacing. Static centre-first/ring topology omits only deeply hidden cells with a two-cell origin guard; a separate256-cell shadow grid shares height storage. This uses two static visible draws and about32.1MiB extra level storage to improve distant crests. Analytic phase/amplitude uses existing levelData.w, with no extra fragment binding/noise evaluation. Shipping0.7 TAAU remains the previously agreed configuration; native1 failures are retained. Unintegrated pending final motion/parity/allocation gates; not a whole-biome acceptance decision. See docs/phase-9/crest-review.md.
+
+
+2026-10-29 — D2 large-writer experiment: directional brush rectangles use conservative capsule-component bounds (same1.9radius cutoff), with fixed typed-array I/O. Disabled scheduler trials increase capacity64→512/lifetime30→240s to avoid early eviction/expiry;32steps unchanged. Verified overlapping-Ridge fixed60 check still marginally fails34.1degrees at34.10289239, so no D2 completion/enabling. Preserve failed trials/runtime mismatch and keep robust compute/allocation/graphics gates open. See crest-review.md.

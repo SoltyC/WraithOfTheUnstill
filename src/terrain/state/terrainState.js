@@ -13,6 +13,7 @@
 
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
+import { writeBrushRect } from './brushBounds.js';
 import { createSandRelax } from './sandRelax.js';
 import { RELAX_TILE } from './relaxation.js';
 import { createStateCollision } from './stateCollision.js';
@@ -405,12 +406,10 @@ export function createTerrainState(engine, opts) {
       for (let b = 0; b < brushN; b++) {
         const o = ((qHead + b) % QUEUE) * BF;
         const x = brushQ[o], z = brushQ[o + 1], dx = brushQ[o + 2], dz = brushQ[o + 3], hl = brushQ[o + 4], hw = brushQ[o + 5];
-        const r = hl + hw * 1.9;
         pf[P_BRUSH + b * 4] = x; pf[P_BRUSH + b * 4 + 1] = z; pf[P_BRUSH + b * 4 + 2] = hl; pf[P_BRUSH + b * 4 + 3] = brushQ[o + 6];
         pf[P_BDIR + b * 4] = dx; pf[P_BDIR + b * 4 + 1] = dz; pf[P_BDIR + b * 4 + 2] = hw; pf[P_BDIR + b * 4 + 3] = brushQ[o + 7];
         pf[P_BEX + b * 4] = brushQ[o + 8]; pf[P_BEX + b * 4 + 1] = brushQ[o + 9]; pf[P_BEX + b * 4 + 2] = brushQ[o + 10]; pf[P_BEX + b * 4 + 3] = brushQ[o + 11];
-        pi[P_BRECT + b * 4] = Math.max(next[0], Math.floor((x - r) * FINE_PER_M)); pi[P_BRECT + b * 4 + 1] = Math.max(next[1], Math.floor((z - r) * FINE_PER_M));
-        pi[P_BRECT + b * 4 + 2] = Math.min(next[0] + FINE_N, Math.ceil((x + r) * FINE_PER_M)); pi[P_BRECT + b * 4 + 3] = Math.min(next[1] + FINE_N, Math.ceil((z + r) * FINE_PER_M));
+        writeBrushRect(pi, P_BRECT + b * 4, brushQ, o, next);
       }
       pi[P_ORIGIN] = next[0]; pi[P_ORIGIN + 1] = next[1];
       pu[P_COUNTS] = nOut; pu[P_COUNTS + 1] = nIn; pu[P_COUNTS + 2] = brushN;

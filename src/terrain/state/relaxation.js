@@ -6,7 +6,7 @@ export const WET_REPOSE = Math.tan(60 * Math.PI / 180);
 export const RELAX_RATE = 1 / 16;
 export const RELAX_TILE = 128;
 export const RELAX_ITERATIONS = 32;
-export const RELAX_LIFETIME = 30;
+export const RELAX_LIFETIME = 240;
 const DX = [1, 0, 1, -1], DZ = [0, 1, 1, 1];
 export const isSand = (m) => m === 1 || m === 6;
 
@@ -44,12 +44,12 @@ export function createRelaxationGrid(n, spacing) {
 /** Fixed storage dirty scheduler. One bounded tile per frame, alternating half-tile origins
  * so closed tile boundaries do not become permanent seams. TTL is refreshed by actual writes.
  */
-export function createRelaxationQueue(capacity = 64) {
+export function createRelaxationQueue(capacity = 512) {
   const xs = new Int32Array(capacity), zs = new Int32Array(capacity), until = new Float64Array(capacity);
   const generations = new Uint32Array(capacity);
   let serial = 0;
   let cursor = 0, evict = 0, wakeX = NaN, wakeZ = NaN;
-  const q = { x: 0, z: 0, now: 0.5, pending: 0, capacity, slot: 0, generation: 0,
+  const q = { x: 0, z: 0, now: 0.5, pending: 0, capacity, lifetime: RELAX_LIFETIME, slot: 0, generation: 0,
     // GPU results may arrive after a fresh brush, slot reuse or save restore.
     retire(slot, generation) {
       if (generation !== 0 && generations[slot] === generation) until[slot] = 0;
