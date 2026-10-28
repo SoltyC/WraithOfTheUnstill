@@ -1,0 +1,210 @@
+{
+  "date": "2026-10-28T19:28:08.591Z",
+  "reports": [
+    {
+      "hour": 9,
+      "repeat": 0,
+      "before": 8,
+      "after": 8,
+      "seconds": 7.713000000357951,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "gpuMs": {
+        "samples": 599,
+        "mean": 13.822530240168755,
+        "median": 13.815391540527344,
+        "p95": 14.185824394226074,
+        "p99": 14.268192291259766,
+        "max": 14.306079864501953
+      },
+      "frameMs": {
+        "samples": 600,
+        "mean": 13.9025,
+        "median": 13.899999976158142,
+        "p95": 15.100000023841858,
+        "p99": 15.5,
+        "max": 19.5
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "hour": 9,
+      "repeat": 1,
+      "before": 8,
+      "after": 8,
+      "seconds": 7.70809999978583,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "gpuMs": {
+        "samples": 599,
+        "mean": 13.912006995912785,
+        "median": 13.911040306091309,
+        "p95": 14.16710376739502,
+        "p99": 14.289055824279785,
+        "max": 14.386624336242676
+      },
+      "frameMs": {
+        "samples": 600,
+        "mean": 13.984499999880791,
+        "median": 14,
+        "p95": 15,
+        "p99": 15.700000047683716,
+        "max": 17.399999976158142
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "hour": 9,
+      "repeat": 2,
+      "before": 8,
+      "after": 8,
+      "seconds": 7.701000000119251,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "gpuMs": {
+        "samples": 599,
+        "mean": 13.904778389779475,
+        "median": 13.896767616271973,
+        "p95": 14.175968170166016,
+        "p99": 14.260095596313477,
+        "max": 14.3090238571167
+      },
+      "frameMs": {
+        "samples": 600,
+        "mean": 13.98,
+        "median": 14,
+        "p95": 15.100000023841858,
+        "p99": 15.600000023841858,
+        "max": 15.800000071525574
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "hour": 23,
+      "repeat": 0,
+      "before": 8,
+      "after": 8,
+      "seconds": 7.324899999737468,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "gpuMs": {
+        "samples": 599,
+        "mean": 13.230220707111645,
+        "median": 13.212512016296387,
+        "p95": 13.542271614074707,
+        "p99": 13.638272285461426,
+        "max": 13.813023567199707
+      },
+      "frameMs": {
+        "samples": 600,
+        "mean": 13.306000000039736,
+        "median": 13.399999976158142,
+        "p95": 14.599999904632568,
+        "p99": 15.199999928474426,
+        "max": 18
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "hour": 23,
+      "repeat": 1,
+      "before": 8,
+      "after": 8,
+      "seconds": 7.492400000095117,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "gpuMs": {
+        "samples": 599,
+        "mean": 13.291002045887739,
+        "median": 13.245759963989258,
+        "p95": 13.62713623046875,
+        "p99": 13.685376167297363,
+        "max": 13.732895851135254
+      },
+      "frameMs": {
+        "samples": 600,
+        "mean": 13.365,
+        "median": 13.399999976158142,
+        "p95": 14.600000023841858,
+        "p99": 15.299999952316284,
+        "max": 17.700000047683716
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "hour": 23,
+      "repeat": 2,
+      "before": 8,
+      "after": 8,
+      "seconds": 7.4257000000473,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "renderScale": 0.7,
+      "gpuMs": {
+        "samples": 599,
+        "mean": 13.286531691957197,
+        "median": 13.292736053466797,
+        "p95": 13.489952087402344,
+        "p99": 13.54259204864502,
+        "max": 13.718560218811035
+      },
+      "frameMs": {
+        "samples": 600,
+        "mean": 13.36449999988079,
+        "median": 13.399999976158142,
+        "p95": 14.699999928474426,
+        "p99": 15.100000023841858,
+        "max": 15.5
+      },
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Live eight-body mix in a fixed free camera, clear day/night at2560x1440 output with agreed0.7 TAAU. Raised diagnostic health, no player attacks; real AI/volleys/devils/terrain writes. Three600-frame repeats each. Measures this loaded combat scene, not streaming/sandstorms/D3 traversal or the full D12 sustained gate. rAF includes diagnostic sampling; raw maxima retained."
+}

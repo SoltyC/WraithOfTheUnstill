@@ -294,7 +294,7 @@ export function createShaped(ctx) {
         s.wet = Math.max(0, s.wet - dt);
         // Glow channel: telegraph light 0..1, +2 when frozen solid (glazed ice in the shader).
         writeAlive(b, s.st, chunks, rec, rise, s.glow + (s.state === S.FROZEN ? 2 : 0), s.hurt);
-        s.renderRise=rise;writeWhirler(s,chunks,rec);
+        if(s.arch==='whirler'){s.renderRise=rise;writeWhirler(s,chunks,rec);}
         writeStream(s, chunks, rec);
         stepPlate(s, chunks, rec, dt);
         for (let c = s.rig.count; c < CHUNKS_PER; c++) chunks[(rec + c) * CHUNK_FLOATS + 15] = 0;

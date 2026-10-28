@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-28T19:26:40.000Z",
+  "hour": 9,
+  "film": {
+    "ok": true,
+    "frames": 420,
+    "failed": 0,
+    "dir": "screenshots/dunecasterfilm-heart-day/frames/whirler",
+    "wallS": 11.2,
+    "ms": 11237
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Scripted presentation: live volley/devil, then direct freeze and shatter at fixed times. This demonstrates motion and debris, not an input-driven combat win."
+}

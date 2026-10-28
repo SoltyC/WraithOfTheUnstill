@@ -172,7 +172,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     }
     let diff = clamp((nl + 0.25) / 1.25, 0.0, 1.0);
     col = albedo * (key * (diff * vis + trans * pow(1.0 - nv, 2.0)) / PI + sky * under);
-    if(kind==15){
+    if(kind==15 || kind==16){
       // Dense amber glass: absorption through thickness, atmospheric reflection and sharp facets.
       // This is an opaque solid in the shared shadow-casting path; no scene-copy refraction pass.
       let R=reflect(-V,N);let F=0.045+0.955*pow(1.0-nv,5.0);
@@ -232,8 +232,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   // Telegraph: the core lights from within and cracks glow across the snow (display-referred).
   // A faint living light in the core at all times; the telegraph floods it.
-  let isPod = kind == 2 || kind == 8;
-  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, isPod));
+  // The Whirler glass heart carries the existing warning light through its full volume.
+  let isWhirlerCore = kind == 16;
+  let isPod = kind == 2 || kind == 8 || isWhirlerCore;
+  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, isPod && (!isWhirlerCore || !frozen)));
   if (g > 0.001) {
     let glowCol = select(vec3f(0.45, 0.78, 1.0), vec3f(1.0, 0.62, 0.22), meadow); // seed-amber
     if (isPod) { col += glowCol * g * 0.9 / max(exposure, 1e-6); }
@@ -243,7 +245,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       col += glowCol * g * crack * 0.6 / max(exposure, 1e-6);
     }
   }
-  if(frozen && kind==15){
+  if(frozen && (kind==15 || kind==16)){
     let crackNoise=noised(fragmentInputs.vLocal.xz*4.0+fragmentInputs.vLocal.y*2.0+vec2f(fragmentInputs.vSeed)).x;
     let vein=1.0-smoothstep(0.01,0.07,abs(crackNoise));
     col+=vec3f(0.55,0.8,1.0)*vein*0.12/max(exposure,1e-6);

@@ -8,7 +8,7 @@ export function buildGlassRig(sh, count, seed, opt) {
     const o=c*3, h=((c*73+seed)%997)/997;
     cseed[c]=seed+c*13.7;rise[c]=0.1+h*0.6;
     if(whirl){
-      bone[c]=0;index[c]=0;kind[c]=c<8?15:11;
+      bone[c]=0;index[c]=0;kind[c]=c<8?16:11;
       off[o]=(h-.5)*.35;off[o+1]=.2;off[o+2]=.12;
       size[o]=c<8?.32:.16;size[o+1]=c<8?.6:.09;size[o+2]=c<8?.22:.65;
     }else if(c<40){

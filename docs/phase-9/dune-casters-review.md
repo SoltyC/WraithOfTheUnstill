@@ -36,3 +36,25 @@ Full suite remains **786 passing tests**, locked build passes. The shared rig's 
 
 
 29 October continuation: latest main309b4db/D1b grade merged as c026ccc, resolving only competing progress headers while preserving both histories. **792tests and locked build pass.** New repeatable tools are prepared for actual1440p day/sunset/night static poses, shipping0.7 live eight-body day/night timing, and full Windows V8 heap attribution comparing existing versus new eight-enemy mixes. These new protocols have NOT run yet; no fresh GPU/readability/allocation/performance acceptance. Previous D9b results above remain historical. Primary used the GPU for D2 large-writer convergence; that work is saved at1c98263 and still disabled. Owned4175 test browser stopped at checkpoint. Automatic goal usage limit reached; full HANDOFF todo remains unfinished. Next: run the matrix and review images, then live eight-body timing and heap attribution, fixing actual defects before integration. Storm/D3-speed and human gates remain unassessed.
+
+
+## Day/night review and warning-heart fix — 29 October
+
+Both the original and revised15-pose lighting matrices use actual2560x1440 native, with1280px review PNGs: morning9h, sunset17.8h, night23h, normal/warning/frozen Whirler and warm/frozen Glass-sworn. All30captures have zero GPU errors/late pipelines. Original normal/warning poses were valid (states2/3), but the warning appeared only through small crack flecks. The Whirler's eight heart chunks now use a dedicated material kind16 within the existing shared glass/glow shader. It retains the existing amber glass absorption/reflection and makes the established warning glow fill the core. A quiet living light remains while warm; freezing suppresses that warm minimum and keeps cold fracture veins. The Glass-sworn kind15 retains its existing path. No draw/binding/pipeline or gameplay timing/damage change. This serves Learn by reading in the0–10s combat loop, preserving the established gold/cool-shadow palette. Human feel is unassessed.
+
+The revised contact sheet and individual night/day images visibly separate normal, warning and brittle pillar states. Two new7s720p60films complete420/420frames each, zero failed uploads/errors/late pipelines. Twelve sampled frames (0/45/90/150/240/335 per film) were reviewed for warning, live volley/devil, frozen pillar and cold debris hand-off. Videos are encoded; raw frames stay local. Freeze/shatter are scripted presentation, not new input-driven fight acceptance; prior3/3 input-driven fights/material answers remain recorded separately.
+
+Repeated live eight-body scene timing after the heart change (three Whirlers/three Glass-sworn/one Skitter/one Plateback, fixed free camera, clear weather, raised diagnostic health, real AI/volleys/devils/writes,600frames per repeat) passes the60fps/45fps1%-low conditions in these views. Output2560x1440 with previously agreed0.7TAAU/internal1792x1008. No GPU errors or late pipelines. rAF means/p99 are reported as frame FPS/1%-low. This is not the full D12 streaming/storm/traversal gate, nor a claim all eight bodies occupy the screen throughout.
+
+| Hour | Repeat | GPU mean ms | Frame FPS | 1% low FPS |
+|---:|---:|---:|---:|---:|
+| 9 | 1 | 13.823 | 71.9 | 64.5 |
+| 9 | 2 | 13.912 | 71.5 | 63.7 |
+| 9 | 3 | 13.905 | 71.5 | 64.1 |
+| 23 | 1 | 13.230 | 75.2 | 65.8 |
+| 23 | 2 | 13.291 | 74.8 | 65.4 |
+| 23 | 3 | 13.287 | 74.8 | 66.2 |
+
+Full suite792tests and locked build pass. Browser V8 sampling with16B interval and collected objects included exposes allocations despite older zero-GC samples: short240-frame warm-up existing mix33.18B/frame through feature stacks, new4Whirler/4Glass-sworn mix2036.88B/frame. Dominant inclusive paths are shared solids line-of-sight (~885B/frame), thinker (~590), devil step (~393). These are separate workloads, not an isolated net-delta measurement; whole game own allocations remain~155–157KB/frame, and profiler timing is distorted. No zero-allocation claim. A redundant Whirler posing call now runs only for Whirlers, and its public helper tests archetype before reading renderRise. Eight focused regressions/full792tests/build pass. A3000-frame stationary warm-up is now explicit before measured walking so real volleys stay exercised while V8 tiers up; first existing-mix repeat samples0featureB/frame. The new-mix run remains in progress at this checkpoint. Do not equate different warm-up protocols or infer whole-game zero allocation.
+
+Open: finish/attribute the longer-warm browser profile and fix material new hot-path allocations; full scene refraction (current glass refracts sky only) needs a shared rendering solution; D3surf-speed/D6storm readability cannot be accepted before those systems exist. D9b remains unintegrated. This visual/per-scene-performance checkpoint closes clear day/sunset/night and these live-scene timing tasks, not the full HANDOFF. All temporary files remain on C:, recording remains stopped.

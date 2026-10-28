@@ -3,6 +3,8 @@ import {SourceMapConsumer} from 'source-map-js';
 import {openSession} from '../winchrome/session.mjs';
 const maps=new Map();
 const label=process.argv[2]||'latest-grade';
+const warmFrames=Number(process.env.WARM_FRAMES||3000);
+if(!Number.isInteger(warmFrames)||warmFrames<240||warmFrames>6000)throw new Error('Use240..6000 warm frames');
 if(!/^[a-z0-9-]+$/.test(label))throw new Error('Use a simple report label');
 async function source(cf){
  const m=/\/assets\/([^/?#]+\.js)/.exec(cf.url);
@@ -58,17 +60,18 @@ try{
    const w=window.__wraith,g=w.g;if(g.terrainState.relaxation)g.terrainState.relaxation.enabled=false;g.terrainState.restore([]);g.stone.mass.clear();
    g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();g.game.spawnShaped(enabled?'whirler':'skitter',4);g.game.spawnShaped(enabled?'glasssworn':'plateback',4);
 
-   g.combat.health=10000;w.inject('MoveForward',true);
+   g.combat.health=10000;w.inject('MoveForward',false);
   },enabled);
-  await session.frames(240);await cdp.send('HeapProfiler.collectGarbage');
+  await session.frames(warmFrames);await cdp.send('HeapProfiler.collectGarbage');
+  await page.evaluate(()=>window.__wraith.inject('MoveForward',true));
   const before=await page.evaluate(()=>{const w=window.__wraith,g=w.g;return {frame:g.clock.frame,time:g.clock.simTime,jobs:g.terrainState.relaxation?.jobs||0,reads:g.terrainState.collision?.reads||0,pos:[g.controller.pos.x,g.controller.pos.z],active:g.shaped.slots.filter(s=>s.state!==0).length};});
   await cdp.send('HeapProfiler.startSampling',{samplingInterval:16,includeObjectsCollectedByMajorGC:true,includeObjectsCollectedByMinorGC:true});
   await page.waitForTimeout(10000);
   const {profile}=await cdp.send('HeapProfiler.stopSampling');
   const after=await page.evaluate(()=>{const w=window.__wraith,g=w.g;w.inject('MoveForward',false);return {frame:g.clock.frame,time:g.clock.simTime,jobs:g.terrainState.relaxation?.jobs||0,reads:g.terrainState.collision?.reads||0,pos:[g.controller.pos.x,g.controller.pos.z],active:g.shaped.slots.filter(s=>s.state!==0).length,gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late,output:[g.engine.getRenderWidth(),g.engine.getRenderHeight()],internal:[g.post.post.width,g.post.post.height],renderScale:g.post.post.renderScale};});
   const frames=after.frame-before.frame;
-  reports.push({enabled,before,after,frames,samplingInterval:16,...await attribute(profile,frames)});
-  await fs.writeFile('docs/phase-9/dune-casters/'+label+'-browser-heap.json',JSON.stringify({date:new Date().toISOString(),reports,errors:session.logs,note:'Real Windows GPU browser V8 allocation sampling including collected objects. Eight Shaped and live walking; disabled means4Skitters+4Platebacks, enabled means4Whirlers+4Glass-sworn. These are separate workloads, not identical frame replays or an isolated net delta. Profiler affects frame timing. Attribution uses first resolved own/engine stack source; Feature-inclusive stacks include duneCaster,rigGlass,duneCasterDust plus any engine/native overhead beneath those callsites. No zero-allocation inference from GC count.'},null,2)+'\n');
+  reports.push({enabled,before,after,frames,warmFrames,samplingInterval:16,...await attribute(profile,frames)});
+  await fs.writeFile('docs/phase-9/dune-casters/'+label+'-browser-heap.json',JSON.stringify({date:new Date().toISOString(),reports,errors:session.logs,note:'Real Windows GPU browser V8 allocation sampling including collected objects. Eight Shaped and live walking after stationary warmup to exercise volleys and JIT tiering; disabled means4Skitters+4Platebacks, enabled means4Whirlers+4Glass-sworn. These are separate workloads, not identical frame replays or an isolated net delta. Profiler affects frame timing. Attribution uses first resolved own/engine stack source; Feature-inclusive stacks include duneCaster,rigGlass,duneCasterDust plus any engine/native overhead beneath those callsites. No zero-allocation inference from GC count.'},null,2)+'\n');
   console.log({enabled,frames,ownPerFrame:reports.at(-1).ownPerFrame,featurePerFrame:reports.at(-1).featurePerFrame});
  }
 }finally{await session.close();}

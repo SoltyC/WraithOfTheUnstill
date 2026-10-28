@@ -77,8 +77,8 @@ export function createDuneCaster(ts,ground,whirls=new Float32Array(16*8)) {
   };
 }
 export function writeWhirler(s,out,rec){
-  const rise=s.renderRise;
   if(s.arch!=='whirler')return;
+  const rise=s.renderRise;
   const b=s.body,st=s.st;
   for(let c=0;c<s.rig.count;c++){
     const o=(rec+c)*16;

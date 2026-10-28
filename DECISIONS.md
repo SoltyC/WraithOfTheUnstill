@@ -520,3 +520,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-28 — D1b: share the bake's unchanged 12 m strata scalar; use a one-time 4 MiB R8 baked rock mask rather than a ninth fragment storage binding. Replace repetitive sine bedding with irregular low-contrast beds. A dune-camera-weighted, hue-preserving soft LUT shoulder uses the existing parameter padding to prevent sunset bloom/grade clipping; zero dune weight preserves frost/meadow output. No geometry, exposure or biome weather changes. Evidence: docs/phase-9/dune-grade-review.md.
+
+
+2026-10-29 — Whirler warning readability: its glass-heart chunks use kind16 inside the existing shared glass/glow shader, so the existing telegraph light fills the core instead of only tiny cracks. Warm quiet baseline is suppressed when frozen; cold veins remain. Same draw/material bindings and attack timing, zero GPU/late errors in15native1440p poses and two420-frame films. Six shipping0.7 live eight-body timing runs pass in this loaded scene; full-world/allocations/refraction/storm/surf gates stay open. See dune-casters-review.md.
