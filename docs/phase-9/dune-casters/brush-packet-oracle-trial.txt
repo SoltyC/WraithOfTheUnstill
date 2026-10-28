@@ -1,0 +1,32 @@
+import fs from 'node:fs/promises';
+export async function validateBrushPacket(page) {
+ const result=await page.evaluate(async()=>{
+  const w=window.__wraith,g=w.g,ts=g.terrainState,frame=()=>new Promise(r=>requestAnimationFrame(r));
+  const previous={frozen:g.clock.frozen,heal:ts.healScale,refill:w.params.v.refillRate};
+  w.params.v.refillRate=0;w.params.version++;
+  g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();
+  g.clock.frozen=true;ts.healScale=0;g.game.wraithHeld=true;g.controller.hold=true;
+  const packet=new Float64Array([1904.012345,900.023456,1,0,.7,.5,.1,.2,1,0,.1,.9]);
+  const points=[[1904.012345,900.023456],[1904,900.5],[1904,899.5],[1904.6,900],[1903.4,900]];
+  const reports=[];
+  try{for(const packed of [false,true]){
+   ts.restore([]);g.stone.mass.clear();for(let i=0;i<90;i++)await frame();
+   const count=ts.pendingBrushes;
+   if(packed)ts.stampPacked(packet);
+   else{ts.bx=packet[0];ts.bz=packet[1];ts.bdx=packet[2];ts.bdz=packet[3];ts.bl=packet[4];ts.bw=packet[5];ts.bd=packet[6];ts.bc=packet[7];ts.bk=packet[8];ts.bwet=packet[9];ts.bbias=packet[10];ts.bberm=packet[11];ts.stamp();}
+   const queued=ts.pendingBrushes-count;
+   for(let i=0;i<60;i++)await frame();
+   const samples=[];for(const p of points)samples.push(await ts.debugProbe(p[0],p[1]));
+   reports.push({packed,queued,samples});
+  }}finally{ts.restore([]);ts.healScale=previous.heal;w.params.v.refillRate=previous.refill;w.params.version++;g.clock.frozen=previous.frozen;g.game.wraithHeld=false;g.controller.hold=false;}
+  let maxDifference=0;
+  for(let i=0;i<points.length;i++)for(const field of ['fine','fineDisplaced','fineRelief','coarse','coarseDisplaced','coarseRelief']){
+   const a=reports[0].samples[i][field],b=reports[1].samples[i][field];
+   if(a===null||b===null){if(a!==b)maxDifference=Infinity;}else maxDifference=Math.max(maxDifference,Math.abs(a-b));
+  }
+  return {reports,points,maxDifference,gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late};
+ });
+ await fs.writeFile('docs/phase-9/dune-casters/brush-packet-gpu.json',JSON.stringify({date:new Date().toISOString(),...result,note:'Actual target-GPU legacy/packed PLOUGH comparison with complete resets, frozen clock/healing disabled/held player. Five identical positions sample fine/coarse depression/displacement/relief. Tests brush equivalence, not allocation/performance or whole persistence.'},null,2)+'\n');
+ if(result.maxDifference!==0||result.gpuErrors||result.late.length||result.reports.some(r=>r.queued!==1))throw new Error('Brush packet GPU equivalence failed');
+ console.log('brush packet GPU parity',result.maxDifference);
+}

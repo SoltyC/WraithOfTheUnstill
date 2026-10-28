@@ -64,12 +64,13 @@ export function createDuneCaster(ts,ground,whirls=new Float32Array(16*8)) {
         const w=(8+k)*8;
         whirls[w]=x[k];whirls[w+1]=ground.h;whirls[w+2]=z[k];whirls[w+3]=owner[k]<0?0:Math.min(1,age[k]*4,(5.3-age[k])*2);
         whirls[w+4]=age[k]*7;whirls[w+5]=1.7;whirls[w+6]=.32;whirls[w+7]=age[k]<.8?1:0;
+        const xx=x[k],zz=z[k],yy=ground.h,t=age[k];
         for(let c=0;c<DEVIL_CHUNKS;c++){
           const o=(base+k*DEVIL_CHUNKS+c)*16;
           if(owner[k]<0){out[o+15]=0;continue;}
-          const a=age[k]*7+c*2.399963,h=c/DEVIL_CHUNKS,r=.22+h*.4;
-          out[o]=x[k]+Math.cos(a)*r;out[o+1]=ground.h+.12+h*1.5;out[o+2]=z[k]+Math.sin(a)*r;
-          out[o+3]=.16;out[o+4]=Math.cos(a);out[o+5]=0;out[o+6]=Math.sin(a);out[o+7]=.1;
+          const a=t*7+c*2.399963,h=c/DEVIL_CHUNKS,r=.22+h*.4,ca=Math.cos(a),sa=Math.sin(a);
+          out[o]=xx+ca*r;out[o+1]=yy+.12+h*1.5;out[o+2]=zz+sa*r;
+          out[o+3]=.16;out[o+4]=ca;out[o+5]=0;out[o+6]=sa;out[o+7]=.1;
           out[o+8]=0;out[o+9]=1;out[o+10]=0;out[o+11]=.4;out[o+12]=k*89+c*17;out[o+13]=11;out[o+14]=age[k]<.8?.8:0;out[o+15]=1;
         }
       }
@@ -84,8 +85,9 @@ export function writeWhirler(s,out,rec){
     const o=(rec+c)*16;
     const h=c<8?.9+c*.1:Math.floor((c-8)/3)/29*2.8+.15;
     const a=s.spin+h*6+((c-8)%3)*2.094395,r=c<8?.16:(s.state===7?.18+h*.05:(.25+h*.16)*(s.state===3?.78:1));
-    out[o]=b.x+Math.cos(a)*r;out[o+1]=b.y+h-(1-rise)*2.8;out[o+2]=b.z+Math.sin(a)*r;
-    out[o+4]=Math.cos(a);out[o+5]=0;out[o+6]=Math.sin(a);out[o+8]=0;out[o+9]=1;out[o+10]=0;
+    const ca=Math.cos(a),sa=Math.sin(a);
+    out[o]=b.x+ca*r;out[o+1]=b.y+h-(1-rise)*2.8;out[o+2]=b.z+sa*r;
+    out[o+4]=ca;out[o+5]=0;out[o+6]=sa;out[o+8]=0;out[o+9]=1;out[o+10]=0;
     if(c>=8&&s.state===7){out[o+3]=.52;out[o+7]=.3;out[o+11]=.65;}
     st.poseSize[c*3]=out[o+3];st.poseSize[c*3+1]=out[o+7];st.poseSize[c*3+2]=out[o+11];
     // Preserve the exact posed positions and frames for the existing debris simulation.
