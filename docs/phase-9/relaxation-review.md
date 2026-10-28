@@ -169,3 +169,6 @@ Next: crest geometry/normal/motion presentation and full browser allocation attr
 
 
 29 October rendering continuation: see crest-review.md for the denser clipmap/ring topology, separate shadow grid, analytic crest metadata, rejected experiments and measured native/shipping configurations. Full suite810 and build pass; source remains unintegrated with physics disabled/default32. Three shipping0.7 pre-final-normal stress repeats pass0.4ms/0.20s; native1 failures remain. Final shader parity, motion, writer and allocation gates are still open.
+
+
+29 October validation: final analytic height parity0.317/1.131mm, dry/wet/frozen and walking pass numerically. Readback pooling halves sampled D2 stacks602→274B/frame;814tests/build pass. Robust compute still fails (cold0.573ms/first repeat3.262ms; later0.185/0.187ms), and new overlapping full-size Ridge test exposes43.29degree slopes after30s scheduler expiry. A photo-hidden cold start also exposes four late Wraith variants when shown. D2 remains disabled/default32/unintegrated; fix large-writer scheduling next. Full evidence and explicit limits: crest-review.md.

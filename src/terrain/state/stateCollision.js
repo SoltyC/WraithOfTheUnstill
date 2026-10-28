@@ -5,6 +5,7 @@ import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
 import { createStateGround, STATE_GRID_N, STATE_GRID_STEP } from '../../world/stateGround.js';
 import { stateCollisionWGSL } from '../../shaders/stateCollision.wgsl.js';
+import { createGpuReadbackPool } from '../../core/gpuReadback.js';
 import { FINE_PER_M } from './layout.js';
 export function createStateCollision(engine,fine,surface) {
   const view=createStateGround(), data=new Int32Array(8);
@@ -18,7 +19,8 @@ export function createStateCollision(engine,fine,surface) {
   let gen=0, serial=0, published=0, last=-Infinity, inFlight=0;
   // Slots and callbacks are allocated once. A displayed buffer cannot be reused for a read,
   // and replies may complete out of order without replacing a newer collision snapshot.
-  const slots=Array.from({length:4},()=>{
+  const readback=createGpuReadbackPool(engine,bytes,4);
+  const slots=Array.from({length:4},(_,index)=>{
     const slot={target:new Float32Array(bytes/4),pending:false,generation:0,serial:0,time:0.5,x:0.5,z:0.5,done:null,failed:null};
     const retire=()=>{slot.pending=false;inFlight--;self.pending=inFlight>0;self.pendingCount=inFlight;};
     slot.done=()=>{
@@ -29,6 +31,7 @@ export function createStateCollision(engine,fine,surface) {
       retire();
     };
     slot.failed=()=>{retire();self.errors++;self.dirty=true;};
+    const read=readback.slots[index];read.target=slot.target;read.done=slot.done;read.failed=slot.failed;
     return slot;
   });
   const self={view,enabled:false,ready:false,pending:false,pendingCount:0,reads:0,errors:0,
@@ -38,8 +41,8 @@ export function createStateCollision(engine,fine,surface) {
       view.enabled=self.enabled;
       if(!self.ready){data[4]=0;job.update(data);self.ready=cs.dispatch(1,1,1);return;}
       if(!self.enabled||self.time-last<0.04)return;
-      let slot=null;
-      for(let i=0;i<slots.length;i++)if(!slots[i].pending && slots[i].target!==view.data){slot=slots[i];break;}
+      let slot=null,slotIndex=-1;
+      for(let i=0;i<slots.length;i++)if(!slots[i].pending && slots[i].target!==view.data){slot=slots[i];slotIndex=i;break;}
       if(!slot || inFlight>=3)return;
       const x0=Math.floor(self.px/STATE_GRID_STEP)*STATE_GRID_STEP-(STATE_GRID_N-1)*STATE_GRID_STEP/2;
       const z0=Math.floor(self.pz/STATE_GRID_STEP)*STATE_GRID_STEP-(STATE_GRID_N-1)*STATE_GRID_STEP/2;
@@ -49,7 +52,7 @@ export function createStateCollision(engine,fine,surface) {
       if(!cs.dispatch(Math.ceil(STATE_GRID_N/8),Math.ceil(STATE_GRID_N/8),1))return;
       last=self.time;self.pending=true;self.dirty=false;self.pendingCount=++inFlight;
       slot.pending=true;slot.generation=gen;slot.serial=++serial;slot.time=self.time;slot.x=x0;slot.z=z0;
-      output.read(0,bytes,slot.target).then(slot.done,slot.failed);
+      if(!readback.copy(slotIndex,output.getBuffer().underlyingResource))slot.failed();
     },
   };
   return self;

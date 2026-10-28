@@ -2,9 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const pending=vi.hoisted(()=>[]);
 vi.mock('@babylonjs/core/Buffers/storageBuffer.js',()=>({StorageBuffer:class{
   update(){}
-  read(offset,bytes,target){return new Promise((resolve,reject)=>pending.push({target,resolve,reject}));}
+  getBuffer(){return {underlyingResource:{}};}
 }}));
 vi.mock('@babylonjs/core/Compute/computeShader.js',()=>({ComputeShader:class{setStorageBuffer(){}dispatch(){return true;}}}));
+vi.mock('../src/core/gpuReadback.js',()=>({createGpuReadbackPool:(engine,bytes,capacity)=>{
+  const slots=Array.from({length:capacity},()=>({}));
+  return {slots,copy(index){const s=slots[index];pending.push({target:s.target,resolve:s.done,reject:s.failed});return true;}};
+}}));
 import { createStateCollision } from '../src/terrain/state/stateCollision.js';
 function start(){const c=createStateCollision({},[{},{},{}],{});c.update();c.enabled=true;c.dirty=true;c.px=4;c.pz=8;c.time=1;c.update();return c;}
 const finish=async()=>{await Promise.resolve();await Promise.resolve();};

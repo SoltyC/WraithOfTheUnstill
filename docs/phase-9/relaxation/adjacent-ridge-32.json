@@ -1,0 +1,252 @@
+{
+  "date": "2026-10-28T15:37:02.945Z",
+  "lifecycle": {
+    "seconds": 36.00809999990486,
+    "frames": 2583,
+    "jobs": 2154,
+    "pending": 0,
+    "atTTL": {
+      "jobs": 2148,
+      "pending": 25
+    },
+    "activityErrors": 0
+  },
+  "tiles": [
+    {
+      "requested": [
+        1898,
+        898.7
+      ],
+      "origin": [
+        1896.6666666666667,
+        898
+      ],
+      "disturbed": 16121,
+      "sum": 5961.582128465176,
+      "maxSlopeDegrees": 34.097567319803844
+    },
+    {
+      "requested": [
+        1900.7,
+        898.7
+      ],
+      "origin": [
+        1899.3333333333333,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 33.12797997544392
+    },
+    {
+      "requested": [
+        1903.4,
+        898.7
+      ],
+      "origin": [
+        1902,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 33.62545796888976
+    },
+    {
+      "requested": [
+        1906.1,
+        898.7
+      ],
+      "origin": [
+        1904.6666666666667,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 36.896745601790556
+    },
+    {
+      "requested": [
+        1908.8,
+        898.7
+      ],
+      "origin": [
+        1907.3333333333333,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 34.03088015215741
+    },
+    {
+      "requested": [
+        1898,
+        901.4
+      ],
+      "origin": [
+        1896.6666666666667,
+        900.6666666666666
+      ],
+      "disturbed": 15908,
+      "sum": 1523.638043642044,
+      "maxSlopeDegrees": 34.52130083320764
+    },
+    {
+      "requested": [
+        1900.7,
+        901.4
+      ],
+      "origin": [
+        1899.3333333333333,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088488578796,
+      "maxSlopeDegrees": 34.00069692449402
+    },
+    {
+      "requested": [
+        1903.4,
+        901.4
+      ],
+      "origin": [
+        1902,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088495731354,
+      "maxSlopeDegrees": 32.206120862747795
+    },
+    {
+      "requested": [
+        1906.1,
+        901.4
+      ],
+      "origin": [
+        1904.6666666666667,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088495731354,
+      "maxSlopeDegrees": 35.252177278840584
+    },
+    {
+      "requested": [
+        1908.8,
+        901.4
+      ],
+      "origin": [
+        1907.3333333333333,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088495731354,
+      "maxSlopeDegrees": 33.50891616184794
+    },
+    {
+      "requested": [
+        1898,
+        904.1
+      ],
+      "origin": [
+        1896.6666666666667,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 6007.016538143158,
+      "maxSlopeDegrees": 43.291156674773234
+    },
+    {
+      "requested": [
+        1900.7,
+        904.1
+      ],
+      "origin": [
+        1899.3333333333333,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.9495668411255,
+      "maxSlopeDegrees": 37.456205026878365
+    },
+    {
+      "requested": [
+        1903.4,
+        904.1
+      ],
+      "origin": [
+        1902,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.9495668411255,
+      "maxSlopeDegrees": 39.537609852541514
+    },
+    {
+      "requested": [
+        1906.1,
+        904.1
+      ],
+      "origin": [
+        1904.6666666666667,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.9495668411255,
+      "maxSlopeDegrees": 36.4920397746733
+    },
+    {
+      "requested": [
+        1908.8,
+        904.1
+      ],
+      "origin": [
+        1907.3333333333333,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.9495668411255,
+      "maxSlopeDegrees": 35.14008308617318
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [
+    {
+      "kind": "render",
+      "label": "RenderPipeline_r32float_depth32float_samples1_textureState0",
+      "t": 61366.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:shadowDepth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61370.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:cloth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.09999990463,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFur",
+      "fragment": "fragment:wraithFur",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.299999952316,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFx",
+      "fragment": "fragment:wraithFx",
+      "compute": ""
+    }
+  ],
+  "collisionErrors": 0,
+  "note": "Two actual full-size parallel Ridge writes (14m long,2.95m half-width,1.1m high) overlap, with normal32-step scheduler for36s, healing disabled, player held. Fifteen read-only scratch tiles sampled after expiry, all eight neighbour slopes on disturbed sand. Does not prove unsampled whole footprint mass or freeze/wet adjacency."
+}

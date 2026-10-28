@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-28T15:25:50.929Z",
+  "reports": [
+    {
+      "name": "seif500",
+      "source": {
+        "name": "seif500",
+        "distance": 500,
+        "target": [
+          3500,
+          761.0131614201728,
+          -50
+        ],
+        "camera": {
+          "mode": "free",
+          "pos": [
+            3500,
+            755.0131614201728,
+            450
+          ],
+          "yaw": 3.141592653589793,
+          "pitch": -0.011999424049761282,
+          "fov": 0.5
+        },
+        "player": [
+          3500,
+          450
+        ],
+        "clearanceMargin": 428.1401379086343,
+        "dune": 1,
+        "type": 1,
+        "flat": 0,
+        "span": 32
+      },
+      "film": {
+        "ok": true,
+        "frames": 240,
+        "failed": 0,
+        "dir": "screenshots/d2-crest-motion/frames/seif500",
+        "wallS": 6.4,
+        "ms": 6393
+      },
+      "gpuErrors": 0,
+      "late": []
+    },
+    {
+      "name": "transverse2000",
+      "source": {
+        "name": "transverse2000",
+        "distance": 2000,
+        "target": [
+          2961.0413557625156,
+          166.21230620114702,
+          505.024358408795
+        ],
+        "camera": {
+          "mode": "free",
+          "pos": [
+            962.4007790225535,
+            304.6849100739092,
+            431.29617513705693
+          ],
+          "yaw": 1.5339238805702273,
+          "pitch": 0.069125987159484,
+          "fov": 0.25
+        },
+        "player": [
+          962.4007790225535,
+          431.29617513705693
+        ],
+        "clearanceMargin": 89.6976410914067,
+        "backgroundGapAt16m": 8.96976410914067,
+        "dune": 1,
+        "type": 0.3333333333333333,
+        "flat": 0,
+        "span": 64
+      },
+      "film": {
+        "ok": true,
+        "frames": 240,
+        "failed": 0,
+        "dir": "screenshots/d2-crest-motion/frames/transverse2000",
+        "wallS": 7.9,
+        "ms": 7889
+      },
+      "gpuErrors": 0,
+      "late": []
+    }
+  ],
+  "note": "Camera-only lateral sweeps of actual CPU-selected crests, 240 frames each at 1280x720 native. Presentation/morph review; no D3 traversal or 1440p performance acceptance."
+}

@@ -1,96 +1,96 @@
 {
-  "date": "2026-10-28T13:01:09.277Z",
+  "date": "2026-10-28T15:36:06.742Z",
   "iterations": 32,
-  "maxGpuHeightError": 0.00802825927294748,
+  "maxGpuHeightError": 0.004007975255433394,
   "gpuProbes": [
     {
       "x": 1900,
-      "z": 894.0054166666666,
+      "z": 894.0108333333333,
       "error": 0,
-      "span": 0.23919999992841667,
+      "span": 0.15610000002385505,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 897.7916666666636,
+      "z": 896.5783333333313,
       "error": 0,
-      "span": 0.26940000009545884,
+      "span": 0.18029999995232515,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 902.3849999999927,
-      "error": 0.00802825927294748,
-      "span": 0.2675000000000409,
-      "relief": 0.1363525390625
+      "z": 899.7849999999951,
+      "error": 0.000756835938148015,
+      "span": 0.20350000000001955,
+      "relief": -0.51416015625
     },
     {
       "x": 1900,
-      "z": 906.9349999999886,
-      "error": -0.0015579605062896462,
-      "span": 0.2956999999285017,
-      "relief": -0.3952779769897461
+      "z": 903.0349999999921,
+      "error": 0.00021628140822826936,
+      "span": 0.20330000007155036,
+      "relief": 0.64892578125
     },
     {
       "x": 1900,
-      "z": 911.7449999999842,
+      "z": 906.4583333333223,
+      "error": -0.004007975255433394,
+      "span": 0.21139999997615178,
+      "relief": -0.2069091796875
+    },
+    {
+      "x": 1900,
+      "z": 909.8383333333193,
       "error": 0,
-      "span": 0.2527999999522308,
+      "span": 0.1793999999761411,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 916.0783333333136,
+      "z": 912.9149999999831,
       "error": 0,
-      "span": 0.2528999999760231,
+      "span": 0.1781000000238322,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 920.4549999999763,
+      "z": 915.991666666647,
       "error": 0,
-      "span": 0.25570000004762505,
+      "span": 0.1641000000238222,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 924.8749999999723,
+      "z": 918.9816666666443,
       "error": 0,
-      "span": 0.27799999999979264,
+      "span": 0.1642999999523056,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 929.3816666666348,
-      "error": -0.0008974075317382812,
-      "span": 0.27839999997604536,
-      "relief": 0.0008974075317382812
-    },
-    {
-      "x": 1900,
-      "z": 933.9316666666307,
+      "z": 921.9716666666416,
       "error": 0,
-      "span": 0.27829999995208254,
+      "span": 0.17830000007150204,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 938.4816666666266,
+      "z": 925.0483333333054,
       "error": 0,
-      "span": 0.2561000000237641,
+      "span": 0.19229999995229718,
       "relief": 0
     },
     {
       "x": 1900,
-      "z": 942.9016666666225,
+      "z": 928.1683333333026,
       "error": 0,
-      "span": 0.25349999999991724,
+      "span": 0.17860000002383458,
       "relief": 0
     }
   ],
-  "seconds": 10.325999999998373,
-  "reads": 189,
-  "maxAge": 0.19939999997609448,
+  "seconds": 7.246800000071303,
+  "reads": 171,
+  "maxAge": 0.13920000004767985,
   "maxFootGap": 0,
   "minFootGap": 0,
   "grounded": 360,
@@ -99,391 +99,428 @@
   "samples": [
     {
       "i": 0,
-      "time": 463.689499999869,
+      "time": 121.37780000007075,
       "pos": [
         1900,
-        150.4091441599528,
-        894.0054166666666
+        150.4093527730306,
+        894.0108333333333
       ],
-      "speed": 0.43333333333333335,
-      "ground": 150.4091441599528,
+      "speed": 0.65,
+      "ground": 150.4093527730306,
       "gap": 0,
       "grounded": true,
-      "age": 0.10839999997619998,
-      "reads": 497,
-      "relaxJobs": 1471
+      "age": 0.10389999997616428,
+      "reads": 722,
+      "relaxJobs": 2432
     },
     {
       "i": 15,
-      "time": 464.2097999998212,
+      "time": 121.73590000009459,
       "pos": [
         1900,
-        150.48769897460932,
-        896.3183333333316
+        150.4619360351562,
+        895.494999999999
       ],
       "speed": 5.2,
-      "ground": 150.48769897460932,
+      "ground": 150.4619360351562,
       "gap": 0,
       "grounded": true,
-      "age": 0.13169999992851444,
-      "reads": 506,
-      "relaxJobs": 1499
+      "age": 0.09610000002383856,
+      "reads": 729,
+      "relaxJobs": 2459
     },
     {
       "i": 30,
-      "time": 464.4931999997973,
+      "time": 121.9417000001661,
       "pos": [
         1900,
-        150.523333231608,
-        897.7916666666636
+        150.4953061930338,
+        896.5783333333313
       ],
       "speed": 5.2,
-      "ground": 150.523333231608,
+      "ground": 150.4953061930338,
       "gap": 0,
       "grounded": true,
-      "age": 0.13249999999993634,
-      "reads": 511,
-      "relaxJobs": 1514
+      "age": 0.09770000004768065,
+      "reads": 734,
+      "relaxJobs": 2474
     },
     {
       "i": 45,
-      "time": 465.0599999998689,
+      "time": 122.3377000001661,
       "pos": [
         1900,
-        150.11192383607113,
-        900.7383333333275
+        150.434018859865,
+        898.6149999999961
       ],
       "speed": 5.2,
-      "ground": 150.11192383607113,
+      "ground": 150.434018859865,
       "gap": 0,
       "grounded": true,
-      "age": 0.14050000000003138,
-      "reads": 521,
-      "relaxJobs": 1543
+      "age": 0.11549999999999727,
+      "reads": 743,
+      "relaxJobs": 2502
     },
     {
       "i": 60,
-      "time": 465.37779999982126,
+      "time": 122.55790000009458,
       "pos": [
         1900,
-        150.7646658325151,
-        902.3849999999927
+        150.05764587402393,
+        899.7849999999951
       ],
       "speed": 5.2,
-      "ground": 150.7646658325151,
+      "ground": 150.05764587402393,
       "gap": 0,
       "grounded": true,
-      "age": 0.12999999999999545,
-      "reads": 528,
-      "relaxJobs": 1558
+      "age": 0.11810000002382992,
+      "reads": 748,
+      "relaxJobs": 2517
     },
     {
       "i": 75,
-      "time": 465.9472999998213,
+      "time": 122.97310000014228,
       "pos": [
         1900,
-        150.91424092611467,
-        905.3316666666567
+        150.57447959581688,
+        901.9083333333265
       ],
       "speed": 5.2,
-      "ground": 150.91424092611467,
+      "ground": 150.57447959581688,
       "gap": 0,
       "grounded": true,
-      "age": 0.1611000000238505,
-      "reads": 539,
-      "relaxJobs": 1586
+      "age": 0.09850000000000136,
+      "reads": 758,
+      "relaxJobs": 2546
     },
     {
       "i": 90,
-      "time": 466.2539999998691,
+      "time": 123.18590000009463,
       "pos": [
         1900,
-        150.11681396484778,
-        906.9349999999886
+        151.26869375943562,
+        903.0349999999921
       ],
       "speed": 5.2,
-      "ground": 150.11681396484778,
+      "ground": 151.26869375943562,
       "gap": 0,
       "grounded": true,
-      "age": 0.12370000004773374,
-      "reads": 546,
-      "relaxJobs": 1601
+      "age": 0.09979999995233868,
+      "reads": 763,
+      "relaxJobs": 2561
     },
     {
       "i": 105,
-      "time": 466.8758999998453,
+      "time": 123.61820000016615,
       "pos": [
         1900,
-        150.45140380859388,
-        910.1849999999856
+        150.95095893622226,
+        905.2883333333234
       ],
       "speed": 5.2,
-      "ground": 150.45140380859388,
+      "ground": 150.95095893622226,
       "gap": 0,
       "grounded": true,
-      "age": 0.19289999997619134,
-      "reads": 557,
-      "relaxJobs": 1630
+      "age": 0.0927000000476852,
+      "reads": 773,
+      "relaxJobs": 2590
     },
     {
       "i": 120,
-      "time": 467.1793999998453,
+      "time": 123.84870000016613,
       "pos": [
         1900,
-        150.42251892089857,
-        911.7449999999842
+        150.31774597168476,
+        906.4583333333223
       ],
       "speed": 5.2,
-      "ground": 150.42251892089857,
+      "ground": 150.31774597168476,
       "gap": 0,
       "grounded": true,
-      "age": 0.13979999995234493,
-      "reads": 564,
-      "relaxJobs": 1645
+      "age": 0.09199999999998454,
+      "reads": 778,
+      "relaxJobs": 2605
     },
     {
       "i": 135,
-      "time": 467.72139999984523,
+      "time": 124.28090000009462,
       "pos": [
         1900,
-        150.37920552571623,
-        914.5616666666483
+        150.09609354654546,
+        908.7116666666536
       ],
       "speed": 5.2,
-      "ground": 150.37920552571623,
+      "ground": 150.09609354654546,
       "gap": 0,
       "grounded": true,
-      "age": 0.13479999995229264,
-      "reads": 575,
-      "relaxJobs": 1673
+      "age": 0.11710000002386778,
+      "reads": 787,
+      "relaxJobs": 2634
     },
     {
       "i": 150,
-      "time": 468.0112999998214,
+      "time": 124.4954000000946,
       "pos": [
         1900,
-        150.36297180175796,
-        916.0783333333136
+        150.4587703450522,
+        909.8383333333193
       ],
       "speed": 5.2,
-      "ground": 150.36297180175796,
+      "ground": 150.4587703450522,
       "gap": 0,
       "grounded": true,
-      "age": 0.13579999995232583,
-      "reads": 580,
-      "relaxJobs": 1688
+      "age": 0.11379999995232026,
+      "reads": 792,
+      "relaxJobs": 2649
     },
     {
       "i": 165,
-      "time": 468.5570999998928,
+      "time": 124.8799000000946,
       "pos": [
         1900,
-        150.2557153320313,
-        918.8949999999777
+        150.42101135253918,
+        911.8316666666508
       ],
       "speed": 5.2,
-      "ground": 150.2557153320313,
+      "ground": 150.42101135253918,
       "gap": 0,
       "grounded": true,
-      "age": 0.1571000000238314,
-      "reads": 589,
-      "relaxJobs": 1716
+      "age": 0.1227999999523206,
+      "reads": 801,
+      "relaxJobs": 2677
     },
     {
       "i": 180,
-      "time": 468.85129999982115,
+      "time": 125.08550000011842,
       "pos": [
         1900,
-        150.21976318359378,
-        920.4549999999763
+        150.39792846679703,
+        912.9149999999831
       ],
       "speed": 5.2,
-      "ground": 150.21976318359378,
+      "ground": 150.39792846679703,
       "gap": 0,
       "grounded": true,
-      "age": 0.15699999999998226,
-      "reads": 594,
-      "relaxJobs": 1731
+      "age": 0.12320000004767451,
+      "reads": 806,
+      "relaxJobs": 2692
     },
     {
       "i": 195,
-      "time": 469.40409999989254,
+      "time": 125.46890000009455,
       "pos": [
         1900,
-        150.21486572265636,
-        923.3149999999737
+        150.3756785074871,
+        914.9083333333147
       ],
       "speed": 5.2,
-      "ground": 150.21486572265636,
+      "ground": 150.3756785074871,
       "gap": 0,
       "grounded": true,
-      "age": 0.15870000004764506,
-      "reads": 604,
-      "relaxJobs": 1759
+      "age": 0.09569999992845624,
+      "reads": 816,
+      "relaxJobs": 2720
     },
     {
       "i": 210,
-      "time": 469.70079999982096,
+      "time": 125.67510000014222,
       "pos": [
         1900,
-        150.16022644042994,
-        924.8749999999723
+        150.36411437988295,
+        915.991666666647
       ],
       "speed": 5.2,
-      "ground": 150.16022644042994,
+      "ground": 150.36411437988295,
       "gap": 0,
       "grounded": true,
-      "age": 0.15850000000000364,
-      "reads": 609,
-      "relaxJobs": 1774
+      "age": 0.09620000004767348,
+      "reads": 821,
+      "relaxJobs": 2735
     },
     {
       "i": 225,
-      "time": 470.2759999998684,
+      "time": 126.04500000011838,
       "pos": [
         1900,
-        150.05114501953133,
-        927.8649999999695
+        150.30439941406317,
+        917.8983333333119
       ],
       "speed": 5.2,
-      "ground": 150.05114501953133,
+      "ground": 150.30439941406317,
       "gap": 0,
       "grounded": true,
-      "age": 0.117999999999995,
-      "reads": 620,
-      "relaxJobs": 1803
+      "age": 0.09599999999998943,
+      "reads": 830,
+      "relaxJobs": 2762
     },
     {
       "i": 240,
-      "time": 470.5728999998446,
+      "time": 126.25100000011838,
       "pos": [
         1900,
-        150.04557169596353,
-        929.3816666666348
+        150.2527478027344,
+        918.9816666666443
       ],
       "speed": 5.2,
-      "ground": 150.04557169596353,
+      "ground": 150.2527478027344,
       "gap": 0,
       "grounded": true,
-      "age": 0.13849999999996498,
-      "reads": 625,
-      "relaxJobs": 1818
+      "age": 0.09660000002384095,
+      "reads": 835,
+      "relaxJobs": 2777
     },
     {
       "i": 255,
-      "time": 471.15119999979675,
+      "time": 126.62100000011837,
       "pos": [
         1900,
-        150.0052069091797,
-        932.4149999999654
+        150.21517191569012,
+        920.8883333333092
       ],
       "speed": 5.2,
-      "ground": 150.0052069091797,
+      "ground": 150.21517191569012,
       "gap": 0,
       "grounded": true,
-      "age": 0.12039999997614359,
-      "reads": 635,
-      "relaxJobs": 1847
+      "age": 0.09549999999998704,
+      "reads": 844,
+      "relaxJobs": 2804
     },
     {
       "i": 270,
-      "time": 471.44849999986815,
+      "time": 126.82640000009454,
       "pos": [
         1900,
-        149.9097739664715,
-        933.9316666666307
+        150.2184173583984,
+        921.9716666666416
       ],
       "speed": 5.2,
-      "ground": 149.9097739664715,
+      "ground": 150.2184173583984,
       "gap": 0,
       "grounded": true,
-      "age": 0.13860000002375727,
-      "reads": 640,
-      "relaxJobs": 1862
+      "age": 0.09579999995231958,
+      "reads": 849,
+      "relaxJobs": 2819
     },
     {
       "i": 285,
-      "time": 472.0250999998916,
+      "time": 127.21080000007066,
       "pos": [
         1900,
-        149.64379760742221,
-        936.9649999999613
+        150.19534729003925,
+        923.9649999999731
       ],
       "speed": 5.2,
-      "ground": 149.64379760742221,
+      "ground": 150.19534729003925,
       "gap": 0,
       "grounded": true,
-      "age": 0.13880000007145554,
-      "reads": 650,
-      "relaxJobs": 1891
+      "age": 0.1100999999046195,
+      "reads": 858,
+      "relaxJobs": 2847
     },
     {
       "i": 300,
-      "time": 472.3239999998677,
+      "time": 127.418200000166,
       "pos": [
         1900,
-        149.54810791015655,
-        938.4816666666266
+        150.15353535970075,
+        925.0483333333054
       ],
       "speed": 5.2,
-      "ground": 149.54810791015655,
+      "ground": 150.15353535970075,
       "gap": 0,
       "grounded": true,
-      "age": 0.13999999999992951,
-      "reads": 655,
-      "relaxJobs": 1906
+      "age": 0.11120000004767405,
+      "reads": 863,
+      "relaxJobs": 2862
     },
     {
       "i": 315,
-      "time": 472.8765999998915,
+      "time": 127.81800000011827,
       "pos": [
         1900,
-        149.49872558593748,
-        941.3849999999572
+        150.06288960774762,
+        927.1283333333035
       ],
       "speed": 5.2,
-      "ground": 149.49872558593748,
+      "ground": 150.06288960774762,
       "gap": 0,
       "grounded": true,
-      "age": 0.1578000000715747,
-      "reads": 665,
-      "relaxJobs": 1934
+      "age": 0.09749999999999659,
+      "reads": 873,
+      "relaxJobs": 2891
     },
     {
       "i": 330,
-      "time": 473.1748999998437,
+      "time": 128.0240000001183,
       "pos": [
         1900,
-        149.507978108724,
-        942.9016666666225
+        150.04900512695318,
+        928.1683333333026
       ],
       "speed": 5.2,
-      "ground": 149.507978108724,
+      "ground": 150.04900512695318,
       "gap": 0,
       "grounded": true,
-      "age": 0.12049999999993588,
-      "reads": 671,
-      "relaxJobs": 1949
+      "age": 0.09720000004770668,
+      "reads": 878,
+      "relaxJobs": 2906
     },
     {
       "i": 345,
-      "time": 473.7229999998674,
+      "time": 128.4097000001659,
       "pos": [
         1900,
-        149.46244812011733,
-        945.7616666666199
+        150.052075805664,
+        930.2049999999674
       ],
       "speed": 5.2,
-      "ground": 149.46244812011733,
+      "ground": 150.052075805664,
       "gap": 0,
       "grounded": true,
-      "age": 0.15799999999990177,
-      "reads": 680,
-      "relaxJobs": 1977
+      "age": 0.10930000007149943,
+      "reads": 887,
+      "relaxJobs": 2934
     }
   ],
   "errors": 0,
   "gpuErrors": 0,
-  "late": [],
+  "late": [
+    {
+      "kind": "render",
+      "label": "RenderPipeline_r32float_depth32float_samples1_textureState0",
+      "t": 61366.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:shadowDepth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61370.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:cloth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.09999990463,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFur",
+      "fragment": "fragment:wraithFur",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.299999952316,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFx",
+      "fragment": "fragment:wraithFx",
+      "compute": ""
+    }
+  ],
   "note": "Walking a full-size 14 m by 2.95 m-half-width, 1.1 m Stone Ridge while relaxation runs. GPU probes complete asynchronously after the CPU sample; their span is reported. This is walking, not D3 sand-surf acceptance."
 }
