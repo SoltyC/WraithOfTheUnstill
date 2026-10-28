@@ -137,3 +137,11 @@ Main's sand-dust feature is merged on this branch as `b7861ab`. **800 tests and 
 - The settling harness's original 30×120-frame loop could finish before 35 sim seconds on a fast renderer. It now permits 60 supervised chunks and can resume an already-expired test without restamping. The eight-step isolated result used that resume after expiry; no solver jobs ran beyond the 30 s dirty lifetime.
 
 Next: controlled timing/overhead attribution; browser allocation profile; representative large adjacent Ridge/writer expiry and crest geometry/motion review. Keep D2 disabled until those gates pass. Independent D9b work can proceed while a timing-environment decision is pending; no ordering dependency requires enabling D2 first.
+
+## Recording-free repeat — 2026-10-28
+
+The user authorized pausing GameDVR, then explicitly requested stopping all game recording. GameDVR was stopped; Medal and its encoder were terminated; NVIDIA recording helpers were stopped. NVIDIA overlay respawned, but Windows counters showed no active video encoding. Recording is left stopped under the latest instruction. Causality for earlier spikes remains unproven.
+
+Three eight-step synthetic26 repeats have combined fine/coarse/collision maxima **0.36352 / 0.335872 / 0.359424 ms**, with zero GPU errors or late pipelines. However, maximum collision snapshot age is **0.2802 / 0.2830 / 0.2808 s**, exceeding the unchanged 0.20 s diagnostic limit. All three runs therefore still fail the full gate. The browser had previously been resized to 2560 by 1440 for crest captures, but this harness did not record actual render resolution; do not assert a verified resolution or compare frame-rate results across runs. New reports are prefixed `no-recording-`; the previous failed recording-on reports are retained unchanged. D2 remains disabled, default 32 steps.
+
+The GPU bot was stopped after these repeats. The local Qwen worker harness reports stopped, and starting it fails because its configured runtime or model is missing. No local-model contribution is claimed.
