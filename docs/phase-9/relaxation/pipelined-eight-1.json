@@ -1,0 +1,377 @@
+{
+  "date": "2026-10-28T12:54:00.867Z",
+  "renderSize": {
+    "width": 2560,
+    "height": 1440
+  },
+  "combinedGpuMs": {
+    "mean": 0.08056023382045938,
+    "p95": 0.08192000000000066,
+    "max": 0.5283840000000004,
+    "peakParts": {
+      "sandRelaxLoad": 0.5048320000000004,
+      "sandCoarseLoad": 0.023552000000000017
+    }
+  },
+  "iterations": 8,
+  "finePasses": 4,
+  "frames": 480,
+  "mode": "synthetic26",
+  "synthetic": {
+    "distance": 234.59600000310706,
+    "covered": 474,
+    "maxAge": 0.1833999999761673,
+    "nominalSpeed": 26
+  },
+  "seconds": 9.375799999952555,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 480,
+  "writes": 3005,
+  "writesByKind": [
+    825,
+    568,
+    0,
+    0,
+    0,
+    1612,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionPendingMax": 3,
+  "collisionReads": 163,
+  "speed": {
+    "min": 5.2,
+    "max": 25.71394608879204,
+    "mean": 6.940807590329574
+  },
+  "samples": 479,
+  "incomplete": 0,
+  "spikes": [
+    {
+      "sample": 146,
+      "frame": 2528,
+      "ms": 0.4669439999999999,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.42947199999999996
+        },
+        {
+          "pass": 1,
+          "ms": 0.016992000000000118
+        },
+        {
+          "pass": 2,
+          "ms": 0.015359999999999818
+        },
+        {
+          "pass": 3,
+          "ms": 0.005120000000000013
+        }
+      ]
+    },
+    {
+      "sample": 246,
+      "frame": 2628,
+      "ms": 0.4597760000000002,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.007168000000000063
+        },
+        {
+          "pass": 1,
+          "ms": 0.4280320000000004
+        },
+        {
+          "pass": 2,
+          "ms": 0.018431999999999782
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 325,
+      "frame": 2707,
+      "ms": 0.4659199999999999,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.43254400000000004
+        },
+        {
+          "pass": 1,
+          "ms": 0.014943999999999846
+        },
+        {
+          "pass": 2,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 3,
+          "ms": 0.005120000000000013
+        }
+      ]
+    },
+    {
+      "sample": 332,
+      "frame": 2714,
+      "ms": 0.5048320000000004,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.006143999999999927
+        },
+        {
+          "pass": 1,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 2,
+          "ms": 0.4782080000000004
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 340,
+      "frame": 2722,
+      "ms": 0.4720640000000005,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.4362879999999998
+        },
+        {
+          "pass": 1,
+          "ms": 0.016320000000000334
+        },
+        {
+          "pass": 2,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 3,
+          "ms": 0.0040960000000000996
+        }
+      ]
+    },
+    {
+      "sample": 355,
+      "frame": 2737,
+      "ms": 0.45977599999999974,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.4259839999999997
+        },
+        {
+          "pass": 1,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 2,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 364,
+      "frame": 2746,
+      "ms": 0.4833280000000002,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.007168000000000063
+        },
+        {
+          "pass": 1,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 2,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 3,
+          "ms": 0.44953600000000016
+        }
+      ]
+    },
+    {
+      "sample": 368,
+      "frame": 2750,
+      "ms": 0.4587520000000005,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.007168000000000063
+        },
+        {
+          "pass": 1,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 2,
+          "ms": 0.4290560000000001
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 377,
+      "frame": 2759,
+      "ms": 0.4669439999999998,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.42803199999999997
+        },
+        {
+          "pass": 1,
+          "ms": 0.017407999999999646
+        },
+        {
+          "pass": 2,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 3,
+          "ms": 0.005119999999999791
+        }
+      ]
+    },
+    {
+      "sample": 398,
+      "frame": 2780,
+      "ms": 0.4659199999999988,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.4259839999999997
+        },
+        {
+          "pass": 1,
+          "ms": 0.017407999999999646
+        },
+        {
+          "pass": 2,
+          "ms": 0.017407999999999646
+        },
+        {
+          "pass": 3,
+          "ms": 0.005119999999999791
+        }
+      ]
+    },
+    {
+      "sample": 415,
+      "frame": 2797,
+      "ms": 0.47308800000000106,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.4372480000000003
+        },
+        {
+          "pass": 1,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 2,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 3,
+          "ms": 0.0040960000000000996
+        }
+      ]
+    },
+    {
+      "sample": 428,
+      "frame": 2810,
+      "ms": 0.4587519999999996,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.006143999999999927
+        },
+        {
+          "pass": 1,
+          "ms": 0.017407999999999646
+        },
+        {
+          "pass": 2,
+          "ms": 0.4290560000000001
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    }
+  ],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.006143999999999927
+    },
+    {
+      "pass": 1,
+      "ms": 0.014336000000000126
+    },
+    {
+      "pass": 2,
+      "ms": 0.4782080000000004
+    },
+    {
+      "pass": 3,
+      "ms": 0.006143999999999927
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.05235226722338212,
+    "p95": 0.04607999999999901,
+    "max": 0.5048320000000004
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Synthetic26 mode adds an actual PLOUGH writer and moving collision readback centre at a nominal 26 m/s along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

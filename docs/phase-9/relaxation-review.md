@@ -149,3 +149,20 @@ The GPU bot was stopped after these repeats. The local Qwen worker harness repor
 ## Early-submit readback experiment — rejected
 
 Babylon's StorageBuffer.read has a noDelay option that submits the copy before scene rendering. An experiment enabled it only for bounded collision refreshes; ownership tests and the build passed, and the live run had zero GPU errors/late pipelines. However, synthetic26 snapshot age still reached 0.2116 s and combined compute peaked at 0.50176 ms. It does not pass either unchanged gate. The experiment is reverted; report preserved as early-submit-eight-step.json. It recorded actual render size 2544×1289, proving browser window size alone is not a 1440p render-size guarantee. The load harness now sets the canvas explicitly and records actual dimensions for subsequent checks. No performance or graphics acceptance follows from this rejected option. Independent D9b can proceed with D2 disabled.
+
+
+## Pipelined collision snapshots — 29 October
+
+Latest main including D1b is merged. Four fixed CPU arrays now allow at most three in-flight collision reads at a 40 ms minimum interval. Only a newer submitted serial from the current reset generation can publish; the currently displayed array is never submitted as a read target. Slots and success/failure callbacks are created once. This overlaps readback latency instead of waiting for each reply before starting its successor; it adds ~0.53 MiB CPU array storage relative to the previous two-array implementation. Babylon's read promises and temporary GPU staging allocations remain API overhead; this is not a zero-allocation claim. No early flush/noDelay is used. D2 remains disabled, default 32 steps.
+
+Five ownership regressions cover moving centres/timestamps, reset while reads are pending, out-of-order replies, the three-read bound/displayed-buffer protection, and failed-slot retry. Focused 9 tests pass and the locked build passes; full suite passes **808 tests** at this checkpoint.
+
+Three new actual **2560×1440** synthetic26/eight-step runs now pass the existing collision age/coverage conditions: max snapshot age **0.1834 / 0.1853 / 0.1835 s**, coverage **474 /473 /473 of480**, three pending reads maximum, zero GPU/readback/retirement errors and late pipelines. Distances **234.6 /237.3 /237.0 m**; nominal writer speed remains26 m/s. These are data-path stress tests, not D3 gameplay. Reports: pipelined-eight-{1,2,3}.json.
+
+The same repeats **still fail compute timing**: combined maxima **0.528384 /0.538624 /0.498688 ms** exceed the unchanged0.4 ms gate. Fine medians/typical jobs remain small, but isolated spikes appear in different passes; do not filter them or infer a cause without evidence. Windows counters showed only the test Chrome actively using the GPU, and nvidia-smi showed P0/1905 MHz, no clock-throttle claim. No sustained world-performance gate passes.
+
+The 32-step full-size Ridge walking check passes: **360/360 grounded and covered**, 359 moving frames, zero foot gap, max age **0.1994 s**, asynchronous GPU-height comparison **8.03 mm** (probe spans remain recorded), zero GPU/readback errors/late pipelines. This has little latency margin and does not certify surf or arbitrary terrain. Previous moving report is retained before-pipeline.
+
+The first post-merge baseline produced two GPU errors because the load harness resized while recorded snapshots were active. It is retained as current-before-snapshot-suppression.json and is not acceptance evidence. The harness now disables snapshots before its forced canvas resize; fresh-cold repeats above have zero errors. Their resolution is recorded; older window-only reports remain historical.
+
+Next: crest geometry/normal/motion presentation and full browser allocation attribution; compute spikes remain unresolved, with no default-iteration or enabling change. Human feel and D12 whole-world gates remain open.

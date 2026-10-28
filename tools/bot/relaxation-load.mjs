@@ -18,6 +18,7 @@ async function ev(js) {
 }
 const result = await ev(`
  const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+ g.toggles.on.snapshot=false;g.engine.snapshotRendering=false;
  const canvas=g.engine.getRenderingCanvas();canvas.style.width='2560px';canvas.style.height='1440px';g.engine.resize();
  g.arm.setFree(false);g.game.teleport(1900,900);
  for(let i=0;i<600&&!g.game.worldSettled();i++)await frame();
@@ -30,7 +31,7 @@ const result = await ev(`
  const activeBefore=g.shaped.slots.filter(s=>s.state!==0).length;
  const oldIterations=r.iterations,oldUpdate=r.update,oldCoarse=ts.coarseRelaxation.update,oldCollision=ts.collision.update,oldStamp=ts.stamp,proto=GPUCommandEncoder.prototype,oldPass=proto.beginComputePass;
  const sampleMs=[],samplePasses=[],sampleStages=[],sampleCombined=[],sampleParts=[],writes=new Uint32Array(16),sampleStart=timer.count;
- let measuredPass=0,measureKind='sandRelaxLoad',measuring=false,stampCount=0,speedMax=0,speedMin=Infinity,speedTotal=0,pendingMax=0;
+ let measuredPass=0,measureKind='sandRelaxLoad',measuring=false,stampCount=0,speedMax=0,speedMin=Infinity,speedTotal=0,pendingMax=0,collisionPendingMax=0;
  timer.active=true;timer.sampleEvery=1;timer.debugPasses=true;
  timer.byLabel=new Proxy(Object.create(null),{set(obj,key,value){
    if(key.startsWith('sandRelaxLoad')||key.startsWith('sandCoarseLoad')||key.startsWith('sandCollisionLoad')){const i=timer.count,delta=value-(obj[key]||0);sampleCombined[i]=(sampleCombined[i]||0)+delta;const kind=key.split(/[0-9]/)[0];const parts=sampleParts[i]||=( {} );parts[kind]=(parts[kind]||0)+delta;}
@@ -61,7 +62,7 @@ const result = await ev(`
    for(let i=0;i<${frames};i++){
      await frame();const speed=Math.hypot(g.controller.vel.x,g.controller.vel.z);
      speedMax=Math.max(speedMax,speed);speedMin=Math.min(speedMin,speed);speedTotal+=speed;
-     pendingMax=Math.max(pendingMax,r.queue.pending);
+     pendingMax=Math.max(pendingMax,r.queue.pending);collisionPendingMax=Math.max(collisionPendingMax,ts.collision.pendingCount||0);
    }
  } finally {
    const at=g.loop.systems.indexOf(synthetic);if(at>=0)g.loop.systems.splice(at,1);ts.followOverride=false;
@@ -75,7 +76,7 @@ const result = await ev(`
  const combined=sampleCombined.filter(Number.isFinite).sort((a,b)=>a-b);
  const combinedPeak=sampleCombined.indexOf(combined.at(-1));
  return {renderSize:{width:g.engine.getRenderWidth(),height:g.engine.getRenderHeight()},combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:26},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
-   jobs:r.jobs-jobs0,writes:stampCount,writesByKind:Array.from(writes),pendingMax,collisionReads:ts.collision.reads-reads0,
+   jobs:r.jobs-jobs0,writes:stampCount,writesByKind:Array.from(writes),pendingMax,collisionPendingMax,collisionReads:ts.collision.reads-reads0,
    speed:{min:speedMin,max:speedMax,mean:speedTotal/${frames}},samples:samples.length,incomplete,spikes,maxSampleStages:sampleStages[sampleMs.indexOf(Math.max(...sampleMs.filter(Number.isFinite)))],
    fineGpuMs:{mean:samples.reduce((a,b)=>a+b,0)/samples.length,p95:samples[Math.floor(samples.length*0.95)],max:samples.at(-1)},
    gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late,collisionErrors:ts.collision.errors,retirementErrors:r.activityErrors,
