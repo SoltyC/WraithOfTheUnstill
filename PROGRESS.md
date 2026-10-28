@@ -632,3 +632,6 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 - rebuild after editing `data/photo-spots.json`.
 
 - Phase 8 M11 (rain and thunderstorm): see PLAN.md "M11 Done" and DECISIONS.md. Rain/storm states, rain renderer, wet world, lightning, thunder; shots in screenshots/rain-final.
+
+
+28 October D1b checkpoint: `codex/dune-grade` at `69f8bb8` (worktree `/home/sol/wraith-dune-grade`) now includes distance-normal retention and sandstone restricted to the baked rock mask; the initial slope-only bands were rejected. Shared 12 m strata value leaves the bake unchanged. Full suite 783 passes and production build passes; 5 cold scout + 18 lighting-matrix views at 1280×720 have zero GPU errors/late compilation. Sixteen matrix frames have no RGB channel >=253; sunset-facing mid frames measure 0.814% / 2.835%, including sun/sky. Still IN PROGRESS, unintegrated: wet-sand regression, terrain-only sunset clipping, a measured unobstructed 2–4 km view, sustained target-resolution timing and human aesthetics. Canyon sawteeth remain D7b geometry. See its `docs/phase-9/dune-grade-review.md` and JSON/captures. Bot stopped and C: profile cleared; no temporary data remains on D:. C: free space verified about 121 GiB; Medal absent. D2/D9b gates remain unchanged.
