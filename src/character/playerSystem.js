@@ -46,9 +46,9 @@ export function createPlayerSystem(ctx) {
         arm.dt = dt;
         arm.update(controller.pos, controller.vel, mx, mz, d[Action.FreeCamUp] - d[Action.FreeCamDown], d[Action.FreeCamFast] === 1);
       } else {
-        // Snow-surf (hold traversal) where the ground underfoot is snow.
+        // One surf controller: snow, or sand once the Walker has lent/granted it.
         sf.want = d[Action.Traverse] === 1 && !controller.swimming; // no surfing in the water
-        if (material) { material.mqx = controller.pos.x; material.mqz = controller.pos.z; material.sampleMaterial(); sf.canSurf = material.mat === 0; }
+        if (material) { material.mqx = controller.pos.x; material.mqz = controller.pos.z; material.sampleMaterial(); sf.material = material.mat; sf.selectSurface(); }
         else sf.canSurf = true;
         // Glide (hold traversal in the air): the same hold, the same steering.
         gl.want = d[Action.Traverse] === 1 && !controller.swimming;

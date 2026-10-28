@@ -56,7 +56,7 @@ export function addWraithSystem(g) {
     const spec = surfRoll.spec, sf = controller.surf, w = wraithView.wraith, p = controller.pos, dt = 1 / 60;
     for (let k = 0; k < 8 && surfRoll.t < spec.seconds; k++) {
       sf.want = !spec.glide;
-      streamer.mqx = p.x; streamer.mqz = p.z; streamer.sampleMaterial(); sf.canSurf = streamer.mat === 0;
+      streamer.mqx = p.x; streamer.mqz = p.z; streamer.sampleMaterial(); sf.material = streamer.mat; sf.selectSurface();
       sf.steer = (spec.steer ?? 0.6) * Math.sin((2 * Math.PI * surfRoll.t) / (spec.period ?? 4));
       sf.throttle = spec.throttle ?? 0;
       const gl = controller.glide;

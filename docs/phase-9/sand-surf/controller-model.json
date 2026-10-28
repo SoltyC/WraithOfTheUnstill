@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-28T20:19:32.211Z",
+  "reports": [
+    {
+      "material": 0,
+      "scenario": "flat",
+      "seconds": 40,
+      "speed": 16.999999643297826,
+      "active": true,
+      "cap": 26
+    },
+    {
+      "material": 0,
+      "scenario": "slip-face",
+      "seconds": 40,
+      "speed": 25.846135630136597,
+      "active": true,
+      "cap": 26
+    },
+    {
+      "material": 0,
+      "scenario": "uphill",
+      "seconds": 40,
+      "speed": 8.815799941638572,
+      "active": true,
+      "cap": 26
+    },
+    {
+      "material": 1,
+      "scenario": "flat",
+      "seconds": 40,
+      "speed": 13.999999972324707,
+      "active": true,
+      "cap": 32
+    },
+    {
+      "material": 1,
+      "scenario": "slip-face",
+      "seconds": 40,
+      "speed": 31.83551475385251,
+      "active": true,
+      "cap": 32
+    },
+    {
+      "material": 1,
+      "scenario": "uphill",
+      "seconds": 40,
+      "speed": 1.2564361808282543,
+      "active": true,
+      "cap": 32
+    },
+    {
+      "material": 6,
+      "scenario": "flat",
+      "seconds": 40,
+      "speed": 13.999999972324707,
+      "active": true,
+      "cap": 32
+    },
+    {
+      "material": 6,
+      "scenario": "slip-face",
+      "seconds": 40,
+      "speed": 31.83551475385251,
+      "active": true,
+      "cap": 32
+    },
+    {
+      "material": 6,
+      "scenario": "uphill",
+      "seconds": 40,
+      "speed": 1.2564361808282543,
+      "active": true,
+      "cap": 32
+    }
+  ],
+  "transition": {
+    "before": 31.568241878517043,
+    "after": 31.493241878517043,
+    "oneSubstepDrop": 0.07499999999999929,
+    "active": true
+  },
+  "note": "40second ideal planes through the same Surf owner-field API used by CapsuleController. Sand is explicitly lent for the oracle. No world/terrain-state/wake/collision latency/graphics/performance/audio or human-feel acceptance."
+}

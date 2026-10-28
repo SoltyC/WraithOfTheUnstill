@@ -526,3 +526,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D2 large-writer experiment: directional brush rectangles use conservative capsule-component bounds (same1.9radius cutoff), with fixed typed-array I/O. Disabled scheduler trials increase capacity64→512/lifetime30→240s to avoid early eviction/expiry;32steps unchanged. Verified overlapping-Ridge fixed60 check still marginally fails34.1degrees at34.10289239, so no D2 completion/enabling. Preserve failed trials/runtime mismatch and keep robust compute/allocation/graphics gates open. See crest-review.md.
+
+
+2026-10-29 — D3 controller prototype: keep one Surf/CapsuleController and static per-material tuning. Snow values preserved; sand1/washed sand6 stay locked until a future explicit Walker grant. Prototype sand forward flat14m/s, cap32,1.5g slope coupling,11m/s2 grip,0.52rad max lean. Lower-cap transitions and glide landing carry momentum. Owner-field hot calls replace numeric argument calls; wrappers remain for diagnostics.824tests/build pass, no target-GPU/feel/graphics acceptance. D2 remains disabled; its data-path stress must later cover32m/s. See sand-surf-review.md.

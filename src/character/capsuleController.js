@@ -167,8 +167,12 @@ export class CapsuleController {
     // Surfing: the surf model owns the horizontal velocity and the facing.
     const sf = this.surf;
     sf.grounded = this.grounded;
-    sf.engage(v.x, v.z, this.yaw);
-    sf.step(h, n.x, n.y, n.z);
+    // The glide owned the incoming velocity; hand that momentum back when landing into a surf.
+    if (this.grounded && this.glide.active && sf.want && sf.canSurf) sf.active = false;
+    sf.enterVX = v.x; sf.enterVZ = v.z; sf.enterFacing = this.yaw;
+    sf.engageQ();
+    sf.dt = h; sf.nx = n.x; sf.ny = n.y; sf.nz = n.z;
+    sf.stepQ();
     const surfing = sf.active;
     if (surfing) {
       v.x = sf.vx; v.z = sf.vz;
