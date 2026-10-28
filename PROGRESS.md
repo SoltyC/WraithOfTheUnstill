@@ -1,6 +1,10 @@
 # Progress
 
 
+> **Latest — D2 collision continuation, 29 October:** `codex/dune-relaxation` at `858854c` includes latest main/D1b and a bounded three-read/four-array collision pipeline (25 Hz maximum). Three verified1440p synthetic26 runs now keep snapshot age0.1834/0.1853/0.1835 s with >98% coverage and zero errors/late pipelines; 32-step Ridge walking is360/360 grounded/covered, 8.03 mm asynchronous comparison error, max age0.1994 s. **808 tests/build pass.** Combined compute maxima0.528/0.539/0.499 ms still fail the unchanged0.4 ms gate, so D2 remains disabled, default32, unintegrated. Review: that worktree's relaxation-review.md. Primary is now investigating actual seif-crest silhouettes with CPU-field-selected, GPU-depth-checked500 m/2 km cameras; denser-grid/morph changes are experiments, not accepted. The expanded goal is active for all remaining agent-verifiable Phase9/HANDOFF todo items; do not stop at D1b or sign off human feel/story/aesthetic gates.
+
+
+
 > **Latest — D1b integrated, 28 October:** Main merge `a17d1e8` includes the reviewed dune grade/far-normal/sandstone implementation from `codex/dune-grade` (`5516a6f`). Wet/dry regression, zero surface clipping including sunset bloom, actual 2–4 km GPU-depth views at noon/golden/night, irregular strata and fixed-scene 1440p timing are recorded in `docs/phase-9/dune-grade-review.md`. Main: **789 tests pass (784 tracked + five preserved local-LLM tests)**, locked build passes, fresh 2560×1440 cold launch has zero GPU errors/late pipelines. Static medians close/mid/canyon ~15.1/11.3/12.6 ms; this is not sustained combat/weather/streaming acceptance. D2 crests/relaxation remain disabled/unintegrated; D9b remains unintegrated pending allocations/performance/readability. Next: D2 collision-readback latency and the unchanged technical gates. Canyon sawteeth (D7b), cold-erg transition, human aesthetics and whole-phase D12 gates remain open. All owned bots stopped after checks; temporary profiles stay on C: and are disposed, never moved to D:.
 
 
