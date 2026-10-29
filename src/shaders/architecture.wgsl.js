@@ -189,6 +189,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var ao = 1.0;
   var scatter = 0.0;         // light through thin reed at grazing angles (thatch)
   var sheen = 0.0;           // a faint metallic broad highlight (iron)
+  var glassK = 0.0;          // battle glass (mid 19): light through it, fracture planes, pinpoint glints
   let n1 = noised(wp.xz * 1.7 + wp.y * 0.9).x;
   let n2 = noised(wp.xz * 0.35 + vec2f(seed)).x;
   let topFace = abs(N.y) > 0.7;
@@ -329,6 +330,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let core = 1.0 - smoothstep(0.0, 0.5, length(uv - vec2f(0.35, 0.6)));
     let wcol = mix(vec3f(1.0, 0.56, 0.2), vec3f(1.0, 0.76, 0.42), core * core);
     emit = wcol * (1.0 - lead) * (0.8 + 0.4 * ph) * (0.85 + 0.55 * core) * flick * lit * glowS.x * 1.15 * select(0.0, 1.0, info.w < 5.5);
+  } else if (mid == 19) {
+    // Battle glass (Phase 9 D7): sand fused by an old blow — dark, clear green-amber, glossy; the SSR
+    // pass reflects the world in it. Fracture planes run through it, each catching the light.
+    let tint = mix(vec3f(0.05, 0.11, 0.085), vec3f(0.12, 0.085, 0.035), step(0.7, fract(seed * 0.618)));
+    albedo = tint * (0.85 + 0.3 * smoothstep(0.2, 0.9, n1 * 0.5 + 0.5));
+    rough = 0.04; ssr = 0.6 * (0.15 + 0.85 * pow(1.0 - max(dot(N, V), 0.0), 3.0)); ao = 1.0; glassK = 1.0;
   } else if (mid == 4) {
     // Ice: dark, clear, glossy; the SSR pass reflects the world in it.
     albedo = vec3f(0.06, 0.1, 0.13) + vec3f(0.12, 0.18, 0.22) * smoothstep(0.2, 0.9, n1);
@@ -424,6 +431,22 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let shin = mix(16.0, 140.0, 1.0 - rough);
   col += key * pow(max(dot(N, H), 0.0), shin) * (1.0 - rough) * 0.6 * vis * clamp(nl, 0.0, 1.0);
   col += sheen * key * pow(max(dot(N, H), 0.0), 20.0) * vis * clamp(nl, 0.0, 1.0) * (albedo * 3.0 + 0.012);
+  if (glassK > 0.0) {
+    // Light through the glass when the sun is behind it (warm, as through amber), and the fracture
+    // planes inside lit up; the sun's glint pinpoint and hot (the bloom carries it a long way:
+    // "the glass catching the sun" seen from across the erg).
+    // Glass hardly scatters: its colour is what it reflects (Fresnel: the sky at grazing angles) and
+    // what shows through it (the sky and sunlit sand behind, tinted by its body).
+    col *= 0.45;
+    let NV = max(dot(N, V), 0.0);
+    let F = 0.04 + 0.96 * pow(1.0 - NV, 5.0);
+    col += shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * F * 1.6;
+    col += (shIrradiance(-V) * uniforms.envMisc.w + key * vis * 0.08) * (albedo * 6.0) * (1.0 - F) * 0.55;
+    let back = pow(clamp(dot(-V, L), 0.0, 1.0), 4.0) * (0.4 + 0.6 * clamp(-nl * 0.5 + 0.5, 0.0, 1.0));
+    let frac = smoothstep(0.93, 0.985, fract(dot(wp, vec3f(1.3, 0.7, -1.1)) * 0.9 + n2 * 0.6)) + smoothstep(0.95, 0.99, fract(dot(wp, vec3f(-0.6, 1.4, 0.8)) * 1.3 + n1 * 0.4));
+    col += key * vis * (albedo * 6.0 + vec3f(0.3, 0.2, 0.06)) * back * (0.5 + 0.8 * frac);
+    col += key * vis * pow(max(dot(N, H), 0.0), 900.0) * 14.0 * clamp(nl, 0.0, 1.0);
+  }
   // Firelight on the camp's stones, packs and snow: falls off from the hearth (site origin).
   let s0 = uniforms.siteGlow[site];
   if (s0.y > 0.0 && trans == 0.0) {

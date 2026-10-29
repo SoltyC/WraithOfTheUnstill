@@ -12,6 +12,7 @@ import { sideSites } from '../world/sideSites.js';
 import { nookSites } from '../world/nookSites.js';
 import { bellLedgeSites } from '../world/bellLedge.js';
 import { ruinSites } from '../world/ruinKits.js';
+import { glassSites } from '../world/glassKit.js';
 import nookData from '../../data/nooks.json';
 import restoredData from '../../data/restored.json';
 import { restoredSites } from '../world/restoredSites.js';
@@ -34,7 +35,7 @@ export async function addArchitectureSystem(g) {
   // The erg's ruins (world/ruinKits.js), appended after every earlier site (their indices never move):
   // the aqueduct's channel is levelled on the baked ground along its line.
   const ruinH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', { path: [[1900, 262], [2330, 290]] }, 20).catch(() => null);
-  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks), ...restoredSites(chapter.table, restoredData, restoredData.wind), ...bellLedgeSites(chapter.table), ...ruinSites(chapter.table, ruinH)];
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks), ...restoredSites(chapter.table, restoredData, restoredData.wind), ...bellLedgeSites(chapter.table), ...ruinSites(chapter.table, ruinH), ...glassSites(chapter.table)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });

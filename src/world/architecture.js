@@ -16,7 +16,9 @@ import { feltTent, stick } from './camp.js';
 
 export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, METAL: 6, SNOW: 7,
   // The village (docs/village/plan-materials.md): each a single chamfered piece like WOOD, no snow caps.
-  PLASTER: 8, THATCH: 9, SLATE: 10, TILE: 11, SHINGLE: 12, PLANK: 13, COBBLE: 14, FLAG: 15, EARTH: 16, IRON: 17, GLASS: 18 };
+  PLASTER: 8, THATCH: 9, SLATE: 10, TILE: 11, SHINGLE: 12, PLANK: 13, COBBLE: 14, FLAG: 15, EARTH: 16, IRON: 17, GLASS: 18,
+  // The erg's battle glass (Phase 9 D7, world/glassKit.js): fused sand, clear and glossy.
+  BATTLE_GLASS: 19 };
 const FOUND = 3; // m of foundation below the seat
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
