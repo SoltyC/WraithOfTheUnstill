@@ -10,7 +10,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const ARCH_SITES = 512; // frost 58 (incl. 5 NPC props) + the meadow village (~110 buildings, ~100 lanterns) + the manor, shrines and side sites (~400 before the nooks) + the 39 nooks
+export const ARCH_SITES = 640; // frost 58 (incl. 5 NPC props) + the meadow village (~110 buildings, ~100 lanterns) + the manor, shrines and side sites (~400 before the nooks) + the 39 nooks (464) + the erg's ruins (Phase 9 D7)
 
 const ARCH_VERTEX = /* wgsl */ `
 attribute position: vec3f;
@@ -372,6 +372,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     albedo = mix(albedo, vec3f(0.84, 0.87, 0.92), snow);
     N = normalize(mix(N, Ng, snow * 0.8)); rough = mix(rough, 0.9, snow);
     ssr = 0.0;
+  }
+  // The erg's ruins (z = 2): wind-blown sand instead — settled on every ledge and banked against the
+  // foot, and the stone itself sand-scoured warm and pale.
+  if (glowS.y <= 0.0 && glowS.z > 1.5 && mid <= 1) {
+    let Ng = normalize(fragmentInputs.vNormal) * sign(dot(fragmentInputs.vNormal, V));
+    let up = smoothstep(0.5, 0.82, Ng.y + 0.15 * n1 + 0.1 * n2 + 0.3 * (0.5 - ms.h));
+    let drift = 1.0 - smoothstep(0.1, 0.6 + 0.4 * n2, fragmentInputs.vLocalY);
+    let sand = max(up * 0.9, drift * 0.9);
+    albedo = mix(albedo * vec3f(1.12, 1.0, 0.82), vec3f(0.62, 0.45, 0.27) * (0.92 + 0.16 * n1), sand);
+    N = normalize(mix(N, Ng, sand * 0.7)); rough = mix(rough, 1.0, sand);
   }
 
   // Rain: stone, plaster and timber darken and take a sheen; the wet runs down, so it is heavier

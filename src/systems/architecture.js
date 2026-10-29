@@ -11,6 +11,7 @@ import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA, NO_S
 import { sideSites } from '../world/sideSites.js';
 import { nookSites } from '../world/nookSites.js';
 import { bellLedgeSites } from '../world/bellLedge.js';
+import { ruinSites } from '../world/ruinKits.js';
 import nookData from '../../data/nooks.json';
 import restoredData from '../../data/restored.json';
 import { restoredSites } from '../world/restoredSites.js';
@@ -30,7 +31,10 @@ export async function addArchitectureSystem(g) {
   // segments are also the analytic stepped floor of solids.js.
   const stairRoute = (g.routes || []).find((r) => r.id === 'manor-stair') || {};
   const stairH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', stairRoute).catch(() => null);
-  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks), ...restoredSites(chapter.table, restoredData, restoredData.wind), ...bellLedgeSites(chapter.table)];
+  // The erg's ruins (world/ruinKits.js), appended after every earlier site (their indices never move):
+  // the aqueduct's channel is levelled on the baked ground along its line.
+  const ruinH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', { path: [[1900, 262], [2330, 290]] }, 20).catch(() => null);
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks), ...restoredSites(chapter.table, restoredData, restoredData.wind), ...bellLedgeSites(chapter.table), ...ruinSites(chapter.table, ruinH)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });
@@ -71,6 +75,8 @@ export async function addArchitectureSystem(g) {
   view.glow[sites.findIndex((s) => s.id === 'monastery') * 4 + 3] = 1;
   // The meadow's places: no snow on them, and the hub's hearth burns.
   sites.forEach((s, i) => { if (NO_SNOW.test(s.id)) view.glow[i * 4 + 2] = 1; });
+  // The erg's ruins (world/ruinKits.js): sand on the ledges and at the foot instead of snow.
+  sites.forEach((s, i) => { if (/^(ruin|glass)-/.test(s.id)) view.glow[i * 4 + 2] = 2; });
   // The village's lanterns burn (their ember: siteGlow.w where there is no hearth).
   sites.forEach((s, i) => { if (s.lamp || s.id.startsWith('vil-')) view.glow[i * 4 + 3] = 1; }); // door lanterns and hearths too
   // World lights (systems/lights.js): those built into the places (the hall's candles, its vigil
