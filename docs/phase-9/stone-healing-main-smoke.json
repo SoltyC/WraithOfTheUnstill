@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-29T10:34:25.916Z",
+  "revision": "18bd3ba2f65cd0ec105e4d539021017976658374",
+  "smoke": {
+    "sceneFrames": 180,
+    "output": [
+      2560,
+      1440
+    ],
+    "internal": [
+      1792,
+      1008
+    ],
+    "postFloats": 128,
+    "windFloats": 24,
+    "stormPresent": false,
+    "gpuErrors": 0,
+    "gpuMessages": [],
+    "late": []
+  },
+  "aged": 0.7937005259840998,
+  "zeroAtSameTime": 0.7937005259840998,
+  "held": 0.7937005259840998,
+  "changedAtSameTime": 0.7937005259840998,
+  "resumed": 0.7405487761432822,
+  "expected": 0.7405487761432822,
+  "zeroPreserved": true,
+  "error": 0,
+  "note": "Fresh main-game1440p/.7 cold smoke, then actual bundled Stone CPU owner isolated with renderer stopped. Synthetic collision stamp only; no new GPU brush, rendered Ridge, resident/evicted healing parity, shelter, allocations or D6 erasure acceptance. This disposable browser intentionally leaves its render loop stopped."
+}
