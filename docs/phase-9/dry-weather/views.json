@@ -1,0 +1,528 @@
+{
+  "date": "2026-10-29T05:15:09.045Z",
+  "reports": [
+    {
+      "name": "crest-stilled",
+      "state": "clear",
+      "restored": "stilled",
+      "on": true,
+      "hour": 12,
+      "wet": 0,
+      "weather": {
+        "state": "clear",
+        "snow": 0,
+        "rain": 0,
+        "storm": 0,
+        "sand": 0,
+        "cover": 0.08000000000000002,
+        "fog": 0.02,
+        "weight": 1,
+        "stormReady": false
+      },
+      "inversion": {
+        "weight": 0,
+        "postDensity": 0
+      },
+      "density": 0.44000000000000006,
+      "quantized": 0.4375,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 12,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2498,
+        196.5,
+        805
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 0,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 0,
+        "snap": false
+      },
+      "opaquePixels": 3292143,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 164.34027403137128,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          30929,
+          13624,
+          6658,
+          131,
+          0,
+          0
+        ],
+        "duneSamples": [
+          30929,
+          11845,
+          3197,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 42710,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/d6-dry-crest-stilled.png"
+    },
+    {
+      "name": "close-clear",
+      "state": "clear",
+      "restored": "restored",
+      "on": true,
+      "hour": 12,
+      "wet": 0,
+      "weather": {
+        "state": "clear",
+        "snow": 0,
+        "rain": 0,
+        "storm": 0,
+        "sand": 0,
+        "cover": 0.08000000000000002,
+        "fog": 0.02,
+        "weight": 1,
+        "stormReady": false
+      },
+      "inversion": {
+        "weight": 0,
+        "postDensity": 0
+      },
+      "density": 0.8,
+      "quantized": 0.796875,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 13,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 157.2234013727313,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56392,
+          644,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56392,
+          644,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/d6-dry-close-clear.png"
+    },
+    {
+      "name": "close-haze",
+      "state": "heat-haze",
+      "restored": "restored",
+      "on": true,
+      "hour": 12,
+      "wet": 0,
+      "weather": {
+        "state": "heat-haze",
+        "snow": 0,
+        "rain": 0,
+        "storm": 0,
+        "sand": 0,
+        "cover": 0.03999999999999998,
+        "fog": 0.14,
+        "weight": 1,
+        "stormReady": false
+      },
+      "inversion": {
+        "weight": 0,
+        "postDensity": 0
+      },
+      "density": 0.8,
+      "quantized": 0.796875,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 13,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 157.30930670398757,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56392,
+          644,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56392,
+          644,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/d6-dry-close-haze.png"
+    },
+    {
+      "name": "close-wet",
+      "state": "clear",
+      "restored": "restored",
+      "on": true,
+      "hour": 12,
+      "wet": 1,
+      "weather": {
+        "state": "clear",
+        "snow": 0,
+        "rain": 0,
+        "storm": 0,
+        "sand": 0,
+        "cover": 0.08000000000000002,
+        "fog": 0.02,
+        "weight": 1,
+        "stormReady": false
+      },
+      "inversion": {
+        "weight": 0,
+        "postDensity": 0
+      },
+      "density": 0.15999999999999998,
+      "quantized": 0.15625,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 14,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 118.50795910538709,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56392,
+          644,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56392,
+          644,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/d6-dry-close-wet.png"
+    },
+    {
+      "name": "mid-golden",
+      "state": "clear",
+      "restored": "restored",
+      "on": true,
+      "hour": 17.8,
+      "wet": 0,
+      "weather": {
+        "state": "clear",
+        "snow": 0,
+        "rain": 0,
+        "storm": 0,
+        "sand": 0,
+        "cover": 0.14167565741914262,
+        "fog": 0.025606877947194785,
+        "weight": 0.7196561026402608,
+        "stormReady": false
+      },
+      "inversion": {
+        "weight": 0,
+        "postDensity": 0
+      },
+      "density": 0.3013900729954475,
+      "quantized": 0.296875,
+      "weight": 0.7196561026402608,
+      "sunY": 0.0396624152107276,
+      "lutBuilds": 20,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2418370,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 99.90478584495308,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20335,
+          7193,
+          8352,
+          1756,
+          100,
+          3
+        ],
+        "duneSamples": [
+          20335,
+          7193,
+          2845,
+          1184,
+          2,
+          0
+        ],
+        "sandSamples": 27571,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/d6-dry-mid-golden.png"
+    },
+    {
+      "name": "mid-night",
+      "state": "clear",
+      "restored": "restored",
+      "on": true,
+      "hour": 23,
+      "wet": 0,
+      "weather": {
+        "state": "clear",
+        "snow": 0,
+        "rain": 0,
+        "storm": 0,
+        "sand": 0,
+        "cover": 0.14167565741914262,
+        "fog": 0.025606877947194785,
+        "weight": 0.7196561026402608,
+        "stormReady": false
+      },
+      "inversion": {
+        "weight": 0,
+        "postDensity": 0
+      },
+      "density": 0.028786244105610433,
+      "quantized": 0.03125,
+      "weight": 0.7196561026402608,
+      "sunY": -0.7320197037616456,
+      "lutBuilds": 21,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2418370,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 68.64298581578461,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20335,
+          7193,
+          8352,
+          1756,
+          100,
+          3
+        ],
+        "duneSamples": [
+          20335,
+          7193,
+          2845,
+          1184,
+          2,
+          0
+        ],
+        "sandSamples": 27571,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/d6-dry-mid-night.png"
+    }
+  ],
+  "note": "Actual native2560x1440 dry-weather/stilled/haze/noon/wet/golden/night matrix after separate Dunes machine and valley-fog mask. No storm/front acceptance; storm capability remains false. Opaque/depth/luma statistics reuse the established D1b native canvas/depth gate (3px sky-edge erosion,RGB>=253 clipping).120frame steady LUT rebuild check, exposure snapped for comparison.1280px review copies. Not sustained world/weather/combat performance or human aesthetic acceptance."
+}

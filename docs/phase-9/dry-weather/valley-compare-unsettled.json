@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-29T05:16:11.215Z",
+  "reports": [
+    {
+      "control": true,
+      "size": [
+        2560,
+        1440
+      ],
+      "params": [
+        0.014998933300375938,
+        170.3594970703125,
+        7,
+        0.999928891658783
+      ],
+      "actualSceneFrames": 90,
+      "biomeWeight": 0.9999491889418236,
+      "restoration": 0,
+      "changedPixels": 0,
+      "maxRGBSum": 0,
+      "meanRGBDelta": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/matched-cold-lake-control.png"
+    },
+    {
+      "control": false,
+      "size": [
+        2560,
+        1440
+      ],
+      "params": [
+        3.7362976712529417e-08,
+        170.37808227539062,
+        7,
+        2.490865199433756e-06
+      ],
+      "actualSceneFrames": 90,
+      "biomeWeight": 0.9999975091261345,
+      "restoration": 0,
+      "changedPixels": 3592276,
+      "maxRGBSum": 83,
+      "meanRGBDelta": 5.059920609085649,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/matched-desert-crest-air.png"
+    }
+  ],
+  "note": "Same actual native1440p noon camera/inputs. Control restores only previous cold-valley post density/weight from the old owner formula; new case uses normal biome mask. Simulation, TAA/jitter/grain/shadow noise and snapped exposure fixed. Test callback only, no added product toggle. Not a whole-scene original-main baseline or human art signoff.",
+  "status": "UNSETTLED FIXTURE: biome/top were still easing between the controls; small residual inversion failed exact-zero check. Use valley-compare.json after pinning the settled inputs."
+}

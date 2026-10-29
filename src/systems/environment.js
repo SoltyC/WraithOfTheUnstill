@@ -38,6 +38,7 @@ export async function addEnvironmentSystems(g) {
   loop.add({ name: 'weather', update: () => {
     weather.restored = ws.restoration.frost === 'restored' ? 1 : 0;
     weather.meadowRestored = ws.restoration.meadow === 'restored' ? 1 : 0;
+    weather.dunesRestored=ws.restoration.dunes==='restored'?1:0;weather.dunes=bwD;
     weather.meadow = bwM / Math.max(bwF + bwM, 1e-3);  // the meadow's weight here (eased below)
     // A load, a teleport and a capture show the weather outright, not easing in from the old place.
     if (pendingTp.active || g.capture) weather.snap = true;
@@ -87,7 +88,10 @@ export async function addEnvironmentSystems(g) {
     if (vfClock >= VF.every || jumped) { vfClock = 0; vfTarget = Math.min(valleyLevel(), controller.pos.y - 8); vfX = camera.position.x; vfZ = camera.position.z; if (jumped || vfTop === 0) vfTop = vfTarget; }
     vfTop += (vfTarget - vfTop) * (1 - Math.exp(-clock.realDt / 6));
     inv.top = vfTop; inv.density = VF.density; inv.soft = 7;
-    inv.weight = Math.max(0, 1 - restoration.value * 1.4);
+    // The erg's stopped air is a crest veil, not the frost/meadow's low fog lake.
+    // Normalize the same eased biome shares as the grade, preserving the old path at dunes0.
+    const duneShare=bwD/Math.max(bwF+bwM+bwD,1e-3);
+    inv.weight = Math.max(0, 1 - restoration.value * 1.4)*(1-duneShare);
   }
   // Grades (post/grades.js): the LUT is rebuilt only when the blended grade moves.
   const { blendGrade } = await import('../post/grades.js');

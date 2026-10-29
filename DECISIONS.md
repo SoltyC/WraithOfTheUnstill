@@ -534,3 +534,7 @@ Use the spare atmosphere parameter lane and shared medium, with a350m dust scale
 
 ### 29 October — bounded near-crest suspended/released dust
 Extend the shared sand-dust draw by1024fixed quads and one vec4; derive ridges from rendered height, fade by Dunes weight/range, integrate eased restoration time for motion. Actual GPU held pose is unchanged across100raw seconds; wet/off/outside zeros and local freeze suppression pass. Full geometry1440p/0.7 cost+0.052–0.088ms in the fixed scene;791tracked tests/build. Keep after main regression. Rejected partial-submesh measurement retained with explicit invalid label. Review: docs/phase-9/crest-air-review.md. Far crest coverage, storms, migration, allocations/combined performance and human art remain open.
+
+
+### 29 October — separate dry Dunes weather; remove inherited cold fog lakes
+Add the third seeded clear/heat-haze clock and continuously blend its dry targets. Reserve sandstorm data behind duneStorms=false until the actual front/visibility/terrain consumers pass review; no unfinished storm in normal play. Fade frost/meadow inversion fog out by normalized Dunes weight, leaving the crest veil as its stopped-air signature.795tracked tests/build and six native day/wet/golden/night views pass with0opaque clipping/GPU/late errors. No new renderer resources. Review: docs/phase-9/dry-weather-review.md. Full D6 storm/migration and human/whole-world gates remain open.

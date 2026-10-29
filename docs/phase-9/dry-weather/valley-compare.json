@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-29T05:22:01.865Z",
+  "reports": [
+    {
+      "control": true,
+      "size": [
+        2560,
+        1440
+      ],
+      "params": [
+        0.014999999664723873,
+        171.0066375732422,
+        7,
+        1
+      ],
+      "actualSceneFrames": 90,
+      "biomeWeight": 1,
+      "restoration": 0,
+      "changedPixels": 0,
+      "maxRGBSum": 0,
+      "meanRGBDelta": 0,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/matched-cold-lake-control.png"
+    },
+    {
+      "control": false,
+      "size": [
+        2560,
+        1440
+      ],
+      "params": [
+        0,
+        171.0066375732422,
+        7,
+        0
+      ],
+      "actualSceneFrames": 90,
+      "biomeWeight": 1,
+      "restoration": 0,
+      "changedPixels": 3594897,
+      "maxRGBSum": 84,
+      "meanRGBDelta": 5.174716073495371,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/matched-desert-crest-air.png"
+    }
+  ],
+  "note": "Same actual native1440p noon camera/inputs. Control restores only previous cold-valley post density/weight from the old owner formula; new case uses normal biome mask. Simulation, TAA/jitter/grain/shadow noise and snapped exposure fixed. Test callback only, no added product toggle. Not a whole-scene original-main baseline or human art signoff."
+}

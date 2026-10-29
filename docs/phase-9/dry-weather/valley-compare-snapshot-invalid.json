@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-29T05:19:31.595Z",
+  "reports": [
+    {
+      "control": true,
+      "size": [
+        2560,
+        1440
+      ],
+      "params": [
+        0.014999999664723873,
+        171.0157012939453,
+        7,
+        1
+      ],
+      "actualSceneFrames": 90,
+      "biomeWeight": 1,
+      "restoration": 0,
+      "changedPixels": 0,
+      "maxRGBSum": 0,
+      "meanRGBDelta": 0,
+      "gpuErrors": 2,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/matched-cold-lake-control.png"
+    },
+    {
+      "control": false,
+      "size": [
+        2560,
+        1440
+      ],
+      "params": [
+        0,
+        171.0157012939453,
+        7,
+        0
+      ],
+      "actualSceneFrames": 90,
+      "biomeWeight": 1,
+      "restoration": 0,
+      "changedPixels": 3594678,
+      "maxRGBSum": 88,
+      "meanRGBDelta": 5.174816623263889,
+      "gpuErrors": 2,
+      "late": [],
+      "file": "screenshots/d6-dry-weather-review/matched-desert-crest-air.png"
+    }
+  ],
+  "note": "Same actual native1440p noon camera/inputs. Control restores only previous cold-valley post density/weight from the old owner formula; new case uses normal biome mask. Simulation, TAA/jitter/grain/shadow noise and snapped exposure fixed. Test callback only, no added product toggle. Not a whole-scene original-main baseline or human art signoff.",
+  "status": "INVALID: fresh diagnostic comparison resized with snapshot bundles still enabled and recorded2GPU errors. Corrected protocol disables snapshots before resize; accepted run must start/end with0errors."
+}

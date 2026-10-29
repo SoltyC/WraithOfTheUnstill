@@ -6,8 +6,10 @@
 // Frost states: clear, overcast, snowfall, blizzard. A stilled steppe has no moving air, so only
 // clear and a still, hazy overcast occur there (no falling snow, no blizzard): the weather
 // returning is part of the release's reward. Restored, the steppe cycles through all four.
+// Dunes: an independent dry machine, blended by raw Dunes weight after the frost/meadow blend.
+// Storm activation stays disabled until its visible front/terrain consumers pass review.
 // Meadow states (Phase 8 M11): clear, overcast, rain, storm (a thunderstorm), the same rule: a
-// stilled meadow only has clear and a still overcast. Both machines run all the time; the targets
+// stilled meadow only has clear and a still overcast. All three machines run all the time; the targets
 // are blended by the meadow's weight under the camera, so the frost↔meadow border grades from snow
 // through sleet to rain without a pop. Rain wets the world (wet, puddle: world/wetness inlined in
 // update) and dries back after.
@@ -15,9 +17,9 @@
 // Durations are real seconds and the sequence is seeded by the cycle index, so a session's
 // weather is deterministic. The dev overlay can force a state (override); captures snap.
 
-import { FROST_STATES, MEADOW_STATES, STILLED_STATES, FROST_CYCLE, MEADOW_CYCLE, STILLED_CYCLE, resolveState } from './weatherStates.js';
+import { FROST_STATES, MEADOW_STATES, STILLED_STATES, FROST_CYCLE, MEADOW_CYCLE, STILLED_CYCLE, DUNES_STATES, STILLED_DUNES_STATES, DUNES_CYCLE, STILLED_DUNES_CYCLE, resolveState } from './weatherStates.js';
 
-export { FROST_STATES, MEADOW_STATES };
+export { FROST_STATES, MEADOW_STATES, DUNES_STATES };
 
 /** Ease time constant (s): ~3τ ≈ 40 s to settle. */
 const TAU = 13;
@@ -36,7 +38,7 @@ function lengths(cyc, seed) {
   for (let i = 0; i < cyc.length; i++) a[i] = cyc[i][1] + (cyc[i][2] - cyc[i][1]) * hash(i * 31 + seed);
   return a;
 }
-const LEN_FROST = lengths(FROST_CYCLE, 7), LEN_MEADOW = lengths(MEADOW_CYCLE, 11), LEN_STILLED = lengths(STILLED_CYCLE, 0);
+const LEN_FROST = lengths(FROST_CYCLE, 7), LEN_MEADOW = lengths(MEADOW_CYCLE, 11), LEN_STILLED = lengths(STILLED_CYCLE, 0), LEN_DUNES=lengths(DUNES_CYCLE,17), LEN_STILLED_DUNES=lengths(STILLED_DUNES_CYCLE,23);
 
 /** Where a biome's machine is: seconds into the step, the step, its length. */
 function newClock() { return { t: 0.5 - 0.5, step: 0, len: 600.5 }; }
@@ -49,7 +51,7 @@ function tick(c, w, cyc, lens) {
 }
 
 export function createWeather() {
-  const f = newClock(), m = newClock();
+  const f = newClock(), m = newClock(), d = newClock();
   const w = {
     /** Current blended parameters (read by consumers). */
     cover: 0.12, snow: 0.5 - 0.5, rain: 0.5 - 0.5, storm: 0.5 - 0.5, wind: 1.5 - 0.5, fog: 0.04, gust: 0.3,
@@ -62,30 +64,39 @@ export function createWeather() {
     /** Dev / photo-spot forcing (0..1, or -1 for none): sets wetness, the slow puddle value and the rain outright. */
     wetForce: -1.5 + 0.5, puddleForce: -1.5 + 0.5, rainForce: -1.5 + 0.5,
     /** Inputs: frost restored (0/1), meadow restored (0/1), the meadow's weight under the camera
-     *  (0 frost … 1 meadow, eased by the owner) and dt (s); snap jumps straight to the target
+     *  (0 frost … 1 meadow, eased by the owner), raw Dunes weight and its release flag, and dt (s); snap jumps straight to the target
      *  (captures, loads). */
     // (Double-initialised fields: V8 keeps them unboxed, so per-frame stores never allocate.)
-    restored: 0, meadowRestored: 0, meadow: 0.5 - 0.5, dt: 0.5 - 0.5, snap: true,
-    frost: f, meadowClock: m,
+    restored: 0, meadowRestored: 0, dunesRestored:0, dunes:0.5-0.5, sand:0.5-0.5, duneStorms:false, meadow: 0.5 - 0.5, dt: 0.5 - 0.5, snap: true,
+    frost: f, meadowClock: m, dunesClock:d,
     update() {
-      // Both machines run all the time (also under an override: it ends where the cycle is).
+      // All three machines run all the time (also under an override: it ends where the cycle is).
       const fNat = w.restored ? tick(f, w, FROST_CYCLE, LEN_FROST) : tick(f, w, STILLED_CYCLE, LEN_STILLED);
       const mNat = w.meadowRestored ? tick(m, w, MEADOW_CYCLE, LEN_MEADOW) : tick(m, w, STILLED_CYCLE, LEN_STILLED);
+      const dNat=w.dunesRestored?tick(d,w,DUNES_CYCLE,LEN_DUNES):tick(d,w,STILLED_DUNES_CYCLE,LEN_STILLED_DUNES);
+      let duneName=resolveState(w.override||dNat,'dunes',w.dunesRestored);
+      if(duneName==='sandstorm'&&!w.duneStorms)duneName='heat-haze';
+      const duneTarget=(w.dunesRestored?DUNES_STATES:STILLED_DUNES_STATES)[duneName];
+      const duneWeight=Math.max(0,Math.min(1,w.dunes));
       const frostName = resolveState(w.override || fNat, 'frost', w.restored), meadowName = resolveState(w.override || mNat, 'meadow', w.meadowRestored);
       const ft = (w.restored ? FROST_STATES : STILLED_STATES)[frostName];
       const mt = (w.meadowRestored ? MEADOW_STATES : STILLED_STATES)[meadowName];
       const b = w.meadow;
-      w.state = b > 0.5 ? meadowName : frostName;
+      w.state = duneWeight>.5?duneName:b > 0.5 ? meadowName : frostName;
       // Blend the two biomes' targets by the meadow weight. At the border a snowing frost turns to
       // sleet: some of its precipitation falls as rain on the meadow side (peaks at b = 0.5).
       const sleet = 4 * b * (1 - b) * 0.7 * ft.snow;
-      const tCover = ft.cover + (mt.cover - ft.cover) * b, tWind = ft.wind + (mt.wind - ft.wind) * b;
-      const tFog = ft.fog + (mt.fog - ft.fog) * b, tGust = ft.gust + (mt.gust - ft.gust) * b;
-      const tSnow = ft.snow * (1 - b), tRain = Math.min(1, mt.rain * b + sleet), tStorm = mt.storm * b;
+      let tCover = ft.cover + (mt.cover - ft.cover) * b, tWind = ft.wind + (mt.wind - ft.wind) * b;
+      let tFog = ft.fog + (mt.fog - ft.fog) * b, tGust = ft.gust + (mt.gust - ft.gust) * b;
+      let tSnow = ft.snow * (1 - b), tRain = Math.min(1, mt.rain * b + sleet), tStorm = mt.storm * b;
+      tCover+=(duneTarget.cover-tCover)*duneWeight;tWind+=(duneTarget.wind-tWind)*duneWeight;
+      tFog+=(duneTarget.fog-tFog)*duneWeight;tGust+=(duneTarget.gust-tGust)*duneWeight;
+      tSnow*=1-duneWeight;tRain*=1-duneWeight;tStorm*=1-duneWeight;
       const k = w.snap ? 1 : 1 - Math.exp(-w.dt / TAU);
       w.cover += (tCover - w.cover) * k; w.snow += (tSnow - w.snow) * k; w.wind += (tWind - w.wind) * k;
       w.fog += (tFog - w.fog) * k; w.gust += (tGust - w.gust) * k;
       w.rain += (tRain - w.rain) * k; w.storm += (tStorm - w.storm) * k;
+      w.sand+=((duneTarget.sand||0)*duneWeight-w.sand)*k;
       // Forced rain still soaks the surface when wetness itself is not pinned.
       if (w.rainForce >= 0) w.rain = Math.min(1, w.rainForce);
       // Wetness: rain soaks the world, dry air takes it back (a captured rain shot is already wet).
