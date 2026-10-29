@@ -2,6 +2,7 @@
 // sampling outputs; no particles, terrain writes, renderer resources or per-frame allocations.
 // WGSL twin: shaders/sandstormFront.wgsl.js. Kept dormant until D6 consumers pass review.
 export const SANDSTORM_SPEED=32, SANDSTORM_AHEAD=2400, SANDSTORM_DEPTH=5000;
+export const SANDSTORM_GUST=1.7;
 export const SANDSTORM_WIDTH=140, SANDSTORM_HEIGHT=450, SANDSTORM_SIGMA=.015;
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
 
@@ -33,14 +34,20 @@ export function createSandstormFront(){
       block[5]=SANDSTORM_HEIGHT;block[6]=SANDSTORM_WIDTH;block[7]=SANDSTORM_DEPTH;
       block[8]=this.age;block[9]=SANDSTORM_SIGMA;block[10]=0;block[11]=0;
     },
-    sample(){
-      if(block[3]<=0){this.density=0;this.signedDistance=0;return;}
-      const across=-this.qx*block[1]+this.qz*block[0],q=this.qx*block[0]+this.qz*block[1]-block[2];
-      const roll=45*Math.sin(across*.018+block[8]*.22)+20*Math.sin(across*.049-this.qy*.02+block[8]*.31);
-      const lead=1-smooth((q-roll+block[6])/(2*block[6]));
-      const tail=smooth((q+block[7]+block[6])/(2*block[6]));
-      this.signedDistance=q-roll;
-      this.density=block[3]*lead*tail*Math.exp(-Math.max(0,this.qy-block[4])/block[5]);
-    },
+    stormOffset:0,
+    sample(){sampleSandstorm(this);},
   };
+}
+
+// Owner-field sampler is shared by the front and wind, without numeric call arguments or
+// per-query objects. Wind uses the same packed layout at offset24.
+export function sampleSandstorm(o){
+  const b=o.block,k=o.stormOffset||0;
+  if(!(b[k+3]>0)){o.density=0;o.signedDistance=0;return;}
+  const across=-o.qx*b[k+1]+o.qz*b[k+0],q=o.qx*b[k+0]+o.qz*b[k+1]-b[k+2];
+  const roll=45*Math.sin(across*.018+b[k+8]*.22)+20*Math.sin(across*.049-o.qy*.02+b[k+8]*.31);
+  const lead=1-smooth((q-roll+b[k+6])/(2*b[k+6]));
+  const tail=smooth((q+b[k+7]+b[k+6])/(2*b[k+6]));
+  o.signedDistance=q-roll;
+  o.density=b[k+3]*lead*tail*Math.exp(-Math.max(0,o.qy-b[k+4])/b[k+5]);
 }

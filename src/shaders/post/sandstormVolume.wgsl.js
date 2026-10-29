@@ -11,7 +11,7 @@ fn stormBiome(p:vec2f)->f32{
     mix(unpack4x8unorm(sandBiomeA[u32(b.y*1024+a.x)]).w,unpack4x8unorm(sandBiomeA[u32(b.y*1024+b.x)]).w,f.x),f.y);
 }
 fn stormOpticalDepth(cam:vec3f,dir:vec3f,dist:f32)->f32{
-  let A=P.desert[0];let B=P.desert[1];let C=P.desert[2];
+  var A=P.desert[0];A.w*=P.desert[3].y;let B=P.desert[1];let C=P.desert[2];
   if(A.w<=0.0){return 0.0;}
   let q=dot(cam.xz,A.xy)-A.z;let k=dot(dir.xz,A.xy);
   let lower=-B.w-B.z;let upper=B.z+65.0;

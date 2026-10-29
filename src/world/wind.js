@@ -9,8 +9,11 @@
 //   bursts    up to MAX_BURSTS injected local gusts (the Gale verbs; anything else may inject):
 //             an expanding ring from a point that pushes outward and dies away
 // The owner (systems/environment.js) sets the inputs once per frame; the uniform block (`block`,
-// 6 × vec4) is shared by reference with every material that declares `windField`.
+// 9 × vec4) is shared by reference with every material that declares `windField`.
 // Allocation-free.
+
+import {sampleSandstorm,SANDSTORM_GUST} from './sandstormFront.js';
+export const WIND_VECTORS=9;
 
 export const FRONT_SPEED = 8;     // m/s
 export const MAX_BURSTS = 4;
@@ -19,20 +22,25 @@ const BURST_SPEED = 14, BURST_LIFE = 2.2, BURST_WIDTH = 5;
 /** Smooth front profile of a phase (radians): sharp-ish rises, long tails. Mirrors the WGSL. */
 function front(ph) { const s = 0.5 + 0.5 * Math.sin(ph); return s * s * s * s; } // inlined (tiny)
 
-export function createWind() {
+export function createWind(stormFront=null) {
   // [0] dir x, dir z, base strength, time; [1] gustiness, front speed, -, -; [2..5] bursts:
-  // x, z, start time, strength (strength 0 = none).
-  const block = new Array(24).fill(0);
+  // x, z, start time, strength (strength 0 = none). [6..8] world-front block.
+  // Wind remains a 2D ground-reference field, shared by cloth and water.
+  const block = new Array(WIND_VECTORS*4).fill(0);
   block[0] = 1; block[5] = FRONT_SPEED;
   let next = 0;
   const w = {
-    block,
+    block,stormFront,stormWeight:0.5-0.5,stormOffset:24,
+    qx:0.5,qy:0.5,qz:0.5,density:0.5-0.5,signedDistance:0.5-0.5,
     /** Owner inputs, set each frame before update(). */
     dirX: 1, dirZ: 0, strength: 0.5 - 0.5, gustiness: 0.5 - 0.5, time: 0.5,
     update() {
       const l = Math.sqrt(this.dirX * this.dirX + this.dirZ * this.dirZ) || 1;
       block[0] = this.dirX / l; block[1] = this.dirZ / l; block[2] = this.strength; block[3] = this.time;
       block[4] = this.gustiness;
+      if(this.stormFront){const f=this.stormFront.block;for(let i=0;i<12;i++)block[24+i]=f[i];
+        block[27]=Math.fround(f[3]*Math.max(0,Math.min(1,this.stormWeight)));
+      }else block[27]=0;
       for (let i = 0; i < MAX_BURSTS; i++) { const o = 8 + i * 4; if (block[o + 3] > 0 && this.time - block[o + 2] > BURST_LIFE) block[o + 3] = 0; }
     },
     /** A local gust: an expanding ring from (x, z) pushing outward (the Gale's Gust, the Warden). */
@@ -63,6 +71,10 @@ function fieldAt(b, o) {
   const eddy = 0.12 * Math.sin(x * 0.21 + t * 1.3) * Math.sin(z * 0.17 - t * 1.1);
   const g = 0.55 + gu * (0.9 * f1 + 0.5 * f2) + eddy;
   let vx = dx * base * g, vz = dz * base * g;
+  if(b.length>=36&&b[27]>0){
+    o.block=b;o.stormOffset=24;o.qx=x;o.qy=b[28];o.qz=z;sampleSandstorm(o);
+    const push=base*SANDSTORM_GUST*o.density;vx+=b[24]*push;vz+=b[25]*push;
+  }else{o.density=0;o.signedDistance=0;}
   for (let i = 0; i < 4; i++) {
     const k = 8 + i * 4, s = b[k + 3]; if (s <= 0) continue;
     const age = t - b[k + 2]; if (age < 0 || age > BURST_LIFE) continue;

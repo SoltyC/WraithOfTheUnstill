@@ -14,6 +14,12 @@ export async function addEnvironmentSystems(g) {
     params, spindrift, dust, snowfall, sfx, SFX, arm, frost, controller, terrainState, footprints, toggles, game, registerToggle, ring, wraithView, setRenderScale } = g;
   // Rain, lightning and thunder (systems/storm.js): the strike turns the key light, so it runs first.
   (await import('./storm.js')).addStormSystems(g);
+  loop.add({name:'sandstormFront',update:()=>{
+    const front=g.sandstorm;front.dt=clock.dt;front.update();
+    g.wind.stormWeight=g.sandDust.duneWeight;post.fog.stormWindWeight=g.wind.stormWeight;
+    front.qx=camera.position.x;front.qy=camera.position.y;front.qz=camera.position.z;front.sample();
+    atmosphere.sandStorm=front.density*g.sandDust.duneWeight;
+  }});
   loop.add({ name: 'atmosphere', update: () => {
     // Materials read their own pixel position in the scene target: the internal size.
     env.env.screenInfo.x = post.post.width; env.env.screenInfo.y = post.post.height;
@@ -28,7 +34,6 @@ export async function addEnvironmentSystems(g) {
     content.clipmap.update();
   } });
   loop.add({ name: 'shadows', update: () => shadows.update() });
-  loop.add(post);
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
@@ -123,7 +128,7 @@ export async function addEnvironmentSystems(g) {
     restoration.value = (rFrost + (rMeadow - rFrost) * mW)*(1-dW)+rDunes*dW;
     restoration.frost = rFrost; restoration.meadow = rMeadow; restoration.dunes=rDunes;
     post.heat.hour=params.v.timeOfDay;post.heat.time=clock.simTime;post.heat.weight=bwD;
-    post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover;
+    post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover+(1-weather.cover)*atmosphere.sandStorm;
     g.sandDust.duneWeight=bwD;
     const desert=atmosphere.desert;desert.weight=bwD;desert.restored=rDunes;desert.wet=weather.wet;desert.sunY=env.env.sunDir.y;
     const r = rFrost, gs = params.v.gradeStrength;
@@ -150,6 +155,9 @@ export async function addEnvironmentSystems(g) {
     wf.gustiness = 0.35 + 0.65 * weather.gust;
     wf.update();
   } });
+  // Upload post/SSR inputs after the shared wind and weather have reached this frame.
+  // Otherwise water materials see current wind while SSR reflects the previous frame.
+  loop.add(post);
   // Water: its clock and the Wraith wading (ripples, the splash going in).
   loop.add({ name: 'water', update: () => {
     const wa = g.water; if (!wa) return;

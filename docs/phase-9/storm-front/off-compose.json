@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-29T05:47:35.550Z",
+  "date": "2026-10-29T08:21:53.882Z",
   "baseline": "2224f79",
   "size": [
     1280,
@@ -11,5 +11,5 @@
   "gpuErrors": 0,
   "gpuMessages": [],
   "late": [],
-  "note": "Pinned original128-float compose versus new140-float compose, actual same live scene/depth/AO/SSR/cloud/shaft/atmosphere/canopy/haze inputs, storm strength0. RGBA16F bitwise comparison. Diagnostic pipelines unarmed with renderer stopped/drained. This isolates compose off behavior, not whole-frame original atmosphere/weather output or a cold-world pipeline gate."
+  "note": "Pinned original128-float compose versus new144-float compose, actual same live scene/depth/AO/SSR/cloud/shaft/atmosphere/canopy/haze inputs, storm strength0. RGBA16F bitwise comparison. Diagnostic pipelines unarmed with renderer stopped/drained. This isolates compose off behavior, not whole-frame original atmosphere/weather output or a cold-world pipeline gate."
 }

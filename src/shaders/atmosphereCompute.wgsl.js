@@ -247,8 +247,14 @@ fn skyRadiance(dir: vec3f, r: f32) -> vec3f {
   if(P.storm.w>0.0){
     // Low dust redistributes daylight into warm diffuse fill, rather than retaining a blue
     // clear-sky fill after the direct beam has vanished. Undimmed weather illuminance is the source.
-    let e=P.weather.y*max(P.sunDir.y,0.0)+P.weather.z*max(P.moonDir.y,0.0)*.6;
-    let dust=vec3f(.68,.43,.22)*e*.07/PI_A*(.65+.35*max(dir.y,0.0));
+    // Use the established overcast illuminance floor at the horizon too: dust is
+    // a scattering sky, and must not extinguish its diffuse source at sunset.
+    let e=P.weather.y*max(P.sunDir.y,0.04)+P.weather.z*max(P.moonDir.y,0.04)*.6;
+    // Match the existing overcast scattering scale near the horizon; daylight keeps
+    // the reviewed .07 coefficient. Moon-dominated dust takes a muted cool tint.
+    let lowSun=1.0-smoothstep(.04,.3,P.sunDir.y);
+    let tint=mix(vec3f(.42,.50,.64),vec3f(.68,.43,.22),smoothstep(-.08,.12,P.sunDir.y));
+    let dust=tint*e*mix(.07,.22,lowSun)/PI_A*(.65+.35*max(dir.y,0.0));
     return mix(base,dust,clamp(P.storm.w,0.0,1.0)*.9);
   }
   return base;

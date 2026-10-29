@@ -230,7 +230,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let ins = (keyC * phase * 0.85 + skyUp * 1.05) * (1.0 - Tv);
     c = vec4f(c.rgb * Tv + ins * exposure, c.a);
   }
-  if(P.desert[0].w>0.0){
+  if(P.desert[0].w>0.0&&P.desert[3].y>0.0){
     let quarter=(sz+3)/4;let base=clamp((p-2)/4,vec2i(0),quarter-1);
     var acc=0.0;var weight=0.0;
     for(var j=0;j<2;j++){for(var i=0;i<2;i++){

@@ -255,7 +255,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     ratioH = (litH + restH) / max(wsumH + restH, 1e-6);
   }
   var stormDist=0.0;var stormTau=0.0;
-  if(P.desert[0].w>0.0){
+  if(P.desert[0].w>0.0&&P.desert[3].y>0.0){
     stormDist=20000.0;
     if(dMax>0.0){stormDist=length(worldPos(texelNdc(pc,P.size),dMax,P.invVP)-cam);}
     stormTau=stormOpticalDepth(cam,dir,stormDist);

@@ -46,7 +46,7 @@ export function createFog(post, scene, atmo, shadows) {
     on: true, shaftsOn: true,
     cloudTex: null, shaftTex: null, hazeTex: null,
     /** Inputs (owner): weather, ground height below the camera (m), key direction, dt. */
-    stormFront:null, stormOn:true,
+    stormFront:null, stormOn:true,stormWindWeight:0.0,
     weather: null, groundY: 0.5, dt: 0.5 - 0.5,
     keyDir: null,
     /** Lightning glow in the clouds, 0..1 (owner). */
@@ -73,7 +73,8 @@ export function createFog(post, scene, atmo, shadows) {
   build(post.width, post.height);
   post.onResize((W, H) => build(W, H));
   post.onParams((P) => {
-    if(fog.stormFront&&fog.stormOn&&fog.on)P.set(fog.stormFront.block,128);else P.fill(0,128,140);
+    if(fog.stormFront)P.set(fog.stormFront.block,128);else P.fill(0,128,140);
+    P[140]=fog.stormWindWeight;P[141]=fog.stormOn&&fog.on?1:0;P[142]=0;P[143]=0;
     const w = fog.weather;
     if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; P[108] = 0; P[116] = 0; P[106] = 0; P[107] = 0; return; }
     // Visibility: ~300 km clear haze is the atmosphere's job; overcast ~4 km, snowfall ~1 km,
