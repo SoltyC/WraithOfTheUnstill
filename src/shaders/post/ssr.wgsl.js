@@ -1,3 +1,4 @@
+import {shelterWGSL} from '../../world/windShelter.js';
 // Screen-space reflections (BRIEF §5.8: "wet, icy, glassy and water surfaces only"). Materials
 // mark reflective pixels in the scene target's alpha with their reflection weight (Fresnel ×
 // ice/wet gloss; 0 elsewhere — see the clipmap's frost output). Half resolution: for each marked
@@ -31,6 +32,7 @@ fn wNoised(p: vec2f) -> vec3f {
 }
 ${WIND_CORE_WGSL}
 ${WIND_STORM_WGSL}
+${shelterWGSL('postWindShelter','P.shelterInfo',k=>`P.shelter[${k}/4u][${k}%4u]`)}
 ${WATER_WAVES_WGSL}
 
 fn posOr(q: vec2i, sz: vec2i, fallback: vec3f) -> vec3f {
@@ -71,7 +73,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   // function the water shader uses, the same wind) bend the reflected ray.
   if (isWater) {
     var storm=P.desert[0];storm.w*=P.desert[3].x;
-    let wv = windStorm(pos.xz,P.pad[4],P.pad[5],storm,P.desert[1],P.desert[2]);
+    let wv = windStorm(pos.xz,P.pad[4],P.pad[5],storm,P.desert[1],P.desert[2])*postWindShelter(pos.xz,1.0);
     // The pixel's footprint on the water (as the water shader's fwidth sees it, at half resolution).
     let fp = dist0 * P.size.w * 2.0 / max(abs(V.y), 0.05);
     let sl = waterSlope(pos.xz, P.pad[4].w, wv, fp);

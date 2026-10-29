@@ -153,6 +153,7 @@ export function createTerrainState(engine, opts) {
     fine, atlas, params,
     /** Optional visual sink, notified only after brush dispatch succeeds. */
     brushFx: null,
+    shelter:null,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
     /** Healing speed multiplier (the 'Refill rate' art control). */
@@ -267,7 +268,7 @@ export function createTerrainState(engine, opts) {
      * window approaches them, exactly like pages the player walked away from.
      */
     restore(pages) {
-      gen++;
+      gen++;this.shelter?.reset();
       for (let s = 0; s < SLOTS; s++) if (slotKey[s] >= 0) { setSlot(slotKey[s], -1); slotKey[s] = -1; freeSlots++; }
       pageStored.fill(0); pageLoading.fill(0); arrivals.length = 0;
       qHead = 0; qCount = 0;

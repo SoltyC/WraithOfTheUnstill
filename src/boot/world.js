@@ -154,7 +154,7 @@ export async function createWorld(g) {
   bindShadows(water.materials[1], shadows); // the surface pass (the absorb pass reads no shadows)
   water.freeze();
   trees.setWater((x, z) => (water.wetAt(x, z) ? 1e9 : NaN)); // no trees in lakes, rivers or on their banks
-  post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k]; });
+  post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k];for(let k=36;k<b.length;k++)P[144+k-36]=b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
   // The Wraith's feet and hem stand on built floors too (solids arrive with the architecture).

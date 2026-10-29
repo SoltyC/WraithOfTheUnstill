@@ -1,3 +1,4 @@
+import {shelterWGSL} from '../world/windShelter.js';
 import {WIND_VECTORS} from '../world/wind.js';
 import {SANDSTORM_GUST} from '../world/sandstormFront.js';
 import {SANDSTORM_FRONT_WGSL} from './sandstormFront.wgsl.js';
@@ -41,6 +42,7 @@ fn windStorm(p:vec2f,W0:vec4f,W1:vec4f,A:vec4f,B:vec4f,C:vec4f)->vec2f{
 export const WIND_WGSL = /* wgsl */ `
 ${WIND_CORE_WGSL}
 ${WIND_STORM_WGSL}
+${shelterWGSL('windShelter','uniforms.windField[9]',k=>`uniforms.windField[10u+${k}/4u][${k}%4u]`)}
 /** The wind at (x, z): xy = direction (unit), z = speed factor (≈ strength × gusts; 0 when still). */
 fn windField(p: vec2f) -> vec3f {
   let W0 = uniforms.windField[0]; let W1 = uniforms.windField[1];
@@ -57,6 +59,6 @@ fn windField(p: vec2f) -> vec3f {
     v += r * (B.w * exp(-q * q) * fade / max(dist, 0.5));
   }
   let sp = length(v);
-  return vec3f(select(d, v / sp, sp > 1e-5), sp);
+  return vec3f(select(d, v / sp, sp > 1e-5), sp*windShelter(p,1.0));
 }
 `;

@@ -44,10 +44,10 @@ fn main(input:VertexInputs)->FragmentInputs{
   let fall=travel.z*(.75+.5*h3);let ycol=h5*18.0-fall;
   let y=ycol-18.0*floor((ycol-(cam.y-6.3))/18.0);
   let wp0=vec3f(p.x,y,p.y);let dist=length(wp0-cam);let density=grainDensity(wp0);
-  var alpha=select(0.0,1.0,h3<.5)*density*travel.w*smoothstep(.0,.3,y-groundAtD(p.x,p.y))
+  var alpha=select(0.0,1.0,h3<.5)*density*travel.w*windShelter(p,max(0.0,y-groundAtD(p.x,p.y)))*smoothstep(.0,.3,y-groundAtD(p.x,p.y))
     *(1.0-smoothstep(14.3,24.7,length(wrapped)))*smoothstep(.35,1.2,dist);
   let size=max(.003+.003*h4,dist*.0006);alpha*=min(1.0,.006/size);
-  let wf=windField(p);let vel=vec3f(wf.x*wf.z*8.0,-.22,wf.y*wf.z*8.0);
+  var wf=windField(p);wf.z*=windShelter(p,max(0.0,y-groundAtD(p.x,p.y)))/max(.12,windShelter(p,1.0));let vel=vec3f(wf.x*wf.z*8.0,-.22,wf.y*wf.z*8.0);
   let toCam=normalize(cam-wp0);let vScreen=vel-toCam*dot(vel,toCam);let vl=length(vScreen);
   let stretch=min(clamp(vl*.0075,0.0,.18),dist*uniforms.grainView.x);
   // Stable vertical-view fallback avoids a zero cross product when looking straight down.

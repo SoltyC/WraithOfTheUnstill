@@ -12,6 +12,12 @@ const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 -
 export async function addEnvironmentSystems(g) {
   const { loop, engine, env, atmosphere, content, camera, streamer, shadows, post, rocks, weather, ws, clock, ground, pendingTp, warden, wardenMod, restoration,
     params, spindrift, dust, snowfall, sfx, SFX, arm, frost, controller, terrainState, footprints, toggles, game, registerToggle, ring, wraithView, setRenderScale } = g;
+  g.windShelter=(await import('../terrain/state/stormShelter.js')).createStormShelter(engine,terrainState,ground);
+  g.wind.shelter=g.windShelter.field;terrainState.shelter=g.windShelter;
+  const syncShelter=()=>{
+    const shelter=g.windShelter;shelter.enabled=shelter.on&&g.sandstorm.active&&g.sandstorm.strength>0;
+    shelter.px=controller.pos.x;shelter.pz=controller.pos.z;shelter.time=clock.simTime;shelter.dx=g.sandstorm.block[0];shelter.dz=g.sandstorm.block[1];shelter.validate();
+  };
   // Rain, lightning and thunder (systems/storm.js): the strike turns the key light, so it runs first.
   (await import('./storm.js')).addStormSystems(g);
   loop.add({name:'sandstormFront',update:()=>{
@@ -149,6 +155,7 @@ export async function addEnvironmentSystems(g) {
   let wdX = 1, wdZ = 0;
   loop.add({ name: 'wind', update: () => {
     const wf = g.wind; if (!wf) return;
+    syncShelter();
     const ke = 1 - Math.exp(-clock.realDt * 0.3);
     wdX += ((streamer.windX || 1) - wdX) * ke; wdZ += ((streamer.windZ || 0) - wdZ) * ke;
     wf.dirX = wdX; wf.dirZ = wdZ; wf.time = clock.simTime;
@@ -270,6 +277,7 @@ export async function addEnvironmentSystems(g) {
       terrainState.bk = 3; terrainState.bwet = 0; terrainState.bbias = 0; terrainState.bberm = 0; terrainState.stamp();
     }
     terrainState.update();
+    syncShelter();g.windShelter.update();
   } });
 
   // Render scale follows the Quality slider (the maximum), stepped down/up by the dynamic-res

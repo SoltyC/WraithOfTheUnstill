@@ -57,7 +57,9 @@ export function createSandStreaks(scene,clipmap,atmo,wind,front,snowfall,chain){
       if(!(front.block[3]>0)||!(wind.stormWeight>0))return;
       view.x=Math.tan(scene.activeCamera.fov*.5)*8/1440;
       wind.sx=scene.activeCamera.position.x;wind.sz=scene.activeCamera.position.z;wind.sample();
-      travel.x+=wind.outX*wind.speed*8*this.dt;travel.y+=wind.outZ*wind.speed*8*this.dt;travel.z+=.22*this.dt;
+      // Recycle the whole column with open-air transport; local shelter sets grain
+      // opacity/stretch in the shader, without slowing grains outside the lee region.
+      travel.x+=wind.outX*wind.rawSpeed*8*this.dt;travel.y+=wind.outZ*wind.rawSpeed*8*this.dt;travel.z+=.22*this.dt;
       if(travel.x>5200)travel.x-=5200;else if(travel.x< -5200)travel.x+=5200;
       if(travel.y>5200)travel.y-=5200;else if(travel.y< -5200)travel.y+=5200;
       if(travel.z>9000)travel.z-=9000;
