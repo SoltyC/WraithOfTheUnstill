@@ -35,7 +35,7 @@ export async function addEnvironmentSystems(g) {
   // Its collision (world/solids.js walls) is refreshed round the Wraith twice a second.
   loop.add({ name: 'canyon', update: () => {
     if (++canyonTick % 4) return;
-    const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.update();
+    const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.camY = camera.position.y; c.update();
     if (g.solids && (canyonTick % 32 === 0 || g.pendingTp.active)) c.fillSolids(g.solids.walls, g.controller.pos.x, g.controller.pos.z, 40);
   } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
@@ -188,7 +188,8 @@ export async function addEnvironmentSystems(g) {
     tr.update();
     // Forest haze (PLAN.md M4b): thickens under the canopy around the camera.
     const hz = post.fog.haze;
-    hz.density = HAZE * tr.canopy; // trees grow only on meadow land
+    // Trees grow only on meadow land; down in the erg's ravines the air holds dust (render/canyonWalls.js).
+    hz.density = Math.max(HAZE * tr.canopy, g.canyon ? g.canyon.haze : 0);
     // Its base is the ground under the camera, eased quickly (the weather fog's base eases slowly
     // and lagged far below after a teleport).
     ground.qx = camera.position.x; ground.qz = camera.position.z; ground.sample();

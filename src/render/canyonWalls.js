@@ -77,14 +77,18 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
 
   /** Chunks: { cx, cz, radius, y0, y1, mesh: [near, mid, far], shown: lod or −1, want, pending, cast: [c0, c1] }. */
   const chunks = [];
+  let spines = [];
   let ready = false, inFlight = 0;
   const worker = new Worker(new URL('../world/canyon.worker.js', import.meta.url), { type: 'module' });
   const view = {
     chunks, material: mat, ready: false,
-    /** Owner fields: camera position (x, z); set before update(). */
-    camX: 0.5, camZ: 0.5,
+    /** Owner fields: camera position (x, z) and height; set before update(). */
+    camX: 0.5, camZ: 0.5, camY: 0.5,
     /** Disabled (dev toggle): nothing shows. */
     on: true,
+    /** Dust in the air down in a ravine (1/m): the haze the post chain's shafts march through
+     *  (post/fog.js forest haze), so sun through a slot's opening reads as beams. Set by update(). */
+    haze: 0,
     update() {
       if (!ready) return;
       let changed = false;
@@ -123,6 +127,19 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
         }
       }
       if (changed) engine.snapshotRenderingReset();
+      // Down in a ravine: within its walls (half-width + a margin) and below its rim's reach.
+      let haze = 0;
+      for (let i = 0; i < spines.length; i++) {
+        const sp = spines[i], dust = sp.kind === 'slot' ? 0.006 : sp.kind === 'canyon' ? 0.0022 : 0.003;
+        for (let k = 0; k < sp.pts.length; k++) {
+          const p = sp.pts[k], d = Math.hypot(p[0] - this.camX, p[1] - this.camZ);
+          if (d > p[2] + 25) continue;
+          const inside = 1 - Math.min(1, Math.max(0, (d - p[2]) / 25));
+          const low = 1 - Math.min(1, Math.max(0, (this.camY - p[3] - 15) / 25));
+          haze = Math.max(haze, dust * inside * low);
+        }
+      }
+      this.haze = this.on ? haze : 0;
     },
     /**
      * Copy the cliff walls' collision segments within `r` m of (x, z) into `wl` (world/solids.js
@@ -163,6 +180,7 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
           }
           chunks.push(c);
         });
+        spines = m.spines;
         ready = view.ready = true;
         engine.snapshotRenderingReset();
         resolve();
