@@ -21,6 +21,7 @@ import { carveHill, HILL } from './hill.mjs';
 import { bakeVillageMask } from './villageMask.mjs';
 import { carveRavines, KIND } from './ravines.mjs';
 import { ravineWalls } from './ravineWalls.mjs';
+import { carveOasis } from './oasis.mjs';
 import { carveDryStair } from './dryStair.mjs';
 import { seatPOIs } from './seats.mjs';
 import { bakeDuneMap } from './dunemap.mjs';
@@ -197,6 +198,9 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     }
   }
   log('ravines', rav.feats.length, 'features', Date.now() - t0, 'ms');
+  // The oasis pool by the Wellhouse (D8), into the playa: a basin and a lake on the hydro map.
+  const oasis = carveOasis(h2, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, hydro, lakeLevel, n4, c4);
+  log('oasis pool', oasis.texels, 'texels, level', oasis.level.toFixed(2), Date.now() - t0, 'ms');
   // The cliff lines of the ravines' risers for the wall kit (D7b), traced on the carved height.
   const ravW = ravineWalls(h2, rav.mask, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, rav.feats, rav.roadDist);
   log('ravine walls', ravW.walls.length, 'lines,', ravW.walls.reduce((a, w) => a + w.pts.length, 0), 'points', Date.now() - t0, 'ms');

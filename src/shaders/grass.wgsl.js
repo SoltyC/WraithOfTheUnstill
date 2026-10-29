@@ -12,6 +12,7 @@
 // root to tip with per-blade variation; light through the blade when backlit (the reference's
 // glowing grass), a sheen along it, occlusion toward the root, shadows from the cascades.
 
+import { OASIS_POOL } from '../world/oasis.js';
 import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL, BORDER_WGSL } from './common.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
@@ -120,6 +121,7 @@ varying vFrost: f32;                 // rime from the frost verbs (terrain state
 ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
 
+const OASIS: vec3f = vec3f(${OASIS_POOL.x}.0, ${OASIS_POOL.z}.0, ${OASIS_POOL.r}.0);
 ${FIELD_WGSL}${BARE_WGSL}
 ${WIND_WGSL}
 @vertex
@@ -152,7 +154,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let patchN = vn(root * 0.05) * 0.7 + vn(root * 0.21) * 0.3;
   // Under the crowns the grass thins to a few shade-tolerant tufts (the forest floor shows).
   let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;
-  let dens = smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * uniforms.grassParams.z
+  // The oasis (world/oasis.js): a belt of reeds round its pool, out on the bare playa.
+  let reed = (1.0 - smoothstep(OASIS.z + 3.0, OASIS.z + 11.0, length(root - OASIS.xy))) * smoothstep(OASIS.z - 6.0, OASIS.z - 1.0, length(root - OASIS.xy));
+  let dens = max(smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2), reed * (0.6 + 0.4 * patchN)) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
   // The village's ground (villageAt): none on cobbles (a few tufts in the joints near the edge), sparse
   // along the earth road's edge, short and thin trampled grass in the yards.
@@ -174,7 +178,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
+  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
