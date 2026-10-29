@@ -288,7 +288,14 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       albedo *= mix(0.55, 1.0, smoothstep(0.2, 0.8, ms.ao));
       rough = mix(0.75, 1.0, ms.rough);
     } else if (mid == 15) {
-      albedo = matRetint(ms, layer, vec3f(0.36, 0.34, 0.31), 0.65) * vary;
+      // Flagstones: each slab its own stone — lighter or darker, warmer or cooler, a few with lichen
+      // or old staining — so the paving reads as laid slabs, not one sheet.
+      let tone = 0.78 + 0.42 * fract(hs * 7.31);
+      let warm = fract(hs * 3.17) - 0.5;
+      albedo = matRetint(ms, layer, vec3f(0.36, 0.34, 0.31), 0.65) * tone * vec3f(1.0 + 0.12 * warm, 1.0 + 0.02 * warm, 1.0 - 0.14 * warm);
+      let stain = smoothstep(0.35, 0.8, noised(wp.xz * 0.45 + vec2f(hs * 17.0)).x * 0.5 + 0.5) * step(0.6, fract(hs * 11.7));
+      albedo = mix(albedo, albedo * vec3f(0.78, 0.82, 0.62), stain * 0.6);
+      albedo *= mix(0.6, 1.0, smoothstep(0.2, 0.75, ms.ao));
       rough = mix(0.75, 1.0, ms.rough);
     } else if (mid == 16) {
       albedo = matRetint(ms, layer, vec3f(0.3, 0.22, 0.15), 0.6) * vary;

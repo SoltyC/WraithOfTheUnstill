@@ -271,7 +271,7 @@ function hall(F) {
   hinge(2.7, -0.3, PI - 1.4, 0, 470);               // the other swung in and sagged against the nave
   // Interior: the floor (FLAG, broken under the open roof), the platform to walk on.
   const fkeep = () => true;
-  pave(F, -HU + HT, HU - HT, HF0 + HT, HF1 - HT, 0.25, 2.8, 17, fkeep, [[10, -22, 6], [24, -18, 5], [28, -33, 6], [18, -34, 4]]);
+  pave(F, -HU + HT, HU - HT, HF0 + HT, HF1 - HT, 0.25, 1.1, 17, fkeep, [[10, -22, 6], [24, -18, 5], [28, -33, 6], [18, -34, 4]]);
   F.platform(-HU + HT, HU - HT, HF0 + HT, HF1 - HT, 0.25);
   // The roof: slate bays over trusses. Ribs (the creature's) every 5 m, open where the slate is gone.
   const rf = HALF + OVER, rise = SLOPE * (rf / HALF), bw = (2 * HU + 1.6) / 14;
@@ -599,7 +599,7 @@ export function forecourtBounds() {
 }
 
 function forecourt(F) {
-  pave(F, -45, 45, -11.8, 52.5, 0.03, 2.4, 51, fcKeep, FC_PATCHES);
+  pave(F, -45, 45, -11.8, 52.5, 0.03, 1.0, 51, fcKeep, FC_PATCHES);
   // A band of different slab (the processional way) is just the patches' absence: keep it plain.
   // Edge wall: a low parapet along the pad's edge with a retaining wall below, broken in places, open at the gate.
   const pts = [];
