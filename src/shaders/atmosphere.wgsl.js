@@ -31,7 +31,7 @@ struct AtmoParams {
   weather: vec4f,       // x = cloud cover 0..1, y = undimmed sun illuminance (sunDir.w is dimmed by
                         //     the cloud deck), z = undimmed moon illuminance, w = snowfall 0..1
   village: vec4f,       // village ground mask box: xy = world origin (m), z = 1 / extent (1/m), 0 = none
-  storm: vec4f,         // x = thunderstorm 0..1 (a darker sky and exposure), y = lightning key illuminance (added to the key colour)
+  storm: vec4f,         // x = thunderstorm 0..1 (a darker sky and exposure), y = lightning key illuminance (added to the key colour), z = low desert dust density
 };
 `;
 
@@ -48,7 +48,7 @@ const MOON_TINT: vec3f = vec3f(0.55, 0.72, 1.0);
 
 struct Medium { scattering: vec3f, extinction: vec3f, rayleigh: vec3f, mie: vec3f };
 
-fn medium(hKm: f32, haze: f32) -> Medium {
+fn medium(hKm: f32, haze: f32, dust:f32) -> Medium {
   let h = max(hKm, 0.0);
   let dR = exp(-h / ${ATMO.rayleighScaleHeight}.0);
   let dM = exp(-h / ${ATMO.mieScaleHeight}) * haze;
@@ -56,8 +56,14 @@ fn medium(hKm: f32, haze: f32) -> Medium {
   var m: Medium;
   m.rayleigh = RAY_SCAT * dR;
   m.mie = vec3f(MIE_SCAT * dM);
-  m.scattering = m.rayleigh + m.mie;
   m.extinction = m.rayleigh + vec3f(MIE_EXT * dM) + OZONE_ABS * dO;
+  if(dust>0.0){
+    // Low warm aerosol; preferential blue extinction warms long sunset paths.
+    let dD=exp(-h/.35)*dust;
+    m.mie+=vec3f(.0038,.0034,.0029)*dD;
+    m.extinction+=vec3f(.0045,.0049,.0055)*dD;
+  }
+  m.scattering = m.rayleigh + m.mie;
   return m;
 }
 

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-29T02:18:55.668Z",
+  "lutRebuilds": 1,
+  "density": 0.796875,
+  "samples": 119,
+  "mean": 12.053011605719558,
+  "p99": 12.117152214050293,
+  "max": 12.1278076171875,
+  "output": [
+    2560,
+    1440
+  ],
+  "internal": [
+    1792,
+    1008
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "120frame whole-GPU-frame span covering dust0→steady desert key, after120frames at0. Includes static LUT rebuild; no diagnostic shader. A single controlled activation, not broad biome/migration/weather or sustained acceptance."
+}

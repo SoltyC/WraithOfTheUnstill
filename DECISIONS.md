@@ -526,3 +526,7 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D5 mirage: reuse packed wind/dune-flat metadata and SSR-style far-direction projection in pre-TAA sampling. Only distant flat sand, downward grazing views and valid visible sky/far shore; no water geometry/state. Shared heat controls48bytes/three added compute bindings including existing buffers, no extra draw/target.788trackedtests/build; synchronized masks and actual colour-delta checks protect near/sky/non-sand/non-flat pixels. Heat-off oracle pins original98a1449 and stays bit-identical. Mirage fixed1440p/0.7 incremental0.016–0.035ms; reviewed360-frame native1440p A/B capture. Screen-space off-frame limits, wider contexts and human acceptance remain explicit.
+
+
+### 29 October — low desert aerosol in existing atmosphere LUTs
+Use the spare atmosphere parameter lane and shared medium, with a350m dust scale height, wet/night/biome/restoration gating and1/64 static-LUT density keys. No new pass/binding/texture; developer A/B toggle only. Actual GPU baseline matches at zero dust; ten native day/wet/golden/night views have0opaque clipping,0steady rebuilds and0GPU/late errors. Matched1440p/0.7 cost is about+.003–.010ms, one activation rebuild measured;791 tracked tests/build pass. Keep after main regression. Review: docs/phase-9/heat-review.md. D5 interior exposure and D6 fronts/migration remain open; no human or whole-world performance signoff.

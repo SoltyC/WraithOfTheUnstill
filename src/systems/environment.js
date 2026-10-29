@@ -120,6 +120,7 @@ export async function addEnvironmentSystems(g) {
     restoration.frost = rFrost; restoration.meadow = rMeadow; restoration.dunes=rDunes;
     post.heat.hour=params.v.timeOfDay;post.heat.time=clock.simTime;post.heat.weight=bwD;
     post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover;
+    const desert=atmosphere.desert;desert.weight=bwD;desert.restored=rDunes;desert.wet=weather.wet;desert.sunY=env.env.sunDir.y;
     const r = rFrost, gs = params.v.gradeStrength;
     // The ice halo (sky shader) belongs to the stilled air: gone with the first wind, hidden by a deck.
     env.env.artParams.y = Math.max(0, 1 - restoration.value * 1.6) * Math.max(0, 1 - weather.cover * 1.4);
@@ -295,6 +296,7 @@ export async function addEnvironmentSystems(g) {
   reg({ key: 'sky', label: 'sky', group: 'System', on: true, onChange: meshToggle(content.sky) });
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
+  reg({ key: 'desertAir', label: 'desert aerosol', group: 'System', on: true, onChange: (on) => { atmosphere.desert.on=on;post.post.resetHistory=true; } });
   reg({ key: 'sandDust', label: 'sand dust', group: 'System', on: true, onChange: meshToggle(g.sandDust.mesh) });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
   reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });

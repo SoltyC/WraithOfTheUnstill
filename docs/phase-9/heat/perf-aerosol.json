@@ -1,0 +1,144 @@
+{
+  "date": "2026-10-29T02:12:56.501Z",
+  "mirage": false,
+  "aerosol": true,
+  "reports": [
+    {
+      "repeat": 0,
+      "on": false,
+      "dust": 0,
+      "steadyRebuilds": 0,
+      "strength": 0.7599999396784932,
+      "gpuMs": {
+        "n": 239,
+        "mean": 12.076765427529562,
+        "median": 12.072159767150879,
+        "p99": 12.165823936462402,
+        "max": 12.206591606140137
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 12.150833333532015,
+        "median": 12.100000023841858,
+        "p99": 13.5,
+        "max": 14.100000023841858
+      }
+    },
+    {
+      "repeat": 0,
+      "on": true,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "strength": 0.7599999999601894,
+      "gpuMs": {
+        "n": 239,
+        "mean": 12.079609164633013,
+        "median": 12.068063735961914,
+        "p99": 12.195391654968262,
+        "max": 12.253376007080078
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 12.149583333233993,
+        "median": 12.100000023841858,
+        "p99": 13.399999976158142,
+        "max": 14.100000023841858
+      }
+    },
+    {
+      "repeat": 1,
+      "on": false,
+      "dust": 0,
+      "steadyRebuilds": 0,
+      "strength": 0.7599999999999829,
+      "gpuMs": {
+        "n": 239,
+        "mean": 12.075170824218494,
+        "median": 12.070079803466797,
+        "p99": 12.17632007598877,
+        "max": 12.211647987365723
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 12.140416666865349,
+        "median": 12.100000023841858,
+        "p99": 13.200000047683716,
+        "max": 14
+      }
+    },
+    {
+      "repeat": 1,
+      "on": true,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "strength": 0.7599999999999999,
+      "gpuMs": {
+        "n": 239,
+        "mean": 12.085565040301079,
+        "median": 12.077631950378418,
+        "p99": 12.197919845581055,
+        "max": 12.226816177368164
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 12.152916666368643,
+        "median": 12.100000023841858,
+        "p99": 13.799999952316284,
+        "max": 16.100000023841858
+      }
+    },
+    {
+      "repeat": 2,
+      "on": false,
+      "dust": 0,
+      "steadyRebuilds": 0,
+      "strength": 0.7599999999999999,
+      "gpuMs": {
+        "n": 239,
+        "mean": 12.078254336592543,
+        "median": 12.072992324829102,
+        "p99": 12.170144081115723,
+        "max": 12.196928024291992
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 12.143333333233992,
+        "median": 12.100000023841858,
+        "p99": 13.600000023841858,
+        "max": 14.200000047683716
+      }
+    },
+    {
+      "repeat": 2,
+      "on": true,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "strength": 0.7599999999999999,
+      "gpuMs": {
+        "n": 239,
+        "mean": 12.088469529251674,
+        "median": 12.081631660461426,
+        "p99": 12.193535804748535,
+        "max": 12.225152015686035
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 12.154166666666667,
+        "median": 12.100000023841858,
+        "p99": 14.699999928474426,
+        "max": 15.899999976158142
+      }
+    }
+  ],
+  "output": [
+    2560,
+    1440
+  ],
+  "internal": [
+    1792,
+    1008
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Three alternating off/on240-frame repeats in one fixed clear restored-noon scene with near Wraith, frozen simulation, verified1440p output/0.7 TAAU. Whole-frame GPU span and rAF, not an isolated heat-pass timer, whole-world traversal/storm/combat budget or human motion judgment."
+}

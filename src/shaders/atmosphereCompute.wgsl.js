@@ -37,7 +37,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   var od = vec3f(0.0);
   for (var i = 0; i < N; i++) {
     let p = ro + rd * (f32(i) + 0.5) * dt;
-    od += medium(length(p) - R_GROUND, P.misc.x).extinction * dt;
+    od += medium(length(p) - R_GROUND, P.misc.x, P.storm.z).extinction * dt;
   }
   textureStore(outTex, id.xy, vec4f(exp(-od), 1.0));
 }
@@ -83,7 +83,7 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
       for (var i = 0; i < N; i++) {
         let p = ro + rd * (f32(i) + 0.5) * dt;
         let h = length(p);
-        let m = medium(h - R_GROUND, P.misc.x);
+        let m = medium(h - R_GROUND, P.misc.x, P.storm.z);
         let ext = max(m.extinction, vec3f(1e-6));
         let stepT = exp(-ext * dt);
         let sunT = sampleTransmittance(h, dot(p / h, sun));
@@ -121,7 +121,7 @@ fn scatterAlong(ro: vec3f, rd: vec3f, tMax: f32, N: i32, light: vec3f, transmitt
     let h = length(p);
     let up = p / h;
     let mu = dot(up, light);
-    let m = medium(h - R_GROUND, P.misc.x);
+    let m = medium(h - R_GROUND, P.misc.x, P.storm.z);
     let ext = max(m.extinction, vec3f(1e-6));
     let stepT = exp(-ext * dt);
     // Earth shadow: no direct light once the light is below this point's horizon.

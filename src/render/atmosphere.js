@@ -4,7 +4,7 @@
 //   atmoLight — storage buffer: [0] key light colour, [1] sky irradiance (up), [2] (side), [3] horizon
 //   atmoParams — storage buffer with camera/sun/moon (AtmoParams)
 // Per frame: one params upload, then sky-view, aerial-perspective and ambient dispatches.
-// Transmittance and multi-scattering are rebuilt only when the haze changes.
+// Transmittance and multi-scattering are rebuilt only when haze or quantized desert dust changes.
 
 import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture.js';
 import { Constants } from '@babylonjs/core/Engines/constants.js';
@@ -16,6 +16,7 @@ import { transmittanceCS, multiScatCS, skyViewCS, aerialCS, ambientCS } from '..
 import { AP_RES, AP_SLICES, SKYVIEW_W, SKYVIEW_H } from '../shaders/atmosphere.wgsl.js';
 import { env } from './environment.js';
 import { params as tunables } from '../core/params.js';
+import { createDesertAerosol } from '../world/desertAerosol.js';
 import { clock } from '../core/clock.js';
 
 /** Illuminance of the sun and the (stylised, far brighter than real) moon, in the renderer's
@@ -99,9 +100,10 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   villageTex.name = 'villageMask'; villageTex.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; villageTex.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
   const villageBox = vm ? new Vector4(vm.x0, vm.z0, 1 / (vm.size * vm.texel), 0) : new Vector4(0, 0, 0, 0);
 
-  let builtHaze = NaN;
+  const desert=createDesertAerosol();
+  let builtHaze = NaN,builtDust=NaN;
   return {
-    canopyTex, waterTex, villageTex, villageBox,
+    canopyTex, waterTex, villageTex, villageBox, desert, lutBuilds:0,
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,
@@ -139,17 +141,18 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
       const dim = 0.015 + 0.985 * (1 - cc) * (1 - cc) * (1 - cc);
       p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
       p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
-      p[40] = this.storm; p[41] = this.flash; p[42] = 0; p[43] = 0;
+      desert.update();const dust=desert.quantized;
+      p[40] = this.storm; p[41] = this.flash; p[42] = dust; p[43] = 0;
       p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = 0;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;
       p[28] = haze; p[29] = NIGHT_FLOOR * env.night; p[30] = clock.realDt; p[31] = this.snapExposure || this.alwaysSnap ? 1 : 0;
       this.snapExposure = false;
       atmoParams.update(p);
-      if (haze !== builtHaze) {
+      if (haze !== builtHaze || dust !== builtDust) {
         if (!csTrans.dispatch(32, 8, 1)) return;
         if (!csMS.dispatch(4, 4, 1)) return;
-        builtHaze = haze;
+        builtHaze = haze;builtDust=dust;this.lutBuilds++;
       }
       if (!csSky.dispatch(Math.ceil(SKYVIEW_W / 8), Math.ceil(SKYVIEW_H / 8), 2)) return;
       if (!csAerial.dispatch(AP_RES / 4, AP_RES / 4, AP_SLICES / 4)) return;

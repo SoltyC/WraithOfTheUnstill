@@ -1,0 +1,706 @@
+{
+  "date": "2026-10-29T02:06:13.755Z",
+  "reports": [
+    {
+      "name": "close-noon",
+      "on": false,
+      "hour": 12,
+      "wet": 0,
+      "density": 0,
+      "quantized": 0,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 1,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 157.24898218067636,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-close-noon-off.png"
+    },
+    {
+      "name": "close-noon",
+      "on": true,
+      "hour": 12,
+      "wet": 0,
+      "density": 0.8,
+      "quantized": 0.796875,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 2,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 157.22504120278055,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-close-noon-on.png"
+    },
+    {
+      "name": "close-wet",
+      "on": false,
+      "hour": 12,
+      "wet": 1,
+      "density": 0,
+      "quantized": 0,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 3,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 118.5207563196063,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-close-wet-off.png"
+    },
+    {
+      "name": "close-wet",
+      "on": true,
+      "hour": 12,
+      "wet": 1,
+      "density": 0.15999999999999998,
+      "quantized": 0.15625,
+      "weight": 1,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 4,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2434.3876080377377,
+        151.29849521996658,
+        1125.2094925726299
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 3662436,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 118.50777451306554,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "duneSamples": [
+          56388,
+          648,
+          65,
+          0,
+          0,
+          0
+        ],
+        "sandSamples": 57101,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-close-wet-on.png"
+    },
+    {
+      "name": "mid-noon",
+      "on": false,
+      "hour": 12,
+      "wet": 0,
+      "density": 0,
+      "quantized": 0,
+      "weight": 0.7196561026402608,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 5,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 161.3119851156166,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-mid-noon-off.png"
+    },
+    {
+      "name": "mid-noon",
+      "on": true,
+      "hour": 12,
+      "wet": 0,
+      "density": 0.5757248821122086,
+      "quantized": 0.578125,
+      "weight": 0.7196561026402608,
+      "sunY": 0.757842562895277,
+      "lutBuilds": 6,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 161.35122552918983,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-mid-noon-on.png"
+    },
+    {
+      "name": "mid-golden",
+      "on": false,
+      "hour": 17.8,
+      "wet": 0,
+      "density": 0,
+      "quantized": 0,
+      "weight": 0.7196561026402608,
+      "sunY": 0.0396624152107276,
+      "lutBuilds": 7,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 101.5040069045639,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-mid-golden-off.png"
+    },
+    {
+      "name": "mid-golden",
+      "on": true,
+      "hour": 17.8,
+      "wet": 0,
+      "density": 0.3013900729954475,
+      "quantized": 0.296875,
+      "weight": 0.7196561026402608,
+      "sunY": 0.0396624152107276,
+      "lutBuilds": 8,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 101.58798090008725,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-mid-golden-on.png"
+    },
+    {
+      "name": "mid-night",
+      "on": false,
+      "hour": 23,
+      "wet": 0,
+      "density": 0,
+      "quantized": 0,
+      "weight": 0.7196561026402608,
+      "sunY": -0.7320197037616456,
+      "lutBuilds": 9,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 68.37107347563288,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-mid-night-off.png"
+    },
+    {
+      "name": "mid-night",
+      "on": true,
+      "hour": 23,
+      "wet": 0,
+      "density": 0.028786244105610433,
+      "quantized": 0.03125,
+      "weight": 0.7196561026402608,
+      "sunY": -0.7320197037616456,
+      "lutBuilds": 10,
+      "steadyRebuilds": 0,
+      "size": [
+        2560,
+        1440
+      ],
+      "depthSize": [
+        2560,
+        1440
+      ],
+      "camera": [
+        2700.1313267996375,
+        286.5176665851502,
+        1301.1691900716519
+      ],
+      "biome": "dunes",
+      "restoration": {
+        "value": 1,
+        "frost": 1,
+        "meadow": 1,
+        "dunes": 1,
+        "snap": false
+      },
+      "opaquePixels": 2417806,
+      "opaqueClippedPixels": 0,
+      "opaqueClippedPct": 0,
+      "sandClippedPixels": 0,
+      "wholeClippedPct": 0,
+      "foregroundMeanLuma": 68.40537686155662,
+      "range": {
+        "bins": [
+          "<500m",
+          "500–1000m",
+          "1–2km",
+          "2–4km",
+          "4–8km",
+          "8km+"
+        ],
+        "opaqueSamples": [
+          20325,
+          7198,
+          8352,
+          1751,
+          101,
+          4
+        ],
+        "duneSamples": [
+          20325,
+          7198,
+          2841,
+          1185,
+          2,
+          0
+        ],
+        "sandSamples": 27563,
+        "stride": 8
+      },
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-aerosol-review/d5-aerosol-mid-night-on.png"
+    }
+  ],
+  "note": "Actual native2560x1440 day/golden/night and dry/wet off/on low-dust matrix. Opaque/depth/luma statistics reuse the established D1b native canvas/depth gate (3px sky-edge erosion,RGB>=253 clipping).120frame steady LUT rebuild check, exposure snapped for comparison.1280px review copies. Not sustained world/weather/combat performance or human aesthetic acceptance."
+}
