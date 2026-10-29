@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 const base='http://localhost:4180',label=process.argv[2]||'trial',solver=process.env.SOLVER!=='0',audio=process.env.AUDIO==='1',wet=Number(process.env.WET||0),frozen=process.env.FROZEN==='1',frames=Number(process.env.FRAMES||600);
+const faceIndex=Number(process.env.FACE||0);
+if(!Number.isInteger(faceIndex)||faceIndex<0||faceIndex>3||frozen&&faceIndex)throw new Error('FACE0..3; frozen fixture uses default corridor');
+const pose=faceIndex?JSON.parse(fs.readFileSync('docs/phase-9/sand-surf/slipfaces.json')).faces[faceIndex-1]:{x:1900,z:900,heading:0};
 if(!Number.isFinite(wet)||wet<0||wet>1||!Number.isInteger(frames)||frames<120||frames>600)throw new Error('WET0..1 and FRAMES120..600 required');
 if(frozen&&frames>180)throw new Error('Frozen corridor fixture supports FRAMES120..180');
 if(!/^[a-z0-9-]+$/.test(label))throw new Error('Use a simple report label');
@@ -13,7 +16,7 @@ report=await cmd({do:'eval',js:`
  w.params.v.dynamicRes=0;w.params.v.renderScale=.7;w.params.v.refillRate=0;w.params.version++;
  g.ws.restoration.frost=g.ws.restoration.meadow=g.ws.restoration.dunes='restored';g.restoration.snap=true;g.ws.weatherOverride='clear';g.ws.wetForce=${wet};g.weather.snap=true;
  g.arm.setFree(false);g.game.wraithHeld=false;g.controller.hold=false;g.game.setPlayerVisible(true);
- g.game.teleport(1900,900);for(let i=0;i<600&&!g.game.worldSettled();i++)await frame();
+ g.game.teleport(${pose.x},${pose.z});for(let i=0;i<600&&!g.game.worldSettled();i++)await frame();
  g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();g.combat.health=10000;g.combat.dying=0;
  const ts=g.terrainState,r=ts.relaxation;r.enabled=false;ts.restore([]);g.stone.mass.clear();
  for(let i=0;i<120;i++)await frame();
@@ -24,9 +27,9 @@ report=await cmd({do:'eval',js:`
  }
  const sf=g.controller.surf;
  sf.active=false;sf.exiting=false;sf.speed=0;sf.turnRate=0;sf.lean=0;sf.blend=0;
- g.controller.glide.active=false;g.controller.yaw=0;
+ g.controller.glide.active=false;g.controller.yaw=${pose.heading};
  g.controller.vel.x=0;g.controller.vel.y=0;g.controller.vel.z=0;
- sf.sandUnlocked=true;g.arm.yaw=0;g.arm.pitch=.25;
+ sf.sandUnlocked=true;g.arm.yaw=${pose.heading};g.arm.pitch=.25;
  const originalStamp=ts.stamp,originalEmit=g.wraithView.emit;let stamps=0,grains=0;
  ts.stamp=function(){if(this.bk===1)stamps++;return originalStamp.call(this);};
  g.wraithView.emit=function(){grains++;return originalEmit.call(this);};
@@ -59,6 +62,6 @@ shot=await cmd({do:'shot',dir:'d3-first-input-'+label,name:'after-run',hud:false
 await cmd({do:'eval',js:"w.inject('Traverse',false);w.inject('MoveForward',false);w.inject('MoveRight',false);g.terrainState.relaxation.enabled=false;g.controller.surf.sandUnlocked=false;g.combat.health=100;g.ws.wetForce=-1;return true;"});
 }
 fs.mkdirSync('docs/phase-9/sand-surf',{recursive:true});
-fs.writeFileSync('docs/phase-9/sand-surf/first-input-'+label+'.json',JSON.stringify({date:new Date().toISOString(),solver,audio,wet,frozen,...report,file:shot.file,note:'Normal Traverse/forward inputs from rest, optional right carve,recorded number of real rAF frames on actual dunes. Explicit diagnostic sand grant; solver flag recorded; solver disabled afterward. Traversal reset to rest with fixed body/camera yaw0; no positive speed or active-state injection. Not three authored slip faces, whole persistence, performance, allocation or human-feel acceptance.'},null,2)+'\n');
+fs.writeFileSync('docs/phase-9/sand-surf/first-input-'+label+'.json',JSON.stringify({date:new Date().toISOString(),solver,audio,wet,frozen,pose,...report,file:shot.file,note:'Normal Traverse/forward inputs from rest, optional right carve,recorded number of real rAF frames on actual dunes. Explicit diagnostic sand grant; solver flag recorded; solver disabled afterward. Traversal reset to rest with recorded body/camera heading; no positive speed or active-state injection. Not three authored slip faces, whole persistence, performance, allocation or human-feel acceptance.'},null,2)+'\n');
 console.log(JSON.stringify(report,null,2));
 if((audio&&!frozen&&!report.samples.some(s=>s.audio.rush>0))||(audio&&frozen&&report.samples.some(s=>s.audio.hiss+s.audio.rush>0))||Math.abs(report.wetMeasured-wet)>.01||(frozen&&(report.stamps!==0||report.grains!==0))||report.gpuErrors||report.late.length||report.active<frames*.9||(!frozen&&report.stamps<frames*.6)||(wet===1&&report.grains!==0)||report.collision.errors)process.exitCode=1;

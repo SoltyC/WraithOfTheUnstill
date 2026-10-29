@@ -228,7 +228,7 @@ export async function addEnvironmentSystems(g) {
     if (frost.crystalEvent) { sfx.x = frost.crystalX; sfx.y = controller.pos.y + 0.5; sfx.z = frost.crystalZ; sfx.gain = 1.1; sfx.play(SFX.CHIME); }
     const sf = controller.surf;
     sfx.sandActive = sf.active && controller.grounded && (sf.material === 1 || sf.material === 6)
-      && !game.wraithHeld && !controller.hold && !g.combat.dying;
+      && !clock.frozen && !game.wraithHeld && !controller.hold && !g.combat.dying;
     sfx.sandSpeed = sf.speed; sfx.sandGrip = Math.abs(sf.latAccel) / sf.tuning.latMax;
     sfx.sandWet = weather.wet; sfx.sandFrozen = g.surfWake.frozen;
     sfx.update();

@@ -76,3 +76,24 @@ Design: serves **Moving is the joy**,0–10s friction/carve feedback and minute 
 ### Sheet transport architecture finding
 
 Falling sheets remain **unimplemented**, not replaced by decorative particles. Current PLOUGH berms combine using max(existing,profile); MOUND also maxes/fills hollows. Adding a separate landing MOUND per visual curtain would manufacture terrain mass and would not represent D2's measured conservative transfer. The next sheet implementation must reserve/debit actual source transport and deposit that same mass on landing, or explicitly couple a bounded visual reconstruction to solver transfers with the timing contract documented. No pretend avalanche/boom trigger from speed alone. The singing-sand avalanche voice awaits a real mass/size event. This is an engineering constraint, not a completed sheet gate.
+
+
+## Three authored input lines and photo-audio fix — 29 October
+
+`tools/world/sand-surf-slipfaces.mjs` uses the exact CPU world field plus baked material to select three distinct sand starts, at(2514,816),(2970,468),(1806,1080). Start slopes~30.0/34.9/34.2°, with15.44/13.16/10.35m drop over the initial25m fall line and a180m straight sand corridor. These are three distinct diagnostic lines, not a claim of three dune types. Curves are then driven by identical normal inputs: Traverse/forward from rest, right frames180–240, left420–480. No positive speed or active-state injection; explicit diagnostic grant only.
+
+Three12s fixed60Hz/native720p silent films use the actual spring-arm camera (FOV/bank/terrain avoidance included): **720/720 captured each**,719 active/720 grounded each, all720 samples sand1. Film peaks24.635/17.509/16.937m/s;0GPU/readback/late errors and no failed frames. Encoded MP4s and six sampled-frame contact sheet are under `screenshots/d3-slipfaces-first/`. Sampled review shows readable spray, robe lean and continuous trail; it also retains overly ridged wake/head and distant terrain/silhouette defects. Full motion/user feel/art acceptance is NOT ASSESSED. Separate WAVs/live mixer evidence cover sound; no synchronized audio film is claimed. The initial film setup used Vector3.set on a plain velocity owner and failed before recording; corrected setup assigns owner fields.
+
+Separate real-rAF600-frame runs at verified2560×1440 output/1792×1008 internal (0.7 TAAU), actual audio mixer running, no simultaneous GPU browser or video encode, all600/600 active/grounded,593covered frames each and0GPU/readback/late errors:
+
+|Face|Peak m/s|GPU mean ms|rAF mean FPS|rAF p99 ms|Max snapshot age s|
+|---|---:|---:|---:|---:|---:|
+|1|24.655|16.118|61.15|19.70|0.1665|
+|2|19.491|16.193|61.06|19.60|0.1606|
+|3|16.892|16.324|60.40|20.40|0.1757|
+
+These are one short clear-scene run per line; very little60fps headroom, no sustained weather/combat/streaming acceptance, and no whole D3 allocation pass. rAF p99 is reported directly, not relabelled as an averaged1% low. These speeds do not establish D2 collision stress at32m/s. The real runs' frame-timed carves occur at slightly different wall times than fixed-step film events; their peak differences are retained.
+
+A real mixer regression also found surf hiss persisting during a frozen photo clock. `sand-surf-sound-photo.mjs` records the failing pre-fix targets and the corrected normal-input run: audible contact before freeze, then sandActive=false and both targets0 after four rAF frames;0GPU/late errors. The environment contact gate now checks !clock.frozen, using the existing smoothed release. Production build and actual browser check pass after that one-condition fix. Full suite previously833, affected wake/sound8tests also passed after frozen-state publication.
+
+**Still remaining:** mass-coupled falling sheets/landing writes and singing avalanche event; crest streams; wake/head/terrain polish; local wet/freeze seams; distant/reloaded whole-run visibility; real Updraft/glide/enemy chains; sustained performance/allocation and human review. Three diagnostic films are now prepared for the user, not signed off. Default sand stays locked, D2 disabled/unintegrated. No files moved to D:.

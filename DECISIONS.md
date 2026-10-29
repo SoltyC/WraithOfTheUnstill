@@ -538,3 +538,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D3 grain friction: two continuous procedural noise/filter/gain beds share the existing effects master/noise buffer, initialized once. Owner fields carry speed/carve/wet/frozen/contact, smoothed by AudioParam targets; no music/event-pool changes.833tests/build, browser offline waveforms and actual dry/wet/frozen mixer routing checked. Human balance and allocation/performance acceptance remain open. Sheets must couple to actual terrain transport; max-composed berm/MOUND plus extra landing deposits would create mass. Do not fake sheet/avalanche completion with a speed-triggered curtain or boom.
+
+
+2026-10-29 — D3 diagnostics: exact CPU-field/material selection defines three separated slip-face lines; normal fixed inputs from rest and the actual spring-arm camera produce three12s720p60 review films (2160/2160frames,0GPU/readback/late errors). Separate short1440p/0.7 real-input runs average60–61fps with little headroom; no D12/feel acceptance. Freeze the world clock for a photo also releases the surf-friction audio target. Human balance/feel, transport sheets, crest streams and D2 blockers remain open.
