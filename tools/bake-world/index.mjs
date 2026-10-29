@@ -20,6 +20,7 @@ import { carveStory, storyPOIs } from './story.mjs';
 import { carveHill, HILL } from './hill.mjs';
 import { bakeVillageMask } from './villageMask.mjs';
 import { carveRavines, KIND } from './ravines.mjs';
+import { ravineWalls } from './ravineWalls.mjs';
 import { carveDryStair } from './dryStair.mjs';
 import { seatPOIs } from './seats.mjs';
 import { bakeDuneMap } from './dunemap.mjs';
@@ -196,6 +197,9 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     }
   }
   log('ravines', rav.feats.length, 'features', Date.now() - t0, 'ms');
+  // The cliff lines of the ravines' risers for the wall kit (D7b), traced on the carved height.
+  const ravW = ravineWalls(h2, rav.mask, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, rav.feats, rav.roadDist);
+  log('ravine walls', ravW.walls.length, 'lines,', ravW.walls.reduce((a, w) => a + w.pts.length, 0), 'points', Date.now() - t0, 'ms');
   // Overview (8 m): average of the 2 m grid.
   const k = n2 / n8, ov = new Uint16Array(n8 * n8);
   for (let j = 0; j < n8; j++) for (let i = 0; i < n8; i++) {
@@ -245,6 +249,7 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   write('lake_level.u16', lakeLevel);
   write('wind.rg8', windMap);
   write('dunes.rg8', bakeDuneMap(rav.feats, nw, cw, HALF));
+  write('ravines.json', Buffer.from(JSON.stringify(ravW) + '\n'));
   // 7. The meadow village's layout (src/world/village.js) on the carved ground, beside the stream.
   const h4at = (x, z) => {
     const u = (x + HALF) / c4 - 0.5, v = (HALF - z) / c4 - 0.5, i = clamp(Math.floor(u), 0, n4 - 2), j = clamp(Math.floor(v), 0, n4 - 2), fu = u - i, fv = v - j;

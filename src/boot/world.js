@@ -118,6 +118,10 @@ export async function createWorld(g) {
   shadows.addCaster(rocks.meshes[1], rocks.makeShadowMaterial, 2, 2);
   shadows.addCaster(rocks.meshes[2], rocks.makeShadowMaterial, 2, 1);
   rocks.freeze();
+  // The ravines' cliff walls (Phase 9 D7b): sandstone faces along the canyon risers, built off the
+  // main thread (world/canyon.worker.js) while the rest loads.
+  const canyon = (await import('../render/canyonWalls.js')).createCanyonWalls(scene, atmosphere, matLib, shadows, bindShadows);
+  canyon.freeze();
   // The wind field (Phase 8 M1): one function of place and time shared by the CPU and the GPU.
   const wind = (await import('../world/wind.js')).createWind();
   // Grass (Phase 8): GPU-built blades over the meadow, receiving the shadow cascades.
@@ -169,5 +173,6 @@ export async function createWorld(g) {
   bindShadows(sandDust.material, shadows);
   terrainState.brushFx = sandDust.bursts;
 
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
+  await canyon.whenReady;
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
 }

@@ -232,6 +232,20 @@
       "source": "polyhaven",
       "asset": "dense_sand",
       "use": "the erg — fine compacted dune sand, grain detail"
+    },
+    {
+      "layer": 33,
+      "id": "cliff-strata",
+      "source": "polyhaven",
+      "asset": "cliff_side",
+      "use": "the Red Galleries' walls — layered red-brown sandstone cliff (the canyon wall kit)"
+    },
+    {
+      "layer": 34,
+      "id": "sandstone-smooth",
+      "source": "polyhaven",
+      "asset": "sandstone_cracks",
+      "use": "the Needle's slot walls, arches and hoodoos — pale wind-polished sandstone"
     }
   ]
 }

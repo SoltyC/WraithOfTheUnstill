@@ -40,6 +40,8 @@ local cache (outside the repository) and packs them into `data/textures/<id>.{al
 | iron | [rusty_metal_04](https://polyhaven.com/a/rusty_metal_04) | CC0 | fittings, sconces, railings — dark wrought iron |
 | sand-rippled | [aerial_beach_01](https://polyhaven.com/a/aerial_beach_01) | CC0 | the erg (Phase 9 D1a) — wind-rippled fine sand: broad albedo and swell normals, retinted warm (shaders/sand.wgsl.js) |
 | sand-fine | [dense_sand](https://polyhaven.com/a/dense_sand) | CC0 | the erg (Phase 9 D1a) — fine compacted dune sand: mid and fine grain detail at two scales |
+| cliff-strata | [cliff_side](https://polyhaven.com/a/cliff_side) | CC0 | the Red Galleries' walls — layered red-brown sandstone cliff (D7b wall kit) |
+| sandstone-smooth | [sandstone_cracks](https://polyhaven.com/a/sandstone_cracks) | CC0 | the slot canyons' polished sandstone walls (D7b) |
 
 ### Music (Phase 7)
 

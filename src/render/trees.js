@@ -87,8 +87,11 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   /** Trunk radius at the root per species × variant (m, at scale 1): collision. */
   const trunkR = new Float32Array(SPECIES_IDS.length * VARIANTS), logLen = new Float32Array(SPECIES_IDS.length * VARIANTS);
   const envArt = env.artParams;
-  // Opaque order: the leaf depth prepass before everything else, then Babylon's default (by material).
-  const zRank = (sm) => (sm.getMesh().name.startsWith('treeZ') ? 0 : 1);
+  // Opaque order: the leaf depth prepass before everything else, then Babylon's default (by
+  // material), then the canyon's cliff walls (render/canyonWalls.js) last: much of them lies behind
+  // terrain already drawn (buried feet, walls past a rim), which the depth test then skips — measured
+  // 0.46 ms against 0.65 ms drawn first, in a rim view.
+  const zRank = (sm) => { const n = sm.getMesh().name; return n.startsWith('treeZ') ? 0 : n.startsWith('canyon') ? 3 : 2; };
   scene.setRenderingOrder(0, (a, b) => (zRank(a) - zRank(b)) || RenderingGroup.PainterSortCompare(a, b));
   SPECIES_IDS.forEach((sid, si) => {
     const barkLayer = MAT[SPECIES[sid].bark];

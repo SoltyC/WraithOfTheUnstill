@@ -30,6 +30,9 @@ export async function addEnvironmentSystems(g) {
   loop.add({ name: 'shadows', update: () => shadows.update() });
   loop.add(post);
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
+  // The canyon's cliff walls: levels of detail by distance (every few frames; the switches are rare).
+  let canyonTick = 0;
+  loop.add({ name: 'canyon', update: () => { if (++canyonTick % 4) return; const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.update(); } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
   // warmth. `restore` eases toward the state (the Warden's release drives it directly).
@@ -304,6 +307,7 @@ export async function addEnvironmentSystems(g) {
   reg({ key: 'desertAir', label: 'desert aerosol', group: 'System', on: true, onChange: (on) => { atmosphere.desert.on=on;post.post.resetHistory=true; } });
   reg({ key: 'crestDust', label: 'dune crest grains', group: 'System', on: true, onChange: (on) => { g.sandDust.crests=on; } });
   reg({ key: 'sandDust', label: 'sand dust', group: 'System', on: true, onChange: meshToggle(g.sandDust.mesh) });
+  reg({ key: 'canyon', label: 'canyon walls (D7b kit)', group: 'System', on: true, onChange: (on) => { g.canyon.on = on; } });
   reg({ key: 'spindrift', label: 'spindrift', group: 'System', on: true, onChange: meshToggle(spindrift.mesh) });
   reg({ key: 'snowfall', label: 'falling snow', group: 'System', on: true, onChange: meshToggle(snowfall.mesh) });
   reg({ key: 'rain', label: 'rain (streaks, splashes)', group: 'System', on: true, onChange: (on) => { g.rain.mesh.setEnabled(on); g.rain.splashMesh.setEnabled(on); engine.snapshotRenderingReset(); } });

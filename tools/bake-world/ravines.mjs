@@ -106,7 +106,10 @@ export function carveRavines(h2, n2, c2, half, enc, roads = []) {
       const up = q.d - w - (jag > 0 ? jag * gfbm(x / 26, z / 26, 2, SEED + 31) : 0);
       if (up <= 0) { cut(x, z, i, j, f, KIND.floor); continue; }
       const raw = f + def.slope * up;
-      cut(x, z, i, j, ledges ? Math.max(f, terrace(raw)) : raw, KIND.wall);
+      // Toward a ford the ledges ease into a plain sand ramp: the fading cut left half-height steps
+      // there that no cliff (the D7b wall kit) could stand on.
+      const lw = ledges && roadD.length ? smooth(55, 110, dRoad(x, z)) : ledges ? 1 : 0;
+      cut(x, z, i, j, lw > 0 ? raw + (Math.max(f, terrace(raw)) - raw) * lw : raw, KIND.wall);
     }
   };
   const lowpass = (a, win) => { const out = new Float64Array(a.length); for (let k = 0; k < a.length; k++) { let s = 0, w = 0; for (let m = -win; m <= win; m++) { const kk = k + m; if (kk < 0 || kk >= a.length) continue; s += a[kk]; w++; } out[k] = s / w; } return out; };
@@ -180,18 +183,23 @@ export function carveRavines(h2, n2, c2, half, enc, roads = []) {
       if (name === 'main') feats.push({ id: def.id, kind: def.kind, c, W: new Float64Array(c.n).fill(def.half) });
     }
   }
-  return { mask, feats };
+  return { mask, feats, roadDist: roadD.length ? dRoad : null };
 }
 
 /** Flat weight (0..1) of the ravines at (x, z) for the dune-type map: floors and rims lose their dunes. */
 export function ravineFlat(feats, x, z) {
   let f = 0;
   for (const ft of feats) {
-    const c = ft.c, rim = ft.kind === 'wadi' ? 0.7 : 1, pad = ft.kind === 'rift' ? 36 : 56;
+    // Rock walls carry no dunes (the wall kit's cliff lines are traced on the carved height, so dune
+    // relief there would push the terrain's risers out through the cliffs): flat across the whole
+    // wall — a canyon's run 70–90 m out from its floor — easing back in beyond the rim.
+    const c = ft.c, rim = ft.kind === 'wadi' ? 0.7 : 1;
+    const pad = ft.kind === 'canyon' ? 110 : ft.kind === 'rift' ? 48 : ft.kind === 'slot' ? 40 : 56;
+    const hold = ft.kind === 'wadi' ? 4 : pad * 0.72;
     for (let k = 0; k < c.n; k += 2) {
       const dx = x - c.x[k], dz = z - c.z[k], d2 = dx * dx + dz * dz, r = ft.W[k] + pad;
       if (d2 >= r * r) continue;
-      const v = rim * (1 - smooth(ft.W[k] + 4, r, sqrt(d2)));
+      const v = rim * (1 - smooth(ft.W[k] + hold, r, sqrt(d2)));
       if (v > f) f = v;
     }
   }
