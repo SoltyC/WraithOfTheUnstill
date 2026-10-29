@@ -199,10 +199,13 @@ fn main(input: VertexInputs) -> FragmentInputs {
         cellId = select(${GC.DAISY}.0, ${GC.BUTTERCUP}.0, species > 0.5);
         let hsz = select(0.1, 0.075, species > 0.5) * (0.8 + 0.4 * hs);
         let top = vec3f(base.x, bgy, base.y) + (up + lean) * H;
-        // Face up, tilted a little to the stem's lean.
-        let ax = normalize(fwd + up * 0.25); let az = normalize(cross(ax, up));
+        // Face up and partly toward the viewer, as a cup flower presents itself: a head lying flat
+        // read edge-on from a low camera as a bare yellow sliver hanging over the grass.
+        let toCam = normalize(vec3f(cam.x - top.x, 0.0, cam.z - top.z) + vec3f(1e-4, 0.0, 0.0));
+        let face = normalize(up + lean * 2.0 + toCam * 0.9);
+        let az = normalize(cross(face, toCam) + vec3f(0.0, 0.0, 1e-4)); let ax = normalize(cross(az, face));
         p = top + ax * (t - 0.5) * hsz * 2.0 + az * side * hsz;
-        nrm = normalize(up + lean * 2.0);
+        nrm = face;
       }
       tint = vec3f((hs3 - 0.5) * 0.04, 0.9 + 0.2 * hs, 0.6);
       ao = mix(0.6, 1.0, t);

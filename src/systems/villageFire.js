@@ -153,7 +153,7 @@ export function addVillageFireSystem(g) {
         const h = hearths.order[c], s = hearths.site[h], o = slot * 4;
         if (view.sites[s * 4 + 3] < 0.5) { F[o + 3] = 0; continue; }
         F[o] = view.sites[s * 4] + hearths.lx[h]; F[o + 1] = view.sites[s * 4 + 1] + hearths.ly[h]; F[o + 2] = view.sites[s * 4 + 2] + hearths.lz[h]; F[o + 3] = 1.3;
-        FX[o] = 1.0; FX[o + 1] = 0; FX[o + 2] = hearths.d[c] < 90 ? 0.8 : 0.5; FX[o + 3] = 0.35;
+        FX[o] = 1.0; FX[o + 1] = 0; FX[o + 2] = hearths.d[c] < 90 ? 0.8 : 0.5; FX[o + 3] = 0.05; // pale wood smoke
         FL[o] = 0; FL[o + 1] = 0; FL[o + 2] = 0; FL[o + 3] = 0;
       }
       const l = Math.hypot(wind.x, wind.z) || 1;

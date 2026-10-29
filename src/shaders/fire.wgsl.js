@@ -147,7 +147,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
     p += vec3f(sin(t * 0.5 + h1 * 6.28), 0.0, cos(t * 0.4 + h3 * 6.28)) * life * 0.6 * S * sm;
     size = S * (0.35 + life * 1.7 * sm) * (0.8 + 0.4 * h3);
     alpha = smoothstep(0.0, 0.25, life) * (1.0 - life) * 0.2 / (1.0 + life * 1.5) * (1.0 + 0.9 * X.w) * select(1.0, 0.5, smokeOnly); // thins as it spreads
-    kind = 2.0;
+    // Smoke only (a hearth's chimney): smaller, more broken puffs — big soft ones read as a smudge.
+    if (smokeOnly) { size *= 0.6; }
+    kind = select(2.0, 2.2, smokeOnly);
   }
   if (S <= 0.0 || rank > X.z) { alpha = 0.0; }
   // Camera-facing; flames and embers stretched upward.
@@ -219,8 +221,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Smoke: a soft, lumpy puff of pale wood smoke, lit by the sky, by the sun (bright against it:
     // smoke scatters forward) and, young and low, by the fire under it.
     let r = length(uv);
-    let n = noised(uv * 1.7 + wp.xz * 0.7 + vec2f(t * 0.1)).x;
-    let d = smoothstep(1.0, 0.2, r + 0.3 * n);
+    let hearth = fragmentInputs.vKind > 2.1; // smoke only: no fire under it to light it
+    let n = noised(uv * select(1.7, 2.6, hearth) + wp.xz * 0.7 + vec2f(t * 0.1)).x;
+    let d = smoothstep(1.0, 0.2, r + select(0.3, 0.5, hearth) * n);
     if (d <= 0.001) { discard; }
     let sky = shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w;
     // A burning building's column (soot > 0) is dark, lit orange from below by the fire, fading with height.
@@ -229,7 +232,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
              + vec3f(1.0, 0.4, 0.12) * soot * (1.0 - smoothstep(0.0, 0.5, life)) * (1.0 - smoothstep(0.0, 0.5, life)) * 0.3 / max(ex, 1e-6); // lit from below, low down only
     let cosT = dot(normalize(wp - uniforms.cameraPosition), uniforms.keyDir);
     let phase = 0.3 + 1.6 * pow(max(cosT, 0.0), 4.0);
-    var glowV = glow;
+    var glowV = select(glow, vec3f(0.0), hearth);
     if (fragmentInputs.vVil > 0.5) { // lit orange from beneath, near the fire only
       let low = 1.0 - smoothstep(0.0, 0.4, life);
       glowV = vec3f(1.0, 0.4, 0.1) * low * low * 1.1 / max(ex, 1e-6);
