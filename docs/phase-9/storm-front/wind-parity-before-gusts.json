@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-29T08:21:51.015Z",
+  "cases": [
+    {
+      "name": "off",
+      "on": false,
+      "age": 95,
+      "gate": 1
+    },
+    {
+      "name": "gate-zero",
+      "on": true,
+      "age": 95,
+      "gate": 0
+    },
+    {
+      "name": "incoming",
+      "on": true,
+      "age": 45,
+      "gate": 1
+    },
+    {
+      "name": "inside",
+      "on": true,
+      "age": 95,
+      "gate": 1
+    },
+    {
+      "name": "gate-quarter",
+      "on": true,
+      "age": 95,
+      "gate": 0.25
+    },
+    {
+      "name": "Gale-burst",
+      "on": true,
+      "age": 95,
+      "gate": 1,
+      "burst": true
+    },
+    {
+      "name": "zero-base",
+      "on": true,
+      "age": 95,
+      "gate": 1,
+      "zero": true
+    }
+  ],
+  "samples": 5166,
+  "maxAbs": 0.000018926173012800973,
+  "mismatches": 0,
+  "nonFinite": 0,
+  "offBitMismatches": 0,
+  "perCase": [
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000011777356609288248,
+      "samples": 738
+    },
+    {
+      "maxAbs": 2.384185793236071e-8,
+      "samples": 738
+    }
+  ],
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Actual CPU field versus shared GPU wind function over7cases,2e-4 fixed absolute bound. Off and biome-gate0 are also bitwise compared to pinned2224f79 GPU wind on identical inputs. Burst slots unchanged. Diagnostic pipelines unarmed; not a cold-world/rendered wind, water SSR, cloth or allocation acceptance."
+}

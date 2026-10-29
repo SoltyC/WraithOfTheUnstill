@@ -10,17 +10,22 @@ describe('shared storm wind',()=>{
     for(let x=1800;x<3600;x+=73)expect(vector(b,x,900)).toEqual(vector(a,x,900));
     expect(b.block.length).toBe(WIND_VECTORS*4);expect(b.block[27]).toBe(0);
   });
-  it('adds the world-front direction only behind the face, with a graded biome gate',()=>{
+  it('adds bounded front-aligned gusts behind the face, with a graded biome gate',()=>{
     const a=wind(null),b=wind(front());a.update();b.stormWeight=1;b.update();
-    const av=vector(a,2400,900),bv=vector(b,2400,900);expect(bv.x-av.x).toBeCloseTo(SANDSTORM_GUST,12);expect(bv.z).toBeCloseTo(av.z,12);
+    const av=vector(a,2400,900),bv=vector(b,2400,900);expect(bv.x-av.x).toBeGreaterThan(.55*SANDSTORM_GUST);expect(Math.abs(bv.z-av.z)).toBeLessThan(.18*SANDSTORM_GUST);
     expect(vector(b,3400,900)).toEqual(vector(a,3400,900));
-    b.stormWeight=.25;b.update();expect(vector(b,2400,900).x-av.x).toBeCloseTo(SANDSTORM_GUST*.25,12);
+    b.stormWeight=.25;b.update();const quarter=vector(b,2400,900);expect(quarter.x-av.x).toBeCloseTo((bv.x-av.x)*.25,12);expect(quarter.z-av.z).toBeCloseTo((bv.z-av.z)*.25,12);
   });
   it('retains all four Gale burst slots and superposes the same storm contribution',()=>{
     const a=wind(null),b=wind(front());b.stormWeight=1;
     for(const w of [a,b]){w.time=10;w.update();w.burst(2400,900,3);w.time=10.5;w.update();}
     expect(b.block.slice(8,24)).toEqual(a.block.slice(8,24));
-    const av=vector(a,2407,900),bv=vector(b,2407,900);expect(bv.x-av.x).toBeCloseTo(SANDSTORM_GUST,12);expect(bv.z).toBeCloseTo(av.z,12);
+    const av=vector(a,2407,900),bv=vector(b,2407,900);const plain=wind(front());plain.stormWeight=1;plain.time=10.5;plain.update();const pv=vector(plain,2407,900),base=wind(null);base.time=10.5;base.update();const before=vector(base,2407,900);expect(bv.x-av.x).toBeCloseTo(pv.x-before.x,12);expect(bv.z-av.z).toBeCloseTo(pv.z-before.z,12);
+  });
+  it('has strong bounded temporal gusts that pause with the shared clock',()=>{
+    const f=front(),w=wind(f);w.stormWeight=1;let lo=Infinity,hi=0;
+    for(let i=0;i<720;i++){w.time=i/60;w.update();const v=vector(w,2400,900);lo=Math.min(lo,v.x);hi=Math.max(hi,v.x);expect(Number.isFinite(v.speed)).toBe(true);expect(Math.abs(v.x)).toBeLessThan(4);}
+    expect(hi-lo).toBeGreaterThan(1.5);const held=vector(w,2400,900);for(let i=0;i<30;i++){w.update();expect(vector(w,2400,900)).toEqual(held);}
   });
   it('supports bare packed blocks and reuses the fixed storage while disabling cleanly',()=>{
     const f=front(),w=wind(f),block=w.block;w.stormWeight=1;w.update();const expected=vector(w,2400,900),out={outX:0,outZ:0,speed:0};sampleInto(block,2400,900,out);

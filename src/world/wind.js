@@ -73,7 +73,19 @@ function fieldAt(b, o) {
   let vx = dx * base * g, vz = dz * base * g;
   if(b.length>=36&&b[27]>0){
     o.block=b;o.stormOffset=24;o.qx=x;o.qy=b[28];o.qz=z;sampleSandstorm(o);
-    const push=base*SANDSTORM_GUST*o.density;vx+=b[24]*push;vz+=b[25]*push;
+    const sdX=b[24],sdZ=b[25],a=Math.fround(Math.fround(x*sdX)+Math.fround(z*sdZ)),cross=Math.fround(Math.fround(-x*sdZ)+Math.fround(z*sdX)),st=Math.fround(t);
+    // Short advected storm bands: mean push stays near the original, with strong gusts
+    // and a bounded crosswind. Cloth, grains and waves all sample these same pulses.
+    // Round the short-wave phases like WGSL: large world coordinates otherwise put
+    // cloth and GPU grains on different parts of a sharp pulse.
+    const phase1=Math.fround(Math.fround(a*Math.fround(.21))-Math.fround(st*Math.fround(2.4)));
+    const phase2=Math.fround(Math.fround(a*Math.fround(.43))-Math.fround(st*Math.fround(4.1)));
+    const p1=front(Math.fround(phase1+Math.fround(Math.fround(Math.sin(Math.fround(cross*Math.fround(.07))))*Math.fround(.8))));
+    const p2=front(Math.fround(phase2+Math.fround(1.7)));
+    const lateralPhase=Math.fround(Math.fround(Math.fround(a*Math.fround(.17))-Math.fround(st*Math.fround(3.2)))+Math.fround(cross*Math.fround(.11)));
+    const gain=.55+1.05*p1+.55*p2,lateral=.18*Math.sin(lateralPhase)*(.4+.6*p1);
+    const push=base*SANDSTORM_GUST*o.density;
+    vx+=push*(sdX*gain-sdZ*lateral);vz+=push*(sdZ*gain+sdX*lateral);
   }else{o.density=0;o.signedDistance=0;}
   for (let i = 0; i < 4; i++) {
     const k = 8 + i * 4, s = b[k + 3]; if (s <= 0) continue;

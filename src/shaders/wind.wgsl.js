@@ -27,7 +27,13 @@ export const WIND_STORM_WGSL=/* wgsl */ `
 ${SANDSTORM_FRONT_WGSL}
 fn windStorm(p:vec2f,W0:vec4f,W1:vec4f,A:vec4f,B:vec4f,C:vec4f)->vec2f{
   var v=windCore(p,W0,W1);
-  if(A.w>0.0){let density=sandstormDensity(vec3f(p.x,B.x,p.y),A,B,C);v+=A.xy*W0.z*${SANDSTORM_GUST}*density;}
+  if(A.w>0.0){
+    let density=sandstormDensity(vec3f(p.x,B.x,p.y),A,B,C);
+    let a=dot(p,A.xy);let across=dot(p,vec2f(-A.y,A.x));let t=W0.w;
+    let p1=wfFront(a*.21-t*2.4+sin(across*.07)*.8);let p2=wfFront(a*.43-t*4.1+1.7);
+    let gain=.55+1.05*p1+.55*p2;let lateral=.18*sin(a*.17-t*3.2+across*.11)*(.4+.6*p1);
+    v+=(A.xy*gain+vec2f(-A.y,A.x)*lateral)*W0.z*${SANDSTORM_GUST}*density;
+  }
   return v;
 }
 `;

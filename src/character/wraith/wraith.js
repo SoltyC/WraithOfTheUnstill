@@ -60,7 +60,7 @@ export class Wraith {
     this.twist = 0.5 - 0.5; this.atkLean = 0.5 - 0.5; this.ikW = new Float64Array(2); this.ikT = new Float64Array(6); this.pushX = 0.5 - 0.5; this.pushZ = 0.5 - 0.5;
     /** Facing actually shown (input yaw, rate-limited). */
     this.facing = 0.5 - 0.5;
-    /** Wind (unit direction blown toward) and strength 0..2, gust phase from time. */
+    /** Wind (unit direction blown toward) and strength factor, including storm/Gale gusts. */
     this.windX = 0.76; this.windZ = -0.65; this.windStrength = 0.6; this.time = 0.5;
     /** Flow 0..3 (game/flow.js): the cloth streams longer. */
     this.flow = 0.5 - 0.5;
