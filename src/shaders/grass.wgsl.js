@@ -69,6 +69,11 @@ fn gMeadow(x: f32, z: f32) -> f32 {
   let a = unpack4x8unorm(biomeA[j * N8 + i]);
   return a.y / max(a.x + a.y + a.z + a.w, 0.05);
 }
+fn gDunes(x: f32, z: f32) -> f32 {
+  let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
+  let a = unpack4x8unorm(biomeA[j * N8 + i]);
+  return a.w / max(a.x + a.y + a.z + a.w, 0.05);
+}
 /** Frost share of frost + meadow at (x, z) (the border's snow patches). */
 fn gFrostMeadow(x: f32, z: f32) -> f32 {
   let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
@@ -156,7 +161,11 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;
   // The oasis (world/oasis.js): a belt of reeds round its pool, out on the bare playa.
   let reed = (1.0 - smoothstep(OASIS.z + 3.0, OASIS.z + 11.0, length(root - OASIS.xy))) * smoothstep(OASIS.z - 6.0, OASIS.z - 1.0, length(root - OASIS.xy));
-  let dens = max(smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2), reed * (0.6 + 0.4 * patchN)) * uniforms.grassParams.z
+  // The erg's margin (Phase 9 D8): the meadow gives out into straw tussocks, clumped and sparse,
+  // on the sand too, thinning away into the open dunes.
+  let dw = gDunes(root.x, root.y);
+  let tussock = smoothstep(0.12, 0.3, dw) * (1.0 - smoothstep(0.5, 0.75, dw)) * smoothstep(0.58, 0.8, vn(root * 0.11 + 17.0) * 0.7 + vn(root * 0.4 + 3.0) * 0.3) * 0.5;
+  let dens = max(max(smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2), reed * (0.6 + 0.4 * patchN)), tussock) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
   // The village's ground (villageAt): none on cobbles (a few tufts in the joints near the edge), sparse
   // along the earth road's edge, short and thin trampled grass in the yards.
@@ -240,7 +249,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vSeed = h4;
   vertexOutputs.vFar = far;
   vertexOutputs.vFrost = st.z;
-  vertexOutputs.vDry = max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y);
+  vertexOutputs.vDry = max(max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw)));
 }
 `;
 
