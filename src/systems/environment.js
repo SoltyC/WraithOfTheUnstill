@@ -32,7 +32,12 @@ export async function addEnvironmentSystems(g) {
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
   // The canyon's cliff walls: levels of detail by distance (every few frames; the switches are rare).
   let canyonTick = 0;
-  loop.add({ name: 'canyon', update: () => { if (++canyonTick % 4) return; const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.update(); } });
+  // Its collision (world/solids.js walls) is refreshed round the Wraith twice a second.
+  loop.add({ name: 'canyon', update: () => {
+    if (++canyonTick % 4) return;
+    const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.update();
+    if (g.solids && (canyonTick % 32 === 0 || g.pendingTp.active)) c.fillSolids(g.solids.walls, g.controller.pos.x, g.controller.pos.z, 40);
+  } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
   // warmth. `restore` eases toward the state (the Warden's release drives it directly).

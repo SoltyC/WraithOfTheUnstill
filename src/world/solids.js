@@ -31,9 +31,15 @@ export function createSolids(sites, built, stairRuns = null) {
     rx: new Float64Array(MAXR), rz: new Float64Array(MAXR), y0: new Float64Array(MAXR), y1: new Float64Array(MAXR) };
   /** A rock taller than this above the feet blocks; lower ones are stepped onto (m). */
   const ROCK_STEP = 0.55;
+  // Cliff walls near the Wraith (systems/canyonSolids.js fills them from render/canyonWalls.js): line
+  // segments (a → b) with the side out of the rock (nx, nz) and a height span (y0 foot, y1 top). The
+  // body is kept R off the line on its outer side, and put back out if it got behind it.
+  const MAXW = 512;
+  const wl = { n: 0, ax: new Float64Array(MAXW), az: new Float64Array(MAXW), bx: new Float64Array(MAXW), bz: new Float64Array(MAXW),
+    nx: new Float64Array(MAXW), nz: new Float64Array(MAXW), y0: new Float64Array(MAXW), y1: new Float64Array(MAXW) };
 
   return {
-    sites: S, blockers, platforms, rocks: rk, stair: ST, gates,
+    sites: S, blockers, platforms, rocks: rk, walls: wl, stair: ST, gates,
     /** An invisible wall: centre (x, z), half-extents hx (across) × hz (along its facing), facing yaw. Returns the gate; set .on. */
     addGate(x, z, hx, hz, yaw) {
       const gate = { x, z, hx, hz, cos: Math.cos(yaw), sin: Math.sin(yaw), on: false };
@@ -82,6 +88,16 @@ export function createSolids(sites, built, stairRuns = null) {
     /** True when (px, py, pz) is inside a solid or under a platform's top (any seated site). */
     insideQ() {
       const x = this.px, y = this.py, z = this.pz, m = 0.25;
+      // Behind a cliff wall's face (up to 4 m into the rock): the camera keeps out of the cliffs.
+      for (let k = 0; k < wl.n; k++) {
+        if (y < wl.y0[k] || y > wl.y1[k]) continue;
+        const ex = wl.bx[k] - wl.ax[k], ez = wl.bz[k] - wl.az[k], l2 = ex * ex + ez * ez;
+        if (l2 < 1e-6) continue;
+        const t = ((x - wl.ax[k]) * ex + (z - wl.az[k]) * ez) / l2;
+        if (t < 0 || t > 1) continue;
+        const d = (x - wl.ax[k] - ex * t) * wl.nx[k] + (z - wl.az[k] - ez * t) * wl.nz[k];
+        if (d < m && d > -4) return true;
+      }
       for (let i = 0; i < blockers.length; i++) {
         const b = blockers[i], seat = S[b.site].seat;
         if (Number.isNaN(seat) || y > seat + b.y1 + m || y < seat + b.y0 - m) continue;
@@ -178,6 +194,20 @@ export function createSolids(sites, built, stairRuns = null) {
         let nx = ex / (a * a), nz = ez / (b * b); const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
         const wx = nx * c - nz * s, wz = nx * s + nz * c;
         const into = v.x * wx + v.z * wz; if (into < 0) { v.x -= into * wx; v.z -= into * wz; }
+      }
+      // Cliff walls: within R of a segment on its outer side, or behind it (up to 2.5 m in), → R out.
+      for (let k = 0; k < wl.n; k++) {
+        if (p.y + 1.7 < wl.y0[k] || p.y > wl.y1[k]) continue;
+        const ex = wl.bx[k] - wl.ax[k], ez = wl.bz[k] - wl.az[k], l2 = ex * ex + ez * ez;
+        if (l2 < 1e-6) continue;
+        let t = ((p.x - wl.ax[k]) * ex + (p.z - wl.az[k]) * ez) / l2;
+        if (t < 0 || t > 1) continue;
+        const cx = wl.ax[k] + ex * t, cz = wl.az[k] + ez * t;
+        const d = (p.x - cx) * wl.nx[k] + (p.z - cz) * wl.nz[k];
+        if (d >= R || d < -2.5) continue;
+        const pen = R - d;
+        p.x += wl.nx[k] * pen; p.z += wl.nz[k] * pen;
+        const into = v.x * wl.nx[k] + v.z * wl.nz[k]; if (into < 0) { v.x -= into * wl.nx[k]; v.z -= into * wl.nz[k]; }
       }
       for (let i = 0; i < gates.length; i++) {
         const b = gates[i];

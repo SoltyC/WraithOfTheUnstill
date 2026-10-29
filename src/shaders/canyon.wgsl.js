@@ -119,10 +119,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var vis = 1.0;
   if (length(camPos - wp) < 120.0) { vis = shadowVisibility(wp, Ng, camPos, fragmentInputs.position.xy); }
   else { vis = shadowVisibilityFast(wp, camPos); }
-  let sky = shIrradiance(N) * uniforms.envMisc.w * ao;
+  // In a slot little sky reaches the walls; the light that does is the sun bounced down between
+  // them off sunlit orange stone (the slots' glow, docs/phase-9/dunes-design.md p9r-needle-noon).
+  let sky = shIrradiance(N) * uniforms.envMisc.w * ao * select(1.0, 0.45, slot);
   // The canyon's warm bounce: sunlit sand and the opposite wall light the shade orange (faces
   // turned sideways and down get the most; it never reaches past the cap).
-  let bounce = key * max(L.y, 0.0) * vec3f(0.62, 0.42, 0.25) * 0.3 / PI * clamp(0.65 - 0.55 * N.y, 0.0, 1.0) * ao;
+  let bounce = key * max(L.y, 0.0) * select(vec3f(0.62, 0.42, 0.25) * 0.3, vec3f(0.85, 0.48, 0.24) * 0.95, slot) / PI * clamp(0.65 - 0.55 * N.y, 0.0, 1.0) * ao;
   var col = albedo * (key * diff * vis / PI + sky + bounce);
   let H = normalize(L + V);
   col += key * pow(max(dot(N, H), 0.0), select(20.0, 40.0, slot)) * select(0.03, 0.08, slot) * vis * diff;

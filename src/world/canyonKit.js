@@ -24,6 +24,8 @@ export const CANYON_LODS = [
   { ds: 3.5, dy: 1.6, lip: 1, range: 1000 },
   { ds: 10, dy: 5, lip: 0, range: 4000 },
 ];
+/** The collision lines' sampling (a cheap pass: one row only matters, the profile is evaluated directly). */
+const COLLIDE_LOD = { ds: 1.5, dy: 50, lip: 0, range: 0 };
 /** Chunk cell (m). */
 export const CANYON_CELL = 128;
 /** Wall kinds (the `cliff` attribute's z): the Galleries' red strata, the Stride's dark bedrock, a slot's smooth sandstone. */
@@ -33,6 +35,8 @@ const SEED = 0xca7;
 /** How far below its contour a face reaches (m): buried in the tread's sand, deep enough to hide a
  *  partial step's foot (the ledges easing out toward a ford). */
 const FOOT = 5;
+/** A slot wall stands at most this far out from its trench wall (m): the 10 m trench keeps a 2.8 m passage. */
+const SLOT_REACH = 3.6;
 const n1 = (s, seed) => valueNoise(s, 0.37, seed); // 1D value noise, −1..1
 
 /** Sub-band of the bed at world height y: its index and the protrusion (m, before scaling). */
@@ -89,17 +93,22 @@ export function cliffOffset(s, y, iso, top, depth, seed, kind) {
   const smooth = kind === WALL.slot;
   // Out in front of the contour at the foot (the grid's jagged riser zig-zags a metre or two either
   // side of the smoothed line: the face must stand clear of its teeth), leaning back with height.
+  if (smooth) {
+    // A slot's wind-polished wall: long flowing undercuts and bulges that wander along it, so the
+    // passage pinches to under 3 m and opens again; never past SLOT_REACH into the 10 m trench.
+    const h = y - iso, ph = 2.6 * n1(s / 23 + seed * 5.1, SEED + 7), ph2 = 3.1 * n1(s / 8.5 + seed * 1.7, SEED + 8);
+    let os = 2.0 + 0.6 * n1(s / 31 + seed * 2.3, SEED + 9) + 1.0 * Math.sin(h * 0.32 + ph) + 0.4 * Math.sin(h * 0.9 + ph2);
+    os = Math.min(os, SLOT_REACH);
+    return Math.max(os, -back);
+  }
   let o = 1.6;
   o -= y > iso ? (y - iso) * Math.min(0.24, 0.5 * depth / rise + 1.2 / rise) : (y - iso) * 0.08;
-  o += (smooth ? 0.35 : 0.75) * n1(s / 19 + seed * 13.1, SEED + 3) + 0.3 * n1(s / 6.5 + seed * 3.3, SEED + 4); // bulges
-  if (!smooth) {
+  o += 0.75 * n1(s / 19 + seed * 13.1, SEED + 3) + 0.3 * n1(s / 6.5 + seed * 3.3, SEED + 4); // bulges
+  {
     o += 0.55 * bandOut(y) * (0.6 + 0.4 * n1(s / 37 + seed, SEED + 5));      // beds
     // Joints: a vertical crack every 9–17 m, most walls.
     const cell = Math.floor(s / 13), h = hash2(cell, Math.floor(seed * 97), SEED + 6);
     if (h < 0.65) { const cs = (cell + 0.25 + 0.5 * h / 0.65) * 13, d = (s - cs) / 0.9; o -= 0.75 * Math.exp(-d * d); }
-  } else {
-    // Wind-polished: broad flutes, no beds.
-    o += 0.25 * Math.sin(y * 0.55 + n1(s / 9 + seed, SEED + 7) * 2.5);
   }
   return Math.max(o, -back);
 }
@@ -130,6 +139,12 @@ function buildWall(out, wall, lod, kind, seed, s0 = 0, s1 = Infinity) {
     const topR = r.top[k], top = iso + 0.8 + (topR - iso - 0.8) * (0.55 + 0.45 * te), depth = Math.max(1.5, r.depth[k]);
     const retreat = (1 - te) * (depth + 2.2);
     const yFace = Math.max(yBot + 0.2, top - lipR);
+    if (out.col) {
+      // Collision: the face's reach at the body's heights (the tread up to 2.4 m above it).
+      let om = -1e9;
+      for (let y = iso - 1.5; y <= iso + 1.0; y += 0.5) om = Math.max(om, cliffOffset(s, y, iso, top, depth, seed, kind) - retreat);
+      out.col.push(x + nx * om, z + nz * om, nx, nz, iso - 1.7, top, k === k0 ? 1 : 0);
+    }
     for (let i = 0; i <= nf; i++) {
       const y = yBot + (yFace - yBot) * i / nf;
       put(out, x, z, nx, nz, cliffOffset(s, y, iso, top, depth, seed, kind) - retreat, y, s, seed, iso, top, kind, 0);
@@ -228,10 +243,14 @@ export function buildCanyonKit(data, cell = CANYON_CELL) {
       return { positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv), cliff: new Float32Array(out.cliff), indices: new Uint32Array(out.idx) };
     };
     const far = build(CANYON_LODS.length - 1);
+    // Collision lines (one point per 1.5 m column: x, z, out-normal, foot, top, 1 at a wall's start).
+    const colOut = { pos: [], nrm: [], uv: [], cliff: [], idx: [], col: [] };
+    for (const p of pieces) buildWall(colOut, p.w, COLLIDE_LOD, p.kind, p.seed, p.s0 === 0 ? 0 : p.s0 - 1e-6, p.s1);
+    const collision = new Float32Array(colOut.col);
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     const P = far.positions;
     for (let i = 0; i < P.length; i += 3) { x0 = Math.min(x0, P[i]); x1 = Math.max(x1, P[i]); y0 = Math.min(y0, P[i + 1]); y1 = Math.max(y1, P[i + 1]); z0 = Math.min(z0, P[i + 2]); z1 = Math.max(z1, P[i + 2]); }
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-    return { key, cx, cz, y0: y0 - 2, y1: y1 + 2, radius: Math.hypot(x1 - x0, z1 - z0) / 2 + 3, far, build: (l) => (l === CANYON_LODS.length - 1 ? far : build(l)) };
+    return { key, cx, cz, y0: y0 - 2, y1: y1 + 2, radius: Math.hypot(x1 - x0, z1 - z0) / 2 + 3, far, collision, build: (l) => (l === CANYON_LODS.length - 1 ? far : build(l)) };
   }).filter((c) => c.far.indices.length > 0);
 }

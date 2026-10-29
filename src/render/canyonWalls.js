@@ -124,6 +124,30 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
       }
       if (changed) engine.snapshotRenderingReset();
     },
+    /**
+     * Copy the cliff walls' collision segments within `r` m of (x, z) into `wl` (world/solids.js
+     * walls: fixed arrays, n set). Each chunk's line holds points [x, z, nx, nz, foot, top, start].
+     */
+    fillSolids(wl, x, z, r) {
+      let n = 0;
+      const max = wl.ax.length;
+      for (let i = 0; i < chunks.length && n < max; i++) {
+        const c = chunks[i], dc = Math.hypot(c.cx - x, c.cz - z);
+        if (dc > c.radius + r) continue;
+        const L = c.collision;
+        for (let o = 7; o < L.length && n < max; o += 7) {
+          if (L[o + 6] > 0.5) continue; // a new wall starts: no segment back to the last one
+          const ax = L[o - 7], az = L[o - 6], bx = L[o], bz = L[o + 1];
+          const mx = (ax + bx) * 0.5 - x, mz = (az + bz) * 0.5 - z;
+          if (mx * mx + mz * mz > r * r) continue;
+          let nx = (L[o - 5] + L[o + 2]) * 0.5, nz = (L[o - 4] + L[o + 3]) * 0.5; const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
+          wl.ax[n] = ax; wl.az[n] = az; wl.bx[n] = bx; wl.bz[n] = bz; wl.nx[n] = nx; wl.nz[n] = nz;
+          wl.y0[n] = Math.min(L[o - 3], L[o + 4]); wl.y1[n] = Math.max(L[o - 2], L[o + 5]);
+          n++;
+        }
+      }
+      wl.n = n;
+    },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
   };
   view.whenReady = new Promise((resolve) => {

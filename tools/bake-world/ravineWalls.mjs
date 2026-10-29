@@ -123,17 +123,32 @@ export function ravineWalls(h2, mask, n2, c2, half, enc, feats, roadDist = null)
   // The bottom riser of each wall: the canyon floor follows the ground, so it rarely sits on a
   // strata height and the step from it to the first ledge has no contour above. Trace it on the
   // height above the local floor (the nearest spine's) instead; its foot height varies per point.
-  const spinePts = [];
-  for (const f of feats) if (f.F) for (let k = 0; k < f.c.n; k += 2) spinePts.push([f.c.x[k], f.c.z[k], f.F[k]]);
-  const above = new Float64Array(W * H).fill(-1e9);
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-    const k = j * W + i; if (!near[k]) continue;
-    const x = wx(i), z = wz(j); let bd = 1e18, fl = 0;
-    for (const p of spinePts) { const dx = x - p[0], dz = z - p[1], d2 = dx * dx + dz * dz; if (d2 < bd) { bd = d2; fl = p[2]; } }
-    above[k] = hf[k] - fl;
+  // The local floor: the nearest spine's floor height, interpolated along the spine (projected onto
+  // its nearest segment). A per-point floor stepped at every spine point, and the field's contour
+  // broke into scraps at each step.
+  const floors = feats.filter((f) => f.F).map((f) => ({ x: f.c.x, z: f.c.z, F: f.F, n: f.c.n }));
+  const floorAt = (x, z) => {
+    let bd = 1e18, fl = 0;
+    for (const sp of floors) for (let k = 0; k < sp.n - 1; k++) {
+      const ax = sp.x[k], az = sp.z[k], ex = sp.x[k + 1] - ax, ez = sp.z[k + 1] - az, l2 = ex * ex + ez * ez || 1;
+      let t = ((x - ax) * ex + (z - az) * ez) / l2; t = t < 0 ? 0 : t > 1 ? 1 : t;
+      const dx = x - ax - ex * t, dz = z - az - ez * t, d2 = dx * dx + dz * dz;
+      if (d2 < bd) { bd = d2; fl = sp.F[k] + (sp.F[k + 1] - sp.F[k]) * t; }
+    }
+    return fl;
+  };
+  // Only within reach of a wall matters, but every cell gets its real value (a filler next to a
+  // wall would have drawn a false contour along the edge of the zone).
+  const above = new Float64Array(W * H);
+  const reach = new Uint8Array(W * H);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (near[j * W + i]) for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) {
+    const jj = j + b, ii = i + a; if (jj >= 0 && jj < H && ii >= 0 && ii < W) reach[jj * W + ii] = 1;
   }
-  const floorAt = (x, z) => { let bd = 1e18, fl = 0; for (const p of spinePts) { const dx = x - p[0], dz = z - p[1], d2 = dx * dx + dz * dz; if (d2 < bd) { bd = d2; fl = p[2]; } } return fl; };
-  for (const raw of contours(above, ISO_UP, (k) => near[k] && above[k] < STRATA + 4)) {
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i; above[k] = reach[k] ? hf[k] - floorAt(wx(i), wz(j)) : 1e4; }
+  // A cell is in play when its lowest corner is within one strata of the floor (a test on one
+  // corner skipped the cells of a diagonal wall whose high corner it happened to be, breaking the line).
+  const lowCell = (k) => near[k] && Math.min(above[k], above[k + 1], above[k + W], above[k + W + 1]) < STRATA + 4;
+  for (const raw of contours(above, ISO_UP, lowCell)) {
     const runs = measure(resample(raw), (x, z) => floorAt(x, z) + ISO_UP, hAt);
     if (runs) for (const pts of runs) walls.push({ L: -1, iso: r2(pts[0][6]), pts });
   }

@@ -1,7 +1,7 @@
 // Canyon wall kit worker (world/canyonKit.js): fetches the baked cliff lines once, builds every
 // chunk's coarse levels at init, and its near level on request, off the main thread (a near chunk
 // is up to ~70k vertices). Arrays are transferred.
-//   → { type: 'init', url }   ← { type: 'init', chunks: [{ key, cx, cz, radius, y0, y1 }], lods: [[mid, far] per chunk] }
+//   → { type: 'init', url }   ← { type: 'init', chunks: [{ key, cx, cz, radius, y0, y1, collision }], lods: [[mid, far] per chunk] }
 //   → { type: 'build', i, l } ← { type: 'build', i, l, geo }
 
 import { buildCanyonKit, CANYON_LODS } from './canyonKit.js';
@@ -15,7 +15,7 @@ self.onmessage = async (e) => {
   if (m.type === 'init') {
     const data = await (await fetch(m.url)).json();
     chunks = buildCanyonKit(data);
-    const meta = chunks.map((c) => ({ key: c.key, cx: c.cx, cz: c.cz, radius: c.radius, y0: c.y0, y1: c.y1 }));
+    const meta = chunks.map((c) => ({ key: c.key, cx: c.cx, cz: c.cz, radius: c.radius, y0: c.y0, y1: c.y1, collision: c.collision }));
     // Every coarse level now (the far one is kept here as the bounds' source: send a copy).
     const lods = chunks.map((c) => { const out = []; for (let l = 1; l < CANYON_LODS.length; l++) out.push(l === CANYON_LODS.length - 1 ? copy(c.far) : c.build(l)); return out; });
     self.postMessage({ type: 'init', chunks: meta, lods }, lods.flat().flatMap(pack));
