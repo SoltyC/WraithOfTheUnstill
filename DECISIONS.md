@@ -520,3 +520,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-28 — D1b: share the bake's unchanged 12 m strata scalar; use a one-time 4 MiB R8 baked rock mask rather than a ninth fragment storage binding. Replace repetitive sine bedding with irregular low-contrast beds. A dune-camera-weighted, hue-preserving soft LUT shoulder uses the existing parameter padding to prevent sunset bloom/grade clipping; zero dune weight preserves frost/meadow output. No geometry, exposure or biome weather changes. Evidence: docs/phase-9/dune-grade-review.md.
+
+
+2026-10-29 — D5 heat shimmer: refract composed color at TAA reconstruction input, before temporal accumulation, to avoid a full-resolution copy pass/target. Reuse bilinear sampler;32-byte owner control buffer and existing baked surface buffer add two compute bindings. Jitter-free reconstruction masks near/sky/non-sand; source depth guards protect near bodies, temporal bounds widen under shimmer. Original main versus heat-off compute is bit-identical in reconstruction/history tests; synchronized live mask checks pass.787tests/build; fixed1440p/0.7 mean incremental0.109–0.140ms; reviewed360-frame native1440p A/B film. Integrate this bounded slice, not full D5: mirage/sky/exposure, whole-world performance and human aesthetics remain open.

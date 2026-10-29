@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-29T01:16:55.502Z",
+  "reports": [
+    {
+      "name": "dry-noon",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0.76,
+      "positive": 7201,
+      "maxMask": 0.759765625,
+      "near": 30626,
+      "nearLeaks": 0,
+      "sky": 1317,
+      "skyLeaks": 0,
+      "other": 16948,
+      "otherLeaks": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks/dry-noon.png"
+    },
+    {
+      "name": "night",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 30588,
+      "nearLeaks": 0,
+      "sky": 1335,
+      "skyLeaks": 0,
+      "other": 16961,
+      "otherLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks/night.png"
+    },
+    {
+      "name": "wet",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 30626,
+      "nearLeaks": 0,
+      "sky": 1317,
+      "skyLeaks": 0,
+      "other": 16948,
+      "otherLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks/wet.png"
+    },
+    {
+      "name": "stilled",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 30596,
+      "nearLeaks": 0,
+      "sky": 1329,
+      "skyLeaks": 0,
+      "other": 16954,
+      "otherLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks/stilled.png"
+    },
+    {
+      "name": "off",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 30588,
+      "nearLeaks": 0,
+      "sky": 1335,
+      "skyLeaks": 0,
+      "other": 16961,
+      "otherLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks/off.png"
+    }
+  ],
+  "note": "Actual TAA debug-mask and depth readback, every4th pixel atnative1280x720. Independent CPU reconstruction/classification uses same resident baked surface buffer; no new diagnostic shader. Near<80m/sky/non-sand leaks checked; dry noon must have positive coverage, other cases must have none. Not a subjective shimmer/motion or performance gate."
+}

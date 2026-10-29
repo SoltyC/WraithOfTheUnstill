@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-29T01:23:01.446Z",
+  "film": {
+    "ok": true,
+    "frames": 360,
+    "failed": 0,
+    "dir": "screenshots/d5-heat-review/frames/heat-ab",
+    "wallS": 22.8,
+    "ms": 22759
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Fixed60Hz six-second native2560x1440 A/B film, first3s heat off, second3s on; held free camera with near Wraith, actual procedural time advances. Silent capture, not real-time performance or human aesthetic acceptance."
+}

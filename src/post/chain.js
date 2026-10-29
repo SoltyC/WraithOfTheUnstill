@@ -3,6 +3,7 @@
 //   TAA → SSAO → SSR → DOF → bloom → tonemap (AgX/ACES) → LUT grade → grain → sharpen
 // (the display pass does tonemap, grade and grain; see shaders/post/display.wgsl.js).
 
+import { createHeat } from './heat.js';
 import { createPost } from './post.js';
 import { createTaa } from './taa.js';
 import { createCompose } from './compose.js';
@@ -19,7 +20,7 @@ import { registerToggle } from '../core/systems.js';
  * @param {any} atmo
  * @param {any} shadows
  */
-export function createPostChain(scene, camera, atmo, shadows) {
+export function createPostChain(scene, camera, atmo, shadows, surface) {
   const post = createPost(scene, camera);
   const fog = createFog(post, scene, atmo, shadows);
   const comp = createCompose(post, scene, camera, atmo, fog);
@@ -32,7 +33,8 @@ export function createPostChain(scene, camera, atmo, shadows) {
   buildMeter();
   post.onResize(buildMeter);
   post.onParams((P) => { P[71] = params.v.exposure * (post.exposureLift || 1); P[84] = meter.on ? 1 : 0; });
-  const taa = createTaa(post, scene, () => comp.out);
+  const heat = createHeat(post,scene,surface);
+  const taa = createTaa(post, scene, () => comp.out, heat);
   post.addPass(() => fog.run());
   post.addPass(() => comp.run());
   post.addPass(() => meter.cs.dispatch(1, 1, 1));
@@ -47,6 +49,7 @@ export function createPostChain(scene, camera, atmo, shadows) {
   post.onResizeOut(wire);
   post.onParams(() => { post.bloomOn = bloom.on; post.bloomIntensity = bloom.intensity; });
   registerToggle({ key: 'postTaa', label: 'TAA', group: 'Post', on: true, onChange: (on) => { taa.on = on; post.resetHistory = true; } });
+  registerToggle({ key: 'postHeat', label: 'heat shimmer', group: 'Post', on: true, onChange: (on) => { heat.on = on; post.resetHistory = true; } });
   registerToggle({ key: 'postAo', label: 'SSAO', group: 'Post', on: true, onChange: (on) => { comp.aoOn = on; } });
   registerToggle({ key: 'postBloom', label: 'bloom', group: 'Post', on: true, onChange: (on) => { bloom.on = on; } });
   registerToggle({ key: 'postMeter', label: 'metered exposure', group: 'Post', on: true, onChange: (on) => { meter.on = on; } });
@@ -58,7 +61,7 @@ export function createPostChain(scene, camera, atmo, shadows) {
   registerToggle({ key: 'postGrade', label: 'LUT grade', group: 'Post', on: post.lutOn, onChange: (on) => { post.lutOn = on; } });
   registerToggle({ key: 'postGrain', label: 'film grain', group: 'Post', on: post.grain > 0, onChange: (on) => { post.grain = on ? 0.035 : 0; } });
   return {
-    post, taa, comp, bloom, fog,
+    post, taa, comp, bloom, fog, heat,
     name: 'post',
     update() { post.update(); },
   };

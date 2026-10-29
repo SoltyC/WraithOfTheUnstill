@@ -12,7 +12,7 @@ import { dofCS } from '../shaders/post/dof.wgsl.js';
  * @param {import('@babylonjs/core').Scene} scene
  * @param {() => import('@babylonjs/core').BaseTexture} input  the composed current frame (getter: it is rebuilt on resize)
  */
-export function createTaa(post, scene, input) {
+export function createTaa(post, scene, input, heat) {
   const engine = scene.getEngine();
   let h0, h1, out, a, b, dofA, dofB;
   // Histories and output at the output size; the current frame (input) at the internal size.
@@ -22,7 +22,7 @@ export function createTaa(post, scene, input) {
     h1 = storageTexture(scene, W, H, 'taaHist1');
     out = storageTexture(scene, W, H, 'taaOut', Constants.TEXTURE_NEAREST_SAMPLINGMODE);
     const binds = (hin, hout) => [['P', 'buffer', post.paramsBuf], ['cur', 'tex', input()], ['depthTex', 'tex', post.depthTex],
-      ['histSampler', 'sampler'], ['hist', 'stex', hin], ['outHist', 'storageTex', hout], ['outColor', 'storageTex', out]];
+      ['histSampler', 'sampler'], ['hist', 'stex', hin], ['outHist', 'storageTex', hout], ['outColor', 'storageTex', out], ['heat', 'buffer', heat.buffer], ['heatSurface', 'buffer', heat.surface]];
     a = computePass(engine, 'taaA', taaCS, binds(h0, h1));
     b = computePass(engine, 'taaB', taaCS, binds(h1, h0));
     // DOF (after TAA): reads this frame's history target, overwrites `out` (no extra copy when off).

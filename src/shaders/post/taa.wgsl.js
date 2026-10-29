@@ -6,6 +6,8 @@
 // Writes the next history and the frame the rest of the chain reads (two fixed targets, so the
 // bindings never change; two instances alternate the history).
 
+import { heatWGSL } from './heat.wgsl.js';
+
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
 
 export const taaCS = /* wgsl */ `
@@ -18,6 +20,8 @@ ${POST_PARAMS_WGSL}
 @group(0) @binding(5) var outHist: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(6) var outColor: texture_storage_2d<rgba16float, write>;
 
+${heatWGSL}
+
 fn toYCoCg(c: vec3f) -> vec3f {
   return vec3f(0.25 * c.r + 0.5 * c.g + 0.25 * c.b, 0.5 * c.r - 0.5 * c.b, -0.25 * c.r + 0.5 * c.g - 0.25 * c.b);
 }
@@ -28,8 +32,16 @@ fn fromYCoCg(c: vec3f) -> vec3f {
 fn tmap(c: vec3f) -> vec3f { return c / (1.0 + luma(c)); }
 fn itmap(c: vec3f) -> vec3f { return c / max(1.0 - luma(c), 1e-4); }
 
-fn loadCur(p: vec2i, sz: vec2i) -> vec3f {
-  return textureLoad(cur, clamp(p, vec2i(0), sz - 1), 0).rgb;
+fn loadCur(p: vec2i, sz: vec2i, warp:vec3f, d:f32) -> vec3f {
+  if(warp.z<=0.00001){return textureLoad(cur,p,0).rgb;}
+  let uv=clamp((vec2f(p)+.5+warp.xy)*P.size.zw,P.size.zw*.5,vec2f(1.0)-P.size.zw*.5);
+  let q=clamp(vec2i(uv*vec2f(sz)),vec2i(0),sz-1);
+  let sourceD=textureLoad(depthTex,q,0);
+  // Never pull a nearby body or another depth layer across a heat-distorted silhouette.
+  if(d>P.cam.w/80.0||sourceD>P.cam.w/80.0||abs(sourceD-d)>max(d*.08,0.000001)){
+    return textureLoad(cur,p,0).rgb;
+  }
+  return textureSampleLevel(cur,histSampler,uv,0.0).rgb;
 }
 
 // Catmull-Rom history sample from 5 bilinear taps (sharper than bilinear; less blur over time).
@@ -69,6 +81,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let ip = uvO * P.size.xy;
   let j = select(vec2f(0.0), P.jitter.xy, P.taa.z > 0.5);
   let qc = vec2i(floor(ip + j));
+  let warp=heatWarp(clamp(qc,vec2i(0),isz-1),j);
+  if(heat.controls.w>.5){
+    textureStore(outColor,p,vec4f(vec3f(warp.z),1.0));textureStore(outHist,p,vec4f(vec3f(warp.z),1.0));return;
+  }
   // Reconstruct the current frame at ip from the 3×3 internal samples (a Gaussian on the distance
   // to each sample), gather the neighbourhood's moments for clipping, and the nearest depth.
   var m1 = vec3f(0.0); var m2 = vec3f(0.0);
@@ -78,13 +94,13 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   for (var y = -1; y <= 1; y++) {
     for (var x = -1; x <= 1; x++) {
       let q = clamp(qc + vec2i(x, y), vec2i(0), isz - 1);
-      let c = loadCur(q, isz);
+      let qd = textureLoad(depthTex, q, 0);
+      let c = loadCur(q, isz, warp, qd);
       let s = toYCoCg(tmap(c));
       m1 += s; m2 += s * s; mn = min(mn, s); mx = max(mx, s);
       let d = ip - (vec2f(q) + 0.5 - j);
       let w = exp(-2.8 * dot(d, d));
       acc += tmap(c) * w; wsum += w; wmax = max(wmax, w);
-      let qd = textureLoad(depthTex, q, 0);
       if (qd > dBest) { dBest = qd; }
     }
   }
@@ -109,7 +125,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let h = toYCoCg(tmap(sampleHistory(uv, P.pad[2])));
     // Variance clip toward the neighbourhood (γ wider when upscaling: fewer samples per pixel).
     let up = P.pad[2].x * P.size.z; // output / internal (≥ 1)
-    let gamma = 1.1 + 0.35 * clamp(up - 1.0, 0.0, 1.0);
+    let gamma = 1.1 + 0.35 * clamp(up - 1.0, 0.0, 1.0) + .35*warp.z;
     let lo = m1 - gamma * sigma; let hi = m1 + gamma * sigma;
     let cen = (lo + hi) * 0.5; let ext = max((hi - lo) * 0.5, vec3f(1e-5));
     let v = h - cen;
@@ -123,7 +139,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let motion = length((uv - uvO) * P.pad[2].xy);
     // Upscaling keeps more history (fewer real samples land on each output pixel per frame).
     let fbBase = mix(P.taa.x, 0.95, clamp(up - 1.0, 0.0, 1.0) * 2.0);
-    let fb = mix(fbBase, 0.8, clamp(motion / 8.0, 0.0, 1.0));
+    var fb = mix(fbBase, 0.8, clamp(motion / 8.0, 0.0, 1.0));
+    if(warp.z>0.0){fb=mix(fb,.75,warp.z*.25);}
     let alpha = (1.0 - fb) * clamp(wmax, 0.35, 1.0);
     let wc = alpha / (1.0 + ct.x); let wh2 = (1.0 - alpha) / (1.0 + hc.x);
     let r = (ct * wc + hc * wh2) / (wc + wh2);

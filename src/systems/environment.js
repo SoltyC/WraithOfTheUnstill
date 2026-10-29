@@ -118,6 +118,8 @@ export async function addEnvironmentSystems(g) {
     const dW=bwD/Math.max(bwF+bwM+bwD,1e-3);
     restoration.value = (rFrost + (rMeadow - rFrost) * mW)*(1-dW)+rDunes*dW;
     restoration.frost = rFrost; restoration.meadow = rMeadow; restoration.dunes=rDunes;
+    post.heat.hour=params.v.timeOfDay;post.heat.time=clock.simTime;post.heat.weight=bwD;
+    post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover;
     const r = rFrost, gs = params.v.gradeStrength;
     // The ice halo (sky shader) belongs to the stilled air: gone with the first wind, hidden by a deck.
     env.env.artParams.y = Math.max(0, 1 - restoration.value * 1.6) * Math.max(0, 1 - weather.cover * 1.4);
