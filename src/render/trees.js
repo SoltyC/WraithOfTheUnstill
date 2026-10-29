@@ -31,7 +31,8 @@ import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 
 const VARIANTS = 8;
-const SPECIES_IDS = ['pine', 'oak', 'birch', 'shrub', 'log']; // shrubs and logs/stumps fill tree cells left empty
+// Shrubs and logs/stumps fill tree cells left empty; the last four grow in the erg and on its margin (Phase 9 D8).
+const SPECIES_IDS = ['pine', 'oak', 'birch', 'shrub', 'log', 'acacia', 'deadwood', 'tamarisk', 'palm'];
 const CELL = 9, REPLACE = 20;       // placement rebuilds after the camera moves REPLACE m
 const HYST = 4, JUMP = 120;          // state hysteresis (m); a move beyond JUMP is a fresh placement (no fades)
 const MAX_NEAR = 90, MAX_FAR = 260, MAX_MID = 160;   // per variant
@@ -194,8 +195,29 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   }
   /** The tree of cell (gx, gz), if any, into T (deterministic: the same tree whenever asked). */
   const T = { x: 0.5, z: 0.5, si: 0, v: 0, sc: 0.5 };
+  /** The oasis's well (seat oasis-well): palms crowd round it. */
+  const OASIS = [1830, 750];
+  /** The erg's flora in cell (gx, gz) at (x, z), into T: palms round the oasis, thorn and tamarisk
+   *  scrub on the meadow's margin, the odd skeleton of a tree out in the dunes. */
+  function desertTreeAt(gx, gz, x, z) {
+    const dunes = streamer.bw3, mead = streamer.bw1, dO = Math.hypot(x - OASIS[0], z - OASIS[1]);
+    const hs = h01(gx, gz, SEED + 32);
+    let p = 0, si = -1;
+    if (dO < 75) { p = dO < 42 ? 0.6 : 0.2; si = hs < 0.8 ? 8 : 5; }
+    else if (dunes > 0.2 && mead > 0.06) { p = 0.12; si = hs < 0.55 ? 7 : hs < 0.85 ? 5 : 6; }
+    else if (dunes > 0.6) { p = 0.005; si = hs < 0.6 ? 6 : 5; }
+    if (h01(gx, gz, SEED + 31) > p) return false;
+    const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
+    if (sl > 4) return false;
+    for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
+    if (waterAt) { const wl = waterAt(x, z); if (wl === wl && h < wl + 0.5) return false; }
+    T.si = si; T.v = Math.floor(h01(gx, gz, SEED + 7) * VARIANTS);
+    T.x = x; T.z = z; T.sc = 0.75 + 0.5 * h01(gx, gz, SEED + 8);
+    return true;
+  }
   function treeAt(gx, gz) {
     const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 1)) * CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * CELL;
+    if (meadowAt(x, z) < 0.6) return streamer.bw3 > 0.15 ? desertTreeAt(gx, gz, x, z) : false;
     // Groves (slow noise), sparse singles between.
     const grove = valueNoise(x / 170, z / 170, SEED + 3) * 0.65 + valueNoise(x / 55, z / 55, SEED + 4) * 0.35;
     const p = grove > 0.12 ? 0.25 + 0.6 * Math.min(1, (grove - 0.12) / 0.3) : 0.012;
@@ -206,7 +228,6 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
       const ps = grove > 0.12 ? 0.5 : grove > 0.0 ? 0.14 : 0, pl = grove > 0.2 ? 0.14 : 0;
       if (hu < ps) kind = 3; else if (hu < ps + pl) kind = 4; else return false;
     }
-    if (meadowAt(x, z) < 0.6) return false;
     const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
     if (sl > 5) return false;
     for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
@@ -224,7 +245,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   // Every tree's crown splatted at 4 m over the whole world, once (and again when exclusions
   // change): the forest floor, the understory, the grass under trees and the light under the
   // crowns all follow it.
-  const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0], CROWN_A = [0.85, 0.95, 0.6, 0.35, 0]; // pine, oak, birch, shrub, log: radius (m) at scale 1, opacity
+  // pine, oak, birch, shrub, log; acacia, deadwood, tamarisk, palm (the erg's cast no canopy: no forest haze or floor there): radius (m) at scale 1, opacity
+const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6, 0.35, 0, 0, 0, 0, 0];
   let canopyDirty = true;
   function buildCanopy() {
     const N = CANOPY_N, cs = 8192 / N, a = new Uint8Array(N * N);
@@ -344,7 +366,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
       for (let gz = g0z; gz <= g1z; gz++) for (let gx = g0x; gx <= g1x; gx++) {
         if (!treeAt(gx, gz)) continue;
         const dx = T.x - x, dz = T.z - z;
-        if (dx * dx + dz * dz > r * r || T.si === 3) continue; // shrubs are walked through
+        if (dx * dx + dz * dz > r * r || T.si === 3 || T.si === 7) continue; // shrubs and tamarisk scrub are walked through
         const k = T.si * VARIANTS + T.v;
         if (logLen[k] > 0) cb(T.x, T.z, trunkR[k] * T.sc, h01(gx, gz, SEED + 9) * 6.283, logLen[k] * T.sc);
         else cb(T.x, T.z, trunkR[k] * T.sc * 1.1, 0, 0);

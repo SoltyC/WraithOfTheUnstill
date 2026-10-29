@@ -10,6 +10,7 @@
 //   pine   tall straight trunk, whorls of drooping branches shortening upward, needle sprays
 //   oak    stout trunk that forks low, wide spreading crown, broad leaf clusters
 //   birch  slender, slightly leaning, light airy crown, small leaves
+// and the erg's (Phase 9 D8): acacia (umbrella thorn), deadwood (bleached), tamarisk (scrub), palm.
 
 const TAU = Math.PI * 2;
 
@@ -30,6 +31,21 @@ export const SPECIES = {
     child: { count: [4, 7], angle: [0.5, 1.0], len: [0.45, 0.7] }, leafSize: [0.9, 1.3], leafDensity: 3.8, cell: 1, bark: 'bark-smooth' },
   // A fallen trunk or a stump (growLog): bark only, mossed.
   log: { height: [0, 0], trunkR: [0.2, 0.42], log: true, cell: 1, bark: 'bark-oak' },
+  // The erg and its margin (Phase 9 D8). Umbrella thorn: a short trunk forking into branches that
+  // climb and spread, small leaves only on the flat top.
+  acacia: { height: [5, 9], trunkR: [0.16, 0.28], trunkLean: 0.18, crownStart: [0.3, 0.45], levels: 3,
+    whorl: false, branches: [5, 8], branchAngle: [0.75, 1.15], branchLen: [0.5, 0.72], droop: 0.0, up: 0.55,
+    child: { count: [3, 5], angle: [0.7, 1.2], len: [0.45, 0.62] }, leafSize: [0.9, 1.4], leafDensity: 2.2, flatTop: 0.72, cell: 2, bark: 'bark-oak' },
+  // A dead tree, bleached: the acacia's bones without leaves.
+  deadwood: { height: [5, 10], trunkR: [0.18, 0.32], trunkLean: 0.25, crownStart: [0.3, 0.5], levels: 3,
+    whorl: false, branches: [4, 7], branchAngle: [0.6, 1.1], branchLen: [0.35, 0.55], droop: 0.05, up: 0.4,
+    child: { count: [2, 4], angle: [0.5, 1.0], len: [0.4, 0.6] }, leafSize: [0, 0], leafDensity: 0, cell: 1, bark: 'bark-smooth' },
+  // Tamarisk scrub: many slender stems, feathery grey-green sprays (the needle sprite).
+  tamarisk: { height: [1.4, 2.6], trunkR: [0.03, 0.05], trunkLean: 0.25, crownStart: [0.2, 0.3], levels: 2, stems: [9, 15],
+    whorl: false, branches: [0, 0], branchAngle: [0.3, 0.85], branchLen: [0.7, 1.0], droop: 0.25, up: 0.2,
+    child: { count: [3, 6], angle: [0.4, 0.9], len: [0.45, 0.7] }, leafSize: [0.7, 1.0], leafDensity: 3.2, cell: 0, bark: 'bark-smooth' },
+  // Date palm (growPalm path): a scaly curved trunk, a crown of arching fronds.
+  palm: { height: [7, 13], trunkR: [0.2, 0.28], palm: true, fronds: [14, 20], leafSize: [0.85, 1.15], cell: 0, bark: 'bark-pine' },
 };
 export const KIND = { BARK: 0, LEAF: 1 };
 
@@ -119,10 +135,12 @@ export function growTree(speciesId, seed, lod = 0) {
     if (r > (lod ? 0.03 : 0.012)) tube(nodes, sides, 1 / 1.6);
     if (level >= sp.levels || (lod && level >= sp.levels - 1)) {
       // Twig end: leaf clusters along the outer part.
-      const n = Math.max(1, Math.round((lod ? 1.2 : 2.5) * sp.leafDensity * L));
+      const n = sp.leafDensity > 0 ? Math.max(1, Math.round((lod ? 1.2 : 2.5) * sp.leafDensity * L)) : 0;
       for (let k = 0; k < n; k++) {
         const t = 0.45 + 0.55 * (k + R() * 0.5) / n, ni = Math.min(nodes.length - 1, Math.round(t * (nodes.length - 1)));
-        cluster(nodes[ni].p, d, rr(R, sp.leafSize) * (lod ? 1.4 : 1), Math.floor(R() * 997));
+        // A flat-topped crown (the acacia): leaves only up in its layer, pressed level.
+        if (sp.flatTop && nodes[ni].p[1] < H * sp.flatTop) continue;
+        cluster(nodes[ni].p, sp.flatTop ? [d[0], 0.15, d[2]] : d, rr(R, sp.leafSize) * (lod ? 1.4 : 1), Math.floor(R() * 997));
       }
       return;
     }
@@ -134,6 +152,37 @@ export function growTree(speciesId, seed, lod = 0) {
       const cd = norm(add(add(d, [0, 0, 0], Math.cos(el)), side, Math.sin(el) * 1.4));
       branch(nodes[ni].p, cd, L * rr(R, c.len), nodes[ni].r * 0.6, level + 1);
     }
+  }
+  if (sp.palm) {
+    // Date palm: the trunk curves up out of a lean, ringed with old frond bases (a scaly radius);
+    // the crown's fronds arch out from the top and droop, leaflets down both sides of each rachis.
+    const tSegs = lod ? 8 : 18, lean = (R() - 0.5) * 0.5, az = R() * TAU, tn = [];
+    let tp = [0, -0.4, 0];
+    for (let i = 0; i <= tSegs; i++) {
+      const t = i / tSegs, bend = lean * (1 - t) * (1 - t);
+      const ring = lod ? 1 : 1 + 0.12 * Math.max(0, Math.sin(i * 2.6)) * (0.4 + 0.6 * t);
+      tn.push({ p: tp, r: r0 * (1.15 - 0.3 * t) * ring * (1 + 0.5 * Math.max(0, 1 - t * 10) ** 2) });
+      tp = [tp[0] + Math.cos(az) * bend * H / tSegs, tp[1] + (H + 0.4) / tSegs, tp[2] + Math.sin(az) * bend * H / tSegs];
+    }
+    tube(tn, lod ? 7 : 11, 1 / 0.8);
+    const top = tn[tSegs].p, nf = Math.round(rr(R, sp.fronds) * (lod ? 0.6 : 1));
+    for (let f = 0; f < nf; f++) {
+      const a = f * 2.39996 + R() * 0.3, el = 0.25 + 1.0 * (f / nf) * (0.6 + 0.4 * R()) - 0.3; // the lowest fronds droop, the young ones rise
+      const L = 2.6 + 1.6 * R(), segs = lod ? 4 : 8, nodes = [{ p: top, r: 0.05 }];
+      let dir = norm([Math.cos(a), Math.sin(el), Math.sin(a)]), q = top;
+      for (let i = 1; i <= segs; i++) {
+        dir = norm(add(dir, [0, -1, 0], 0.16 + 0.1 * (1 - el)));
+        q = add(q, dir, L / segs); nodes.push({ p: q, r: 0.045 * (1 - 0.7 * i / segs) });
+      }
+      if (!lod) tube(nodes, 3, 1);
+      const side = norm(cross(dir, [0, 1, 0]));
+      const nl = lod ? 4 : 9;
+      for (let k = 1; k <= nl; k++) {
+        const t = k / (nl + 1), ni = Math.min(segs, Math.round(t * segs)), p = nodes[ni].p;
+        for (const sgn of [-1, 1]) cluster(add(add(p, side, sgn * 0.25), [0, -0.08, 0]), add(side, [0, -0.5, 0], sgn), rr(R, sp.leafSize) * (1 - 0.35 * t) * (lod ? 1.4 : 1), Math.floor(R() * 997));
+      }
+    }
+    return finish();
   }
   if (sp.stems) {
     // Shrub: stems from a clump at the ground, each a branch of level 1 arching out.

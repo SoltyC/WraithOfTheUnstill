@@ -179,6 +179,13 @@ ${leafPass ? `
   let h = fract(info.y * 0.0137 + fragmentInputs.vHue);
   var albedo = lc.rgb * mix(vec3f(0.85, 0.95, 0.8), vec3f(1.1, 1.05, 0.9), h) * (0.85 + 0.35 * fragmentInputs.vHue);
   albedo *= mix(1.0, 0.76, uniforms.wetParams.x); // rain
+  // The erg's species keep their own colour (shared sprites, render/trees.js SPECIES_IDS 5…):
+  // the acacia's dusty olive, the tamarisk's grey-green, the palm's sun-yellowed fronds.
+  let sp = uniforms.treeMat.y;
+  let lum = dot(albedo, vec3f(0.3, 0.55, 0.15));
+  if (abs(sp - 5.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.25, 1.12, 0.6), 0.6); }
+  if (abs(sp - 7.0) < 0.5) { albedo = mix(albedo, lum * vec3f(0.95, 1.08, 0.95), 0.65); }
+  if (abs(sp - 8.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.2, 1.25, 0.6), 0.45); }
   // Inner crown is darker (light has crossed the leaves above): height in tree and facing — but
   // never black (light comes through and between the leaves).
   let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, info.w);
@@ -200,7 +207,10 @@ ${leafPass ? `
   col += spellLit(wp, N, albedo, 0.4, ex);` : `
   let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
   // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
-  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.3, 0.29, 0.27), abs(uniforms.treeMat.y - 2.0) < 0.5), 0.6);
+  var barkTint = select(select(vec3f(0.17, 0.13, 0.1), vec3f(0.16, 0.13, 0.11), uniforms.treeMat.y > 0.5), vec3f(0.3, 0.29, 0.27), abs(uniforms.treeMat.y - 2.0) < 0.5);
+  if (abs(uniforms.treeMat.y - 6.0) < 0.5) { barkTint = vec3f(0.46, 0.43, 0.39); }      // deadwood: sun-bleached
+  if (abs(uniforms.treeMat.y - 8.0) < 0.5) { barkTint = vec3f(0.24, 0.19, 0.14); }      // palm: fibrous brown
+  var albedo = matRetint(bk, i32(uniforms.treeMat.x + 0.5), barkTint, 0.6);
   albedo *= mix(1.0, 0.62, uniforms.wetParams.x); // wet bark
   let moss = smoothstep(0.3, 0.0, info.w) * smoothstep(-0.2, 0.6, -bk.N.z * 0.6 + 0.2) * 0.6;
   albedo = mix(albedo, vec3f(0.06, 0.09, 0.03), moss);
