@@ -138,7 +138,7 @@ export function createStoneBending(ctx) {
 
     update() {
       const dt = this.dt, time = this.time;
-      mass.healScale = ts.healScale || 1;
+      mass.healScale = ts.healScale ?? 1;
       mass.update(time);
       this.gesture = Math.max(0, this.gesture - dt / 0.45);
       this.shatterEvent = false; this.bloomEvent = false; this.splashEvent = false; this.ridgeAdvance = 0; this.bloomHot = 0;

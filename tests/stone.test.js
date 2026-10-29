@@ -20,7 +20,7 @@ function rig(surf = SURF.SNOW) {
   rig.surf = surf;
   st.x = 0; st.z = 0; st.aimX = 1; st.aimZ = 0; st.tx = 9; st.tz = 0; st.ty = 0; st.time = 0;
   const run = (seconds, each) => { const n = Math.round(seconds / DT); for (let i = 0; i < n; i++) { if (each) each(i * DT); st.dt = DT; st.time += DT; st.update(); } };
-  return { st, stamps, mass, run, lights, ground };
+  return { st, stamps, mass, run, lights, ground, ts };
 }
 rig.surf = 0;
 
@@ -97,6 +97,12 @@ describe('Ridge', () => {
       expect(h1 / h0).toBeCloseTo(Math.exp(-DECAY[mat * 6 + 1] * 60), 3);
       expect(h1 / h0).toBeGreaterThan(mat === 3 ? 0.95 : 0.92);
     }
+  });
+  it('respects zero terrain refill in the actual Stone owner', () => {
+    const r=rig();r.st.ridgeHeld=true;r.run(2);r.st.ridgeHeld=false;r.run(1.2);
+    const s=r.stamps.filter(q=>q.k===BRUSH.RIDGE).pop(),h=r.mass.heightAt(s.x,s.z);
+    r.ts.healScale=0;r.run(60);
+    expect(r.mass.healScale).toBe(0);expect(r.mass.heightAt(s.x,s.z)).toBe(h);
   });
   it('only splashes on water and raises nothing', () => {
     const r = rig(SURF.WATER);

@@ -48,7 +48,7 @@ export function createStoneMass() {
     kind: new Uint8Array(MASS_MAX), on: new Uint8Array(MASS_MAX),
     cx: new Float64Array(MASS_MAX), cz: new Float64Array(MASS_MAX), dx: new Float64Array(MASS_MAX), dz: new Float64Array(MASS_MAX),
     hl: new Float64Array(MASS_MAX), hw: new Float64Array(MASS_MAX), H: new Float64Array(MASS_MAX),
-    rate: new Float64Array(MASS_MAX), t0: new Float64Array(MASS_MAX), fac: new Float64Array(MASS_MAX),
+    rate: new Float64Array(MASS_MAX), t0: new Float64Array(MASS_MAX), healAge: new Float64Array(MASS_MAX), fac: new Float64Array(MASS_MAX),
     reach: new Float64Array(MASS_MAX), frozen: new Uint8Array(MASS_MAX),
   };
   let head = 0;
@@ -70,11 +70,15 @@ export function createStoneMass() {
     clear() { k.on.fill(0); self.count = 0; head = 0; },
     /** Once per frame: advance the decay factors and retire shapes that have healed away. */
     update(time) {
+      // Integrate the rate over each new interval. Multiplying total shape age by the
+      // current scale retroactively changed collision height when weather/refill changed.
+      const exposure = Math.max(0, time - self.time) * Math.max(0, self.healScale);
       self.time = time;
       let n = 0;
       for (let i = 0; i < MASS_MAX; i++) {
         if (!k.on[i]) continue;
-        const f = k.frozen[i] ? 1 : Math.exp(-k.rate[i] * Math.max(0, time - k.t0[i]) * self.healScale);
+        if (!k.frozen[i]) k.healAge[i] += exposure;
+        const f = k.frozen[i] ? 1 : Math.exp(-k.rate[i] * k.healAge[i]);
         k.fac[i] = f;
         if (f * k.H[i] < 0.01) { k.on[i] = 0; continue; }
         n++;
@@ -120,7 +124,7 @@ export function createStoneMass() {
   };
   function put(kind) {
     const a = self.arg, i = head; head = (head + 1) % MASS_MAX;
-    k.kind[i] = kind; k.on[i] = 1; k.cx[i] = a[0]; k.cz[i] = a[1]; k.t0[i] = self.time; k.fac[i] = 1; k.frozen[i] = 0;
+    k.kind[i] = kind; k.on[i] = 1; k.cx[i] = a[0]; k.cz[i] = a[1]; k.t0[i] = self.time; k.healAge[i] = 0; k.fac[i] = 1; k.frozen[i] = 0;
     if (kind === RIDGE) { k.dx[i] = a[2]; k.dz[i] = a[3]; k.hl[i] = a[4]; k.hw[i] = a[5]; k.H[i] = a[6]; k.rate[i] = a[7]; }
     else { k.dx[i] = 1; k.dz[i] = 0; k.hl[i] = 0; k.hw[i] = a[2]; k.H[i] = a[3]; k.rate[i] = a[4]; }
     k.reach[i] = k.hl[i] + k.hw[i] * (kind === RIDGE ? RIDGE_END : RIM1) + (kind === RIDGE ? TRENCH_EXT0 + TRENCH_EXTK * RIDGE_END * k.hw[i] : 0);
