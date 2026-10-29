@@ -1,0 +1,29 @@
+# D6 crest air slice — 29 October
+
+Near-camera crest grains are implemented; **D6 remains incomplete**. Reuse the existing sand-dust static draw, terrain height/material/state buffers and shared wind field. Add1024fixed quads (3136total) and one16-byte uniform, no extra draw, storage binding, texture, compute pass, particle CPU update or terrain write. This visual transport does not stand in for D3's mass-conserving falling sheets.
+
+An8m world-cell grid covers the camera neighbourhood. Five rendered-height samples select a convex ridge axis; a bounded quadratic step and three refined height samples locate the crest. It handles ridges across or along the wind, without assuming transverse dunes. Stable world-cell hashes retain the same grain pose when the grid shifts. Opacity fades88–120m and with raw Dunes biome weight. This bounded near field does **not** yet provide plumes on every distant crest; D6's far field remains open.
+
+Stilled grains hang above the crest without a time phase. A fixed owner field integrates eased restoration times simulation dt; after release it advances the grain lifecycle, downwind travel and lift using the shared gusts. It pauses with the photo clock. Ordinary disturbance puffs and low ground blow retain their paths; their restoration input now follows the existing eased Dunes owner instead of a binary switch. The developer crest toggle changes a uniform; normal drawing remains one fixed pool.
+
+Shared loose-sand guard rejects non-sand, wet, frozen and transformed fine-state sources. Frozen rejection uses available fine-window metadata; outside that window there is no remote fine-freeze readback, and this is not a claim of world-wide saved freeze-edge acceptance. No mass, controller, progression, save format or HUD changes.
+
+## Verification
+
+791 tracked tests and locked production build pass. `oracle.json` runs the actual vertex crest branch, rendered-ground/relief/material helpers and wind functions as GPU compute against live buffers. It finds69active held emitters, max alpha0.16, with **0pose mismatches when raw/wind time advances100s** at fixed release time. Advancing restored release time1s moves68emitters. Fully wet, disabled and outside-biome cases all produce0active emitters; a real local freeze stamp suppresses1previously active emitter(s). No non-finite/GPU/late errors. Synthetic actual-shader cases reject flat, slope and basin (mask0), accept X/Z/diagonal ridges (mask1). Diagnostic pipelines are compiled unarmed, not a cold-world gate.
+
+Three corrected full-cost off/on240-frame repeats at actual2560x1440 canvas/1792x1008 internal measure additional whole-frame GPU means **0.088484/0.081253/0.052213ms**, on means10.499–10.531ms,239timestamp samples per interval,0GPU errors/late pipelines. Off draws the original2112quads, on3136; a diagnostic partial-submesh is given explicit bounds. This comparison includes the added vertex work, unlike the earlier branch-only comparison. It is a fixed clear restored view, not combined D2/D3, storm/combat/traversal, allocations or sustained D12 acceptance.
+
+Rejected `perf-empty-invalid.json` has0samples: the first shortened diagnostic submesh lacked its own bounds, raised boundingSphere and stopped rendering. It is not performance evidence. `perf-branch-only.json` retains hidden extra vertices and is not full cost. Final tool rejects<210GPU samples or wrong canvas/internal size. Old visual report is labelled non-final; the final still tool checks scene-frame advancement (clock.frame is deliberately fixed to remove shadow noise).
+
+Native1440p still matrix covers crest off/held/released/fully wet. Every phase advances at least170actual scene frames and has0GPU/late errors. The held/off isolation freezes time/exposure/noise/grain/jitter/TAA and changes31927pixels above RGB-sum6, mean RGB delta0.0767; this demonstrates actual visible colour contribution. Released/wet shots also change world grade/material and are **not** isolated dust deltas. Existing stilled valley haze and rough distant dune defects remain visible, not attributed to or signed off by this slice.
+
+Six-second native1440p60 A/B film captures360/360frames; separate8second native1440p60 release film captures480/480,0failed/GPU/late errors. Release begins at3seconds without snapping restoration. Review encodes are720p, native frames retained locally. Sampled images show a deliberately subtle crest veil and moving low plumes, preserving the near Wraith/material palette. Human aesthetics/continuous-motion judgment and combat-telegraph readability remain NOT ASSESSED.
+
+## Design and next work
+
+Feature: crest air changes from suspended to wind-driven as the erg is released. Serves **Learn by reading**, **The world remembers and answers**, the0–10second feedback/minute vista loop and pure Sensation. It adds no new Flow or mechanical reward.
+
+Smells: treadmill, no opportunity cost, dominant strategy, complexity over depth, reskinned Warden, fetch, gate without warning and forced resonance are clear by cosmetic scope. Bare-core fun, hollow whole-world loop and empty stretches are NOT ASSESSED. Lying/missing far combat telegraph is NOT ASSESSED pending D9b/D3/D6 combined play. Graphics without play is accepted as cheap Sensation at the measured fixed-scene cost. Scope mismatch is present for full D6: keep this bounded slice labelled, build/test the far field and storm separately.
+
+Verdict: keep this verified near-crest air slice after main regression. D6 still needs the clear/heat-haze/sandstorm biome machine, wall-front volume, dim sun/150–300m visibility/streaks, erasure/re-rippling, storm wind/cloth/audio/shelter, far crest streams and shared CPU/GPU saved dune migration. D3 sheets still require real bounded source debit and matching landing deposit before curtain/boom effects. Whole handoff and human gates remain unfinished.

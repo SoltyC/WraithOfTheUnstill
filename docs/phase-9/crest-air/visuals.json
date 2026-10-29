@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-29T02:57:18.609Z",
+  "reports": [
+    {
+      "name": "off",
+      "state": "stilled",
+      "wet": 0,
+      "on": false,
+      "framesAdvanced": 180,
+      "camera": [
+        2498,
+        196.5,
+        805
+      ],
+      "restored": 0,
+      "motion": 0,
+      "changedPixels": 0,
+      "meanRGBDelta": 0,
+      "maxRGBSum": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-crest-review/crest-off.png"
+    },
+    {
+      "name": "held",
+      "state": "stilled",
+      "wet": 0,
+      "on": true,
+      "framesAdvanced": 180,
+      "camera": [
+        2498,
+        196.5,
+        805
+      ],
+      "restored": 0,
+      "motion": 0,
+      "changedPixels": 31927,
+      "meanRGBDelta": 0.07669985170717593,
+      "maxRGBSum": 56,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-crest-review/crest-held.png"
+    },
+    {
+      "name": "released",
+      "state": "restored",
+      "wet": 0,
+      "on": true,
+      "framesAdvanced": 180,
+      "camera": [
+        2498,
+        196.5,
+        805
+      ],
+      "restored": 1,
+      "motion": 0,
+      "changedPixels": 3677706,
+      "meanRGBDelta": 20.281319896556713,
+      "maxRGBSum": 283,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-crest-review/crest-released.png"
+    },
+    {
+      "name": "wet",
+      "state": "restored",
+      "wet": 1,
+      "on": true,
+      "framesAdvanced": 180,
+      "camera": [
+        2498,
+        196.5,
+        805
+      ],
+      "restored": 1,
+      "motion": 0,
+      "changedPixels": 3686318,
+      "meanRGBDelta": 46.75275607638889,
+      "maxRGBSum": 389,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d6-crest-review/crest-wet.png"
+    }
+  ],
+  "film": {
+    "ok": true,
+    "frames": 480,
+    "failed": 0,
+    "dir": "screenshots/d6-crest-review/frames/crest-release",
+    "wallS": 27,
+    "ms": 27020
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Native1440p still matrix near actual detected crest;1280px review copies. Held/off colour comparison freezes time, shadow-noise index, exposure, grain/jitter/TAA. Released and wet change world restoration/material too and are not isolated crest deltas. Native8s fixed60 release film, release at3s without snapping restoration; not real-time performance or human art acceptance."
+}

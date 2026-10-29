@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-29T02:45:05.394Z",
+  "mirage": false,
+  "aerosol": false,
+  "reports": [
+    {
+      "repeat": 0,
+      "on": false,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "indices": 12672,
+      "strength": 0.7588128271883939,
+      "gpuMs": {
+        "n": 0,
+        "mean": null
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 5.892916666467984,
+        "median": 5.899999976158142,
+        "p99": 7.299999952316284,
+        "max": 8.5
+      }
+    },
+    {
+      "repeat": 0,
+      "on": true,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "indices": 18816,
+      "strength": 0.7588128271883939,
+      "gpuMs": {
+        "n": 0,
+        "mean": null
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 5.882083333532015,
+        "median": 5.899999976158142,
+        "p99": 8.700000047683716,
+        "max": 9.300000071525574
+      }
+    },
+    {
+      "repeat": 1,
+      "on": false,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "indices": 12672,
+      "strength": 0.7588128271883939,
+      "gpuMs": {
+        "n": 0,
+        "mean": null
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 5.882083333532015,
+        "median": 5.899999976158142,
+        "p99": 7.800000071525574,
+        "max": 8.899999976158142
+      }
+    },
+    {
+      "repeat": 1,
+      "on": true,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "indices": 18816,
+      "strength": 0.7588128271883939,
+      "gpuMs": {
+        "n": 0,
+        "mean": null
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 5.882083333532015,
+        "median": 5.899999976158142,
+        "p99": 8.799999952316284,
+        "max": 9.800000071525574
+      }
+    },
+    {
+      "repeat": 2,
+      "on": false,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "indices": 12672,
+      "strength": 0.7588128271883939,
+      "gpuMs": {
+        "n": 0,
+        "mean": null
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 5.882500000298023,
+        "median": 5.899999976158142,
+        "p99": 8.399999976158142,
+        "max": 8.799999952316284
+      }
+    },
+    {
+      "repeat": 2,
+      "on": true,
+      "dust": 0.796875,
+      "steadyRebuilds": 0,
+      "indices": 18816,
+      "strength": 0.7588128271883939,
+      "gpuMs": {
+        "n": 0,
+        "mean": null
+      },
+      "frameMs": {
+        "n": 240,
+        "mean": 5.882083333532015,
+        "median": 5.899999976158142,
+        "p99": 6.099999904632568,
+        "max": 7.600000023841858
+      }
+    }
+  ],
+  "output": [
+    1792,
+    1008
+  ],
+  "internal": [
+    1792,
+    1008
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Baseline report preserved separately; three alternating off/on240-frame repeats including the full1024-extra-quad draw cost (2112off/3136on quads) in one fixed clear restored-noon scene with near Wraith, frozen simulation, verified1440p output/0.7 TAAU. Whole-frame GPU span and rAF, not an isolated crest-draw timer, whole-world traversal/storm/combat budget or human motion judgment.",
+  "status": "INVALID: all GPU sample counts0; diagnostic shortened submesh had no own bounding info, raised boundingSphere exception and stopped the render loop. Report does not verify timing/resolution. Corrected harness binds mesh bounds and rejects incomplete samples."
+}

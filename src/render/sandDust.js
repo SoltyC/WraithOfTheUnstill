@@ -37,11 +37,12 @@ export function createSandDust(scene, clipmap, atmo, wind, ts) {
   mesh.doNotSyncBoundingInfo = true;
   mesh.freezeWorldMatrix();
   const dustParams = new Vector4(0, 0, 1, 0);
+  const crestParams = new Vector4(0, 1, 0, 0);
   const bursts = createSandDustEvents();
   const dustWind = new Float32Array(wind.block);
   const mat = new ShaderMaterial('sandDust', scene, { vertex: 'sandDust', fragment: 'sandDust' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'dustParams', 'dustEvents', 'windField', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'dustParams', 'crestParams', 'dustEvents', 'windField', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
     storageBuffers: ['levelData', 'surface', 'stateFine0', 'stateFine1', 'stateParams', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -51,6 +52,7 @@ export function createSandDust(scene, clipmap, atmo, wind, ts) {
   bindAtmosphere(mat, atmo);
   mat.setArray4('levels', clipmap.levels);
   mat.setVector4('dustParams', dustParams);
+  mat.setVector4('crestParams', crestParams);
   mat.setArray4('dustEvents', bursts.events);
   mat.setArray4('windField', wind.block);
   mat.setStorageBuffer('levelData', clipmap.levelData);
@@ -64,12 +66,15 @@ export function createSandDust(scene, clipmap, atmo, wind, ts) {
   mesh.material = mat;
   mat.freeze(); fastFrozenIsReady(mat);
   return {
-    mesh, material: mat, dustParams, bursts,
-    time: 0.5, wet: 0.0, restored: 0.0, strength: 1.0, windStrength: 0.0,
+    mesh, material: mat, dustParams, crestParams, bursts,
+    time: 0.5, wet: 0.0, restored: 0.0, strength: 1.0, windStrength: 0.0, crestTime: 0.0, crests: true, duneWeight: 0.0, dt: 0.0,
     update() {
+      this.crestTime+=this.dt*Math.max(0,Math.min(1,this.restored));
+      crestParams.x=this.crestTime;crestParams.y=this.crests?1:0;crestParams.z=Math.max(0,Math.min(1,this.duneWeight));
       dustParams.x = this.time; dustParams.y = this.wet;
       dustParams.z = this.strength; dustParams.w = this.restored;
       mat.setVector4('dustParams', dustParams);
+      mat.setVector4('crestParams', crestParams);
       mat.setArray4('dustEvents', bursts.events);
       dustWind.set(wind.block); dustWind[2] = this.windStrength;
       mat.setArray4('windField', dustWind);

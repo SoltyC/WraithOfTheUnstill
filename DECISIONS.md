@@ -530,3 +530,7 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 ### 29 October — low desert aerosol in existing atmosphere LUTs
 Use the spare atmosphere parameter lane and shared medium, with a350m dust scale height, wet/night/biome/restoration gating and1/64 static-LUT density keys. No new pass/binding/texture; developer A/B toggle only. Actual GPU baseline matches at zero dust; ten native day/wet/golden/night views have0opaque clipping,0steady rebuilds and0GPU/late errors. Matched1440p/0.7 cost is about+.003–.010ms, one activation rebuild measured;791 tracked tests/build pass. Keep after main regression. Review: docs/phase-9/heat-review.md. D5 interior exposure and D6 fronts/migration remain open; no human or whole-world performance signoff.
+
+
+### 29 October — bounded near-crest suspended/released dust
+Extend the shared sand-dust draw by1024fixed quads and one vec4; derive ridges from rendered height, fade by Dunes weight/range, integrate eased restoration time for motion. Actual GPU held pose is unchanged across100raw seconds; wet/off/outside zeros and local freeze suppression pass. Full geometry1440p/0.7 cost+0.052–0.088ms in the fixed scene;791tracked tests/build. Keep after main regression. Rejected partial-submesh measurement retained with explicit invalid label. Review: docs/phase-9/crest-air-review.md. Far crest coverage, storms, migration, allocations/combined performance and human art remain open.
