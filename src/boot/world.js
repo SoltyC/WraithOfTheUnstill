@@ -61,6 +61,11 @@ export async function createWorld(g) {
   const { createPostChain } = await import('../post/chain.js');
   const post = createPostChain(scene, camera, atmosphere, shadows, content.clipmap.buffers.surface, content.clipmap.buffers.wind);
   post.fog.keyDir = env.env.keyDir;
+  const {createSandstormFront}=await import('../world/sandstormFront.js');
+  const sandstorm=g.sandstorm=createSandstormFront();
+  // Prototype authored erg anchor; no automatic activation until all storm consumers pass.
+  sandstorm.anchorX=2400;sandstorm.anchorZ=900;sandstorm.baseY=180;
+  post.fog.stormFront=sandstorm;
   const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
   // Ground blow (spindrift): created after the opaque meshes, drawn in the transparent pass.
   const { createSpindrift } = await import('../render/spindrift.js');

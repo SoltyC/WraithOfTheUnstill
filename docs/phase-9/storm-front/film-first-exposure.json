@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-29T06:07:23.652Z",
+  "film": {
+    "ok": true,
+    "frames": 720,
+    "failed": 0,
+    "dir": "screenshots/d6-front-prototype/frames/front-arrival",
+    "wallS": 42.2,
+    "ms": 42244
+  },
+  "age": 80.9999999999992,
+  "localDensity": 0.9944598480048967,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "12second native1440p/fixed60 arrival film, after2second warm, age about69\u219281. Actual model time/lighting/SH/exposure ease, near Wraith and held camera. Current prototype has no storm streak/wind/erasure/audio/shelter consumers and remains disabled in normal weather. Silent footage is not real-time performance or human art signoff.",
+  "status": "REJECTED EXPOSURE FIXTURE: capture started from an inside-storm benchmark eye adaptation and only2s warm. Initial near-ground frames are too bright. Corrected driver settles incoming exposure first and samples near-ground clipping each second."
+}

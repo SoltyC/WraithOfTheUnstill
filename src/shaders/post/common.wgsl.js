@@ -3,7 +3,7 @@
 // Texel convention: row 0 is the bottom of the view, so ndc = (texel + 0.5) / size · 2 − 1.
 
 /** Floats in the parameter block (post.js fills [0..43]; passes add theirs via onParams). */
-export const POST_PARAM_FLOATS = 128;
+export const POST_PARAM_FLOATS = 140;
 
 export const POST_PARAMS_WGSL = /* wgsl */ `
 struct PostParams {
@@ -25,6 +25,7 @@ struct PostParams {
   exposure: vec4f,    // meter on, adapt rate, min stops, max stops
   vp: mat4x4f,        // this frame's view-projection, unjittered (floats 88..103)
   pad: array<vec4f, 6>, // [0] debug, [1] valley fog, [2] output size, [3] forest haze (density, falloff, base, shafts on), [4], [5] the wind block's first two vec4s (water waves)
+  desert: array<vec4f,3>, // world storm direction/plane/strength, base/height/width/depth, age/sigma
 };
 
 fn texelNdc(p: vec2i, size: vec4f) -> vec2f {

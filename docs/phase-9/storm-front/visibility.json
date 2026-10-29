@@ -1,0 +1,377 @@
+{
+  "date": "2026-10-29T05:59:15.967Z",
+  "camera": [
+    2400,
+    158.3016357421875,
+    900
+  ],
+  "results": [
+    {
+      "name": "east",
+      "dist": 1,
+      "tau": 0.014999998733401299,
+      "transmittance": 0.9851118922233582,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 5,
+      "tau": 0.07499999552965164,
+      "transmittance": 0.9277434349060059,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 10,
+      "tau": 0.14999999105930328,
+      "transmittance": 0.8607079386711121,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 50,
+      "tau": 0.75,
+      "transmittance": 0.4723665416240692,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 100,
+      "tau": 1.5,
+      "transmittance": 0.22313016653060913,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 150,
+      "tau": 2.25,
+      "transmittance": 0.1053992286324501,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 200,
+      "tau": 3,
+      "transmittance": 0.049787070602178574,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 300,
+      "tau": 4.5,
+      "transmittance": 0.011108998209238052,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "east",
+      "dist": 600,
+      "tau": 8.829920768737793,
+      "transmittance": 0.0001462898071622476,
+      "visibility": 203.8523406982422,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 1,
+      "tau": 0.014999998733401299,
+      "transmittance": 0.9851118922233582,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 5,
+      "tau": 0.07499999552965164,
+      "transmittance": 0.9277434349060059,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 10,
+      "tau": 0.14999999105930328,
+      "transmittance": 0.8607079386711121,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 50,
+      "tau": 0.75,
+      "transmittance": 0.4723665416240692,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 100,
+      "tau": 1.5,
+      "transmittance": 0.22313016653060913,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 150,
+      "tau": 2.25,
+      "transmittance": 0.1053992286324501,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 200,
+      "tau": 3,
+      "transmittance": 0.049787070602178574,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 300,
+      "tau": 4.5,
+      "transmittance": 0.011108998209238052,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "west",
+      "dist": 600,
+      "tau": 9,
+      "transmittance": 0.00012340984540060163,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 1,
+      "tau": 0.014999998733401299,
+      "transmittance": 0.9851118922233582,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 5,
+      "tau": 0.07499999552965164,
+      "transmittance": 0.9277434349060059,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 10,
+      "tau": 0.14999999105930328,
+      "transmittance": 0.8607079386711121,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 50,
+      "tau": 0.75,
+      "transmittance": 0.4723665416240692,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 100,
+      "tau": 1.5,
+      "transmittance": 0.22313016653060913,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 150,
+      "tau": 2.25,
+      "transmittance": 0.1053992286324501,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 200,
+      "tau": 3,
+      "transmittance": 0.049787070602178574,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "north",
+      "dist": 300,
+      "tau": 4.498441219329834,
+      "transmittance": 0.011126327328383923,
+      "visibility": 200.0692901611328,
+      "endDunes": 0.988235354423523
+    },
+    {
+      "name": "north",
+      "dist": 600,
+      "tau": 8.005125045776367,
+      "transmittance": 0.0003337477974127978,
+      "visibility": 224.85595703125,
+      "endDunes": 0.4784314036369324
+    },
+    {
+      "name": "south",
+      "dist": 1,
+      "tau": 0.014999998733401299,
+      "transmittance": 0.9851118922233582,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 5,
+      "tau": 0.07499999552965164,
+      "transmittance": 0.9277434349060059,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 10,
+      "tau": 0.14999999105930328,
+      "transmittance": 0.8607079386711121,
+      "visibility": 200.00001525878906,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 50,
+      "tau": 0.75,
+      "transmittance": 0.4723665416240692,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 100,
+      "tau": 1.5,
+      "transmittance": 0.22313016653060913,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 150,
+      "tau": 2.25,
+      "transmittance": 0.1053992286324501,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 200,
+      "tau": 3,
+      "transmittance": 0.049787070602178574,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 300,
+      "tau": 4.5,
+      "transmittance": 0.011108998209238052,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "south",
+      "dist": 600,
+      "tau": 9,
+      "transmittance": 0.00012340984540060163,
+      "visibility": 200,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 1,
+      "tau": 0.014983344823122025,
+      "transmittance": 0.9851283431053162,
+      "visibility": 200.22230529785156,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 5,
+      "tau": 0.07458486407995224,
+      "transmittance": 0.9281286597251892,
+      "visibility": 201.11318969726562,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 10,
+      "tau": 0.14834557473659515,
+      "transmittance": 0.8621330857276917,
+      "visibility": 202.23049926757812,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 50,
+      "tau": 0.7098318338394165,
+      "transmittance": 0.4917268455028534,
+      "visibility": 211.31765747070312,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 100,
+      "tau": 1.3450016975402832,
+      "transmittance": 0.2605392634868622,
+      "visibility": 223.0480499267578,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 150,
+      "tau": 1.9133483171463013,
+      "transmittance": 0.14758539199829102,
+      "visibility": 235.18978881835938,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 200,
+      "tau": 2.4218881130218506,
+      "transmittance": 0.08875387907028198,
+      "visibility": 247.74058532714844,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 300,
+      "tau": 3.2840120792388916,
+      "transmittance": 0.03747759386897087,
+      "visibility": 274.0550231933594,
+      "endDunes": 1
+    },
+    {
+      "name": "up",
+      "dist": 600,
+      "tau": 4.968465805053711,
+      "transmittance": 0.006953809410333633,
+      "visibility": 362.2848815917969,
+      "endDunes": 1
+    }
+  ],
+  "nonFinite": 0,
+  "badNear": 0,
+  "offNonzero": 0,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Actual renderer optical-depth integrator and live8m Dunes biome buffer,45horizontal/upward rays at ground-reference height in the fixed age95 storm. Visibility=3/sigmaEffective, measured from each path. Core200m horizontal rays test150–300m; near1–10m optical depth cannot exceed.015/m path bound. Diagnostic pipeline unarmed; no rendered actor/telegraph/shelter/performance acceptance."
+}

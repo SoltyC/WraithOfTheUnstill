@@ -32,7 +32,7 @@ export function createFog(post, scene, atmo, shadows) {
       ['atmoLight', 'buffer', atmo.atmoLight], ['shadowData', 'buffer', shadows.shadowData],
       ['shadowMap0', 'tex', shadows.maps[0]], ['shadowMap1', 'tex', shadows.maps[1]], ['shadowMap2', 'tex', shadows.maps[2]],
       ['noiseSampler', 'sampler'], ['noiseTex', 'stex', noise],
-      ['noiseLoSampler', 'sampler'], ['noiseLo', 'stex', noiseLo], ['cloudOut', 'storageTex', cloudTex], ['shaftOut', 'storageTex', shaftTex]]);
+      ['noiseLoSampler', 'sampler'], ['noiseLo', 'stex', noiseLo], ['cloudOut', 'storageTex', cloudTex], ['shaftOut', 'storageTex', shaftTex], ['sandBiomeA','buffer',atmo.biomeA]]);
     // The forest haze's shafts at half resolution (their own pass: the beams need the detail).
     hw = Math.ceil(W / 2); hh = Math.ceil(H / 2);
     hazeTex = storageTexture(scene, hw, hh, 'hazeShafts');
@@ -46,6 +46,7 @@ export function createFog(post, scene, atmo, shadows) {
     on: true, shaftsOn: true,
     cloudTex: null, shaftTex: null, hazeTex: null,
     /** Inputs (owner): weather, ground height below the camera (m), key direction, dt. */
+    stormFront:null, stormOn:true,
     weather: null, groundY: 0.5, dt: 0.5 - 0.5,
     keyDir: null,
     /** Lightning glow in the clouds, 0..1 (owner). */
@@ -72,6 +73,7 @@ export function createFog(post, scene, atmo, shadows) {
   build(post.width, post.height);
   post.onResize((W, H) => build(W, H));
   post.onParams((P) => {
+    if(fog.stormFront&&fog.stormOn&&fog.on)P.set(fog.stormFront.block,128);else P.fill(0,128,140);
     const w = fog.weather;
     if (!w || !fog.on) { P[56] = 0; P[59] = 0; P[61] = 0; P[108] = 0; P[116] = 0; P[106] = 0; P[107] = 0; return; }
     // Visibility: ~300 km clear haze is the atmosphere's job; overcast ~4 km, snowfall ~1 km,

@@ -1,0 +1,365 @@
+{
+  "date": "2026-10-29T06:06:41.391Z",
+  "initial": {
+    "output": [
+      2560,
+      1440
+    ],
+    "internal": [
+      1792,
+      1008
+    ],
+    "adapter": "nvidia / ampere",
+    "gpuErrors": 0,
+    "late": [],
+    "normalStormReady": false
+  },
+  "reports": [
+    {
+      "repeat": 0,
+      "age": 60,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.486569121292945,
+        "p99": 10.552672386169434,
+        "max": 10.573472023010254
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.546666666865349,
+        "p99": 12.100000023841858,
+        "max": 14.299999952316284
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 60,
+      "on": true,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.517785188044463,
+        "p99": 10.605792045593262,
+        "max": 10.970335960388184
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.53499999990066,
+        "p99": 13.5,
+        "max": 15.399999976158142
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 75,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.502967962161268,
+        "p99": 10.554368019104004,
+        "max": 10.559776306152344
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.559166666865348,
+        "p99": 11.600000023841858,
+        "max": 12
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 75,
+      "on": true,
+      "localDensity": 0.7816464397051616,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.563194502347683,
+        "p99": 10.65071964263916,
+        "max": 10.680992126464844
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.669999999801318,
+        "p99": 12.099999904632568,
+        "max": 16.399999976158142
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 95,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.522303824644208,
+        "p99": 10.589599609375,
+        "max": 10.599616050720215
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.583750000099341,
+        "p99": 11.5,
+        "max": 12.100000023841858
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.574051234512648,
+        "p99": 10.679136276245117,
+        "max": 10.713536262512207
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.637083333233992,
+        "p99": 11.700000047683716,
+        "max": 12.100000023841858
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 60,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.534210955248717,
+        "p99": 10.588095664978027,
+        "max": 10.761152267456055
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.6,
+        "p99": 13.399999976158142,
+        "max": 14.199999928474426
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 60,
+      "on": true,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.576314227850368,
+        "p99": 10.657855987548828,
+        "max": 10.673151969909668
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.63833333303531,
+        "p99": 11.899999976158142,
+        "max": 12.200000047683716
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 75,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.535235752121674,
+        "p99": 10.598943710327148,
+        "max": 10.614368438720703
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.6,
+        "p99": 12,
+        "max": 12.100000023841858
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 75,
+      "on": true,
+      "localDensity": 0.7816464397051616,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.59405843184084,
+        "p99": 10.663583755493164,
+        "max": 10.673312187194824
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.654999999701976,
+        "p99": 11.600000023841858,
+        "max": 12.100000023841858
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 95,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.535857128797714,
+        "p99": 10.588159561157227,
+        "max": 10.602975845336914
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.596666666368643,
+        "p99": 14.199999928474426,
+        "max": 15.899999976158142
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.58502130229104,
+        "p99": 10.659968376159668,
+        "max": 10.669504165649414
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.649583333233993,
+        "p99": 13.899999976158142,
+        "max": 14.399999976158142
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 60,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.538195657929617,
+        "p99": 10.59939193725586,
+        "max": 10.606111526489258
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.597916666666666,
+        "p99": 11.700000047683716,
+        "max": 17.90000009536743
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 60,
+      "on": true,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.655090583418204,
+        "p99": 12.453215599060059,
+        "max": 13.9268159866333
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.741666666666667,
+        "p99": 13.700000047683716,
+        "max": 14.799999952316284
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 75,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.537448747387492,
+        "p99": 10.595423698425293,
+        "max": 10.605567932128906
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.601250000298023,
+        "p99": 11.799999952316284,
+        "max": 13
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 75,
+      "on": true,
+      "localDensity": 0.7816464397051616,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.592232692191791,
+        "p99": 10.649791717529297,
+        "max": 10.654208183288574
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.654166666666667,
+        "p99": 11.800000071525574,
+        "max": 12.100000023841858
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 95,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.533872321061011,
+        "p99": 10.586912155151367,
+        "max": 10.59779167175293
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.59208333293597,
+        "p99": 11.699999928474426,
+        "max": 12.300000071525574
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.585143947202292,
+        "p99": 10.651583671569824,
+        "max": 10.664128303527832
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.649583333233993,
+        "p99": 12,
+        "max": 13.199999928474426
+      }
+    }
+  ],
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Three matched off/on240-frame repeats for incoming/leading/inside ages60/75/95, actual2560x1440 output/1792x1008 internal, fixed scene/near Wraith and frozen simulation. Includes local storm atmosphere/lighting plus volume; heat off in both to isolate cost without its automatic storm suppression saving. Steady cached LUT rebuilds recorded. Not whole-world/combat/streaks/erasure/shelter/sustained D12 acceptance."
+}

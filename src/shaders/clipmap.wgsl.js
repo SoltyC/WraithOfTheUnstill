@@ -494,7 +494,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
-    let scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
+    var sandSkyFill=skyUp;
+    // The painterly blue shadow boost follows the remaining direct beam in a dust storm.
+    // SH retains its diffuse fill, so a vanished sun does not leave a luminous blue shadow.
+    if(atmoParams.storm.w>0.0){sandSkyFill*=1.0-.97*clamp(atmoParams.storm.w,0.0,1.0);}
+    let scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, sandSkyFill);
     col = mix(col, scol, wSand);
     ssrMask = max(ssrMask, wSand * ss.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
   }

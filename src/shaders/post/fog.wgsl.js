@@ -14,6 +14,7 @@
 // .g = the same for the forest haze (PLAN.md M4b).
 
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
+import {SANDSTORM_VOLUME_WGSL} from './sandstormVolume.wgsl.js';
 import { CASCADES } from '../shadows.wgsl.js';
 
 /** Weather fog shared by this pass and compose: exponential height fog (closed form). */
@@ -54,6 +55,8 @@ struct ShadowData {
 @group(0) @binding(10) var noiseLo: texture_2d<f32>;
 @group(0) @binding(11) var cloudOut: texture_storage_2d<rgba16float, write>;
 @group(0) @binding(12) var shaftOut: texture_storage_2d<rgba16float, write>;
+@group(0) @binding(13) var<storage,read> sandBiomeA:array<u32>;
+${SANDSTORM_VOLUME_WGSL}
 ${WEATHER_FOG_WGSL}
 
 fn shadowLoad(c: u32, p: vec2i) -> f32 {
@@ -251,7 +254,14 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let restH = max(totalH - wsumH, 0.0);
     ratioH = (litH + restH) / max(wsumH + restH, 1e-6);
   }
-  textureStore(shaftOut, q, vec4f(ratio, ratioH, 0.0, 1.0));
+  var stormDist=0.0;var stormTau=0.0;
+  if(P.desert[0].w>0.0){
+    stormDist=20000.0;
+    if(dMax>0.0){stormDist=length(worldPos(texelNdc(pc,P.size),dMax,P.invVP)-cam);}
+    stormTau=stormOpticalDepth(cam,dir,stormDist);
+  }
+  // Spare channels now carry storm optical depth and depth for bilateral upsampling.
+  textureStore(shaftOut, q, vec4f(ratio,stormTau,min(stormDist,60000.0),1.0));
 }
 `;
 

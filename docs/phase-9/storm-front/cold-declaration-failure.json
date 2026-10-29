@@ -1,0 +1,9 @@
+{
+  "recorded": "2026-10-29",
+  "accepted": false,
+  "stage": "first cold post-block declaration",
+  "gpuErrorCount": 8,
+  "message": "WGSL :23 expected ':' for struct member, base/height/width/depth",
+  "cause": "Semicolons in a struct-member comment were split by Babylon preprocessing.",
+  "fix": "Use commas in the comment. Final fresh entry and reviewed phases have0GPU errors."
+}
