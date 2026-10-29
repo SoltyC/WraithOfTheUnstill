@@ -535,3 +535,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D3 surface response: feed global weather wetness through shared wake owner fields; wet loose spray falls to zero and cut depth eases to55%. Use the existing collision snapshot's spare fourth float for frozen fraction (one extra compute binding to existing fine1, no new buffer/readback size/save format). GPU PLOUGH preserves frozen sand crust; covered CPU wake skips cuts/spray and never leaves a stale shared brush program. Snow unchanged.830tests/build, five-point GPU frozen/dry oracle and short actual-input wet/frozen runs pass; disabled/missing snapshot coverage, local-only wet patches, whole D3/D2/D12 gates remain open.
+
+
+2026-10-29 — D3 grain friction: two continuous procedural noise/filter/gain beds share the existing effects master/noise buffer, initialized once. Owner fields carry speed/carve/wet/frozen/contact, smoothed by AudioParam targets; no music/event-pool changes.833tests/build, browser offline waveforms and actual dry/wet/frozen mixer routing checked. Human balance and allocation/performance acceptance remain open. Sheets must couple to actual terrain transport; max-composed berm/MOUND plus extra landing deposits would create mass. Do not fake sheet/avalanche completion with a speed-triggered curtain or boom.

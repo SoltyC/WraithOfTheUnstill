@@ -36,11 +36,12 @@ export function createSurfWake(ts, fx) {
     /** Owner fields: the controller's surf model, foot position, grounded. */
     surf: null, x: 0.5, y: 0.5, z: 0.5, grounded: false, enabled: true,
     /** Flow 0..3 (game/flow.js, eased): the wake grows wider, deeper and throws more spray. */
-    flow: 0.5 - 0.5, wet: 0,
+    flow: 0.5 - 0.5, wet: 0, frozen: 0,
     update() {
       const s = this.surf;
-      if (!this.enabled || !s || !s.active || !this.grounded || s.speed < 1) { last[0] = NaN; return; }
+      if (!this.enabled || !s || !s.active || !this.grounded || s.speed < 1) { this.frozen = 0; last[0] = NaN; return; }
       const sand = s.tuning === sandSurfTuning;
+      if (!sand) this.frozen = 0;
       const T = sand ? sandSurfWakeTuning : wakeTuning;
       if (Number.isNaN(last[0])) { last[0] = this.x; last[1] = this.z; return; }
       const dx = this.x - last[0], dz = this.z - last[1], len = Math.sqrt(dx * dx + dz * dz);
@@ -66,6 +67,7 @@ export function createSurfWake(ts, fx) {
         surface.qx = ts.bx; surface.qz = ts.bz;
         if (surface.sample()) frozen = surface.frozen;
       }
+      this.frozen = frozen;
       const wet = sand ? Math.max(0, Math.min(1, this.wet)) : 0;
       const loose = sand ? (1 - wet) * (1 - wet) * Math.max(0, 1 - frozen * 2) : 1;
       // Wet sand cuts a compact, shallow lane; a frozen crust takes no cut or loose spray.

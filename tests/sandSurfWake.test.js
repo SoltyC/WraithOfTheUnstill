@@ -35,6 +35,8 @@ describe('material-specific shared surf wake',()=>{
   expect(damp.fx.count).toBeLessThan(dry.fx.count);expect(damp.fx.count).toBeGreaterThan(0);
   expect(wet.fx.count).toBe(0);expect(wet.stamps[0].depth).toBeCloseTo(dry.stamps[0].depth*.55,12);
   expect(ice.fx.count).toBe(0);expect(ice.stamps).toHaveLength(0);expect(ice.ts.bk).toBeUndefined();
+  expect(ice.wake.frozen).toBe(1);ice.wake.z+=.001;ice.wake.update();expect(ice.wake.frozen).toBe(1);
+  ice.wake.surf.active=false;ice.wake.update();expect(ice.wake.frozen).toBe(0);
   expect(make(0,20,15,0,1,1).stamps[0].depth).toBeCloseTo(.29,12);
   expect(make(0,20,15,0,1,1).fx.count).toBe(make(0,20,15).fx.count);
  });
