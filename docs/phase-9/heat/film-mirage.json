@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-29T01:41:34.680Z",
+  "mirage": true,
+  "film": {
+    "ok": true,
+    "frames": 360,
+    "failed": 0,
+    "dir": "screenshots/d5-mirage-review/frames/mirage-ab",
+    "wallS": 22.6,
+    "ms": 22622
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Fixed60Hz six-second native2560x1440 A/B film, first3s selected effect off, second3s on (mirage flag recorded); held free camera with near Wraith, actual procedural time advances. Silent capture, not real-time performance or human aesthetic acceptance."
+}

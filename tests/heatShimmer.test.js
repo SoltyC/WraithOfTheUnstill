@@ -10,8 +10,12 @@ describe('desert heat controls',()=>{
  });
  it('eases with restoration, biome weight, cloud and wetness without replacing its buffer',()=>{
   const h=model(),data=h.data;h.weight=.5;h.restored=.5;h.cover=.5;h.wet=.5;h.update();
-  expect(h.strength).toBeCloseTo(.0375,12);expect(h.data).toBe(data);expect(h.data.byteLength).toBe(32);
+  expect(h.strength).toBeCloseTo(.0375,12);expect(h.data).toBe(data);expect(h.data.byteLength).toBe(48);
   h.maxPixels=1e6;h.update();expect(h.data[2]).toBe(3);h.maxPixels=-1;h.update();expect(h.data[2]).toBe(0);
+ });
+ it('can disable the mirage without removing shimmer and exposes a separate debug mask',()=>{
+  const h=model();h.update();expect(h.data[8]).toBeCloseTo(.45);h.mirage=false;h.debug=2;h.update();
+  expect(h.strength).toBe(1);expect(h.data[8]).toBe(0);expect(h.data[3]).toBe(2);
  });
  it('publishes continuous time and debug without introducing temporal random seeds',()=>{
   const h=model();h.time=123.5;h.debug=true;h.update();expect(h.data[1]).toBe(123.5);expect(h.data[3]).toBe(1);

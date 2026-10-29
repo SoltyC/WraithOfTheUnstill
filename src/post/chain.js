@@ -20,7 +20,7 @@ import { registerToggle } from '../core/systems.js';
  * @param {any} atmo
  * @param {any} shadows
  */
-export function createPostChain(scene, camera, atmo, shadows, surface) {
+export function createPostChain(scene, camera, atmo, shadows, surface, windMap) {
   const post = createPost(scene, camera);
   const fog = createFog(post, scene, atmo, shadows);
   const comp = createCompose(post, scene, camera, atmo, fog);
@@ -33,7 +33,7 @@ export function createPostChain(scene, camera, atmo, shadows, surface) {
   buildMeter();
   post.onResize(buildMeter);
   post.onParams((P) => { P[71] = params.v.exposure * (post.exposureLift || 1); P[84] = meter.on ? 1 : 0; });
-  const heat = createHeat(post,scene,surface);
+  const heat = createHeat(post,scene,surface,windMap);
   const taa = createTaa(post, scene, () => comp.out, heat);
   post.addPass(() => fog.run());
   post.addPass(() => comp.run());
@@ -49,6 +49,7 @@ export function createPostChain(scene, camera, atmo, shadows, surface) {
   post.onResizeOut(wire);
   post.onParams(() => { post.bloomOn = bloom.on; post.bloomIntensity = bloom.intensity; });
   registerToggle({ key: 'postTaa', label: 'TAA', group: 'Post', on: true, onChange: (on) => { taa.on = on; post.resetHistory = true; } });
+  registerToggle({ key: 'postMirage', label: 'heat mirage', group: 'Post', on: true, onChange: (on) => { heat.mirage = on; post.resetHistory = true; } });
   registerToggle({ key: 'postHeat', label: 'heat shimmer', group: 'Post', on: true, onChange: (on) => { heat.on = on; post.resetHistory = true; } });
   registerToggle({ key: 'postAo', label: 'SSAO', group: 'Post', on: true, onChange: (on) => { comp.aoOn = on; } });
   registerToggle({ key: 'postBloom', label: 'bloom', group: 'Post', on: true, onChange: (on) => { bloom.on = on; } });

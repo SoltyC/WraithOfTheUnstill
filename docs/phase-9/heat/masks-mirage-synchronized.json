@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-29T01:38:39.919Z",
+  "jitter": true,
+  "mirage": true,
+  "pose": {
+    "x": 1660,
+    "z": 750,
+    "cx": 1656,
+    "cz": 750,
+    "yaw": 1.5707963267948966
+  },
+  "reports": [
+    {
+      "name": "dry-noon",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0.7186470588235294,
+      "positive": 1036,
+      "maxMask": 0.11724853515625,
+      "near": 31845,
+      "nearLeaks": 0,
+      "sky": 8873,
+      "skyLeaks": 0,
+      "other": 13336,
+      "otherLeaks": 0,
+      "unflat": 12082,
+      "unflatLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks-mirage-synchronized/dry-noon.png"
+    },
+    {
+      "name": "night",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 31901,
+      "nearLeaks": 0,
+      "sky": 8836,
+      "skyLeaks": 0,
+      "other": 13329,
+      "otherLeaks": 0,
+      "unflat": 12049,
+      "unflatLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks-mirage-synchronized/night.png"
+    },
+    {
+      "name": "wet",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 31828,
+      "nearLeaks": 0,
+      "sky": 8878,
+      "skyLeaks": 0,
+      "other": 13332,
+      "otherLeaks": 0,
+      "unflat": 12114,
+      "unflatLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks-mirage-synchronized/wet.png"
+    },
+    {
+      "name": "stilled",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 31883,
+      "nearLeaks": 0,
+      "sky": 8847,
+      "skyLeaks": 0,
+      "other": 13324,
+      "otherLeaks": 0,
+      "unflat": 12064,
+      "unflatLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks-mirage-synchronized/stilled.png"
+    },
+    {
+      "name": "off",
+      "size": [
+        1280,
+        720
+      ],
+      "strength": 0,
+      "positive": 0,
+      "maxMask": 0,
+      "near": 31882,
+      "nearLeaks": 0,
+      "sky": 8838,
+      "skyLeaks": 0,
+      "other": 13315,
+      "otherLeaks": 0,
+      "unflat": 12072,
+      "unflatLeaks": 0,
+      "gpuErrors": 0,
+      "late": [],
+      "file": "screenshots/d5-heat-masks-mirage-synchronized/off.png"
+    }
+  ],
+  "note": "Actual TAA debug-mask and depth readback with render loop stopped and queue drained while matrices/color/depth are read together; jitter flag recorded, every4th pixel atnative1280x720. Independent CPU reconstruction/classification uses same resident baked surface buffer; no new diagnostic shader. Near<80m/sky/non-sand leaks checked; dry noon must have positive coverage, other cases must have none. Not a subjective shimmer/motion or performance gate."
+}

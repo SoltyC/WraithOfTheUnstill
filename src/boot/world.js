@@ -59,7 +59,7 @@ export async function createWorld(g) {
   bindShadows(content.capsuleMat, shadows);
   // Post chain (Phase 6, src/post/): the camera renders into an HDR target, post passes follow.
   const { createPostChain } = await import('../post/chain.js');
-  const post = createPostChain(scene, camera, atmosphere, shadows, content.clipmap.buffers.surface);
+  const post = createPostChain(scene, camera, atmosphere, shadows, content.clipmap.buffers.surface, content.clipmap.buffers.wind);
   post.fog.keyDir = env.env.keyDir;
   const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
   // Ground blow (spindrift): created after the opaque meshes, drawn in the transparent pass.

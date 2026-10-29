@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-29T01:38:40.243Z",
+  "baselineRevision": "98a1449",
+  "reports": [
+    {
+      "taa": 0,
+      "size": [
+        1280,
+        720
+      ],
+      "mismatches": 0,
+      "maxDifference": 0
+    },
+    {
+      "taa": 1,
+      "size": [
+        1280,
+        720
+      ],
+      "mismatches": 0,
+      "maxDifference": 0
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Actual baseline-main versus current TAA compute on identical live composed/depth inputs, shared parameters and constant history, heat strength0; both reconstruction-only and history branches. Diagnostic pipelines created with late detector unarmed; restart for world cold/performance gates. This is not heat-on temporal/motion acceptance."
+}

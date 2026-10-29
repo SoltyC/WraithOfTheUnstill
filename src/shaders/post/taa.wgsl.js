@@ -32,7 +32,7 @@ fn fromYCoCg(c: vec3f) -> vec3f {
 fn tmap(c: vec3f) -> vec3f { return c / (1.0 + luma(c)); }
 fn itmap(c: vec3f) -> vec3f { return c / max(1.0 - luma(c), 1e-4); }
 
-fn loadCur(p: vec2i, sz: vec2i, warp:vec3f, d:f32) -> vec3f {
+fn loadCur(p: vec2i, sz: vec2i, warp:vec4f, d:f32) -> vec3f {
   if(warp.z<=0.00001){return textureLoad(cur,p,0).rgb;}
   let uv=clamp((vec2f(p)+.5+warp.xy)*P.size.zw,P.size.zw*.5,vec2f(1.0)-P.size.zw*.5);
   let q=clamp(vec2i(uv*vec2f(sz)),vec2i(0),sz-1);
@@ -41,7 +41,14 @@ fn loadCur(p: vec2i, sz: vec2i, warp:vec3f, d:f32) -> vec3f {
   if(d>P.cam.w/80.0||sourceD>P.cam.w/80.0||abs(sourceD-d)>max(d*.08,0.000001)){
     return textureLoad(cur,p,0).rgb;
   }
-  return textureSampleLevel(cur,histSampler,uv,0.0).rgb;
+  var color=textureSampleLevel(cur,histSampler,uv,0.0).rgb;
+  if(warp.w>0.00001){
+    let jitter=select(vec2f(0.0),P.jitter.xy,P.taa.z>.5);
+    // Reuse the sky/far-shore fallback projection and the accepted centre mask.
+    let reflected=heatReflectionUV(p,jitter,d,warp.xy);
+    if(reflected.z>.5){color=mix(color,textureSampleLevel(cur,histSampler,reflected.xy,0.0).rgb,warp.w);}
+  }
+  return color;
 }
 
 // Catmull-Rom history sample from 5 bilinear taps (sharper than bilinear; less blur over time).
@@ -83,7 +90,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let qc = vec2i(floor(ip + j));
   let warp=heatWarp(clamp(qc,vec2i(0),isz-1),j);
   if(heat.controls.w>.5){
-    textureStore(outColor,p,vec4f(vec3f(warp.z),1.0));textureStore(outHist,p,vec4f(vec3f(warp.z),1.0));return;
+    let mask=select(warp.z,warp.w,heat.controls.w>1.5);
+    textureStore(outColor,p,vec4f(vec3f(mask),1.0));textureStore(outHist,p,vec4f(vec3f(mask),1.0));return;
   }
   // Reconstruct the current frame at ip from the 3×3 internal samples (a Gaussian on the distance
   // to each sample), gather the neighbourhood's moments for clipping, and the nearest depth.

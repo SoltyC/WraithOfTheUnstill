@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-29T01:46:35.676Z",
+  "output": [
+    2560,
+    1440
+  ],
+  "internal": [
+    1792,
+    1008
+  ],
+  "strength": 0.7186470627784729,
+  "changed": 51809,
+  "maxDifference": 0.01416015625,
+  "minRange": 182.72884226285512,
+  "nearChanged": 0,
+  "skyChanged": 0,
+  "nonSandChanged": 0,
+  "unflatChanged": 0,
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Same current shader/composed/depth/frame/control inputs in isolated GPU reconstruction, only mirage gain0 versus0.45. Render loop stopped/queue drained; all changed output pixels independently classified from matching depth and baked buffers. Temporal accumulation disabled for this colour-output isolation. Diagnostic pipeline compiled with late detector unarmed; this is not human visual/performance acceptance."
+}
