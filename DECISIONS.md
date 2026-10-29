@@ -538,3 +538,13 @@ Extend the shared sand-dust draw by1024fixed quads and one vec4; derive ridges f
 
 ### 29 October — separate dry Dunes weather; remove inherited cold fog lakes
 Add the third seeded clear/heat-haze clock and continuously blend its dry targets. Reserve sandstorm data behind duneStorms=false until the actual front/visibility/terrain consumers pass review; no unfinished storm in normal play. Fade frost/meadow inversion fog out by normalized Dunes weight, leaving the crest veil as its stopped-air signature.795tracked tests/build and six native day/wet/golden/night views pass with0opaque clipping/GPU/late errors. No new renderer resources. Review: docs/phase-9/dry-weather-review.md. Full D6 storm/migration and human/whole-world gates remain open.
+
+
+### 30 October — canyon walls are a mesh kit traced from the bake, not a finer heightfield
+The Galleries' 12 m ledges are 2–3 cells of the 2 m grid, drawn as sawtooth facets. A finer grid or smoothing the bake cannot give crisp, overhanging strata. The bake traces each riser as a contour just above its foot and measures its climb; the game stands sandstone cliff faces just in front of the terrain riser, which stays the floor (the face never passes the ramp line, so nothing clips), with collision lines from the kit. Dunes are kept off rock walls (the bake's flat weight covers the wall) because runtime dune relief moved the risers away from the traced lines. The cliffs draw last (hidden parts are depth-rejected) and only the near level casts. Cost +0.34–0.53 ms.
+
+### 30 October — erg ruins and glass are architecture sites
+Ruins and glass reuse the built-places system (seating, collision, shadows, chunked culling); their sites take sand instead of snow (site glow z = 2) and the site cap rose to 640. Battle glass is a new architecture material (19), not the Crystallize renderer (that one is for the verb's dynamic formations).
+
+### 30 October — post-chain shade lift and edge clamping
+Compute passes build their sampler from the internal texture's cached wrap, which was unset (repeat): post storage textures now set it to clamp (the sun's bloom had wrapped into the opposite corners). Daylight shade crushed to black by the ACES toe gets a pre-tonemap lift of the deepest values only (2.6 by day, 0.3 at night): mid-tones, highlights and the grade are unchanged.

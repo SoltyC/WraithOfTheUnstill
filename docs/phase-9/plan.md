@@ -291,6 +291,17 @@ Fixed-scene 1440p GPU medians ~15.1 ms close, 11.3 ms mid, 12.6 ms canyon. NOT A
   - These are the "glass formation catching the sun" of the signature frame.
 - Ruins and glass are seated on real ground with anchor patches, carry collision, appear on the map and in the compass, and feed caves later.
 
+### D7 — Done (ruins and glass, 2026-10-30)
+
+Ruins are architecture sites in Shaper stone (`src/world/ruinKits.js`), seated, collided, shadowed and chunked like every built place; erg sites take sand on their ledges and banked at their feet instead of snow (site glow z = 2): **the Sunken Temple** (its dome showing above a seif dune round the open vent, a ring of half-buried columns, the portal and the stair down into the sand: the Buried Door's site), **a colonnade** walking into a dune and sinking pair by pair, **an obelisk field** east of the Stride, **the aqueduct** (arches and trough on the baked ground along the wadi, the channel high over its dunes, spans fallen), **the Sun Gate** (a slotted lintel on a ledge of the Galleries' west wall), **a giant's head** buried to the lips. **Glass fields** (`src/world/glassKit.js`): each of the five seats has a centrepiece round a glazed crater (a frozen crown splash, a glass tree where lightning forked, a star of thrown shards) and seven smaller pieces; `MAT.BATTLE_GLASS` (19) is a clear teal/amber body with Fresnel sky reflection, SSR, light through it from behind, lit fracture planes and a pinpoint glint. Site cap 640.
+**Not done:** the transform channel marking glass ground (glass is meshes, not terrain state), full-scene refraction, sand drifting into doorways as CPU solids, the camp's caravanserai (D11), human review.
+
+### D7b — Done (ravine kits, 2026-10-30)
+
+The canyon's sawtooth ledges are gone: the bake traces every strata riser as a smoothed contour just above its foot (plus a floor-relative trace for each wall's bottom step) and measures its climb (`tools/bake-world/ravineWalls.mjs` → `world/ravines.json`); `src/world/canyonKit.js` builds sandstone cliff faces along those lines (beds by world height, bulges, joints, lean that never passes the terrain riser it hides, a rounded lip, caprock, ends turning back into the slope), at three levels of detail by distance, the near one in a worker (`world/canyon.worker.js`). Slots get wind-polished, undercut walls narrowing to under 3 m and lit by warm bounce; the Stride gets darker bedrock. 49 hoodoos and 3 natural arches stand at the Galleries' south end. Collision lines from the kit feed `world/solids.js` (wall segments). Two CC0 scans (cliff_side, sandstone_cracks). Bake: dunes no longer ride the rock walls; ledges ease into a sand ramp at the Dry Stair's ford. Dust in the ravines' air feeds the existing shaft march. Spots `p9r-galleries-dawn`, `-galleries-rim`, `-needle-noon`, `-stride-glide`, `-hoodoos-dusk`, `-hoodoos-noon`.
+**Cost** (RTX 3060, 1440p / 0.7): +0.34 ms on the canyon floor, +0.46–0.53 ms in a rim view (walls draw last; only the near level casts, into cascade 1). GPU frame means 11.4–13.8 ms at the p9r spots.
+**Not done:** sandfalls (running and frozen: they need D2's sand flow and D11's puzzles), slot light shafts as dedicated cards (the haze march only shows beams where the sun reaches in), the Stride's glass seams, `p9r-braids-restored` and `p9r-sandfall-frozen`, human review.
+
 ### D8 — Scrub, the margin and the oasis
 
 - **The meadow→dune margin ("scrub drying into dune"):**
@@ -303,6 +314,11 @@ Fixed-scene 1440p GPU medians ~15.1 ms close, 11.3 ms mid, 12.6 ms canyon. NOT A
   - Restored: the water rises.
 - **Deep erg:** nothing, on purpose, except dune grass tussocks in interdunes and the odd skeletal tree.
   - Empty space must still be beautiful; the sand material and the light carry it.
+
+### D8 — Done (first pass, 2026-10-30)
+
+Four new tree species in the generator: **date palms** (curved ringed trunks, crowns of arching fronds) crowding the oasis well, **acacia** (umbrella thorn, leaves only on the flat top) and **tamarisk** scrub on the meadow's margin, **bleached deadwood** at the margin and, rarely, out in the dunes; each keeps its own colour on the shared leaf sprites. **The oasis pool**: a basin carved into the playa by the bake (`tools/bake-world/oasis.mjs`) and marked a lake, so it is drawn, waded and swum like any lake, ringed with tall reeds. **Straw tussocks** where the meadow gives out onto the sand.
+**Not done:** stilled/restored states for the oasis (choked well, grey palms; the water rising), pebble desert pavement, flowers after rain, the margin's dry grass species as its own blade type, human review.
 
 ### D9 — The dune Shaped (three plus an elite)
 

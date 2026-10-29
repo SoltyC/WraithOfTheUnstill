@@ -418,3 +418,18 @@ Terrain profile (2026-10-10, `p8-forest-floor`, 0.7): toggling the terrain at re
 
 
 2026-10-28 D1b fixed views, Windows headless RTX3060, verified 2560×1440 scale1: three 240-frame GPU timestamp repeats each. Close median 15.042/15.062/15.073 ms; mid 11.269/11.256/11.261; canyon 12.637/12.640/12.640; highest observed span 15.715 ms, 27 passes, zero errors/late pipelines. One 4 MiB R8 rock mask, no new per-frame upload or draw. Static diagnostic only: sustained world/combat/weather/streaming performance and presentation/1% lows remain open. docs/phase-9/dune-grade/perf.json.
+
+
+## 30 October — erg kits (T, headless Windows Chrome, 2560×1440 at render scale 0.7, GPU timestamps)
+
+| View | GPU mean (ms) | Note |
+|---|---|---|
+| p9r-galleries-dawn | 13.00 | canyon floor, cliff kit near + mid |
+| p9r-galleries-rim | 11.41 | rim view, most walls mid/far level |
+| p9r-hoodoos-dusk | 13.76 | hoodoos and arches |
+| p9r-needle-noon | 12.97 | inside a slot, ravine haze on |
+| p8-meadow-golden | 15.67 | unchanged reference |
+| p8-village-square | 15.52 | unchanged reference |
+| p9s1-close-noon | 10.45 | open sand |
+
+Cliff kit alone (on − off): +0.34 ms canyon floor, +0.46–0.53 ms rim view (+0.08 shadow cascade 1).
