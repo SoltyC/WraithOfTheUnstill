@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-29T01:04:50.546Z",
+  "renderSize": {
+    "width": 2560,
+    "height": 1440,
+    "internalWidth": 1792,
+    "internalHeight": 1008,
+    "renderScale": 0.7
+  },
+  "combinedGpuMs": {
+    "mean": 0.15649583298538702,
+    "p95": 0.17715199999999975,
+    "max": 0.18739199999999734,
+    "peakParts": {
+      "sandRelaxLoad": 0.15052799999999777,
+      "sandCoarseLoad": 0.02047999999999961,
+      "sandCollisionLoad": 0.016383999999999954
+    }
+  },
+  "iterations": 32,
+  "finePasses": 10,
+  "frames": 480,
+  "mode": "synthetic32",
+  "synthetic": {
+    "distance": 255.62560000610392,
+    "covered": 474,
+    "maxAge": 0.16259999990461438,
+    "nominalSpeed": 32,
+    "rate": 0.125
+  },
+  "seconds": 8.31439999997616,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 480,
+  "writes": 2862,
+  "writesByKind": [
+    707,
+    579,
+    0,
+    0,
+    0,
+    1576,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 399,
+  "collisionPendingMax": 3,
+  "collisionReads": 160,
+  "speed": {
+    "min": 5.2,
+    "max": 25.856681019398575,
+    "mean": 7.172603388872488
+  },
+  "samples": 479,
+  "incomplete": 0,
+  "spikes": [],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.007168000000000063
+    },
+    {
+      "pass": 1,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 2,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 3,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 4,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 5,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 6,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 7,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 8,
+      "ms": 0.017407999999999646
+    },
+    {
+      "pass": 9,
+      "ms": 0.005119999999999791
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.13070430062630561,
+    "p95": 0.1443840000000025,
+    "max": 0.15155199999999702
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Synthetic modes add an actual PLOUGH writer and moving collision readback centre at the recorded nominal speed along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

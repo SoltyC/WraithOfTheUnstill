@@ -1,0 +1,24 @@
+{
+  "scenario": "frozen",
+  "iterations": 32,
+  "date": "2026-10-29T01:04:07.299Z",
+  "ready": true,
+  "maxError": 0,
+  "rms": 0,
+  "beforeMass": 1339.2897281646729,
+  "afterMass": 1339.2897281646729,
+  "massError": 0,
+  "packedMassError": 0,
+  "packedCycles": 100,
+  "relativePackedMassError": 0,
+  "note": "Scratch float output before f16 store. Closed tile; iteration count recorded above. Headless indicative timing.",
+  "timing": {
+    "jobs": 120,
+    "samples": 120,
+    "relaxGpuTotalMs": 28.720128000000116,
+    "maxBatchMs": 1.076223999999999,
+    "errors": 0,
+    "late": [],
+    "adapter": "nvidia / ampere"
+  }
+}

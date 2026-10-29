@@ -1,0 +1,222 @@
+{
+  "date": "2026-10-29T01:02:53.635Z",
+  "lifecycle": {
+    "fixed": true,
+    "runtime": {
+      "rate": 0.125,
+      "capacity": 512,
+      "lifetime": 240,
+      "entry": "http://localhost:4176/assets/index-BVEDr-5X.js"
+    },
+    "seconds": 246.00890000018236,
+    "frames": 14754,
+    "jobs": 14400,
+    "pending": 0,
+    "atTTL": {
+      "jobs": 1794,
+      "pending": 196
+    },
+    "activityErrors": 0
+  },
+  "tiles": [
+    {
+      "requested": [
+        1898,
+        898.7
+      ],
+      "origin": [
+        1896.6666666666667,
+        898
+      ],
+      "disturbed": 16121,
+      "sum": 5961.5904359817505,
+      "maxSlopeDegrees": 34.00303533571172
+    },
+    {
+      "requested": [
+        1900.7,
+        898.7
+      ],
+      "origin": [
+        1899.3333333333333,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 33.12797997544392
+    },
+    {
+      "requested": [
+        1903.4,
+        898.7
+      ],
+      "origin": [
+        1902,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 33.62545796888976
+    },
+    {
+      "requested": [
+        1906.1,
+        898.7
+      ],
+      "origin": [
+        1904.6666666666667,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065681874752,
+      "maxSlopeDegrees": 34.0002462659908
+    },
+    {
+      "requested": [
+        1908.8,
+        898.7
+      ],
+      "origin": [
+        1907.3333333333333,
+        898
+      ],
+      "disturbed": 16129,
+      "sum": 5897.065679550171,
+      "maxSlopeDegrees": 34.000020934945994
+    },
+    {
+      "requested": [
+        1898,
+        901.4
+      ],
+      "origin": [
+        1896.6666666666667,
+        900.6666666666666
+      ],
+      "disturbed": 15909,
+      "sum": 1534.0735369324684,
+      "maxSlopeDegrees": 34.005504758379644
+    },
+    {
+      "requested": [
+        1900.7,
+        901.4
+      ],
+      "origin": [
+        1899.3333333333333,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088493347168,
+      "maxSlopeDegrees": 34.00035893106491
+    },
+    {
+      "requested": [
+        1903.4,
+        901.4
+      ],
+      "origin": [
+        1902,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088495731354,
+      "maxSlopeDegrees": 32.206120862747795
+    },
+    {
+      "requested": [
+        1906.1,
+        901.4
+      ],
+      "origin": [
+        1904.6666666666667,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088515996933,
+      "maxSlopeDegrees": 34.00069692449402
+    },
+    {
+      "requested": [
+        1908.8,
+        901.4
+      ],
+      "origin": [
+        1907.3333333333333,
+        900.6666666666666
+      ],
+      "disturbed": 15875,
+      "sum": 1392.8088495731354,
+      "maxSlopeDegrees": 33.50891616184794
+    },
+    {
+      "requested": [
+        1898,
+        904.1
+      ],
+      "origin": [
+        1896.6666666666667,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 6009.225646436214,
+      "maxSlopeDegrees": 34.00204887131262
+    },
+    {
+      "requested": [
+        1900.7,
+        904.1
+      ],
+      "origin": [
+        1899.3333333333333,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.949572980404,
+      "maxSlopeDegrees": 34.0002462659908
+    },
+    {
+      "requested": [
+        1903.4,
+        904.1
+      ],
+      "origin": [
+        1902,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.949582755566,
+      "maxSlopeDegrees": 34.0002462659908
+    },
+    {
+      "requested": [
+        1906.1,
+        904.1
+      ],
+      "origin": [
+        1904.6666666666667,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.949569880962,
+      "maxSlopeDegrees": 34.0002462659908
+    },
+    {
+      "requested": [
+        1908.8,
+        904.1
+      ],
+      "origin": [
+        1907.3333333333333,
+        903.3333333333334
+      ],
+      "disturbed": 16129,
+      "sum": 5943.949567854404,
+      "maxSlopeDegrees": 34.00013360061783
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "note": "Fixed mode drives normal loop at1/60 and1280x720/0.7, allowing GPU/event-loop work between frames; it is a deterministic60fps settling oracle, not real-time performance. Two actual full-size parallel Ridge writes (14m long,2.95m half-width,1.1m high) overlap, with normal32-step scheduler for measured duration, healing disabled, player held. Fifteen read-only scratch tiles sampled after expiry, all eight neighbour slopes on disturbed sand. Does not prove unsampled whole footprint mass or freeze/wet adjacency."
+}

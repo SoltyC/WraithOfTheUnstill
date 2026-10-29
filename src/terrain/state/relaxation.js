@@ -1,9 +1,10 @@
 // D2 granular reference. Each undirected edge exchanges equal/opposite signed height from
-// one immutable iteration. Eight neighbours × 1/16 keeps the Jacobi step monotone. Tile edges
+// one immutable iteration. Eight neighbours × 1/8 bounds the sum of exchange weights by one, so the
+// total-height Jacobi step is a convex combination of its current neighbourhood. Tile edges
 // are closed: processing overlapping tiles later transports mass across previous boundaries.
 export const DRY_REPOSE = Math.tan(34 * Math.PI / 180);
 export const WET_REPOSE = Math.tan(60 * Math.PI / 180);
-export const RELAX_RATE = 1 / 16;
+export const RELAX_RATE = 1 / 8;
 export const RELAX_TILE = 128;
 export const RELAX_ITERATIONS = 32;
 export const RELAX_LIFETIME = 240;

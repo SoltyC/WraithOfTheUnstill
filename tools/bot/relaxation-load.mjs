@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // Real-time diagnostic: seeded maximum-speed surf, eight Shaped, normal terrain writers.
 import fs from 'node:fs';
-import { RELAX_ITERATIONS } from '../../src/terrain/state/relaxation.js';
+import { RELAX_ITERATIONS, RELAX_RATE } from '../../src/terrain/state/relaxation.js';
 const iterations = Number(process.argv[2] || RELAX_ITERATIONS);
 if (!Number.isInteger(iterations) || iterations < 2 || iterations > 64 || iterations % 2) throw new Error('Use an even iteration count from 2 to 64');
 const mode=process.argv[3]||'live';
 const renderScale=Number(process.env.RENDER_SCALE||1);
 if(!(renderScale>=.5&&renderScale<=1))throw new Error('RENDER_SCALE must be .5..1');
-if(!['live','synthetic26'].includes(mode))throw new Error('Use live or synthetic26');
-const frames=mode==='synthetic26'?480:240;
+if(!['live','synthetic26','synthetic32'].includes(mode))throw new Error('Use live, synthetic26 or synthetic32');
+const syntheticSpeed=mode==='synthetic32'?32:26;
+const label=process.argv[4]||('full-load-'+iterations+(mode==='live'?'':'-'+mode));
+if(!/^[a-z0-9-]+$/.test(label))throw new Error('Use a simple report label');
+const frames=mode.startsWith('synthetic')?480:240;
 const finePasses = 2 + 2 * Math.floor(iterations / 8) + iterations % 8;
 const base = process.env.WRAITH_URL || 'http://127.0.0.1:4176';
 async function ev(js) {
@@ -27,6 +30,7 @@ const result = await ev(`
  for(let i=0;i<600&&!g.game.worldSettled();i++)await frame();
  g.game.killShaped();for(const s of g.shaped.slots)s.state=0;g.navSync();
  const ts=g.terrainState,r=ts.relaxation,timer=w.gpuTimer;
+ if(r.rate!==${RELAX_RATE})throw new Error('Loaded rate differs from source; restart bot');
  r.enabled=false;ts.restore([]);g.stone.mass.clear();
  w.params.v.refillRate=0;w.params.v.dynamicRes=0;w.params.v.renderScale=${renderScale};w.params.version++;
  for(let i=0;i<90;i++)await frame();
@@ -47,19 +51,19 @@ const result = await ev(`
  proto.beginComputePass=function(desc){desc.label=measuring?measureKind+measuredPass++:undefined;return oldPass.call(this,desc);};
  ts.stamp=function(){stampCount++;if(this.bk>=0&&this.bk<writes.length)writes[this.bk]++;return oldStamp.call(this);};
  g.arm.yaw=0;g.arm.pitch=0.3;g.combat.dying=0;g.combat.health=10000;
- const sf=g.controller.surf;sf.active=true;sf.speed=26;sf.heading=0;
+ const sf=g.controller.surf;sf.active=true;sf.speed=${syntheticSpeed};sf.heading=0;
  w.inject('Traverse',true);w.inject('MoveForward',true);
  r.iterations=${iterations};r.enabled=true;const jobs0=r.jobs,reads0=ts.collision.reads,start=g.clock.simTime;
  let syntheticDistance=0,syntheticCovered=0,syntheticAge=0,lastSyntheticX=NaN;
  const synthetic={name:'D2 synthetic max-speed writer',update(){
-   const distance=(g.clock.simTime-start)*26,phase=distance%80;
+   const distance=(g.clock.simTime-start)*${syntheticSpeed},phase=distance%80;
    const x=1900+(phase<40?phase-20:60-phase);
    if(Number.isFinite(lastSyntheticX))syntheticDistance+=Math.abs(x-lastSyntheticX);lastSyntheticX=x;
    ts.followOverride=true;ts.followX=x;ts.followZ=900;
-   ts.bx=x;ts.bz=900;ts.bdx=1;ts.bdz=0;ts.bl=Math.max(0.1,26*g.clock.dt*0.5);ts.bw=0.9;ts.bd=0.13;ts.bc=0.8;ts.bk=1;ts.stamp();
+   ts.bx=x;ts.bz=900;ts.bdx=1;ts.bdz=0;ts.bl=Math.max(0.1,${syntheticSpeed}*g.clock.dt*0.5);ts.bw=0.9;ts.bd=0.13;ts.bc=0.8;ts.bk=1;ts.stamp();
    const v=ts.collision.view;v.qx=x;v.qz=900;if(v.sample()){syntheticCovered++;syntheticAge=Math.max(syntheticAge,g.clock.simTime-v.sampleTime);}
  }};
- if('${mode}'==='synthetic26'){const at=g.loop.systems.findIndex(s=>s.name==='terrainState');g.loop.systems.splice(at,0,synthetic);}
+ if(${mode.startsWith('synthetic')}){const at=g.loop.systems.findIndex(s=>s.name==='terrainState');g.loop.systems.splice(at,0,synthetic);}
 
  try {
    for(let i=0;i<${frames};i++){
@@ -78,13 +82,13 @@ const result = await ev(`
  const samples=sampleMs.filter((_,i)=>samplePasses[i]===${finePasses}).sort((a,b)=>a-b),incomplete=samplePasses.filter(n=>n!==${finePasses}).length;
  const combined=sampleCombined.filter(Number.isFinite).sort((a,b)=>a-b);
  const combinedPeak=sampleCombined.indexOf(combined.at(-1));
- return {renderSize:{width:g.engine.getRenderWidth(),height:g.engine.getRenderHeight(),internalWidth:g.post.post.width,internalHeight:g.post.post.height,renderScale:g.post.post.renderScale},combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:26},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
+ return {renderSize:{width:g.engine.getRenderWidth(),height:g.engine.getRenderHeight(),internalWidth:g.post.post.width,internalHeight:g.post.post.height,renderScale:g.post.post.renderScale},combinedGpuMs:{mean:combined.reduce((a,b)=>a+b,0)/combined.length,p95:combined[Math.floor(combined.length*.95)],max:combined.at(-1),peakParts:sampleParts[combinedPeak]},iterations:${iterations},finePasses:${finePasses},frames:${frames},mode:'${mode}',synthetic:{distance:syntheticDistance,covered:syntheticCovered,maxAge:syntheticAge,nominalSpeed:${syntheticSpeed},rate:r.rate},seconds:g.clock.simTime-start,activeBefore,activeAfter:g.shaped.slots.filter(s=>s.state!==0).length,
    jobs:r.jobs-jobs0,writes:stampCount,writesByKind:Array.from(writes),pendingMax,collisionPendingMax,collisionReads:ts.collision.reads-reads0,
    speed:{min:speedMin,max:speedMax,mean:speedTotal/${frames}},samples:samples.length,incomplete,spikes,maxSampleStages:sampleStages[sampleMs.indexOf(Math.max(...sampleMs.filter(Number.isFinite)))],
    fineGpuMs:{mean:samples.reduce((a,b)=>a+b,0)/samples.length,p95:samples[Math.floor(samples.length*0.95)],max:samples.at(-1)},
    gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late,collisionErrors:ts.collision.errors,retirementErrors:r.activityErrors,
-   note:'Synthetic26 mode adds an actual PLOUGH writer and moving collision readback centre at a nominal 26 m/s along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed.'};
+   note:'Synthetic modes add an actual PLOUGH writer and moving collision readback centre at the recorded nominal speed along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed.'};
 `);
-fs.writeFileSync('docs/phase-9/relaxation/full-load-'+iterations+(mode==='live'?'':'-'+mode)+'.json', JSON.stringify({ date: new Date().toISOString(), ...result }, null, 2) + '\n');
+fs.writeFileSync('docs/phase-9/relaxation/'+label+'.json', JSON.stringify({ date: new Date().toISOString(), ...result }, null, 2) + '\n');
 console.log(JSON.stringify(result, null, 2));
-if (!Number.isFinite(result.seconds) || result.seconds <= 1 || result.activeBefore !== 8 || result.jobs < 200 || result.samples < 200 || result.incomplete || result.writes === 0 || result.gpuErrors || result.late.length || result.collisionErrors || result.retirementErrors || result.fineGpuMs.max >= 0.4 || result.combinedGpuMs.max >= 0.4 || (mode==='synthetic26' && (result.synthetic.covered<frames*.95 || !Number.isFinite(result.synthetic.distance/result.seconds) || result.synthetic.distance/result.seconds<24 || result.synthetic.maxAge>.2))) process.exitCode = 1;
+if (!Number.isFinite(result.seconds) || result.seconds <= 1 || result.activeBefore !== 8 || result.jobs < 200 || result.samples < 200 || result.incomplete || result.writes === 0 || result.gpuErrors || result.late.length || result.collisionErrors || result.retirementErrors || result.fineGpuMs.max >= 0.4 || result.combinedGpuMs.max >= 0.4 || (mode.startsWith('synthetic') && (result.synthetic.covered<frames*.95 || !Number.isFinite(result.synthetic.distance/result.seconds) || result.synthetic.distance/result.seconds<syntheticSpeed-2 || result.synthetic.maxAge>.2))) process.exitCode = 1;

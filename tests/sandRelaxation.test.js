@@ -11,6 +11,29 @@ describe('conservative granular relaxation', () => {
     expect(Math.min(...g.height)).toBeGreaterThanOrEqual(lo);
     expect(Math.max(...g.height)).toBeLessThanOrEqual(hi);
   });
+  it('keeps total heights within initial local extrema with high-frequency relief and barriers', () => {
+    for (const pattern of [0,1,2]) {
+      const g=createRelaxationGrid(23,.1),held=new Float64Array(g.height.length);
+      let lo=Infinity,hi=-Infinity;
+      for(let z=0;z<g.n;z++)for(let x=0;x<g.n;x++){
+        const i=z*g.n+x;
+        g.base[i]=Math.cos(x/4)*1.2+z*.03;
+        g.height[i]=pattern===0?((x+z)%2?3:-3):pattern===1?(i%19===0?5:0):Math.sin(i*137.3)*2;
+        g.wet[i]=(i%7)/6;g.frozen[i]=i%17===0?1:0;if(i%19===0)g.material[i]=0;
+        held[i]=g.height[i];lo=Math.min(lo,g.base[i]+g.height[i]);hi=Math.max(hi,g.base[i]+g.height[i]);
+      }
+      const mass=sum(g.height);
+      for(let chunk=0;chunk<10;chunk++){
+        g.run(20);expect(sum(g.height)).toBeCloseTo(mass,10);
+        for(let i=0;i<g.height.length;i++){
+          expect(Number.isFinite(g.height[i])).toBe(true);
+          expect(g.base[i]+g.height[i]).toBeGreaterThanOrEqual(lo-1e-12);
+          expect(g.base[i]+g.height[i]).toBeLessThanOrEqual(hi+1e-12);
+          if(g.frozen[i]||g.material[i]===0)expect(g.height[i]).toBe(held[i]);
+        }
+      }
+    }
+  });
   it('settles an isolated pile to dry repose, deterministically', () => {
     const a = createRelaxationGrid(17, 0.1), b = createRelaxationGrid(17, 0.1);
     a.height[144] = b.height[144] = 3;

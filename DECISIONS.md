@@ -526,3 +526,6 @@ Beyond the spec in `docs/gameplay-design.md` §11 (the numbers and tables are in
 
 
 2026-10-29 — D2 large-writer experiment: directional brush rectangles use conservative capsule-component bounds (same1.9radius cutoff), with fixed typed-array I/O. Disabled scheduler trials increase capacity64→512/lifetime30→240s to avoid early eviction/expiry;32steps unchanged. Verified overlapping-Ridge fixed60 check still marginally fails34.1degrees at34.10289239, so no D2 completion/enabling. Preserve failed trials/runtime mismatch and keep robust compute/allocation/graphics gates open. See crest-review.md.
+
+
+2026-10-29 — D2 prototype: use the monotone eight-neighbour upper exchange rate1/8 instead of1/16, shared CPU/GPU, no added steps/jobs. New bounds/barrier/mass regressions and819tests/build pass. The unchanged large overlapping-Ridge fixture now34.0055°<34.1°;32m/s synthetic collision age/coverage pass. Fresh-session compute still spikes0.492544ms>0.4ms, so D2 remains disabled/unintegrated. Preserve all failed and passed evidence; no worst-case gate relaxation.
