@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "result": {
+    "errors": 14,
+    "messages": [
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n",
+      "Blending is enabled but color format (TextureFormat::R32Float) is not blendable.\n - While validating targets[0] framebuffer output.\n - While validating fragment state.\n - While calling [Device \"BabylonWebGPUDevice0\"].CreateRenderPipeline([RenderPipelineDescriptor \"\"RenderPipeline_r32float_depth32float_samples1_textureState0\"\"]).\n"
+    ],
+    "late": [],
+    "warmed": true,
+    "draws": 1,
+    "builds": 3,
+    "targetFormat": "rgba16float",
+    "sourceFormat": "rgba16float",
+    "targetType": 2,
+    "sourceType": 2,
+    "engineFormat": "bgra8unorm",
+    "shared": true,
+    "layer": 0,
+    "enabled": true,
+    "materials": [
+      "sandStreaks"
+    ],
+    "targets": [
+      {
+        "name": "shadowCascade0",
+        "contains": false
+      },
+      {
+        "name": "shadowCascade1",
+        "contains": false
+      },
+      {
+        "name": "shadowCascade2",
+        "contains": false
+      },
+      {
+        "name": "shadowCascade3",
+        "contains": false
+      }
+    ]
+  },
+  "ms": 0
+}

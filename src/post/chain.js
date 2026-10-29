@@ -37,6 +37,8 @@ export function createPostChain(scene, camera, atmo, shadows, surface, windMap) 
   const taa = createTaa(post, scene, () => comp.out, heat);
   post.addPass(() => fog.run());
   post.addPass(() => comp.run());
+  let streaks=null;
+  post.addPass(()=>{if(streaks)streaks.run();});
   post.addPass(() => meter.cs.dispatch(1, 1, 1));
   const bloom = createBloom(post, scene, () => taa.out);
   post.addPass(() => taa.run());
@@ -63,6 +65,7 @@ export function createPostChain(scene, camera, atmo, shadows, surface, windMap) 
   registerToggle({ key: 'postGrain', label: 'film grain', group: 'Post', on: post.grain > 0, onChange: (on) => { post.grain = on ? 0.035 : 0; } });
   return {
     post, taa, comp, bloom, fog, heat,
+    setStreaks(s){streaks=s;},
     name: 'post',
     update() { post.update(); },
   };

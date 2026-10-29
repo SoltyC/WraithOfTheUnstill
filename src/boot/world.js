@@ -125,6 +125,8 @@ export async function createWorld(g) {
   rocks.freeze();
   // The wind field (Phase 8 M1): one function of place and time shared by the CPU and the GPU.
   const wind = (await import('../world/wind.js')).createWind(sandstorm);
+  const sandStreaks=g.sandStreaks=(await import('../render/sandStreaks.js')).createSandStreaks(scene,content.clipmap,atmosphere,wind,sandstorm,snowfall,post);
+  bindShadows(sandStreaks.material,shadows);post.setStreaks(sandStreaks);
   // Grass (Phase 8): GPU-built blades over the meadow, receiving the shadow cascades.
   const grass = (await import('../render/grass.js')).createGrass(scene, content.clipmap, atmosphere, wind);
   for (const m of grass.materials) bindShadows(m, shadows);

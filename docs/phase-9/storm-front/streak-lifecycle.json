@@ -1,0 +1,273 @@
+{
+  "date": "2026-10-29T08:59:13.886Z",
+  "reports": [
+    {
+      "repeat": 0,
+      "snapshot": false,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 5,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 0,
+      "snapshot": false,
+      "on": true,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "sceneFrames": 90,
+      "draws": 90,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 7,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2201974207,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 0,
+      "snapshot": false,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 9,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 0,
+      "snapshot": true,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 9,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 0,
+      "snapshot": true,
+      "on": true,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "sceneFrames": 90,
+      "draws": 90,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 11,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2201974207,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 0,
+      "snapshot": true,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 13,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 1,
+      "snapshot": false,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 13,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 1,
+      "snapshot": false,
+      "on": true,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "sceneFrames": 90,
+      "draws": 90,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 15,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2201974207,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 1,
+      "snapshot": false,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 17,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 1,
+      "snapshot": true,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 17,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 1,
+      "snapshot": true,
+      "on": true,
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        1792,
+        1008
+      ],
+      "sceneFrames": 90,
+      "draws": 90,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 19,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2201974207,
+      "gpuErrors": 0,
+      "late": 0
+    },
+    {
+      "repeat": 1,
+      "snapshot": true,
+      "on": false,
+      "output": [
+        1280,
+        720
+      ],
+      "internal": [
+        1280,
+        720
+      ],
+      "sceneFrames": 90,
+      "draws": 0,
+      "pausedTravelUnchanged": true,
+      "targetBuilds": 21,
+      "colorRefs": 2,
+      "depthRefs": 2,
+      "textureBytes": 2085935615,
+      "gpuErrors": 0,
+      "late": 0
+    }
+  ],
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Two repeated snapshot-off/on resize and grain-off/on cycles. Actual rendered frame advances, inactive draw skip, fixed paused travel, shared color/depth reference counts and same-size GPU texture bytes. Default storm capability remains false. No full allocation/distant-streaming/sustained D12 acceptance."
+}

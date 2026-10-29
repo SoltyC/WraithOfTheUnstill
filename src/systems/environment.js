@@ -155,6 +155,7 @@ export async function addEnvironmentSystems(g) {
     wf.gustiness = 0.35 + 0.65 * weather.gust;
     wf.update();
   } });
+  loop.add({name:'sandStreaks',update:()=>{g.sandStreaks.dt=clock.dt;g.sandStreaks.wet=weather.wet;g.sandStreaks.update();}});
   // Upload post/SSR inputs after the shared wind and weather have reached this frame.
   // Otherwise water materials see current wind while SSR reflects the previous frame.
   loop.add(post);

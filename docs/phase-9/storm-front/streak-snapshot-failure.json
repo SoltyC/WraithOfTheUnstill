@@ -1,0 +1,52 @@
+{
+  "ok": true,
+  "result": {
+    "errors": 10526,
+    "messages": [
+      "DepthReadOnly (0) of renderBundles[0] ([RenderBundle]) is not compatible with DepthReadOnly (1) of [RenderPassEncoder \"[9818|9] - sandStreaks - RenderPass\"].\n - While encoding [RenderPassEncoder \"[9818|9] - sandStreaks - RenderPass\"].ExecuteBundles(1, ...).\n - While finishing [CommandEncoder \"RenderEncoder\"].\n",
+      "[Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[CommandBuffer from CommandEncoder \"UploadEncoder\"], [Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"]])\n",
+      "DepthReadOnly (0) of renderBundles[0] ([RenderBundle]) is not compatible with DepthReadOnly (1) of [RenderPassEncoder \"[9819|9] - sandStreaks - RenderPass\"].\n - While encoding [RenderPassEncoder \"[9819|9] - sandStreaks - RenderPass\"].ExecuteBundles(1, ...).\n - While finishing [CommandEncoder \"RenderEncoder\"].\n",
+      "[Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[CommandBuffer from CommandEncoder \"UploadEncoder\"], [Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"]])\n",
+      "DepthReadOnly (0) of renderBundles[0] ([RenderBundle]) is not compatible with DepthReadOnly (1) of [RenderPassEncoder \"[9820|9] - sandStreaks - RenderPass\"].\n - While encoding [RenderPassEncoder \"[9820|9] - sandStreaks - RenderPass\"].ExecuteBundles(1, ...).\n - While finishing [CommandEncoder \"RenderEncoder\"].\n",
+      "[Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[CommandBuffer from CommandEncoder \"UploadEncoder\"], [Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"]])\n",
+      "DepthReadOnly (0) of renderBundles[0] ([RenderBundle]) is not compatible with DepthReadOnly (1) of [RenderPassEncoder \"[9821|9] - sandStreaks - RenderPass\"].\n - While encoding [RenderPassEncoder \"[9821|9] - sandStreaks - RenderPass\"].ExecuteBundles(1, ...).\n - While finishing [CommandEncoder \"RenderEncoder\"].\n",
+      "[Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[CommandBuffer from CommandEncoder \"UploadEncoder\"], [Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"]])\n",
+      "DepthReadOnly (0) of renderBundles[0] ([RenderBundle]) is not compatible with DepthReadOnly (1) of [RenderPassEncoder \"[9822|9] - sandStreaks - RenderPass\"].\n - While encoding [RenderPassEncoder \"[9822|9] - sandStreaks - RenderPass\"].ExecuteBundles(1, ...).\n - While finishing [CommandEncoder \"RenderEncoder\"].\n",
+      "[Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"] is invalid due to a previous error.\n - While calling [Queue].Submit([[CommandBuffer from CommandEncoder \"UploadEncoder\"], [Invalid CommandBuffer from CommandEncoder \"RenderEncoder\"]])\n"
+    ],
+    "late": [],
+    "warmed": true,
+    "draws": 6365,
+    "builds": 11,
+    "targetFormat": "rgba16float",
+    "sourceFormat": "rgba16float",
+    "targetType": 2,
+    "sourceType": 2,
+    "engineFormat": "bgra8unorm",
+    "shared": true,
+    "layer": 0,
+    "enabled": true,
+    "materials": [
+      "sandStreaks"
+    ],
+    "targets": [
+      {
+        "name": "shadowCascade0",
+        "contains": false
+      },
+      {
+        "name": "shadowCascade1",
+        "contains": false
+      },
+      {
+        "name": "shadowCascade2",
+        "contains": false
+      },
+      {
+        "name": "shadowCascade3",
+        "contains": false
+      }
+    ]
+  },
+  "ms": 0
+}

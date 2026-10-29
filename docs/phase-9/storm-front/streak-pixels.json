@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-29T08:59:42.284Z",
+  "size": [
+    2560,
+    1440
+  ],
+  "sharedGeometry": true,
+  "targetFormat": "rgba16float",
+  "depthReadOnly": false,
+  "materialDepthWriteDisabled": true,
+  "changed": {
+    "pixels": 8530,
+    "changedBytes": 42131
+  },
+  "repeat": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "disabled": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "depth": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "never": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "depthNonzero": 2770326,
+  "changedOverDepth": 4783,
+  "unoccluded": {
+    "pixels": 8546,
+    "changedBytes": 42241
+  },
+  "occlusion": {
+    "pixels": 16,
+    "changedBytes": 110
+  },
+  "nonFinite": 0,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Stopped/drained actual1440p composed HDR target. Identical input compose baseline/repeat; actual shared precipitation geometry draw; zero storm gate; scene depth before/after. Controlled depth-ALWAYS/NEVER diagnostic pipelines unarmed with compatibility mode only for depth controls, not cold gameplay pipeline evidence. No moving-camera/temporal/actor telegraph/human art/performance/allocation acceptance."
+}

@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-29T08:37:28.413Z",
+  "size": [
+    2560,
+    1440
+  ],
+  "sharedGeometry": true,
+  "targetFormat": "rgba16float",
+  "depthReadOnly": true,
+  "changed": {
+    "pixels": 11694,
+    "changedBytes": 57516
+  },
+  "repeat": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "disabled": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "depth": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "never": {
+    "pixels": 11694,
+    "changedBytes": 57516
+  },
+  "depthNonzero": 2770839,
+  "changedOverDepth": 7213,
+  "unoccluded": {
+    "pixels": 11694,
+    "changedBytes": 57516
+  },
+  "occlusion": {
+    "pixels": 0,
+    "changedBytes": 0
+  },
+  "nonFinite": 0,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Rejected diagnostic: Babylon lazy render-pass startup overrode material ALWAYS/NEVER compare with reverse-Z GEQUAL. The identical controls do not establish occlusion. Retained to explain the corrected load-only pass startup."
+}
