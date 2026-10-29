@@ -106,23 +106,26 @@ function obelisk(k, gnomon = false) {
 function aqueductSpan(k, len, ch, fallen) {
   return (b, facing) => {
     const P = rot(facing), pw = 1.4, half = len / 2;
+    // Piers up to the arches' spring line, the arch turning from there, the spandrel band over the
+    // crowns carrying the trough at `ch`.
+    const r = half - pw, spring = ch - 2.2 - r;
     for (const s of [-1, 1]) {
       const [x, z] = P(0, s * half);
-      b.box(x, z, -2, ch - 1.6, 1.25, pw, facing, MAT.STONE, 300 + k * 3 + s, { ruin: fallen && s > 0 ? 0.5 : 0, drift: false });
+      b.box(x, z, -2, fallen && s > 0 ? spring * 0.6 : spring, 1.25, pw, facing, MAT.STONE, 300 + k * 3 + s, { ruin: fallen && s > 0 ? 0.5 : 0, drift: false });
     }
     if (fallen) {
       for (let q = 0; q < 5; q++) { const [x, z] = P((hh(k, q) - 0.5) * 6, (hh(k, q + 9) - 0.5) * len); b.box(x, z, -0.5, 0.4 + 0.5 * hh(k, q + 3), 0.8, 0.6, facing + hh(k, q + 5) * 3, MAT.STONE, 320 + k * 7 + q, { ...NS, tilt: (hh(k, q + 7) - 0.5) * 0.5 }); }
       return;
     }
-    // The arch: voussoirs along a semicircle between the piers' inner faces.
-    const r = half - pw, yc = ch - 1.6 - r * 0.15;
+    // Voussoirs round the semicircle, from pier to pier.
     for (let q = 0; q < 11; q++) {
       const a0 = Math.PI * q / 11, a1 = Math.PI * (q + 1) / 11, am = (a0 + a1) / 2;
       const [x, z] = P(0, -Math.cos(am) * (r + 0.45));
-      b.box(x, z, yc + Math.sin(am) * r, yc + Math.sin(am) * r + 0.9, 1.15, 0.5 * (r * (a1 - a0)) + 0.05, facing, MAT.STONE, 340 + k * 11 + q, { ...NS, tilt: -(am - Math.PI / 2), solid: false });
+      b.box(x, z, spring + Math.sin(am) * (r + 0.45) - 0.45, spring + Math.sin(am) * (r + 0.45) + 0.45, 1.15, 0.5 * ((r + 0.45) * (a1 - a0)) + 0.05, facing, MAT.STONE, 340 + k * 11 + q, { ...NS, tilt: -(am - Math.PI / 2), solid: false });
     }
-    // Spandrel walls up to the trough, the trough on top.
-    b.box(0, 0, ch - 1.6, ch, 1.25, half + pw, facing, MAT.STONE, 360 + k, { course: 0.55, drift: false, solid: false });
+    // The haunches filled up to the crown beside the arch, the spandrel band and trough on top.
+    for (const s of [-1, 1]) { const [x, z] = P(0, s * (half - 0.2)); b.box(x, z, spring, spring + r + 0.9, 1.2, pw + 0.9, facing, MAT.STONE, 352 + k * 2 + s, { ...NS, solid: false }); }
+    b.box(0, 0, spring + r + 0.9, ch, 1.25, half + pw, facing, MAT.STONE, 360 + k, { course: 0.55, drift: false, solid: false });
     for (const s of [-1, 1]) { const [x, z] = P(s * 1.05, 0); b.box(x, z, ch, ch + 0.7, 0.2, half + pw, facing, MAT.STONE, 370 + k * 2 + s, { ...NS, solid: false }); }
   };
 }
@@ -170,7 +173,8 @@ export function ruinSites(table, height) {
   const o = [2338, 905];   // on the open erg east of the Stride
   sites.push({ id: 'ruin-obelisk-gnomon', at: o, facing: 0.3, build: obelisk(0, true), footprint: 2.5, seatAt: 'center' });
   for (let k = 1; k <= 8; k++) { const a = (k / 8) * Math.PI * 2; sites.push({ id: 'ruin-obelisk-' + k, at: [o[0] + Math.cos(a) * 16, o[1] + Math.sin(a) * 16], facing: a, build: obelisk(k), footprint: 2.2, seatAt: 'center', sink: 0.6 * hh(k, 34) }); }
-  sites.push({ id: 'ruin-gate-sun', at: at('ruin-gate-sun', [1439, 1039]), facing: 1.57, build: sunGate, footprint: 5, seatAt: 'center' });
+  // The Sun Gate on a ledge of the west wall above the canyon floor (the seat lies on the floor's edge), facing the sunrise.
+  sites.push({ id: 'ruin-gate-sun', at: [1365, 1039], facing: 1.57, build: sunGate, footprint: 4, seatAt: 'center' });
   sites.push({ id: 'ruin-colossus-head', at: [2318, 1030], facing: 3.6, build: colossusHead, footprint: 6, seatAt: 'center', sink: 0.5 });
   // The aqueduct along the wadi: spans of 13 m, the channel level easing down east above the bed.
   if (height) {
@@ -182,7 +186,7 @@ export function ruinSites(table, height) {
       const cx = A[0] + ux * (k + 0.5) * 13, cz = A[1] + uz * (k + 0.5) * 13;
       const g = Math.min(height(cx - ux * 6.5, cz - uz * 6.5), height(cx + ux * 6.5, cz + uz * 6.5));
       if (!Number.isFinite(g)) continue;
-      const channel = top + 2 - 0.012 * k * 13;                  // a gentle fall east
+      const channel = top + 9 - 0.012 * k * 13;                  // high over the wadi and its dunes, a gentle fall east
       if (channel - g < 4) continue;                             // where the ground rises to it, nothing shows
       const fallen = hh(k, 77) < 0.22;
       sites.push({ id: 'ruin-aqueduct-' + k, at: [cx, cz], facing, build: aqueductSpan(k, 13, channel - g, fallen), footprint: 8, seatY: g });
