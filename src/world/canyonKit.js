@@ -209,6 +209,107 @@ function kindAt(spines, x, z) {
   return kind;
 }
 
+
+/**
+ * A closed tube: rings around `centres` (each [x, y, z]) in planes spanned by unit vectors
+ * U[i], W[i], radius r(i, angle) — appended as a grid that wraps round (normals from the grid).
+ * cliff per ring: [iso, top, cap].
+ */
+function tube(out, centres, U, W, radius, segs, cliffOf, uScale) {
+  const rows = centres.length, base = out.pos.length / 3, cols = segs + 1;
+  for (let j = 0; j < cols; j++) {
+    const a = (j / segs) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+    for (let i = 0; i < rows; i++) {
+      const c = centres[i], r = radius(i, a), u = U[i], w = W[i], cl = cliffOf(i);
+      out.pos.push(c[0] + (u[0] * ca + w[0] * sa) * r, c[1] + (u[1] * ca + w[1] * sa) * r, c[2] + (u[2] * ca + w[2] * sa) * r);
+      out.uv.push(a * uScale, c[1] + (u[1] * ca + w[1] * sa) * r);
+      out.cliff.push(cl[0], cl[1], WALL.canyon, cl[2]);
+      out.nrm.push(0, 0, 0);
+    }
+  }
+  for (let j = 0; j < cols - 1; j++) for (let i = 0; i < rows - 1; i++) {
+    const a = base + j * rows + i, b = a + rows, c = b + 1, d = a + 1;
+    out.idx.push(a, c, b, a, d, c);
+  }
+  // Normals: across the rings (wrapping) × along the axis, facing away from the axis.
+  const P = out.pos;
+  for (let j = 0; j < cols; j++) for (let i = 0; i < rows; i++) {
+    const v = base + j * rows + i;
+    const jA = base + ((j - 1 + segs) % segs) * rows + i, jB = base + ((j + 1) % segs) * rows + i;
+    const iA = base + j * rows + Math.max(0, i - 1), iB = base + j * rows + Math.min(rows - 1, i + 1);
+    const tx = P[jB * 3] - P[jA * 3], ty = P[jB * 3 + 1] - P[jA * 3 + 1], tz = P[jB * 3 + 2] - P[jA * 3 + 2];
+    const ux = P[iB * 3] - P[iA * 3], uy = P[iB * 3 + 1] - P[iA * 3 + 1], uz = P[iB * 3 + 2] - P[iA * 3 + 2];
+    let nx = uy * tz - uz * ty, ny = uz * tx - ux * tz, nz = ux * ty - uy * tx;
+    const c = centres[i], ox = P[v * 3] - c[0], oy = P[v * 3 + 1] - c[1], oz = P[v * 3 + 2] - c[2];
+    if (nx * ox + ny * oy + nz * oz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+    const l = Math.hypot(nx, ny, nz);
+    if (l < 1e-6) { const lo = Math.hypot(ox, oy, oz) || 1; nx = ox / lo; ny = oy / lo; nz = oz / lo; } else { nx /= l; ny /= l; nz /= l; }
+    out.nrm[v * 3] = nx; out.nrm[v * 3 + 1] = ny; out.nrm[v * 3 + 2] = nz;
+  }
+}
+
+/** Collision: a square of wall segments round (x, z) at radius r, from y0 to y1. */
+function ring(out, x, z, r, y0, y1) {
+  if (!out.col) return;
+  for (let k = 0; k <= 8; k++) {
+    const a = (k / 8) * Math.PI * 2, nx = Math.cos(a), nz = Math.sin(a);
+    out.col.push(x + nx * r, z + nz * r, nx, nz, y0, y1, k === 0 ? 1 : 0);
+  }
+}
+
+/** A hoodoo: [x, z, base, height, radius, seed]. Beds by world height (as the walls), a neck under a
+ *  wider caprock, a talus flare at the foot; the rings wobble by angle so no two are round. */
+function buildHoodoo(out, h, lod) {
+  const [x, z, g, H, r0, seed] = h;
+  const segs = lod.lip >= 3 ? 16 : lod.lip >= 1 ? 9 : 6;
+  const dy = Math.max(0.3, lod.dy * 0.7);
+  // A third are bare spires (the cap long fallen); the rest wear a thick, irregular caprock.
+  const spire = seed < 0.33, top = g + H, capT = spire ? 0.01 : 0.9 + 0.9 * seed;
+  const ys = [];
+  for (let y = g - 2; y < top - capT - 1.4; y += dy) ys.push(y);
+  for (let k = 0; k <= 3; k++) ys.push(top - capT - 1.4 + k * 0.45);
+  ys.push(top - capT + 0.05, top - 0.25, top, top + 0.02);
+  const C = ys.map((y) => [x, y, z]), U = ys.map(() => [1, 0, 0]), Wv = ys.map(() => [0, 0, 1]);
+  const radius = (i, a) => {
+    const y = ys[i], t = (y - g) / H;
+    const wob = 1 + 0.13 * n1(a * 1.6 + seed * 9, SEED + 11) + 0.07 * n1(a * 4.1 + y * 0.3 + seed * 3, SEED + 12);
+    let r = r0 * (1.0 - (spire ? 0.7 : 0.25) * t) * (1 + 0.2 * bandOut(y));
+    r *= 1 + 0.45 * Math.max(0, 1 - (y - g) / 1.8) ** 2;                   // talus at the foot
+    const neck = top - capT - 0.5;
+    if (!spire && y > neck - 1.5 && y < top - capT) r *= 1 - 0.3 * Math.min(1, (y - (neck - 1.5)) / 1.5);
+    if (!spire && y >= top - capT) r = r0 * (1.05 + 0.15 * seed) * (y >= top ? (y > top + 0.01 ? 0.05 : 0.8) : 1) * (1 + 0.25 * n1(a * 1.3 + seed * 17, SEED + 14));
+    if (spire && y >= top - 0.3) r *= y > top + 0.01 ? 0.05 : 0.5;
+    return Math.max(0.05, r * wob);
+  };
+  tube(out, C, U, Wv, radius, segs, (i) => [g + 1.5, top, ys[i] >= top - capT ? 1 : 0], r0);
+  ring(out, x, z, r0 * 1.15, g - 1, top);
+}
+
+/** A natural arch: [x, z, base, span, height, yaw, seed] — a fin swept along an arc, legs swelling at the ground. */
+function buildArch(out, a, lod) {
+  const [x, z, g, span, H, yaw, seed] = a;
+  const segs = lod.lip >= 3 ? 12 : lod.lip >= 1 ? 8 : 5, n = lod.lip >= 3 ? 34 : lod.lip >= 1 ? 16 : 8;
+  const dx = Math.cos(yaw), dz = Math.sin(yaw);
+  const C = [], U = [], Wv = [], rad = [];
+  for (let i = 0; i <= n; i++) {
+    const t = -0.08 + 1.16 * i / n, th = Math.PI * Math.min(1, Math.max(0, t));
+    const along = (t - 0.5) * span, up = Math.sin(th) * H;
+    C.push([x + dx * along, g - 1.5 + up, z + dz * along]);
+    // Frame: the path's tangent (cos th along, sin… up); U = across (horizontal), W = tangent × U.
+    const tx = Math.cos(th) * dx, ty = -0.0 + Math.cos(th) * 0 + (Math.PI * H / span) * Math.cos(th) * 0, tz = Math.cos(th) * dz;
+    const T = [dx * span, Math.PI * H * Math.cos(th), dz * span]; const tl = Math.hypot(...T); T[0] /= tl; T[1] /= tl; T[2] /= tl;
+    const Ux = [-dz, 0, dx];
+    U.push(Ux); Wv.push([T[1] * Ux[2] - T[2] * Ux[1], T[2] * Ux[0] - T[0] * Ux[2], T[0] * Ux[1] - T[1] * Ux[0]]);
+    const leg = Math.max(0, 1 - Math.sin(th) * 1.4);
+    rad.push(2.1 + 0.6 * seed + 2.4 * leg * leg);
+    void tx; void ty; void tz;
+  }
+  // A fin: thin across (U), deep in the arch's plane (W), the span's top flattened.
+  const radius = (i, ang) => rad[i] * (Math.abs(Math.cos(ang)) * 0.55 + Math.abs(Math.sin(ang)) * 1.05 + 0.1) * (1 + 0.15 * n1(ang * 2 + i * 0.4 + seed * 7, SEED + 13));
+  tube(out, C, U, Wv, radius, segs, () => [g + 1.5, g + H + 2, 0], 2);
+  for (const t of [0.04, 0.96]) ring(out, x + dx * (t - 0.5) * span, z + dz * (t - 0.5) * span, 2.6, g - 1, g + H * 0.6);
+}
+
 /**
  * Chunks of the whole kit: walls split by the spatial cell of their points. A chunk builds a level
  * of detail on demand (`build(l)`: the near one is heavy and only wanted close by); its bounds come
@@ -234,18 +335,26 @@ export function buildCanyonKit(data, cell = CANYON_CELL) {
     }
     push(key, start, Infinity);
   });
+  const solo = new Map(); // cell → { hoodoos, arches }
+  const soloOf = (x, z) => { const k = Math.floor(x / cell) + '_' + Math.floor(z / cell); if (!solo.has(k)) solo.set(k, { hoodoos: [], arches: [] }); if (!groups.has(k)) groups.set(k, []); return solo.get(k); };
+  for (const h of data.hoodoos || []) soloOf(h[0], h[1]).hoodoos.push(h);
+  for (const ar of data.arches || []) soloOf(ar[0], ar[1]).arches.push(ar);
   const keys = [...groups.keys()].sort();
   return keys.map((key) => {
-    const pieces = groups.get(key);
+    const pieces = groups.get(key), extra = solo.get(key) || { hoodoos: [], arches: [] };
     const build = (l) => {
       const out = { pos: [], nrm: [], uv: [], cliff: [], idx: [] };
       for (const p of pieces) buildWall(out, p.w, CANYON_LODS[l], p.kind, p.seed, p.s0 === 0 ? 0 : p.s0 - 1e-6, p.s1);
+      for (const h of extra.hoodoos) buildHoodoo(out, h, CANYON_LODS[l]);
+      for (const ar of extra.arches) buildArch(out, ar, CANYON_LODS[l]);
       return { positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv), cliff: new Float32Array(out.cliff), indices: new Uint32Array(out.idx) };
     };
     const far = build(CANYON_LODS.length - 1);
     // Collision lines (one point per 1.5 m column: x, z, out-normal, foot, top, 1 at a wall's start).
     const colOut = { pos: [], nrm: [], uv: [], cliff: [], idx: [], col: [] };
     for (const p of pieces) buildWall(colOut, p.w, COLLIDE_LOD, p.kind, p.seed, p.s0 === 0 ? 0 : p.s0 - 1e-6, p.s1);
+    for (const h of extra.hoodoos) ring(colOut, h[0], h[1], h[4] * 1.15, h[2] - 1, h[2] + h[3]);
+    for (const ar of extra.arches) for (const t of [0.04, 0.96]) ring(colOut, ar[0] + Math.cos(ar[5]) * (t - 0.5) * ar[3], ar[1] + Math.sin(ar[5]) * (t - 0.5) * ar[3], 2.6, ar[2] - 1, ar[2] + ar[4] * 0.6);
     const collision = new Float32Array(colOut.col);
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     const P = far.positions;

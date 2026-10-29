@@ -152,13 +152,36 @@ export function ravineWalls(h2, mask, n2, c2, half, enc, feats, roadDist = null)
     const runs = measure(resample(raw), (x, z) => floorAt(x, z) + ISO_UP, hAt);
     if (runs) for (const pts of runs) walls.push({ L: -1, iso: r2(pts[0][6]), pts });
   }
+  // Hoodoos and arches (D7b): on the Galleries' floor at the south end (z < 260) and in the Falls
+  // gallery, clear of the walls, on flat ground, at least 11 m apart. [x, z, base, height, radius, seed]
+  // and arches [x, z, base, span, height, yaw, seed].
+  const hoodoos = [], arches = [];
+  {
+    let sd = 0x5eed;
+    const rnd = () => { sd = (Math.imul(sd, 1664525) + 1013904223) >>> 0; return sd / 4294967296; };
+    for (const f of feats) {
+      if (f.id !== 'red-galleries' && f.id !== 'gallery-falls') continue;
+      for (let k = 0; k < f.c.n; k += 1) {
+        if (f.c.z[k] > 260) continue;
+        for (let tries = 0; tries < 2; tries++) {
+          const side = rnd() * 2 - 1, x = f.c.x[k] + f.c.nx[k] * side * (f.W[k] - 9), z = f.c.z[k] + f.c.nz[k] * side * (f.W[k] - 9);
+          if (f.W[k] < 14) continue;
+          const g = hAt(x, z), flat = Math.abs(hAt(x + 3, z) - g) + Math.abs(hAt(x, z + 3) - g);
+          if (flat > 0.8 || Math.abs(g - f.F[k]) > 2.5) continue;
+          if (hoodoos.some((h) => Math.hypot(h[0] - x, h[1] - z) < 11) || arches.some((a) => Math.hypot(a[0] - x, a[1] - z) < 20)) continue;
+          if (rnd() < 0.08 && arches.length < 3) arches.push([r2(x), r2(z), r2(g), r2(9 + rnd() * 6), r2(8 + rnd() * 5), r2(Math.atan2(f.c.nz[k], f.c.nx[k]) + (rnd() - 0.5) * 0.6), r2(rnd())]);
+          else hoodoos.push([r2(x), r2(z), r2(g), r2(6 + rnd() * rnd() * 14), r2(1.1 + rnd() * 1.4), r2(rnd())]);
+        }
+      }
+    }
+  }
   // Spines for the slot kit and the map: every 4th point (8 m), with half-width and floor height.
   const spines = feats.filter((f) => f.F).map((f) => {
     const pts = [];
     for (let k = 0; k < f.c.n; k += 4) pts.push([r2(f.c.x[k]), r2(f.c.z[k]), r2(f.W[k]), r2(f.F[k])]);
     return { id: f.id, kind: f.kind, pts };
   });
-  return { iso: ISO_UP, strata: STRATA, walls, spines };
+  return { iso: ISO_UP, strata: STRATA, walls, spines, hoodoos, arches };
 }
 
 /** Polyline → points every STEP m along it, then smoothed (ends pinned). */
