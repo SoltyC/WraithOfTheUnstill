@@ -16,6 +16,7 @@ export async function addEnvironmentSystems(g) {
   (await import('./storm.js')).addStormSystems(g);
   loop.add({name:'sandstormFront',update:()=>{
     const front=g.sandstorm;front.dt=clock.dt;front.update();
+    g.stormExposure.time=clock.simTime;g.stormExposure.record();
     g.wind.stormWeight=g.sandDust.duneWeight;post.fog.stormWindWeight=g.wind.stormWeight;
     front.qx=camera.position.x;front.qy=camera.position.y;front.qz=camera.position.z;front.sample();
     atmosphere.sandStorm=front.density*g.sandDust.duneWeight;
@@ -240,6 +241,11 @@ export async function addEnvironmentSystems(g) {
     // The wind bed swells with the gust fronts passing the camera (the field at the listener).
     let gf = 1;
     if (g.wind && g.wind.strength > 1e-3) { g.wind.sx = cp.x; g.wind.sz = cp.z; g.wind.sample(); gf = Math.min(1.6, Math.max(0.5, g.wind.speed / (0.66 * g.wind.strength))); }
+    // Embodied storm exposure follows the player even when the third-person camera is
+    // outside shelter. Camera orientation still supplies the upwind stereo bearing.
+    const stormWind=g.wind;stormWind.sx=controller.pos.x;stormWind.sz=controller.pos.z;stormWind.sample();
+    sfx.stormDensity=stormWind.density;sfx.stormSpeed=stormWind.rawSpeed;sfx.stormDX=stormWind.outX;sfx.stormDZ=stormWind.outZ;
+    sfx.stormWet=weather.wet;sfx.stormExposure=stormWind.exposure;
     sfx.wind = Math.min(1, w / 1.1 * gf); sfx.hiss = Math.min(1, frost.ribbonStrength); sfx.time = clock.simTime;
     if (frost.crystalEvent) { sfx.x = frost.crystalX; sfx.y = controller.pos.y + 0.5; sfx.z = frost.crystalZ; sfx.gain = 1.1; sfx.play(SFX.CHIME); }
     sfx.update();

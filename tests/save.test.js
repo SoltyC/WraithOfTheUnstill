@@ -97,7 +97,7 @@ describe('save migrations', () => {
     };
     delete v2.inventory; delete v2.equipped; delete v2.economy;
     const s = validateSave(migrate(v2));
-    expect(s.version).toBe(3);
+    expect(s.version).toBe(SAVE_VERSION);
     expect(s.inventory.owned.map((w) => w.id)).toEqual(['staff', 'sickles', 'maul']);
     expect(s.inventory.carried).toEqual(['staff', 'maul']);
     expect(s.inventory.marks).toBe(0);

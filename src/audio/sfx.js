@@ -6,6 +6,8 @@
 // wind field: the stilled steppe is silent, the release brings the wind back. The context starts
 // on the first key or pointer press (browser autoplay rules).
 
+import {createStormWind} from './stormWind.js';
+
 export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, THUNDER: 10, FLOW_UP: 11, FLOW_DOWN: 12, SWISH: 13, CLANG: 14, TOLL: 15 };
 const VOICES = 20;
 
@@ -15,7 +17,7 @@ export function createSfx() {
   let humOsc = null, humOsc2 = null, humGain = null, humGain2 = null;
   let master = null, windGain = null, windFilter = null, hissGain = null, hissFilter = null, rainGain = null, rainLowGain = null;
   const voices = [];
-  let next = 0;
+  let next = 0,stormWind=null;
 
   function noiseBuffer(ctx, seconds) {
     const n = Math.floor(ctx.sampleRate * seconds), buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
@@ -51,6 +53,7 @@ export function createSfx() {
     windFilter = ac.createBiquadFilter(); windFilter.type = 'lowpass'; windFilter.frequency.value = 400; windFilter.Q.value = 0.7;
     windGain = ac.createGain(); windGain.gain.value = 0;
     ws.connect(windFilter); windFilter.connect(windGain); windGain.connect(master); ws.start();
+    stormWind=createStormWind(ac,master,ws);
     // Ribbon hiss: a bright stream while the Ribbon flows.
     const hs = ac.createBufferSource(); hs.buffer = nb; hs.loop = true;
     hissFilter = ac.createBiquadFilter(); hissFilter.type = 'bandpass'; hissFilter.frequency.value = 3200; hissFilter.Q.value = 1.4;
@@ -106,10 +109,11 @@ export function createSfx() {
     /** The Bell-mace's hum (fields, applied by update()): level 0..1, pitch 0..1 of the stored height, and whether it is at the cap. */
     hum: 0.5 - 0.5, humPitch: 0.5 - 0.5, humCap: false,
     /** Continuous levels (fields, 0..1), applied by update(): wind, ribbon hiss, rain. thunderDist: metres of the next THUNDER. */
+    stormDensity:0.0,stormSpeed:0.0,stormExposure:1.0,stormWet:0.0,stormDX:1.0,stormDZ:0.0,
     wind: 0.5 - 0.5, hiss: 0.5 - 0.5, rain: 0.5 - 0.5, shelter: 0.5 - 0.5, rainBed: 0.5 - 0.5, time: 0.5, thunderDist: 1000.5,
 
     /** Effects volume 0..1 (settings). */
-    setVolume(v) { this.volume = v; if (master) master.gain.value = 0.7 * v; },
+    setVolume(v) { this.volume = v; if (master) master.gain.value = this.enabled ? 0.7 * v : 0; },
     volume: 1,
     /** The shared AudioContext (null until unlocked); music plays through it too. */
     context() { return ac; },
@@ -252,7 +256,11 @@ export function createSfx() {
     update() {
       if (!ac || ac.state !== 'running') return;
       const t = ac.currentTime, gust = 0.7 + 0.3 * Math.sin(this.time * 0.9) * Math.sin(this.time * 0.37 + 1.1);
-      windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust), t, 0.3);
+      master.gain.setTargetAtTime(this.enabled?0.7*this.volume:0,t,.03);
+      windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust)*(1-.75*Math.max(0,Math.min(1,this.stormDensity))), t, 0.3);
+      stormWind.time=t;stormWind.on=this.enabled;stormWind.density=this.stormDensity;stormWind.speed=this.stormSpeed;
+      stormWind.exposure=this.stormExposure;stormWind.wet=this.stormWet;stormWind.dx=this.stormDX;stormWind.dz=this.stormDZ;
+      stormWind.rightX=this.rx;stormWind.rightZ=this.rz;stormWind.update();
       windFilter.frequency.setTargetAtTime(260 + 900 * this.wind * gust, t, 0.3);
       hissGain.gain.setTargetAtTime(this.hiss * 0.18, t, 0.04);
       humGain.gain.setTargetAtTime(this.hum * 0.07, t, 0.06);

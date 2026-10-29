@@ -1,0 +1,9 @@
+import {describe,it,expect} from 'vitest';
+import {createStormWind} from '../src/audio/stormWind.js';
+function setup(){let count=0;const param=()=>({value:0,setTargetAtTime(v,t,tau){this.target=v;this.time=t;this.tau=tau;}}),node=()=>{count++;return {frequency:param(),Q:param(),gain:param(),pan:param(),connect(){}};};const c={createBiquadFilter:node,createGain:node,createStereoPanner:node};const a=createStormWind(c,node(),node());return {a,count:()=>count};}
+describe('shared storm wind sound graph',()=>{
+  it('stays silent without local storm density and never creates nodes during updates',()=>{const {a,count}=setup(),before=count();a.speed=4;for(let i=0;i<600;i++){a.time=i/60;a.update();}expect(a.lowTarget).toBe(0);expect(a.gritTarget).toBe(0);expect(count()).toBe(before);expect(before).toBe(8);});
+  it('preserves strong gust dynamics above ordinary wind strength',()=>{const {a}=setup();a.density=1;a.speed=1;a.update();const low=a.lowTarget,grit=a.gritTarget;a.speed=3;a.update();expect(a.lowTarget).toBeGreaterThan(low);expect(a.gritTarget).toBeGreaterThan(grit);expect(a.lowTarget).toBeLessThan(.25);expect(a.gritTarget).toBeLessThan(.18);});
+  it('reduces close grit in shelter while retaining distant rumble',()=>{const {a}=setup();a.density=1;a.speed=3;a.update();const low=a.lowTarget,grit=a.gritTarget;a.exposure=0;a.update();expect(a.lowTarget).toBeCloseTo(low*.2,12);expect(a.gritTarget).toBe(0);a.exposure=1;a.wet=1;a.update();expect(a.gritTarget).toBe(0);expect(grit).toBeGreaterThan(0);});
+  it('hears gusts from upwind and silences the graph when disabled',()=>{const {a}=setup();a.density=1;a.speed=2;a.update();expect(a.panTarget).toBe(-.45);a.dx=-1;a.update();expect(a.panTarget).toBe(.45);a.on=false;a.update();expect(a.lowTarget).toBe(0);expect(a.gritTarget).toBe(0);});
+});

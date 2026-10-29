@@ -66,6 +66,9 @@ export async function createWorld(g) {
   // Prototype authored erg anchor; no automatic activation until all storm consumers pass.
   sandstorm.anchorX=2400;sandstorm.anchorZ=900;sandstorm.baseY=180;
   post.fog.stormFront=sandstorm;
+  g.stormExposure=new (await import('../world/stormExposure.js')).StormExposure();
+  g.stormExposure.source=sandstorm.block;
+  g.stormPersistence=await import('../world/stormPersistence.js');
   const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
   // Ground blow (spindrift): created after the opaque meshes, drawn in the transparent pass.
   const { createSpindrift } = await import('../render/spindrift.js');

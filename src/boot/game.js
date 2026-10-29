@@ -102,6 +102,9 @@ async function createSaves(g) {
     store: lazyStore,
     codec: lazyCodec,
     async collect(s) {
+      // Pages are captured across frames. Capture the world/history afterwards so their
+      // watermark covers even the last readback, and load shifts cannot create future pages.
+      const pages=await terrainState.snapshot();
       const p = controller.pos;
       s.player.pos = [p.x, p.y, p.z];
       s.player.yaw = controller.yaw;
@@ -118,8 +121,8 @@ async function createSaves(g) {
         const W = wardenMod.W, b = warden.body;
         s.entities.warden = { state: warden.state === W.RELEASE || warden.state === W.RESTED ? 'rested' : 'dormant', x: b.x, z: b.z, heading: b.heading };
       }
-      // Last: the terrain pages (read back across frames; everything above is this frame's).
-      s.terrainPages = await terrainState.snapshot();
+      s.terrainPages=pages;
+      s.world.sandstorm=g.stormPersistence.captureStormState(g.sandstorm,g.stormExposure);
     },
     apply(s) {
       // Back to where the save was made, once the ground (and any floor) there is known.
@@ -137,6 +140,7 @@ async function createSaves(g) {
       g.navSync?.();
       // Saved game times (pages, formations) move onto this session's clock.
       const shift = clock.simTime - s.playSeconds;
+      g.stormPersistence.restoreStormState(s.world.sandstorm,g.sandstorm,g.stormExposure,shift,clock.simTime);
       terrainState.restore(s.terrainPages.map((p) => ({ key: p.key, savedAt: p.savedAt + shift, data: p.data })));
       frost.restoreCrystals(s.entities.crystals, clock.simTime);
       // The Warden is placed again by its system: dormant in its arena, or lying where it rests.

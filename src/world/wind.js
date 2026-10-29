@@ -49,7 +49,7 @@ export function createWind(stormFront=null) {
       block[o] = x; block[o + 1] = z; block[o + 2] = this.time; block[o + 3] = strength;
     },
     /** Out fields of sample(): the wind at the queried point — direction (unit) and speed factor. */
-    sx: 0.5, sz: 0.5, outX: 0.5, outZ: 0.5, speed: 0.5,
+    sx: 0.5, sz: 0.5, outX: 0.5, outZ: 0.5, speed: 0.5, rawSpeed:0.5, exposure:1.0,
     /** The wind at (sx, sz) now: outX, outZ (unit direction) and speed (≈ strength × gusts). */
     sample() { fieldAt(block, this); },
   };
@@ -98,5 +98,6 @@ function fieldAt(b, o) {
   }
   const sp = Math.sqrt(vx * vx + vz * vz);
   if (sp > 1e-5) { o.outX = vx / sp; o.outZ = vz / sp; } else { o.outX = dx; o.outZ = dz; }
+  o.rawSpeed=sp;o.exposure=1;
   o.speed = sp;
 }
