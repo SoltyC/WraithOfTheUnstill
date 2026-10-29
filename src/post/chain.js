@@ -12,6 +12,7 @@ import { computePass } from './post.js';
 import { createFog } from './fog.js';
 import { meterCS } from '../shaders/post/meter.wgsl.js';
 import { params } from '../core/params.js';
+import { env } from '../render/environment.js';
 import { registerToggle } from '../core/systems.js';
 
 /**
@@ -48,6 +49,9 @@ export function createPostChain(scene, camera, atmo, shadows, surface, windMap) 
   wire();
   post.onResizeOut(wire);
   post.onParams(() => { post.bloomOn = bloom.on; post.bloomIntensity = bloom.intensity; });
+  // Shade lift (display pass): by day only, so moonlit and lamp-lit nights keep their blacks.
+  const lift = { day: 2.6, night: 0.3 };
+  post.onParams(() => { const d = env.envMisc.y; post.shadowLift = lift.night + (lift.day - lift.night) * d; });
   registerToggle({ key: 'postTaa', label: 'TAA', group: 'Post', on: true, onChange: (on) => { taa.on = on; post.resetHistory = true; } });
   registerToggle({ key: 'postMirage', label: 'heat mirage', group: 'Post', on: true, onChange: (on) => { heat.mirage = on; post.resetHistory = true; } });
   registerToggle({ key: 'postHeat', label: 'heat shimmer', group: 'Post', on: true, onChange: (on) => { heat.on = on; post.resetHistory = true; } });
@@ -62,7 +66,7 @@ export function createPostChain(scene, camera, atmo, shadows, surface, windMap) 
   registerToggle({ key: 'postGrade', label: 'LUT grade', group: 'Post', on: post.lutOn, onChange: (on) => { post.lutOn = on; } });
   registerToggle({ key: 'postGrain', label: 'film grain', group: 'Post', on: post.grain > 0, onChange: (on) => { post.grain = on ? 0.035 : 0; } });
   return {
-    post, taa, comp, bloom, fog, heat,
+    post, taa, comp, bloom, fog, heat, lift,
     name: 'post',
     update() { post.update(); },
   };

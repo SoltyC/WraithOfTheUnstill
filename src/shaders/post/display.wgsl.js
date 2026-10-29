@@ -21,7 +21,7 @@ var lut: texture_2d<f32>;
 var lutSampler: sampler;
 uniform params: vec4f;   // x = tonemapper (0 ACES, 1 AgX), y = grain, z = frame index, w = LUT on
 uniform viewport: vec4f; // render size (w, h), 1/w, 1/h
-uniform params2: vec4f;  // x = sharpen (0..1), y = bloom intensity, z = bloom on
+uniform params2: vec4f;  // x = sharpen (0..1), y = bloom intensity, z = bloom on, w = shadow lift
 
 // ACES (Narkowicz fit), the Phase 0–5 look.
 fn aces(x: vec3f) -> vec3f {
@@ -79,8 +79,13 @@ fn hash3(p: vec3f) -> f32 {
   return fract((q.x + q.y) * q.z);
 }
 
+// The ACES fit's toe has a slope of ~0.2 near black, so daylight shade (a few stops under the sun
+// on grass, the far side of a house) crushed to 0–3/255. Lift only the deep values, by up to
+// 1 + w, fading out well below mid-grey (0.18): sunlit tones and the grade are untouched.
 fn tonemap(hdr: vec3f) -> vec3f {
-  return select(aces(hdr), agx(hdr), uniforms.params.x > 0.5);
+  let l = dot(hdr, vec3f(0.2126, 0.7152, 0.0722));
+  let x = hdr * (1.0 + uniforms.params2.w * 0.035 / (0.035 + l));
+  return select(aces(x), agx(x), uniforms.params.x > 0.5);
 }
 fn loadHdr(p: vec2i) -> vec3f {
   let q = clamp(p, vec2i(0), vec2i(uniforms.viewport.xy) - 1);

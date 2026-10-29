@@ -45,6 +45,10 @@ export function storageTexture(scene, w, h, name, sampling = Constants.TEXTURE_B
     sampling, Constants.TEXTURETYPE_HALF_FLOAT, Constants.TEXTURE_CREATIONFLAG_STORAGE);
   t.name = name;
   t.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; t.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
+  // Compute passes build their sampler from the internal texture's cached wrap, which only a
+  // material bind copies from wrapU/V; unset it means repeat, and edge taps wrapped across the
+  // frame (the sun's bloom showed up in the opposite corner, history and SSR bled at the edges).
+  t._texture._cachedWrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; t._texture._cachedWrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
   return t;
 }
 
@@ -135,6 +139,8 @@ export function createPost(scene, camera) {
     bloomIntensity: 0, bloomOn: false,
     /** Post-TAA sharpening (0..1). */
     sharpen: 0.35,
+    /** Shadow lift before the tonemap (deep shade × up to 1 + this; the owner scales it by daylight). */
+    shadowLift: 0,
     lutOn: true,
     /** Grade parameters (see shaders/post/lut.wgsl.js), written by the owner; set gradeDirty. */
     grade: gradeData,
@@ -218,7 +224,7 @@ export function createPost(scene, camera) {
       for (let i = 0; i < passes.length; i++) passes[i]();
       frame++;
       displayParams.x = post.tonemapper; displayParams.y = post.grain; displayParams.z = frame % 1024; displayParams.w = post.lutOn ? 1 : 0;
-      displayParams2.x = post.sharpen; displayParams2.y = post.bloomIntensity; displayParams2.z = post.bloomOn ? 1 : 0;
+      displayParams2.x = post.sharpen; displayParams2.y = post.bloomIntensity; displayParams2.z = post.bloomOn ? 1 : 0; displayParams2.w = post.shadowLift;
       engine.restoreDefaultFramebuffer();
       effectRenderer.render(display);
     },
