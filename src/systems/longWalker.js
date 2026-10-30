@@ -278,7 +278,7 @@ export function addLongWalkerSystem(g) {
   // ── Frame ────────────────────────────────────────────────────────────────────────────────────
   let moundT = 0, devDone = false, circT = 0, shakeT = 20, warnT = -1, kickT = 0, balkT = -1, skitT = 30, offT = 0, ringT = 0, wakeFx = 0;
   let wasRiding = false, wasDying = false, shrineX = NaN, shrineZ = NaN, checkX = NaN, checkZ = NaN, glyphT0 = 0, glyphT1 = 0;
-  const seen = new Uint32Array(64), gustSeen = new Uint32Array(8);
+  const seen = new Uint32Array(64), gustSeen = new Uint32Array(8), ringed = new Uint8Array(6);
   const hasDust = (k) => W.swing[k] > 0.04 && W.swing[k] < 0.97;
 
   function devHooks() {
@@ -366,14 +366,28 @@ export function addLongWalkerSystem(g) {
     }
     if (ev & WEV.RISE_WARN && dist < 400) soundW(1.8, SFX.RUMBLE);
 
-    // The telegraph: a ring of dust where each lifted foot will come down.
+    // The telegraph: where each lifted foot will come down the sand feels it — a dotted ring pressed in
+    // as it lifts (the terrain state, within its window round the Wraith; the landing ploughs it away)
+    // and dust lifting off round the ring while it swings.
+    for (let k = 0; k < 6; k++) {
+      if (W.swing[k] === 0) { ringed[k] = 0; continue; }
+      if (ringed[k] || !hasDust(k) || W.state !== WK.WALK || !ts) continue;
+      ringed[k] = 1;
+      const rx = W.tx[k] - p.x, rz = W.tz[k] - p.z;
+      if (Math.abs(rx) > 36 || Math.abs(rz) > 36) continue;
+      for (let q = 0; q < 12; q++) {
+        const b = q * TAU / 12;
+        ts.bx = W.tx[k] + Math.cos(b) * S.padR; ts.bz = W.tz[k] + Math.sin(b) * S.padR; ts.bdx = -Math.sin(b); ts.bdz = Math.cos(b);
+        ts.bl = 0.25; ts.bw = 0.32; ts.bd = 0.14; ts.bc = 0.5; ts.bk = BRUSH.PRESS; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.6; ts.stamp();
+      }
+    }
     ringT -= dt;
     if (ringT <= 0 && dist < 260 && W.state === WK.WALK) {
-      ringT = 0.28;
+      ringT = 0.2;
       for (let k = 0; k < 6; k++) {
         if (!hasDust(k)) continue;
         const a = clock.simTime * 2.1 + k;
-        for (let q = 0; q < 3; q++) { const b = a + q * TAU / 3; F[4] = W.tx[k] + Math.cos(b) * S.padR; F[5] = W.tz[k] + Math.sin(b) * S.padR; F[6] = 1.4; F[7] = 0.8; F[8] = -Math.sin(b); F[9] = Math.cos(b); burst(); }
+        for (let q = 0; q < 4; q++) { const b = a + q * TAU / 4; F[4] = W.tx[k] + Math.cos(b) * S.padR; F[5] = W.tz[k] + Math.sin(b) * S.padR; F[6] = 2.0; F[7] = 1.0; F[8] = -Math.sin(b); F[9] = Math.cos(b); burst(); }
       }
     }
 
