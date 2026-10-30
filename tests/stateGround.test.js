@@ -16,6 +16,13 @@ describe('sand collision snapshots',()=>{
     data[2]=0;expect(state.sample()).toBe(false);data[2]=1;
     state.qx=2;expect(state.sample()).toBe(false);state.clear();expect(state.sample()).toBe(false);
   });
+  it('interpolates frozen fraction independently of heights and clears it on reset',()=>{
+    const {state,data}=patch();data[3]=1;data[7]=.5;data[15]=.25;data[19]=0;
+    state.install(data,-1,-1,1,3,10);expect(state.maxFrozen).toBe(1);
+    state.qx=-.5;state.qz=-.5;expect(state.sample()).toBe(true);
+    expect(state.frozen).toBeCloseTo(1.75/4,12);expect(state.disp).toBeCloseTo(.3);
+    state.clear();expect(state.frozen).toBe(0);expect(state.maxFrozen).toBe(0);
+  });
   it('replaces an older solid Ridge with slumped state, without double-counting',()=>{
     const {ground}=patch(), mass=createStoneMass();ground.mass=mass;
     mass.time=5;mass.arg.set([0,0,1,0,1,1,2,0]);mass.addRidge();mass.update(10);

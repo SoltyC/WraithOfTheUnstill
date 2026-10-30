@@ -35,7 +35,7 @@ export function addWraithSystem(g) {
     if (game.wraithHeld || game.pendingBend !== null || game.pendingWeapon !== null) return;
     surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded;
     surfWake.enabled = toggles.on.footprints !== false;
-    surfWake.update();
+    surfWake.wet = weather.wet; surfWake.update();
     wraithView.update();
     wraithFootfalls();
   } });
@@ -56,7 +56,7 @@ export function addWraithSystem(g) {
     const spec = surfRoll.spec, sf = controller.surf, w = wraithView.wraith, p = controller.pos, dt = 1 / 60;
     for (let k = 0; k < 8 && surfRoll.t < spec.seconds; k++) {
       sf.want = !spec.glide;
-      streamer.mqx = p.x; streamer.mqz = p.z; streamer.sampleMaterial(); sf.canSurf = streamer.mat === 0;
+      streamer.mqx = p.x; streamer.mqz = p.z; streamer.sampleMaterial(); sf.material = streamer.mat; sf.selectSurface();
       sf.steer = (spec.steer ?? 0.6) * Math.sin((2 * Math.PI * surfRoll.t) / (spec.period ?? 4));
       sf.throttle = spec.throttle ?? 0;
       const gl = controller.glide;
@@ -67,7 +67,7 @@ export function addWraithSystem(g) {
       w.time = clock.simTime - (spec.seconds - surfRoll.t); wraithView.time = w.time;
       w.surf = sf.blend; w.surfLean = sf.lean; w.glide = gl.blend; w.glideBank = gl.bank;
       surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded; surfWake.enabled = true;
-      surfWake.update();
+      surfWake.wet = weather.wet; surfWake.update();
       wraithView.update();
       surfRoll.t += dt;
     }

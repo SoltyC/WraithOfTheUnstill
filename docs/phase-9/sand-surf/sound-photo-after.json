@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-29T00:12:11.599Z",
+  "before": {
+    "active": true,
+    "hiss": 0.012918762677149578,
+    "rush": 0.0019285578474761498
+  },
+  "after": {
+    "active": false,
+    "hiss": 0,
+    "rush": 0
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Actual normal inputs create active sand contact, then freeze photo clock for4rAF frames. Targets should go to0 via regular mixer update; this is not a recorded output-tail measurement."
+}

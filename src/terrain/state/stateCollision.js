@@ -13,9 +13,9 @@ export function createStateCollision(engine,fine,surface) {
   const bytes=STATE_GRID_N*STATE_GRID_N*16;
   const output=new StorageBuffer(engine,bytes,undefined,'state-collision-output');
 
-  const mapping={fine0:{group:0,binding:0},fine2:{group:0,binding:1},surface:{group:0,binding:2},job:{group:0,binding:3},output:{group:0,binding:4}};
+  const mapping={fine1:{group:0,binding:5},fine0:{group:0,binding:0},fine2:{group:0,binding:1},surface:{group:0,binding:2},job:{group:0,binding:3},output:{group:0,binding:4}};
   const cs=new ComputeShader('stateCollision',engine,{computeSource:stateCollisionWGSL},{bindingsMapping:mapping});
-  cs.setStorageBuffer('fine0',fine[0]);cs.setStorageBuffer('fine2',fine[2]);cs.setStorageBuffer('surface',surface);cs.setStorageBuffer('job',job);cs.setStorageBuffer('output',output);
+  cs.setStorageBuffer('fine1',fine[1]);cs.setStorageBuffer('fine0',fine[0]);cs.setStorageBuffer('fine2',fine[2]);cs.setStorageBuffer('surface',surface);cs.setStorageBuffer('job',job);cs.setStorageBuffer('output',output);
   let gen=0, serial=0, published=0, last=-Infinity, inFlight=0;
   // Slots and callbacks are allocated once. A displayed buffer cannot be reused for a read,
   // and replies may complete out of order without replacing a newer collision snapshot.
@@ -46,7 +46,7 @@ export function createStateCollision(engine,fine,surface) {
       if(!slot || inFlight>=3)return;
       const x0=Math.floor(self.px/STATE_GRID_STEP)*STATE_GRID_STEP-(STATE_GRID_N-1)*STATE_GRID_STEP/2;
       const z0=Math.floor(self.pz/STATE_GRID_STEP)*STATE_GRID_STEP-(STATE_GRID_N-1)*STATE_GRID_STEP/2;
-      const healingRefresh=view.maxRelief>0.05 && self.time-view.sampleTime>=1;
+      const healingRefresh=(view.maxRelief>0.05 || view.maxFrozen>0.01) && self.time-view.sampleTime>=1;
       if(!self.dirty && !healingRefresh && view.data && x0===view.x0 && z0===view.z0)return;
       data[0]=self.originX;data[1]=self.originZ;data[2]=Math.round(x0*FINE_PER_M);data[3]=Math.round(z0*FINE_PER_M);data[4]=1;job.update(data);
       if(!cs.dispatch(Math.ceil(STATE_GRID_N/8),Math.ceil(STATE_GRID_N/8),1))return;

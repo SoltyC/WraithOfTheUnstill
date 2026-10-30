@@ -1,4 +1,4 @@
-// Snow-surf (BRIEF §9.3): the traversal mode the game is played in most, so it is tuned for feel.
+// Shared snow/sand surf (BRIEF §9.3): the traversal mode the game is played in most, so it is tuned for feel.
 // Pure logic over plain numbers (testable in Node, allocation-free): the capsule controller asks
 // it for the horizontal velocity while it is engaged and keeps doing the vertical and ground work.
 //
@@ -9,6 +9,8 @@
 // little speed. The carve's lateral acceleration sets the lean (into the turn) that the body,
 // camera and wake read. Entering eases in from the current velocity; letting go brakes down to a
 // walk before handing back, so neither end snaps.
+
+import { sandSurfTuning } from './sandSurfTuning.js';
 
 export const surfTuning = {
   cruise: 13,           // m/s the crest pushes toward on the flat
@@ -31,6 +33,14 @@ export const surfTuning = {
 export class Surf {
   constructor() {
     /** Engaged (the controller takes its horizontal velocity from here). */
+    this.tuning = surfTuning;
+    this.material = 0;
+    this.sandUnlocked = false;
+    this._lastTuning = surfTuning;
+    this._speedCap = 0.5; this._speedCap = surfTuning.maxSpeed;
+    // Hot controller inputs use owner fields; numeric-argument wrappers remain for diagnostics.
+    this.enterVX = 0.5; this.enterVZ = 0.5; this.enterFacing = 0.5;
+    this.dt = 0.5; this.nx = 0.5; this.ny = 0.5; this.nz = 0.5;
     this.active = false;
     /** Letting go: braking down to a walk before handing back. */
     this.exiting = false;
@@ -52,16 +62,31 @@ export class Surf {
     this.vx = 0.5 - 0.5; this.vz = 0.5 - 0.5;
   }
 
+  /** The baked material IDs shared with terrain state: snow0, sand1, washed sand6. */
+  selectSurface() {
+    if (this.material === 0) { this.canSurf = true; this.tuning = surfTuning; }
+    else if ((this.material === 1 || this.material === 6) && this.sandUnlocked) {
+      this.canSurf = true; this.tuning = sandSurfTuning;
+    } else this.canSurf = false; // retain the last surface tuning while easing out
+  }
+
   /**
    * Engage/disengage from the inputs and the current horizontal velocity (vx, vz) and facing.
    * Call once per controller substep before step().
    */
   engage(vx, vz, facing) {
+    this.enterVX = vx; this.enterVZ = vz; this.enterFacing = facing;
+    this.engageQ();
+  }
+
+  engageQ() {
+    const vx = this.enterVX, vz = this.enterVZ, facing = this.enterFacing;
     if (!this.active) {
       if (this.want && this.canSurf && this.grounded) {
         const s = Math.sqrt(vx * vx + vz * vz);
         this.active = true; this.exiting = false;
         this.speed = s;
+        this._speedCap = Math.max(this.tuning.maxSpeed, s);
         this.heading = s > 1 ? Math.atan2(vx, vz) : facing;
         this.turnRate = 0;
       }
@@ -76,7 +101,17 @@ export class Surf {
    * Ends the mode (active = false) once an exit has braked down to walking speed.
    */
   step(h, nx, ny, nz) {
-    const T = surfTuning;
+    this.dt = h; this.nx = nx; this.ny = ny; this.nz = nz;
+    this.stepQ();
+  }
+
+  stepQ() {
+    const h = this.dt, nx = this.nx, ny = this.ny, nz = this.nz, T = this.tuning;
+    if (T !== this._lastTuning) {
+      this._speedCap = Math.max(T.maxSpeed, this.speed);
+      this._lastTuning = T;
+    }
+    this._speedCap = Math.max(T.maxSpeed, this._speedCap - T.brake * h);
     const target = this.active && !this.exiting ? 1 : 0;
     this.blend += (target - this.blend) * (1 - Math.exp(-h * (target ? 6 : 4)));
     if (!this.active) { this.lean += (0 - this.lean) * (1 - Math.exp(-h * T.leanResponse)); return; }
@@ -107,7 +142,7 @@ export class Surf {
     this.heading += this.turnRate * h;
     this.latAccel = this.turnRate * this.speed;
     if (this.grounded) a -= T.carveDrag * Math.abs(this.latAccel);
-    this.speed = Math.min(T.maxSpeed, Math.max(0, this.speed + a * h));
+    this.speed = Math.min(this._speedCap, Math.max(0, this.speed + a * h));
     // Lean into the turn: the angle that balances the carve's sideways pull against gravity.
     const leanT = Math.max(-T.maxLean, Math.min(T.maxLean, Math.atan2(this.latAccel, 9.81)));
     this.lean += (leanT - this.lean) * (1 - Math.exp(-h * T.leanResponse));

@@ -6,6 +6,8 @@
 // wind field: the stilled steppe is silent, the release brings the wind back. The context starts
 // on the first key or pointer press (browser autoplay rules).
 
+import { createSandSurfSound } from './sandSurfSound.js';
+
 export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, THUNDER: 10, FLOW_UP: 11, FLOW_DOWN: 12, SWISH: 13, CLANG: 14, TOLL: 15 };
 const VOICES = 20;
 
@@ -33,6 +35,7 @@ export function createSfx() {
     const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
     master.connect(comp); comp.connect(ac.destination);
     const nb = noiseBuffer(ac, 2.5);
+    self.sandSound = createSandSurfSound(ac, nb, master);
     for (let i = 0; i < VOICES; i++) {
       const src = ac.createBufferSource(); src.buffer = nb; src.loop = true; src.loopStart = Math.random() * 2;
       const filt = ac.createBiquadFilter(); const ng = ac.createGain(); ng.gain.value = 0;
@@ -99,6 +102,7 @@ export function createSfx() {
 
   const self = {
     enabled: true,
+    sandSound: null, sandActive: false, sandSpeed: 0, sandGrip: 0, sandWet: 0, sandFrozen: 0,
     /** Listener (fields): camera position and its right vector (horizontal). */
     lx: 0.5, ly: 0.5, lz: 0.5, rx: 1.5 - 0.5, rz: 0.5 - 0.5,
     /** Sound position and loudness (fields) for the next play(). `tone` (0..2) picks the Flow cue's pitch. */
@@ -251,6 +255,10 @@ export function createSfx() {
     /** Continuous layers: wind (gusting), the Ribbon's hiss and the rain. */
     update() {
       if (!ac || ac.state !== 'running') return;
+      const sand = this.sandSound;
+      sand.active = this.enabled && this.sandActive; sand.speed = this.sandSpeed;
+      sand.grip = this.sandGrip; sand.wet = this.sandWet; sand.frozen = this.sandFrozen;
+      sand.update();
       const t = ac.currentTime, gust = 0.7 + 0.3 * Math.sin(this.time * 0.9) * Math.sin(this.time * 0.37 + 1.1);
       windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust), t, 0.3);
       windFilter.frequency.setTargetAtTime(260 + 900 * this.wind * gust, t, 0.3);

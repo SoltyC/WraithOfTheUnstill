@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-29T00:01:27.640Z",
+  "results": [
+    {
+      "name": "idle",
+      "rms": 0,
+      "highRms": 0,
+      "peak": 0,
+      "tailRms": 0,
+      "targets": {
+        "hiss": 0,
+        "rush": 0
+      }
+    },
+    {
+      "name": "slow",
+      "rms": 0.004829075234740248,
+      "highRms": 0.0031545158955421392,
+      "peak": 0.017989221960306168,
+      "tailRms": 0.004845023570945425,
+      "targets": {
+        "hiss": 0.027096774193548386,
+        "rush": 0.004079084287200832
+      }
+    },
+    {
+      "name": "fast",
+      "rms": 0.029591205716023597,
+      "highRms": 0.021777220929236056,
+      "peak": 0.10980049520730972,
+      "tailRms": 0.02942443759347516,
+      "targets": {
+        "hiss": 0.12,
+        "rush": 0.08
+      }
+    },
+    {
+      "name": "wet",
+      "rms": 0.004923452102746485,
+      "highRms": 0.00027035186327301026,
+      "peak": 0.01821976713836193,
+      "tailRms": 0.004800051378516663,
+      "targets": {
+        "hiss": 0,
+        "rush": 0.024000000000000004
+      }
+    },
+    {
+      "name": "frozen",
+      "rms": 0,
+      "highRms": 0,
+      "peak": 0,
+      "tailRms": 0,
+      "targets": {
+        "hiss": 0,
+        "rush": 0
+      }
+    },
+    {
+      "name": "stop",
+      "rms": 0.014461966408924772,
+      "highRms": 0.010442248048478025,
+      "peak": 0.10397796332836151,
+      "tailRms": 0,
+      "targets": {
+        "hiss": 0,
+        "rush": 0
+      }
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Actual createSandSurfSound source evaluated in isolated browser OfflineAudioContexts, deterministic shared noise,48kHz2s mono. RMS uses0.5–2s; tail uses1.75–2s. Stop at0.8s. No human listening/balance or real-time audio/performance signoff; game mixer context untouched."
+}

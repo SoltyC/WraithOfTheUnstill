@@ -1,0 +1,184 @@
+{
+  "date": "2026-10-28T20:54:21.769Z",
+  "before": [
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    }
+  ],
+  "frozen": [
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": 0,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    }
+  ],
+  "dry": [
+    {
+      "fine": 0.199951171875,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.199951171875,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0.1900634765625,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.1900634765625,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0.191650390625,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.191650390625,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0.199951171875,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.199951171875,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "fine": 0.199951171875,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.199951171875,
+      "coarseRelief": 0,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    }
+  ],
+  "stationaryRefreshes": 5,
+  "covered": true,
+  "frozenFraction": 1,
+  "age": 0.21270000004768796,
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "frozenMaxChange": 0,
+  "dryMaxChange": 0.199951171875,
+  "note": "Actual five-point GPU fine-state probes before/after identical PLOUGH on clean frozen versus reset dry sand; local frozen metadata sampled through collision pipeline. Periodic-refresh probe temporarily clears unrelated dirty markers before update, then restores update. No new diagnostic shader. Global wet emission suppression is unit-tested separately; not full moving weather/frozen gameplay acceptance."
+}

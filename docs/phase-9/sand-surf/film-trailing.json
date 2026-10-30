@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-28T20:42:06.317Z",
+  "film": {
+    "ok": true,
+    "frames": 480,
+    "failed": 0,
+    "dir": "screenshots/d3-surf-trailing/frames/sand-surf",
+    "wallS": 15.8,
+    "ms": 15753
+  },
+  "active": 479,
+  "grounded": 480,
+  "peak": 13.423616750448929,
+  "samples": [
+    {
+      "i": 0,
+      "speed": 0,
+      "pos": [
+        1900,
+        150.58083894848824,
+        900
+      ]
+    },
+    {
+      "i": 60,
+      "speed": 5.3375013106286,
+      "pos": [
+        1900,
+        150.62025907451664,
+        902.8689874651743
+      ]
+    },
+    {
+      "i": 120,
+      "speed": 9.04590028005926,
+      "pos": [
+        1900,
+        150.4504833906961,
+        910.2290119966137
+      ]
+    },
+    {
+      "i": 180,
+      "speed": 11.294630886104514,
+      "pos": [
+        1900,
+        150.21947513700354,
+        920.4798504967873
+      ]
+    },
+    {
+      "i": 240,
+      "speed": 12.462601885325835,
+      "pos": [
+        1902.9955074963912,
+        149.82072845746893,
+        931.8191127779902
+      ]
+    },
+    {
+      "i": 300,
+      "speed": 13.252155040586201,
+      "pos": [
+        1911.1873991421915,
+        149.4480321309742,
+        942.0957417974985
+      ]
+    },
+    {
+      "i": 360,
+      "speed": 12.783521336505352,
+      "pos": [
+        1919.5007371528382,
+        150.3241400104348,
+        952.0993129955843
+      ]
+    },
+    {
+      "i": 420,
+      "speed": 12.724994172427877,
+      "pos": [
+        1927.7746460116157,
+        150.86323360597555,
+        962.0536859561538
+      ]
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "note": "Input-driven eight-second carve from rest, one right input. Fixed 60Hz native720p diagnostic film; not a real-time performance measurement or three-slip-face/human feel acceptance. Temporary sand grant and D2 solver restored off afterward."
+}

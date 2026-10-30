@@ -2,8 +2,11 @@
 // the path it just travelled — a deep groove with high berms, heavier on the outside of the turn
 // — into the terrain state (persistent, healing slowly, visible from across the field once it
 // has scrolled into the coarse pages), and a plume of spray is thrown from the outside berm.
-// Allocation-free; brush fields on the terrain state, particles through an emit() sink.
+// Fixed scratch; brush fields on the terrain state, particles through an emit() sink.
+// Whole-path browser allocation measurement remains a separate gate.
 
+import { sandSurfTuning } from './sandSurfTuning.js';
+import { sandSurfWakeTuning } from './sandSurfWakeTuning.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
 export const wakeTuning = {
@@ -26,38 +29,60 @@ export const wakeTuning = {
  * @param {{ ex: number, ey: number, ez: number, evx: number, evy: number, evz: number, esize: number, emit: () => void }} fx
  */
 export function createSurfWake(ts, fx) {
-  let px = NaN, pz = NaN, seed = 7;
-  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const surface = ts.collision ? ts.collision.view : null;
+  const last = new Float64Array(2).fill(NaN), seed = new Uint32Array([7]);
+  const rnd = () => { seed[0] = (seed[0] * 1664525 + 1013904223) >>> 0; return seed[0] / 4294967296; };
   return {
     /** Owner fields: the controller's surf model, foot position, grounded. */
     surf: null, x: 0.5, y: 0.5, z: 0.5, grounded: false, enabled: true,
     /** Flow 0..3 (game/flow.js, eased): the wake grows wider, deeper and throws more spray. */
-    flow: 0.5 - 0.5,
+    flow: 0.5 - 0.5, wet: 0, frozen: 0,
     update() {
       const s = this.surf;
-      if (!this.enabled || !s || !s.active || !this.grounded || s.speed < 1) { px = NaN; return; }
-      const T = wakeTuning;
-      if (Number.isNaN(px)) { px = this.x; pz = this.z; return; }
-      const dx = this.x - px, dz = this.z - pz, len = Math.sqrt(dx * dx + dz * dz);
+      if (!this.enabled || !s || !s.active || !this.grounded || s.speed < 1) { this.frozen = 0; last[0] = NaN; return; }
+      const sand = s.tuning === sandSurfTuning;
+      if (!sand) this.frozen = 0;
+      const T = sand ? sandSurfWakeTuning : wakeTuning;
+      if (Number.isNaN(last[0])) { last[0] = this.x; last[1] = this.z; return; }
+      const dx = this.x - last[0], dz = this.z - last[1], len = Math.sqrt(dx * dx + dz * dz);
       if (len < 0.02) return;
-      if (len > 4) { px = this.x; pz = this.z; return; }              // teleport, not a carve
-      const sp = s.speed, grip = Math.min(1, Math.abs(s.latAccel) / 15);
+      if (len > 4) { last[0] = this.x; last[1] = this.z; return; }              // teleport, not a carve
+      const sp = s.speed, grip = Math.min(1, Math.abs(s.latAccel) / (s.tuning ? s.tuning.latMax : 15));
       // Groove along the segment just travelled; berms heavier on the outside of the turn
       // (turning right → the outside is left → negative bias).
-      ts.bx = (this.x + px) * 0.5; ts.bz = (this.z + pz) * 0.5; ts.bdx = dx / len; ts.bdz = dz / len;
+      ts.bx = (this.x + last[0]) * 0.5; ts.bz = (this.z + last[1]) * 0.5; ts.bdx = dx / len; ts.bdz = dz / len;
       ts.bl = len * 0.5;
       const fk = this.flow;
       ts.bw = (T.halfWidth + T.widthPerSpeed * sp) * (1 + 0.1 * fk);
       ts.bd = Math.min(T.maxDepth, T.depth + T.depthPerSpeed * sp) * s.blend * (1 + 0.08 * fk);
-      ts.bc = T.compaction;
-      ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = -Math.sign(s.latAccel) * grip * T.bias; ts.bberm = T.berm;
-      ts.stamp();
-      px = this.x; pz = this.z;
+      // Keep the sand capsule's rounded front berm behind the feet's normal stencil.
+      // Otherwise collision reads the fresh wake lip as an uphill slope every frame.
+      // The full groove/berm still collides when crossed; snow placement is unchanged.
+      if (sand) {
+        const trail = ts.bw * 1.65 + 0.3;
+        ts.bx -= ts.bdx * trail; ts.bz -= ts.bdz * trail;
+      }
+      let frozen = 0;
+      if (sand && surface !== null) {
+        surface.qx = ts.bx; surface.qz = ts.bz;
+        if (surface.sample()) frozen = surface.frozen;
+      }
+      this.frozen = frozen;
+      const wet = sand ? Math.max(0, Math.min(1, this.wet)) : 0;
+      const loose = sand ? (1 - wet) * (1 - wet) * Math.max(0, 1 - frozen * 2) : 1;
+      // Wet sand cuts a compact, shallow lane; a frozen crust takes no cut or loose spray.
+      ts.bd *= (1 - .45 * wet) * (frozen > .5 ? 0 : 1);
+      if (ts.bd > 0) {
+        ts.bc = T.compaction;
+        ts.bk = BRUSH.PLOUGH; ts.bwet = 0; ts.bbias = -Math.sign(s.latAccel) * grip * T.bias; ts.bberm = T.berm;
+        ts.stamp();
+      }
+      last[0] = this.x; last[1] = this.z;
       // Spray: thrown up and out of the outside berm behind the feet, carried a little forward
       // (air drag lays it back into a trailing plume).
       const hx = dx / len, hz = dz / len, rx = hz, rz = -hx;
       // The crest: compressed snow boiling up right under and around the feet.
-      for (let k = 0; k < Math.round(6 * s.blend); k++) {
+      for (let k = 0; k < Math.round(6 * s.blend * loose); k++) {
         const side = rnd() * 2 - 1;
         fx.ex = this.x + hx * (0.1 + 0.3 * rnd()) + rx * side * 0.35; fx.ez = this.z + hz * (0.1 + 0.3 * rnd()) + rz * side * 0.35;
         fx.ey = this.y + 0.02;
@@ -68,7 +93,7 @@ export function createSurfWake(ts, fx) {
       }
       const out = s.latAccel > 0.5 ? -1 : s.latAccel < -0.5 ? 1 : 0;
       const n = Math.min(T.maxSpray * (1 + 0.25 * fk), Math.round(sp * T.sprayPerSpeed + Math.abs(s.latAccel) * T.sprayPerLat) * (1 + 0.2 * fk)) * s.blend;
-      for (let k = 0; k < n; k++) {
+      for (let k = 0; k < n * loose; k++) {
         const side = out !== 0 ? out * (0.7 + 0.3 * rnd()) : (rnd() < 0.5 ? -1 : 1);
         const back = 0.2 + 0.5 * rnd();
         fx.ex = this.x - hx * back + rx * side * ts.bw * (0.9 + 0.4 * rnd());
