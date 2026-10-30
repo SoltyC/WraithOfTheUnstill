@@ -85,9 +85,14 @@ export function createStoneMass() {
       }
       self.count = n;
     },
-    /** Signed ground offset (m) at (x, z): displaced mass up, depression down. Sets .disp and .depr. */
-    heightAt(x, z) {
-      if (self.count === 0) { self.disp = 0; self.depr = 0; return 0; }
+    /** Signed ground offset (m) at (x, z): displaced mass up, depression down. Sets .disp and .depr.
+     *  (Tests and set-up; hot paths use heightQ: a returned double, not inlined, is boxed.) */
+    heightAt(x, z) { self.qx = x; self.qz = z; self.heightQ(); return self.h; },
+    /** Query fields: qx, qz → heightQ() → h (and .disp, .depr). Allocation-free. */
+    qx: 0.5, qz: 0.5, h: 0.5 - 0.5,
+    heightQ() {
+      const x = self.qx, z = self.qz;
+      if (self.count === 0) { self.disp = 0; self.depr = 0; self.h = 0; return; }
       let disp = 0, depr = 0;
       for (let i = 0; i < MASS_MAX; i++) {
         if (!k.on[i]) continue;
@@ -99,27 +104,29 @@ export function createStoneMass() {
           const along = rx * k.dx[i] + rz * k.dz[i], a = along < -k.hl[i] ? -k.hl[i] : along > k.hl[i] ? k.hl[i] : along;
           const px = rx - k.dx[i] * a, pz = rz - k.dz[i] * a;
           const d = Math.sqrt(px * px + pz * pz) / hw;
-          if (d < RIDGE_END) { const c = H * crestAt(d); if (c > disp) disp = c; }
+          // (The profiles inline here: crestAt, trenchAt, bowlAt, rimAt — a returned double boxes when a call is not inlined.)
+          if (d < CREST) { const u = d / CREST, w = 1 - u * u, c = H * w * w; if (c > disp) disp = c; }
           // The trench is a flank (lateral distance, along the segment's length and a fading way past it): see RIDGE in terrainState.wgsl.js.
           const dp = Math.abs(rx * k.dz[i] - rz * k.dx[i]) / hw;
           if (dp > CREST && dp < RIDGE_END) {
             const hl = k.hl[i], ext = TRENCH_EXT0 + TRENCH_EXTK * dp * hw, al = along < 0 ? -along : along;
             if (al < hl + ext) {
               let u = (al - hl) / ext; u = u < 0 ? 0 : u; const ef = 1 - u * u * (3 - 2 * u);
-              const t = H * TRENCH_RATIO * trenchAt(dp) * ef;
+              const t = H * TRENCH_RATIO * Math.sin(Math.PI * (dp - CREST) / (RIDGE_END - CREST)) * ef;
               if (t > depr) depr = t;
             }
           }
         } else {
           const d = Math.sqrt(rx * rx + rz * rz) / hw;
           if (d >= RIM1) continue;
-          const b = H * bowlAt(d), r = H * RIM_RATIO * rimAt(d);
+          const ub = d / BOWL, wb = 1 - ub * ub, b = d < BOWL ? H * wb * wb : 0;
+          const r = d > RIM0 ? H * RIM_RATIO * Math.sin(Math.PI * (d - RIM0) / (RIM1 - RIM0)) : 0;
           if (r > disp) disp = r;
           if (b > depr) depr = b;
         }
       }
       self.disp = disp; self.depr = depr;
-      return disp - depr;
+      self.h = disp - depr;
     },
   };
   function put(kind) {

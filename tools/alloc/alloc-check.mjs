@@ -64,7 +64,7 @@ const cases = {
     const st = stoneRig; st.dt = clock.dt; st.time += st.dt;
     st.castShard = (i % 40) === 0; st.ridgeHeld = ((i >> 6) & 7) < 3; st.castBloom = (i % 240) === 7;
     st.update();
-    sink[0] = st.mass.heightAt(5, 1);
+    st.mass.qx = 5; st.mass.qz = 1; st.mass.heightQ(); sink[0] = st.mass.h;
   },
   'ground.sample': (i) => { ground.qx = (i % 1000) * 0.2 - 100; ground.qz = (i % 777) * 0.2 - 70; ground.sample(); sink[0] = ground.h; },
   // dt comes from a mutable field, as in the game (a literal constant would hide boxing).

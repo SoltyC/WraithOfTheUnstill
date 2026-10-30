@@ -165,7 +165,7 @@ export function createStoneBending(ctx) {
       const n = Math.min(48, Math.max(2, Math.ceil(len / 0.5)));
       for (let i = 1; i <= n; i++) {
         const u = i / n, x = this.ax + dx * u, z = this.az + dz * u;
-        const off = mass.heightAt(x, z);
+        const off = (mass.qx = x, mass.qz = z, mass.heightQ(), mass.h);
         if (off < 0.35) continue;
         if (this.ay + dy * u < (A[22] = x, A[23] = z, gs(), A[22]) + 0.15) { this.t = (i - 1) / n; return true; }   // ground1 already includes the mass
       }
@@ -176,9 +176,11 @@ export function createStoneBending(ctx) {
     pushOut(x, z, minOff) {
       this.pushX = 0; this.pushZ = 0;
       if (mass.count === 0) return false;
-      const h0 = mass.heightAt(x, z);
+      const h0 = (mass.qx = x, mass.qz = z, mass.heightQ(), mass.h);
       if (h0 < minOff) return false;
-      const e = 0.3, gx = mass.heightAt(x + e, z) - mass.heightAt(x - e, z), gz = mass.heightAt(x, z + e) - mass.heightAt(x, z - e);
+      const e = 0.3;
+      const gx = (mass.qx = x + e, mass.heightQ(), mass.h) - (mass.qx = x - e, mass.heightQ(), mass.h);
+      const gz = (mass.qx = x, mass.qz = z + e, mass.heightQ(), mass.h) - (mass.qz = z - e, mass.heightQ(), mass.h);
       const gl = Math.sqrt(gx * gx + gz * gz);
       if (gl < 1e-4) return false;
       const step = Math.min(0.6, (h0 - minOff) / (gl / (2 * e)) + 0.1);

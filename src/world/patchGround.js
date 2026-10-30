@@ -67,7 +67,7 @@ export class PatchGround {
       if (!found) this.h = 0;
     }
     const m = this.mass;
-    if (m !== null && m.count > 0) this.h += m.heightAt(this.qx, this.qz);
+    if (m !== null && m.count > 0) { m.qx = this.qx; m.qz = this.qz; m.heightQ(); this.h += m.h; }
   }
 
   /** Normal at (qx, qz) → nx/ny/nz, from central differences at the active patch spacing. */
