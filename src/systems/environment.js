@@ -6,6 +6,8 @@
 import { DynamicRes } from '../core/dynamicRes.js';
 import { gpuTimer } from '../core/gpuTimer.js';
 import { SANDFALL_SITES } from '../render/sandfalls.js';
+import { BRUSH } from '../shaders/terrainState.wgsl.js';
+const BRUSH_MOUND = BRUSH.MOUND;
 
 const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
 
@@ -44,7 +46,7 @@ export async function addEnvironmentSystems(g) {
   // Sandfalls (D7b): running once the Dunes are restored; a Crystallize at a cascade freezes it into
   // ramps of ice-sand (flag `frozen:sandfall-<site>`, saved with the quests). A photo spot may force
   // which are frozen (worldState.sandfallsFrozen); the state snaps when that changes.
-  let fallSpot = null;
+  let fallSpot = null, fallPile = 0;
   loop.add({ name: 'sandfalls', update: () => {
     const sf = g.sandfalls, fr = g.frost, flags = g.chapter ? g.chapter.graph.flags : null;
     if (fr && fr.crystalEvent && flags && restoration.dunes > 0.5) {
@@ -59,6 +61,21 @@ export async function addEnvironmentSystems(g) {
     if (ov !== fallSpot) { fallSpot = ov; sf.snap(); }
     sf.time = clock.simTime; sf.flow = g.canyon.on ? restoration.dunes : 0; sf.dt = clock.dt; sf.update();
     if (g.solids) sf.fillRamps(g.solids.ramps);
+    // The sand a running fall pours piles in a cone at its foot (terrain state: displaced mass, which
+    // heals once the fall stops or freezes): kept heaped every few seconds near the Wraith.
+    fallPile += clock.dt;
+    if (fallPile > 3 && sf.flow > 0.5 && g.terrainState) {
+      fallPile = 0;
+      const p = controller.pos, ts = g.terrainState;
+      for (let k = 0; k < sf.falls.length; k++) {
+        const f = sf.falls[k];
+        if (sf.frozen[f[7]] > 0.05) continue;
+        const fx = f[0] + f[3] * 2.4, fz = f[2] + f[4] * 2.4;
+        if (Math.abs(fx - p.x) > 35 || Math.abs(fz - p.z) > 35) continue;
+        ts.bx = fx; ts.bz = fz; ts.bdx = f[3]; ts.bdz = f[4]; ts.bl = 0.6; ts.bw = 2.6; ts.bd = 0.9; ts.bc = 0.3;
+        ts.bk = BRUSH_MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
+      }
+    }
   } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and
