@@ -199,7 +199,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   /** The tree of cell (gx, gz), if any, into T (deterministic: the same tree whenever asked). */
   const T = { x: 0.5, z: 0.5, si: 0, v: 0, sc: 0.5 };
   /** The ravines' floors (world/ravines.json spines, via setRavines): 16 m cells → the floor's level,
-   *  marked well inside a canyon's or the rift's walls (not the slots: too narrow, too dark). */
+   *  marked out to near a canyon's or the rift's walls (ledges are left out by height) (not the slots: too narrow, too dark). */
   let ravineFloor = null;
   const RC = 16, rKey = (i, j) => i * 4096 + j;
   function canyonFloorAt(x, z) { return ravineFloor ? ravineFloor.get(rKey(Math.floor(x / RC), Math.floor(z / RC))) : undefined; }
@@ -231,6 +231,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   }
   function treeAt(gx, gz) {
     const x = (gx + 0.15 + 0.7 * h01(gx, gz, SEED + 1)) * CELL, z = (gz + 0.15 + 0.7 * h01(gx, gz, SEED + 2)) * CELL;
+    if (canyonFloorAt(x, z) !== undefined) return desertTreeAt(gx, gz, x, z);   // the canyon floors: the erg's flora, even where the meadow's weight runs down into them
     if (meadowAt(x, z) < 0.6) return streamer.bw3 > 0.15 ? desertTreeAt(gx, gz, x, z) : false;
     // Groves (slow noise), sparse singles between.
     const grove = valueNoise(x / 170, z / 170, SEED + 3) * 0.65 + valueNoise(x / 55, z / 55, SEED + 4) * 0.35;
@@ -399,7 +400,7 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
         for (let k = 0; k < sp.pts.length - 1; k++) {
           const [ax, az, aw, af] = sp.pts[k], [bx, bz, bw, bf] = sp.pts[k + 1], len = Math.hypot(bx - ax, bz - az);
           for (let s = 0; s <= len; s += RC / 2) {
-            const t = s / len, x = ax + (bx - ax) * t, z = az + (bz - az) * t, r = (aw + (bw - aw) * t) * 0.6, f = af + (bf - af) * t;
+            const t = s / len, x = ax + (bx - ax) * t, z = az + (bz - az) * t, r = (aw + (bw - aw) * t) * 0.9, f = af + (bf - af) * t;
             for (let i = Math.floor((x - r) / RC); i <= Math.floor((x + r) / RC); i++) for (let j = Math.floor((z - r) / RC); j <= Math.floor((z + r) / RC); j++) {
               if (Math.hypot((i + 0.5) * RC - x, (j + 0.5) * RC - z) < r) ravineFloor.set(rKey(i, j), f);
             }

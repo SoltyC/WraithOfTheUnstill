@@ -334,7 +334,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Battle glass (Phase 9 D7): sand fused by an old blow — dark, clear green-amber, glossy; the SSR
     // pass reflects the world in it. Fracture planes run through it, each catching the light.
     // Bottle green running to amber through a piece (where the sand fused hotter), not facet by facet.
-    let tint = mix(vec3f(0.06, 0.09, 0.07), vec3f(0.1, 0.08, 0.04), smoothstep(0.1, 0.7, n2 * 0.5 + 0.5));
+    let tint = mix(vec3f(0.05, 0.085, 0.07), vec3f(0.085, 0.075, 0.05), smoothstep(0.3, 0.85, n2 * 0.5 + 0.5));
     albedo = tint * (0.85 + 0.3 * smoothstep(0.2, 0.9, n1 * 0.5 + 0.5));
     rough = 0.04; ssr = 0.6 * (0.15 + 0.85 * pow(1.0 - max(dot(N, V), 0.0), 3.0)); ao = 1.0; glassK = 1.0;
   } else if (mid == 4) {
@@ -443,7 +443,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let F = 0.04 + 0.96 * pow(1.0 - NV, 5.0);
     col += shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * (F * 1.6 + 0.06);
     // Behind it: the sky where the view rises, else the sunlit sand it stands in (glass sits on the erg).
-    let sandBehind = vec3f(0.62, 0.48, 0.32) * (key * 0.55 + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
+    let sandBehind = vec3f(0.62, 0.48, 0.32) * (key * vis * 0.55 + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
     let behind = mix(sandBehind, shIrradiance(-V) * uniforms.envMisc.w, smoothstep(-0.05, 0.3, -V.y));
     col += behind * (albedo * 6.0) * (1.0 - F) * 0.3 * (0.25 + 0.75 * NV);   // seen edge-on, more glass to see through: darker
     let back = pow(clamp(dot(-V, L), 0.0, 1.0), 4.0) * (0.4 + 0.6 * clamp(-nl * 0.5 + 0.5, 0.0, 1.0));

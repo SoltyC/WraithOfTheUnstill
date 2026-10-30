@@ -20,7 +20,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let toCam = normalize(uniforms.cameraPosition - wp);
   if (f.w < 0.5) {
     let right = normalize(cross(vertexInputs.fallTan, toCam) + vec3f(1e-5, 0.0, 0.0));
-    let width = (1.6 + 3.0 * f.y) * (0.8 + 0.4 * f.z);
+    let width = (1.3 + 1.7 * f.y) * (0.8 + 0.4 * f.z);
     wp += right * f.x * width * 0.5;
   } else {
     // The foot's dust: a billboard rising off the floor, wider than the stream.
@@ -54,12 +54,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let s1 = noised(vec2f(u * 3.5 + f.z * 40.0, v * 9.0 - t * 2.6)).x * 0.5 + 0.5;
     let s2 = noised(vec2f(u * 9.0 - f.z * 13.0, v * 22.0 - t * 4.1)).x * 0.5 + 0.5;
     let streak = smoothstep(0.25, 0.75, s1 * 0.65 + s2 * 0.35);
-    a = (1.0 - u * u * u * u) * mix(1.0, 0.6, v) * (0.55 + 0.45 * streak) * (1.0 - smoothstep(0.88, 1.0, v));
+    a = (1.0 - u * u * u * u) * mix(0.8, 0.35, v) * (0.35 + 0.65 * streak) * smoothstep(0.0, 0.08, v) * (1.0 - smoothstep(0.8, 1.0, v));
   } else {
     // The dust: a soft boiling cloud, densest low.
     let p = vec2f(f.x, f.y * 2.0 - 1.0);
     let boil = noised(p * 1.6 + vec2f(f.z * 31.0, -t * 0.5)).x * 0.5 + 0.5;
-    a = (1.0 - smoothstep(0.3, 1.0, length(p) + 0.35 * boil)) * (1.0 - f.y * 0.6) * 0.6;
+    a = (1.0 - smoothstep(0.3, 1.0, length(p) + 0.35 * boil)) * (1.0 - f.y * 0.6) * 0.35;
   }
   a *= flow;
   if (a < 0.003) { discard; }
@@ -69,7 +69,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Sand scatters forward: backlit, a fall glows along its edges (it "catches the light").
   let fwd = pow(max(dot(-V, L), 0.0), 5.0);
   // A falling curtain is lit all round (grains turn every way): the sun, more of it where unshadowed, and the sky.
-  let col = sand * (key * (0.25 + 0.75 * vis) * (0.6 + 1.6 * fwd) / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * 1.1);
+  // Where the wall shades it, only the sky lights it, and nothing glows from behind.
+  let col = sand * (key * vis * (0.6 + 1.6 * fwd) / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * 0.8);
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(cam - wp) * 0.001);
   let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
   fragmentOutputs.color = vec4f(outc * a, a);

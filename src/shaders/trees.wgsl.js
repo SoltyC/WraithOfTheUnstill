@@ -183,9 +183,11 @@ ${leafPass ? `
   // the acacia's dusty olive, the tamarisk's grey-green, the palm's sun-yellowed fronds.
   let sp = uniforms.treeMat.y;
   let lum = dot(albedo, vec3f(0.3, 0.55, 0.15));
-  if (abs(sp - 5.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.25, 1.12, 0.6), 0.6); }
+  if (abs(sp - 5.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.45, 1.32, 0.75), 0.6); }
   if (abs(sp - 7.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.3, 1.45, 1.2), 0.7); }   // pale enough not to go black in shade
   if (abs(sp - 8.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.2, 1.25, 0.6), 0.45); }
+  // Dusty, sun-bleached foliage: lighter than the meadow's (and so never a black blot in shade).
+  if (sp > 4.5) { albedo *= 1.5; }
   // Stilled erg (treeMat.z the Dunes' restoration): the oasis palms and the thorn hang grey and dry.
   if (sp > 4.5) { albedo = mix(albedo, lum * vec3f(1.0, 0.92, 0.78) * 0.9, 0.8 * (1.0 - uniforms.treeMat.z)); }
   // Inner crown is darker (light has crossed the leaves above): height in tree and facing — but
@@ -200,6 +202,9 @@ ${leafPass ? `
   // Transmitted sky and fill: a shaded leaf is still lit through from the leaves around it.
   let through = (shIrradiance(-N) * uniforms.envMisc.w * 0.35 + canopyFill(canopy, N) * 0.5) * (1.0 - thick);
   col = albedo * (key * diff * vis * inner / PI + sky + canopyFill(canopy, N) * inner * 0.6 + through);
+  // The erg's trees stand on bright sand: light thrown up off it (the sky's, and the sun's where the
+  // ground round the tree is lit) fills the crown's underside, so they never go black in a canyon's shade.
+  if (sp > 4.5) { col += albedo * (shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w + key * max(L.y, 0.0) * vis / PI) * 1.4 * (0.7 - 0.3 * N.y); }
   // Light through the leaves toward the sun: the blade glows, the veins and twigs stay dark.
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * (1.0 - thick) * (0.6 + 0.4 * clamp(-nl, 0.0, 1.0));
   col += key * albedo * vec3f(0.95, 1.2, 0.5) * back * vis * 0.7;
