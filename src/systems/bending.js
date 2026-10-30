@@ -252,6 +252,7 @@ export function addBendingSystem(g) {
     crystals.update();
     streaks.vx = controller.vel.x; streaks.vy = controller.vel.y; streaks.vz = controller.vel.z;
     streaks.dt = clock.dt; streaks.engaged = Math.max(controller.surf.blend, controller.glide.blend);
+    streaks.sand = controller.surf.material === 1 || controller.surf.material === 6 ? 1 : 0;
     streaks.update();
   } });
 }

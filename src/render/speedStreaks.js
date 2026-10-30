@@ -74,8 +74,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let shape = (1.0 - u.x * u.x) * (1.0 - u.y * u.y);
   let a = clamp(fragmentInputs.vAlpha * shape * 0.16, 0.0, 1.0);
   if (a < 0.001) { discard; }
-  // The colour of the air: sky light (bright, slightly cool).
-  let col = shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * 1.6 + atmoKeyColor() * 0.05;
+  // The colour of the air: sky light (bright, slightly cool) — on sand, dust (warm, sunlit; streakFade.z).
+  let sky = shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * 1.6 + atmoKeyColor() * 0.05;
+  let dust = (shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w + atmoKeyColor() * 0.35) * vec3f(0.95, 0.72, 0.48) * 1.3;
+  let col = mix(sky, dust, uniforms.streakFade.z);
   let outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
   fragmentOutputs.color = vec4f(outc * a, a);
 }
@@ -113,6 +115,8 @@ export function createSpeedStreaks(scene, atmo) {
     mesh,
     /** Owner fields: travel velocity (m/s), frame dt (s), traversal engagement 0..1, Flow 0..3 (eased). */
     vx: 0.5, vy: 0.5, vz: 0.5, dt: 0.5, engaged: 0.5 - 0.5, flow: 0.5 - 0.5,
+    /** Owner field: 1 while the traversal is over sand (the streaks are dust), 0 snow/air. */
+    sand: 0.5 - 0.5,
     update() {
       const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz);
       // Distance travelled drives the streaks (a phase from time × speed would jump as speed changes).
@@ -120,6 +124,7 @@ export function createSpeedStreaks(scene, atmo) {
       params.x = this.vx; params.y = this.vy; params.z = this.vz; params.w = travelled;
       fade.x = this.engaged * Math.min(1, Math.max(0, (sp - 7) / 9));
       fade.y = Math.min(1, this.flow / 3);
+      fade.z += (this.sand - fade.z) * Math.min(1, this.dt * 3);
     },
   };
 }
