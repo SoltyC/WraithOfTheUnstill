@@ -16,6 +16,9 @@ export async function createGame(g) {
       if (pendingTp.active || streamer.arrived.length > 0) return false;
       if (streamer.pendingNear(controller.pos.x, controller.pos.z) !== 0) return false;
       if (terrainState.pendingPages !== 0) return false;
+      if (terrainState.relaxation && !terrainState.relaxation.ready) return false;
+      if (terrainState.collision && !terrainState.collision.ready) return false;
+      if (terrainState.coarseRelaxation && !terrainState.coarseRelaxation.ready) return false;
       return !arm.free || streamer.pendingNear(camera.position.x, camera.position.z) === 0;
     },
     /** Photo-spot trail waiting for the world to settle (then stamped as footprints). */

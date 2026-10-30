@@ -1,0 +1,53 @@
+[
+  {
+    "repeat": 1,
+    "exit": 1,
+    "fineGpuMs": {
+      "mean": 0.05139667640918603,
+      "p95": 0.04608000000000023,
+      "max": 0.3389439999999998
+    },
+    "synthetic": {
+      "distance": 243.2141999915666,
+      "covered": 474,
+      "maxAge": 0.280200000047671,
+      "nominalSpeed": 26
+    },
+    "errors": 0,
+    "late": []
+  },
+  {
+    "repeat": 2,
+    "exit": 1,
+    "fineGpuMs": {
+      "mean": 0.045802087682672396,
+      "p95": 0.04608000000000012,
+      "max": 0.3143680000000002
+    },
+    "synthetic": {
+      "distance": 243.33039999354605,
+      "covered": 474,
+      "maxAge": 0.28300000000012915,
+      "nominalSpeed": 26
+    },
+    "errors": 0,
+    "late": []
+  },
+  {
+    "repeat": 3,
+    "exit": 1,
+    "fineGpuMs": {
+      "mean": 0.04529543215031325,
+      "p95": 0.04608000000000012,
+      "max": 0.33587199999999984
+    },
+    "synthetic": {
+      "distance": 243.92920000461163,
+      "covered": 473,
+      "maxAge": 0.28080000007184935,
+      "nominalSpeed": 26
+    },
+    "errors": 0,
+    "late": []
+  }
+]

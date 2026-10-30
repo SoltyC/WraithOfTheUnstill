@@ -22,7 +22,7 @@ export const SHADOW_SPLITS = [24, 140, 800, 4500];
 /** Terrain levels drawn into each cascade (level l spans ±8·2^l m). Cascade 0 keeps the fine
  *  levels to ~512 m (its receivers also read cascade 1, which holds the distant ridges);
  *  cascades 2 and 3 skip the levels wholly inside their near distance. */
-const SHADOW_LEVELS = [[0, 6], [0, 11], [4, 11], [7, 11]];
+const SHADOW_LEVELS = [[0, 6], [0, 10], [4, 10], [7, 10]];
 const BACKOFF = 4000;   // m toward the light: distant ranges still cast into the cascades
 
 const vp = new Matrix();
@@ -42,9 +42,11 @@ export function createShadows(scene, viewCamera, casters) {
   const shadowData = new StorageBuffer(engine, data.byteLength, undefined, 'shadow-data');
   const maps = [], cams = [], lights = [], origins = [];
   const clip = casters.clipmap;
+  const terrainCaster=clip.shadowMesh||clip.mesh;
 
   for (let c = 0; c < CASCADES; c++) {
     const cam = new TargetCamera('shadowCam' + c, new Vector3(0, 100, 0), scene, false);
+    cam.layerMask=0x1fffffff;
     cam.mode = Camera.ORTHOGRAPHIC_CAMERA;
     cam.minZ = 0; cam.maxZ = 10000;
     const rtt = new RenderTargetTexture('shadowCascade' + c, SHADOW_SIZE, scene, {
@@ -53,7 +55,7 @@ export function createShadows(scene, viewCamera, casters) {
     });
     rtt.activeCamera = cam;
     rtt.clearColor = new Color4(1e6, 0, 0, 1);
-    rtt.renderList = [clip.mesh, casters.capsule];
+    rtt.renderList = [clip.shadowCenter, terrainCaster, casters.capsule];
     rtt.renderParticles = false; rtt.renderSprites = false;
     const light = new Vector4(0, 1, 0, 0), origin = new Vector4(0, 0, 0, 0);
     // Clipmap depth: the terrain's position only (clipmapShadowVertexWGSL), depth fragment.
@@ -65,7 +67,7 @@ export function createShadows(scene, viewCamera, casters) {
     });
     cm.setArray4('levels', clip.levels);
     cm.setVector4('camGrid', clip.camGrid);
-    cm.setVector4('shadowLevels', new Vector4(SHADOW_LEVELS[c][0], SHADOW_LEVELS[c][1], 0, 0));
+    cm.setVector4('shadowLevels', new Vector4(SHADOW_LEVELS[c][0], SHADOW_LEVELS[c][1], clip.shadowN/2, 0));
     cm.setStorageBuffer('levelData', clip.levelData);
     cm.setVector4('shadowLight', light); cm.setVector4('shadowOrigin', origin);
     cm.backFaceCulling = false;
@@ -75,7 +77,8 @@ export function createShadows(scene, viewCamera, casters) {
       shaderLanguage: ShaderLanguage.WGSL,
     });
     pm.setVector4('shadowLight', light); pm.setVector4('shadowOrigin', origin);
-    rtt.setMaterialForRendering(clip.mesh, cm);
+    rtt.setMaterialForRendering(terrainCaster, cm);
+    rtt.setMaterialForRendering(clip.shadowCenter, cm);
     rtt.setMaterialForRendering(casters.capsule, pm);
     // Cleared by the pass start itself (see below): the RTT's own clear would restart the pass.
     rtt.onClearObservable.add(() => {});

@@ -53,7 +53,7 @@ self.onmessage = async (e) => {
       return surface[(row * surfaceN + col) * 4];
     };
     unpackPage(entry.words, planes);
-    healPlanes(planes, Math.max(0, m.time - entry.time), material, tmp);
+    healPlanes(planes, Math.max(0, m.time - entry.time), material, tmp, m.sandScale ?? 1);
     packPage(planes, entry.words);
     self.postMessage({ type: 'page', key: m.key, gen: m.gen, words: entry.words }, [entry.words.buffer]);
   }

@@ -48,13 +48,15 @@ export function createStoneMass() {
     kind: new Uint8Array(MASS_MAX), on: new Uint8Array(MASS_MAX),
     cx: new Float64Array(MASS_MAX), cz: new Float64Array(MASS_MAX), dx: new Float64Array(MASS_MAX), dz: new Float64Array(MASS_MAX),
     hl: new Float64Array(MASS_MAX), hw: new Float64Array(MASS_MAX), H: new Float64Array(MASS_MAX),
-    rate: new Float64Array(MASS_MAX), t0: new Float64Array(MASS_MAX), healAge: new Float64Array(MASS_MAX), fac: new Float64Array(MASS_MAX),
+    changed: new Float64Array(MASS_MAX), rate: new Float64Array(MASS_MAX), t0: new Float64Array(MASS_MAX), healAge: new Float64Array(MASS_MAX), fac: new Float64Array(MASS_MAX),
     reach: new Float64Array(MASS_MAX), frozen: new Uint8Array(MASS_MAX),
   };
   let head = 0;
   const self = {
     /** Shapes alive, the last query's displaced and depression parts, and the clock/heal scale (set by the owner). */
     count: 0, disp: 0, depr: 0, time: 0, healScale: 1,
+    /** Queries skip shapes last changed at or before this time (the sand-state snapshot already holds them). */
+    afterTime: -Infinity,
     /** Arguments of addRidge (cx, cz, dx, dz, hl, hw, H, rate), addCrater (cx, cz, hw, H, rate) and raise (H): doubles passed to a call box, so they come through here. */
     arg: new Float64Array(8),
     /** Shape arrays for cover tests and the Frost combination (read only). */
@@ -64,7 +66,7 @@ export function createStoneMass() {
     /** Record a crater (centre, footprint radius hw, bowl depth H) → index. */
     addCrater() { return put(CRATER); },
     /** A later, taller stamp over the same segment (the swell): height H from now on. */
-    raise(i) { if (k.on[i]) k.H[i] = Math.max(k.H[i], self.arg[0]); },
+    raise(i) { if (k.on[i]) { k.H[i] = Math.max(k.H[i], self.arg[0]); k.changed[i] = self.time; } },
     /** Frozen shapes do not heal on the CPU either (the Frost combination re-stamps them). */
     freeze(i) { k.frozen[i] = 1; },
     clear() { k.on.fill(0); self.count = 0; head = 0; },
@@ -95,7 +97,7 @@ export function createStoneMass() {
       if (self.count === 0) { self.disp = 0; self.depr = 0; self.h = 0; return; }
       let disp = 0, depr = 0;
       for (let i = 0; i < MASS_MAX; i++) {
-        if (!k.on[i]) continue;
+        if (!k.on[i] || k.changed[i] <= self.afterTime) continue;
         const rx = x - k.cx[i], rz = z - k.cz[i];
         const rr = k.reach[i];
         if (rx > rr || rx < -rr || rz > rr || rz < -rr) continue;
@@ -135,6 +137,7 @@ export function createStoneMass() {
     if (kind === RIDGE) { k.dx[i] = a[2]; k.dz[i] = a[3]; k.hl[i] = a[4]; k.hw[i] = a[5]; k.H[i] = a[6]; k.rate[i] = a[7]; }
     else { k.dx[i] = 1; k.dz[i] = 0; k.hl[i] = 0; k.hw[i] = a[2]; k.H[i] = a[3]; k.rate[i] = a[4]; }
     k.reach[i] = k.hl[i] + k.hw[i] * (kind === RIDGE ? RIDGE_END : RIM1) + (kind === RIDGE ? TRENCH_EXT0 + TRENCH_EXTK * RIDGE_END * k.hw[i] : 0);
+    k.changed[i] = self.time;
     self.count++;
     return i;
   }

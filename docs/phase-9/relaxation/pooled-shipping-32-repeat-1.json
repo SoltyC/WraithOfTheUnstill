@@ -1,0 +1,250 @@
+{
+  "date": "2026-10-28T15:35:41.772Z",
+  "renderSize": {
+    "width": 2560,
+    "height": 1440,
+    "internalWidth": 1792,
+    "internalHeight": 1008,
+    "renderScale": 0.7
+  },
+  "combinedGpuMs": {
+    "mean": 0.1657988141962425,
+    "p95": 0.18022399999999972,
+    "max": 3.2624639999999996,
+    "peakParts": {
+      "sandRelaxLoad": 3.2256,
+      "sandCoarseLoad": 0.02047999999999961,
+      "sandCollisionLoad": 0.016383999999999954
+    }
+  },
+  "iterations": 32,
+  "finePasses": 10,
+  "frames": 480,
+  "mode": "synthetic26",
+  "synthetic": {
+    "distance": 169.10539999936032,
+    "covered": 474,
+    "maxAge": 0.1373999999761395,
+    "nominalSpeed": 26
+  },
+  "seconds": 6.7601000000235985,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 480,
+  "writes": 2497,
+  "writesByKind": [
+    513,
+    480,
+    0,
+    0,
+    0,
+    1504,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionPendingMax": 3,
+  "collisionReads": 144,
+  "speed": {
+    "min": 5.2,
+    "max": 25.85658229705057,
+    "mean": 7.545444276840829
+  },
+  "samples": 479,
+  "incomplete": 0,
+  "spikes": [
+    {
+      "sample": 327,
+      "frame": 2809,
+      "ms": 0.5498880000000019,
+      "passes": 10,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.006143999999999927
+        },
+        {
+          "pass": 1,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 2,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 3,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 4,
+          "ms": 0.42803199999999997
+        },
+        {
+          "pass": 5,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 6,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 7,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 8,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 9,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 472,
+      "frame": 2954,
+      "ms": 3.2256,
+      "passes": 10,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.006143999999999927
+        },
+        {
+          "pass": 1,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 2,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 3,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 4,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 5,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 6,
+          "ms": 3.1160319999999997
+        },
+        {
+          "pass": 7,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 8,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 9,
+          "ms": 0.006143999999999927
+        }
+      ]
+    }
+  ],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.006143999999999927
+    },
+    {
+      "pass": 1,
+      "ms": 0.01331199999999999
+    },
+    {
+      "pass": 2,
+      "ms": 0.01331199999999999
+    },
+    {
+      "pass": 3,
+      "ms": 0.01331199999999999
+    },
+    {
+      "pass": 4,
+      "ms": 0.01331199999999999
+    },
+    {
+      "pass": 5,
+      "ms": 0.01331199999999999
+    },
+    {
+      "pass": 6,
+      "ms": 3.1160319999999997
+    },
+    {
+      "pass": 7,
+      "ms": 0.015360000000000262
+    },
+    {
+      "pass": 8,
+      "ms": 0.015360000000000262
+    },
+    {
+      "pass": 9,
+      "ms": 0.006143999999999927
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.1405025135699381,
+    "p95": 0.14745600000000025,
+    "max": 3.2256
+  },
+  "gpuErrors": 0,
+  "late": [
+    {
+      "kind": "render",
+      "label": "RenderPipeline_r32float_depth32float_samples1_textureState0",
+      "t": 61366.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:shadowDepth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61370.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:cloth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.09999990463,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFur",
+      "fragment": "fragment:wraithFur",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.299999952316,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFx",
+      "fragment": "fragment:wraithFx",
+      "compute": ""
+    }
+  ],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Synthetic26 mode adds an actual PLOUGH writer and moving collision readback centre at a nominal 26 m/s along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

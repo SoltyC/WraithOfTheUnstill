@@ -1,0 +1,771 @@
+{
+  "date": "2026-10-28T15:38:48.539Z",
+  "reports": [
+    {
+      "enabled": false,
+      "before": {
+        "frame": 361,
+        "time": 7.379200000047686,
+        "jobs": 0,
+        "reads": 0,
+        "pos": [
+          1900,
+          921.9483333333137
+        ],
+        "active": 8
+      },
+      "after": {
+        "frame": 785,
+        "time": 21.033600000023803,
+        "jobs": 0,
+        "reads": 0,
+        "pos": [
+          1900,
+          992.9283333332492
+        ],
+        "active": 8,
+        "gpuErrors": 0,
+        "late": [],
+        "output": [
+          2560,
+          1440
+        ],
+        "internal": [
+          1792,
+          1008
+        ],
+        "renderScale": 0.7
+      },
+      "frames": 424,
+      "samplingInterval": 16,
+      "totalBytes": 112441948,
+      "ownBytes": 75376628,
+      "engineBytes": 37059840,
+      "d2StackBytes": 0,
+      "totalPerFrame": 265193.27358490566,
+      "ownPerFrame": 177775.06603773584,
+      "d2PerFrame": 0,
+      "topSites": [
+        {
+          "site": "_place src/character/wraith/wraith.js:326",
+          "bytes": 43273872,
+          "bytesPerFrame": 102061.01886792453
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621",
+          "bytes": 7636848,
+          "bytesPerFrame": 18011.43396226415
+        },
+        {
+          "site": "isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516",
+          "bytes": 7468580,
+          "bytesPerFrame": 17614.575471698114
+        },
+        {
+          "site": "_lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120",
+          "bytes": 6934740,
+          "bytesPerFrame": 16355.518867924528
+        },
+        {
+          "site": "_setTexture @babylonjs/core/Engines/webgpuEngine.pure.js:2134",
+          "bytes": 5535652,
+          "bytesPerFrame": 13055.783018867925
+        },
+        {
+          "site": "join :0",
+          "bytes": 5332848,
+          "bytesPerFrame": 12577.471698113208
+        },
+        {
+          "site": "sample src/world/solids.js:228",
+          "bytes": 4628880,
+          "bytesPerFrame": 10917.169811320755
+        },
+        {
+          "site": "l src/systems/lights.js:60",
+          "bytes": 4193256,
+          "bytesPerFrame": 9889.754716981131
+        },
+        {
+          "site": "bt src/game/bellwether/bellwether.js:462",
+          "bytes": 3587112,
+          "bytesPerFrame": 8460.169811320755
+        },
+        {
+          "site": "B src/render/rocks.js:67",
+          "bytes": 1669440,
+          "bytesPerFrame": 3937.3584905660377
+        },
+        {
+          "site": "update src/systems/architecture.js:161",
+          "bytes": 1571688,
+          "bytesPerFrame": 3706.811320754717
+        },
+        {
+          "site": "hypot :0",
+          "bytes": 1226424,
+          "bytesPerFrame": 2892.509433962264
+        },
+        {
+          "site": "n src/terrain/noise.js:22",
+          "bytes": 1197936,
+          "bytesPerFrame": 2825.3207547169814
+        },
+        {
+          "site": "t src/terrain/noise.js:16",
+          "bytes": 1195152,
+          "bytesPerFrame": 2818.754716981132
+        },
+        {
+          "site": "sort :0",
+          "bytes": 932296,
+          "bytesPerFrame": 2198.811320754717
+        },
+        {
+          "site": "Z src/render/rocks.js:174",
+          "bytes": 866664,
+          "bytesPerFrame": 2044.0188679245282
+        },
+        {
+          "site": "(anonymous) src/world/villageKeepout.js:40",
+          "bytes": 740504,
+          "bytesPerFrame": 1746.4716981132076
+        },
+        {
+          "site": "Ee src/render/trees.js:194",
+          "bytes": 649104,
+          "bytesPerFrame": 1530.9056603773586
+        },
+        {
+          "site": "L src/render/rocks.js:54",
+          "bytes": 644592,
+          "bytesPerFrame": 1520.2641509433963
+        },
+        {
+          "site": "Q src/render/trees.js:42",
+          "bytes": 622608,
+          "bytesPerFrame": 1468.4150943396226
+        },
+        {
+          "site": "_GetKey @babylonjs/core/Engines/WebGPU/webgpuCacheTextureView.js:28",
+          "bytes": 445696,
+          "bytesPerFrame": 1051.1698113207547
+        },
+        {
+          "site": "has :0",
+          "bytes": 425764,
+          "bytesPerFrame": 1004.1603773584906
+        },
+        {
+          "site": "_checkContext @babylonjs/core/Compute/computeShader.pure.js:294",
+          "bytes": 387288,
+          "bytesPerFrame": 913.4150943396227
+        },
+        {
+          "site": "ft src/game/bellwether/bellwether.js:400",
+          "bytes": 384096,
+          "bytesPerFrame": 905.8867924528302
+        },
+        {
+          "site": "getBindGroups @babylonjs/core/Engines/WebGPU/webgpuComputeContext.js:4",
+          "bytes": 367108,
+          "bytesPerFrame": 865.8207547169811
+        },
+        {
+          "site": "update src/ui/hud/compass.js:141",
+          "bytes": 353548,
+          "bytesPerFrame": 833.8396226415094
+        },
+        {
+          "site": "_startRenderTargetRenderPass @babylonjs/core/Engines/webgpuEngine.pure.js:2409",
+          "bytes": 352992,
+          "bytesPerFrame": 832.5283018867924
+        },
+        {
+          "site": "slice :0",
+          "bytes": 334092,
+          "bytesPerFrame": 787.9528301886793
+        },
+        {
+          "site": "update src/game/nav.js:103",
+          "bytes": 306404,
+          "bytesPerFrame": 722.6509433962265
+        },
+        {
+          "site": "ye src/game/shaped/shaped.js:697",
+          "bytes": 285624,
+          "bytesPerFrame": 673.6415094339623
+        }
+      ],
+      "topStacks": [
+        {
+          "site": "_place src/character/wraith/wraith.js:326 <- _pins src/character/wraith/wraith.js:304 <- update src/character/wraith/wraith.js:143 <- update src/render/wraith.js:279 <- update src/systems/wraith.js:7 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 41324760,
+          "bytesPerFrame": 97464.05660377358
+        },
+        {
+          "site": "isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744 <- _renderRenderTarget @babylonjs/core/scene.pure.js:4500 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464",
+          "bytes": 7468580,
+          "bytesPerFrame": 17614.575471698114
+        },
+        {
+          "site": "join :0 <- isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744 <- _renderRenderTarget @babylonjs/core/scene.pure.js:4500 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72",
+          "bytes": 5246188,
+          "bytesPerFrame": 12373.084905660377
+        },
+        {
+          "site": "_setTexture @babylonjs/core/Engines/webgpuEngine.pure.js:2134 <- bind @babylonjs/core/Materials/shaderMaterial.pure.js:802 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433",
+          "bytes": 4735980,
+          "bytesPerFrame": 11169.764150943396
+        },
+        {
+          "site": "sample src/world/solids.js:228 <- step src/character/wraith/cloth.js:111 <- update src/character/wraith/wraith.js:143 <- update src/render/wraith.js:279 <- update src/systems/wraith.js:7 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 4407648,
+          "bytesPerFrame": 10395.396226415094
+        },
+        {
+          "site": "l src/systems/lights.js:60 <- update src/systems/lights.js:86 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 4002864,
+          "bytesPerFrame": 9440.716981132075
+        },
+        {
+          "site": "_lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744",
+          "bytes": 3811276,
+          "bytesPerFrame": 8988.858490566037
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621 <- _lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827",
+          "bytes": 3736752,
+          "bytesPerFrame": 8813.094339622641
+        },
+        {
+          "site": "bt src/game/bellwether/bellwether.js:462 <- update src/game/bellwether/bellwether.js:293 <- update src/boot/actors.js:196 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 3424752,
+          "bytesPerFrame": 8077.245283018868
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621 <- _lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240",
+          "bytes": 3194856,
+          "bytesPerFrame": 7535.037735849057
+        },
+        {
+          "site": "_lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533",
+          "bytes": 2764284,
+          "bytesPerFrame": 6519.537735849057
+        },
+        {
+          "site": "_place src/character/wraith/wraith.js:326 <- _pins src/character/wraith/wraith.js:304 <- update src/character/wraith/wraith.js:143 <- update src/render/wraith.js:279 <- update src/systems/wraith.js:7 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1949112,
+          "bytesPerFrame": 4596.962264150943
+        },
+        {
+          "site": "B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/render/rocks.js:210 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1645944,
+          "bytesPerFrame": 3881.943396226415
+        },
+        {
+          "site": "update src/systems/architecture.js:161 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1503076,
+          "bytesPerFrame": 3544.990566037736
+        },
+        {
+          "site": "hypot :0 <- bt src/game/bellwether/bellwether.js:462 <- update src/game/bellwether/bellwether.js:293 <- update src/boot/actors.js:196 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 991380,
+          "bytesPerFrame": 2338.1603773584907
+        },
+        {
+          "site": "Z src/render/rocks.js:174 <- update src/render/rocks.js:210 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 866664,
+          "bytesPerFrame": 2044.0188679245282
+        },
+        {
+          "site": "n src/terrain/noise.js:22 <- B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/render/rocks.js:210 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 860160,
+          "bytesPerFrame": 2028.6792452830189
+        },
+        {
+          "site": "t src/terrain/noise.js:16 <- n src/terrain/noise.js:22 <- B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/render/rocks.js:210 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 859512,
+          "bytesPerFrame": 2027.1509433962265
+        },
+        {
+          "site": "(anonymous) src/world/villageKeepout.js:40 <- U src/boot/world.js:101 <- X src/render/rocks.js:159 <- Z src/render/rocks.js:174 <- update src/render/rocks.js:210 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 722380,
+          "bytesPerFrame": 1703.7264150943397
+        },
+        {
+          "site": "Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 619272,
+          "bytesPerFrame": 1460.5471698113208
+        },
+        {
+          "site": "Q src/render/trees.js:42 <- Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 592656,
+          "bytesPerFrame": 1397.7735849056603
+        },
+        {
+          "site": "L src/render/rocks.js:54 <- B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/render/rocks.js:210 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 553752,
+          "bytesPerFrame": 1306.0188679245282
+        },
+        {
+          "site": "sort :0 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744 <- _renderRenderTarget @babylonjs/core/scene.pure.js:4500 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433",
+          "bytes": 495712,
+          "bytesPerFrame": 1169.132075471698
+        },
+        {
+          "site": "ft src/game/bellwether/bellwether.js:400 <- update src/game/bellwether/bellwether.js:293 <- update src/boot/actors.js:196 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 367248,
+          "bytesPerFrame": 866.1509433962265
+        },
+        {
+          "site": "_setTexture @babylonjs/core/Engines/webgpuEngine.pure.js:2134 <- bind @babylonjs/core/Materials/shaderMaterial.pure.js:802 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- _renderTransparentSorted @babylonjs/core/Rendering/renderingGroup.js:172 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464",
+          "bytes": 352900,
+          "bytesPerFrame": 832.311320754717
+        },
+        {
+          "site": "update src/ui/hud/compass.js:141 <- update src/systems/nav.js:45 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 337444,
+          "bytesPerFrame": 795.8584905660377
+        },
+        {
+          "site": "n src/terrain/noise.js:22 <- Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 310632,
+          "bytesPerFrame": 732.622641509434
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621 <- _lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744",
+          "bytes": 308616,
+          "bytesPerFrame": 727.8679245283018
+        },
+        {
+          "site": "has :0 <- update src/game/nav.js:103 <- update src/systems/nav.js:45 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 308612,
+          "bytesPerFrame": 727.8584905660377
+        },
+        {
+          "site": "t src/terrain/noise.js:16 <- n src/terrain/noise.js:22 <- Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _processFrame @babylonjs/core/Engines/abstractEngine.pure.js:433 <- _renderLoop @babylonjs/core/Engines/abstractEngine.pure.js:454 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 307824,
+          "bytesPerFrame": 726
+        }
+      ],
+      "d2Stacks": []
+    },
+    {
+      "enabled": true,
+      "before": {
+        "frame": 1499,
+        "time": 33.06626666669032,
+        "jobs": 241,
+        "reads": 78,
+        "pos": [
+          1900,
+          922.1216666666469
+        ],
+        "active": 8
+      },
+      "after": {
+        "frame": 1964,
+        "time": 47.289466666738214,
+        "jobs": 706,
+        "reads": 356,
+        "pos": [
+          1900,
+          996.0916666665796
+        ],
+        "active": 8,
+        "gpuErrors": 0,
+        "late": [],
+        "output": [
+          2560,
+          1440
+        ],
+        "internal": [
+          1792,
+          1008
+        ],
+        "renderScale": 0.7
+      },
+      "frames": 465,
+      "samplingInterval": 16,
+      "totalBytes": 124018872,
+      "ownBytes": 80684448,
+      "engineBytes": 43330476,
+      "d2StackBytes": 127416,
+      "totalPerFrame": 266707.2516129032,
+      "ownPerFrame": 173514.94193548386,
+      "d2PerFrame": 274.01290322580644,
+      "topSites": [
+        {
+          "site": "_place src/character/wraith/wraith.js:326",
+          "bytes": 50939328,
+          "bytesPerFrame": 109546.94193548388
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621",
+          "bytes": 8962176,
+          "bytesPerFrame": 19273.496774193547
+        },
+        {
+          "site": "isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516",
+          "bytes": 8762092,
+          "bytesPerFrame": 18843.20860215054
+        },
+        {
+          "site": "_lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120",
+          "bytes": 8123136,
+          "bytesPerFrame": 17469.109677419354
+        },
+        {
+          "site": "_setTexture @babylonjs/core/Engines/webgpuEngine.pure.js:2134",
+          "bytes": 6493656,
+          "bytesPerFrame": 13964.851612903225
+        },
+        {
+          "site": "join :0",
+          "bytes": 6309888,
+          "bytesPerFrame": 13569.651612903226
+        },
+        {
+          "site": "sample src/world/solids.js:228",
+          "bytes": 5448048,
+          "bytesPerFrame": 11716.232258064516
+        },
+        {
+          "site": "l src/systems/lights.js:60",
+          "bytes": 4929192,
+          "bytesPerFrame": 10600.412903225806
+        },
+        {
+          "site": "bt src/game/bellwether/bellwether.js:462",
+          "bytes": 4221336,
+          "bytesPerFrame": 9078.14193548387
+        },
+        {
+          "site": "update src/systems/architecture.js:161",
+          "bytes": 1850292,
+          "bytesPerFrame": 3979.122580645161
+        },
+        {
+          "site": "B src/render/rocks.js:67",
+          "bytes": 1666200,
+          "bytesPerFrame": 3583.2258064516127
+        },
+        {
+          "site": "hypot :0",
+          "bytes": 1430892,
+          "bytesPerFrame": 3077.1870967741934
+        },
+        {
+          "site": "n src/terrain/noise.js:22",
+          "bytes": 1206072,
+          "bytesPerFrame": 2593.7032258064514
+        },
+        {
+          "site": "t src/terrain/noise.js:16",
+          "bytes": 1195272,
+          "bytesPerFrame": 2570.4774193548387
+        },
+        {
+          "site": "sort :0",
+          "bytes": 1092884,
+          "bytesPerFrame": 2350.288172043011
+        },
+        {
+          "site": "Z src/render/rocks.js:174",
+          "bytes": 864436,
+          "bytesPerFrame": 1859.0021505376344
+        },
+        {
+          "site": "(anonymous) src/world/villageKeepout.js:40",
+          "bytes": 745292,
+          "bytesPerFrame": 1602.778494623656
+        },
+        {
+          "site": "update src/game/nav.js:103",
+          "bytes": 725060,
+          "bytesPerFrame": 1559.268817204301
+        },
+        {
+          "site": "L src/render/rocks.js:54",
+          "bytes": 651600,
+          "bytesPerFrame": 1401.2903225806451
+        },
+        {
+          "site": "Ee src/render/trees.js:194",
+          "bytes": 647088,
+          "bytesPerFrame": 1391.5870967741935
+        },
+        {
+          "site": "_checkContext @babylonjs/core/Compute/computeShader.pure.js:294",
+          "bytes": 571780,
+          "bytesPerFrame": 1229.6344086021506
+        },
+        {
+          "site": "_GetKey @babylonjs/core/Engines/WebGPU/webgpuCacheTextureView.js:28",
+          "bytes": 522672,
+          "bytesPerFrame": 1124.0258064516129
+        },
+        {
+          "site": "ft src/game/bellwether/bellwether.js:400",
+          "bytes": 447864,
+          "bytesPerFrame": 963.1483870967742
+        },
+        {
+          "site": "Q src/render/trees.js:42",
+          "bytes": 447840,
+          "bytesPerFrame": 963.0967741935484
+        },
+        {
+          "site": "getBindGroups @babylonjs/core/Engines/WebGPU/webgpuComputeContext.js:4",
+          "bytes": 432032,
+          "bytesPerFrame": 929.1010752688172
+        },
+        {
+          "site": "update src/ui/hud/compass.js:141",
+          "bytes": 412208,
+          "bytesPerFrame": 886.4688172043011
+        },
+        {
+          "site": "_startRenderTargetRenderPass @babylonjs/core/Engines/webgpuEngine.pure.js:2409",
+          "bytes": 410332,
+          "bytesPerFrame": 882.4344086021505
+        },
+        {
+          "site": "slice :0",
+          "bytes": 393276,
+          "bytesPerFrame": 845.7548387096774
+        },
+        {
+          "site": "probe src/systems/architecture.js:58",
+          "bytes": 231960,
+          "bytesPerFrame": 498.83870967741933
+        },
+        {
+          "site": "Z src/game/shaped/shaped.js:421",
+          "bytes": 225672,
+          "bytesPerFrame": 485.31612903225806
+        }
+      ],
+      "topStacks": [
+        {
+          "site": "_place src/character/wraith/wraith.js:326 <- _pins src/character/wraith/wraith.js:304 <- update src/character/wraith/wraith.js:143 <- update src/render/wraith.js:279 <- update src/systems/wraith.js:7 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 50939328,
+          "bytesPerFrame": 109546.94193548388
+        },
+        {
+          "site": "isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744 <- _renderRenderTarget @babylonjs/core/scene.pure.js:4500 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464",
+          "bytes": 8762092,
+          "bytesPerFrame": 18843.20860215054
+        },
+        {
+          "site": "join :0 <- isReady @babylonjs/core/Materials/shaderMaterial.pure.js:516 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744 <- _renderRenderTarget @babylonjs/core/scene.pure.js:4500 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72",
+          "bytes": 6151904,
+          "bytesPerFrame": 13229.901075268817
+        },
+        {
+          "site": "_setTexture @babylonjs/core/Engines/webgpuEngine.pure.js:2134 <- bind @babylonjs/core/Materials/shaderMaterial.pure.js:802 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083",
+          "bytes": 5814480,
+          "bytesPerFrame": 12504.258064516129
+        },
+        {
+          "site": "sample src/world/solids.js:228 <- step src/character/wraith/cloth.js:111 <- update src/character/wraith/wraith.js:143 <- update src/render/wraith.js:279 <- update src/systems/wraith.js:7 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 5433648,
+          "bytesPerFrame": 11685.264516129033
+        },
+        {
+          "site": "l src/systems/lights.js:60 <- update src/systems/lights.js:86 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 4929192,
+          "bytesPerFrame": 10600.412903225806
+        },
+        {
+          "site": "_lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744",
+          "bytes": 4476764,
+          "bytesPerFrame": 9627.449462365592
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621 <- _lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827",
+          "bytes": 4384488,
+          "bytesPerFrame": 9429.006451612904
+        },
+        {
+          "site": "bt src/game/bellwether/bellwether.js:462 <- update src/boot/actors.js:196 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 4221336,
+          "bytesPerFrame": 9078.14193548387
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621 <- _lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240",
+          "bytes": 3747048,
+          "bytesPerFrame": 8058.167741935484
+        },
+        {
+          "site": "_lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533",
+          "bytes": 3227200,
+          "bytesPerFrame": 6940.215053763441
+        },
+        {
+          "site": "update src/systems/architecture.js:161 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1850292,
+          "bytesPerFrame": 3979.122580645161
+        },
+        {
+          "site": "B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1642392,
+          "bytesPerFrame": 3532.025806451613
+        },
+        {
+          "site": "hypot :0 <- bt src/game/bellwether/bellwether.js:462 <- update src/boot/actors.js:196 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1206672,
+          "bytesPerFrame": 2594.993548387097
+        },
+        {
+          "site": "Z src/render/rocks.js:174 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 864436,
+          "bytesPerFrame": 1859.0021505376344
+        },
+        {
+          "site": "t src/terrain/noise.js:16 <- n src/terrain/noise.js:22 <- B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 862344,
+          "bytesPerFrame": 1854.5032258064516
+        },
+        {
+          "site": "n src/terrain/noise.js:22 <- B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 859992,
+          "bytesPerFrame": 1849.4451612903226
+        },
+        {
+          "site": "(anonymous) src/world/villageKeepout.js:40 <- U src/boot/world.js:101 <- X src/render/rocks.js:159 <- Z src/render/rocks.js:174 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 727020,
+          "bytesPerFrame": 1563.483870967742
+        },
+        {
+          "site": "update src/game/nav.js:103 <- update src/systems/nav.js:45 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 725060,
+          "bytesPerFrame": 1559.268817204301
+        },
+        {
+          "site": "Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 617232,
+          "bytesPerFrame": 1327.3806451612904
+        },
+        {
+          "site": "sort :0 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744 <- _renderRenderTarget @babylonjs/core/scene.pure.js:4500 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083",
+          "bytes": 609264,
+          "bytesPerFrame": 1310.2451612903226
+        },
+        {
+          "site": "L src/render/rocks.js:54 <- B src/render/rocks.js:67 <- Z src/render/rocks.js:174 <- update src/systems/environment.js:33 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 561120,
+          "bytesPerFrame": 1206.7096774193549
+        },
+        {
+          "site": "ft src/game/bellwether/bellwether.js:400 <- update src/boot/actors.js:196 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 447864,
+          "bytesPerFrame": 963.1483870967742
+        },
+        {
+          "site": "Q src/render/trees.js:42 <- Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 422160,
+          "bytesPerFrame": 907.8709677419355
+        },
+        {
+          "site": "_setTexture @babylonjs/core/Engines/webgpuEngine.pure.js:2134 <- bind @babylonjs/core/Materials/shaderMaterial.pure.js:802 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- _renderTransparentSorted @babylonjs/core/Rendering/renderingGroup.js:172 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464",
+          "bytes": 413180,
+          "bytesPerFrame": 888.5591397849462
+        },
+        {
+          "site": "update src/ui/hud/compass.js:141 <- update src/systems/nav.js:45 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 412208,
+          "bytesPerFrame": 886.4688172043011
+        },
+        {
+          "site": "_setColorStates @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:621 <- _lookupRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:120 <- getRenderPipeline @babylonjs/core/Engines/WebGPU/webgpuCacheRenderPipeline.js:142 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827 <- _render @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:744",
+          "bytes": 370128,
+          "bytesPerFrame": 795.9741935483871
+        },
+        {
+          "site": "_GetKey @babylonjs/core/Engines/WebGPU/webgpuCacheTextureView.js:28 <- _startRenderTargetRenderPass @babylonjs/core/Engines/webgpuEngine.pure.js:2409 <- S.T._startRenderTargetRenderPass src/render/shadows.js:94 <- _draw @babylonjs/core/Engines/webgpuEngine.pure.js:2869 <- _renderWithThinInstances @babylonjs/core/Meshes/mesh.pure.js:1893 <- _processRendering @babylonjs/core/Meshes/mesh.pure.js:1926 <- render @babylonjs/core/Meshes/mesh.pure.js:2108 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- render @babylonjs/core/Rendering/objectRenderer.js:531 <- _renderToTarget @babylonjs/core/Materials/Textures/renderTargetTexture.pure.js:827",
+          "bytes": 350560,
+          "bytesPerFrame": 753.8924731182796
+        },
+        {
+          "site": "sort :0 <- _RenderSorted @babylonjs/core/Rendering/renderingGroup.js:183 <- render @babylonjs/core/Rendering/renderingGroup.js:89 <- render @babylonjs/core/Rendering/renderingManager.js:111 <- _renderForCamera @babylonjs/core/scene.pure.js:4096 <- _processSubCameras @babylonjs/core/scene.pure.js:4240 <- _renderFrame @babylonjs/core/scene.pure.js:4533 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 329176,
+          "bytesPerFrame": 707.905376344086
+        },
+        {
+          "site": "n src/terrain/noise.js:22 <- Ee src/render/trees.js:194 <- je src/render/trees.js:249 <- update src/render/trees.js:319 <- update src/systems/environment.js:170 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 318192,
+          "bytesPerFrame": 684.2838709677419
+        }
+      ],
+      "d2Stacks": [
+        {
+          "site": "update src/terrain/state/stateCollision.js:40 <- update src/terrain/state/terrainState.js:299 <- update src/systems/environment.js:231 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 52152,
+          "bytesPerFrame": 112.15483870967742
+        },
+        {
+          "site": "(anonymous) src/core/gpuReadback.js:30 <- notifyObservers @babylonjs/core/Misc/observable.pure.js:267 <- endFrame @babylonjs/core/Engines/abstractEngine.pure.js:398 <- endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 19168,
+          "bytesPerFrame": 41.22150537634408
+        },
+        {
+          "site": "n.mapped src/core/gpuReadback.js:15 <- (root) :0",
+          "bytes": 11052,
+          "bytesPerFrame": 23.767741935483873
+        },
+        {
+          "site": "Float32Array :0 <- n.mapped src/core/gpuReadback.js:15 <- (root) :0",
+          "bytes": 10560,
+          "bytesPerFrame": 22.70967741935484
+        },
+        {
+          "site": "_checkContext @babylonjs/core/Compute/computeShader.pure.js:294 <- dispatch @babylonjs/core/Compute/computeShader.pure.js:273 <- update src/terrain/state/stateCollision.js:40 <- update src/terrain/state/terrainState.js:299 <- update src/systems/environment.js:231 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 7256,
+          "bytesPerFrame": 15.604301075268816
+        },
+        {
+          "site": "n.done src/terrain/state/stateCollision.js:26 <- n.mapped src/core/gpuReadback.js:15 <- (root) :0",
+          "bytes": 6888,
+          "bytesPerFrame": 14.812903225806451
+        },
+        {
+          "site": "then :0 <- (anonymous) src/core/gpuReadback.js:30 <- notifyObservers @babylonjs/core/Misc/observable.pure.js:267 <- endFrame @babylonjs/core/Engines/abstractEngine.pure.js:398 <- endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 5720,
+          "bytesPerFrame": 12.301075268817204
+        },
+        {
+          "site": "wake src/terrain/state/relaxation.js:59 <- update src/terrain/state/sandRelax.js:45 <- update src/terrain/state/terrainState.js:299 <- update src/systems/environment.js:231 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 4848,
+          "bytesPerFrame": 10.425806451612903
+        },
+        {
+          "site": "join :0 <- _checkContext @babylonjs/core/Compute/computeShader.pure.js:294 <- dispatch @babylonjs/core/Compute/computeShader.pure.js:273 <- update src/terrain/state/stateCollision.js:40 <- update src/terrain/state/terrainState.js:299 <- update src/systems/environment.js:231 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 4000,
+          "bytesPerFrame": 8.602150537634408
+        },
+        {
+          "site": "M.g._computeDispatch @babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.pure.js:202 <- M.g.computeDispatch @babylonjs/core/Engines/WebGPU/Extensions/engine.computeShader.pure.js:196 <- dispatch @babylonjs/core/Compute/computeShader.pure.js:273 <- update src/terrain/state/stateCollision.js:40 <- update src/terrain/state/terrainState.js:299 <- update src/systems/environment.js:231 <- _frame src/core/loop.js:72 <- _renderFrame @babylonjs/core/Engines/abstractEngine.pure.js:464 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 3808,
+          "bytesPerFrame": 8.189247311827957
+        },
+        {
+          "site": "(anonymous) src/core/gpuReadback.js:30 <- notifyObservers @babylonjs/core/Misc/observable.pure.js:267 <- endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 1576,
+          "bytesPerFrame": 3.389247311827957
+        },
+        {
+          "site": "then :0 <- (anonymous) src/core/gpuReadback.js:30 <- notifyObservers @babylonjs/core/Misc/observable.pure.js:267 <- endFrame @babylonjs/core/Engines/webgpuEngine.pure.js:2348 <- _boundRenderFunction @babylonjs/core/Engines/abstractEngine.pure.js:1083 <- (root) :0",
+          "bytes": 388,
+          "bytesPerFrame": 0.8344086021505376
+        }
+      ]
+    }
+  ],
+  "errors": [
+    "error: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "warning: The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127"
+  ],
+  "note": "Real Windows GPU browser V8 allocation sampling including collected objects. Eight Shaped and live walking; relaxation disabled/enabled comparisons are separate runs, not identical frame replays. Profiler affects frame timing. Attribution uses first resolved own/engine stack source; D2 inclusive stacks include reusable gpuReadback helper, engine/native overhead and asynchronous readback callbacks. No zero-allocation inference from GC count."
+}

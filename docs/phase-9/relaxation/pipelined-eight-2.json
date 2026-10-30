@@ -1,0 +1,305 @@
+{
+  "date": "2026-10-28T12:56:12.883Z",
+  "renderSize": {
+    "width": 2560,
+    "height": 1440
+  },
+  "combinedGpuMs": {
+    "mean": 0.07689994154488523,
+    "p95": 0.08294399999999998,
+    "max": 0.538624,
+    "peakParts": {
+      "sandRelaxLoad": 0.515072,
+      "sandCoarseLoad": 0.023552000000000017
+    }
+  },
+  "iterations": 8,
+  "finePasses": 4,
+  "frames": 480,
+  "mode": "synthetic26",
+  "synthetic": {
+    "distance": 237.26339999626748,
+    "covered": 473,
+    "maxAge": 0.18530000007152125,
+    "nominalSpeed": 26
+  },
+  "seconds": 9.492999999999768,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 480,
+  "writes": 3013,
+  "writesByKind": [
+    831,
+    566,
+    0,
+    0,
+    0,
+    1616,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionPendingMax": 3,
+  "collisionReads": 162,
+  "speed": {
+    "min": 5.2,
+    "max": 25.71394608879204,
+    "mean": 6.911302580917535
+  },
+  "samples": 479,
+  "incomplete": 0,
+  "spikes": [
+    {
+      "sample": 232,
+      "frame": 3110,
+      "ms": 0.45977599999999974,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.006143999999999927
+        },
+        {
+          "pass": 1,
+          "ms": 0.016383999999999954
+        },
+        {
+          "pass": 2,
+          "ms": 0.43110399999999993
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 234,
+      "frame": 3112,
+      "ms": 0.4597760000000002,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.42803199999999997
+        },
+        {
+          "pass": 1,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 2,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 3,
+          "ms": 0.0040960000000000996
+        }
+      ]
+    },
+    {
+      "sample": 287,
+      "frame": 3165,
+      "ms": 0.47001600000000066,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.4341759999999999
+        },
+        {
+          "pass": 1,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 2,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 3,
+          "ms": 0.0040960000000000996
+        }
+      ]
+    },
+    {
+      "sample": 297,
+      "frame": 3175,
+      "ms": 0.515072,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.007168000000000063
+        },
+        {
+          "pass": 1,
+          "ms": 0.016384000000000398
+        },
+        {
+          "pass": 2,
+          "ms": 0.4853759999999996
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    },
+    {
+      "sample": 375,
+      "frame": 3253,
+      "ms": 0.46899200000000074,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.43132800000000016
+        },
+        {
+          "pass": 1,
+          "ms": 0.01718400000000031
+        },
+        {
+          "pass": 2,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 3,
+          "ms": 0.005120000000000013
+        }
+      ]
+    },
+    {
+      "sample": 398,
+      "frame": 3276,
+      "ms": 0.4546560000000006,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.4198400000000002
+        },
+        {
+          "pass": 1,
+          "ms": 0.015360000000000262
+        },
+        {
+          "pass": 2,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 3,
+          "ms": 0.005120000000000013
+        }
+      ]
+    },
+    {
+      "sample": 400,
+      "frame": 3278,
+      "ms": 0.45465600000000017,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.42188800000000004
+        },
+        {
+          "pass": 1,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 2,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 3,
+          "ms": 0.005120000000000013
+        }
+      ]
+    },
+    {
+      "sample": 417,
+      "frame": 3295,
+      "ms": 0.4608000000000001,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.42700799999999983
+        },
+        {
+          "pass": 1,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 2,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 3,
+          "ms": 0.005120000000000013
+        }
+      ]
+    },
+    {
+      "sample": 442,
+      "frame": 3320,
+      "ms": 0.45465599999999995,
+      "passes": 4,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.007168000000000063
+        },
+        {
+          "pass": 1,
+          "ms": 0.01331199999999999
+        },
+        {
+          "pass": 2,
+          "ms": 0.42803199999999997
+        },
+        {
+          "pass": 3,
+          "ms": 0.006143999999999927
+        }
+      ]
+    }
+  ],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.007168000000000063
+    },
+    {
+      "pass": 1,
+      "ms": 0.016384000000000398
+    },
+    {
+      "pass": 2,
+      "ms": 0.4853759999999996
+    },
+    {
+      "pass": 3,
+      "ms": 0.006143999999999927
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.050280751565762165,
+    "p95": 0.04608000000000012,
+    "max": 0.515072
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Synthetic26 mode adds an actual PLOUGH writer and moving collision readback centre at a nominal 26 m/s along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

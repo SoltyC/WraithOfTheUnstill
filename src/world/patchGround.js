@@ -22,6 +22,8 @@ export class PatchGround {
     this.installs = 0;
     /** Terrain mass the bending writes (game/bending/stoneMass.js heightAt) or null: added to every height, so a Ridge is collision the moment it is stamped. */
     this.mass = null;
+    /** Latest sand-state snapshot; replaces older analytic shapes after they slump. */
+    this.state = null;
   }
 
   /** Install a patch from the worker. */
@@ -67,6 +69,20 @@ export class PatchGround {
       if (!found) this.h = 0;
     }
     const m = this.mass;
+    const state = this.state;
+    if (state !== null) {
+      state.qx = this.qx; state.qz = this.qz;
+      if (state.sample()) {
+        let disp = state.disp, depr = state.depr;
+        if (m !== null && m.count > 0) {
+          // A new cast stays solid immediately while its GPU snapshot is in flight. Once a
+          // snapshot contains it, the analytic shape stops holding up sand that has slumped.
+          m.afterTime = state.sampleTime; m.qx = this.qx; m.qz = this.qz; m.heightQ(); m.afterTime = -Infinity;
+          disp = Math.max(disp, m.disp); depr = Math.max(depr, m.depr);
+        }
+        this.h += disp - depr; return;
+      }
+    }
     if (m !== null && m.count > 0) { m.qx = this.qx; m.qz = this.qz; m.heightQ(); this.h += m.h; }
   }
 

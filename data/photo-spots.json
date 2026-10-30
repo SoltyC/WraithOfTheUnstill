@@ -5849,6 +5849,100 @@
     {"id":"p9r-pavement","biome":"dunes","label":"D8: desert pavement on the flats \u2014 packed, varnished gravel underfoot","time":11,"weather":"clear","restoration":"restored","player":[2078,1249],"hidePlayer":true,"camera":{"mode":"free","pos":[2078,149.7,1249],"yaw":2.4,"pitch":0.6,"fov":1}},
     {"id":"p9r-pavement-far","biome":"dunes","label":"D8: the flats at 16:00 \u2014 darker lag-gravel patches in the sand, the Stride beyond","time":16,"weather":"clear","restoration":"restored","player":[2064,1264],"hidePlayer":true,"camera":{"mode":"free","pos":[2064,151.1,1264],"yaw":2.4,"pitch":0.12,"fov":1}},
     {"id":"p9r-oasis-restored","biome":"dunes","label":"D8: the oasis restored — the caravanserai beyond; palms green, the pool full, reeds","time":11,"weather":"clear","restoration":"restored","player":[1880,792],"hidePlayer":true,"camera":{"mode":"free","pos":[1880,154.5,792],"yaw":-2.4,"pitch":0.12,"fov":1}},
-    {"id":"p9r-oasis-stilled","biome":"dunes","label":"D8: the oasis stilled — the caravanserai beyond; palms grey, the basin dry and crazed","time":11,"weather":"clear","restoration":"stilled","player":[1880,792],"hidePlayer":true,"camera":{"mode":"free","pos":[1880,154.5,792],"yaw":-2.4,"pitch":0.12,"fov":1}}
+    {"id":"p9r-oasis-stilled","biome":"dunes","label":"D8: the oasis stilled — the caravanserai beyond; palms grey, the basin dry and crazed","time":11,"weather":"clear","restoration":"stilled","player":[1880,792],"hidePlayer":true,"camera":{"mode":"free","pos":[1880,154.5,792],"yaw":-2.4,"pitch":0.12,"fov":1}},
+    {"id":"p9d2-crest-500","biome":"dunes","label":"Diagnostic dune ridge geometry at 500 m (elevated camera)","time":17.8,"weather":"clear","hidePlayer":true,"player":[1544.4095225512606,-1187.037086855466],"camera":{"mode":"free","pos":[1544.4095225512606,336.0152441543178,-1187.037086855466],"yaw":3.403392041388943,"pitch":0.015998634876343527,"fov":0.7}},
+    {"id":"p9d2-crest-2000","biome":"dunes","label":"Diagnostic dune ridge geometry at 2000 m (elevated camera)","time":17.8,"weather":"clear","hidePlayer":true,"player":[1932.6380902050423,261.8516525781365],"camera":{"mode":"free","pos":[1932.6380902050423,336.0152441543178,261.8516525781365],"yaw":3.403392041388943,"pitch":0.003999978666871465,"fov":0.7}},
+    {
+      "id": "p9d2-silhouette-500-a",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 500-a",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        3052.5,
+        1837.343
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          3052.5,
+          369.46,
+          1837.343
+        ],
+        "yaw": -2.617994,
+        "pitch": -0.018649,
+        "fov": 0.55
+      }
+    },
+    {
+      "id": "p9d2-silhouette-500-b",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 500-b",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        1982.5,
+        -1410.696
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          1982.5,
+          467.997,
+          -1410.696
+        ],
+        "yaw": -2.617994,
+        "pitch": -0.039979,
+        "fov": 0.55
+      }
+    },
+    {
+      "id": "p9d2-silhouette-2000-a",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 2000-a",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        405,
+        -876.609
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          405,
+          341.998,
+          -876.609
+        ],
+        "yaw": 2.617994,
+        "pitch": -0.01,
+        "fov": 0.55
+      }
+    },
+    {
+      "id": "p9d2-silhouette-2000-b",
+      "biome": "dunes",
+      "label": "D2 crest silhouette candidate 2000-b",
+      "time": 17.8,
+      "weather": "clear",
+      "hidePlayer": true,
+      "player": [
+        2732.5,
+        -111.658
+      ],
+      "camera": {
+        "mode": "free",
+        "pos": [
+          2732.5,
+          467.997,
+          -111.658
+        ],
+        "yaw": -2.617994,
+        "pitch": -0.01,
+        "fov": 0.55
+      }
+    }
   ]
 }

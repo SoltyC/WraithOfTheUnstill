@@ -165,8 +165,9 @@ export async function createWorld(g) {
   content.capsule.setEnabled(false);
   // Terrain state (BRIEF §4.3): fine window + coarse pages; the clipmap reads it.
   const { createTerrainState } = await import('../terrain/state/terrainState.js');
-  const terrainState = createTerrainState(engine, { surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
+  const terrainState = createTerrainState(engine, { clipmap: content.clipmap, surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
   content.clipmap.bindState(terrainState);
+  if (terrainState.collision) ground.state = terrainState.collision.view;
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
   const sandDust = (await import('../render/sandDust.js')).createSandDust(scene, content.clipmap, atmosphere, wind, terrainState);

@@ -30,6 +30,18 @@ for (let m = 0; m < MATERIAL_COUNT; m++) for (let c = 0; c < 6; c++) DECAY[m * 6
 /** Diffusion (m²/s) of the depression and displaced-mass channels: trails slump and fill. */
 export const DIFFUSION = 0.0005; // σ ≈ 0.25 m after 60 s, 0.77 m after 10 min
 
+/** Relative sand weathering: held erg barely changes; restored wind accelerates healing. */
+export const SAND_HEAL_STILLED = 0.08;
+export function sandHealingScale(restored,wind) { return restored ? 0.8+1.2*Math.min(1,Math.max(0,wind)/1.2) : SAND_HEAL_STILLED; }
+
+// Integer avalanche hash: absolute ticks change the rounding choice even at steady FPS.
+export const DITHER_X=0x9e3779b9,DITHER_Z=0x85ebca6b,DITHER_T=0xc2b2ae35,DITHER_A=0x7feb352d,DITHER_B=0x846ca68b;
+export function healingDither(i,j,tick){
+  let h=Math.imul(i,DITHER_X)^Math.imul(j,DITHER_Z)^Math.imul(tick,DITHER_T);
+  h=Math.imul(h^(h>>>16),DITHER_A);h=Math.imul(h^(h>>>15),DITHER_B);
+  return ((h^(h>>>16))>>>8)/16777216;
+}
+
 // ── f16 / unorm8 packing identical to WGSL pack2x16float / pack4x8unorm ───────────────────────
 const f32 = new Float32Array(1), u32 = new Uint32Array(f32.buffer);
 export function toHalf(v) {
@@ -67,6 +79,8 @@ export function unpackPage(words, planes) {
     planes[0][i] = fromHalf(w0 & 0xffff); planes[1][i] = fromHalf(w0 >>> 16);
     planes[2][i] = (w1 & 0xff) / 255; planes[3][i] = ((w1 >>> 8) & 0xff) / 255;
     planes[4][i] = ((w1 >>> 16) & 0xff) / 255; planes[5][i] = (w1 >>> 24) / 255;
+    const remainder=fromHalf(w2 >>> 16);
+    planes[0][i] += Math.max(-remainder,0); planes[1][i] += Math.max(remainder,0);
     planes[6][i] = (w2 & 0xff) / 255; planes[7][i] = ((w2 >>> 8) & 0xff) / 255;
   }
 }
@@ -75,7 +89,8 @@ export function packPage(planes, words) {
   for (let i = 0; i < n; i++) {
     words[i] = pack2(planes[0][i], planes[1][i]);
     words[n + i] = pack4(planes[2][i], planes[3][i], planes[4][i], planes[5][i]);
-    words[2 * n + i] = pack4(planes[6][i], planes[7][i], 0, 0);
+    const packed=words[i], remainder=(planes[1][i]-planes[0][i])-(fromHalf(packed>>>16)-fromHalf(packed&65535));
+    words[2 * n + i] = (pack4(planes[6][i],planes[7][i],0,0) | (toHalf(remainder)<<16)) >>> 0;
   }
 }
 export function allocPlanes() { return Array.from({ length: 8 }, () => new Float32Array(PAGE_N * PAGE_N)); }
@@ -147,7 +162,7 @@ export function boxRadii(sigma) {
  * Heals unpacked planes in place for `seconds`. material(i) returns the bake material id of
  * coarse texel i (row-major within the page).
  */
-export function healPlanes(planes, seconds, material, tmp) {
+export function healPlanes(planes, seconds, material, tmp, sandScale = 1) {
   if (!(seconds > 0)) return;
   const n = PAGE_N * PAGE_N;
   const sigma = Math.sqrt(2 * DIFFUSION * seconds) * COARSE_PER_M; // texels
@@ -158,11 +173,13 @@ export function healPlanes(planes, seconds, material, tmp) {
     for (const p of [0, 1]) gaussBlur(planes[p], tmp, sigma);
   }
   for (let i = 0; i < n; i++) {
-    const m = material(i) * 6;
+    const id=material(i), m = id * 6;
+    const age=seconds*((id===1||id===6)?sandScale:1);
     for (let p = 0; p < 8; p++) {
       const c = PLANE_RATE[p];
       if (c < 0) continue;
-      planes[p][i] *= Math.exp(-DECAY[m + c] * seconds);
+      const elapsed=(p===0||p===1||p===2||p===7)?age:seconds;
+      planes[p][i] *= Math.exp(-DECAY[m + c] * elapsed);
     }
   }
 }

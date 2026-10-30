@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-27T20:22:46.399Z",
+  "iterations": 32,
+  "finePasses": 10,
+  "frames": 240,
+  "seconds": 5.5646000000238445,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 240,
+  "writes": 1137,
+  "writesByKind": [
+    375,
+    78,
+    0,
+    0,
+    0,
+    684,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionReads": 36,
+  "speed": {
+    "min": 5.2,
+    "max": 25.71394608879204,
+    "mean": 8.310551037918252
+  },
+  "samples": 239,
+  "incomplete": 0,
+  "fineGpuMs": {
+    "mean": 0.13395548117154712,
+    "p95": 0.14643199999999368,
+    "max": 0.9103360000000009
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

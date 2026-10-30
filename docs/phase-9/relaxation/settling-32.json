@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-27T20:18:10.674Z",
+  "iterations": 32,
+  "before": {
+    "fine": 0,
+    "coarse": 0,
+    "fineDisplaced": 1.8408203125,
+    "coarseDisplaced": 0,
+    "fineRelief": 1.8408203125,
+    "coarseRelief": 0,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0
+  },
+  "after": {
+    "fine": 0,
+    "coarse": 0,
+    "fineDisplaced": 0.580078125,
+    "coarseDisplaced": 0,
+    "fineRelief": 0.580078125,
+    "coarseRelief": 0,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0
+  },
+  "jobs": 1640,
+  "elapsed": 36.65439999997637,
+  "allMaxDegrees": 34.010159648483665,
+  "activeMaxDegrees": 34.010159648483665,
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Real-time isolated mound; slope checked after the 30 s dirty lifetime, including diagonals. This is not an eight-enemy overlapping-write settling gate.",
+  "progress": [
+    {
+      "chunk": 0,
+      "elapsed": 2.1377999999523114,
+      "jobs": 120,
+      "pending": 4
+    },
+    {
+      "chunk": 1,
+      "elapsed": 4.281699999928471,
+      "jobs": 240,
+      "pending": 4
+    },
+    {
+      "chunk": 2,
+      "elapsed": 6.417399999976147,
+      "jobs": 360,
+      "pending": 4
+    },
+    {
+      "chunk": 3,
+      "elapsed": 8.554799999952305,
+      "jobs": 480,
+      "pending": 4
+    },
+    {
+      "chunk": 4,
+      "elapsed": 10.699299999952299,
+      "jobs": 600,
+      "pending": 4
+    },
+    {
+      "chunk": 5,
+      "elapsed": 12.83449999999998,
+      "jobs": 720,
+      "pending": 4
+    },
+    {
+      "chunk": 6,
+      "elapsed": 14.971399999976121,
+      "jobs": 840,
+      "pending": 4
+    },
+    {
+      "chunk": 7,
+      "elapsed": 17.112199999928446,
+      "jobs": 960,
+      "pending": 4
+    },
+    {
+      "chunk": 8,
+      "elapsed": 19.24929999995229,
+      "jobs": 1080,
+      "pending": 4
+    },
+    {
+      "chunk": 9,
+      "elapsed": 21.385299999952302,
+      "jobs": 1200,
+      "pending": 4
+    },
+    {
+      "chunk": 10,
+      "elapsed": 23.52839999997614,
+      "jobs": 1320,
+      "pending": 4
+    },
+    {
+      "chunk": 11,
+      "elapsed": 25.663599999904598,
+      "jobs": 1440,
+      "pending": 4
+    },
+    {
+      "chunk": 12,
+      "elapsed": 27.799799999952327,
+      "jobs": 1560,
+      "pending": 4
+    },
+    {
+      "chunk": 13,
+      "elapsed": 29.936399999976217,
+      "jobs": 1640,
+      "pending": 0
+    },
+    {
+      "chunk": 14,
+      "elapsed": 32.05789999997627,
+      "jobs": 1640,
+      "pending": 0
+    },
+    {
+      "chunk": 15,
+      "elapsed": 34.17900000000017,
+      "jobs": 1640,
+      "pending": 0
+    },
+    {
+      "chunk": 16,
+      "elapsed": 36.30459999990486,
+      "jobs": 1640,
+      "pending": 0
+    }
+  ]
+}

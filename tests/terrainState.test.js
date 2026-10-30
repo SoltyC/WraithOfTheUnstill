@@ -5,7 +5,7 @@ import {
   pageKeyAt, pageOriginCoarse, slotIndex, windowDifference, forEachPageInRect, COARSE_PER_M, WORLD_HALF,
 } from '../src/terrain/state/layout.js';
 import {
-  toHalf, fromHalf, pack2, pack4, unpackPage, packPage, allocPlanes, healPlanes, DECAY, DIFFUSION, boxRadii, GAUSS_MAX,
+  toHalf, fromHalf, pack2, pack4, unpackPage, packPage, allocPlanes, healPlanes, DECAY, DIFFUSION, boxRadii, GAUSS_MAX, sandHealingScale, healingDither,
 } from '../src/terrain/state/healing.js';
 
 const area = (r, n) => { let a = 0; for (let k = 0; k < n; k++) a += (r[k * 4 + 2] - r[k * 4]) * (r[k * 4 + 3] - r[k * 4 + 1]); return a; };
@@ -193,5 +193,52 @@ describe('closed-form healing', () => {
       const variance = r.reduce((s, x) => s + ((2 * x + 1) ** 2 - 1) / 12, 0);
       expect(Math.abs(Math.sqrt(variance) - sigma) / sigma).toBeLessThan(0.08);
     }
+  });
+});
+
+describe('terrain height rounding remainder',()=>{
+  it('preserves signed height through repeated page packing without exposing the spare half as material channels',()=>{
+    const planes=allocPlanes(),words=new Uint32Array(WORDS*PAGE_N*PAGE_N);
+    const initial=[];
+    for(let i=0;i<20;i++){
+      planes[0][i]=0.0137*i;planes[1][i]=0.07331*(20-i);planes[6][i]=0.3;planes[7][i]=0.6;
+      initial.push(planes[1][i]-planes[0][i]);
+    }
+    for(let pass=0;pass<5;pass++){packPage(planes,words);unpackPage(words,planes);}
+    for(let i=0;i<20;i++){
+      expect(Math.abs(planes[1][i]-planes[0][i]-initial[i])).toBeLessThan(1e-6);
+      expect(planes[6][i]).toBeCloseTo(0.3,2);expect(planes[7][i]).toBeCloseTo(0.6,2);
+    }
+  });
+});
+
+describe('sand weathering',()=>{
+  it('keeps a minute-old trail readable even in strong restored wind',()=>{
+    const rate=sandHealingScale(true,2);
+    expect(rate).toBeGreaterThan(sandHealingScale(true,0));
+    expect(sandHealingScale(true,0)).toBeGreaterThan(sandHealingScale(false,2));
+    expect(Math.exp(-DECAY[6]*60*rate)).toBeGreaterThan(0.7);
+  });
+  it('changes sand decay without accelerating snow, and preserves slow stilled compaction',()=>{
+    const a=allocPlanes(),b=allocPlanes(),tmp=new Float32Array(PAGE_N*PAGE_N);
+    a[2].fill(1);b[2].fill(1);a[3].fill(1);a[4].fill(1);
+    const scale=sandHealingScale(false,0);
+    healPlanes(a,60,()=>1,tmp,scale);healPlanes(b,60,()=>0,tmp,scale);
+    expect(a[2][0]).toBeGreaterThan(0.99);
+    expect(a[3][0]).toBeCloseTo(Math.exp(-DECAY[9]*60),6);
+    expect(a[4][0]).toBeCloseTo(Math.exp(-DECAY[10]*60),6);
+    expect(b[2][0]).toBeCloseTo(Math.exp(-DECAY[2]*60),6);
+  });
+});
+
+describe('temporal healing rounding',()=>{
+  it('has changing, unbiased choices at a distant texel under steady band timing',()=>{
+    let sum=0,downs=0;const values=new Set();
+    for(let frame=0;frame<6000;frame++){
+      const n=healingDither(91383,-43206,frame*16);
+      expect(n).toBeGreaterThanOrEqual(0);expect(n).toBeLessThan(1);
+      sum+=n;downs+=n<0.1?1:0;values.add(n);
+    }
+    expect(sum/6000).toBeCloseTo(0.5,1);expect(downs/6000).toBeCloseTo(0.1,1);expect(values.size).toBeGreaterThan(5900);
   });
 });

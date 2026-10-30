@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-28T06:23:14.723Z",
+  "combinedGpuMs": {
+    "mean": 0.07578081002087705,
+    "p95": 0.08294400000000007,
+    "max": 0.36351999999999984,
+    "peakParts": {
+      "sandRelaxLoad": 0.3389439999999998,
+      "sandCoarseLoad": 0.024576000000000042
+    }
+  },
+  "iterations": 8,
+  "finePasses": 4,
+  "frames": 480,
+  "mode": "synthetic26",
+  "synthetic": {
+    "distance": 243.2141999915666,
+    "covered": 474,
+    "maxAge": 0.280200000047671,
+    "nominalSpeed": 26
+  },
+  "seconds": 9.723199999926123,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 480,
+  "writes": 2924,
+  "writesByKind": [
+    816,
+    480,
+    0,
+    0,
+    0,
+    1628,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionReads": 73,
+  "speed": {
+    "min": 5.2,
+    "max": 25.71394608879204,
+    "mean": 6.830749770906582
+  },
+  "samples": 479,
+  "incomplete": 0,
+  "spikes": [],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.006143999999999927
+    },
+    {
+      "pass": 1,
+      "ms": 0.30822399999999983
+    },
+    {
+      "pass": 2,
+      "ms": 0.018432000000000004
+    },
+    {
+      "pass": 3,
+      "ms": 0.006144000000000038
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.05139667640918603,
+    "p95": 0.04608000000000023,
+    "max": 0.3389439999999998
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Synthetic26 mode adds an actual PLOUGH writer and moving collision readback centre at a nominal 26 m/s along a bounded back-and-forth path. It is a D2 data-path stress test, not D3 gameplay. Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs but included in combinedGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

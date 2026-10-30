@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-28T14:52:22.629Z",
+  "samples": 547,
+  "valid": 323,
+  "maxPhaseError": 0.0009791760422768192,
+  "maxAmpError": 0.24451447472360144,
+  "badFamily": 0,
+  "nonFinite": 0,
+  "worst": [],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Existing clipmap storage readback checked against independent CPU WorldData climate plus original dune phase/amplitude functions. Phase is quantised to1/512cycle; amplitude to0.5m. This is metadata correctness, not collision-height parity or visual/motion acceptance."
+}

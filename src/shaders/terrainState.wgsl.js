@@ -3,8 +3,9 @@
 // in a frame all see the last write, so per-dispatch params would collide); workgroup_id.z picks
 // the job.
 
+import { HEIGHT_REMAINDER_WGSL } from './heightRemainder.wgsl.js';
 import { FINE_N, RATIO, PAGE_N, PAGES, WORLD_HALF, COARSE_PER_M, FINE_PER_M, NO_SLOT, TRANSFORM } from '../terrain/state/layout.js';
-import { DECAY, MATERIAL_COUNT } from '../terrain/state/healing.js';
+import { DECAY, MATERIAL_COUNT, DITHER_X, DITHER_Z, DITHER_T, DITHER_A, DITHER_B } from '../terrain/state/healing.js';
 import { CREST, RIDGE_END, BOWL, RIM0, RIM1, TRENCH_EXT0, TRENCH_EXTK } from '../game/bending/stoneMass.js';
 
 export const MAX_BRUSHES = 48;
@@ -17,6 +18,7 @@ export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
 export const STATE_COMMON_WGSL = /* wgsl */ `
+${HEIGHT_REMAINDER_WGSL}
 const FINE_N: u32 = ${FINE_N}u;
 const RATIO: i32 = ${RATIO};
 const PAGE_N: u32 = ${PAGE_N}u;
@@ -30,7 +32,7 @@ struct StateParams {
   outRects: array<vec4i,2>,         // coarse texel rects [c0, d0, c1, d1)
   inRects: array<vec4i,${MAX_IN}>,          // fine texel rects
   healRect: vec4i,                  // fine texel band healed this frame
-  healDt: vec4f,                    // x = fine band dt (s), y = coarse slot dt (s)
+  healDt: vec4f,                    // x = fine band dt, y = coarse slot dt, z = sand weathering scale, w = absolute game time
   healSlot: vec4i,                  // x = slot (−1 none), y/z = page origin (world coarse texels)
   counts: vec4u,                    // out rects, in rects, brushes
   brushes: array<vec4f,${MAX_BRUSHES}>,     // centre x, z (m), half length (m), depth (m)
@@ -55,10 +57,15 @@ fn unpackTexel(w0: u32, w1: u32, w2: u32) -> Texel {
 }
 fn zeroTexel() -> Texel { var t: Texel; t.h = vec2f(0.0); t.s = vec4f(0.0); t.m = vec4f(0.0); return t; }
 // Unbiased (dithered) 8-bit packing for healing: a decaying value never sticks one step above
-// rest. The transform id is exact (its dither stays inside ±½ step).
-fn packDither(v: vec4f, n: f32) -> u32 { return pack4x8unorm(clamp(v + (n - 0.5) / 255.0, vec4f(0.0), vec4f(1.0))); }
+// rest. The transform id is copied exactly, including at rounding ties.
+fn packDither(v: vec4f, n: f32) -> u32 {
+  let d=(n-0.5)/255.0;
+  return pack4x8unorm(clamp(v+vec4f(d,d,d,0.0),vec4f(0.0),vec4f(1.0)));
+}
 fn ditherHash(i: i32, j: i32, seed: f32) -> f32 {
-  return fract(sin(f32(i) * 12.9898 + f32(j) * 78.233 + seed * 37.719) * 43758.5453);
+  var h=(bitcast<u32>(i)*${DITHER_X}u) ^ (bitcast<u32>(j)*${DITHER_Z}u) ^ (u32(floor(seed*60.0))*${DITHER_T}u);
+  h=(h^(h>>16u))*${DITHER_A}u;h=(h^(h>>15u))*${DITHER_B}u;
+  return f32((h^(h>>16u))>>8u)/16777216.0;
 }
 `;
 
@@ -77,13 +84,14 @@ fn materialAt(x: f32, z: f32) -> u32 {
 // Healing toward rest for one texel; m = bake material id.
 const HEAL_FN = /* wgsl */ `
 ${DECAY_WGSL}
-fn healTexel(t: Texel, m: u32, dt: f32) -> Texel {
+fn healTexel(t: Texel, m: u32, age: f32) -> Texel {
+  let dt=age*select(1.0,sp.healDt.z,m==1u||m==6u);
   let o = min(m, ${MATERIAL_COUNT - 1}u) * 6u;
   var r = t;
   r.h = t.h * exp(-vec2f(DECAY[o], DECAY[o + 1u]) * dt);
   // Compaction, wetness, frozen heal; the transform id never does.
-  r.s = vec4f(t.s.xyz * exp(-vec3f(DECAY[o + 2u], DECAY[o + 3u], DECAY[o + 4u]) * dt), t.s.w);
-  r.m = vec4f(t.m.x * exp(-DECAY[o + 4u] * dt), t.m.y * exp(-DECAY[o + 5u] * dt), 0.0, 0.0);
+  r.s = vec4f(t.s.xyz * exp(-vec3f(DECAY[o + 2u]*dt, DECAY[o + 3u]*age, DECAY[o + 4u]*age)), t.s.w);
+  r.m = vec4f(t.m.x * exp(-DECAY[o + 4u] * age), t.m.y * exp(-DECAY[o + 5u] * dt), 0.0, 0.0);
   return r;
 }
 ${MATERIAL_AT}
@@ -138,14 +146,18 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     for (var x = 0; x < RATIO; x++) {
       let k = fineIdx(c * RATIO + x, d * RATIO + y);
       let t = unpackTexel(fine0[k], fine1[k], fine2[k]);
-      h += t.h; sv += t.s; mv += t.m; transform = max(transform, t.s.w);
+      let remainder = unpack2x16float(fine2[k]).y;
+      h += t.h + vec2f(max(-remainder,0.0),max(remainder,0.0));
+      sv += t.s; mv += vec4f(t.m.xy,0.0,0.0); transform = max(transform, t.s.w);
     }
   }
   let n = 1.0 / f32(RATIO * RATIO);
   h *= n; sv *= n; mv *= n; sv.w = transform;
-  atlas0[ci] = pack2x16float(h);
+  let packed = pack2x16float(h); let round = unpack2x16float(packed);
+  let remainder = (h.y-h.x)-(round.y-round.x);
+  atlas0[ci] = packed;
   atlas1[ci] = pack4x8unorm(sv);
-  atlas2[ci] = pack4x8unorm(mv);
+  atlas2[ci] = (pack4x8unorm(mv)&65535u)|packHeightRemainder(remainder);
 }
 `;
 
@@ -157,7 +169,10 @@ ${COARSE_IDX_WGSL}
 fn coarseTexel(c: i32, d: i32) -> Texel {
   let k = coarseIdx(c, d);
   if (k == 0xffffffffu) { return zeroTexel(); }
-  return unpackTexel(atlas0[k], atlas1[k], atlas2[k]);
+  var t = unpackTexel(atlas0[k], atlas1[k], atlas2[k]);
+  let remainder = unpack2x16float(atlas2[k]).y;
+  t.h += vec2f(max(-remainder,0.0),max(remainder,0.0)); t.m=vec4f(t.m.xy,0.0,0.0);
+  return t;
 }
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3u) {
@@ -177,9 +192,11 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   // Transform ids do not interpolate: nearest.
   sv.w = select(select(t00.s.w, t10.s.w, fr.x >= 0.5), select(t01.s.w, t11.s.w, fr.x >= 0.5), fr.y >= 0.5);
   let k = fineIdx(i, j);
-  fine0[k] = pack2x16float(h);
+  let packed = pack2x16float(h); let round = unpack2x16float(packed);
+  let remainder = (h.y-h.x)-(round.y-round.x);
+  fine0[k] = packed;
   fine1[k] = pack4x8unorm(sv);
-  fine2[k] = pack4x8unorm(mv);
+  fine2[k] = (pack4x8unorm(mv)&65535u)|packHeightRemainder(remainder);
 }
 `;
 
@@ -222,6 +239,9 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
   let side = select(-1.0, 1.0, rel.x * bd.y - rel.y * bd.x > 0.0);
   let k = fineIdx(i, j);
   var t = unpackTexel(fine0[k], fine1[k], fine2[k]);
+  let remainder = unpack2x16float(fine2[k]).y;
+  t.h += vec2f(max(-remainder,0.0),max(remainder,0.0));
+  t.m = vec4f(t.m.xy,0.0,0.0);
   let program = u32(ex.x + 0.5);
   let hsh = cellHash(p, 0.03);
   // Turf (BRIEF §4.4: frost on grass = frosted, brittle): the sod barely gives — a quarter of the
@@ -345,7 +365,8 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     // Wet (spray, meltwater).
     t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.3, 1.0, d)));
   }
-  fine0[k] = pack2x16float(t.h);
+  let packed=pack2x16float(t.h);let rounded=unpack2x16float(packed);
+  fine0[k] = packed;
   fine1[k] = pack4x8unorm(t.s);
   fine2[k] = pack4x8unorm(t.m);
 }
@@ -365,11 +386,16 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   let w0 = fine0[k]; let w1 = fine1[k]; let w2 = fine2[k];
   if (w0 == 0u && w1 == 0u && w2 == 0u) { return; } // rest state: nothing to heal
   let m = materialAt((f32(i) + 0.5) / FINE_PER_M, (f32(j) + 0.5) / FINE_PER_M);
-  let t = healTexel(unpackTexel(w0, w1, w2), m, sp.healDt.x);
-  let n = ditherHash(i, j, sp.healDt.x);
-  fine0[k] = pack2x16float(t.h);
+  var value=unpackTexel(w0,w1,w2);
+  let previous=unpack2x16float(w2).y;
+  value.h+=vec2f(max(-previous,0.0),max(previous,0.0));
+  let t=healTexel(value,m,sp.healDt.x);
+  let n = ditherHash(i, j, sp.healDt.w);
+  let packed=pack2x16float(t.h);let rounded=unpack2x16float(packed);
+  fine0[k] = packed;
   fine1[k] = packDither(t.s, n);
-  fine2[k] = packDither(t.m, n);
+  let remainder=(t.h.y-t.h.x)-(rounded.y-rounded.x);
+  fine2[k] = (packDither(t.m, n) & 65535u) | packHeightRemainder(remainder);
 }
 `;
 
@@ -386,11 +412,16 @@ fn main(@builtin(global_invocation_id) g: vec3u) {
   let w0 = atlas0[k]; let w1 = atlas1[k]; let w2 = atlas2[k];
   if (w0 == 0u && w1 == 0u && w2 == 0u) { return; }
   let m = materialAt((f32(s.y + i32(g.x)) + 0.5) * 0.25, (f32(s.z + i32(g.y)) + 0.5) * 0.25);
-  let t = healTexel(unpackTexel(w0, w1, w2), m, sp.healDt.y);
-  let n = ditherHash(i32(g.x), i32(g.y), sp.healDt.y + f32(s.x));
-  atlas0[k] = pack2x16float(t.h);
+  var value=unpackTexel(w0,w1,w2);
+  let previous=unpack2x16float(w2).y;
+  value.h+=vec2f(max(-previous,0.0),max(previous,0.0));
+  let t=healTexel(value,m,sp.healDt.y);
+  let n = ditherHash(s.y+i32(g.x),s.z+i32(g.y),sp.healDt.w);
+  let packed=pack2x16float(t.h);let rounded=unpack2x16float(packed);
+  atlas0[k] = packed;
   atlas1[k] = packDither(t.s, n);
-  atlas2[k] = packDither(t.m, n);
+  let remainder=(t.h.y-t.h.x)-(rounded.y-rounded.x);
+  atlas2[k] = (packDither(t.m,n)&65535u)|packHeightRemainder(remainder);
 }
 `;
 

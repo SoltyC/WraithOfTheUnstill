@@ -1,0 +1,140 @@
+{
+  "date": "2026-10-28T05:43:21.221Z",
+  "iterations": 32,
+  "finePasses": 10,
+  "frames": 240,
+  "seconds": 2.74180000006902,
+  "activeBefore": 8,
+  "activeAfter": 8,
+  "jobs": 240,
+  "writes": 663,
+  "writesByKind": [
+    94,
+    157,
+    0,
+    0,
+    0,
+    412,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "pendingMax": 64,
+  "collisionReads": 31,
+  "speed": {
+    "min": 5.2,
+    "max": 25.85658229705057,
+    "mean": 11.308563451415184
+  },
+  "samples": 239,
+  "incomplete": 0,
+  "spikes": [
+    {
+      "sample": 209,
+      "frame": 3124,
+      "ms": 0.48435199999999956,
+      "passes": 10,
+      "stages": [
+        {
+          "pass": 0,
+          "ms": 0.006143999999999927
+        },
+        {
+          "pass": 1,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 2,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 3,
+          "ms": 0.3665919999999998
+        },
+        {
+          "pass": 4,
+          "ms": 0.016383999999999954
+        },
+        {
+          "pass": 5,
+          "ms": 0.015359999999999818
+        },
+        {
+          "pass": 6,
+          "ms": 0.014336000000000126
+        },
+        {
+          "pass": 7,
+          "ms": 0.015359999999999818
+        },
+        {
+          "pass": 8,
+          "ms": 0.015359999999999818
+        },
+        {
+          "pass": 9,
+          "ms": 0.006144000000000038
+        }
+      ]
+    }
+  ],
+  "maxSampleStages": [
+    {
+      "pass": 0,
+      "ms": 0.006143999999999927
+    },
+    {
+      "pass": 1,
+      "ms": 0.014336000000000126
+    },
+    {
+      "pass": 2,
+      "ms": 0.014336000000000126
+    },
+    {
+      "pass": 3,
+      "ms": 0.3665919999999998
+    },
+    {
+      "pass": 4,
+      "ms": 0.016383999999999954
+    },
+    {
+      "pass": 5,
+      "ms": 0.015359999999999818
+    },
+    {
+      "pass": 6,
+      "ms": 0.014336000000000126
+    },
+    {
+      "pass": 7,
+      "ms": 0.015359999999999818
+    },
+    {
+      "pass": 8,
+      "ms": 0.015359999999999818
+    },
+    {
+      "pass": 9,
+      "ms": 0.006144000000000038
+    }
+  ],
+  "fineGpuMs": {
+    "mean": 0.1308020753138074,
+    "p95": 0.14131199999999944,
+    "max": 0.48435199999999956
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "collisionErrors": 0,
+  "retirementErrors": 0,
+  "note": "Maximum speed is seeded once; subsequent movement/writers use the live game. Diagnostic player health is raised to keep the workload running. Per-frame fine compute sums require every expected timestamped pass. Collision/coarse costs are excluded from fineGpuMs. Human feel and sustained 1440p/60 are not assessed."
+}

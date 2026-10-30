@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-28T05:46:31.043Z",
+  "iterations": 8,
+  "before": {
+    "fine": 0,
+    "coarse": 0,
+    "fineDisplaced": 1.8408203125,
+    "coarseDisplaced": 0,
+    "fineRelief": 1.8408203125,
+    "coarseRelief": 0,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0
+  },
+  "after": {
+    "fine": 0,
+    "coarse": 0,
+    "fineDisplaced": 0.580078125,
+    "coarseDisplaced": 0,
+    "fineRelief": 0.580078125,
+    "coarseRelief": 0,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0
+  },
+  "jobs": 3431,
+  "elapsed": 52.59180000001652,
+  "allMaxDegrees": 34.08128778036301,
+  "activeMaxDegrees": 34.08128778036301,
+  "gpuErrors": 0,
+  "late": [],
+  "progress": [
+    {
+      "chunk": 0,
+      "elapsed": 52.40330000001643,
+      "jobs": 3431,
+      "pending": 0
+    }
+  ],
+  "note": "Real-time isolated mound; slope checked after the 30 s dirty lifetime, including diagonals. This is not an eight-enemy overlapping-write settling gate."
+}

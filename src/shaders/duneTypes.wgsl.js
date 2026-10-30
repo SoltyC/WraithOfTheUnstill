@@ -7,13 +7,14 @@ const DUNE_SEED: u32 = 0x6d65u + 300u;
 // LOD fade of a feature with wavelength lambda at grid spacing s (fully present while s ≤ λ/8).
 fn tn_lodFade(lambda: f32, s: f32) -> f32 { return 1.0 - smoothstep(lambda / 8.0, lambda / 3.0, s); }
 
-fn tn_transverseH(u: f32, v: f32) -> f32 {
+fn tn_transverseField(u: f32, v: f32) -> vec3f {
   let S = 0x6d65u;
   let phase = u / 140.0 + 0.9 * tn_fbm(u / 900.0, v / 600.0, 3, S + 1u) + 0.25 * tn_valueNoise(v / 170.0, u / 400.0, S + 2u);
   let p = phase - floor(phase);
   let seg = 0.7 + 0.3 * tn_fbm(v / 260.0, u / 700.0, 3, S + 3u);
-  return tn_duneProfile(p) * 22.0 * seg;
+  return vec3f(tn_duneProfile(p) * 22.0 * seg,phase,22.0*seg);
 }
+fn tn_transverseH(u:f32,v:f32)->f32{return tn_transverseField(u,v).x;}
 
 fn tn_barchanH(u: f32, v: f32) -> f32 {
   let S = DUNE_SEED + 10u;
@@ -65,12 +66,13 @@ fn tn_starH(u: f32, v: f32) -> f32 {
   return best;
 }
 
-fn tn_seifH(u: f32, v: f32) -> f32 {
+fn tn_seifField(u: f32, v: f32) -> vec3f {
   let S = DUNE_SEED + 40u;
   let phase = v / 115.0 + 0.55 * tn_fbm(u / 700.0, v / 300.0, 3, S);
   let p = phase - floor(phase);
   let tri = 1.0 - abs(2.0 * p - 1.0);
   let amp = 13.0 * (0.65 + 0.35 * tn_fbm(u / 500.0, v / 250.0, 2, S + 1u));
-  return amp * (0.5 * tri * tri * (3.0 - 2.0 * tri) + 0.5 * tri);
+  return vec3f(amp * (0.5 * tri * tri * (3.0 - 2.0 * tri) + 0.5 * tri),phase,amp);
 }
+fn tn_seifH(u:f32,v:f32)->f32{return tn_seifField(u,v).x;}
 `;

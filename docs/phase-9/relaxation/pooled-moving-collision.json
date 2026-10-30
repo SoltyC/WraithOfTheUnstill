@@ -1,0 +1,526 @@
+{
+  "date": "2026-10-28T15:36:06.742Z",
+  "iterations": 32,
+  "maxGpuHeightError": 0.004007975255433394,
+  "gpuProbes": [
+    {
+      "x": 1900,
+      "z": 894.0108333333333,
+      "error": 0,
+      "span": 0.15610000002385505,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 896.5783333333313,
+      "error": 0,
+      "span": 0.18029999995232515,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 899.7849999999951,
+      "error": 0.000756835938148015,
+      "span": 0.20350000000001955,
+      "relief": -0.51416015625
+    },
+    {
+      "x": 1900,
+      "z": 903.0349999999921,
+      "error": 0.00021628140822826936,
+      "span": 0.20330000007155036,
+      "relief": 0.64892578125
+    },
+    {
+      "x": 1900,
+      "z": 906.4583333333223,
+      "error": -0.004007975255433394,
+      "span": 0.21139999997615178,
+      "relief": -0.2069091796875
+    },
+    {
+      "x": 1900,
+      "z": 909.8383333333193,
+      "error": 0,
+      "span": 0.1793999999761411,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 912.9149999999831,
+      "error": 0,
+      "span": 0.1781000000238322,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 915.991666666647,
+      "error": 0,
+      "span": 0.1641000000238222,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 918.9816666666443,
+      "error": 0,
+      "span": 0.1642999999523056,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 921.9716666666416,
+      "error": 0,
+      "span": 0.17830000007150204,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 925.0483333333054,
+      "error": 0,
+      "span": 0.19229999995229718,
+      "relief": 0
+    },
+    {
+      "x": 1900,
+      "z": 928.1683333333026,
+      "error": 0,
+      "span": 0.17860000002383458,
+      "relief": 0
+    }
+  ],
+  "seconds": 7.246800000071303,
+  "reads": 171,
+  "maxAge": 0.13920000004767985,
+  "maxFootGap": 0,
+  "minFootGap": 0,
+  "grounded": 360,
+  "covered": 360,
+  "moving": 359,
+  "samples": [
+    {
+      "i": 0,
+      "time": 121.37780000007075,
+      "pos": [
+        1900,
+        150.4093527730306,
+        894.0108333333333
+      ],
+      "speed": 0.65,
+      "ground": 150.4093527730306,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.10389999997616428,
+      "reads": 722,
+      "relaxJobs": 2432
+    },
+    {
+      "i": 15,
+      "time": 121.73590000009459,
+      "pos": [
+        1900,
+        150.4619360351562,
+        895.494999999999
+      ],
+      "speed": 5.2,
+      "ground": 150.4619360351562,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09610000002383856,
+      "reads": 729,
+      "relaxJobs": 2459
+    },
+    {
+      "i": 30,
+      "time": 121.9417000001661,
+      "pos": [
+        1900,
+        150.4953061930338,
+        896.5783333333313
+      ],
+      "speed": 5.2,
+      "ground": 150.4953061930338,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09770000004768065,
+      "reads": 734,
+      "relaxJobs": 2474
+    },
+    {
+      "i": 45,
+      "time": 122.3377000001661,
+      "pos": [
+        1900,
+        150.434018859865,
+        898.6149999999961
+      ],
+      "speed": 5.2,
+      "ground": 150.434018859865,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.11549999999999727,
+      "reads": 743,
+      "relaxJobs": 2502
+    },
+    {
+      "i": 60,
+      "time": 122.55790000009458,
+      "pos": [
+        1900,
+        150.05764587402393,
+        899.7849999999951
+      ],
+      "speed": 5.2,
+      "ground": 150.05764587402393,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.11810000002382992,
+      "reads": 748,
+      "relaxJobs": 2517
+    },
+    {
+      "i": 75,
+      "time": 122.97310000014228,
+      "pos": [
+        1900,
+        150.57447959581688,
+        901.9083333333265
+      ],
+      "speed": 5.2,
+      "ground": 150.57447959581688,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09850000000000136,
+      "reads": 758,
+      "relaxJobs": 2546
+    },
+    {
+      "i": 90,
+      "time": 123.18590000009463,
+      "pos": [
+        1900,
+        151.26869375943562,
+        903.0349999999921
+      ],
+      "speed": 5.2,
+      "ground": 151.26869375943562,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09979999995233868,
+      "reads": 763,
+      "relaxJobs": 2561
+    },
+    {
+      "i": 105,
+      "time": 123.61820000016615,
+      "pos": [
+        1900,
+        150.95095893622226,
+        905.2883333333234
+      ],
+      "speed": 5.2,
+      "ground": 150.95095893622226,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.0927000000476852,
+      "reads": 773,
+      "relaxJobs": 2590
+    },
+    {
+      "i": 120,
+      "time": 123.84870000016613,
+      "pos": [
+        1900,
+        150.31774597168476,
+        906.4583333333223
+      ],
+      "speed": 5.2,
+      "ground": 150.31774597168476,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09199999999998454,
+      "reads": 778,
+      "relaxJobs": 2605
+    },
+    {
+      "i": 135,
+      "time": 124.28090000009462,
+      "pos": [
+        1900,
+        150.09609354654546,
+        908.7116666666536
+      ],
+      "speed": 5.2,
+      "ground": 150.09609354654546,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.11710000002386778,
+      "reads": 787,
+      "relaxJobs": 2634
+    },
+    {
+      "i": 150,
+      "time": 124.4954000000946,
+      "pos": [
+        1900,
+        150.4587703450522,
+        909.8383333333193
+      ],
+      "speed": 5.2,
+      "ground": 150.4587703450522,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.11379999995232026,
+      "reads": 792,
+      "relaxJobs": 2649
+    },
+    {
+      "i": 165,
+      "time": 124.8799000000946,
+      "pos": [
+        1900,
+        150.42101135253918,
+        911.8316666666508
+      ],
+      "speed": 5.2,
+      "ground": 150.42101135253918,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.1227999999523206,
+      "reads": 801,
+      "relaxJobs": 2677
+    },
+    {
+      "i": 180,
+      "time": 125.08550000011842,
+      "pos": [
+        1900,
+        150.39792846679703,
+        912.9149999999831
+      ],
+      "speed": 5.2,
+      "ground": 150.39792846679703,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.12320000004767451,
+      "reads": 806,
+      "relaxJobs": 2692
+    },
+    {
+      "i": 195,
+      "time": 125.46890000009455,
+      "pos": [
+        1900,
+        150.3756785074871,
+        914.9083333333147
+      ],
+      "speed": 5.2,
+      "ground": 150.3756785074871,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09569999992845624,
+      "reads": 816,
+      "relaxJobs": 2720
+    },
+    {
+      "i": 210,
+      "time": 125.67510000014222,
+      "pos": [
+        1900,
+        150.36411437988295,
+        915.991666666647
+      ],
+      "speed": 5.2,
+      "ground": 150.36411437988295,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09620000004767348,
+      "reads": 821,
+      "relaxJobs": 2735
+    },
+    {
+      "i": 225,
+      "time": 126.04500000011838,
+      "pos": [
+        1900,
+        150.30439941406317,
+        917.8983333333119
+      ],
+      "speed": 5.2,
+      "ground": 150.30439941406317,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09599999999998943,
+      "reads": 830,
+      "relaxJobs": 2762
+    },
+    {
+      "i": 240,
+      "time": 126.25100000011838,
+      "pos": [
+        1900,
+        150.2527478027344,
+        918.9816666666443
+      ],
+      "speed": 5.2,
+      "ground": 150.2527478027344,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09660000002384095,
+      "reads": 835,
+      "relaxJobs": 2777
+    },
+    {
+      "i": 255,
+      "time": 126.62100000011837,
+      "pos": [
+        1900,
+        150.21517191569012,
+        920.8883333333092
+      ],
+      "speed": 5.2,
+      "ground": 150.21517191569012,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09549999999998704,
+      "reads": 844,
+      "relaxJobs": 2804
+    },
+    {
+      "i": 270,
+      "time": 126.82640000009454,
+      "pos": [
+        1900,
+        150.2184173583984,
+        921.9716666666416
+      ],
+      "speed": 5.2,
+      "ground": 150.2184173583984,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09579999995231958,
+      "reads": 849,
+      "relaxJobs": 2819
+    },
+    {
+      "i": 285,
+      "time": 127.21080000007066,
+      "pos": [
+        1900,
+        150.19534729003925,
+        923.9649999999731
+      ],
+      "speed": 5.2,
+      "ground": 150.19534729003925,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.1100999999046195,
+      "reads": 858,
+      "relaxJobs": 2847
+    },
+    {
+      "i": 300,
+      "time": 127.418200000166,
+      "pos": [
+        1900,
+        150.15353535970075,
+        925.0483333333054
+      ],
+      "speed": 5.2,
+      "ground": 150.15353535970075,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.11120000004767405,
+      "reads": 863,
+      "relaxJobs": 2862
+    },
+    {
+      "i": 315,
+      "time": 127.81800000011827,
+      "pos": [
+        1900,
+        150.06288960774762,
+        927.1283333333035
+      ],
+      "speed": 5.2,
+      "ground": 150.06288960774762,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09749999999999659,
+      "reads": 873,
+      "relaxJobs": 2891
+    },
+    {
+      "i": 330,
+      "time": 128.0240000001183,
+      "pos": [
+        1900,
+        150.04900512695318,
+        928.1683333333026
+      ],
+      "speed": 5.2,
+      "ground": 150.04900512695318,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.09720000004770668,
+      "reads": 878,
+      "relaxJobs": 2906
+    },
+    {
+      "i": 345,
+      "time": 128.4097000001659,
+      "pos": [
+        1900,
+        150.052075805664,
+        930.2049999999674
+      ],
+      "speed": 5.2,
+      "ground": 150.052075805664,
+      "gap": 0,
+      "grounded": true,
+      "age": 0.10930000007149943,
+      "reads": 887,
+      "relaxJobs": 2934
+    }
+  ],
+  "errors": 0,
+  "gpuErrors": 0,
+  "late": [
+    {
+      "kind": "render",
+      "label": "RenderPipeline_r32float_depth32float_samples1_textureState0",
+      "t": 61366.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:shadowDepth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61370.89999997616,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:cloth",
+      "fragment": "fragment:cloth",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.09999990463,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFur",
+      "fragment": "fragment:wraithFur",
+      "compute": ""
+    },
+    {
+      "kind": "render",
+      "label": "RenderPipeline_rgba16float_depth32float_samples1_textureState1952",
+      "t": 61371.299999952316,
+      "stack": "Error\n    at s (http://localhost:4176/assets/index-C30GAdo9.js:2:1217)\n    at r.createRenderPipeline (http://localhost:4176/assets/index-C30GAdo9.js:2:2971)\n    at e._createRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:41568)\n    at e.getRenderPipeline (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:420:25490)\n    at e._draw (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:25020)\n    at e.drawElementsType (http://localhost:4176/assets/webgpuEngine.pure-txS_x-4q.js:432:26503)\n    at e._draw (http://localhost:4176/assets/mesh-_foa0ouC.js:3:31229)\n    at e._processRendering (http://localhost:4176/assets/mesh-_foa0ouC.js:3:38182)\n    at e.render (http://localhost:4176/assets/mesh-_foa0ouC.js:3:44585)\n    at e.render (http://localhost:4176/assets/shaderMaterial-Dw2Tj-SV.js:1:15802)",
+      "vertex": "vertex:wraithFx",
+      "fragment": "fragment:wraithFx",
+      "compute": ""
+    }
+  ],
+  "note": "Walking a full-size 14 m by 2.95 m-half-width, 1.1 m Stone Ridge while relaxation runs. GPU probes complete asynchronously after the CPU sample; their span is reported. This is walking, not D3 sand-surf acceptance."
+}

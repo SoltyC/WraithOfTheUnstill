@@ -1,3 +1,4 @@
+import { DUNE_CREST_CODEC_WGSL, DUNE_CREST_NORMAL_WGSL } from './duneCrest.wgsl.js';
 // Clipmap terrain (BRIEF §4.2). One static N×N grid drawn as LEVELS thin instances (level index in
 // the instance matrix translation x). Each level is a full square around its snapped origin; the
 // vertex shader sinks the part the next finer level covers below it, so no trim strips are needed.
@@ -26,8 +27,8 @@ import { SANDSTONE_WGSL } from './sandstone.wgsl.js';
 import { BORDER_WGSL } from './common.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
-export const CLIPMAP_N = 256;     // quads per level side
-export const CLIPMAP_LEVELS = 12; // finest 6.25 cm, coarsest 128 m spacing (half-extent 16 km)
+import { CLIPMAP_N, CLIPMAP_LEVELS } from '../terrain/clipmapLayout.js';
+export { CLIPMAP_N, CLIPMAP_LEVELS };
 
 /** Height functions shared by the clipmap shader and tools/capture/parity-check.mjs. */
 export const HEIGHT_WGSL = /* wgsl */ `
@@ -179,14 +180,16 @@ fn edgeFalloff(h: f32, x: f32, z: f32) -> f32 {
   return mix(h, -60.0, smoothstep(0.0, 2000.0, out));
 }
 
-fn terrainH(x: f32, z: f32, s: f32) -> f32 {
+fn terrainField(x: f32, z: f32, s: f32) -> vec4f {
   let macroH = edgeFalloff(select(macroDetail(x, z), macroOverview(x, z), s >= 8.0), x, z);
   var wB = vec2f(0.0);
   let wA = biomeAt(x, z, &wB);
   let wind = windAt(x, z);
   let alp = tn_alpineHeight(x, z, macroH, wA.x, lodFade(180.0, s), lodFade(60.0, s));
-  return macroH + tn_mesoHeight(x, z, wA, wB, wind, duneAt(x, z), s) + alp + microH(x, z, wA, wind, s);
+  let meso=tn_mesoField(x,z,wA,wB,wind,duneAt(x,z),s);
+  return vec4f(macroH + meso.x + alp + microH(x, z, wA, wind, s),meso.yzw);
 }
+fn terrainH(x:f32,z:f32,s:f32)->f32{return terrainField(x,z,s).x;}
 `;
 
 export const clipmapVertexWGSL = /* wgsl */ `
@@ -214,6 +217,8 @@ varying vLake: f32;
 varying vNormalC: vec3f;
 varying vFlat: f32;      // the bake's dune flat weight (pans, playas, ravine floors): desert pavement
 varying vEncl: f32;      // how walled-in the ground is (a ravine floor): its shade takes the walls' warm bounce, less sky
+varying vCrest: vec4f;
+varying vCrestSpacing: f32;
 
 const W_HALF: f32 = 4096.0;
 const N8: i32 = 1024; const C8: f32 = 8.0;
@@ -279,6 +284,7 @@ fn groundAtV(x: f32, z: f32, l0: u32) -> f32 {
   return -1e4;
 }
 
+${DUNE_CREST_CODEC_WGSL}
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   let level = u32(vertexInputs.world3.x + 0.5);
@@ -289,11 +295,12 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var p = L.xy + vertexInputs.position.xz * s;
   let d0 = levelSample(level, i, j);
   var h = d0.x;
+  var crest=unpackDuneCrest(d0.w);
   var nxz = d0.yz;
   // Morph toward the parent grid in the outer band (camera-relative distance, continuous).
   let cam = uniforms.camGrid.xz;
   let dist = max(abs(p.x - cam.x), abs(p.y - cam.y)) / s;
-  let band = 24.0;
+  let band = 8.0;
   var alpha = clamp((dist - (HALF - 1.0 - band)) / band, 0.0, 1.0);
   if (level == ${CLIPMAP_LEVELS - 1}u) { alpha = 0.0; }
   if (alpha > 0.0) {
@@ -307,6 +314,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let dp = levelSample(level + 1u, pi, pj);
     p = mix(p, t, alpha);
     h = mix(h, dp.x, alpha);
+    crest=mix(crest,unpackDuneCrest(dp.w),alpha);
     nxz = mix(nxz, dp.yz, alpha);
   }
   let n = normalize(vec3f(nxz.x, sqrt(max(1.0 - dot(nxz, nxz), 0.0)), nxz.y));
@@ -327,6 +335,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vWorldPos = wp;
   vertexOutputs.vNormal = n;
   vertexOutputs.vLevel = f32(level);
+  vertexOutputs.vCrest=crest;vertexOutputs.vCrestSpacing=s*(1.0+alpha);
   vertexOutputs.vWind = windAtV(p.x, p.y);
   // Large-scale normal (three levels coarser, bilinear): free of the micro layer, so the
   // material's rock/ice masks follow landforms, not individual sastrugi.
@@ -352,7 +361,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   }
   vertexOutputs.vEncl = clamp(encl / 3.0, 0.0, 1.0);
   var wB = vec2f(0.0);
-  vertexOutputs.vBiomeA = biomeAt(p.x, p.y, &wB);
+  vertexOutputs.vBiomeA = biomeAt(p.x,p.y,&wB);
   vertexOutputs.vBiomeB = wB;
 }
 `;
@@ -373,6 +382,8 @@ varying vLake: f32;
 varying vNormalC: vec3f;
 varying vFlat: f32;      // the bake's dune flat weight (pans, playas, ravine floors): desert pavement
 varying vEncl: f32;      // how walled-in the ground is (a ravine floor): its shade takes the walls' warm bounce, less sky
+varying vCrest: vec4f;
+varying vCrestSpacing: f32;
 ${COMMON_WGSL}
 ${GRID_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -385,6 +396,7 @@ ${SNOW_WGSL}
 ${MEADOW_WGSL}
 ${SAND_WGSL}
 ${SANDSTONE_WGSL}
+${DUNE_CREST_NORMAL_WGSL}
 ${BORDER_WGSL}
 
 @fragment
@@ -397,6 +409,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let V = normalize(camPos - wp);
   var N = normalize(fragmentInputs.vNormal);
   matDpx = dpdx(wp); matDpy = dpdy(wp);
+  // Differentiate the cached unwrapped phase before material branches (uniform derivatives).
+  let phase=fragmentInputs.vCrest.x/max(fragmentInputs.vCrest.w,0.0001);
+  let phaseDx=dpdx(phase);let phaseDy=dpdy(phase);
+  let det=matDpx.x*matDpy.z-matDpx.z*matDpy.x;var crestGradient=vec2f(0.0);
+  if(abs(det)>1e-12){crestGradient=vec2f(phaseDx*matDpy.z-phaseDy*matDpx.z,matDpx.x*phaseDy-matDpy.x*phaseDx)/det;}
   let dist = length(camPos - wp);
 
   // Clay albedo tinted by biome (debug-readable, not final materials).
@@ -528,7 +545,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     let sst = stateSurface(wp.x, wp.z);
-    let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, sst, L);
+    let crestN = duneCrestNormal(Ngs, fragmentInputs.vCrest, crestGradient, fragmentInputs.vCrestSpacing, dist, fp);
+    let ss = sandSurface(wp, crestN, normalize(fragmentInputs.vNormalC), fp, sst, L);
     var scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
     // Down between a ravine's walls the shade is warm: less of the blue sky reaches it, and the sunlit
     // walls and floor throw their orange back into it (the canyon kit's bounce, shaders/canyon.wgsl.js).
@@ -630,7 +648,7 @@ attribute world3: vec4f;
 uniform viewProjection: mat4x4f;
 uniform levels: array<vec4f,16>;
 uniform camGrid: vec4f;
-uniform shadowLevels: vec4f;          // x, y = the levels this cascade draws (first, last)
+uniform shadowLevels: vec4f;          // xy = first/last level, z = caster grid half-width
 var<storage, read> levelData: array<vec4f>;
 varying vWorldPos: vec3f;
 
@@ -655,8 +673,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var h = levelSample(level, i, j).x;
   let cam = uniforms.camGrid.xz;
   let dist = max(abs(p.x - cam.x), abs(p.y - cam.y)) / s;
-  let band = 24.0;
-  var alpha = clamp((dist - (HALF - 1.0 - band)) / band, 0.0, 1.0);
+  let band = 8.0;
+  let visibleHalf=uniforms.shadowLevels.z;
+  var alpha = clamp((dist - (visibleHalf - 1.0 - band)) / band, 0.0, 1.0);
   if (level == ${CLIPMAP_LEVELS - 1}u) { alpha = 0.0; }
   if (alpha > 0.0) {
     let ti = i - (i & 1u);
@@ -670,7 +689,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   }
   if (level > 0u) {
     let F = uniforms.levels[level - 1u];
-    let ext = F.z * HALF - F.z * 0.5;
+    let ext = F.z * visibleHalf - F.z * 0.5;
     if (abs(p.x - F.x) < ext && abs(p.y - F.y) < ext) { h -= 200.0; }
   }
   let wp = vec3f(p.x, h, p.y);

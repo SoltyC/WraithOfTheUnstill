@@ -1,3 +1,5 @@
+import { createClipmapGrid } from './clipmapGrid.js';
+import { CLIPMAP_SHADOW_N } from '../terrain/clipmapLayout.js';
 // Clipmap terrain renderer (BRIEF §4.2). One static grid patch drawn as CLIPMAP_LEVELS thin
 // instances (fixed count: snapshot-rendering safe, one draw call). Level l has spacing S0·2^l and
 // its origin snapped to multiples of 2·spacing, so every level's vertices sit on its parent's grid.
@@ -9,9 +11,6 @@
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
 import { ShaderLanguage } from '@babylonjs/core/Materials/shaderLanguage.js';
-import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
-import '@babylonjs/core/Meshes/thinInstanceMesh.js'; // side effect: adds thin-instance methods to Mesh
-import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
@@ -41,35 +40,15 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   ShaderStore.ShadersStoreWGSL.clipmapVertexShader = clipmapVertexWGSL;
   ShaderStore.ShadersStoreWGSL.clipmapFragmentShader = clipmapFragmentWGSL;
 
-  // Grid in integer cell coordinates centred on 0: (i − N/2, 0, j − N/2), vertex index j·V + i.
-  const n = CLIPMAP_N, v = n + 1;
-  const positions = new Float32Array(v * v * 3);
-  for (let j = 0; j < v; j++) for (let i = 0; i < v; i++) {
-    const k = (j * v + i) * 3;
-    positions[k] = i - n / 2; positions[k + 1] = 0; positions[k + 2] = j - n / 2;
-  }
-  // Uniform diagonal: required for the odd→even morph collapse to stay consistent.
-  const indices = new Uint32Array(n * n * 6);
-  let p = 0;
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const a = j * v + i, b = a + 1, c = a + v, d = c + 1;
-    indices[p++] = a; indices[p++] = d; indices[p++] = c;
-    indices[p++] = a; indices[p++] = b; indices[p++] = d;
-  }
-  const mesh = new Mesh('clipmap', scene);
-  const vd = new VertexData();
-  vd.positions = positions; vd.indices = indices;
-  vd.applyToMesh(mesh, false);
-  // One instance per level; the level index rides in the matrix translation x (world3.x).
-  const mats = new Float32Array(16 * CLIPMAP_LEVELS);
-  for (let l = 0; l < CLIPMAP_LEVELS; l++) {
-    const o = l * 16;
-    mats[o] = 1; mats[o + 5] = 1; mats[o + 10] = 1; mats[o + 15] = 1;
-    mats[o + 12] = l;
-  }
-  mesh.thinInstanceSetBuffer('matrix', mats, 16, true);
-  mesh.alwaysSelectAsActiveMesh = true;
-  mesh.doNotSyncBoundingInfo = true;
+  // Opaque draw order matters: fine centre first gives the buried ring guards early depth rejection.
+  const centerMesh=createClipmapGrid(scene,CLIPMAP_N,1,'clipmap-center');
+  const mesh=createClipmapGrid(scene,CLIPMAP_N,CLIPMAP_LEVELS-1,'clipmap',1,true);centerMesh.parent=mesh;
+  const shadowN=Math.min(CLIPMAP_N,CLIPMAP_SHADOW_N);
+  const shadowMesh=createClipmapGrid(scene,shadowN,CLIPMAP_LEVELS-1,'clipmap-shadow',1,true);
+  const shadowCenter=createClipmapGrid(scene,shadowN,1,'clipmap-shadow-center');
+  shadowMesh.parent=mesh;shadowCenter.parent=shadowMesh;
+  // The regular camera cannot draw the casters; shadow cameras include this reserved layer.
+  shadowMesh.layerMask=shadowCenter.layerMask=0x10000000;
 
   // Per-level heights + normals, written by compute.
   const levelData = new StorageBuffer(engine, CLIPMAP_LEVELS * CLIPMAP_V * CLIPMAP_V * 16, undefined, 'clipmap-levels');
@@ -115,14 +94,14 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   mat.setStorageBuffer('biomeB', buffers.biomeB);
   mat.setStorageBuffer('windMap', buffers.wind);
   mat.setStorageBuffer('hydro', buffers.hydro);
-  mesh.material = mat;
+  mesh.material = centerMesh.material = shadowMesh.material = shadowCenter.material = mat;
 
   // Last computed origin per level (NaN = never) and the residency version levels were built at.
   const builtX = new Float64Array(CLIPMAP_LEVELS).fill(NaN), builtZ = new Float64Array(CLIPMAP_LEVELS).fill(NaN);
   let builtResidency = -1;
 
   return {
-    mesh, material: mat, playerPos, levelData, levels, camGrid, buffers, spellLights, lightGrid,
+    mesh, centerMesh, shadowMesh, shadowCenter, shadowN, material: mat, playerPos, levelData, params, levels, camGrid, buffers, spellLights, lightGrid,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
     /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
     stateBound: [],

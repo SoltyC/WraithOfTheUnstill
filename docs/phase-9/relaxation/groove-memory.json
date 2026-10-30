@@ -1,0 +1,138 @@
+{
+  "date": "2026-10-27T19:18:40.140Z",
+  "before": [
+    {
+      "x": 1901,
+      "fine": 0.219970703125,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.219970703125,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1902.5,
+      "fine": 0.219970703125,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.219970703125,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1904,
+      "fine": 0.219970703125,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.219970703125,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1905.5,
+      "fine": 0.219970703125,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.219970703125,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1907,
+      "fine": 0.219970703125,
+      "coarse": 0,
+      "fineDisplaced": 0,
+      "coarseDisplaced": 0,
+      "fineRelief": -0.219970703125,
+      "coarseRelief": 0,
+      "slot": 1,
+      "stored": 0,
+      "loading": 0
+    }
+  ],
+  "probes": [
+    {
+      "x": 1901,
+      "fine": 0.2166748046875,
+      "coarse": 0.2166748046875,
+      "fineDisplaced": 0.000010192394256591797,
+      "coarseDisplaced": 0.000010192394256591797,
+      "fineRelief": -0.2166646122932434,
+      "coarseRelief": -0.2166646122932434,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1902.5,
+      "fine": 0.2166748046875,
+      "coarse": 0.2166748046875,
+      "fineDisplaced": 0.000010192394256591797,
+      "coarseDisplaced": 0.000010192394256591797,
+      "fineRelief": -0.2166646122932434,
+      "coarseRelief": -0.2166646122932434,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1904,
+      "fine": 0.2166748046875,
+      "coarse": 0.2166748046875,
+      "fineDisplaced": 0.000010192394256591797,
+      "coarseDisplaced": 0.000010192394256591797,
+      "fineRelief": -0.2166646122932434,
+      "coarseRelief": -0.2166646122932434,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1905.5,
+      "fine": 0.2166748046875,
+      "coarse": 0.2166748046875,
+      "fineDisplaced": 0.000010192394256591797,
+      "coarseDisplaced": 0.000010192394256591797,
+      "fineRelief": -0.2166646122932434,
+      "coarseRelief": -0.2166646122932434,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    },
+    {
+      "x": 1907,
+      "fine": 0.2166748046875,
+      "coarse": 0.2166748046875,
+      "fineDisplaced": 0.000010192394256591797,
+      "coarseDisplaced": 0.000010192394256591797,
+      "fineRelief": -0.2166646122932434,
+      "coarseRelief": -0.2166646122932434,
+      "slot": 0,
+      "stored": 0,
+      "loading": 0
+    }
+  ],
+  "pages": 1,
+  "late": [],
+  "gpuErrors": 0,
+  "depthRetained": [
+    0.9850166481687015,
+    0.9850166481687015,
+    0.9850166481687015,
+    0.9850166481687015,
+    0.9850166481687015
+  ],
+  "note": "10 m by 1.6 m carved groove, real IndexedDB save/load; footprint fine-detail loss is reported separately."
+}
