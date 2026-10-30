@@ -12,6 +12,7 @@
 // Phase 1 "clay" shading: wrapped diffuse + sky ambient + aerial perspective, tinted by biome.
 
 import { ENV_DECL, COMMON_WGSL, LIGHT_SLOTS, GRID_LIGHT_DECL, GRID_LIGHT_WGSL } from './common.wgsl.js';
+import { OASIS_POOL } from '../world/oasis.js';
 import { MAX_PER_CELL } from '../render/lightGrid.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
@@ -497,6 +498,22 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
     col = mix(col, scol, wSand);
     ssrMask = max(ssrMask, wSand * ss.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
+  }
+  // The oasis basin (world/oasis.js): dried mud, crazed into polygons — bare while the erg is stilled,
+  // the lakebed under the water once it is restored. A tint and the cracks on the lit colour.
+  let oasisD = length(wp.xz - vec2f(${OASIS_POOL.x}.0, ${OASIS_POOL.z}.0));
+  if (oasisD < ${OASIS_POOL.r}.0 * 1.15) {
+    let mudK = 1.0 - smoothstep(${OASIS_POOL.r}.0 * 0.8, ${OASIS_POOL.r}.0 * 1.12, oasisD + 1.5 * noised(wp.xz * 0.2).x);
+    // Cells of ~0.7 m: the distance to the nearest cell edge (second-nearest minus nearest centre).
+    let q = wp.xz / 0.7; let qi = floor(q); var d1 = 9.0; var d2 = 9.0;
+    for (var j = -1; j <= 1; j++) { for (var i = -1; i <= 1; i++) {
+      let c = qi + vec2f(f32(i), f32(j));
+      let h = fract(sin(vec2f(dot(c, vec2f(127.1, 311.7)), dot(c, vec2f(269.5, 183.3)))) * 43758.5453);
+      let d = length(q - c - h);
+      if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) { d2 = d; }
+    } }
+    let crack = (1.0 - smoothstep(0.02, 0.07, d2 - d1)) * (1.0 - smoothstep(0.3, 1.2, fp));
+    col = mix(col, col * vec3f(0.78, 0.7, 0.62) * (1.0 - 0.6 * crack) * (0.92 + 0.12 * fract(sin(dot(qi, vec2f(12.9, 78.2))) * 4375.5)), mudK);
   }
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
