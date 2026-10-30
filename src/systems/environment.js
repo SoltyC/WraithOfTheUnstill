@@ -287,6 +287,7 @@ export async function addEnvironmentSystems(g) {
     const sf = controller.surf;
     sfx.sandActive = sf.active && controller.grounded && (sf.material === 1 || sf.material === 6)
       && !clock.frozen && !game.wraithHeld && !controller.hold && !g.combat.dying;
+    sfx.sandAvalanche = g.surfWake ? g.surfWake.avalanche : 0;
     sfx.sandSpeed = sf.speed; sfx.sandGrip = Math.abs(sf.latAccel) / sf.tuning.latMax;
     sfx.sandWet = weather.wet; sfx.sandFrozen = g.surfWake.frozen;
     sfx.update();

@@ -45,4 +45,16 @@ describe('material-specific shared surf wake',()=>{
   wake.z+=20;wake.update();expect(stamps.length).toBe(before);
   wake.surf.active=false;wake.z+=.5;wake.update();expect(stamps.length).toBe(before);
  });
+ it('pours sheets down a steep slip face (within the spray budget) and builds the avalanche level; none on the flat',()=>{
+  const steep=make(1,20,0);steep.wake.surf.nx=.6;steep.wake.surf.nz=0;steep.wake.surf.ny=.8;
+  const flat=make(1,20,0);flat.wake.surf.nx=0;flat.wake.surf.nz=0;flat.wake.surf.ny=1;
+  for(const m of [steep,flat]){m.fx.count=0;m.wake.avalanche=0;for(let i=0;i<30;i++){m.wake.z+=.33;m.wake.update();}}
+  expect(steep.wake.avalanche).toBeGreaterThan(.5);expect(flat.wake.avalanche).toBe(0);
+  expect(steep.fx.count/30*60*SPRAY_LIFE).toBeLessThan(FX_SPRAY);
+ });
+ it('streams sand off a crest when a fast sand run leaves the ground',()=>{
+  const m=make(1,20,0);m.fx.count=0;m.wake.grounded=false;m.wake.update();
+  expect(m.fx.count).toBeGreaterThan(0);
+  const slow=make(1,4,0);slow.fx.count=0;slow.wake.grounded=false;slow.wake.update();expect(slow.fx.count).toBe(0);
+ });
 });

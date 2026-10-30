@@ -102,7 +102,7 @@ export function createSfx() {
 
   const self = {
     enabled: true,
-    sandSound: null, sandActive: false, sandSpeed: 0, sandGrip: 0, sandWet: 0, sandFrozen: 0,
+    sandSound: null, sandActive: false, sandSpeed: 0, sandGrip: 0, sandWet: 0, sandFrozen: 0, sandAvalanche: 0,
     /** Listener (fields): camera position and its right vector (horizontal). */
     lx: 0.5, ly: 0.5, lz: 0.5, rx: 1.5 - 0.5, rz: 0.5 - 0.5,
     /** Sound position and loudness (fields) for the next play(). `tone` (0..2) picks the Flow cue's pitch. */
@@ -257,7 +257,7 @@ export function createSfx() {
       if (!ac || ac.state !== 'running') return;
       const sand = this.sandSound;
       sand.active = this.enabled && this.sandActive; sand.speed = this.sandSpeed;
-      sand.grip = this.sandGrip; sand.wet = this.sandWet; sand.frozen = this.sandFrozen;
+      sand.grip = this.sandGrip; sand.wet = this.sandWet; sand.frozen = this.sandFrozen; sand.avalanche = this.sandAvalanche;
       sand.update();
       const t = ac.currentTime, gust = 0.7 + 0.3 * Math.sin(this.time * 0.9) * Math.sin(this.time * 0.37 + 1.1);
       windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust), t, 0.3);

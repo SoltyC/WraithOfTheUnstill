@@ -32,13 +32,34 @@ export function createSurfWake(ts, fx) {
   const surface = ts.collision ? ts.collision.view : null;
   const last = new Float64Array(2).fill(NaN), seed = new Uint32Array([7]);
   const rnd = () => { seed[0] = (seed[0] * 1664525 + 1013904223) >>> 0; return seed[0] / 4294967296; };
+  let wasGrounded = false, streamT = 0;
   return {
     /** Owner fields: the controller's surf model, foot position, grounded. */
     surf: null, x: 0.5, y: 0.5, z: 0.5, grounded: false, enabled: true,
     /** Flow 0..3 (game/flow.js, eased): the wake grows wider, deeper and throws more spray. */
     flow: 0.5 - 0.5, wet: 0, frozen: 0,
+    /** Out: how hard the slip face is avalanching under the carve, 0..1 (eased; the sound's boom). */
+    avalanche: 0,
+    /** Owner field: s since the last update (the avalanche's easing and the crest stream's timing). */
+    dt: 1 / 60,
     update() {
       const s = this.surf;
+      // Leaving a crest at speed on sand: a stream of sand pours off it behind the Wraith for a moment.
+      if (s && s.active && !this.grounded && wasGrounded && s.tuning === sandSurfTuning && s.speed > 7 && this.wet < 0.5) streamT = 0.45;
+      wasGrounded = this.grounded;
+      if (streamT > 0 && s) {
+        streamT -= this.dt;
+        const hx = Math.sin(s.heading), hz = Math.cos(s.heading);
+        for (let k = 0; k < 7; k++) {
+          const back = 0.3 + 1.2 * rnd(), side = (rnd() - 0.5) * 1.2;
+          fx.ex = this.x - hx * back + hz * side; fx.ez = this.z - hz * back - hx * side; fx.ey = this.y - 0.1 - 0.3 * rnd();
+          fx.evx = hx * s.speed * (0.25 + 0.2 * rnd()) + (rnd() - 0.5) * 0.8; fx.evz = hz * s.speed * (0.25 + 0.2 * rnd()) + (rnd() - 0.5) * 0.8;
+          fx.evy = 0.6 + 1.4 * rnd(); fx.esize = 0.06 + 0.1 * rnd();
+          fx.emit();
+        }
+      }
+      // The avalanche level eases down whenever no slip face is being carved.
+      this.avalanche = Math.max(0, this.avalanche - this.dt * 0.5);
       if (!this.enabled || !s || !s.active || !this.grounded || s.speed < 1) { this.frozen = 0; last[0] = NaN; return; }
       const sand = s.tuning === sandSurfTuning;
       if (!sand) this.frozen = 0;
@@ -91,9 +112,34 @@ export function createSurfWake(ts, fx) {
         fx.esize = 0.07 + 0.08 * rnd();
         fx.emit();
       }
+      // Sheets: carving a slip face, the berm on the downhill side cannot hold and pours away down the
+      // face as a curtain of sand. Particles only — the terrain's own relaxation (D2) moves the mass —
+      // so the sheet shows the slump the solver is making, never extra sand.
+      const steep = Math.sqrt(s.nx * s.nx + s.nz * s.nz);
+      let sheet = 0;
+      if (sand && steep > 0.42 && sp > 4 && loose > 0.3) {
+        const k = Math.min(1, (steep - 0.42) / 0.25) * Math.min(1, (sp - 4) / 10) * loose;
+        this.avalanche = Math.min(1, this.avalanche + this.dt * 2.5 * k);
+        const dhx = s.nx / steep, dhz = s.nz / steep;                    // downhill
+        const sideDown = (rx * dhx + rz * dhz) >= 0 ? 1 : -1;           // the berm on the downhill side
+        sheet = Math.round(14 * k);
+        for (let q = 0; q < sheet; q++) {
+          const back = 0.3 + 2.2 * rnd();
+          fx.ex = this.x - hx * back + rx * sideDown * ts.bw * (1.0 + 0.6 * rnd());
+          fx.ez = this.z - hz * back + rz * sideDown * ts.bw * (1.0 + 0.6 * rnd());
+          fx.ey = this.y + 0.05 + 0.1 * rnd();
+          const run = 1.5 + 3.5 * rnd() * k;                               // slides down the face, fanning
+          fx.evx = dhx * run + (rnd() - 0.5) * 0.9 + hx * sp * 0.08;
+          fx.evz = dhz * run + (rnd() - 0.5) * 0.9 + hz * sp * 0.08;
+          fx.evy = 0.15 + 0.5 * rnd();
+          fx.esize = 0.08 + 0.12 * rnd();
+          fx.emit();
+        }
+      }
       const out = s.latAccel > 0.5 ? -1 : s.latAccel < -0.5 ? 1 : 0;
       const n = Math.min(T.maxSpray * (1 + 0.25 * fk), Math.round(sp * T.sprayPerSpeed + Math.abs(s.latAccel) * T.sprayPerLat) * (1 + 0.2 * fk)) * s.blend;
-      for (let k = 0; k < n * loose; k++) {
+      // (The pouring downhill berm takes its particles from the spray: the frame's total stays in the pool.)
+      for (let k = 0; k < n * loose - sheet; k++) {
         const side = out !== 0 ? out * (0.7 + 0.3 * rnd()) : (rnd() < 0.5 ? -1 : 1);
         const back = 0.2 + 0.5 * rnd();
         fx.ex = this.x - hx * back + rx * side * ts.bw * (0.9 + 0.4 * rnd());

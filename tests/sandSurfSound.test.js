@@ -4,15 +4,16 @@ function fixture(){
  const nodes=[],param=()=>({value:0,setTargetAtTime(v,t,c){this.target=v;this.seconds=c;}});
  const ctx={currentTime:0,createBufferSource(){const n={connect(){},start(){this.started=true;}};nodes.push(n);return n;},
  createBiquadFilter(){const n={Q:param(),frequency:param(),connect(){}};nodes.push(n);return n;},
- createGain(){const n={gain:param(),connect(){}};nodes.push(n);return n;}};
+ createGain(){const n={gain:param(),connect(){}};nodes.push(n);return n;},
+ createOscillator(){const n={type:'',frequency:param(),connect(){},start(){this.started=true;}};nodes.push(n);return n;}};
  return {sound:createSandSurfSound(ctx,{},{}),nodes};
 }
 describe('fixed continuous sand-surf friction sound',()=>{
  it('creates its nodes once and keeps eased targets bounded through sustained updates',()=>{
-  const {sound:s,nodes}=fixture();expect(nodes).toHaveLength(6);
+  const {sound:s,nodes}=fixture();expect(nodes).toHaveLength(16);
   s.active=true;s.speed=32;s.grip=1;
   for(let i=0;i<1000;i++)s.update();
-  expect(nodes).toHaveLength(6);expect(s.hissLevel).toBeCloseTo(.12);expect(s.rushLevel).toBeCloseTo(.08);
+  expect(nodes).toHaveLength(16);expect(s.hissLevel).toBeCloseTo(.12);expect(s.rushLevel).toBeCloseTo(.08);
   expect(nodes[4].gain.seconds).toBeGreaterThan(0);expect(nodes[5].gain.seconds).toBeGreaterThan(0);
   s.speed=1e6;s.grip=1e6;s.update();expect(s.hissLevel).toBeCloseTo(.12);expect(s.rushLevel).toBeCloseTo(.08);
  });
@@ -28,5 +29,12 @@ describe('fixed continuous sand-surf friction sound',()=>{
   s.frozen=0;s.active=false;s.update();expect(s.hissLevel+s.rushLevel).toBe(0);
   s.active=true;s.speed=0;s.update();expect(s.hissLevel+s.rushLevel).toBe(0);
   expect(nodes[4].gain.seconds).toBe(.09);expect(nodes[5].gain.seconds).toBe(.12);
+ });
+ it('booms on an avalanching slip face, swelling slowly, never on wet sand or a crust',()=>{
+  const {sound:s,nodes}=fixture();s.active=true;s.speed=20;s.update();expect(s.boomLevel).toBe(0);
+  s.avalanche=1;s.update();expect(s.boomLevel).toBeGreaterThan(.1);
+  const boomGain=nodes[6];expect(boomGain.gain.target).toBeCloseTo(s.boomLevel);expect(boomGain.gain.seconds).toBeGreaterThanOrEqual(.6);
+  s.wet=1;s.update();expect(s.boomLevel).toBe(0);s.wet=0;s.frozen=1;s.update();expect(s.boomLevel).toBe(0);
+  expect(nodes).toHaveLength(16);
  });
 });
