@@ -161,6 +161,81 @@ function colossusHead(b, facing) {
 }
 
 /**
+ * The caravanserai at the oasis (D11's camp, the Wellhouse; plan.md "a Veiled caravan stranded in a
+ * ruined caravanserai at the oasis"): a walled court 32 m square in Shaper stone, its walls broken
+ * along the top and down to stumps in two places, a gate in the front wall under a carved lintel,
+ * round towers at the corners (one fallen in), an arcade of piers along the back and sides carrying
+ * a roof slab (walkable: platforms), the dry well in the middle of the court. Sand has drifted
+ * against the walls and half fills the gateway: a drift you walk up and over (platforms stepped
+ * with its slope — the CPU solid from the drift's height).
+ */
+function caravanserai(b, facing) {
+  const P = rot(facing), S = 16, T = 0.65, H = 7.2;
+  // The walls, in runs (local: x across, z toward the front); the front run split by the gate.
+  const runs = [
+    [[-S, -S], [S, -S]], [[-S, -S], [-S, S]], [[S, -S], [S, S]],
+    [[-S, S], [-3.2, S]], [[3.2, S], [S, S]],
+  ];
+  runs.forEach(([a, c], ri) => {
+    const len = Math.hypot(c[0] - a[0], c[1] - a[1]), n = Math.max(1, Math.round(len / 4));
+    const yaw = facing + Math.atan2(c[0] - a[0], c[1] - a[1]);
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n, lx = a[0] + (c[0] - a[0]) * t, lz = a[1] + (c[1] - a[1]) * t, [x, z] = P(lx, lz);
+      // Breaches: two stretches down to stumps; elsewhere the top worn ragged.
+      const breach = (ri === 1 && k >= 3 && k <= 4) || (ri === 0 && k === 6);
+      const top = breach ? 0.8 + 0.6 * hh(ri * 31 + k, 1) : H - 1.6 * hh(ri * 31 + k, 2);
+      b.box(x, z, -1, top, T, len / n / 2 + 0.02, yaw, MAT.STONE, 600 + ri * 40 + k, { ruin: breach ? 0.6 : 0.35, course: 0.62 });
+    }
+  });
+  // The gate: two piers and a carved lintel; a step of fallen blocks.
+  for (const s of [-1, 1]) { const [x, z] = P(s * 3.6, S); b.box(x, z, -1, H + 1.4, 0.9, 1.0, facing, MAT.STONE, 700 + s, {}); }
+  { const [x, z] = P(0, S); b.box(x, z, H - 0.4, H + 1.0, 4.5, 0.85, facing, MAT.GLYPH, 703, { carve: 1, ...NS }); }
+  // Corner towers; the back-right one fallen in to a stump, its drums in the sand.
+  [[-S, -S], [S, -S], [-S, S], [S, S]].forEach(([lx, lz], ti) => {
+    const [x, z] = P(lx, lz), fallen = ti === 1;
+    b.drum(x, z, -1, fallen ? 2.2 : H + 2.2, 2.4, 2.2, 20, MAT.STONE, 720 + ti, { broken: fallen ? 1 : 0 });
+    if (!fallen) b.drum(x, z, H + 2.2, H + 2.8, 2.6, 2.6, 20, MAT.STONE, 730 + ti, { solid: false });
+    else for (let q = 0; q < 3; q++) { const a = 0.6 + q * 0.5, [fx, fz] = P(lx + 4 + q * 1.6, lz - 1 - q * 0.8); b.drum(fx, fz, -0.4, 1.6, 1.0, 1.0, 14, MAT.STONE, 740 + q, { lie: 1, yaw: facing + a }); }
+  });
+  // The arcade: piers 3.6 m in from the back and side walls, a roof slab over each bay to the wall.
+  const D = 3.6, PH = 4.2;
+  const bays = [];
+  for (let k = -3; k <= 3; k++) bays.push([k * 4, -S + D, 0]);                       // back
+  for (let k = -2; k <= 2; k++) { bays.push([-S + D, k * 4 + 1, 1]); bays.push([S - D, k * 4 + 1, 1]); }   // sides
+  bays.forEach(([lx, lz, side], i) => {
+    const [x, z] = P(lx, lz), broken = hh(i, 41) < 0.18;
+    b.box(x, z, -1, broken ? PH * 0.45 : PH, 0.45, 0.45, facing, MAT.STONE, 760 + i, { ruin: broken ? 0.5 : 0.1 });
+    if (broken) return;
+    // The slab from the pier back to the wall (walkable from the breach and the stair).
+    const cx = side ? (lx < 0 ? -S + D / 2 : S - D / 2) : lx, cz = side ? lz : -S + D / 2;
+    const [sx, sz] = P(cx, cz);
+    b.box(sx, sz, PH, PH + 0.45, side ? D / 2 + 0.3 : 2.05, side ? 2.05 : D / 2 + 0.3, facing, MAT.STONE, 800 + i, { ...NS, platform: true, solid: false });
+  });
+  // A stair up to the arcade roof in the back-left corner.
+  for (let k = 0; k < 10; k++) { const [x, z] = P(-S + D + 1.2 + k * 0.62, -S + D + 1.4); b.box(x, z, -1, 0.42 * (k + 1), 0.31, 0.9, facing, MAT.STONE, 830 + k, { ...NS, platform: true }); }
+  // The dry well: a ring of stones round a dark shaft, a broken windlass post.
+  for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2, [x, z] = P(Math.cos(a) * 1.5, Math.sin(a) * 1.5 + 1); b.box(x, z, -0.3, 0.75, 0.32, 0.5, facing + a, MAT.STONE, 850 + k, { ...NS }); }
+  { const [x, z] = P(0, 1); b.blockers.push({ site: b.site, kind: 'circle', x, z, r: 1.9, y0: -0.3, y1: 0.75 }); }
+  { const [x, z] = P(1.9, 1); b.box(x, z, -0.2, 2.2, 0.18, 0.18, facing, MAT.WOOD, 870, { ...NS, tilt: 0.2 }); }
+  // Sand: banked against the walls outside and in, and a drift half filling the gateway — a mound
+  // you walk up and over, its platforms stepped with its slope (≤ 0.35 m a step).
+  for (let k = 0; k < 9; k++) {
+    const a = hh(k, 51), ri = k % 4, along = (a - 0.5) * 2 * (S - 3), out = ri < 2 ? 1 : -1;
+    const [lx, lz] = ri === 0 || ri === 2 ? [along, -S + out * (T + 1.6)] : [(-S) * (ri === 1 ? 1 : -1) + out * (T + 1.6) * (ri === 1 ? -1 : 1), along];
+    const [x, z] = P(lx, lz);
+    blob(b, x, z, -1.4, 0.9 + 1.2 * hh(k, 52), 3.5 + 3 * hh(k, 53), 1.8, facing + (ri === 0 || ri === 2 ? Math.PI / 2 : 0), MAT.SNOW, 880 + k, { lump: 0.15 });
+  }
+  const DR = 1.5;   // the drift's crest in the gateway (m)
+  { const [x, z] = P(0, S); blob(b, x, z, -1.2, DR, 3.4, 6.5, facing, MAT.SNOW, 900, { lump: 0.1 }); }
+  for (let k = -9; k <= 9; k++) {
+    const lz = S + k * 0.62, top = DR * (1 - (k / 10) * (k / 10)) - 0.15;
+    if (top < 0.2) continue;
+    const [x, z] = P(0, lz);
+    b.platforms.push({ site: b.site, x, z, hx: 3.0, hz: 0.31, cos: Math.cos(facing), sin: Math.sin(facing), top });
+  }
+}
+
+/**
  * The erg's ruin sites. `table` maps seat ids to POIs ({ pos }); `height(x, z)` is the baked ground
  * (world/stair.js loadBakedHeight) for the aqueduct's absolute channel level (null: no aqueduct).
  */
@@ -180,6 +255,9 @@ export function ruinSites(table, height) {
   // The Sun Gate on a ledge of the west wall above the canyon floor (the seat lies on the floor's edge), facing the sunrise.
   sites.push({ id: 'ruin-gate-sun', at: [1365, 1039], facing: 1.57, build: sunGate, footprint: 4, seatAt: 'center' });
   sites.push({ id: 'ruin-colossus-head', at: [2318, 1030], facing: 3.6, build: colossusHead, footprint: 6, seatAt: 'center', sink: 0.5 });
+  // The caravanserai at the oasis (the Wellhouse camp, D11), on the flat playa west of the pool (the
+  // camp's seat at 1800, 700 is up a dune's flank), its gate toward the water.
+  sites.push({ id: 'ruin-caravanserai', at: [1810, 775], facing: Math.atan2(1846 - 1810, 736 - 775), build: caravanserai, footprint: 20, seatAt: 'center', sink: 0.6 });
   // The aqueduct along the wadi: spans of 13 m, the channel level easing down east above the bed.
   if (height) {
     const A = [1900, 262], B = [2330, 290], L = Math.hypot(B[0] - A[0], B[1] - A[1]), n = Math.floor(L / 13);

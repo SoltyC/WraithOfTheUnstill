@@ -52,6 +52,8 @@ export async function addArchitectureSystem(g) {
   const solids = g.solids = createSolids(sites, built, stairSegments(stairRoute));
   // No boulders inside the built places (one stood beside the camp fire).
   g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]));
+  // Nothing grows through the erg's ruins and glass (the oasis palms round the caravanserai, the canyon flora).
+  g.trees?.setExclusions(sites.filter((s) => /^(ruin|glass)-/.test(s.id)).map((s) => [s.at[0], s.at[1], (s.id === 'ruin-caravanserai' ? 24 : s.footprint) + 3]));
   /** Prop sites by NPC id (the NPC system places them at the hand). */
   g.props = {};
   sites.forEach((s, i) => { if (s.prop) g.props[s.npc] = { index: i, kind: s.kind }; });

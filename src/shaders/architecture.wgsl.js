@@ -231,7 +231,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     }
   } else if (mid == 7) {
     // Drifted snow banked against the stone (geometry): the snow's own colour, lightly rippled.
-    albedo = vec3f(0.86, 0.88, 0.92); rough = 0.9;
+    // On the erg's ruins (z = 2) the drift is sand.
+    albedo = select(vec3f(0.86, 0.88, 0.92), vec3f(0.64, 0.47, 0.29) * (0.92 + 0.16 * n1), glowS.z > 1.5); rough = 0.9;
     N = normalize(N + vec3f(n1 * 0.08, 0.0, n2 * 0.08));
   } else if (mid == 2) {
     // Felt and canvas: undyed wool, patched; light comes through it from the fire at night.
