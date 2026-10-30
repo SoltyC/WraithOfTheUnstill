@@ -479,3 +479,14 @@ The branch's 512-cell clipmap measured 15.79 (canyon) and 15.80 (meadow) before 
 | p9-storm-arriving | 8.80 (capture: the front held outside) |
 | p9r-pavement-far | 11.41 (clear, nearby) |
 | p8-meadow-golden | 14.37 |
+
+## 31 October — D10, the Long Walker (same setup)
+
+`tools/bot/walker-perf.mjs`: whole-frame GPU timestamps, the same view with it shown against it culled, two alternating repeats of 240 frames.
+
+| View | Shown (ms) | Culled (ms) |
+|---|---|---|
+| Kneeling, 60 m away, filling the view (near view, subdivision 3) | 10.93 / 10.91 | 10.71 / 10.72 |
+| Walking, 60–180 m (near, then far view) | 11.10 / 10.56 | 10.43 / 10.32 |
+
+About +0.2 ms near and +0.2–0.7 ms walking in view. ~690 chunks, through the 'shaped' material; near view within 300 m, far view to 3.2 km, culled beyond. No late pipelines. CPU: its update is allocation-free in Node (`tools/alloc/walker.mjs`).

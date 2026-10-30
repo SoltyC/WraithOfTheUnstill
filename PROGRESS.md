@@ -4,6 +4,13 @@
 
 # Progress
 
+> **Latest — 31 October, D10 (Claude): the Long Walker is in, first pass.**
+> - Glass footprints lead to it, buried in the star dune; the brake stone wakes it and lends Stone and sand-surf.
+> - It walks its circuit and every lifted foot's landing spot is pressed into the sand as a ring. A Ridge, a Bloom's pit or Frost-bound sand under a foot makes it kneel; its plated leg and flank are the climb onto its back.
+> - Its back is a moving floor you ride. Shards or Gusts at the glyph pillars steer it; at the Stride it balks and throws you off.
+> - At the camp it kneels by the gate; turn the two mirror-stones to throw the low sun down the well and it lies down, the erg restored.
+> - All of it checked live with the bot. GPU +0.2 ms near it; **940 tests pass**. Details and gaps: plan.md "D10 — Done".
+>
 > **Latest — 30 October, D9 (Claude): the dune Shaped are in the world.** Whirlers and Glass-sworn merged; the user's choices built: Whirler blasts leave local dust clouds (veil only while inside), themed haunts across the erg (none near the camp) and Skitters riding sandstorms, a shattered Glass-sworn fuses its ground to glass. **929 tests pass**; no late pipelines. Details: plan.md "D9 — Done".
 >
 > **Latest — 30 October, D6 (Claude): sandstorms and the moving erg are in.** Merged `codex/desert-storm`; the restored erg's weather now brings sandstorms (front rolls in from 2.4 km upwind; stilled erg never storms); storms erase sand marks (~25× faster healing, erosion clock for stored pages); exposure history no longer throws when full; dunes migrate ~1 m an in-game day (saved shift, GPU/CPU parity 1.2/1.7 mm at 30 m, anchored round ruins/glass/oasis). Spots `p9-storm-arriving`, `p9-storm-inside`. **919 tests pass.** GPU 12.4 ms inside a storm. Details: plan.md "D6 — Done".

@@ -584,3 +584,15 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - Whirlers blind with a **local dust cloud** where a blast or devil strikes; the veil shows only while the Wraith stands in it (not a full-screen burst).
 - The erg's Shaped keep **themed haunts** (Skitters: dune fields; Plate-backs: ruins; Whirlers: canyon floors and flats; Glass-sworn: the glass fields), none near the camp; **sandstorms bring Skitters**.
 - A shattered **Glass-sworn leaves glass ground** (permanent, slick).
+
+## 2026-10-31 — D10: the Long Walker as built
+
+- **The climb is on the kneeling body, as plated steps**, not the frost Warden's hold-to-hold grip (BRIEF §8.4 quality gate): the kneeling leg is a ramp of ruin plates and each hip's flank a stair of plates up to an opening in the court's wall. The moving body is ridden, not climbed. A grip climb on a 5 m/s six-legged body was not attempted.
+- **Its back is a moving floor** (`src/game/walker/deck.js`): oriented boxes in the body's own frame, queried by the capsule controller (`controller.deck`) after the solids; a rider is carried from last frame's pose to this one at the start of each frame and keeps the body's velocity when it leaves in the air. The body updates before the player each frame (`addLongWalkerBody` in main.js).
+- **What trips it:** Stone's mass under the pad (a Ridge > 0.6 m, a Bloom's pit), a FREEZE brush cast within 40 s on the spot, or the ground changing > 0.9 m under a lifted foot (within 30 m of the Wraith, where the collision snapshot sees it). Glass does not: its circuit is the glass track.
+- **Steering counts a Shard by its line** while the Wraith rides: Stone's Shard is a plate torn from the sand under the thrower, so from the deck it flies ~20 m below the pillar.
+- **A balk throws its rider clear:** the deck lets the Wraith through for 1.2 s and flings it 15 m/s over the nearer side (its walls would otherwise catch it).
+- **Buried and at rest only the court shows** (the deck 1.1–1.3 m under the sand at its middle); a ring of big sand chunks for the dune read as faceted rocks and was cut.
+- **It kneels at the well on the gate's axis, slanted:** the neck goes through the caravanserai's gateway to the well (over the wall it would cut through it); the oasis pool lies on that axis, so the body is slanted 54° to the side it came from (one side's feet stand at the pool's edge).
+- **The mirrors want the low sun:** sun elevation under ~21° (sin 0.36); "Wait for dusk" at the well on its back is the time skip (there are no dune shrines before D11).
+- Its body, deck and director pass numbers through fields, not arguments; the body object has no accessors (an accessor in the literal put it in dictionary mode, and every double stored on it was boxed).

@@ -432,6 +432,51 @@ Proposal (the user to choose; alternatives at the end): **the Long Walker.**
 - **The release masters Stone** (full strength and the Echo slots) **and grants sand-surf.**
 - Climb quality gate (BRIEF §8.4): if a moving six-legged climb can't reach the bar, the climb happens on the kneeling body (stationary), with the shaking kept, and the decision is recorded.
 
+### D10 — Done (first pass, 2026-10-31)
+
+The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not the old fight text above. Code: `src/game/walker/{walker,deck,route}.js`, `src/systems/longWalker.js`, `data/quests/dunes.json`; tests `tests/longWalker.test.js`; bot scripts `tools/bot/walker-{pursuit,home,perf}.mjs`; allocation check `tools/alloc/walker.mjs`.
+- **The body:** a ~44 m hull of banded sandstone and packed sand on six legs (hip → knee 14 m, knee → foot 22 m), its deck 22 m up, built of the Shaped's dune chunks (~690, near and far views). On its back is the ruined court: walls, a well, two glyph pillars, an arcade with a stair to its roof, and two mirror-stones on the roof. A long head sits on a two-part neck.
+- **The track:** 36 glass footprints (pad and toes fused, a rim of splashed shards; glass ground under them) run its circuit east of the Stride. The quest *Follow the Glass* starts in the eastern erg; the compass points at the next print, then at the Walker, then at the well.
+- **Buried and the waking:** only its court shows above the sand at the star dune (2436, 1124). Touching the brake stone in its forecourt makes it heave up over 9 s (dust pours off, the ground shakes, the legs come out of the sand). It **lends Stone**, and sand-surf with it.
+- **The pursuit:** it walks its circuit at 5 m/s in a ripple gait (one lift every 1.2 s, two feet in the air). It never attacks.
+  - Footfalls press deep prints, throw dust and boom; a foot that lands on the Wraith hurts it (30) and throws it.
+  - Skitters rise from its wake every 38–55 s while it is chased.
+  - **The telegraph:** each lifted foot's landing spot is fixed at the lift. A dotted ring is pressed into the sand there (the terrain state, near the Wraith) and dust lifts off it until the foot lands exactly there.
+- **The stumble:** a foot that lands on a Ridge, into a Bloom's pit, on Frost-bound sand (any FREEZE brush in the last 40 s), or on ground that changed under it by more than 0.9 m buckles.
+  - It kneels 13 s on that side, rolled 9°, with a groan 2.5 s before it rises; then 6 s when it cannot be tripped again.
+  - The kneeling leg is a **ramp of ruin plates**, and the flank above each hip a **stair of plates** (their glyphs glow while it kneels) up to an opening in the court's wall.
+  - Dying near it brings the Wraith back 40 m off its last kneeling place (a checkpoint).
+- **Its back:** the court is a moving floor (`game/walker/deck.js`): floors, walls and carry in the body's own frame, solved on its tilted top planes.
+  - A rider moves and turns with it, and keeps its stride on jumping off.
+  - No sand-surf or footprints up there.
+- **Steering:** a Shard (its line passing a pillar: from the deck a Shard flies far below) or a Gust against a glyph pillar turns it 0.42 rad toward that side. The pillar tolls.
+  - With no rider for 30 s it goes back to its circuit.
+  - It shakes every 26–38 s while ridden (1.6 s groan, sand pouring off the walls, 2.6 s rocking): kicks toward the low side, a quarter as strong within 1.7 m of stone.
+  - **Steered at the Stride it balks.** It sees the drop 20–44 m ahead, shakes, throws its rider clear over the side, and turns back to its circuit.
+- **Home:** within 110 m of the camp's well it walks to its kneeling place: its neck's root 20 m out on the caravanserai gate's axis, its body slanted 54° off the axis, on the side it came from (the pool is on the axis). There it turns in and kneels.
+  - It lies down only when the well's glass eye is lit. Turn the two mirror-stones (Interact; 45° a turn) so the low sun (elevation under ~21°) goes from the first to the second and down the well; motes of light show each leg of the beam.
+  - If the sun is high, "Wait for dusk" at the well on its back sets the evening.
+- **Release:** it lays its head through the gateway on the well and lies down (16 s); sand is heaped along its flanks and over its court near the Wraith. The dunes are restored (the existing D6 weather, streaming and migration take over), Stone stays the Wraith's, *Follow the Glass* completes (150 marks, a health thread). At rest only its court shows by the oasis; saved.
+- **Climb quality gate (BRIEF §8.4):** the climb happens on the kneeling body, as plated steps walked and jumped (not the frost Warden's hold-to-hold grip). The moving body is ridden, not climbed. See DECISIONS.
+- **Checked (Windows Chrome, the bot):**
+  - It wakes.
+  - A FREEZE under a lifted foot → it kneels; the bot walked from the sand up the leg and the flank stair onto its back in 11.5 s and rode it as it rose.
+  - A real Shard thrown from the deck turned it 0.42 rad.
+  - Steered at the Stride it balked 40 m short and threw the rider to the sand.
+  - From 150 m east of the camp it went home and knelt by the gate; the mirrors at 16:30 lit the eye; it lay down (released flag, erg restored).
+  - GPU +0.2 ms with it kneeling 60 m away (+0.2–0.7 walking in view, 1440p/0.7), no late pipelines.
+  - `tools/alloc/walker.mjs`: no GC in its update (the riding case's single GC is the controller's own, as at HEAD).
+  - 940 tests.
+
+**Not done:**
+- The camp's well does not visibly fill (D11's camp and well).
+- Skitters do not climb aboard; its wake throws no real sandstorm, only dust and Skitters.
+- The release has no cinematic camera (the rider rides it down).
+- The sand heaped at the release only takes within the terrain state's window round the Wraith, so at rest it reads as a court in the sand more than a dune range.
+- Its footfalls avalanche only through the sand they plough (D2's relaxation).
+- Up close the mirror discs read as floating crystals.
+- The pursuit's difficulty and pacing want human play.
+
 ### D11 — The camp, quests, shrines, Echoes and robes
 
 > **Quests superseded (user, 2026-10-26):** the main quests, side quests and robes below read too much like the frost's. They are replaced by the puzzle hub in `docs/phase-9/dunes-design.md`: the sand grammar, the three Silent Instruments, five side sites and the D11 build order there. The camp, shrines, Echoes, map, HUD and save notes here still stand.

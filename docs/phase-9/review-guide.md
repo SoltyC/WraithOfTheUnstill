@@ -55,6 +55,21 @@ Worth walking too (no fixed spot):
 - **The dune Shaped** (D9): walk up to a glass field (e.g. 2634, 825) for a Glass-sworn — freeze it, shatter it, and surf the glass it leaves; a Whirler on the flats (2064, 1264) — step out of its dust; stand in a storm for Skitters riding in.
 - **Migration** (D6): too slow to watch (~1 m an in-game day); it is saved and shows over a long game.
 
+## The Long Walker (D10)
+
+- **The track:** start east of the Stride (e.g. 2560, 760). Follow the compass from glass print to glass print to the star dune (2436, 1124); its court shows above the sand. Touch the brake stone in front of it (Interact).
+- **The pursuit:** watch the rings pressed into the sand where each lifted foot will land. Raise a Ridge on one, Bloom a pit, or Frost the sand, before the foot comes down. It kneels: run to the kneeling leg and walk up its plates, then the stair on its flank, into the court.
+- **Its back:** Shard or Gust a glyph pillar to turn it (left pillar → left). Stay near stone when it groans. Try steering it at the Stride: it balks and throws you off.
+- **Home:** bring it to the Wellhouse (go round either end of the Stride). It kneels by the gate. On its roof, turn the two mirror-stones until the light motes run mirror → mirror → the well; at high sun use "Wait for dusk" at its own well first.
+- **Shortcuts:** `?walker=buried`, `?walker=walk` (awake at the seat), `?walker=home` (150 m east of the camp, steered home), `?walker=release` (lying at the camp, the erg restored).
+- **To judge:**
+  - The body's look up close (chunked sandstone: does it read as a colossus or as a heap?).
+  - Whether the ring telegraph is readable at speed.
+  - Whether stumbling it feels earned.
+  - The climb's pace against its 13 s.
+  - The calm of riding it.
+  - The homecoming at dusk.
+
 ## Known gaps
 
 - **Full-scene refraction in the glass** is not done. It needs a copy of the opaque scene behind the glass (a new pass in the post chain). The glass's see-through term (the sky and sand behind, modelled) stands in.
