@@ -27,6 +27,8 @@ export function applySpot(spot, game) {
   worldState.wetForce = spot.wet ?? -1; worldState.puddleForce = spot.puddle ?? -1; worldState.rainForce = spot.rain ?? -1;
   // A lightning strike held at its moment for the shot: { bearing (deg from the view), dist (m), age (s) }.
   worldState.strike = spot.strike || null;
+  // Frozen sandfalls (D7b) for the shot: the cascades (render/sandfalls.js sites) to show frozen, or null (the game's own).
+  worldState.sandfallsFrozen = spot.sandfallsFrozen || null;
   // Spots show the land restored unless they ask for it stilled (the accepted gate looks).
   worldState.restoration[spot.biome === 'frost' ? 'frost' : spot.biome] = spot.restoration || 'restored';
   const { controller, arm, teleport } = game;

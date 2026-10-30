@@ -5,6 +5,7 @@
 
 import { DynamicRes } from '../core/dynamicRes.js';
 import { gpuTimer } from '../core/gpuTimer.js';
+import { SANDFALL_SITES } from '../render/sandfalls.js';
 
 const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 - 2 * t); };
 
@@ -37,9 +38,27 @@ export async function addEnvironmentSystems(g) {
     if (++canyonTick % 4) return;
     const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.camY = camera.position.y; c.update();
     g.slotShafts.time = clock.simTime; g.slotShafts.strength = c.on ? 1 : 0; g.slotShafts.update();
-    g.sandfalls.time = clock.simTime; g.sandfalls.flow = c.on ? restoration.dunes : 0; g.sandfalls.update();
     g.wadiWater.time = clock.simTime; g.wadiWater.restored = restoration.dunes; g.wadiWater.hour = params.v.timeOfDay; g.wadiWater.update();
     if (g.solids && (canyonTick % 32 === 0 || g.pendingTp.active)) c.fillSolids(g.solids.walls, g.controller.pos.x, g.controller.pos.z, 40);
+  } });
+  // Sandfalls (D7b): running once the Dunes are restored; a Crystallize at a cascade freezes it into
+  // ramps of ice-sand (flag `frozen:sandfall-<site>`, saved with the quests). A photo spot may force
+  // which are frozen (worldState.sandfallsFrozen); the state snaps when that changes.
+  let fallSpot = null;
+  loop.add({ name: 'sandfalls', update: () => {
+    const sf = g.sandfalls, fr = g.frost, flags = g.chapter ? g.chapter.graph.flags : null;
+    if (fr && fr.crystalEvent && flags && restoration.dunes > 0.5) {
+      for (let k = 0; k < sf.ramps.length; k++) {
+        const r = sf.ramps[k], ex = r[2] - r[0], ez = r[3] - r[1], l2 = ex * ex + ez * ez;
+        const t = Math.max(0, Math.min(1, ((fr.crystalX - r[0]) * ex + (fr.crystalZ - r[1]) * ez) / l2));
+        if (Math.hypot(fr.crystalX - r[0] - ex * t, fr.crystalZ - r[1] - ez * t) < r[6] + 3) flags.add('frozen:sandfall-' + r[8]);
+      }
+    }
+    const ov = ws.sandfallsFrozen;
+    for (let k = 0; k < SANDFALL_SITES; k++) sf.freeze(k, ov ? ov.includes(k) : !!(flags && flags.has('frozen:sandfall-' + k)));
+    if (ov !== fallSpot) { fallSpot = ov; sf.snap(); }
+    sf.time = clock.simTime; sf.flow = g.canyon.on ? restoration.dunes : 0; sf.dt = clock.dt; sf.update();
+    if (g.solids) sf.fillRamps(g.solids.ramps);
   } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and

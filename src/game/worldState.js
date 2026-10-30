@@ -20,6 +20,8 @@ export const worldState = {
   wetForce: -1, puddleForce: -1, rainForce: -1,
   /** A lightning strike to fire now (dev overlay, photo spots, the bot): { bearing (deg from the camera's view), dist (m), age (s into the strike), hold (keep it at that age) }, or null. */
   strike: null,
+  /** Sandfall cascades forced frozen (photo spots), or null: the game's own (quest flags). */
+  sandfallsFrozen: null,
   /** @type {Record<string, 'stilled'|'restored'>} */
   restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' },
 };

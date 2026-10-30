@@ -38,8 +38,14 @@ export function createSolids(sites, built, stairRuns = null) {
   const wl = { n: 0, ax: new Float64Array(MAXW), az: new Float64Array(MAXW), bx: new Float64Array(MAXW), bz: new Float64Array(MAXW),
     nx: new Float64Array(MAXW), nz: new Float64Array(MAXW), y0: new Float64Array(MAXW), y1: new Float64Array(MAXW) };
 
+  // Frozen sandfalls (render/sandfalls.js, D7b): stepped ramps of ice-sand from a tread up to a lip,
+  // switched on while the fall is frozen. Axis from the foot (x0, z0) at y0 to the lip (x1, z1) at
+  // y1, half-width hw, n steps (a stepped floor like the stair's: y0 + (y1 − y0) · ceil(t · n) / n).
+  const MAXRAMP = 96;
+  const rp = { n: 0, on: new Uint8Array(MAXRAMP), x0: new Float64Array(MAXRAMP), z0: new Float64Array(MAXRAMP), x1: new Float64Array(MAXRAMP), z1: new Float64Array(MAXRAMP),
+    y0: new Float64Array(MAXRAMP), y1: new Float64Array(MAXRAMP), hw: new Float64Array(MAXRAMP), steps: new Float64Array(MAXRAMP) };
   return {
-    sites: S, blockers, platforms, rocks: rk, walls: wl, stair: ST, gates,
+    sites: S, blockers, platforms, rocks: rk, walls: wl, stair: ST, gates, ramps: rp,
     /** An invisible wall: centre (x, z), half-extents hx (across) × hz (along its facing), facing yaw. Returns the gate; set .on. */
     addGate(x, z, hx, hz, yaw) {
       const gate = { x, z, hx, hz, cos: Math.cos(yaw), sin: Math.sin(yaw), on: false };
@@ -74,6 +80,16 @@ export function createSolids(sites, built, stairRuns = null) {
         if (top > h && top <= feet + 0.7) h = top;
       }
       if (ST.n > 0) h = ST.floor(x, z, h, feet);
+      for (let k = 0; k < rp.n; k++) {
+        if (!rp.on[k]) continue;
+        const ex = rp.x1[k] - rp.x0[k], ez = rp.z1[k] - rp.z0[k], l2 = ex * ex + ez * ez;
+        const t = ((x - rp.x0[k]) * ex + (z - rp.z0[k]) * ez) / l2;
+        if (t < 0 || t > 1) continue;
+        const d = ((x - rp.x0[k]) * ez - (z - rp.z0[k]) * ex) / Math.sqrt(l2);
+        if (d < -rp.hw[k] || d > rp.hw[k]) continue;
+        const top = rp.y0[k] + (rp.y1[k] - rp.y0[k]) * Math.ceil(t * rp.steps[k]) / rp.steps[k];
+        if (top > h && top <= feet + 0.7) h = top;
+      }
       for (let k = 0; k < rk.n; k++) {
         const dx = x - rk.x[k], dz = z - rk.z[k];
         const lx = (dx * rk.c[k] + dz * rk.s[k]) / rk.rx[k], lz = (-dx * rk.s[k] + dz * rk.c[k]) / rk.rz[k], q = lx * lx + lz * lz;
