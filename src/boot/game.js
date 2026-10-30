@@ -116,6 +116,7 @@ async function createSaves(g) {
       s.world.weather = worldState.weather;
       s.world.biome = worldState.biome;
       s.world.restoration = { ...worldState.restoration };
+      s.world.duneShift = worldState.duneShift || 0;
       s.world.weatherOverride = worldState.weatherOverride;
       if (g.quests) Object.assign(s.quests, g.quests.serialize());
       if (g.progress) g.progress.collect(s);
@@ -136,6 +137,7 @@ async function createSaves(g) {
       worldState.weather = s.world.weather;
       worldState.weatherOverride = s.world.weatherOverride ?? null;
       Object.assign(worldState.restoration, s.world.restoration);
+      worldState.duneShift = Number.isFinite(s.world.duneShift) ? s.world.duneShift : 0;
       restoration.value = worldState.restoration.frost === 'restored' ? 1 : 0; restoration.snap = true;
       weather.snap = true;
       if (g.quests) g.quests.restore(s.quests);

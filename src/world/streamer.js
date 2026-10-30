@@ -268,4 +268,12 @@ export class WorldStreamer {
     }
     streaming.queueDepth = this.inFlight + this.arrived.length;
   }
+  /** Dune migration (D6): hand the worker the shift and anchors (render/clipmap.js has the same) and
+   *  refresh every collision patch from the moved dunes. */
+  setMigration(shift, anchors, n) {
+    this.worker.postMessage({ type: 'migration', shift, n, anchors: Float64Array.from(anchors) });
+    this.fineCx = 1e9; this.coarseCx = 1e9;
+    for (const a of this.anchors) a.version = -2;
+  }
+
 }

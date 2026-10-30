@@ -41,6 +41,7 @@ try {
 @group(0) @binding(6) var<storage, read> pts: array<vec2f>;
 @group(0) @binding(7) var<storage, read_write> outH: array<f32>;
 ${TERRAIN_NOISE_WGSL}
+fn duneMigrationAt(x: f32, z: f32) -> f32 { return 0.0; }
 ${HEIGHT_WGSL}
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) id: vec3u) {

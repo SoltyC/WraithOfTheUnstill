@@ -25,6 +25,7 @@ import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMa
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { STATE_SAMPLE_BUFFERS, STATE_COMPACTION_BUFFERS } from '../shaders/terrainState.wgsl.js';
+import { MIGRATION_ANCHORS } from '../terrain/meso.js';
 
 export const CLIPMAP_S0 = 0.0625; // finest spacing (m): BRIEF wants < 10 cm near the player
 const DETAIL_MAX_SPACING = 8;     // levels below this read 2 m tiles (see terrainH)
@@ -52,7 +53,10 @@ export function createClipmap(scene, buffers, atmo, matLib) {
 
   // Per-level heights + normals, written by compute.
   const levelData = new StorageBuffer(engine, CLIPMAP_LEVELS * CLIPMAP_V * CLIPMAP_V * 16, undefined, 'clipmap-levels');
-  const paramsData = new Float32Array(CLIPMAP_LEVELS * 4);
+  // Levels, then the dune migration (shift, anchor count) and its anchors (shaders/clipmapCompute.wgsl.js Params).
+  const MIG = CLIPMAP_LEVELS * 4;
+  let migrationDirty = false;
+  const paramsData = new Float32Array(CLIPMAP_LEVELS * 4 + 4 + MIGRATION_ANCHORS * 4);
   const params = new StorageBuffer(engine, paramsData.byteLength, undefined, 'clipmap-params');
   const all = { heights: buffers.heights, overviewH: buffers.overview, biomeA: buffers.biomeA, biomeB: buffers.biomeB, windMap: buffers.wind, resident: buffers.resident, levelData, params };
   // Bind only what each shader uses: unused bindings are absent from its auto layout.
@@ -117,18 +121,24 @@ export function createClipmap(scene, buffers, atmo, matLib) {
     },
     /** Fields set by the owner before update() (no double arguments). */
     camX: 0.5, camZ: 0.5, residencyVersion: 0,
+    /** Dune migration (D6): set the shift (m) and anchors (x, z, r0, r1 ×n); every level recomputes. */
+    setMigration(shift, anchors, n) {
+      paramsData[MIG] = shift; paramsData[MIG + 1] = Math.min(n, MIGRATION_ANCHORS);
+      for (let i = 0; i < Math.min(n, MIGRATION_ANCHORS) * 4; i++) paramsData[MIG + 4 + i] = anchors[i];
+      migrationDirty = true;
+    },
     /** Levels recomputed by the last update (dev overlay / profiling). */
     dirtyLevels: 0,
     /** Snap level origins around the camera and recompute dirty levels. */
     update() {
-      const residencyChanged = this.residencyVersion !== builtResidency;
+      const residencyChanged = this.residencyVersion !== builtResidency, all = migrationDirty;
       let dirty = 0;
       for (let l = 0; l < CLIPMAP_LEVELS; l++) {
         const s = CLIPMAP_S0 * (1 << l), two = 2 * s;
         const ox = Math.floor(this.camX / two + 0.5) * two, oz = Math.floor(this.camZ / two + 0.5) * two;
         levels[l * 4] = ox; levels[l * 4 + 1] = oz; levels[l * 4 + 2] = s; levels[l * 4 + 3] = l;
         const moved = ox !== builtX[l] || oz !== builtZ[l];
-        const d = moved || (residencyChanged && s < DETAIL_MAX_SPACING);
+        const d = moved || all || (residencyChanged && s < DETAIL_MAX_SPACING);
         paramsData[l * 4] = ox; paramsData[l * 4 + 1] = oz; paramsData[l * 4 + 2] = s; paramsData[l * 4 + 3] = d ? 1 : 0;
         if (d) dirty++;
       }
@@ -140,7 +150,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
       if (!csHeights.dispatch(groups, groups, CLIPMAP_LEVELS)) return;
       if (!csNormals.dispatch(groups, groups, CLIPMAP_LEVELS)) return;
       for (let l = 0; l < CLIPMAP_LEVELS; l++) if (paramsData[l * 4 + 3] > 0) { builtX[l] = paramsData[l * 4]; builtZ[l] = paramsData[l * 4 + 1]; }
-      builtResidency = this.residencyVersion;
+      builtResidency = this.residencyVersion; migrationDirty = false;
     },
   };
 }

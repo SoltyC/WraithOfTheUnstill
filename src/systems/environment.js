@@ -7,6 +7,7 @@ import { DynamicRes } from '../core/dynamicRes.js';
 import { gpuTimer } from '../core/gpuTimer.js';
 import { SANDFALL_SITES } from '../render/sandfalls.js';
 import { sandHealingScale, STORM_ERASE } from '../terrain/state/healing.js';
+import { MIGRATION_ANCHORS } from '../terrain/meso.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 const BRUSH_MOUND = BRUSH.MOUND;
 
@@ -104,6 +105,37 @@ export async function addEnvironmentSystems(g) {
         ts.bk = BRUSH_MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
       }
     }
+  } });
+  // Dune migration (D6, restored): the erg's dunes creep downwind ~1 m an in-game day. The shift is one
+  // saved number (ws.duneShift); it reaches the terrain in 0.25 m steps (every ~6 in-game hours), the GPU
+  // (clipmap) and the CPU's collision (world worker) together. The ruins, the glass and the oasis are
+  // anchored: the dunes do not creep over them.
+  let migAnchors = null, migApplied = NaN;
+  const MIG_RATE = 1, MIG_STEP = 0.25;
+  const buildAnchors = () => {
+    const pts = (g.archSites || []).filter((s) => /^(ruin|glass)-/.test(s.id)).map((s) => [s.at[0], s.at[1], s.id === 'ruin-caravanserai' ? 26 : (s.footprint || 6) + 8]);
+    pts.push([1846, 736, 40]);   // the oasis pool and its reeds
+    // Cluster neighbours (within 60 m) into one zone each, so 32 zones hold every site.
+    const zones = [];
+    for (const [x, z, r] of pts) {
+      const near = zones.find((q) => Math.hypot(q[0] - x, q[1] - z) < q[2] + r + 60);
+      if (near) { const d = Math.hypot(near[0] - x, near[1] - z); near[2] = Math.max(near[2], d + r); }
+      else zones.push([x, z, r]);
+    }
+    zones.sort((a, b) => b[2] - a[2]);
+    const out = new Float64Array(MIGRATION_ANCHORS * 4), n = Math.min(MIGRATION_ANCHORS, zones.length);
+    for (let i = 0; i < n; i++) { out[i * 4] = zones[i][0]; out[i * 4 + 1] = zones[i][1]; out[i * 4 + 2] = zones[i][2]; out[i * 4 + 3] = zones[i][2] + 50; }
+    return { out, n };
+  };
+  loop.add({ name: 'duneMigration', update: () => {
+    if (!g.clock.frozen && ws.restoration.dunes === 'restored') ws.duneShift = (ws.duneShift || 0) + MIG_RATE * clock.dt / (params.v.dayLengthMin * 60);
+    const q = Math.floor((ws.duneShift || 0) / MIG_STEP) * MIG_STEP;
+    if (q === migApplied) return;
+    if (!migAnchors) migAnchors = buildAnchors();
+    migApplied = q;
+    g.duneMigration = { shift: q, anchors: migAnchors.out, n: migAnchors.n };
+    content.clipmap.setMigration(q, migAnchors.out, migAnchors.n);
+    streamer.setMigration(q, migAnchors.out, migAnchors.n);
   } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
   // air, no spindrift, a flat, cool, desaturated grade; restored brings back wind, spindrift and

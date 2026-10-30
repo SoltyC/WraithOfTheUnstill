@@ -180,13 +180,14 @@ fn edgeFalloff(h: f32, x: f32, z: f32) -> f32 {
   return mix(h, -60.0, smoothstep(0.0, 2000.0, out));
 }
 
+// duneMigrationAt(x, z): the host defines it (shaders/clipmapCompute.wgsl.js; diagnostics stub 0).
 fn terrainField(x: f32, z: f32, s: f32) -> vec4f {
   let macroH = edgeFalloff(select(macroDetail(x, z), macroOverview(x, z), s >= 8.0), x, z);
   var wB = vec2f(0.0);
   let wA = biomeAt(x, z, &wB);
   let wind = windAt(x, z);
   let alp = tn_alpineHeight(x, z, macroH, wA.x, lodFade(180.0, s), lodFade(60.0, s));
-  let meso=tn_mesoField(x,z,wA,wB,wind,duneAt(x,z),s);
+  let meso=tn_mesoField(x,z,wA,wB,wind,duneAt(x,z),s,duneMigrationAt(x,z));
   return vec4f(macroH + meso.x + alp + microH(x, z, wA, wind, s),meso.yzw);
 }
 fn terrainH(x:f32,z:f32,s:f32)->f32{return terrainField(x,z,s).x;}

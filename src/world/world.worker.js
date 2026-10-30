@@ -7,6 +7,7 @@
 //   → { type:'patch', id, cx, cz, n, step, anchor? } ← { type:'patch', id, x0, z0, n, step, heights: Float32Array, anchor, cx, cz }
 
 import { WorldData } from './worldData.js';
+import { duneMigration } from '../terrain/meso.js';
 
 let world = null;
 let base = '';
@@ -45,6 +46,9 @@ self.onmessage = async (e) => {
       const k = m.tz * world.tiles + m.tx;
       const data = pending.get(k);
       if (data) { world.setTile(m.tx, m.tz, data); pending.delete(k); }
+    } else if (m.type === 'migration') {
+      // Dune migration (D6): the dunes' shift and anchors, as the GPU has them (render/clipmap.js).
+      duneMigration.shift = m.shift; duneMigration.n = m.n; duneMigration.anchors.set(m.anchors.subarray(0, m.n * 4));
     } else if (m.type === 'patch') {
       const { n, step } = m;
       const x0 = m.cx - (n - 1) * step * 0.5, z0 = m.cz - (n - 1) * step * 0.5;

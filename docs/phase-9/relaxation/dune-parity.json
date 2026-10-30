@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-27T19:46:44.400Z",
+  "date": "2026-10-30T12:05:48.901Z",
   "note": "Only synchronous creation of the diagnostic pipeline is excluded from the late-world detector; detector remains armed during all waits and gameplay.",
   "reports": [
     {
@@ -9,17 +9,17 @@
       ],
       "points": 4096,
       "radius": 500,
-      "maxAbsErrM": 0.000905461751870007,
-      "meanAbsErrM": 0.000051800207751723226,
+      "maxAbsErrM": 0.0012189503551098824,
+      "meanAbsErrM": 0.0000517646289953308,
       "worst": {
-        "x": 2715.459228515625,
-        "z": 1290.1661376953125,
-        "cpu": 289.4605612234706,
-        "gpu": 289.45965576171875
+        "x": 2728.035400390625,
+        "z": 1293.8365478515625,
+        "cpu": 307.2680681590199,
+        "gpu": 307.269287109375
       },
-      "gpuErrors": 0,
+      "gpuErrors": 10,
       "late": [],
-      "pass": true
+      "pass": false
     },
     {
       "center": [
@@ -28,17 +28,17 @@
       ],
       "points": 4096,
       "radius": 500,
-      "maxAbsErrM": 0.0017017189256307574,
-      "meanAbsErrM": 0.00003665905025588764,
+      "maxAbsErrM": 0.0016957368540460038,
+      "meanAbsErrM": 0.00003580111151626694,
       "worst": {
         "x": 2207.785400390625,
         "z": 772.7844848632812,
-        "cpu": 99.03897058332046,
-        "gpu": 99.0406723022461
+        "cpu": 98.27528180220845,
+        "gpu": 98.2769775390625
       },
-      "gpuErrors": 0,
+      "gpuErrors": 10,
       "late": [],
-      "pass": true
+      "pass": false
     }
   ]
 }

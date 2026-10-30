@@ -24,6 +24,8 @@ export const worldState = {
   sandfallsFrozen: null,
   /** A forced sandstorm's start (photo spots): null inside it, 'arriving' its front 700 m upwind. */
   stormStart: null,
+  /** Dune migration (D6): how far the restored erg's dunes have crept downwind (m), saved. */
+  duneShift: 0,
   /** @type {Record<string, 'stilled'|'restored'>} */
   restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' },
 };

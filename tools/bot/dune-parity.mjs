@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import { createServer } from 'vite';
 import { WorldData } from '../../src/world/worldData.js';
+import { duneMigration } from '../../src/terrain/meso.js';
 const base = process.env.WRAITH_URL || 'http://127.0.0.1:4176';
 async function ev(js) {
   new Function('g', 'w', 'return (async()=>{' + js + '})()'); // validate generated bot code before sending
@@ -25,6 +26,14 @@ try {
 @group(0) @binding(5) var<storage, read> resident: array<u32>;
 @group(0) @binding(6) var<storage, read> pts: array<vec2f>;
 @group(0) @binding(7) var<storage, read_write> outH: array<f32>;
+// The game's dune migration (D6): shift and anchors, as the clipmap compute has them.
+@group(0) @binding(8) var<uniform> mig: array<vec4f, 33>;
+fn duneMigrationAt(x: f32, z: f32) -> f32 {
+  let shift = mig[0].x; if (shift == 0.0) { return 0.0; }
+  var hold = 0.0;
+  for (var i = 0u; i < u32(mig[0].y); i++) { let a = mig[1u + i]; hold = max(hold, 1.0 - smoothstep(a.z, a.w, length(vec2f(x, z) - a.xy))); }
+  return shift * (1.0 - hold);
+}
 ${TERRAIN_NOISE_WGSL}
 ${HEIGHT_WGSL}
 @compute @workgroup_size(64)
@@ -59,15 +68,18 @@ for (const center of [[2700, 1300], [2100, 500]]) {
       try {stats.armed=false;pipe=d.createComputePipeline({layout:'auto',compute:{module,entryPoint:'main'}});}
       finally {stats.armed=armed;}
       const entries=[B.heights,B.overview,B.biomeA,B.biomeB,B.wind,B.resident].map((b,i)=>({binding:i,resource:{buffer:b.getBuffer().underlyingResource}}));
-      entries.push({binding:6,resource:{buffer:src}},{binding:7,resource:{buffer:dst}});
+      const M=g.duneMigration||{shift:0,n:0,anchors:new Float64Array(128)};const migData=new Float32Array(4+128);migData[0]=M.shift;migData[1]=M.n;migData.set(Float32Array.from(M.anchors).subarray(0,M.n*4),4);
+      const migBuf=d.createBuffer({size:migData.byteLength,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});d.queue.writeBuffer(migBuf,0,migData);
+      entries.push({binding:6,resource:{buffer:src}},{binding:7,resource:{buffer:dst}},{binding:8,resource:{buffer:migBuf}});
       const bg=d.createBindGroup({layout:pipe.getBindGroupLayout(0),entries});
       const enc=d.createCommandEncoder(),pass=enc.beginComputePass();pass.setPipeline(pipe);pass.setBindGroup(0,bg);pass.dispatchWorkgroups(Math.ceil(n/64));pass.end();
       enc.copyBufferToBuffer(dst,0,read,0,n*4);d.queue.submit([enc.finish()]);
       await read.mapAsync(GPUMapMode.READ);
       const heights=Array.from(new Float32Array(read.getMappedRange()));read.unmap();
-      return {heights,resident:Array.from(B.residentData),gpuErrors:stats.gpuErrors,late:stats.late};
+      return {heights,resident:Array.from(B.residentData),gpuErrors:stats.gpuErrors,late:stats.late,mig:{shift:M.shift,n:M.n,anchors:Array.from(M.anchors)}};
     } finally {src.destroy();dst.destroy();read.destroy();}
   `);
+  duneMigration.shift = gpu.mig.shift; duneMigration.n = gpu.mig.n; duneMigration.anchors.set(gpu.mig.anchors);
   const world = new WorldData(manifest);
   world.overview = new Uint16Array(u8(manifest.height.overview.file).buffer);
   world.biomeA = u8(manifest.biome.files[0]); world.biomeB = u8(manifest.biome.files[1]);

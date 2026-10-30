@@ -7,6 +7,7 @@ import { DUNE_CREST_CODEC_WGSL } from './duneCrest.wgsl.js';
 
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 import { HEIGHT_WGSL, CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
+import { MIGRATION_ANCHORS } from '../terrain/meso.js';
 
 const V = CLIPMAP_N + 1;
 
@@ -14,6 +15,9 @@ const COMMON = /* wgsl */ `
 struct Params {
   // xy = origin (world x, z), z = spacing, w = dirty (1 = recompute)
   levels: array<vec4f, ${CLIPMAP_LEVELS}>,
+  // x = dune migration shift (m), y = anchor count (D6; render/clipmap.js migration)
+  migration: vec4f,
+  anchors: array<vec4f, ${MIGRATION_ANCHORS}>,
 };
 @group(0) @binding(0) var<storage, read> heights: array<u32>;
 @group(0) @binding(1) var<storage, read> overviewH: array<u32>;
@@ -25,6 +29,18 @@ struct Params {
 @group(0) @binding(7) var<storage, read> params: Params;
 const V: u32 = ${V}u;
 const HALF: f32 = ${CLIPMAP_N / 2}.0;
+// Dune migration (D6; terrain/meso.js duneMigration is the CPU twin): the shift (m, params.migration.x)
+// damped to nothing in the anchored zones round the ruins, glass and camp (params.anchors: x, z, r0, r1).
+fn duneMigrationAt(x: f32, z: f32) -> f32 {
+  let shift = params.migration.x;
+  if (shift == 0.0) { return 0.0; }
+  var hold = 0.0;
+  for (var i = 0u; i < u32(params.migration.y); i++) {
+    let a = params.anchors[i];
+    hold = max(hold, 1.0 - smoothstep(a.z, a.w, length(vec2f(x, z) - a.xy)));
+  }
+  return shift * (1.0 - hold);
+}
 `;
 
 export const clipmapHeightsWGSL = /* wgsl */ `

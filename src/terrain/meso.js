@@ -30,6 +30,23 @@ const COLD_LEVEL = 7;
  * @param {number} duneT  dune-type coordinate from the bake (0 barchan, 1/3 transverse, 2/3 star, 1 seif)
  * @param {number} duneFlat  0..1 flat weight (playa, pan, ravine floor, arena): dunes fade out
  */
+/** Dune migration (D6, the restored erg): the dunes' shapes creep downwind by `shift` m, held in the
+ *  anchored zones round the ruins, glass and camp (anchors: x, z, r0, r1 ×n). Shared with the GPU
+ *  (shaders/clipmap.wgsl.js duneMigrationAt), set on both together. */
+export const MIGRATION_ANCHORS = 32;
+export const duneMigration = { shift: 0, n: 0, anchors: new Float64Array(MIGRATION_ANCHORS * 4) };
+function migrationAt(x, z) {
+  const m = duneMigration;
+  if (m.shift === 0) return 0;
+  let hold = 0;
+  for (let i = 0; i < m.n; i++) {
+    const a = m.anchors, o = i * 4, d = Math.hypot(x - a[o], z - a[o + 1]);
+    const t = Math.min(1, Math.max(0, (d - a[o + 2]) / (a[o + 3] - a[o + 2]))), k = 1 - t * t * (3 - 2 * t);
+    if (k > hold) hold = k;
+  }
+  return m.shift * (1 - hold);
+}
+
 export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast, windX, windZ, duneT = 1 / 3, duneFlat = 0) {
   const u = x * windX + z * windZ;        // along wind
   const v = -x * windZ + z * windX;       // across wind
@@ -42,10 +59,11 @@ export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast,
     const wB = t3 < 1 ? 1 - t3 : 0, wT = 1 - Math.abs(t3 - 1) > 0 ? 1 - Math.abs(t3 - 1) : 0;
     const wS = 1 - Math.abs(t3 - 2) > 0 ? 1 - Math.abs(t3 - 2) : 0, wF = t3 > 2 ? t3 - 2 : 0;
     let big = 0;
-    if (wT > 0.001) big += wT * transverseH(u, v);
-    if (wB > 0.001) big += wB * barchanH(u, v);
-    if (wS > 0.001) big += wS * (starH(u, v) + 0.3 * transverseH(u, v));   // low ridges fill between the stars
-    if (wF > 0.001) big += wF * seifH(u, v);
+    const ud = u - migrationAt(x, z);   // migrated (D6)
+    if (wT > 0.001) big += wT * transverseH(ud, v);
+    if (wB > 0.001) big += wB * barchanH(ud, v);
+    if (wS > 0.001) big += wS * (starH(ud, v) + 0.3 * transverseH(ud, v));   // low ridges fill between the stars
+    if (wF > 0.001) big += wF * seifH(ud, v);
     const ripple = 0.6 * fbm(u / 18, v / 55, 3, S + 4);
     // The cold erg (frost–dune border): snow settles in the lee hollows first and the wind strips it from
     // the crests, so the hollows fill toward a level and anything above it stays bare sand.
