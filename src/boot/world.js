@@ -168,6 +168,8 @@ export async function createWorld(g) {
   const terrainState = createTerrainState(engine, { clipmap: content.clipmap, surface: streamer.buffers.surface, base: import.meta.env.BASE_URL + 'world/' });
   content.clipmap.bindState(terrainState);
   if (terrainState.collision) ground.state = terrainState.collision.view;
+  // D2: sand relaxes to its angle of repose (34°) and the CPU's ground follows the GPU's sand.
+  if (terrainState.relaxation) terrainState.relaxation.enabled = true;
   rocks.bindState(terrainState);
   grass.bindState(terrainState);
   const sandDust = (await import('../render/sandDust.js')).createSandDust(scene, content.clipmap, atmosphere, wind, terrainState);

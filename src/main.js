@@ -166,6 +166,10 @@ async function boot() {
   // Warm-up (BRIEF §15): make every material ready, then render frames behind the loading
   // screen so all pipelines exist before the late-pipeline detector arms. The world streams
   // meanwhile; loading ends once the player stands on ground with every nearby tile resident.
+  // A spot that hides the Wraith still warms its pipelines: shown through the warm-up, hidden after
+  // (otherwise its fur and FX variants compile late the first time it is shown).
+  const hideAfterWarm = !g.wraithView.isEnabled();
+  if (hideAfterWarm) game.setPlayerVisible(true);
   await scene.whenReadyAsync();
   progress(0.5);
   loop.start();
@@ -176,6 +180,7 @@ async function boot() {
     return game.worldSettled();
   });
   progress(1);
+  if (hideAfterWarm) { game.setPlayerVisible(false); await waitFrames(engine, 2); }
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,
   // skipping its per-draw JS path (pipeline-cache lookups, labels, iterators) — most of the
