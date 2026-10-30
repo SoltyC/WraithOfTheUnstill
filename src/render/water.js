@@ -301,6 +301,8 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     },
     /** Field query (no doubles as arguments: hot paths): qx, qz → levelQ() → lv (NaN: no water). */
     qx: 0.5, qz: 0.5, lv: 0.5, fx: 0.5 - 0.5, fz: 0.5 - 0.5,
+    /** Another water source asked where there is none here ({ qx, qz, levelQ() → lv }), or null. */
+    extra: null,
     levelQ() {
       const i = Math.floor((this.qx + HALF) / C), j = Math.floor((HALF - this.qz) / C);
       this.fx = 0; this.fz = 0;
@@ -309,6 +311,8 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       if (dry(o)) { this.lv = NaN; return; }
       this.lv = level[o];
       if (this.lv === this.lv) return;
+      // Not a lake: the erg's braids when they run (render/wadiWater.js), else rivers and shallows.
+      if (this.extra !== null && Number.isNaN(wet[o]) && Number.isNaN(rLevel[o])) { const ex = this.extra; ex.qx = this.qx; ex.qz = this.qz; ex.levelQ(); this.lv = ex.lv; return; }
       // Not the lake's mask: a river, else the flooded shallows and rim (the mesh's own level).
       const rl = rLevel[o]; if (rl !== rl) { this.lv = wet[o]; return; }
       // A river: its computed level; the current along the flow at the strength's speed.

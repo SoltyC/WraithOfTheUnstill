@@ -28,3 +28,14 @@ describe('wadi water ribbons', () => {
   });
   it('an empty list builds nothing', () => { expect(wadiRibbons([]).pos.length).toBe(0); });
 });
+
+import { wadiWaterMask } from '../src/render/wadiWater.js';
+describe('the braids\' water mask (CPU, as the shader)', () => {
+  it('water in the middle of a running braid somewhere, none at the edges or with no flow', () => {
+    let wetMid = 0, wetEdge = 0, dry = 0;
+    for (let a = 0; a < 2000; a += 5) { if (wadiWaterMask(0, a, 8, 1, 0.5, 1) > 0.5) wetMid++; if (wadiWaterMask(0.98, a, 8, 1, 0.5, 1) > 0.5) wetEdge++; if (wadiWaterMask(0, a, 8, 0, 0.5, 1) > 0.5) dry++; }
+    expect(wetMid).toBeGreaterThan(40);
+    expect(wetEdge).toBe(0);
+    expect(dry).toBe(0);
+  });
+});

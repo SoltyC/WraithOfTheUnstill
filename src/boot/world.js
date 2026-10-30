@@ -180,6 +180,7 @@ export async function createWorld(g) {
   // Sandfalls off the canyon's highest lips (D7b), flowing once the Dunes are restored.
   const sandfalls = (await import('../render/sandfalls.js')).createSandfalls(scene, atmosphere, shadows, bindShadows, canyon.spines, canyon.chunks);
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
-  const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis);
+  const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground);
+  water.extra = wadiWater;   // wading in the braids when they run
   Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
 }

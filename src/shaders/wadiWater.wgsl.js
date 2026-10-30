@@ -7,6 +7,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL } from './grass.wgsl.js';
+import { WATER_WAVES_WGSL } from './water.wgsl.js';
 
 export const wadiVertexWGSL = /* wgsl */ `
 attribute position: vec3f;   // x, the braid's seed, z
@@ -40,12 +41,15 @@ fn main(input: VertexInputs) -> FragmentInputs {
 export const wadiFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform wadiParams: vec4f;
+var<storage, read> waterRipples: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vWadi: vec4f;
 varying vSeed: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+fn wNoised(p: vec2f) -> vec3f { return noised(p); }
+${WATER_WAVES_WGSL}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let wp = fragmentInputs.vWorldPos; let w = fragmentInputs.vWadi; let seed = fragmentInputs.vSeed;
@@ -67,7 +71,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Ripples running downstream (a fine and a broad set), as a perturbed normal.
   let r1 = noised(vec2f(x * 1.6, a * 0.9 - t * 1.4));
   let r2 = noised(vec2f(x * 0.5 + 3.0, a * 0.25 - t * 0.6));
-  let N = normalize(vec3f(r1.y * 0.05 + r2.y * 0.06, 1.0, r1.z * 0.05 + r2.z * 0.06));
+  // The Wraith wading through it: the lakes' wake and splashes (render/water.js ripples), no wind waves.
+  let wk = waterSlope(wp.xz, t, vec2f(0.0), length(fwidth(wp)));
+  let N = normalize(vec3f(r1.y * 0.05 + r2.y * 0.06 - wk.x, 1.0, r1.z * 0.05 + r2.z * 0.06 - wk.y));
   let NV = max(dot(N, V), 0.0);
   let F = 0.02 + 0.98 * pow(1.0 - NV, 5.0);
   let vis = shadowVisibilityFast(wp, cam);
@@ -77,6 +83,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let R = reflect(-V, N);
   var col = atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z))) * F;
   col += key * vis * pow(max(dot(N, H), 0.0), 500.0) * 2.5 * step(0.0, L.y);
+  col += vec3f(0.85, 0.82, 0.76) * shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * min(wk.z, 1.0) * 0.6;   // foam in the wake
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(cam - wp) * 0.001);
   let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
   let aw = water * (F + (1.0 - F) * 0.3);

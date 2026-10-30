@@ -107,7 +107,34 @@ export function wadiFlowers(wadis) {
   return { pos, attr, idx };
 }
 
-export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis) {
+// The shader's noise (shaders/common.wgsl.js hash12 / noised: value only), for the CPU's water mask.
+const fract = (v) => v - Math.floor(v);
+function hash12(x, y) {
+  let qx = fract(x * 0.1031), qy = fract(y * 0.103);
+  const d = qx * (qy + 33.33) + qy * (qx + 33.33); qx += d; qy += d;
+  return fract((qx + qy) * qx);
+}
+function noise(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+  const ux = fx * fx * fx * (fx * (fx * 6 - 15) + 10), uy = fy * fy * fy * (fy * (fy * 6 - 15) + 10);
+  const a = hash12(ix, iy), b = hash12(ix + 1, iy), c = hash12(ix, iy + 1), d = hash12(ix + 1, iy + 1);
+  return (a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy) * 2 - 1;
+}
+const smooth = (e0, e1, x) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+
+/**
+ * The water in a braid at the ribbon's (across −1..1, metres along, half-width, end fade), braid
+ * seed and flow: the shader's mask (shaders/wadiWater.wgsl.js), 0..1.
+ */
+export function wadiWaterMask(u, a, hw, fade, seed, flow) {
+  const x = u * hw + 0.3 * hw * noise(a * 0.013, seed * 3.1), ax = Math.abs(x) / hw;
+  const core = (0.2 + 0.35 * flow) * (0.8 + 0.4 * noise(a * 0.03, seed * 1.7));
+  const gaps = smooth(-0.45, 0, noise(a * 0.011, seed * 7.3) + 0.4 * flow);
+  const bars = smooth(0.25, 0.45, noise(x * 0.22, a * 0.045 + seed) * 0.5 + 0.5 + 0.2 * flow);
+  return (1 - smooth(core * 0.75, core, ax)) * gaps * (1 + (bars - 1) * 0.85) * fade;
+}
+
+export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis, ripples = null, ground = null) {
   ShaderStore.ShadersStoreWGSL.wadiVertexShader = wadiVertexWGSL;
   ShaderStore.ShadersStoreWGSL.wadiFragmentShader = wadiFragmentWGSL;
   const { pos, attr, idx } = wadiRibbons(wadis || []);
@@ -122,7 +149,7 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
     attributes: ['position', 'wadi'],
     uniforms: ['viewProjection', 'levels', 'wadiParams', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
-    storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    storageBuffers: ['levelData', 'biomeA', 'windMap', 'waterRipples', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
     needAlphaBlending: true,
   });
@@ -132,6 +159,7 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
   mat.setStorageBuffer('windMap', clipmap.buffers.wind);
   mat.setVector4('wadiParams', params);
+  if (ripples) mat.setStorageBuffer('waterRipples', ripples);
   mat.alphaMode = Constants.ALPHA_PREMULTIPLIED_PORTERDUFF;
   mat.disableDepthWrite = true;
   mat.backFaceCulling = false;
@@ -163,7 +191,40 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
   fMat.backFaceCulling = false;
   fMesh.material = fMat;
   fMat.freeze(); fastFrozenIsReady(fMat);
+  // The CPU's braids (wading): their segments in 32 m cells — [ax, az, bx, bz, along at a, hw at a, hw at b, braid].
+  const SEG = [], CELLS = new Map(), CC = 32, ckey = (i, j) => i * 65536 + j;
+  (wadis || []).forEach((w, wi) => {
+    let along = 0;
+    for (let k = 0; k < w.pts.length - 1; k++) {
+      const [ax, az, aw] = w.pts[k], [bx, bz, bw] = w.pts[k + 1], len = Math.hypot(bx - ax, bz - az), si = SEG.length;
+      SEG.push([ax, az, bx, bz, along, aw * SPAN, bw * SPAN, wi, len, along + len]);
+      const r = Math.max(aw, bw) * SPAN + 2;
+      for (let i = Math.floor((Math.min(ax, bx) - r) / CC); i <= Math.floor((Math.max(ax, bx) + r) / CC); i++)
+        for (let j = Math.floor((Math.min(az, bz) - r) / CC); j <= Math.floor((Math.max(az, bz) + r) / CC); j++) {
+          const kk = ckey(i, j); if (!CELLS.has(kk)) CELLS.set(kk, []); CELLS.get(kk).push(si);
+        }
+      along += len;
+    }
+  });
+  const totals = (wadis || []).map((w) => w.pts.slice(1).reduce((a, p, k) => a + Math.hypot(p[0] - w.pts[k][0], p[1] - w.pts[k][1]), 0));
   return {
+    /** Water in the braids (render/water.js asks when it has none): fields qx, qz → levelQ() → lv (NaN: dry). */
+    qx: 0.5, qz: 0.5, lv: 0.5,
+    levelQ() {
+      this.lv = NaN;
+      const flow = params.y; if (flow < 0.05 || ground === null) return;
+      const list = CELLS.get(ckey(Math.floor(this.qx / CC), Math.floor(this.qz / CC))); if (!list) return;
+      for (let n = 0; n < list.length; n++) {
+        const sg = SEG[list[n]], ex = sg[2] - sg[0], ez = sg[3] - sg[1];
+        const t = ((this.qx - sg[0]) * ex + (this.qz - sg[1]) * ez) / (sg[8] * sg[8]);
+        if (t < 0 || t > 1) continue;
+        const hw = sg[5] + (sg[6] - sg[5]) * t, lat = ((this.qx - sg[0]) * -ez + (this.qz - sg[1]) * ex) / sg[8];
+        if (Math.abs(lat) > hw) continue;
+        const a = sg[4] + sg[8] * t, fade = Math.max(0, Math.min(1, a / 60, (totals[sg[7]] - a) / 60));
+        if (wadiWaterMask(lat / hw, a, hw, fade, sg[7] + 0.5, flow) < 0.5) continue;
+        ground.qx = this.qx; ground.qz = this.qz; ground.sample(); this.lv = ground.h + 0.06; return;
+      }
+    },
     mesh, material: mat, flowerMesh: fMesh, flowerMaterial: fMat, flowers: fl.pos.length / 12, rows: pos.length / 3 / (ACROSS + 1),
     /** Owner fields: time (s), restored 0..1 (the Dunes), hour (0..24). */
     time: 0.5, restored: 0.5 - 0.5, hour: 12.5 - 0.5,
