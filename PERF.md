@@ -458,3 +458,15 @@ The clipmap's enclosure term (6 ground lookups per vertex, flats only) and the w
 | p8-meadow-golden | 14.8 (reference) |
 
 At p9r-galleries-dawn, trees off saves 0.32 ms (the canyon flora); the canyon kit with falls and beams 1.07 ms (more cliff lines after the bake fix). Load 18.0 s to ready. No late pipelines.
+
+## 30 October — D2 integrated (same setup)
+
+| View | GPU mean (ms) |
+|---|---|
+| p9r-galleries-dawn | 13.93 |
+| p9r-braids-restored | 10.33 |
+| p8-meadow-golden | 14.33 |
+| p2-frost-dawn | 9.99 |
+| p9d2-crest-500 | 7.14 |
+
+The branch's 512-cell clipmap measured 15.79 (canyon) and 15.80 (meadow) before it was set back to 256. Relaxation compute (32 m/s stress, eight Shaped, fresh sessions): mean 0.155, p95 0.174, max 0.45 / 0.57 / 0.55 ms (reports `docs/phase-9/relaxation/integ-fresh-{1,2,3}.json`). Load to ready 30 s before and after the merge on the machine's state at the time (18 s earlier in the day).

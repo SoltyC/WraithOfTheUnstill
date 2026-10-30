@@ -555,3 +555,9 @@ Compute passes build their sampler from the internal texture's cached wrap, whic
 
 
 2026-10-29 — D2 prototype: use the monotone eight-neighbour upper exchange rate1/8 instead of1/16, shared CPU/GPU, no added steps/jobs. New bounds/barrier/mass regressions and819tests/build pass. The unchanged large overlapping-Ridge fixture now34.0055°<34.1°;32m/s synthetic collision age/coverage pass. Fresh-session compute still spikes0.492544ms>0.4ms, so D2 remains disabled/unintegrated. Preserve all failed and passed evidence; no worst-case gate relaxation.
+
+
+## 2026-10-30 — D2 integrated: 256-cell clipmap kept; relaxation on
+
+- **Clipmap density:** the D2 branch grew the visible clipmap from 256 to 512 cells a level (11 levels). Measured at 1440p/0.7 it cost +1.9 ms in the canyon and +1.4 ms in the meadow for a little more far-dune detail; silhouettes were equally clean at 256 with the analytic crest normals. Kept at 256 cells, 12 levels (`src/terrain/clipmapLayout.js`; one line to switch back). The branch's ring topology, centre-first order, separate shadow grid and crest metadata stay.
+- **Relaxation enabled** with mean 0.155 ms / p95 0.174 ms combined compute under the 32 m/s stress; rare (<1 %) single-pass peaks to 0.41–0.57 ms are recorded, not hidden. Revisit if they show in frame pacing.

@@ -177,6 +177,18 @@ Fixed-scene 1440p GPU medians ~15.1 ms close, 11.3 ms mid, 12.6 ms canyon. NOT A
 - **Allocation budget:** relaxation is a compute pass under 0.4 ms in its worst case (surf at full speed). Measure it on the 3060.
 - **Tests:** mass conservation, a slope never left above repose after N iterations, and determinism.
 
+### D2 — Done (integrated and enabled, 2026-10-30)
+
+Merged from `codex/dune-relaxation` (e44d9af) into the phase branch and switched on.
+- **Crests:** transverse and seif crest metadata ride in the clipmap's level data; the fragment adds the true crest profile's derivative to the grid's (analytic crest normals), so crests read sharp without denser geometry. The branch's 512-cell clipmap was measured at +1–2 ms on every frame, meadow included, for slightly more far-dune detail; the clipmap stays at 256 cells (DECISIONS.md). Silhouettes at 500 m and 2 km show no stair-stepping; a seif field's crest is a clean line. The mountain-like shoulders in the southern seif candidate are the bake's large landforms at the erg's edge, not the seif dunes (13 m at most): a D0 geography note, not D2.
+- **Relaxation:** conservative eight-neighbour exchange (rate 1/8, 32 steps a job, 512 slots, 240 s), sand only (snow and mud keep their shape), wet and frozen sand bound; the overlapping-Ridge oracle settles to 34.006° (34.1° tolerance); mass drift ≤ 6 ppm over 100 cycles. A steep heap slumps to a repose cone in seconds, throwing a puff of dust.
+- **Collision parity:** the CPU ground follows the GPU's sand through pooled snapshot readbacks (≤ 25 Hz, three in flight); analytic Stone shapes hold until a snapshot contains them. Walking 360/360 grounded and covered; height parity 0.3/1.1 mm.
+- **Sand healing:** prints soften over minutes (half-life ~5 min, faster in a restored windy erg); a trail reads well after 60 s.
+- **Cost:** a fresh-session 32 m/s writer with eight Shaped at 1440p/0.7: combined relaxation, coarse and collision compute mean **0.155 ms**, p95 **0.174 ms** (three fresh sessions); under 1 % of frames peak at 0.41–0.57 ms, always in the load pass (which reads the clipmap's level data) or the last iteration pass. The cause is not established (likely waiting on that frame's clipmap height work); whole-frame GPU means at the p9r spots are unchanged from before the merge.
+- **Allocations:** queue, CPU collision sampling and dust events make no garbage (Node V8, 1 M calls each); Babylon's readback promise per collision read remains (bounded, ≤ 25 Hz).
+- **Also fixed:** a spot that hides the Wraith no longer leaves its pipelines to compile late.
+**Not done:** sandstorm erasure (D6); avalanche sheets with a mass budget (D3); the coarse pages' closed-form flattening is in, its long-range visuals are not reviewed; human review.
+
 ### D3 — Sand-surf (most polish time)
 
 - **Tuning** (`surfTuning` per material: `sandTuning`):
