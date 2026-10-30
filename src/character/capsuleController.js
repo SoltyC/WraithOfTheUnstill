@@ -140,7 +140,10 @@ export class CapsuleController {
     g.sampleNormal();
     const n = this._n;
     n.x = g.nx; n.y = g.ny; n.z = g.nz;
-    const steep = n.y < T.maxSlopeCos;
+    // Steep terrain slides — unless the feet stand on a built floor above it (a plinth, a landing,
+    // a frozen sandfall's ramp over the riser): there the terrain's slope is not underfoot.
+    let steep = n.y < T.maxSlopeCos;
+    if (steep && this.grounded && this.solids !== null) { g.qx = p.x; g.qz = p.z; g.sample(); if (p.y > g.h + 0.3) steep = false; }
     // Water: swim where it is deep enough and the body has gone in; walk out where the bed rises.
     const wlv = this.waterLevel;
     if (wlv === wlv) {
