@@ -211,6 +211,7 @@ varying vBiomeB: vec2f;
 varying vWind: vec2f;
 varying vLake: f32;
 varying vNormalC: vec3f;
+varying vFlat: f32;      // the bake's dune flat weight (pans, playas, ravine floors): desert pavement
 
 const W_HALF: f32 = 4096.0;
 const N8: i32 = 1024; const C8: f32 = 8.0;
@@ -218,6 +219,15 @@ const NW: i32 = 256;   const CW: f32 = 32.0;
 const N4: i32 = 2048;  const C4: f32 = 4.0;
 
 // Prevailing wind (unit, blowing toward), bilinear over the 32 m climatology.
+/** The bake's dune flat weight (pans, playas, ravine floors): the wind map's .w byte, bilinear. */
+fn flatAtV(x: f32, z: f32) -> f32 {
+  let u = (x + W_HALF) / CW - 0.5; let v = (W_HALF - z) / CW - 0.5;
+  let i0 = clamp(i32(floor(u)), 0, NW - 1); let j0 = clamp(i32(floor(v)), 0, NW - 1);
+  let i1 = clamp(i0 + 1, 0, NW - 1); let j1 = clamp(j0 + 1, 0, NW - 1);
+  let fu = clamp(u - floor(u), 0.0, 1.0); let fv = clamp(v - floor(v), 0.0, 1.0);
+  return mix(mix(unpack4x8unorm(windMap[j0 * NW + i0]).w, unpack4x8unorm(windMap[j0 * NW + i1]).w, fu),
+             mix(unpack4x8unorm(windMap[j1 * NW + i0]).w, unpack4x8unorm(windMap[j1 * NW + i1]).w, fu), fv);
+}
 fn windAtV(x: f32, z: f32) -> vec2f {
   let u = (x + W_HALF) / CW - 0.5;
   let v = (W_HALF - z) / CW - 0.5;
@@ -320,6 +330,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let nc = mix(mix(c00, c10, gf.x), mix(c01, c11, gf.x), gf.y);
   vertexOutputs.vNormalC = vec3f(nc.x, sqrt(max(1.0 - dot(nc, nc), 0.0)), nc.y);
   vertexOutputs.vLake = lakeAt(p.x, p.y);
+  vertexOutputs.vFlat = flatAtV(p.x, p.y);
   var wB = vec2f(0.0);
   vertexOutputs.vBiomeA = biomeAt(p.x, p.y, &wB);
   vertexOutputs.vBiomeB = wB;
@@ -340,6 +351,7 @@ varying vBiomeB: vec2f;
 varying vWind: vec2f;
 varying vLake: f32;
 varying vNormalC: vec3f;
+varying vFlat: f32;      // the bake's dune flat weight (pans, playas, ravine floors): desert pavement
 ${COMMON_WGSL}
 ${GRID_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -495,7 +507,27 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
-    let scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
+    var scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
+    // Desert pavement on the pans and playas (Phase 9 D8): the wind has taken the fines and left a
+    // lag of dark, varnished gravel packed in the sand — up close separate pebbles, far off a browner,
+    // darker ground in patches.
+    let pave = smoothstep(0.55, 0.9, fragmentInputs.vFlat) * smoothstep(0.5, 0.72, noised(wp.xz * 0.035 + vec2f(3.1, 7.7)).x * 0.5 + 0.5 + 0.12 * noised(wp.xz * 0.21).x) * (1.0 - ss.wetK);
+    let lagc = mix(scol, vec3f(dot(scol, vec3f(0.3, 0.5, 0.2))), 0.45) * vec3f(0.62, 0.52, 0.44);   // varnish greys and darkens the sand's warmth
+    if (pave > 0.01 && fp < 0.06) {
+      // Packed angular gravel: Voronoi cells of ~6 cm, each a stone shrunk back from the cell's edges
+      // (sand in the seams), some cells left bare; lit on the sun's side of its centre.
+      let q = wp.xz / 0.06; let qi = floor(q); var d1 = 9.0; var d2 = 9.0; var hc = vec2f(0.0); var off = vec2f(0.0);
+      for (var j = -1; j <= 1; j++) { for (var i = -1; i <= 1; i++) {
+        let c = qi + vec2f(f32(i), f32(j));
+        let h = fract(sin(vec2f(dot(c, vec2f(127.1, 311.7)), dot(c, vec2f(269.5, 183.3)))) * 43758.5453);
+        let o = q - c - h; let d = length(o);
+        if (d < d1) { d2 = d1; d1 = d; hc = h; off = o; } else if (d < d2) { d2 = d; }
+      } }
+      let stone = smoothstep(0.06, 0.2, d2 - d1) * step(0.22, hc.y) * (1.0 - smoothstep(0.02, 0.06, fp));
+      let tone = mix(vec3f(0.07, 0.05, 0.036), vec3f(0.26, 0.2, 0.15), hc.x * hc.x);
+      let dome = clamp(0.8 + 1.1 * dot(off, normalize(L.xz + vec2f(1e-4, 0.0))), 0.45, 1.15);
+      scol = mix(scol, mix(lagc, scol * tone * dome / max(ss.albedo, vec3f(0.05)), stone), pave);
+    } else if (pave > 0.01) { scol = mix(scol, lagc, pave); }
     col = mix(col, scol, wSand);
     ssrMask = max(ssrMask, wSand * ss.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
   }
