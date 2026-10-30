@@ -107,12 +107,16 @@ export function glassSites(table) {
   const sites = [];
   seats.forEach((fb, f) => {
     const [x, z] = at('glass-' + (f + 1), fb);
-    sites.push({ id: `glass-${f + 1}-heart`, at: [x, z], facing: 0, build: centre[f], footprint: 5, sink: 0.15 });  // on the lowest ground under it: the crater sinks into a slope, never floats
+    // glassR: the ground fused round it (m) — the crater's radius and a little more (the terrain
+    // state's GLASS transform, systems/glassGround.js).
+    sites.push({ id: `glass-${f + 1}-heart`, at: [x, z], facing: 0, build: centre[f], footprint: 5, sink: 0.15, glassR: [5.9, 4.6, 5.25, 4.4, 4.7][f] * 1.3 });  // on the lowest ground under it: the crater sinks into a slope, never floats
     // Scattered round it: small splashes, shard clusters and a lone glass tree or two.
     for (let k = 0; k < 7; k++) {
       const a = hh(f, k) * 6.28, d = 9 + 18 * hh(f, k + 10), kind = hh(f, k + 20);
-      const build = kind < 0.45 ? shardStar(0.5 + 0.4 * hh(f, k + 30), 100 + f * 10 + k, 6) : kind < 0.8 ? splash(0.45 + 0.35 * hh(f, k + 30), 200 + f * 10 + k) : glassTree(0.6 + 0.4 * hh(f, k + 30), 300 + f * 10 + k);
-      sites.push({ id: `glass-${f + 1}-${k}`, at: [x + Math.cos(a) * d, z + Math.sin(a) * d], facing: 0, build, footprint: 2.5, sink: 0.1 });
+      const sc = kind < 0.45 ? 0.5 + 0.4 * hh(f, k + 30) : kind < 0.8 ? 0.45 + 0.35 * hh(f, k + 30) : 0.6 + 0.4 * hh(f, k + 30);
+      const build = kind < 0.45 ? shardStar(sc, 100 + f * 10 + k, 6) : kind < 0.8 ? splash(sc, 200 + f * 10 + k) : glassTree(sc, 300 + f * 10 + k);
+      const glassR = (kind < 0.45 ? 3.6 : kind < 0.8 ? 4.2 : 3.4) * sc * 1.3;
+      sites.push({ id: `glass-${f + 1}-${k}`, at: [x + Math.cos(a) * d, z + Math.sin(a) * d], facing: 0, build, footprint: 2.5, sink: 0.1, glassR });
     }
   });
   return sites;

@@ -13,6 +13,7 @@
 
 import { ENV_DECL, COMMON_WGSL, LIGHT_SLOTS, GRID_LIGHT_DECL, GRID_LIGHT_WGSL } from './common.wgsl.js';
 import { OASIS_POOL } from '../world/oasis.js';
+import { TRANSFORM } from '../terrain/state/layout.js';
 import { MAX_PER_CELL } from '../render/lightGrid.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
@@ -526,7 +527,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (wSand > 0.001) {
     let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
-    let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
+    let sst = stateSurface(wp.x, wp.z);
+    let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, sst, L);
     var scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
     // Down between a ravine's walls the shade is warm: less of the blue sky reaches it, and the sunlit
     // walls and floor throw their orange back into it (the canyon kit's bounce, shaders/canyon.wgsl.js).
@@ -554,8 +556,42 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       let dome = clamp(0.8 + 1.1 * dot(off, normalize(L.xz + vec2f(1e-4, 0.0))), 0.45, 1.15);
       scol = mix(scol, mix(lagc, scol * tone * dome / max(ss.albedo, vec3f(0.05)), stone), pave);
     } else if (pave > 0.01) { scol = mix(scol, lagc, pave); }
+    // Glass ground (terrain-state transform GLASS: under the battle glass, D7; D9's Glass-sworn): sand
+    // fused into a dark green-black crust, crazed into plates, glossy — the sky in it (and the SSR
+    // pass's reflection), the sun as a hard glint off each plate.
+    var glassK = 0.0;
+    // (The state is held only in the fine window round the Wraith: fade before its edge, ±42 m.)
+    let gWin = 1.0 - smoothstep(28.0, 38.0, max(abs(wp.x - uniforms.cameraPosition.x), abs(wp.z - uniforms.cameraPosition.z)));
+    if (abs(sst.w - ${TRANSFORM.GLASS}.0) < 0.5 && gWin > 0.0) {
+      // A soft edge: how much of the ground round the pixel is glass (the transform is per texel).
+      var cov = 0.0;
+      for (var k = 0; k < 4; k++) { let o = vec2f(select(-0.18, 0.18, (k & 1) == 1), select(-0.18, 0.18, k >= 2)); cov += select(0.0, 0.25, abs(stateSurface(wp.x + o.x, wp.z + o.y).w - ${TRANSFORM.GLASS}.0) < 0.5); }
+      // Plates of fused crust, warped and uneven, the cracks between them darker.
+      let wq = wp.xz + 0.45 * vec2f(noised(wp.xz * 0.8).x, noised(wp.xz * 0.8 + 17.0).x);
+      let q = wq / 0.75; let qi = floor(q); var d1 = 9.0; var d2 = 9.0; var hc = vec2f(0.0);
+      for (var j = -1; j <= 1; j++) { for (var i = -1; i <= 1; i++) {
+        let c = qi + vec2f(f32(i), f32(j));
+        let h = fract(sin(vec2f(dot(c, vec2f(127.1, 311.7)), dot(c, vec2f(269.5, 183.3)))) * 43758.5453);
+        let d = length(q - c - h);
+        if (d < d1) { d2 = d1; d1 = d; hc = h; } else if (d < d2) { d2 = d; }
+      } }
+      let crack = (1.0 - smoothstep(0.02, 0.07, d2 - d1)) * (1.0 - smoothstep(0.02, 0.08, fp));
+      // Each plate tilted a little (its own glint).
+      // Fused, not polished: bubbled and lumpy within each plate, so what it mirrors breaks up.
+      let bump = noised(wp.xz * 7.0).yz * 0.05 + noised(wp.xz * 19.0 + 3.0).yz * 0.025;
+      let Np = normalize(vec3f((hc.x - 0.5) * 0.14 + bump.x, 1.0, (hc.y - 0.5) * 0.14 + bump.y));
+      let NV = max(dot(Np, V), 0.0); let F = 0.04 + 0.96 * pow(1.0 - NV, 5.0);
+      let body = mix(vec3f(0.028, 0.04, 0.033), vec3f(0.045, 0.047, 0.032), hc.x) * (0.85 + 0.3 * (noised(wp.xz * 2.3).x * 0.5 + 0.5));
+      var gcol = body * (key * max(dot(Np, L), 0.0) * vis * cs / PI + shIrradiance(Np) * uniforms.envMisc.w);
+      let R = reflect(-V, Np);
+      gcol += atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z))) * F * 0.13 * (1.0 - smoothstep(10.0, 40.0, length(camPos - wp)) * 0.6);
+      gcol += key * vis * cs * pow(max(dot(Np, normalize(L + V)), 0.0), 700.0) * 5.0;
+      gcol *= 1.0 - 0.4 * crack;
+      glassK = smoothstep(0.2, 0.9, cov) * gWin;
+      scol = mix(scol, gcol, glassK);
+    }
     col = mix(col, scol, wSand);
-    ssrMask = max(ssrMask, wSand * ss.wetK * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
+    ssrMask = max(ssrMask, wSand * max(ss.wetK, glassK * 0.08) * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
   }
   // The oasis basin (world/oasis.js): dried mud, crazed into polygons — bare while the erg is stilled,
   // the lakebed under the water once it is restored. A tint and the cracks on the lit colour.

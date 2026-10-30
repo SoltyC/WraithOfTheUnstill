@@ -12,7 +12,7 @@ export const MAX_BRUSHES = 48;
 export const MAX_IN = 4;
 export const PARAM_WORDS = 4 + 8 + MAX_IN * 4 + 4 + 4 + 4 + 4 + MAX_BRUSHES * 4 * 4;
 /** Brush programs (terrainState.stamp: field bk). */
-export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 5, FLATTEN: 6, STRIP: 7, RIDGE: 8, CRATER: 9 };
+export const BRUSH = { PRESS: 0, PLOUGH: 1, SCORE: 2, FREEZE: 3, WET: 4, MOUND: 5, FLATTEN: 6, STRIP: 7, RIDGE: 8, CRATER: 9, GLASS: 10 };
 
 const f = (v) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
 
@@ -337,6 +337,10 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     t.h.x = max(t.h.x, br.w * bowl);
     t.h.y = max(t.h.y, br.w * ex.w * rim);
     t.m.y = max(t.m.y, 1.0 - smoothstep(${f(BOWL)}, ${f(RIM1)}, d));
+  } else if (program == ${BRUSH.GLASS}u) {
+    // Glass (D7's battle glass, D9's Glass-sworn): the sand fused for good under a ragged edge; dry.
+    // A ragged but coherent edge (smooth noise, not a per-texel hash: no dithered fringe).
+    if (d < 0.7 + 0.3 * smoothHash(p, 0.9) && !turf) { t.s.w = ${TRANSFORM.GLASS}.0 / 255.0; t.s.y = 0.0; }
   } else {
     // Wet (spray, meltwater).
     t.s.y = max(t.s.y, ex.y * (1.0 - smoothstep(0.3, 1.0, d)));
