@@ -1,0 +1,396 @@
+{
+  "date": "2026-10-28T19:26:21.677Z",
+  "reports": [
+    {
+      "id": "p9d9b-whirler-h9",
+      "hour": 9,
+      "source": "p9d9b-whirler",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-h9.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 2,
+          "hp": 65,
+          "glow": 0,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-warning-h9",
+      "hour": 9,
+      "source": "p9d9b-whirler-warning",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-warning-h9.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 3,
+          "hp": 65,
+          "glow": 1,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-frozen-h9",
+      "hour": 9,
+      "source": "p9d9b-whirler-frozen",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-frozen-h9.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 7,
+          "hp": 65,
+          "glow": 0,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-glass-h9",
+      "hour": 9,
+      "source": "p9d9b-glass",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-glass-h9.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "glasssworn",
+          "state": 2,
+          "hp": 120,
+          "glow": 0,
+          "coreKind": 12
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-glass-frozen-h9",
+      "hour": 9,
+      "source": "p9d9b-glass-frozen",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-glass-frozen-h9.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "glasssworn",
+          "state": 7,
+          "hp": 120,
+          "glow": 0,
+          "coreKind": 12
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-h17-8",
+      "hour": 17.8,
+      "source": "p9d9b-whirler",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-h17-8.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 2,
+          "hp": 65,
+          "glow": 0,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-warning-h17-8",
+      "hour": 17.8,
+      "source": "p9d9b-whirler-warning",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-warning-h17-8.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 3,
+          "hp": 65,
+          "glow": 1,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-frozen-h17-8",
+      "hour": 17.8,
+      "source": "p9d9b-whirler-frozen",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-frozen-h17-8.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 7,
+          "hp": 65,
+          "glow": 0,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-glass-h17-8",
+      "hour": 17.8,
+      "source": "p9d9b-glass",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-glass-h17-8.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "glasssworn",
+          "state": 2,
+          "hp": 120,
+          "glow": 0,
+          "coreKind": 12
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-glass-frozen-h17-8",
+      "hour": 17.8,
+      "source": "p9d9b-glass-frozen",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-glass-frozen-h17-8.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "glasssworn",
+          "state": 7,
+          "hp": 120,
+          "glow": 0,
+          "coreKind": 12
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-h23",
+      "hour": 23,
+      "source": "p9d9b-whirler",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-h23.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 2,
+          "hp": 65,
+          "glow": 0,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-warning-h23",
+      "hour": 23,
+      "source": "p9d9b-whirler-warning",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-warning-h23.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 3,
+          "hp": 65,
+          "glow": 1,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-whirler-frozen-h23",
+      "hour": 23,
+      "source": "p9d9b-whirler-frozen",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-whirler-frozen-h23.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "whirler",
+          "state": 7,
+          "hp": 65,
+          "glow": 0,
+          "coreKind": 16
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-glass-h23",
+      "hour": 23,
+      "source": "p9d9b-glass",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-glass-h23.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "glasssworn",
+          "state": 2,
+          "hp": 120,
+          "glow": 0,
+          "coreKind": 12
+        }
+      ]
+    },
+    {
+      "id": "p9d9b-glass-frozen-h23",
+      "hour": 23,
+      "source": "p9d9b-glass-frozen",
+      "file": "screenshots/dune-casters-light-matrix-heart/p9d9b-glass-frozen-h23.png",
+      "output": [
+        2560,
+        1440
+      ],
+      "internal": [
+        2560,
+        1440
+      ],
+      "renderScale": 1,
+      "gpuErrors": 0,
+      "late": [],
+      "bodies": [
+        {
+          "arch": "glasssworn",
+          "state": 7,
+          "hp": 120,
+          "glow": 0,
+          "coreKind": 12
+        }
+      ]
+    }
+  ],
+  "note": "Actual2560x1440 native,1280px review images. Frozen diagnostic poses, clear weather at9/17.8/23h after integrated D1b grade. Tests static warm/warning/frozen material visibility; no storm or D3 surf-speed acceptance. Human aesthetics remain unassessed."
+}

@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-28T08:07:09.726Z",
+  "width": 2560,
+  "height": 1440,
+  "samples": [
+    {
+      "on": false,
+      "n": 190,
+      "median": 14.976608276367188,
+      "p95": 15.553631782531738,
+      "max": 16.135391235351562
+    },
+    {
+      "on": true,
+      "n": 188,
+      "median": 14.978560447692871,
+      "p95": 15.487327575683594,
+      "max": 15.938943862915039
+    },
+    {
+      "on": false,
+      "n": 190,
+      "median": 15.019807815551758,
+      "p95": 15.390463829040527,
+      "max": 15.86128044128418
+    },
+    {
+      "on": true,
+      "n": 190,
+      "median": 15.007360458374023,
+      "p95": 15.290016174316406,
+      "max": 15.99283218383789
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Fixed-view 1440p headless RTX 3060 alternating mesh off/on. Whole-frame timestamps include the world; differences are indicative and do not establish sustained gameplay performance or the independent D2 relaxation budget. One Whirler in a frozen fixed camera; mesh toggle isolates only the new powder draw, not all D9b CPU/chunk costs."
+}

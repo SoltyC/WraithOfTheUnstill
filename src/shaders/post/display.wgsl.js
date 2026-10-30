@@ -22,6 +22,7 @@ var lutSampler: sampler;
 uniform params: vec4f;   // x = tonemapper (0 ACES, 1 AgX), y = grain, z = frame index, w = LUT on
 uniform viewport: vec4f; // render size (w, h), 1/w, 1/h
 uniform params2: vec4f;  // x = sharpen (0..1), y = bloom intensity, z = bloom on, w = shadow lift
+uniform params3: vec4f;  // x = sand veil (in a Whirler's dust cloud)
 
 // ACES (Narkowicz fit), the Phase 0–5 look.
 fn aces(x: vec3f) -> vec3f {
@@ -119,6 +120,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let l = dot(e, vec3f(0.2126, 0.7152, 0.0722));
   let g = hash3(vec3f(fragmentInputs.position.xy, uniforms.params.z)) - 0.5;
   e += vec3f(g * uniforms.params.y * 4.0 * l * (1.0 - l));
+  // Inside a Whirler's dust cloud: a warm sand veil, gone when the Wraith steps out. Preserve
+  // silhouettes and cap obscuration; no hard whiteout.
+  let dust=clamp(uniforms.params3.x,0.0,1.0);
+  let swirl=hash3(vec3f(floor(fragmentInputs.position.xy/5.0),floor(uniforms.params.z*0.3)));
+  let edge=smoothstep(0.05,0.65,length(fragmentInputs.position.xy*uniforms.viewport.zw-vec2f(0.5)));
+  e=mix(e,vec3f(0.61,0.47,0.29),dust*(0.12+0.22*edge+0.12*swirl));
   // Dither away 8-bit banding in the sky gradients.
   let n = fract(52.9829189 * fract(dot(fragmentInputs.position.xy, vec2f(0.06711056, 0.00583715)))) - 0.5;
   e += vec3f(n / 255.0);

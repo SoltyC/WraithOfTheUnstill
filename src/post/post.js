@@ -105,12 +105,13 @@ export function createPost(scene, camera) {
   const effectRenderer = new EffectRenderer(engine);
   const display = new EffectWrapper({
     engine, name: 'display', vertexShader: displayVertexWGSL, fragmentShader: displayFragmentWGSL,
-    attributeNames: ['position'], uniformNames: ['params', 'viewport', 'params2'], samplerNames: ['src', 'lut', 'bloom'],
+    attributeNames: ['position'], uniformNames: ['params', 'viewport', 'params2', 'params3'], samplerNames: ['src', 'lut', 'bloom'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   const displayParams = new Vector4(1, 0.035, 0, 1);
   const viewport = new Vector4(OW, OH, 1 / OW, 1 / OH);
   const displayParams2 = new Vector4(0.35, 0, 0, 0);
+  const displayParams3 = new Vector4(0, 0, 0, 0);   // x = sand veil (the Wraith inside a Whirler's dust cloud)
   /** The texture the display pass shows (the last post output; the scene target until passes exist). */
   let finalTex = sceneRT, bloomTex = lutTex;
   display.onApplyObservable.add(() => {
@@ -121,6 +122,7 @@ export function createPost(scene, camera) {
     e.setVector4('params', displayParams);
     e.setVector4('viewport', viewport);
     e.setVector4('params2', displayParams2);
+    e.setVector4('params3', displayParams3);
   });
 
   // --- Shared per-frame parameters (one upload per frame; layout in shaders/post/common.wgsl.js). -
@@ -141,6 +143,8 @@ export function createPost(scene, camera) {
     sharpen: 0.35,
     /** Shadow lift before the tonemap (deep shade × up to 1 + this; the owner scales it by daylight). */
     shadowLift: 0,
+    /** Sand-on-camera veil while the Wraith stands in a Whirler's dust cloud (after TAA; the UI is apart). */
+    sandBlind: 0,
     lutOn: true,
     /** Grade parameters (see shaders/post/lut.wgsl.js), written by the owner; set gradeDirty. */
     grade: gradeData,
@@ -225,6 +229,7 @@ export function createPost(scene, camera) {
       frame++;
       displayParams.x = post.tonemapper; displayParams.y = post.grain; displayParams.z = frame % 1024; displayParams.w = post.lutOn ? 1 : 0;
       displayParams2.x = post.sharpen; displayParams2.y = post.bloomIntensity; displayParams2.z = post.bloomOn ? 1 : 0; displayParams2.w = post.shadowLift;
+      displayParams3.x = post.sandBlind;
       engine.restoreDefaultFramebuffer();
       effectRenderer.render(display);
     },

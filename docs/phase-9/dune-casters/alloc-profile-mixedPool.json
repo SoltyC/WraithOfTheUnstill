@@ -1,0 +1,50 @@
+[
+  [
+    "stepShots file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:335 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    18150960
+  ],
+  [
+    "update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    14366800
+  ],
+  [
+    "update file:///home/sol/wraith-shaped/src/game/shaped/body.js:93 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    14341200
+  ],
+  [
+    "hypot :0 <- stepShots file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:335 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0",
+    7148320
+  ],
+  [
+    "_legs file:///home/sol/wraith-shaped/src/game/shaped/body.js:142 <- update file:///home/sol/wraith-shaped/src/game/shaped/body.js:93 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0",
+    3643360
+  ],
+  [
+    "mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    1810720
+  ],
+  [
+    "step file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:35 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0 <- (root) :0",
+    1743120
+  ],
+  [
+    "think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- think file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:409 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1 <-  :0",
+    203520
+  ],
+  [
+    "shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- think file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:409 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1",
+    78080
+  ],
+  [
+    "throwShard file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:377 <- shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- think file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:409 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18",
+    72880
+  ],
+  [
+    "rnd file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:58 <- thinkHound file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:705 <- think file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:409 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18 <-  file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:1",
+    38320
+  ],
+  [
+    "hypot :0 <- shoot file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:325 <- think file:///home/sol/wraith-shaped/src/game/shaped/duneCaster.js:10 <- think file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:409 <- update file:///home/sol/wraith-shaped/src/game/shaped/shaped.js:235 <- mixedPool file:///home/sol/wraith-shaped/tools/alloc/dune-casters.mjs:18",
+    38320
+  ]
+]

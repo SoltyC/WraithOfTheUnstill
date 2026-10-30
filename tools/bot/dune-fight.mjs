@@ -6,12 +6,13 @@
 //   spawns: e.g. hound:3 or hound:2,brute:1 (at 7 m ahead, spread);   env: SEED_DIST (m), TIMEOUT (s), FROZEN=1 freezes them first.
 const base = process.env.WRAITH_URL || 'http://localhost:4177';
 const [, , element = 'frost', spawnArg = 'skitter:4'] = process.argv;
-const weapon = 'staff', mode = 'light';
+const weapon = 'staff', mode = process.env.MODE || 'light';
 const bot = async (cmd, args = {}) => {
   const { id } = await (await fetch(base + '/__wraith/bot/cmd', { method: 'POST', body: JSON.stringify({ do: cmd, ...args }) })).json();
   return await (await fetch(`${base}/__wraith/bot/reply?id=${id}&wait=600000`)).json();
 };
 const spawns = spawnArg.split(',').map((s) => { const [n, c] = s.split(':'); return [n, +c || 1]; });
+await bot('eval',{js:`g.clock.frozen=false;g.game.wraithHeld=false;g.controller.hold=false;g.game.setPlayerVisible(true);g.arm.setFree(false);return true;`});
 await bot('teleport', { x: 1900, z: 900 });
 await new Promise((r) => setTimeout(r, 3000));
 const js = `
@@ -37,16 +38,19 @@ const js = `
   const S = { STALK: 2, TELEGRAPH: 3, LUNGE: 4, STAGGER: 6, FROZEN: 7 };
   const t0 = g.clock.simTime, h0 = g.combat.health;
   const killT = [], alive0 = ids.length;
+  let starvedFrames=0,fightFrames=0,maxBlind=0;const frozenSeen=new Set();
   let heavyT = 0, tapT = 0, dodged = 0, downSince = -1, state = 'ready', castAt = -10, ribbonUntil = -1, crystals = 0, gusts = 0, shards = 0, shardAt = -10, stripped = 0, popped = 0;
   const stripSeen = new Set(), popSeen = new Set();
   const held = { Primary: false, MoveForward: false, MoveBack: false };
   const set = (n, d) => { if (held[n] !== d) { held[n] = d; w.inject(n, d); } };
   const tick = () => {
-    const now = g.clock.simTime, p = g.controller.pos;
+    const now = g.clock.simTime, p = g.controller.pos;fightFrames++;maxBlind=Math.max(maxBlind,g.shaped.blind);for(const i of ids)if(g.shaped.isFrozen(i))frozenSeen.add(i);if(g.combat.focus<14)starvedFrames++;
     let best = -1, bd = 1e9, cnt = 0;
     for (const i of ids) { if (!g.shaped.isLive(i)) continue; cnt++; const b = g.shaped.slots[i].body, d = Math.hypot(b.sx[1] - p.x, b.sz[1] - p.z); if (d < bd) { bd = d; best = i; } }
+    for (const i of ids) { if (!g.shaped.isLive(i) && !killT[ids.indexOf(i)]) killT[ids.indexOf(i)] = +(now - t0).toFixed(2); }
     if (best < 0 || now - t0 > TIMEOUT) { set('Primary', false); set('MoveForward', false); set('MoveBack', false); w.inject('Bend', false); state = 'done'; return; }
     for (const i of ids) { const q = g.shaped.slots[i]; if (q.arch === 'plateback') { if (q.st.seamK === 0 && !stripSeen.has(i)) { stripSeen.add(i); stripped++; } if (q.st.plateOff && !popSeen.has(i)) { popSeen.add(i); popped++; } } }
+    g.combat.lock=best; // Use the normal lock-on aim for material answers.
     const s = g.shaped.slots[best], b = s.body;
     g.arm.yaw = Math.atan2(b.sx[1] - p.x, b.sz[1] - p.z);
     const m = g.weapons.machine;
@@ -69,7 +73,7 @@ const js = `
     for (const i of ids) { if (!g.shaped.isLive(i)) continue; const q = g.shaped.slots[i], qb = q.body; if ((q.state === S.TELEGRAPH || q.state === S.LUNGE) && Math.hypot(qb.sx[1] - p.x, qb.sz[1] - p.z) < 4.2) threat = true; }
     if (threat && now - dodged > 0.9 && m.phase !== 1 && m.phase !== 3) { dodged = now; w.inject('Dodge', true); setTimeout(() => w.inject('Dodge', false), 50); }
     if (bd < reach + 0.4) {
-      const heavyNow = MODE === 'heavy' || (MODE === 'mixed' && now - heavyT > 3.5);
+      const heavyNow = MODE === 'heavy' || (MODE === 'mixed' && (g.shaped.isFrozen(best)||now - heavyT > 3.5));
       if (heavyNow) {
         if (m.phase === 0 && downSince < 0) { set('Primary', true); downSince = now; }
         if (downSince >= 0 && now - downSince > 0.55) { set('Primary', false); downSince = -1; heavyT = now; }
@@ -79,7 +83,7 @@ const js = `
   };
   while (state !== 'done') { tick(); await new Promise((r) => requestAnimationFrame(r)); }
   const st = g.weapons.stats, now = g.clock.simTime;
-  return { element: ELEMENT, crystals, gusts, shards, stripped, popped, weapon: W, mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
+  return { frozenTargets:frozenSeen.size,frozenArchetypes:Array.from(frozenSeen,i=>g.shaped.slots[i].arch),maxBlind,gpuErrors:w.gpuStats.gpuErrors,late:w.gpuStats.late,starvedShare:starvedFrames/Math.max(1,fightFrames),element: ELEMENT, crystals, gusts, shards, stripped, popped, weapon: W, mode: MODE, spawns: SPAWNS, seconds: +(now - t0).toFixed(1), killed: ids.filter((i) => !g.shaped.isLive(i)).length + '/' + alive0, killT, damageTaken: +(h0 - g.combat.health).toFixed(1), hp: +g.combat.health.toFixed(0),
     swings: st.swings, heavies: st.heavies, hits: st.hits, dmgDealt: +st.damage.toFixed(0), shatters: st.shatters, glances: st.glances, dodges: g.flow.counts[5], flowHits: [g.flow.counts[0], g.flow.counts[1], g.flow.counts[2]], flowTierSecs: Array.from(g.flow.timeAt, (x) => +x.toFixed(1)), flowMax: g.flow.tier };
 `;
 const r = await bot('eval', { js });

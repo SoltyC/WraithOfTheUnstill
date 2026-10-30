@@ -89,6 +89,8 @@ export async function createActors(g) {
   bindShadows(shapedView.material, shadows);
   shadows.addCaster(shapedView.mesh, shapedView.makeShadowMaterial, 2);
   shapedView.freeze();
+  g.duneCasterDust=(await import('../render/duneCasterDust.js')).createDuneCasterDust(scene,atmosphere,shaped);
+  bindShadows(g.duneCasterDust.material,shadows);
   // Stone's flying plates and thrown pieces: real chunks through the same pipeline, their own record pool; and its dust and glitter.
   const stoneView = createShapedView(scene, atmosphere, stone.chunks, { name: 'stone' });
   bindShadows(stoneView.material, shadows);

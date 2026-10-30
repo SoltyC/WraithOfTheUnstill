@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-28T19:53:42.254Z",
+  "reports": [
+    {
+      "packed": false,
+      "queued": 1,
+      "samples": [
+        {
+          "fine": 0.0999755859375,
+          "coarse": 0,
+          "fineDisplaced": 0,
+          "coarseDisplaced": 0,
+          "fineRelief": -0.0999755859375,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0.026275634765625,
+          "coarse": 0,
+          "fineDisplaced": 0.053070068359375,
+          "coarseDisplaced": 0,
+          "fineRelief": 0.02679443359375,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0,
+          "coarse": 0,
+          "fineDisplaced": 0.08807373046875,
+          "coarseDisplaced": 0,
+          "fineRelief": 0.08807373046875,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0.09991455078125,
+          "coarse": 0,
+          "fineDisplaced": 0,
+          "coarseDisplaced": 0,
+          "fineRelief": -0.09991455078125,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0.09991455078125,
+          "coarse": 0,
+          "fineDisplaced": 0,
+          "coarseDisplaced": 0,
+          "fineRelief": -0.09991455078125,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        }
+      ]
+    },
+    {
+      "packed": true,
+      "queued": 1,
+      "samples": [
+        {
+          "fine": 0.0999755859375,
+          "coarse": 0,
+          "fineDisplaced": 0,
+          "coarseDisplaced": 0,
+          "fineRelief": -0.0999755859375,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0.026275634765625,
+          "coarse": 0,
+          "fineDisplaced": 0.053070068359375,
+          "coarseDisplaced": 0,
+          "fineRelief": 0.02679443359375,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0,
+          "coarse": 0,
+          "fineDisplaced": 0.08807373046875,
+          "coarseDisplaced": 0,
+          "fineRelief": 0.08807373046875,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0.09991455078125,
+          "coarse": 0,
+          "fineDisplaced": 0,
+          "coarseDisplaced": 0,
+          "fineRelief": -0.09991455078125,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        },
+        {
+          "fine": 0.09991455078125,
+          "coarse": 0,
+          "fineDisplaced": 0,
+          "coarseDisplaced": 0,
+          "fineRelief": -0.09991455078125,
+          "coarseRelief": 0,
+          "slot": 0,
+          "stored": 0,
+          "loading": 0
+        }
+      ]
+    }
+  ],
+  "points": [
+    [
+      1904.012345,
+      900.023456
+    ],
+    [
+      1904,
+      900.5
+    ],
+    [
+      1904,
+      899.5
+    ],
+    [
+      1904.6,
+      900
+    ],
+    [
+      1903.4,
+      900
+    ]
+  ],
+  "maxDifference": 0,
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Actual target-GPU legacy/packed PLOUGH comparison with complete resets, frozen clock/healing disabled/held player. Five identical positions sample fine/coarse depression/displacement/relief. Tests brush equivalence, not allocation/performance or whole persistence."
+}

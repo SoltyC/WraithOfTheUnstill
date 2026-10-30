@@ -1,5 +1,5 @@
 // A small collision snapshot of sand-state channels, using the same bilinear fine sampler.
-import { FINE_N, FINE_PER_M, WORLD_HALF } from '../terrain/state/layout.js';
+import { FINE_N, FINE_PER_M, WORLD_HALF, TRANSFORM } from '../terrain/state/layout.js';
 import { STATE_GRID_N, STATE_GRID_STEP } from '../world/stateGround.js';
 export const stateCollisionWGSL = /* wgsl */ `
 struct Job { origin: vec2i, gridMin: vec2i, enabled: u32, pad0:u32, pad1:u32, pad2:u32 };
@@ -26,6 +26,9 @@ fn main(@builtin(global_invocation_id) id:vec3u) {
   let row=u32(clamp((${WORLD_HALF}.0-wp.y)*0.25,0.0,2047.0));
   let mat=surface[row*2048u+col]&255u;
   let h=(texel(p-vec2i(1,1))+texel(p-vec2i(0,1))+texel(p-vec2i(1,0))+texel(p))*0.25;
-  output[k]=vec4f(h.xy,select(0.0,1.0,mat==1u||mat==6u),h.z);
+  // Glass ground (transform GLASS) reads as frozen 2: a hard crust that takes no cut, and slick.
+  let q0=((p % ${FINE_N}) + ${FINE_N}) % ${FINE_N};
+  let tid=u32(unpack4x8unorm(fine1[u32(q0.y * ${FINE_N} + q0.x)]).w*255.0+0.5);
+  output[k]=vec4f(h.xy,select(0.0,1.0,mat==1u||mat==6u),select(h.z,2.0,tid==${TRANSFORM.GLASS}u));
 }
 `;

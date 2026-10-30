@@ -26,7 +26,7 @@ export const gpuStats = {
   /** Set when the device is lost; boot treats this as fatal. */
   deviceLost: '',
   gpuErrors: 0,
-  /** First ten validation messages, retained for headless diagnostics (no success-path work). */
+  /** Bounded diagnostic history; written only on an uncaptured validation error. */
   gpuErrorMessages: [],
 };
 
@@ -91,7 +91,7 @@ function instrumentDevice(device) {
   });
   device.addEventListener('uncapturederror', (e) => {
     gpuStats.gpuErrors++;
-    if (gpuStats.gpuErrors <= 10) { gpuStats.gpuErrorMessages.push(e.error.message);console.error('[gpu] uncaptured error: ' + e.error.message); }
+    if (gpuStats.gpuErrors <= 10) { gpuStats.gpuErrorMessages.push(String(e.error.message).slice(0,2000)); console.error('[gpu] uncaptured error: ' + e.error.message); }
   });
   const crp = device.createRenderPipeline.bind(device);
   const crpa = device.createRenderPipelineAsync.bind(device);

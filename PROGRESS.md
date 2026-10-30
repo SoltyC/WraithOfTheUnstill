@@ -107,6 +107,10 @@
 
 > **Disk constraint:** the user explicitly wants normal C: storage and clearing disposable data, not moving it to D:. Temporary test profiles briefly archived to D: have been removed. 561 inactive Wraith Chrome profiles were identified on C:; cleanup has recovered more than 90 GiB free so far. Game captures/projects are preserved. Medal's actual user-scope app uninstaller exited successfully; recording remains stopped. C:\adobeTemp (~5.6 GiB) is protected by administrator/TrustedInstaller permissions and remains. Capture launchers now clean inactive profiles through tools/winchrome/cleanup-profiles.ps1; keep future tests on the normal temporary path. No trailer files changed.
 
+> **Latest D9b review — 2026-10-28:** 3/3 staff/Frost clears each single/new mixed fight; both alternate live material answers verified; corrected 420-frame film and five cold captures have zero GPU errors/late pipelines. 786 tests/build pass. Frozen debris keeps size/material. Full allocations, sustained performance and night/storm/surf-speed readability remain open, so D9b remains unintegrated on claude/dune-shaped. D1b is now integrated from main; its grade is included in this branch for the next enemy review. See docs/phase-9/dune-casters-review.md.
+
+> **Historical D9b implementation checkpoint — 2026-10-28:** Whirler/Glass-sworn code, bounded dust devils and powder, material answers, bestiary and eight regressions are built in /home/sol/wraith-shaped on claude/dune-shaped. 786 tests/build pass. Cold 1280 captures and input-driven Frost/staff clears have zero GPU errors/late pipelines; 1440p eight-caster powder cost is ~0.68–0.69 ms. D9b is not integrated: debris-size fix/frozen-glass shader need fresh GPU/film review; repeated balance, alternative live answers and full allocations remain open (15 GC/100k mixed frames). Read docs/phase-9/dune-casters-review.md. D2 stays disabled on codex/dune-relaxation, pushed through 67597d8; recording is stopped under the user's latest instruction. Earlier pending-approval text is historical.
+
 Session handoff log. Update at the end of every session (see BRIEF §0).
 
 ## Current state

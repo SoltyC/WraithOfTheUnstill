@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-28T08:13:31.134Z",
+  "film": {
+    "ok": true,
+    "frames": 420,
+    "failed": 0,
+    "dir": "screenshots/dunecasterfilm/frames/whirler",
+    "wallS": 18.1,
+    "ms": 18062
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Scripted presentation: live volley/devil, then direct freeze and shatter at fixed times. This demonstrates motion and debris, not an input-driven combat win."
+}

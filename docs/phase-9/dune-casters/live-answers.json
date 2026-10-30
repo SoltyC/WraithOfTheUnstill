@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-28T08:21:44.033Z",
+  "glass": {
+    "hp0": 120,
+    "warmHp": 120,
+    "warmHit": 1,
+    "froze": true,
+    "hits": [
+      {
+        "hits": 1,
+        "hp": 120,
+        "frozen": false
+      },
+      {
+        "hits": 2,
+        "hp": 66,
+        "frozen": true
+      },
+      {
+        "hits": 3,
+        "hp": 12,
+        "frozen": true
+      },
+      {
+        "hits": 4,
+        "hp": -42,
+        "frozen": false
+      }
+    ],
+    "killed": true,
+    "health": 100,
+    "focus": 40.986399999141746
+  },
+  "vortex": {
+    "spin0": 8.332399999618529,
+    "spin": -9.12960000038146,
+    "reverse": 0.25,
+    "pinned": true,
+    "alive": true,
+    "strength": 1
+  },
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Live input casts with ordinary lock-on. Warm Glass-sworn is pinned only to make the immunity contact oracle repeatable; shardHit counts prove body contact. This is a material-answer oracle, not an unassisted fight."
+}

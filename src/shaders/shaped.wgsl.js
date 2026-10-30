@@ -48,6 +48,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
     // Awn / sandstone thorn: a spike tapering to a point trailing backward (-z).
     let t = 1.0 - 0.85 * max(-v.z, 0.0);
     v = vec3f(v.x * t, v.y * t, v.z);
+  } else if (mk == 15) {
+    v=vec3f(v.x*(1.0-0.5*max(v.y,0.0)),v.y,v.z*(1.0-0.5*max(v.y,0.0)));
   } else if (mk == 10) {
     // Root strand: pointed at the bottom, hanging.
     let t = 1.0 - 0.8 * max(-v.y, 0.0);
@@ -170,6 +172,17 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     }
     let diff = clamp((nl + 0.25) / 1.25, 0.0, 1.0);
     col = albedo * (key * (diff * vis + trans * pow(1.0 - nv, 2.0)) / PI + sky * under);
+    if(kind==15 || kind==16){
+      // Dense amber glass: absorption through thickness, atmospheric reflection and sharp facets.
+      // This is an opaque solid in the shared shadow-casting path; no scene-copy refraction pass.
+      let R=reflect(-V,N);let F=0.045+0.955*pow(1.0-nv,5.0);
+      let reflected=atmoSky(normalize(vec3f(R.x,max(R.y,0.02),R.z)));
+      let absorb=exp(-vec3f(0.8,1.5,2.8)*(0.35+0.65*(1.0-nv)));
+      let T=refract(-V,N,1.0/1.46);
+      let transmitted=atmoSky(normalize(vec3f(T.x,max(abs(T.y),0.02),T.z)));
+      col=mix(absorb*(transmitted*0.3+sky*0.18+key*max(nl,0.0)*vis/PI*.12),reflected,F*.85);
+      col+=key*pow(max(dot(N,normalize(L+V)),0.0),160.0)*vis*1.4;
+    }
     if (frozen) {
       // Crystallize: an icy glaze over the meadow (cold tint, sky in the facets, edge glints).
       let F = 0.02 + 0.98 * pow(1.0 - nv, 5.0);
@@ -219,8 +232,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   // Telegraph: the core lights from within and cracks glow across the snow (display-referred).
   // A faint living light in the core at all times; the telegraph floods it.
-  let isPod = kind == 2 || kind == 8;
-  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, isPod));
+  // The Whirler glass heart carries the existing warning light through its full volume.
+  let isWhirlerCore = kind == 16;
+  let isPod = kind == 2 || kind == 8 || isWhirlerCore;
+  let g = max(fragmentInputs.vGlow - select(0.0, 2.0, frozen), select(0.0, 0.18, isPod && (!isWhirlerCore || !frozen)));
   if (g > 0.001) {
     let glowCol = select(vec3f(0.45, 0.78, 1.0), vec3f(1.0, 0.62, 0.22), meadow); // seed-amber
     if (isPod) { col += glowCol * g * 0.9 / max(exposure, 1e-6); }
@@ -229,6 +244,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       let crack = 1.0 - smoothstep(0.0, 0.08, abs(n));
       col += glowCol * g * crack * 0.6 / max(exposure, 1e-6);
     }
+  }
+  if(frozen && (kind==15 || kind==16)){
+    let crackNoise=noised(fragmentInputs.vLocal.xz*4.0+fragmentInputs.vLocal.y*2.0+vec2f(fragmentInputs.vSeed)).x;
+    let vein=1.0-smoothstep(0.01,0.07,abs(crackNoise));
+    col+=vec3f(0.55,0.8,1.0)*vein*0.12/max(exposure,1e-6);
   }
   // Hurt flash (kind's fraction): the struck body whitens and its rim burns cold for an instant.
   if (hurt > 0.001) {

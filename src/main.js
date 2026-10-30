@@ -113,6 +113,7 @@ async function boot() {
   (await import('./systems/trials.js')).addTrialsSystem(g);
   (await import('./systems/encounterLog.js')).addEncounterLog(g); // ?bot=1 telemetry; before the spawners that call it
   (await import('./systems/encounters.js')).addEncounterSystem(g);
+  (await import('./systems/ergHaunts.js')).addErgHauntSystem(g); // the erg's Shaped on their own ground, and Skitters riding the storms
   (await import('./systems/villagers.js')).addVillagerSystem(g);
   (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);

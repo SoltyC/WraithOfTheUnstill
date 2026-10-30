@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-28T08:00:15.096Z",
+  "reports": [
+    {
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 1,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "light",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ]
+      ],
+      "seconds": 4.4,
+      "killed": "1/1",
+      "killT": [],
+      "damageTaken": 0,
+      "hp": 100,
+      "swings": 5,
+      "heavies": 0,
+      "hits": 5,
+      "dmgDealt": 56,
+      "shatters": 0,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        5,
+        0,
+        0
+      ],
+      "flowTierSecs": [
+        8.6,
+        0.5,
+        0,
+        0
+      ],
+      "flowMax": 1
+    },
+    {
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 4,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "light",
+      "spawns": [
+        [
+          "glasssworn",
+          1
+        ]
+      ],
+      "seconds": 17.9,
+      "killed": "1/1",
+      "killT": [],
+      "damageTaken": 36,
+      "hp": 64,
+      "swings": 24,
+      "heavies": 0,
+      "hits": 23,
+      "dmgDealt": 89,
+      "shatters": 0,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        23,
+        0,
+        0
+      ],
+      "flowTierSecs": [
+        7.5,
+        3.8,
+        9.2,
+        2.2
+      ],
+      "flowMax": 2
+    },
+    {
+      "gpuErrors": 0,
+      "late": [],
+      "starvedShare": 0,
+      "element": "frost",
+      "crystals": 4,
+      "gusts": 0,
+      "shards": 0,
+      "stripped": 0,
+      "popped": 0,
+      "weapon": "staff",
+      "mode": "light",
+      "spawns": [
+        [
+          "whirler",
+          1
+        ],
+        [
+          "glasssworn",
+          1
+        ],
+        [
+          "skitter",
+          2
+        ]
+      ],
+      "seconds": 22.6,
+      "killed": "4/4",
+      "killT": [
+        null,
+        19.55,
+        3.63,
+        1.32
+      ],
+      "damageTaken": 92,
+      "hp": 8,
+      "swings": 33,
+      "heavies": 0,
+      "hits": 29,
+      "dmgDealt": 195,
+      "shatters": 0,
+      "glances": 0,
+      "dodges": 0,
+      "flowHits": [
+        29,
+        0,
+        2
+      ],
+      "flowTierSecs": [
+        19.9,
+        7.4,
+        0,
+        0
+      ],
+      "flowMax": 0
+    }
+  ]
+}
