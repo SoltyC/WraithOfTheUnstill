@@ -121,6 +121,7 @@ varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vSeed: f32;
 varying vDry: f32;
+varying vStraw: f32;     // the erg's margin: the meadow's grass dried to straw (Phase 9 D8)
 varying vFar: f32;                   // 0 near … 1 far: the blade settles to the turf's colour and brightness
 varying vFrost: f32;                 // rime from the frost verbs (terrain state, frozen)
 
@@ -166,7 +167,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // on the sand too, thinning away into the open dunes.
   let dw = gDunes(root.x, root.y);
   let tussock = smoothstep(0.12, 0.3, dw) * (1.0 - smoothstep(0.5, 0.75, dw)) * smoothstep(0.58, 0.8, vn(root * 0.11 + 17.0) * 0.7 + vn(root * 0.4 + 3.0) * 0.3) * 0.5;
-  let dens = max(max(smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2), reed * (0.6 + 0.4 * patchN)), tussock) * uniforms.grassParams.z
+  // Toward the erg the meadow's own grass dries: straw-coloured, shorter, thinning in patches.
+  let straw = smoothstep(0.06, 0.35, dw);
+  let dens = max(max(smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * (1.0 - 0.55 * straw * smoothstep(0.7, 0.3, patchN)), reed * (0.6 + 0.4 * patchN)), tussock) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
   // The village's ground (villageAt): none on cobbles (a few tufts in the joints near the edge), sparse
   // along the earth road's edge, short and thin trampled grass in the yards.
@@ -188,13 +191,13 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
+  var hgt = (1.0 - 0.35 * straw * (1.0 - reed)) * (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
   if (keep < 0.5 || wid <= 1e-4) {
     vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0);
-    vertexOutputs.vT = 0.0; vertexOutputs.vSide = 0.0; vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vSeed = 0.0; vertexOutputs.vDry = 0.0; vertexOutputs.vFar = 0.0; vertexOutputs.vFrost = 0.0;
+    vertexOutputs.vT = 0.0; vertexOutputs.vSide = 0.0; vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vSeed = 0.0; vertexOutputs.vDry = 0.0; vertexOutputs.vFar = 0.0; vertexOutputs.vFrost = 0.0; vertexOutputs.vStraw = 0.0;
     return vertexOutputs;
   }
   let row = f32(vtx / 2u); let side = select(-1.0, 1.0, (vtx & 1u) == 1u);
@@ -250,6 +253,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vSeed = h4;
   vertexOutputs.vFar = far;
   vertexOutputs.vFrost = st.z;
+  vertexOutputs.vStraw = straw * (1.0 - reed);
   vertexOutputs.vDry = max(max(max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw))), reed * (1.0 - uniforms.grassErg.x));
 }
 `;
@@ -263,6 +267,7 @@ varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vSeed: f32;
 varying vDry: f32;
+varying vStraw: f32;     // the erg's margin: the meadow's grass dried to straw (Phase 9 D8)
 varying vFar: f32;                   // 0 near … 1 far: the blade settles to the turf's colour and brightness
 varying vFrost: f32;                 // rime from the frost verbs (terrain state, frozen)
 ${COMMON_WGSL}
@@ -288,6 +293,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let green = mix(vec3f(0.075, 0.11, 0.03), vec3f(0.12, 0.15, 0.045), sd);
   let dry = mix(vec3f(0.2, 0.19, 0.09), vec3f(0.25, 0.23, 0.12), sd);
   var albedo = mix(green, dry, fragmentInputs.vDry * (0.25 + 0.45 * t));
+  // The margin's straw: pale gold, bleached toward the tip.
+  let strawC = mix(vec3f(0.3, 0.25, 0.13), vec3f(0.4, 0.34, 0.19), sd) * (0.75 + 0.35 * t);
+  albedo = mix(albedo, strawC, fragmentInputs.vStraw * (0.55 + 0.45 * t));
   // Root darkening fades with distance: a far blade is mostly its root wedge, and left dark it reads
   // as a black spike on the (undarkened) turf; far off the blade is the turf's own tone.
   albedo *= mix(mix(0.35, 1.0, smoothstep(0.0, 0.45, t)), 1.0, far);
