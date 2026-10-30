@@ -176,5 +176,7 @@ export async function createWorld(g) {
   await canyon.whenReady;
   // Light shafts in the slots (D7b): volumetric slices across them, lit where the sun gets in.
   const slotShafts = (await import('../render/slotShafts.js')).createSlotShafts(scene, atmosphere, shadows, bindShadows, canyon.spines, canyon.chunks);
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
+  // Sandfalls off the canyon's highest lips (D7b), flowing once the Dunes are restored.
+  const sandfalls = (await import('../render/sandfalls.js')).createSandfalls(scene, atmosphere, shadows, bindShadows, canyon.spines, canyon.chunks);
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
 }

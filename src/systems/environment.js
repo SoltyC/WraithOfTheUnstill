@@ -37,6 +37,7 @@ export async function addEnvironmentSystems(g) {
     if (++canyonTick % 4) return;
     const c = g.canyon; c.camX = camera.position.x; c.camZ = camera.position.z; c.camY = camera.position.y; c.update();
     g.slotShafts.time = clock.simTime; g.slotShafts.strength = c.on ? 1 : 0; g.slotShafts.update();
+    g.sandfalls.time = clock.simTime; g.sandfalls.flow = c.on ? restoration.dunes : 0; g.sandfalls.update();
     if (g.solids && (canyonTick % 32 === 0 || g.pendingTp.active)) c.fillSolids(g.solids.walls, g.controller.pos.x, g.controller.pos.z, 40);
   } });
   // Restoration (BRIEF §2.4): the frost steppe is stilled until its Warden is released — still
