@@ -174,6 +174,7 @@ export async function createWorld(g) {
   terrainState.brushFx = sandDust.bursts;
 
   await canyon.whenReady;
+  trees.setRavines(canyon.spines);   // sparse flora on the canyon floors
   // Light shafts in the slots (D7b): volumetric slices across them, lit where the sun gets in.
   const slotShafts = (await import('../render/slotShafts.js')).createSlotShafts(scene, atmosphere, shadows, bindShadows, canyon.spines, canyon.chunks);
   // Sandfalls off the canyon's highest lips (D7b), flowing once the Dunes are restored.

@@ -198,6 +198,11 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   }
   /** The tree of cell (gx, gz), if any, into T (deterministic: the same tree whenever asked). */
   const T = { x: 0.5, z: 0.5, si: 0, v: 0, sc: 0.5 };
+  /** The ravines' floors (world/ravines.json spines, via setRavines): 16 m cells → the floor's level,
+   *  marked well inside a canyon's or the rift's walls (not the slots: too narrow, too dark). */
+  let ravineFloor = null;
+  const RC = 16, rKey = (i, j) => i * 4096 + j;
+  function canyonFloorAt(x, z) { return ravineFloor ? ravineFloor.get(rKey(Math.floor(x / RC), Math.floor(z / RC))) : undefined; }
   /** The oasis's well (seat oasis-well): palms crowd round it. */
   const OASIS = [1830, 750];
   /** The erg's flora in cell (gx, gz) at (x, z), into T: palms round the oasis, thorn and tamarisk
@@ -206,7 +211,13 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
     const dunes = streamer.bw3, mead = streamer.bw1, dO = Math.hypot(x - OASIS[0], z - OASIS[1]);
     const hs = h01(gx, gz, SEED + 32);
     let p = 0, si = -1;
+    const fl = canyonFloorAt(x, z);
     if (dO < 75) { p = dO < 42 ? 0.6 : 0.2; si = hs < 0.8 ? 8 : 5; }
+    else if (fl !== undefined) {
+      // Down on a canyon floor: sparse tamarisk and thorn where runoff gathers, a dead tree here and there.
+      if (heightAt(x, z) > fl + 3) return false;
+      p = 0.07; si = hs < 0.5 ? 7 : hs < 0.8 ? 5 : 6;
+    }
     else if (dunes > 0.2 && mead > 0.06) { p = 0.12; si = hs < 0.55 ? 7 : hs < 0.85 ? 5 : 6; }
     else if (dunes > 0.6) { p = 0.005; si = hs < 0.6 ? 6 : 5; }
     if (h01(gx, gz, SEED + 31) > p) return false;
@@ -380,6 +391,23 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     },
     /** Keep out of the water (render/water.js levelAt): re-places the trees and the canopy map. */
     setWater(fn) { waterAt = fn; lastX = 1e9; canopyDirty = true; },
+    /** The ravines' spines ({ kind, pts: [x, z, half-width, floor] }): flora on the canyon floors. */
+    setRavines(spines) {
+      ravineFloor = new Map();
+      for (const sp of spines) {
+        if (sp.kind !== 'canyon' && sp.kind !== 'rift') continue;
+        for (let k = 0; k < sp.pts.length - 1; k++) {
+          const [ax, az, aw, af] = sp.pts[k], [bx, bz, bw, bf] = sp.pts[k + 1], len = Math.hypot(bx - ax, bz - az);
+          for (let s = 0; s <= len; s += RC / 2) {
+            const t = s / len, x = ax + (bx - ax) * t, z = az + (bz - az) * t, r = (aw + (bw - aw) * t) * 0.6, f = af + (bf - af) * t;
+            for (let i = Math.floor((x - r) / RC); i <= Math.floor((x + r) / RC); i++) for (let j = Math.floor((z - r) / RC); j <= Math.floor((z + r) / RC); j++) {
+              if (Math.hypot((i + 0.5) * RC - x, (j + 0.5) * RC - z) < r) ravineFloor.set(rKey(i, j), f);
+            }
+          }
+        }
+      }
+      lastX = 1e9; canopyDirty = true;
+    },
     /** Keep clear of the village's plots and roads. */
     setKeepOut(fn) { keepOut = fn; lastX = 1e9; canopyDirty = true; },
     setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },
