@@ -265,9 +265,14 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     // clumpy berms either side, heavier on the outside (bias) — Sweep's channel, the surf wake.
     let inner = clamp(1.0 - d * d, 0.0, 1.0);
     let floorK = pow(inner, 0.45);
-    let rim = smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.65, d));
-    let bias = clamp(1.0 + ex.z * side, 0.15, 1.85);
-    let clump = 0.72 + 0.4 * smoothHash(p, 0.11) + 0.18 * smoothHash(p + vec2f(3.7, 1.3), 0.045);
+    // Snow throws high, clumpy berms; loose sand pours into a low, wide, smooth lip (about the same
+    // mass over twice the width: steep sand would only slump, and lumps read as rubble).
+    let sandy = material == 1u || material == 6u;
+    let rim = select(smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.65, d)),
+                     smoothstep(0.78, 1.0, d) * (1.0 - smoothstep(1.0, 1.88, d)) * 0.55, sandy);
+    let bias = clamp(1.0 + ex.z * side * select(1.0, 0.6, sandy), 0.15, 1.85);
+    let clump = select(0.72 + 0.4 * smoothHash(p, 0.11) + 0.18 * smoothHash(p + vec2f(3.7, 1.3), 0.045),
+                       0.9 + 0.2 * smoothHash(p, 0.7), sandy);
     t.h.x = max(t.h.x, br.w * give * floorK);
     // The groove's interior is ploughed clean: any berm there (the rounded front of the previous
     // frame's stamp throws one into the path ahead) is cleared, or a ghost ridge would remain at
