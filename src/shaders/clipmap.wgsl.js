@@ -212,6 +212,7 @@ varying vWind: vec2f;
 varying vLake: f32;
 varying vNormalC: vec3f;
 varying vFlat: f32;      // the bake's dune flat weight (pans, playas, ravine floors): desert pavement
+varying vEncl: f32;      // how walled-in the ground is (a ravine floor): its shade takes the walls' warm bounce, less sky
 
 const W_HALF: f32 = 4096.0;
 const N8: i32 = 1024; const C8: f32 = 8.0;
@@ -268,6 +269,14 @@ fn biomeAt(x: f32, z: f32, wB: ptr<function, vec2f>) -> vec4f {
 }
 
 fn levelSample(level: u32, i: u32, j: u32) -> vec4f { return levelData[(level * V + j) * V + i]; }
+/** The rendered ground at a world point: the finest level holding it (nearest vertex: coarse is fine for the enclosure). */
+fn groundAtV(x: f32, z: f32, l0: u32) -> f32 {
+  for (var l = l0; l < ${CLIPMAP_LEVELS}u; l++) {
+    let g = (vec2f(x, z) - uniforms.levels[l].xy) / uniforms.levels[l].z + HALF;
+    if (g.x >= 0.0 && g.y >= 0.0 && g.x <= 2.0 * HALF && g.y <= 2.0 * HALF) { return levelSample(l, u32(g.x + 0.5), u32(g.y + 0.5)).x; }
+  }
+  return -1e4;
+}
 
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
@@ -331,6 +340,16 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vNormalC = vec3f(nc.x, sqrt(max(1.0 - dot(nc, nc), 0.0)), nc.y);
   vertexOutputs.vLake = lakeAt(p.x, p.y);
   vertexOutputs.vFlat = flatAtV(p.x, p.y);
+  // Enclosure: how far the ground 32 m round rises above this point (only on the flats, where the
+  // ravine floors are): a canyon floor's two walls give about one half; open playa, none.
+  var encl = 0.0;
+  if (vertexOutputs.vFlat > 0.3) {
+    for (var k = 0; k < 6; k++) {
+      let a = f32(k) * 1.047198;
+      encl += clamp((groundAtV(p.x + cos(a) * 32.0, p.y + sin(a) * 32.0, max(level, 3u)) - h - 3.0) / 14.0, 0.0, 1.0);
+    }
+  }
+  vertexOutputs.vEncl = clamp(encl / 3.0, 0.0, 1.0);
   var wB = vec2f(0.0);
   vertexOutputs.vBiomeA = biomeAt(p.x, p.y, &wB);
   vertexOutputs.vBiomeB = wB;
@@ -352,6 +371,7 @@ varying vWind: vec2f;
 varying vLake: f32;
 varying vNormalC: vec3f;
 varying vFlat: f32;      // the bake's dune flat weight (pans, playas, ravine floors): desert pavement
+varying vEncl: f32;      // how walled-in the ground is (a ravine floor): its shade takes the walls' warm bounce, less sky
 ${COMMON_WGSL}
 ${GRID_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -508,6 +528,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
                               fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
     let ss = sandSurface(wp, Ngs, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), L);
     var scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
+    // Down between a ravine's walls the shade is warm: less of the blue sky reaches it, and the sunlit
+    // walls and floor throw their orange back into it (the canyon kit's bounce, shaders/canyon.wgsl.js).
+    let encl = fragmentInputs.vEncl * (1.0 - vis * cs);
+    if (encl > 0.01) {
+      scol = mix(scol, scol * vec3f(0.95, 0.8, 0.66), encl) + ss.albedo * key * max(L.y, 0.0) * vec3f(0.85, 0.5, 0.28) * 0.16 * encl;
+    }
     // Desert pavement on the pans and playas (Phase 9 D8): the wind has taken the fines and left a
     // lag of dark, varnished gravel packed in the sand — up close separate pebbles, far off a browner,
     // darker ground in patches.
