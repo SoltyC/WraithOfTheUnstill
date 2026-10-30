@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
-import { wadiRibbons } from '../src/render/wadiWater.js';
+import { wadiRibbons, wadiFlowers } from '../src/render/wadiWater.js';
 
 const ravines = JSON.parse(fs.readFileSync(new URL('../data/world/ravines.json', import.meta.url), 'utf8'));
 
@@ -18,11 +18,13 @@ describe('wadi water ribbons', () => {
     const n = a.pos.length / 3;
     expect(a.attr.length).toBe(n * 4);
     expect(a.idx.length % 6).toBe(0);
-    expect(Math.max(...a.idx)).toBeLessThan(n);
+    expect(a.idx.reduce((m, v) => Math.max(m, v), 0)).toBeLessThan(n);
     // across −1..1, the end fade 0..1, metres along non-negative
     for (let i = 0; i < n; i++) { const u = a.attr[i * 4], s = a.attr[i * 4 + 1], f = a.attr[i * 4 + 3]; expect(Math.abs(u)).toBeLessThanOrEqual(1); expect(s).toBeGreaterThanOrEqual(0); expect(f).toBeGreaterThanOrEqual(0); expect(f).toBeLessThanOrEqual(1); }
     // rows every 3 m: a few thousand over the braids, not tens of thousands
     expect(n / 7).toBeGreaterThan(1000); expect(n / 7).toBeLessThan(6000);
+    const f = wadiFlowers(ravines.wadis); expect(f.pos.length / 12).toBeGreaterThan(10000); expect(f.pos.length / 12).toBeLessThan(60000);
+    expect(f.idx.reduce((m, v) => Math.max(m, v), 0)).toBeLessThan(f.pos.length / 3);
   });
   it('an empty list builds nothing', () => { expect(wadiRibbons([]).pos.length).toBe(0); });
 });

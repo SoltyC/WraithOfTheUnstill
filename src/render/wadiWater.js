@@ -4,7 +4,9 @@
 // catching the sky, with a band of wet, darker sand either side. Visual only (nothing wades in it).
 // One draw: a ribbon along each braid's bed (world/ravines.json `wadis`), its vertices dropped onto
 // the clipmap's own rendered ground in the vertex shader (shaders/grass.wgsl.js gGround), so the
-// sheet lies on the dunes the terrain draws.
+// sheet lies on the dunes the terrain draws. After the water, flowers: clumps of desert annuals
+// (primrose, sand verbena, globemallow, desert marigold) along the braids' damp banks, blooming
+// while the Dunes are restored (dunes-design.md §7.1 "water at dusk, flowers after"; D8).
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
@@ -16,7 +18,7 @@ import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
-import { wadiVertexWGSL, wadiFragmentWGSL } from '../shaders/wadiWater.wgsl.js';
+import { wadiVertexWGSL, wadiFragmentWGSL, wadiFlowerVertexWGSL, wadiFlowerFragmentWGSL } from '../shaders/wadiWater.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -63,6 +65,48 @@ export function wadiRibbons(wadis) {
   return { pos, attr, idx };
 }
 
+const hf = (a, b) => { let x = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul(b | 0, 0x165667b1); x = Math.imul(x ^ (x >>> 15), 0x2c1b3c6d); return ((x ^ (x >>> 13)) >>> 0) / 4294967296; };
+
+/**
+ * The flowers (deterministic): every 1.5 m along each braid, on either bank, a clump of 4–9 cards
+ * where a slow noise along the bank says the seed took. position = the card's root (x, 0, z) — the
+ * height comes from the ground on the GPU; flower = (corner x −1..1, corner y 0..1, size m, kind 0..3
+ * + seed fraction).
+ */
+export function wadiFlowers(wadis) {
+  const pos = [], attr = [], idx = [];
+  // A slow 1D value noise along a bank (clumps and bare stretches).
+  const vn = (t, k) => { const i = Math.floor(t), f = t - i, u = f * f * (3 - 2 * f); return hf(i, k) * (1 - u) + hf(i + 1, k) * u; };
+  wadis.forEach((w, wi) => {
+    const P = w.pts; let along = 0;
+    for (let k = 0; k < P.length - 1; k++) {
+      const [ax, az, aw] = P[k], [bx, bz, bw] = P[k + 1], len = Math.hypot(bx - ax, bz - az);
+      if (len < 1e-3) continue;
+      const nx = -(bz - az) / len, nz = (bx - ax) / len;
+      for (let s = 0; s < len; s += 1.5) {
+        const t = s / len, x = ax + (bx - ax) * t, z = az + (bz - az) * t, hw = (aw + (bw - aw) * t) * SPAN, a = along + s;
+        for (const side of [-1, 1]) {
+          const key = Math.round(a / 1.5) * 2 + (side > 0 ? 1 : 0);
+          if (hf(key, wi * 31 + 7) > 0.9 * Math.max(0, (vn(a / 22, wi * 13 + side) - 0.3) / 0.7)) continue;
+          // On the bank: past the water's middle, inside the wet band's edge.
+          const off = side * hw * (0.5 + 0.45 * hf(key, wi * 31 + 8)), kind = Math.floor(vn(a / 60, wi * 5 + side + 99) * 3.999);
+          const n = 4 + Math.floor(hf(key, wi * 31 + 9) * 6);
+          for (let c = 0; c < n; c++) {
+            const r = 0.9 * Math.sqrt(hf(key * 8 + c, wi + 11)), ang = hf(key * 8 + c, wi + 12) * 6.283;
+            const px = x + nx * off + Math.cos(ang) * r, pz = z + nz * off + Math.sin(ang) * r;
+            const size = 0.3 + 0.25 * hf(key * 8 + c, wi + 13), seed = hf(key * 8 + c, wi + 14) * 0.98;
+            const b = pos.length / 3;
+            for (const [cu, cv] of [[-1, 0], [1, 0], [1, 1], [-1, 1]]) { pos.push(px, 0, pz); attr.push(cu, cv, size, kind + seed); }
+            idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+          }
+        }
+      }
+      along += len;
+    }
+  });
+  return { pos, attr, idx };
+}
+
 export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis) {
   ShaderStore.ShadersStoreWGSL.wadiVertexShader = wadiVertexWGSL;
   ShaderStore.ShadersStoreWGSL.wadiFragmentShader = wadiFragmentWGSL;
@@ -93,15 +137,41 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
   mat.backFaceCulling = false;
   mesh.material = mat;
   mat.freeze(); fastFrozenIsReady(mat);
+  // The flowers: one draw of camera-facing cards, off beyond ~150 m.
+  ShaderStore.ShadersStoreWGSL.wadiFlowerVertexShader = wadiFlowerVertexWGSL;
+  ShaderStore.ShadersStoreWGSL.wadiFlowerFragmentShader = wadiFlowerFragmentWGSL;
+  const fl = wadiFlowers(wadis || []);
+  const fMesh = new Mesh('wadiFlowers', scene);
+  const fvd = new VertexData();
+  fvd.positions = new Float32Array(fl.pos.length ? fl.pos : [0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  fvd.indices = new Uint32Array(fl.idx.length ? fl.idx : [0, 1, 2]); fvd.applyToMesh(fMesh, false);
+  fMesh.setVerticesData('flower', new Float32Array(fl.attr.length ? fl.attr : new Array(12).fill(0)), false, 4);
+  fMesh.alwaysSelectAsActiveMesh = true; fMesh.doNotSyncBoundingInfo = true; fMesh.freezeWorldMatrix();
+  const fMat = new ShaderMaterial('wadiFlowers', scene, { vertex: 'wadiFlower', fragment: 'wadiFlower' }, {
+    attributes: ['position', 'flower'],
+    uniforms: ['viewProjection', 'levels', 'wadiParams', ...ENV_UNIFORMS],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
+    storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    shaderLanguage: ShaderLanguage.WGSL,
+  });
+  bindEnvironment(fMat); bindAtmosphere(fMat, atmo); bindShadows(fMat, shadows);
+  fMat.setArray4('levels', clipmap.levels);
+  fMat.setStorageBuffer('levelData', clipmap.levelData);
+  fMat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
+  fMat.setStorageBuffer('windMap', clipmap.buffers.wind);
+  fMat.setVector4('wadiParams', params);
+  fMat.backFaceCulling = false;
+  fMesh.material = fMat;
+  fMat.freeze(); fastFrozenIsReady(fMat);
   return {
-    mesh, material: mat, rows: pos.length / 3 / (ACROSS + 1),
+    mesh, material: mat, flowerMesh: fMesh, flowerMaterial: fMat, flowers: fl.pos.length / 12, rows: pos.length / 3 / (ACROSS + 1),
     /** Owner fields: time (s), restored 0..1 (the Dunes), hour (0..24). */
     time: 0.5, restored: 0.5 - 0.5, hour: 12.5 - 0.5,
     update() {
       // The flow comes down toward evening and is gone by the small hours (a seasonal stream, daily
       // in the game): rising from 16:30, full 18:00–22:00, drying out by 1:00.
       const h = this.hour, rise = Math.min(1, Math.max(0, (h - 16.5) / 1.5)), fall = h >= 12 ? 1 : Math.max(0, 1 - h);
-      params.x = this.time; params.y = this.restored * (h >= 12 ? rise : fall);
+      params.x = this.time; params.y = this.restored * (h >= 12 ? rise : fall); params.z = this.restored;   // the flowers bloom while restored
     },
   };
 }

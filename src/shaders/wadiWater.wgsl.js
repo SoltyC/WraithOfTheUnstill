@@ -14,7 +14,7 @@ attribute wadi: vec4f;       // across −1..1, metres along, half-width (m), en
 uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
-uniform wadiParams: vec4f;   // x = time, y = flow 0..1
+uniform wadiParams: vec4f;   // x = time, y = flow 0..1, z = the flowers' bloom 0..1
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
@@ -82,5 +82,85 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let aw = water * (F + (1.0 - F) * 0.3);
   let a2 = aw + (1.0 - aw) * wet * 0.2;
   fragmentOutputs.color = vec4f(outc * water, a2);
+}
+`;
+
+// The flowers along the banks (render/wadiWater.js wadiFlowers): cards turned to the camera round
+// the vertical, nodding in the air; drawn in the fragment — a stem, two leaves and a five-petalled
+// head in the kind's colour — cut out (no blending), lit flat (small, many-faced things).
+export const wadiFlowerVertexWGSL = /* wgsl */ `
+attribute position: vec3f;   // the card's root (x, 0, z)
+attribute flower: vec4f;     // corner x −1..1, corner y 0..1, size (m), kind + seed fraction
+uniform viewProjection: mat4x4f;
+uniform cameraPosition: vec3f;
+uniform levels: array<vec4f,16>;
+uniform wadiParams: vec4f;
+var<storage, read> levelData: array<vec4f>;
+var<storage, read> biomeA: array<u32>;
+var<storage, read> windMap: array<u32>;
+varying vWorldPos: vec3f;
+varying vFlower: vec4f;
+${FIELD_WGSL}
+@vertex
+fn main(input: VertexInputs) -> FragmentInputs {
+  let f = vertexInputs.flower; let p = vertexInputs.position;
+  let root = vec3f(p.x, gGround(p.x, p.z) - 0.03, p.z);
+  let toCam = uniforms.cameraPosition - root; let d = length(toCam.xz);
+  let right = normalize(vec3f(-toCam.z, 0.0, toCam.x) + vec3f(1e-5, 0.0, 0.0));
+  // Grown with the bloom (and shrunk away past 120–150 m: no popping cards).
+  let size = f.z * uniforms.wadiParams.z * (1.0 - smoothstep(120.0, 150.0, d));
+  let sway = sin(uniforms.wadiParams.x * 1.7 + fract(f.w) * 40.0) * 0.06 * f.y * f.y;
+  let wp = root + right * (f.x * 0.5 * size + sway * size) + vec3f(0.0, f.y * size, 0.0);
+  vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
+  if (size < 0.01) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
+  vertexOutputs.vWorldPos = wp;
+  vertexOutputs.vFlower = f;
+}
+`;
+
+export const wadiFlowerFragmentWGSL = /* wgsl */ `
+${ENV_DECL}
+varying vWorldPos: vec3f;
+varying vFlower: vec4f;
+${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
+${SHADOW_RECEIVE_WGSL}
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
+  let f = fragmentInputs.vFlower; let wp = fragmentInputs.vWorldPos;
+  let kind = floor(f.w); let seed = fract(f.w);
+  let q = vec2f(f.x * 0.5, f.y);                       // card space: x −0.5..0.5 (one size), y 0..1
+  // A small plant: two or three flower heads on thin stems at different heights, the petals (5 to
+  // 7, irregular) shaded darker toward the eye, narrow blade leaves at the foot.
+  var hit = 0.0; var albedo = vec3f(0.0);
+  let pc = array<vec3f, 4>(vec3f(0.9, 0.87, 0.8), vec3f(0.55, 0.3, 0.62), vec3f(0.92, 0.45, 0.17), vec3f(0.93, 0.78, 0.2));
+  let pcol = pc[u32(clamp(kind, 0.0, 3.0))] * (0.9 + 0.2 * seed);
+  let heads = 2 + i32(seed * 1.99);
+  for (var k = 0; k < heads; k++) {
+    let hs = fract(seed * (7.13 + f32(k) * 3.7));
+    let hc = vec2f((hs - 0.5) * 0.5, 0.55 + 0.35 * fract(hs * 5.3));
+    let hr = 0.1 + 0.05 * fract(hs * 9.1);
+    let hv = (q - hc) / hr; let r = length(hv);
+    let np = 5.0 + floor(fract(hs * 3.3) * 2.99);
+    let th = atan2(hv.y, hv.x) + hs * 6.283;
+    let edge = 0.55 + 0.45 * pow(abs(cos(th * np * 0.5)), 0.7) * (0.85 + 0.15 * sin(th * 7.0 + hs * 20.0));
+    if (r < edge && hit < 0.5) { hit = 1.0; albedo = pcol * mix(0.65, 1.05, smoothstep(0.15, 0.8, r)); if (r < 0.26) { albedo = vec3f(0.6, 0.42, 0.1); } }
+    // Its stem, bending a little.
+    let sx = hc.x * (q.y / hc.y) + 0.015 * sin(q.y * 9.0 + hs * 6.0);
+    if (hit < 0.5 && abs(q.x - sx) < 0.012 && q.y < hc.y) { hit = 1.0; albedo = vec3f(0.24, 0.32, 0.14); }
+  }
+  // Blade leaves from the root.
+  for (var k = 0; k < 3; k++) {
+    let a = (f32(k) - 1.0) * 0.5 + (seed - 0.5) * 0.3;
+    let dirv = vec2f(sin(a), cos(a)); let along = dot(q - vec2f(0.0, 0.0), dirv); let across = abs(dot(q, vec2f(dirv.y, -dirv.x)));
+    if (hit < 0.5 && along > 0.0 && along < 0.32 && across < 0.03 * (1.0 - along / 0.32)) { hit = 1.0; albedo = vec3f(0.2, 0.28, 0.12) * (0.8 + 0.4 * along / 0.32); }
+  }
+  if (hit < 0.5) { discard; }
+  let cam = uniforms.cameraPosition; let L = uniforms.keyDir;
+  let vis = shadowVisibilityFast(wp, cam);
+  let key = atmoKeyColor();
+  let col = albedo * (key * vis * (0.45 + 0.4 * max(L.y, 0.0)) / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
+  let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(cam - wp) * 0.001);
+  fragmentOutputs.color = vec4f(displayTransform(lit, uniforms.fogParams.z * atmoExposure()), 0.0);
 }
 `;
