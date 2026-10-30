@@ -270,12 +270,15 @@ export function createSolids(sites, built, stairRuns = null) {
 /** A ground query that also stands on built floors (once `solids` is set): for feet and cloth. */
 export function flooredGround(ground) {
   return {
-    qx: 0.5, qz: 0.5, h: 0.5, solids: null,
+    qx: 0.5, qz: 0.5, h: 0.5, solids: null, deck: null,
     sample() {
       ground.qx = this.qx; ground.qz = this.qz; ground.sample();
       const so = this.solids;
-      if (so === null) { this.h = ground.h; return; }
-      so.qx = this.qx; so.qz = this.qz; so.qh = ground.h; so.floorAnyQ(); this.h = so.h;
+      if (so === null) this.h = ground.h;
+      else { so.qx = this.qx; so.qz = this.qz; so.qh = ground.h; so.floorAnyQ(); this.h = so.h; }
+      // The Long Walker's back (game/walker/deck.js), near the Wraith's own height.
+      const dk = this.deck;
+      if (dk !== null && dk.on) { dk.qx = this.qx; dk.qz = this.qz; dk.qh = this.h; dk.floorNearQ(); this.h = dk.h; }
     },
   };
 }

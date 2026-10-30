@@ -82,7 +82,8 @@ export function addWraithSystem(g) {
   }
   function wraithFootfalls() {
     const gt = wraithView.wraith.gait, ev = gt.ev;
-    footprints.enabled = toggles.on.footprints !== false;
+    // (Riding the Long Walker the feet are on its back, not in the sand below.)
+    footprints.enabled = toggles.on.footprints !== false && !(controller.deck !== null && controller.deck.riding);
     for (let e = 0; e < gt.evCount; e++) {
       const o = e * 7;
       sfx.x = ev[o]; sfx.y = ev[o + 1]; sfx.z = ev[o + 2]; sfx.gain = 0.35 + 0.08 * Math.min(ev[o + 6], 6); sfx.play(SFX.STEP);

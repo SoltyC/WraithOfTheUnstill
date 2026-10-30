@@ -1,0 +1,39 @@
+{
+  "_review": "Phase 9 D10: the Long Walker's line (docs/gameplay-design.md §5.1, dunes-design.md §4.3–4.4). D11 adds the camp, the instruments and the side sites; until then this is the erg's main line on its own.",
+  "chapter": "dunes",
+  "title": "The Glass Dunes",
+  "npcs": [],
+  "places": {},
+  "names": {},
+  "quests": [
+    {
+      "id": "dunes-follow-the-glass",
+      "kind": "main",
+      "title": "Follow the Glass",
+      "summary": "Footprints of glass, each as long as a house, cross the erg in a great loop. Something walked here, and the sand fused under it.",
+      "start": { "any": [ { "near": { "x": 2550, "z": 800, "r": 520 } }, { "flag": "dunes:walker-woke" } ] },
+      "steps": [
+        {
+          "id": "track",
+          "journal": "Follow the glass footprints across the erg. They lead toward the great star dune.",
+          "when": { "flag": "dunes:walker-woke" },
+          "goal": { "dynamic": "walker", "label": "Glass footprint", "radius": 20 }
+        },
+        {
+          "id": "stumble",
+          "journal": "The Long Walker walks its old circuit. Make it stumble: change the ground where a foot will land — a Ridge under it, a Bloom's pit, or sand bound hard with Frost. Then climb its kneeling leg onto its back.",
+          "when": { "flag": "dunes:walker-boarded" },
+          "goal": { "dynamic": "walker", "label": "The Long Walker", "radius": 40 },
+          "actions": [ { "autosave": true } ]
+        },
+        {
+          "id": "home",
+          "journal": "Steer the Long Walker home to the dry well at the Wellhouse, west round the Stride: a Shard against a glyph pillar on its back turns it to that side. At the well, light the shaft.",
+          "when": { "flag": "dunes:walker-released" },
+          "goal": { "dynamic": "walker", "label": "The dry well", "radius": 40 },
+          "actions": [ { "marks": 150 }, { "thread": true }, { "autosave": true } ]
+        }
+      ]
+    }
+  ]
+}

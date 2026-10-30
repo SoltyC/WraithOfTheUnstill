@@ -16,7 +16,8 @@ export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
  *   quests: { quests: Record<string, { state: string, step: number }>, flags: string[] },
  *   journal: { lore: string[], map: string },
  *   world: { timeOfDay: number, weather: string, weatherOverride: string|null, biome: string, sandstorm: null|object, restoration: Record<string, string> },
- *   entities: { crystals: number[], warden: null | { state: string, x: number, z: number, heading: number } },
+ *   entities: { crystals: number[], warden: null | { state: string, x: number, z: number, heading: number },
+ *               walker?: null | { x: number, z: number, yaw: number, mode: number } },
  *   terrainPages: TerrainPage[],
  *   inventory: { owned: { id: string, tier: number, infusion: string|null }[], carried: (string|null)[], held: number, marks: number,
  *     materials: Record<string, number>, pouch: Record<string, number>, flask: { charges: number, max: number }, threads: number, sel: string },
@@ -134,6 +135,8 @@ export function validateSave(s) {
   if (!Array.isArray(s.entities?.crystals) || s.entities.crystals.some((n) => !Number.isFinite(n))) fail('entities.crystals');
   const w = s.entities.warden;
   if (w !== null && (typeof w?.state !== 'string' || !Number.isFinite(w.x) || !Number.isFinite(w.z) || !Number.isFinite(w.heading))) fail('entities.warden');
+  const lw = s.entities.walker;
+  if (lw != null && (!Number.isFinite(lw.x) || !Number.isFinite(lw.z) || !Number.isFinite(lw.yaw))) fail('entities.walker');
   if (!Number.isFinite(s.world?.timeOfDay)) fail('world.timeOfDay');
   if (!Array.isArray(s.terrainPages)) fail('terrainPages');
   if(s.world.sandstorm!==null){

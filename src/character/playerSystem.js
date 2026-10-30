@@ -61,6 +61,8 @@ export function createPlayerSystem(ctx) {
         // ... and wherever the terrain state holds glass (a shattered Glass-sworn's ground: frozen 2 in the collision snapshot).
         const sv = ctx.world && ctx.world.ground ? ctx.world.ground.state : null;
         if (sv) { sv.qx = controller.pos.x; sv.qz = controller.pos.z; if (sv.sample() && sv.frozen > 1.2) { sf.canSurf = true; sf.slick = 1; } }
+        // The Long Walker's back is stone, not sand (game/walker/deck.js).
+        if (controller.deck !== null && controller.deck.riding) sf.canSurf = false;
         // Glide (hold traversal in the air): the same hold, the same steering.
         gl.want = d[Action.Traverse] === 1 && !controller.swimming;
         if (surfing) {

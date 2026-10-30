@@ -121,6 +121,7 @@ async function createSaves(g) {
       if (g.quests) Object.assign(s.quests, g.quests.serialize());
       if (g.progress) g.progress.collect(s);
       s.entities.crystals = frost.serializeCrystals(clock.simTime);
+      if (g.longWalker) s.entities.walker = g.longWalker.serialize();
       if (warden.active) {
         const W = wardenMod.W, b = warden.body;
         s.entities.warden = { state: warden.state === W.RELEASE || warden.state === W.RESTED ? 'rested' : 'dormant', x: b.x, z: b.z, heading: b.heading };
@@ -151,6 +152,7 @@ async function createSaves(g) {
       // The Warden is placed again by its system: dormant in its arena, or lying where it rests.
       const w = s.entities.warden;
       g.wardenRest = w && w.state === 'rested' ? { x: w.x, z: w.z, heading: w.heading } : null;
+      g.longWalker?.restore(s.entities.walker ?? null);
       warden.active = false;
     },
   });

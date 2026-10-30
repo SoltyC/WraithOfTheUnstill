@@ -99,6 +99,34 @@ function shardStar(scale, seed, n = 11) {
   };
 }
 
+/** A glazed oval at (cx, cz) in the print's frame (x across, z along heading h), rim a little raised. */
+function oval(b, h, cx, cz, rx, rz, seed) {
+  const c = Math.cos(h), s = Math.sin(h), P = (x, z, y) => [x * c + z * s, y, -x * s + z * c];
+  const n = 12, mid = P(cx, cz, 0.05), rim = [];
+  for (let k = 0; k <= n; k++) { const a = (k / n) * Math.PI * 2, j = 0.85 + 0.25 * hh(seed, k % n); rim.push(P(cx + Math.cos(a) * rx * j, cz + Math.sin(a) * rz * j, 0.1 + 0.12 * hh(seed + 3, k % n))); }
+  for (let k = 0; k < n; k++) b.tri(mid, rim[k + 1], rim[k], G, seed);
+}
+
+/** One of the Long Walker's footprints fossilised in glass (Phase 9 D10, "Follow the Glass"): its
+ *  pad and three toes pressed into the sand and fused, a rim of low shards splashed out round the
+ *  pad. h: its heading (the way it walked). */
+function walkerPrint(h, seed) {
+  return (b) => {
+    oval(b, h, 0, -0.6, 2.7, 3.4, seed);
+    [[-1.9, 3.3, 1.0], [0, 4.0, 1.15], [1.9, 3.3, 1.0]].forEach(([x, z, r], k) => oval(b, h, x, z, r, r * 1.35, seed + 10 + k));
+    const c = Math.cos(h), s = Math.sin(h);
+    for (let k = 0; k < 7; k++) {
+      const a = (k / 7) * Math.PI * 2 + hh(seed, k) * 0.5, lx = Math.cos(a) * 3.0, lz = -0.6 + Math.sin(a) * 3.8;
+      b.box(lx * c + lz * s, -lx * s + lz * c, -0.2, 0.35 + 0.5 * hh(seed, k + 20), 0.08, 0.35 + 0.3 * hh(seed, k + 30), h + a + Math.PI / 2, G, seed + 40 + k, { plain: true, tilt: 0.5 + 0.3 * hh(seed, k + 50), solid: false });
+    }
+  };
+}
+
+/** The glass track (game/walker/route.js trackPrints): [x, z, heading, side] each. */
+export function walkerTrackSites(prints) {
+  return prints.map(([x, z, h], k) => ({ id: `walker-print-${k}`, at: [x, z], facing: h, build: walkerPrint(h, 700 + k * 13), footprint: 4, sink: 0.12, glassR: 4.6 }));
+}
+
 /** The five fields' glass sites (`table`: POIs by id; seats glass-1..5). */
 export function glassSites(table) {
   const at = (id, fallback) => (table[id] && table[id].pos) || fallback;

@@ -53,6 +53,8 @@ export class CapsuleController {
     this.god = false;
     /** Architecture collision (world/solids.js) or null. */
     this.solids = null;
+    /** A moving floor (the Long Walker's back, game/walker/deck.js) or null: floors, walls, and it carries a rider. */
+    this.deck = null;
     /** While true the controller does nothing (e.g. waiting for collision data after a teleport). */
     this.hold = false;
     // Inputs set each frame by the owner.
@@ -101,18 +103,22 @@ export class CapsuleController {
     this.pos.y = y;
     this.vel.x = 0; this.vel.y = 0; this.vel.z = 0;
     this.grounded = true;
+    if (this.deck !== null) this.deck.riding = false;
   }
 
   /** Advance by `this.dt` (set by the caller; a field, not an argument, so no boxing). */
   update() {
     if (this.solids !== null) this.solids.cull(this.pos.x, this.pos.z);
     if (this.hold) { this._acc = 0; return; }
+    // Riding the Walker: move with its back from last frame's pose to this one.
+    if (this.deck !== null) this.deck.carry(this.pos, this);
     this._acc += this.dt;
     const h = controllerTuning.substep;
     let steps = 0;
     // _step takes no arguments: doubles passed to a non-inlined call are boxed (allocation).
     while (this._acc >= h && steps < 12) { this._step(); this._acc -= h; steps++; }
     if (steps === 12) this._acc = 0; // drop backlog after a long stall rather than spiral
+    if (this.deck !== null) this.deck.after(this.pos, this.vel, this.grounded);
   }
 
   _step() {
@@ -143,7 +149,7 @@ export class CapsuleController {
     // Steep terrain slides — unless the feet stand on a built floor above it (a plinth, a landing,
     // a frozen sandfall's ramp over the riser): there the terrain's slope is not underfoot.
     let steep = n.y < T.maxSlopeCos;
-    if (steep && this.grounded && this.solids !== null) { g.qx = p.x; g.qz = p.z; g.sample(); if (p.y > g.h + 0.3) steep = false; }
+    if (steep && this.grounded && (this.solids !== null || this.deck !== null)) { g.qx = p.x; g.qz = p.z; g.sample(); if (p.y > g.h + 0.3) steep = false; }
     // Water: swim where it is deep enough and the body has gone in; walk out where the bed rises.
     const wlv = this.waterLevel;
     if (wlv === wlv) {
@@ -233,11 +239,13 @@ export class CapsuleController {
     p.y += v.y * h;
     // Built things (world/solids.js): walls push out; plinths and floors are ground.
     if (this.solids !== null) this.solids.push(p, v);
+    if (this.deck !== null) this.deck.push(p, v);
 
     g.qx = p.x; g.qz = p.z;
     g.sample();
     let gy = g.h;
     if (this.solids !== null) { const so = this.solids; so.qx = p.x; so.qz = p.z; so.qh = gy; so.qf = p.y; so.floorQ(); gy = so.h; }
+    if (this.deck !== null) { const dk = this.deck; dk.qx = p.x; dk.qz = p.z; dk.qh = gy; dk.qf = p.y; dk.floorQ(); gy = dk.h; }
     if (this.grounded) {
       // Stay glued to the ground over crests unless the drop exceeds snap distance.
       if (p.y - gy <= T.snapDistance) { p.y = gy; v.y = 0; }
