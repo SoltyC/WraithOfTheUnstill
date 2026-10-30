@@ -318,7 +318,9 @@ The canyon's sawtooth ledges are gone: the bake traces every strata riser as a s
 ### D8 — Done (first pass, 2026-10-30)
 
 Four new tree species in the generator: **date palms** (curved ringed trunks, crowns of arching fronds) crowding the oasis well, **acacia** (umbrella thorn, leaves only on the flat top) and **tamarisk** scrub on the meadow's margin, **bleached deadwood** at the margin and, rarely, out in the dunes; each keeps its own colour on the shared leaf sprites. **The oasis pool**: a basin carved into the playa by the bake (`tools/bake-world/oasis.mjs`) and marked a lake, so it is drawn, waded and swum like any lake, ringed with tall reeds. **Straw tussocks** where the meadow gives out onto the sand.
-**Not done:** stilled/restored states for the oasis (choked well, grey palms; the water rising), pebble desert pavement, flowers after rain, the margin's dry grass species as its own blade type, human review.
+**Stilled and restored:** while the erg is stilled the well is choked — the pool's own mesh is hidden and the CPU reads the basin dry, the palms, thorn and tamarisk hang grey, the reeds stand short and dead; restored, the water rises and they green.
+**Checked:** load 17.5 s to ready, no late pipelines or GPU errors after visiting the canyon, slot, hoodoos, temple, a glass field and the oasis.
+**Not done:** pebble desert pavement, flowers after rain (the erg's weather is dry), the margin's dry grass as its own blade type, a dried-mud look for the empty basin, human review.
 
 ### D9 — The dune Shaped (three plus an elite)
 

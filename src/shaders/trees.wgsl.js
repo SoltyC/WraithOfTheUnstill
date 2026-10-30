@@ -184,7 +184,7 @@ ${leafPass ? `
   let sp = uniforms.treeMat.y;
   let lum = dot(albedo, vec3f(0.3, 0.55, 0.15));
   if (abs(sp - 5.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.25, 1.12, 0.6), 0.6); }
-  if (abs(sp - 7.0) < 0.5) { albedo = mix(albedo, lum * vec3f(0.95, 1.08, 0.95), 0.65); }
+  if (abs(sp - 7.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.3, 1.45, 1.2), 0.7); }   // pale enough not to go black in shade
   if (abs(sp - 8.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.2, 1.25, 0.6), 0.45); }
   // Stilled erg (treeMat.z the Dunes' restoration): the oasis palms and the thorn hang grey and dry.
   if (sp > 4.5) { albedo = mix(albedo, lum * vec3f(1.0, 0.92, 0.78) * 0.9, 0.8 * (1.0 - uniforms.treeMat.z)); }
