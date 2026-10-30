@@ -21,6 +21,7 @@ import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 import { WorldData } from '../world/worldData.js';
+import { OASIS_POOL } from '../world/oasis.js';
 
 const N = 2048, C = 4, HALF = 4096;
 /** How far (texels of C m) a lake's level may flood past the bake's mask onto lower real ground. */
@@ -174,22 +175,38 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   const wl = new Float32Array(N * N);
   for (let k = 0; k < N * N; k++) wl[k] = !Number.isNaN(wet[k]) ? wet[k] : !Number.isNaN(rLevel[k]) ? rLevel[k] : -1e4;
   atmo.waterTex.update(wl);
-  // Geometry: lakes — per row, runs of texels at one level become one quad.
-  const pos = [], idx = [], flow = [];
-  for (let j = 0; j < N; j++) {
-    let i = 0;
-    while (i < N) {
-      const v = wet[j * N + i];
-      if (Number.isNaN(v)) { i++; continue; }
-      let e = i + 1;
-      while (e < N && wet[j * N + e] === v) e++;
-      const x0 = -HALF + i * C, x1 = -HALF + e * C, z0 = HALF - j * C, z1 = HALF - (j + 1) * C, b = pos.length / 3;
-      pos.push(x0, v, z0, x1, v, z0, x1, v, z1, x0, v, z1);
-      for (let k = 0; k < 4; k++) flow.push(0, 0, 0, -1); // a lake: flat at its level
-      idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
-      i = e;
+  // The oasis pool (world/oasis.js) has water only once the erg is restored: its texels are drawn
+  // by a mesh of their own (shown by setOasis) and read dry on the CPU while it is choked.
+  const oasisT = new Uint8Array(N * N);
+  {
+    const R = OASIS_POOL.r + 8;
+    for (let j = Math.floor((HALF - OASIS_POOL.z - R) / C); j <= Math.floor((HALF - OASIS_POOL.z + R) / C); j++) for (let i = Math.floor((OASIS_POOL.x - R + HALF) / C); i <= Math.floor((OASIS_POOL.x + R + HALF) / C); i++) {
+      const x = -HALF + (i + 0.5) * C, z = HALF - (j + 0.5) * C;
+      if ((x - OASIS_POOL.x) ** 2 + (z - OASIS_POOL.z) ** 2 < R * R) oasisT[j * N + i] = 1;
     }
   }
+  let oasisFull = true;
+  // Geometry: lakes — per row, runs of texels at one level become one quad.
+  const lakeQuads = (pos, idx, flow, oasis) => {
+    for (let j = 0; j < N; j++) {
+      let i = 0;
+      while (i < N) {
+        const v = wet[j * N + i];
+        if (Number.isNaN(v) || oasisT[j * N + i] !== oasis) { i++; continue; }
+        let e = i + 1;
+        while (e < N && wet[j * N + e] === v && oasisT[j * N + e] === oasis) e++;
+        const x0 = -HALF + i * C, x1 = -HALF + e * C, z0 = HALF - j * C, z1 = HALF - (j + 1) * C, b = pos.length / 3;
+        pos.push(x0, v, z0, x1, v, z0, x1, v, z1, x0, v, z1);
+        for (let k = 0; k < 4; k++) flow.push(0, 0, 0, -1); // a lake: flat at its level
+        idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
+        i = e;
+      }
+    }
+  };
+  const pos = [], idx = [], flow = [];
+  lakeQuads(pos, idx, flow, 0);
+  const oPos = [], oIdx = [], oFlow = [];
+  lakeQuads(oPos, oIdx, oFlow, 1);
   // Rivers: a grid over their texels with shared corners (the level averaged over the river texels
   // meeting there), so the surface runs on smoothly; flow and rapids (the level's fall along the flow).
   let riverQuads = 0;
@@ -218,12 +235,16 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     idx.push(a0, a2, a1, a0, a3, a2);
     riverQuads++;
   }
-  const make = (name, fragment, absorb) => {
+  const meshOf = (name, P, I, Fl, absorb) => {
     const mesh = new Mesh(name, scene);
-    const vd = new VertexData(); vd.positions = new Float32Array(pos); vd.indices = new Uint32Array(idx); vd.applyToMesh(mesh, false);
-    mesh.setVerticesData('flow', new Float32Array(flow), false, 4);
+    const vd = new VertexData(); vd.positions = new Float32Array(P); vd.indices = new Uint32Array(I); vd.applyToMesh(mesh, false);
+    mesh.setVerticesData('flow', new Float32Array(Fl), false, 4);
     mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true; mesh.freezeWorldMatrix();
     mesh.alphaIndex = absorb ? 0 : 1;
+    return mesh;
+  };
+  const make = (name, fragment, absorb) => {
+    const mesh = meshOf(name, pos, idx, flow, absorb);
     const mat = new ShaderMaterial(name, scene, { vertex: 'water', fragment }, {
       attributes: ['position', 'flow'],
       uniforms: ['viewProjection', 'levels', 'waterParams', 'windField', ...ENV_UNIFORMS],
@@ -246,6 +267,10 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   };
   const params = new Vector4(0, 1, 0, 0);
   const absorb = make('waterAbsorb', 'waterAbsorb', true), surface = make('waterSurface', 'waterSurface', false);
+  // The oasis's own pair, sharing the materials (no new pipelines).
+  const oasisMeshes = oIdx.length ? [meshOf('oasisAbsorb', oPos, oIdx, oFlow, true), meshOf('oasisSurface', oPos, oIdx, oFlow, false)] : [];
+  if (oasisMeshes.length) { oasisMeshes[0].material = absorb.mat; oasisMeshes[1].material = surface.mat; }
+  const dry = (o) => oasisT[o] === 1 && !oasisFull;
 
   // Ripples: a ring of slots (x, z, start time, strength).
   const rip = new Float32Array(WATER_RIPPLES * 4);
@@ -259,13 +284,20 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   }
 
   const water = {
-    meshes: [absorb.mesh, surface.mesh], materials: [absorb.mat, surface.mat], quads: idx.length / 6, riverQuads,
+    meshes: [absorb.mesh, surface.mesh, ...oasisMeshes], materials: [absorb.mat, surface.mat], quads: idx.length / 6, riverQuads,
+    /** The oasis pool full (the erg restored) or choked and dry; true when that changed what is drawn. */
+    setOasis(full) {
+      if (full === oasisFull) return false;
+      oasisFull = full;
+      for (const m of oasisMeshes) m.setEnabled(full);
+      return true;
+    },
     /** Lake level at (x, z) (m), or NaN where there is none (the rim under the shore excluded). */
     levelAt(x, z) {
       const i = Math.floor((x + HALF) / C), j = Math.floor((HALF - z) / C);
       if (i < 0 || j < 0 || i >= N || j >= N) return NaN;
       const o = j * N + i;
-      return rim[o] ? NaN : wet[o];
+      return rim[o] || dry(o) ? NaN : wet[o];
     },
     /** Field query (no doubles as arguments: hot paths): qx, qz → levelQ() → lv (NaN: no water). */
     qx: 0.5, qz: 0.5, lv: 0.5, fx: 0.5 - 0.5, fz: 0.5 - 0.5,
@@ -274,6 +306,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       this.fx = 0; this.fz = 0;
       if (i < 0 || j < 0 || i >= N || j >= N) { this.lv = NaN; return; }
       const o = j * N + i;
+      if (dry(o)) { this.lv = NaN; return; }
       this.lv = level[o];
       if (this.lv === this.lv) return;
       // Not the lake's mask: a river, else the flooded shallows and rim (the mesh's own level).
@@ -287,7 +320,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     wetAt(x, z) {
       const i = Math.floor((x + HALF) / C), j = Math.floor((HALF - z) / C);
       if (i < 0 || j < 0 || i >= N || j >= N) return false;
-      const o = j * N + i; return !Number.isNaN(wet[o]) || !Number.isNaN(rLevel[o]);
+      const o = j * N + i; return !dry(o) && (!Number.isNaN(wet[o]) || !Number.isNaN(rLevel[o]));
     },
     /** A ripple now (or at a past time t): the scripted walks of photo spots lay their wake with it. */
     ripple(x, z, t, s, dx = 0, dz = 0) { emit(x, z, t, s, dx, dz); },

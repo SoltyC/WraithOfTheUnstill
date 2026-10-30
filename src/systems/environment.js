@@ -164,6 +164,8 @@ export async function addEnvironmentSystems(g) {
     wa.time = clock.simTime; wa.px = controller.pos.x; wa.py = controller.pos.y; wa.pz = controller.pos.z;
     wa.speed = Math.sqrt(controller.vel.x * controller.vel.x + controller.vel.z * controller.vel.z);
     wa.swimming = controller.swimming; wa.strokePhase = g.wraithView.wraith.swimPhase;
+    // The oasis's well is choked while the erg is stilled: its pool fills once the Dunes are restored.
+    if (wa.setOasis(ws.restoration.dunes === 'restored')) engine.snapshotRenderingReset();
     wa.update();
   } });
   // Grass: its clock and the push (its wind is the field; a stilled meadow stands rigid).
@@ -184,7 +186,7 @@ export async function addEnvironmentSystems(g) {
   const HAZE = 0.0032; // 1/m at the ground under a full canopy (~1 km visibility; local, 200 m)
   loop.add({ name: 'trees', update: () => {
     const tr = g.trees; if (!tr) return;
-    tr.camX = camera.position.x; tr.camZ = camera.position.z; tr.time = clock.simTime;
+    tr.camX = camera.position.x; tr.camZ = camera.position.z; tr.time = clock.simTime; tr.dunesRestored = restoration.dunes;
     tr.update();
     // Forest haze (PLAN.md M4b): thickens under the canopy around the camera.
     const hz = post.fog.haze;

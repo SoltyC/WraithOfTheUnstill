@@ -186,6 +186,8 @@ ${leafPass ? `
   if (abs(sp - 5.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.25, 1.12, 0.6), 0.6); }
   if (abs(sp - 7.0) < 0.5) { albedo = mix(albedo, lum * vec3f(0.95, 1.08, 0.95), 0.65); }
   if (abs(sp - 8.0) < 0.5) { albedo = mix(albedo, lum * vec3f(1.2, 1.25, 0.6), 0.45); }
+  // Stilled erg (treeMat.z the Dunes' restoration): the oasis palms and the thorn hang grey and dry.
+  if (sp > 4.5) { albedo = mix(albedo, lum * vec3f(1.0, 0.92, 0.78) * 0.9, 0.8 * (1.0 - uniforms.treeMat.z)); }
   // Inner crown is darker (light has crossed the leaves above): height in tree and facing — but
   // never black (light comes through and between the leaves).
   let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, info.w);

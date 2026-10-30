@@ -94,6 +94,9 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   // 0.46 ms against 0.65 ms drawn first, in a rim view.
   const zRank = (sm) => { const n = sm.getMesh().name; return n.startsWith('treeZ') ? 0 : n.startsWith('canyon') ? 3 : 2; };
   scene.setRenderingOrder(0, (a, b) => (zRank(a) - zRank(b)) || RenderingGroup.PainterSortCompare(a, b));
+  // The erg's species share one material vector each, its z the Dunes' restoration (owner: dunesRestored):
+  // stilled, their leaves hang grey and dry.
+  const desertMat = SPECIES_IDS.map((sid, si) => (si >= 5 ? new Vector4(MAT[SPECIES[sid].bark], si, 1, 0) : null));
   SPECIES_IDS.forEach((sid, si) => {
     const barkLayer = MAT[SPECIES[sid].bark];
     for (let v = 0; v < VARIANTS; v++) for (const lod of [0, 1]) {
@@ -121,7 +124,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         bindEnvironment(mat); bindAtmosphere(mat, atmo);
         if (leaf) { mat.setTexture('leafAtlas', atlas); mat.setTexture('leafSurface', atlases.surface); } else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-        mat.setVector4('treeParams', params); mat.setArray4('windField', wind.block); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', new Vector4(barkLayer, si, 0, 0));
+        mat.setVector4('treeParams', params); mat.setArray4('windField', wind.block); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', si >= 5 ? desertMat[si] : new Vector4(barkLayer, si, 0, 0));
         mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
         mat.backFaceCulling = leaf ? false : true;
         mesh.material = mat;
@@ -341,8 +344,11 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     /** True: keep the current placement however far the camera moves (filmed camera moves: no trees fading in and out at the
      *  edge, no shadows shifting with them). */
     hold: false,
+    /** Owner field: the Dunes' restoration 0 (stilled) … 1 (restored). */
+    dunesRestored: 1,
     update() {
       params.x = this.time; params.y = this.wind; params.z = this.windX; params.w = this.windZ;
+      for (let k = 5; k < desertMat.length; k++) desertMat[k].z = this.dunesRestored;
       const now = (performance.now() - t0) * 0.001;
       for (const l of lodV) l.w = now;
       this.canopy += (canopyTarget - this.canopy) * Math.min(1, (now - lastNow) * 0.7); lastNow = now;
