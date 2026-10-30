@@ -151,6 +151,10 @@ function colossusHead(b, facing) {
   for (const [y0, y1, d] of [[0.9, 1.35, 3.85], [0.35, 0.8, 3.75]]) { const [x, z] = P(0, d); b.box(x, z, y0, y1, 1.5, 0.22, facing, MAT.STONE, 505 + y0 * 10, { ...NS, solid: false }); } // lips
   { const [x, z] = P(0, 3.4); b.box(x, z, -1.2, 0.2, 2.0, 0.6, facing, MAT.STONE, 509, { ...NS, solid: false }); }    // chin
   for (const s of [-1, 1]) { const [x, z] = P(s * 1.7, 3.62); b.box(x, z, 5.05, 5.3, 0.95, 0.12, facing, MAT.GLYPH, 506 + s, { ...NS, carve: 1, solid: false }); } // closed eyes
+  for (const s of [-1, 1]) {
+    { const [x, z] = P(s * 2.05, 2.95); blob(b, x, z, -1.4, 4.7, 1.4, 1.0, facing, MAT.STONE, 520 + s, { lump: 0.05 }); }       // cheek and jaw, worn round
+    { const [x, z] = P(s * 3.75, 0.6); blob(b, x, z, 2.2, 6.0, 0.55, 1.0, facing, MAT.STONE, 523 + s, { lump: 0.1 }); }          // ear
+  }
   { const [x, z] = P(0, -1.6); b.frustum(x, z, 6.0, 13.5, 3.6, 3.0, 4.6, 3.4, facing, MAT.GLYPH, 510); }             // headdress
   { const [x, z] = P(-1.4, -1.0); b.box(x, z, 13.4, 14.6, 2.2, 1.9, facing - 0.3, MAT.STONE, 511, { ...NS, tilt: 0.35, solid: false }); } // its broken crown
   for (let k = 0; k < 6; k++) { const a = hh(k, 61) * 6.28, d = 8 + 6 * hh(k, 62), [x, z] = [Math.cos(a) * d, Math.sin(a) * d]; b.box(x, z, -0.5, 0.3 + 0.6 * hh(k, 63), 0.7 + 0.5 * hh(k, 64), 0.5, a, MAT.STONE, 512 + k, { ...NS, tilt: (hh(k, 65) - 0.5) * 0.4 }); }

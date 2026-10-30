@@ -333,7 +333,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   } else if (mid == 19) {
     // Battle glass (Phase 9 D7): sand fused by an old blow — dark, clear green-amber, glossy; the SSR
     // pass reflects the world in it. Fracture planes run through it, each catching the light.
-    let tint = mix(vec3f(0.05, 0.11, 0.085), vec3f(0.12, 0.085, 0.035), step(0.7, fract(seed * 0.618)));
+    // Bottle green running to amber through a piece (where the sand fused hotter), not facet by facet.
+    let tint = mix(vec3f(0.06, 0.09, 0.07), vec3f(0.1, 0.08, 0.04), smoothstep(0.1, 0.7, n2 * 0.5 + 0.5));
     albedo = tint * (0.85 + 0.3 * smoothstep(0.2, 0.9, n1 * 0.5 + 0.5));
     rough = 0.04; ssr = 0.6 * (0.15 + 0.85 * pow(1.0 - max(dot(N, V), 0.0), 3.0)); ao = 1.0; glassK = 1.0;
   } else if (mid == 4) {
@@ -440,11 +441,17 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col *= 0.45;
     let NV = max(dot(N, V), 0.0);
     let F = 0.04 + 0.96 * pow(1.0 - NV, 5.0);
-    col += shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * F * 1.6;
-    col += (shIrradiance(-V) * uniforms.envMisc.w + key * vis * 0.08) * (albedo * 6.0) * (1.0 - F) * 0.55;
+    col += shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * (F * 1.6 + 0.06);
+    // Behind it: the sky where the view rises, else the sunlit sand it stands in (glass sits on the erg).
+    let sandBehind = vec3f(0.62, 0.48, 0.32) * (key * 0.55 + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
+    let behind = mix(sandBehind, shIrradiance(-V) * uniforms.envMisc.w, smoothstep(-0.05, 0.3, -V.y));
+    col += behind * (albedo * 6.0) * (1.0 - F) * 0.3 * (0.25 + 0.75 * NV);   // seen edge-on, more glass to see through: darker
     let back = pow(clamp(dot(-V, L), 0.0, 1.0), 4.0) * (0.4 + 0.6 * clamp(-nl * 0.5 + 0.5, 0.0, 1.0));
-    let frac = smoothstep(0.93, 0.985, fract(dot(wp, vec3f(1.3, 0.7, -1.1)) * 0.9 + n2 * 0.6)) + smoothstep(0.95, 0.99, fract(dot(wp, vec3f(-0.6, 1.4, 0.8)) * 1.3 + n1 * 0.4));
-    col += key * vis * (albedo * 6.0 + vec3f(0.3, 0.2, 0.06)) * back * (0.5 + 0.8 * frac);
+    // Fracture planes: thin bright seams through the body, not slabs.
+    let frac = smoothstep(0.965, 0.99, fract(dot(wp, vec3f(1.3, 0.7, -1.1)) * 1.7 + n2 * 0.6)) + smoothstep(0.97, 0.993, fract(dot(wp, vec3f(-0.6, 1.4, 0.8)) * 2.3 + n1 * 0.4));
+    // Through-light varies with the glass's thickness (the noise): bright where thin, dark where thick.
+    col += key * vis * (albedo * 6.0) * back * (0.15 + 0.35 * smoothstep(-0.3, 0.6, n1) + 1.4 * frac);
+    col += key * (albedo * 6.0) * frac * 0.05;
     col += key * vis * pow(max(dot(N, H), 0.0), 900.0) * 14.0 * clamp(nl, 0.0, 1.0);
   }
   // Firelight on the camp's stones, packs and snow: falls off from the hearth (site origin).
