@@ -57,3 +57,74 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);
 }
 `;
+
+// The bends' beams (render/slotShafts.js slotBends): a strip from the rim down along the sun, turned
+// to the camera round its axis; soft-edged, dusty, brightest looking toward the sun. Shown while the
+// sun is high, leaning along the slot at the sun's elevation, and only when the rim opening is in sun
+// (the shadow map at the beam's top).
+export const slotBeamVertexWGSL = /* wgsl */ `
+attribute position: vec3f;   // the beam's top (just under the rim)
+attribute beam: vec4f;       // side −1/1, t down the beam 0..1, seed, depth to the floor (m)
+attribute beamDir: vec2f;    // the slot's direction there
+uniform viewProjection: mat4x4f;
+uniform cameraPosition: vec3f;
+uniform keyDir: vec3f;
+varying vWorldPos: vec3f;
+varying vBeam: vec4f;
+varying vTop: vec3f;
+varying vAlign: f32;
+@vertex
+fn main(input: VertexInputs) -> FragmentInputs {
+  let b = vertexInputs.beam; let top = vertexInputs.position; let L = uniforms.keyDir;
+  // Down at the sun's elevation, leaning along the slot (art-directed: across it, the real ray would
+  // strike the wall a metre down) until it reaches the floor's level.
+  let len = b.w / max(L.y, 0.25);
+  let lh = vec2f(L.x, L.z); let d2 = vertexInputs.beamDir;
+  let along = d2 * select(-1.0, 1.0, dot(lh, d2) >= 0.0) * length(lh);
+  let axis = -normalize(vec3f(along.x, L.y, along.y));
+  var wp = top + axis * len * b.y;
+  let toCam = normalize(uniforms.cameraPosition - wp);
+  let right = normalize(cross(axis, toCam) + vec3f(1e-5, 0.0, 0.0));
+  wp += right * b.x * (0.9 + 1.4 * b.y) * (0.8 + 0.4 * b.z);
+  // Shown while the sun is high (late morning to early afternoon).
+  let align = smoothstep(0.45, 0.66, L.y);
+  vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
+  if (align < 0.002 || length(top.xz - uniforms.cameraPosition.xz) > 120.0) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
+  vertexOutputs.vWorldPos = wp;
+  vertexOutputs.vBeam = b;
+  vertexOutputs.vTop = top;
+  vertexOutputs.vAlign = align;
+}
+`;
+
+export const slotBeamFragmentWGSL = /* wgsl */ `
+${ENV_DECL}
+uniform shaftParams: vec4f;
+varying vWorldPos: vec3f;
+varying vBeam: vec4f;
+varying vTop: vec3f;
+varying vAlign: f32;
+${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
+${SHADOW_RECEIVE_WGSL}
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
+  let wp = fragmentInputs.vWorldPos; let b = fragmentInputs.vBeam;
+  let cam = uniforms.cameraPosition; let L = uniforms.keyDir;
+  let dist = length(cam - wp);
+  // Soft across, fading in under the rim and out toward the floor; not up against the camera.
+  let fade = (1.0 - b.x * b.x) * smoothstep(0.0, 0.12, b.y) * (1.0 - smoothstep(0.7, 1.0, b.y)) * smoothstep(1.5, 6.0, dist);
+  let sunTop = max(shadowVisibilityFast(fragmentInputs.vTop + vec3f(0.0, 6.0, 0.0), cam), uniforms.shaftParams.z);
+  if (fade * fragmentInputs.vAlign * sunTop < 0.002) { discard; }
+  let V = normalize(cam - wp);
+  let phase = 0.25 + 1.6 * pow(max(dot(-V, L), 0.0), 5.0);
+  let t = uniforms.shaftParams.x;
+  // Streaks along the beam (the opening's ragged edge) and dust drifting through.
+  let streak = noised(vec2f(b.x * 2.2 + b.z * 30.0, b.y * 1.5)).x * 0.5 + 0.5;
+  let dust = noised(wp.xz * 0.6 + vec2f(wp.y * 0.4, t * 0.05)).x * 0.5 + 0.5;
+  let mote = smoothstep(0.93, 0.99, noised(wp.xz * 3.1 + vec2f(wp.y * 2.3 - t * 0.3, b.z * 17.0)).x * 0.5 + 0.5);
+  let k = 0.22 * uniforms.shaftParams.y * fade * fragmentInputs.vAlign * sunTop * phase * (0.45 + 0.4 * streak + 0.3 * dust + 1.2 * mote);
+  let col = atmoKeyColor() * vec3f(1.0, 0.86, 0.66) * k;
+  fragmentOutputs.color = vec4f(displayTransform(col, uniforms.fogParams.z * atmoExposure()), 0.0);
+}
+`;
