@@ -433,3 +433,14 @@ Terrain profile (2026-10-10, `p8-forest-floor`, 0.7): toggling the terrain at re
 | p9s1-close-noon | 10.45 | open sand |
 
 Cliff kit alone (on − off): +0.34 ms canyon floor, +0.46–0.53 ms rim view (+0.08 shadow cascade 1).
+
+## 30 October (later) — the erg's open matters (same setup)
+
+| View | GPU mean (ms) | Note |
+|---|---|---|
+| p9r-galleries-dawn | 13.10 | + warm canyon shade (clipmap enclosure), canyon flora |
+| p9r-hoodoos-noon | 13.06–13.13 | + wadi water/flowers in range |
+| p9r-braids-restored | 9.93 | the braids running at dusk, flowers on the banks |
+| p7-monastery-approach | 12.88 | reference (meadow side) |
+
+The clipmap's enclosure term (6 ground lookups per vertex, flats only) and the wadi water + flowers together add ~0.15–0.25 ms on the erg's canyon views; the first version (8 lookups across levels) cost ~0.45 ms. Load 17.1–17.5 s to ready. No late pipelines at any p9r spot.
