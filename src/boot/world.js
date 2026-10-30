@@ -174,5 +174,7 @@ export async function createWorld(g) {
   terrainState.brushFx = sandDust.bursts;
 
   await canyon.whenReady;
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
+  // Light shafts in the slots (D7b): volumetric slices across them, lit where the sun gets in.
+  const slotShafts = (await import('../render/slotShafts.js')).createSlotShafts(scene, atmosphere, shadows, bindShadows, canyon.spines, canyon.chunks);
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
 }

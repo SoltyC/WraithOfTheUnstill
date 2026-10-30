@@ -180,7 +180,7 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
           }
           chunks.push(c);
         });
-        spines = m.spines;
+        spines = m.spines; view.spines = spines;
         ready = view.ready = true;
         engine.snapshotRenderingReset();
         resolve();
