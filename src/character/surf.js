@@ -44,6 +44,7 @@ export class Surf {
     // Inputs (fields, set by the owner each frame).
     this.want = false;          // traversal held
     this.canSurf = false;       // the surface underfoot can be surfed
+    this.slick = 0;             // 0 snow … 1 glass underfoot (D7's fused ground): little friction or drag
     this.steer = 0.5 - 0.5;     // −1..1: turn left … right (fraction of the grip limit)
     this.throttle = 0.5 - 0.5;  // −1 brake … +1 push
     this.grounded = true;
@@ -93,7 +94,7 @@ export class Surf {
       // Downhill along the heading: horizontal part of gravity's tangential component.
       a += T.gravity * (nx * hx + nz * hz) * ny;
       // Drag.
-      a -= T.drag * this.speed * this.speed + T.friction;
+      a -= (T.drag * this.speed * this.speed + T.friction) * (1 - 0.8 * this.slick);
       if (this.exiting || this.throttle < 0) a -= T.brake * (this.exiting ? 1 : -this.throttle);
     } else {
       a -= T.drag * this.speed * this.speed;

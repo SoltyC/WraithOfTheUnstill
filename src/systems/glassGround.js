@@ -16,7 +16,18 @@ export function addGlassGroundSystem(g) {
   if (!sites.length || !terrainState) return;
   const done = new Uint8Array(sites.length);
   let t = 0;
-  g.glassGround = { sites, done };
+  // Field query (no doubles as arguments): qx, qz → glassQ() → hit — fused ground there (a stamped
+  // piece's, within its radius): surfable and slick (character/surf.js slick).
+  const gg = { sites, done, qx: 0.5, qz: 0.5, hit: false,
+    glassQ() {
+      this.hit = false;
+      for (let i = 0; i < sites.length; i++) {
+        if (!done[i]) continue;
+        const s = sites[i], dx = this.qx - s.at[0], dz = this.qz - s.at[1], r = s.glassR * 0.85;
+        if (dx * dx + dz * dz < r * r) { this.hit = true; return; }
+      }
+    } };
+  g.glassGround = gg;
   loop.add({ name: 'glassGround', update: () => {
     t += clock.dt;
     if (t < 0.25) return;

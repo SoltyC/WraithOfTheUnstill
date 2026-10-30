@@ -92,7 +92,7 @@ async function boot() {
   sysClimb.addClimbSystem(g);
   if (g.water) { g.controller.water = g.water; g.arm.water = g.water; } // swimming; the camera stays above the surface
   g.streams = new (await import('./game/restored/streams.js')).Streams((await import('../data/restored.json')).default.streams, g.restoration); // the restored biomes' rising air (docs §7)
-  loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind, streams: g.streams }));
+  loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind, streams: g.streams, world: g }));
   (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
   (await import('./systems/weapons.js')).addWeaponSystem(g); // before the Wraith (the attack pose) and the creatures (the blows it lands)

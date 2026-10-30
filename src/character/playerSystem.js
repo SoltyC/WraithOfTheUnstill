@@ -50,6 +50,10 @@ export function createPlayerSystem(ctx) {
         sf.want = d[Action.Traverse] === 1 && !controller.swimming; // no surfing in the water
         if (material) { material.mqx = controller.pos.x; material.mqz = controller.pos.z; material.sampleMaterial(); sf.canSurf = material.mat === 0; }
         else sf.canSurf = true;
+        // Glass ground (D7) is surfable and slick.
+        const gg = ctx.world ? ctx.world.glassGround : null;
+        sf.slick = 0;
+        if (gg) { gg.qx = controller.pos.x; gg.qz = controller.pos.z; gg.glassQ(); if (gg.hit) { sf.canSurf = true; sf.slick = 1; } }
         // Glide (hold traversal in the air): the same hold, the same steering.
         gl.want = d[Action.Traverse] === 1 && !controller.swimming;
         if (surfing) {
