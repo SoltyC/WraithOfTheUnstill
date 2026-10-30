@@ -298,6 +298,16 @@ Merged from `codex/sand-surf` (e5d4555): one surf controller with sand tuning (f
   - Saved as a single world-time-based offset, not as state. Ruins and the camp sit on hard ground or in "anchored" zones where the meso weight is masked, so nothing important gets buried by drift.
   - **Story use:** the release uncovers a buried ruin over a few seconds in the cinematic, a scripted local phase.
 
+### D6 — Done (integrated and enabled, 2026-10-30)
+
+Merged from `codex/desert-storm` (ec27b3d): a world-anchored storm front with shared CPU/GPU density, its lighting (the sun to a dim disc, no luminous blue shadows), gusting wind that drives the mantle and robe, near-field sand streaks, storm audio, a saved exposure history and Ridge wind shelter. Then switched on and finished:
+- **Weather:** the restored erg's cycle is clear → heat haze → **sandstorm** → haze → clear; the stilled erg keeps clear and still haze only. When the cycle turns to sandstorm with the Wraith in the erg, the front forms 2.4 km upwind and rolls in on the wind at 32 m/s; when it moves on, the storm dies away where it is. A forced storm (photo spot, dev overlay) starts with the camera inside it, or with the front arriving 700 m out (`stormStart: 'arriving'`).
+- **Erasure:** a storm over the Wraith wears sand marks away and lets the ripples back — resident sand heals ~25× faster at full density (a 0.30 m footprint is 0.045 m after 30 s, against 0.27 m in clear air); pages stored away heal on reload by the storm erosion that passed meanwhile (an erosion clock stored with each page). The exposure history now forgets its oldest half when full (hours of storms) instead of throwing.
+- **Dune migration (restored):** the dunes creep downwind ~1 m an in-game day — one saved number (`duneShift`), reaching the terrain in 0.25 m steps on the GPU clipmap and the CPU collision together (parity 1.2 / 1.7 mm at a 30 m shift), held still in anchored zones round the ruins, glass and oasis.
+- **Spots:** `p9-storm-arriving`, `p9-storm-inside`.
+- **Cost:** 12.4 ms inside a storm at 1440p/0.7 (11.4 in clear air nearby); no late pipelines.
+**Not done:** the front reads as a haze bank swallowing the far hills rather than a billowing wall; the storm hiding the Shaped's telegraphs (D9); a storm's erosion of pages stored away is measured at the Wraith (storms are kilometres wide), not per page, and pages already saved before a load do not carry their erosion; the release's scripted local uncovering of a buried ruin (D10); human review.
+
 ### D7 — Ruins and glass
 
 - **Half-buried Shaper ruins** (architecture builders, new kits in `world/ruinKits.js`), in the Shapers' visual language from the monastery and shrines:

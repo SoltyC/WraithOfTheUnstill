@@ -470,3 +470,12 @@ At p9r-galleries-dawn, trees off saves 0.32 ms (the canyon flora); the canyon ki
 | p9d2-crest-500 | 7.14 |
 
 The branch's 512-cell clipmap measured 15.79 (canyon) and 15.80 (meadow) before it was set back to 256. Relaxation compute (32 m/s stress, eight Shaped, fresh sessions): mean 0.155, p95 0.174, max 0.45 / 0.57 / 0.55 ms (reports `docs/phase-9/relaxation/integ-fresh-{1,2,3}.json`). Load to ready 30 s before and after the merge on the machine's state at the time (18 s earlier in the day).
+
+## 30 October — D6 integrated (same setup)
+
+| View | GPU mean (ms) |
+|---|---|
+| p9-storm-inside | 12.36 |
+| p9-storm-arriving | 8.80 (capture: the front held outside) |
+| p9r-pavement-far | 11.41 (clear, nearby) |
+| p8-meadow-golden | 14.37 |

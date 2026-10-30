@@ -47,6 +47,13 @@ Worth walking too (no fixed spot):
 - **The margin's dry grass**: toward the erg the meadow's grass dries to straw, shorter and thinning in patches.
 - **Cliff fix**: two bake errors left some canyon risers as bare smeared sand slopes. Contour smoothing pulled cliff lines up onto the rock, and the floor trace used the spine's floor instead of the real one. Both are fixed.
 
+## Later additions (D2, D3, D6)
+
+- **Sand slumps** (D2): pile sand steeply (a Ridge on sand, a surf berm) and it settles to 34° in seconds.
+- **Sand-surf** (D3): with Stone (`?stone=1` until the Walker), hold surf on sand; carve a slip face for the sheets and the boom. Films: `screenshots/d3-slipfaces-integ/`.
+- **Sandstorms** (D6): `p9-storm-arriving` (watch for ~25 s: the front arrives), `p9-storm-inside`; or the dev overlay's weather → sandstorm in the restored erg. Walk a trail, then stand in the storm: it fills in within a minute.
+- **Migration** (D6): too slow to watch (~1 m an in-game day); it is saved and shows over a long game.
+
 ## Known gaps
 
 - **Full-scene refraction in the glass** is not done. It needs a copy of the opaque scene behind the glass (a new pass in the post chain). The glass's see-through term (the sky and sand behind, modelled) stands in.
