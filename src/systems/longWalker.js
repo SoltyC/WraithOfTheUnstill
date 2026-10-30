@@ -276,15 +276,17 @@ export function addLongWalkerSystem(g) {
   }
 
   // ── Frame ────────────────────────────────────────────────────────────────────────────────────
-  let moundT = 0, devDone = false, circT = 0, shakeT = 20, warnT = -1, kickT = 0, balkT = -1, skitT = 30, offT = 0, ringT = 0, wakeFx = 0;
+  let boardAt = -1, moundT = 0, devDone = false, circT = 0, shakeT = 20, warnT = -1, kickT = 0, balkT = -1, skitT = 30, offT = 0, ringT = 0, wakeFx = 0;
   let wasRiding = false, wasDying = false, shrineX = NaN, shrineZ = NaN, checkX = NaN, checkZ = NaN, glyphT0 = 0, glyphT1 = 0;
   const seen = new Uint32Array(64), gustSeen = new Uint32Array(8), ringed = new Uint8Array(6);
   const hasDust = (k) => W.swing[k] > 0.04 && W.swing[k] < 0.97;
 
   function devHooks() {
     devDone = true;
-    if (!dev && !spotId.startsWith('p9-walker')) return;
-    const mode = dev || spotId.replace('p9-walker-', '');
+    const mode = dev || (spotId.startsWith('p9-walker-') ? spotId.replace('p9-walker-', '') : '');
+    if (!['buried', 'wake', 'walk', 'ride', 'home', 'release'].includes(mode)) return;
+    // Ride and home start the Wraith on its back (once the spot's own teleport has put it down).
+    if (mode === 'ride' || mode === 'home') boardAt = clock.simTime + 2.5;
     if (mode === 'release') { flags.add(FLAG.WOKE); flags.add(FLAG.BOARDED); flags.add(FLAG.RELEASED); worldState.restoration.dunes = 'restored'; placed = false; g.walkerPlaced = false; return; }
     if (mode === 'buried') return;
     flags.add(FLAG.WOKE); g.elements?.unlock('stone');
@@ -294,6 +296,7 @@ export function addLongWalkerSystem(g) {
       // 150 m out east of the camp, facing it: it turns home and walks to its kneeling place.
       saved = { x: CAMP_WELL[0] + 150, z: CAMP_WELL[1] - 20, yaw: -Math.PI / 2, mode: MODE.STEER };
     }
+    if (mode === 'ride') flags.add(FLAG.BOARDED);
     placed = false; g.walkerPlaced = false;
   }
 
@@ -301,6 +304,10 @@ export function addLongWalkerSystem(g) {
     const dt = clock.dt, p = controller.pos;
     if (!devDone) devHooks();
     if (!placed) { if (!tryPlace()) return; afterPlace(); }
+    if (boardAt > 0 && clock.simTime > boardAt && W.state === WK.WALK) {
+      boardAt = -1;
+      io[0] = 0; io[1] = 0.05; io[2] = 6; local3(); controller.teleport(io[3], io[5], io[4]); deck.riding = true;
+    }
     if (!wellSet) setWell();
     AN[2] = W.x + Math.sin(W.yaw) * 25; AN[3] = W.z + Math.cos(W.yaw) * 25; anchor();
     const ev = W.ev;

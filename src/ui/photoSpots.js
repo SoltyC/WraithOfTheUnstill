@@ -39,9 +39,13 @@ export function applySpot(spot, game) {
   // Deferred: the player drops onto the ground once collision for the target is streamed;
   // the follow camera snaps to the player at that moment.
   if (spot.player) { teleport(spot.player[0], spot.player[1]); controller.yaw = spot.facing ?? c.yaw; }
-  if (c.mode === 'free') arm.setPose(c.pos[0], c.pos[1], c.pos[2], c.yaw, c.pitch, c.fov);
+  // Played (the playtest page, not a capture): the Wraith is there and the camera follows it, looking
+  // the way the shot looks; a capture keeps the shot's free camera and hidden Wraith.
+  const play = !!game.play;
+  if (c.mode === 'free' && !play) arm.setPose(c.pos[0], c.pos[1], c.pos[2], c.yaw, c.pitch, c.fov);
+  if (c.mode === 'free' && play) { arm.yaw = c.yaw; arm.pitch = Math.max(0.05, Math.min(0.5, c.pitch)); controller.yaw = spot.facing ?? c.yaw; }
   // Gate shots of the land alone (Phase 2: "a static screenshot with no character").
-  if (game.setPlayerVisible) game.setPlayerVisible(!spot.hidePlayer);
+  if (game.setPlayerVisible) game.setPlayerVisible(play || !spot.hidePlayer);
 }
 
 /** Serialise the current view as a free-camera spot (copied from the overlay). */

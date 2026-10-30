@@ -57,7 +57,7 @@ export async function createGame(g) {
     },
     killShaped() { for (let i = 0; i < shapedMod.MAX_SHAPED; i++) shaped.damage(i, 1e9, false, 0, 0); },
     applySpot(spot) {
-      spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible });
+      spots.applySpot(spot, { controller, arm, teleport: requestTeleport, setPlayerVisible: this.setPlayerVisible, play: !g.capture && !g.qs.get('bot') });
       this.pendingTrail = spot.trail || null;
       this.pendingFreeze = spot.freeze || null;
       this.pendingWalk = spot.walk || null;
