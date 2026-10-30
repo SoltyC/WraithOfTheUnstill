@@ -52,6 +52,7 @@ Worth walking too (no fixed spot):
 - **Sand slumps** (D2): pile sand steeply (a Ridge on sand, a surf berm) and it settles to 34° in seconds.
 - **Sand-surf** (D3): with Stone (`?stone=1` until the Walker), hold surf on sand; carve a slip face for the sheets and the boom. Films: `screenshots/d3-slipfaces-integ/`.
 - **Sandstorms** (D6): `p9-storm-arriving` (watch for ~25 s: the front arrives), `p9-storm-inside`; or the dev overlay's weather → sandstorm in the restored erg. Walk a trail, then stand in the storm: it fills in within a minute.
+- **The dune Shaped** (D9): walk up to a glass field (e.g. 2634, 825) for a Glass-sworn — freeze it, shatter it, and surf the glass it leaves; a Whirler on the flats (2064, 1264) — step out of its dust; stand in a storm for Skitters riding in.
 - **Migration** (D6): too slow to watch (~1 m an in-game day); it is saved and shows over a long game.
 
 ## Known gaps

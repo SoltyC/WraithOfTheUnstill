@@ -4,6 +4,8 @@
 
 # Progress
 
+> **Latest — 30 October, D9 (Claude): the dune Shaped are in the world.** Whirlers and Glass-sworn merged; the user's choices built: Whirler blasts leave local dust clouds (veil only while inside), themed haunts across the erg (none near the camp) and Skitters riding sandstorms, a shattered Glass-sworn fuses its ground to glass. **929 tests pass**; no late pipelines. Details: plan.md "D9 — Done".
+>
 > **Latest — 30 October, D6 (Claude): sandstorms and the moving erg are in.** Merged `codex/desert-storm`; the restored erg's weather now brings sandstorms (front rolls in from 2.4 km upwind; stilled erg never storms); storms erase sand marks (~25× faster healing, erosion clock for stored pages); exposure history no longer throws when full; dunes migrate ~1 m an in-game day (saved shift, GPU/CPU parity 1.2/1.7 mm at 30 m, anchored round ruins/glass/oasis). Spots `p9-storm-arriving`, `p9-storm-inside`. **919 tests pass.** GPU 12.4 ms inside a storm. Details: plan.md "D6 — Done".
 >
 > **Latest — 30 October, D3 (Claude): sand-surfing is in.** Merged `codex/sand-surf`; sand-surf comes with Stone (`?stone=1` until the Walker); smooth low sand berms instead of snow's rubble; avalanche sheets pour off the downhill berm on slip faces (particles; D2 moves the mass); a singing-sand boom swells under them; sand streams off crests; dust-warm speed streaks. Three slip-face films 719/720 surfing, peaks 24.7/17.7/17.1 m/s, no errors; glide→slip face→surf carries 21 m/s. GPU surfing 13.0 ms at 1440p/0.7. **875 tests pass.** Needs your feel and sound review. Details: plan.md "D3 — Done".

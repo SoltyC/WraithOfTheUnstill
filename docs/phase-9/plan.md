@@ -390,6 +390,15 @@ Proposals (the user to choose or replace), made of packed sand, sandstone and ru
   - Stone (after the release): erupted;
   - Ember (Phase 11): fused to a glass statue.
 
+### D9 — Done (integrated, 2026-10-30)
+
+Skitters and Plate-backs were already in (D9a); Whirlers and the Glass-sworn merged from `claude/dune-shaped` (0dc2fa3). The user's choices (2026-10-30):
+- **Whirler blinding: a local dust cloud.** A sand blast or dust devil that strikes leaves a cloud of dust there (~3.6 m across, ~3.5 s), drawn as a ring of sand-dust puffs; the warm screen veil shows only while the Wraith stands in one and clears within half a second of stepping out.
+- **Placement: themed haunts, and storms bring Skitters** (`src/systems/ergHaunts.js`): Skitters in open dune fields, Plate-backs round the temple, obelisks and colossus head, Whirlers on the Galleries' floor and the flats, a Glass-sworn at each of the five glass fields (escorted at the bigger ones). A haunt rises when the Wraith comes within 60 m (never within 250 m of the caravanserai camp, never in the calm after a fight); if the Wraith walks away its Shaped sink back; a cleared haunt stays quiet 20 minutes. In a sandstorm, two or three Skitters rise upwind of the Wraith every 40–60 s.
+- **A Glass-sworn leaves glass ground:** where one shatters the sand fuses (the terrain state's GLASS transform) — glossy, crazed, permanent, and slick to surf (the collision snapshot reads glass as a hard crust).
+- **Checked:** a Glass-sworn's death leaves glass under it (snapshot frozen 2); a Whirler's blast veils at 0.76 while standing in its cloud and 0 after stepping out; three Skitters rode a storm in; GPU 14.4 ms with a Whirler on screen, no late pipelines; 929 tests.
+**Not done:** cleared haunts' quiet is per session (a reload re-arms them); the haunts' difficulty and pacing across the erg want human play; the storm hiding the Shaped's telegraphs beyond their streaming sand is not separately tuned.
+
 ### D10 — The dune Warden and its arena
 
 > **Superseded (2026-10-24):** the fight below is replaced by the "bring it home" design in `docs/gameplay-design.md` §5.1 (follow its glass track, wake it, pursue it on sand-surf, stumble a leg by reshaping the ground, board it, steer it to the camp's dry well). Kept for its arena and quality-gate notes.
@@ -524,6 +533,8 @@ Roughly 16–20 sessions. Sonnet agents build each milestone in a worktree; I re
 - **Order freedom** (cross-biome): if the dunes can be done before the meadow, nothing on the critical path may need Gale. See the cross-biome plan.
 
 ## Decisions for the user
+
+**Answered (user, 2026-10-30, D9):** Whirlers blind with a local dust cloud you can step out of; the Shaped keep themed haunts and storms bring Skitters; a shattered Glass-sworn leaves glass ground.
 
 **Answered (user, 2026-10-24):** (1) the erg grows, **with ravines** — wadis, canyons and slot canyons cut into it (see D0); (2) the Long Walker, **but it must feel unlike the other Wardens** (no "strip the vents, climb, strike three things" formula; see D10 and docs/gameplay-design.md); (3) Skitters, Plate-backs, Whirlers, Glass-sworn: yes; (4) open order; (5) **no world-tier scaling.**
 

@@ -577,3 +577,10 @@ Compute passes build their sampler from the internal texture's cached wrap, whic
 ### 29 October — dormant world-anchored storm volume prototype
 Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU front block, existing quarter-weather shaft spare channels plus depth-aware compose/fallback, post params128→140floats and existing biome buffer. No new texture/draw/pass.26136density parity points,200m core optical visibility, compose-off bit identity, five zero-clipping native poses, nine239sample matched timing pairs(+.031–.117ms) and corrected720frame arrival film pass;799tracked tests/build. Warm diffuse fill/direct-shadow boost fix preserves near readability; default paths stay dormant. Corrected film settles incoming exposure first, validates12exported ground strips and rejects empty before-render probes; initial exposure and lighting trials retained/labelled. Review: docs/phase-9/storm-front-review.md. Wind/streaks/erasure/shelter/audio/Sun-disc/golden-night/allocations/combined quality remain open; full D6 and handoff not complete.
 2026-10-29 — Whirler warning readability: its glass-heart chunks use kind16 inside the existing shared glass/glow shader, so the existing telegraph light fills the core instead of only tiny cracks. Warm quiet baseline is suppressed when frozen; cold veins remain. Same draw/material bindings and attack timing, zero GPU/late errors in15native1440p poses and two420-frame films. Six shipping0.7 live eight-body timing runs pass in this loaded scene; full-world/allocations/refraction/storm/surf gates stay open. See dune-casters-review.md.
+
+
+## 2026-10-30 — D9 choices (user)
+
+- Whirlers blind with a **local dust cloud** where a blast or devil strikes; the veil shows only while the Wraith stands in it (not a full-screen burst).
+- The erg's Shaped keep **themed haunts** (Skitters: dune fields; Plate-backs: ruins; Whirlers: canyon floors and flats; Glass-sworn: the glass fields), none near the camp; **sandstorms bring Skitters**.
+- A shattered **Glass-sworn leaves glass ground** (permanent, slick).
