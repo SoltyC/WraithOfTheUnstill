@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-29T10:56:09.882Z",
+  "initial": {
+    "output": [
+      2560,
+      1440
+    ],
+    "internal": [
+      1792,
+      1008
+    ],
+    "adapter": "nvidia / ampere",
+    "gpuErrors": 0,
+    "late": [],
+    "normalStormReady": false
+  },
+  "reports": [
+    {
+      "repeat": 0,
+      "age": 95,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.383755105309906,
+        "p99": 10.944704055786133,
+        "max": 15.449824333190918
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.457916666567325,
+        "p99": 15.299999952316284,
+        "max": 17
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.430562143046487,
+        "p99": 10.497856140136719,
+        "max": 10.506815910339355
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.49375,
+        "p99": 11.800000071525574,
+        "max": 14.300000071525574
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 95,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.379055007232283,
+        "p99": 10.458815574645996,
+        "max": 10.472384452819824
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.451250000298023,
+        "p99": 11.800000071525574,
+        "max": 14.100000023841858
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.450206772552873,
+        "p99": 10.528639793395996,
+        "max": 10.966496467590332
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.517916666467984,
+        "p99": 12.199999928474426,
+        "max": 13.299999952316284
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 95,
+      "on": false,
+      "localDensity": 0,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.401175542855363,
+        "p99": 10.454912185668945,
+        "max": 10.462976455688477
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.46791666696469,
+        "p99": 13.5,
+        "max": 15.899999976158142
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.468710695849303,
+        "p99": 10.523072242736816,
+        "max": 10.535648345947266
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.53041666696469,
+        "p99": 11.799999952316284,
+        "max": 14.100000023841858
+      }
+    }
+  ],
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Three matched240-frame clear/storm pairs at actual2560x1440 output/1792x1008 internal. Simulation runs during settling and measurement, including cloth and new shared short gusts; front begins inside at age95. Heat off in both. Includes volume, lighting, grains and wind, not isolated gust cost or combined D2/D3/D9b/D12. All samples/pairs retained; zero steady LUT rebuilds, GPU errors and late pipelines."
+}

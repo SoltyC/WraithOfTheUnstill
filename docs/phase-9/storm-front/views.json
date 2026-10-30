@@ -1,0 +1,157 @@
+{
+  "date": "2026-10-29T05:55:19.255Z",
+  "initial": {
+    "camera": [
+      2406,
+      160.8016357421875,
+      900
+    ],
+    "actor": 158.3016357421875,
+    "output": [
+      2560,
+      1440
+    ],
+    "parameters": 140,
+    "stormDefault": false,
+    "gpuErrors": 0,
+    "late": []
+  },
+  "reports": [
+    {
+      "age": 0,
+      "plane": 0,
+      "strength": 0,
+      "localDensity": 0,
+      "desert": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "sceneFrames": 150,
+      "clippedPixels": 0,
+      "meanLuma": 155.49202172616262,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-front-prototype/front-off.png"
+    },
+    {
+      "age": 45,
+      "plane": 1440,
+      "strength": 1,
+      "localDensity": 0,
+      "desert": [
+        1,
+        0,
+        1440,
+        1,
+        158.3016357421875,
+        450,
+        140,
+        5000,
+        45,
+        0.014999999664723873,
+        0,
+        0
+      ],
+      "sceneFrames": 150,
+      "clippedPixels": 0,
+      "meanLuma": 157.20363231152368,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-front-prototype/front-age-45.png"
+    },
+    {
+      "age": 60,
+      "plane": 1920,
+      "strength": 1,
+      "localDensity": 0,
+      "desert": [
+        1,
+        0,
+        1920,
+        1,
+        158.3016357421875,
+        450,
+        140,
+        5000,
+        60,
+        0.014999999664723873,
+        0,
+        0
+      ],
+      "sceneFrames": 150,
+      "clippedPixels": 0,
+      "meanLuma": 153.93609575011092,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-front-prototype/front-age-60.png"
+    },
+    {
+      "age": 75,
+      "plane": 2400,
+      "strength": 1,
+      "localDensity": 0.7816464397051616,
+      "desert": [
+        1,
+        0,
+        2400,
+        1,
+        158.3016357421875,
+        450,
+        140,
+        5000,
+        75,
+        0.014999999664723873,
+        0,
+        0
+      ],
+      "sceneFrames": 150,
+      "clippedPixels": 0,
+      "meanLuma": 138.56543661015027,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-front-prototype/front-age-75.png"
+    },
+    {
+      "age": 95,
+      "plane": 3040,
+      "strength": 1,
+      "localDensity": 0.9944598480048967,
+      "desert": [
+        1,
+        0,
+        3040,
+        1,
+        158.3016357421875,
+        450,
+        140,
+        5000,
+        95,
+        0.014999999664723873,
+        0,
+        0
+      ],
+      "sceneFrames": 150,
+      "clippedPixels": 0,
+      "meanLuma": 123.30410804387473,
+      "gpuErrors": 0,
+      "gpuMessages": [],
+      "late": [],
+      "file": "screenshots/d6-front-prototype/front-age-95.png"
+    }
+  ],
+  "note": "Prototype only: manually armed world-front at fixed erg anchor, native1440p view/near Wraith, fixed clear restored noon, snapped exposure, age poses. Normal weather.duneStorms stays false. No storm wind/streak/erasure/shelter/audio or full storm acceptance is claimed."
+}

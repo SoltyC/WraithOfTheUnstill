@@ -9,7 +9,7 @@
 //   → { type:'restore', pages: [{ key, time, words }] }      (a loaded save: replaces the whole store)
 
 import { PAGE_N, COARSE_PER_M, WORLD_HALF, pageOriginCoarse } from './layout.js';
-import { unpackPage, packPage, allocPlanes, healPlanes } from './healing.js';
+import { unpackPage, packPage, allocPlanes, healPlanes, STORM_ERASE } from './healing.js';
 
 let surface = null; // Uint8Array rgba8, 2048², 4 m texels, row 0 = north
 let surfaceN = 0, surfaceTexel = 0;
@@ -36,9 +36,9 @@ self.onmessage = async (e) => {
     self.postMessage({ type: 'dump', pages }, pages.map((p) => p.words.buffer));
   } else if (m.type === 'restore') {
     store.clear();
-    for (const p of m.pages) store.set(p.key, { time: p.time, words: p.words });
+    for (const p of m.pages) store.set(p.key, { time: p.time, erosion: m.erosion ?? 0, words: p.words });
   } else if (m.type === 'store') {
-    store.set(m.key, { time: m.time, words: m.words });
+    store.set(m.key, { time: m.time, erosion: m.erosion ?? 0, words: m.words });
   } else if (m.type === 'load') {
     await initDone;
     const entry = store.get(m.key);
@@ -53,7 +53,10 @@ self.onmessage = async (e) => {
       return surface[(row * surfaceN + col) * 4];
     };
     unpackPage(entry.words, planes);
-    healPlanes(planes, Math.max(0, m.time - entry.time), material, tmp, m.sandScale ?? 1);
+    // A sandstorm over the stored page (D6) wears its sand marks as STORM_ERASE seconds of healing per
+    // density-second, on top of the time it was away (healing.js; the GPU heals resident sand alike).
+    const away = Math.max(0, m.time - entry.time), storm = Math.max(0, (m.erosion ?? 0) - (entry.erosion ?? 0));
+    healPlanes(planes, away, material, tmp, (m.sandScale ?? 1) + (away > 0 ? STORM_ERASE * storm / away : 0));
     packPage(planes, entry.words);
     self.postMessage({ type: 'page', key: m.key, gen: m.gen, words: entry.words }, [entry.words.buffer]);
   }

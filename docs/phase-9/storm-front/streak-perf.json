@@ -1,0 +1,137 @@
+{
+  "date": "2026-10-29T08:59:40.106Z",
+  "initial": {
+    "output": [
+      2560,
+      1440
+    ],
+    "internal": [
+      1792,
+      1008
+    ],
+    "adapter": "nvidia / ampere",
+    "gpuErrors": 0,
+    "late": [],
+    "normalStormReady": false
+  },
+  "reports": [
+    {
+      "repeat": 0,
+      "age": 95,
+      "on": false,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.518036247796095,
+        "p99": 10.586624145507812,
+        "max": 10.595168113708496
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.578333333631356,
+        "p99": 11.800000071525574,
+        "max": 12.200000047683716
+      }
+    },
+    {
+      "repeat": 0,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.544914884048525,
+        "p99": 10.606111526489258,
+        "max": 10.634112358093262
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.609999999900658,
+        "p99": 11.799999952316284,
+        "max": 12
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 95,
+      "on": false,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.524666670476044,
+        "p99": 10.589376449584961,
+        "max": 10.598976135253906
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.588333333532015,
+        "p99": 12.5,
+        "max": 12.599999904632568
+      }
+    },
+    {
+      "repeat": 1,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.547022739713661,
+        "p99": 10.617728233337402,
+        "max": 10.640031814575195
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.610416666666667,
+        "p99": 12,
+        "max": 14.600000023841858
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 95,
+      "on": false,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.556099101589314,
+        "p99": 11.351231575012207,
+        "max": 11.438240051269531
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.625416666766007,
+        "p99": 11.899999976158142,
+        "max": 16.700000047683716
+      }
+    },
+    {
+      "repeat": 2,
+      "age": 95,
+      "on": true,
+      "localDensity": 0.9944598480048967,
+      "steadyLutRebuilds": 0,
+      "gpu": {
+        "n": 239,
+        "mean": 10.551713995354943,
+        "p99": 10.608575820922852,
+        "max": 10.634847640991211
+      },
+      "raf": {
+        "n": 240,
+        "mean": 10.616250000397365,
+        "p99": 11.899999976158142,
+        "max": 14.5
+      }
+    }
+  ],
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Three matched grain-off/on240-frame repeats at the same inside-storm age95, actual2560x1440 output/1792x1008 internal. Fixed near-Wraith scene, frozen simulation, volume and shared wind active in both, heat off. All239GPU samples per run and all paired deltas retained, including the negative noisy pair. No whole-world/water art/cloth dynamics, erasure/shelter/allocation or sustained D12 acceptance."
+}

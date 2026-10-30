@@ -13,8 +13,11 @@ describe('dry Dunes weather and three-biome blending',()=>{
   it('never substitutes frost precipitation for restored or stilled desert air',()=>{
     for(const restored of [0,1])for(const state of ['clear','heat-haze','rain','snowfall','blizzard','storm','sandstorm']){
       const w=createWeather();w.restored=w.meadowRestored=1;w.dunes=1;w.dunesRestored=restored;w.override=state;w.update();
-      expect(w.snow).toBe(0);expect(w.rain).toBe(0);expect(w.storm).toBe(0);expect(w.sand).toBe(0);
-      expect(w.state).toBe(state==='clear'?'clear':'heat-haze');
+      expect(w.snow).toBe(0);expect(w.rain).toBe(0);expect(w.storm).toBe(0);
+      // A sandstorm is the restored erg's own weather; everything else that would fall becomes haze.
+      const storm=restored&&state==='sandstorm';
+      expect(w.sand).toBe(storm?1:0);
+      expect(w.state).toBe(state==='clear'?'clear':storm?'sandstorm':'heat-haze');
       if(!restored)expect(w.gust).toBe(0);
     }
   });
@@ -25,12 +28,14 @@ describe('dry Dunes weather and three-biome blending',()=>{
       for(const field of fields)expect(w[field]).toBeCloseTo(base[field]+(DUNES_STATES['heat-haze'][field]-base[field])*d,12);
     }
   });
-  it('cycles deterministically while keeping the unfinished storm capability off by default',()=>{
+  it('cycles deterministically through clear, haze and sandstorm in the restored erg; never a storm stilled',()=>{
     const run=()=>{const w=createWeather();w.dunes=1;w.dunesRestored=1;const states=[];
-      expect(w.duneStorms).toBe(false);
-      for(let i=0;i<7200;i++){w.dt=1;w.update();expect(w.snow+w.rain+w.storm+w.sand).toBe(0);if(i%60===0)states.push(w.state);}
-      expect(new Set(states)).toEqual(new Set(['clear','heat-haze']));
-      w.duneStorms=true;w.override='sandstorm';w.snap=true;w.update();expect(w.sand).toBe(1);expect(w.state).toBe('sandstorm');
+      expect(w.duneStorms).toBe(true);
+      for(let i=0;i<7200;i++){w.dt=1;w.update();expect(w.snow+w.rain+w.storm).toBe(0);if(i%60===0)states.push(w.state);}
+      expect(new Set(states)).toEqual(new Set(['clear','heat-haze','sandstorm']));
+      const still=createWeather();still.dunes=1;still.dunesRestored=0;
+      for(let i=0;i<7200;i++){still.dt=1;still.update();expect(still.state).not.toBe('sandstorm');expect(still.sand).toBe(0);}
+      w.override='sandstorm';w.snap=true;w.update();expect(w.sand).toBe(1);expect(w.state).toBe('sandstorm');
       return states;
     };
     expect(run()).toEqual(run());

@@ -1,0 +1,31 @@
+# D6 near sand streaks — 29 October
+
+Dormant/unintegrated `codex/desert-storm` prototype, after shared wind checkpoint d3d8df5. Normal weather `duneStorms=false` and front `enabled=false`. This implements a bounded near-grain consumer, not all D6 or the handoff.
+
+## Ownership and rendering
+
+`render/sandStreaks.js` clones the existing16000-quad snowfall mesh **sharing its Geometry**, with a separate material/travel owner. No new particle position/index arrays or full-screen texture. Existing snow shaders, density and motion stay separate. Only the active storm adds one geometry draw over the existing composed RGBA16F target, after volume compose and before exposure meter/TAA. It tests the existing scene depth and disables material depth writes. A short Simpson-integrated front/biome path fogs the grains themselves; opaque background depth therefore does not incorrectly hide a nearby sky-backed grain behind the entire distant dust column.
+
+The static seed column uses the existing precipitation ground-height/hash helpers. The same world front and bilinear raw8m Dunes mask control grain density; the shared wind function orients streaks. CPU travel integrates sampled camera-local wind, wrapping by whole columns, so changing wind speed/direction does not multiply an absolute time into a new pose. Pause holds all travel exactly. Global wetness fades the dry gate; local frozen/sheltered air and gameplay effects still need their proper D6 contracts.
+
+Original world-length motion blur made a few nearby grains look like long lines across sky in the first480-frame film. It is retained under `streaks-long-first*` and frames/streaks-long-first. Final stretch has a FOV-aware8reference1440p-pixel cap (plus grain diameter), preserving small grains at near distances. The column/shape pool is fixed; no spawn arrays or per-frame geometry writes.
+
+Target wrapper retains one reference to the existing composed color. `shareDepth()` retains scene depth. Resize disposes the old wrapper after the normal post resizers recreate their owners, then wraps the new targets. No extra GPU color/depth allocation. The ordinary depth attachment loads/stores; depth writes are disabled by the material and verified by readback. Babylon snapshot bundle descriptors do not propagate `depthReadOnly`, so that attachment flag was rejected after a real snapshot test. Alpha/depth/pass state is explicitly restored; the first omitted-state attempt caused shadow blend errors and is retained as a failed fixture. A load-only pass starts before material state when not snapshotting because Babylon's lazy startup overrides the depth comparison. Snapshot activation resets before scene rendering, not midway through the post chain.
+
+## Verification
+
+Production build passes; the full803-test suite passes. Six fresh native2560x1440 poses advance150actual scene frames each,0GPU errors/late pipelines/clipped RGB pixels. Side-view noon front-off/incoming/inside A/B and dusk/night preserve near terrain and Wraith silhouette. Captures: `screenshots/d6-storm-streaks/`. Technical sample review; human aesthetics and far/moving actor telegraphs remain NOT ASSESSED.
+
+`storm-front/streak-pixels.json`: actual native2560x1440 HDR compose input, stopped/drained renderer. The final draw changes8530pixels; exact same-input compose repeat and zero storm gate change0pixels. Scene depth changes0bits; no non-finite RGB. Depth NEVER draws0pixels. ALWAYS changes8546pixels; the16pixel difference demonstrates real opaque occlusion in this pose. Those two diagnostic control pipelines are unarmed and use compatibility mode to avoid a cached bundle hiding state changes; they are not cold-gameplay pipeline evidence. A previous lazy-start depth-control result is labelled invalid and retained.
+
+`streak-lifecycle.json`:12phases across two repeated snapshot-off/on and720p/1440p/.7 resize cycles. Every sampled phase advances90rendered frames; inactive draw count0, active90. Paused travel remains exact. Shared color/depth references both remain2. GPU texture bytes return to2085935615 at every1280x720 phase and2201974207 at every2560x1440/.7 phase, with0GPU errors/late pipelines. These are fixed-scene resize ownership checks, not complete heap/streaming allocation acceptance.
+
+`streak-perf.json`: three matched inside-storm grain-off/on pairs,240frames and239GPU samples each at2560x1440/1792x1008. Added mean costs **+.026879,+.022356,-.004385ms**, all retained without filtering. On means10.5449–10.5517ms;0steady LUT rebuilds/GPU errors/late pipelines. Volume/shared wind are active in both, heat off. Fixed scene/frozen simulation only, not combined D2/D3/D9b/sustained D12.
+
+Final8s native1440p/fixed60 film has **480/480frames**,0failed/GPU/late errors. Eight once-per-second decoded native near-ground samples are positive (~97.57luma),0RGB>=253; maxRGB192. The720p60 review encode is independently decoded as480frames. Contact/native crop reviewed; silent fixed-step film does not establish real-time motion or human feel. `streak-motion.json` separately verifies pause/release/pause: travel holds exactly at zero dt, then advances19.12m with positive fall, then holds exactly again. This is owner motion, not a full visual-telegraph gate. Exported-frame QA now accepts an explicit report/frame-root/count while keeping original arrival defaults and uses UTF-8 across Windows/WSL.
+
+## Design verdict and next work
+
+Keep this dormant visual slice. It supports Learn by reading and restoration sensation in the0–10s/minute loops, without adding a verb, progression, Flow payout or HUD. Treadmill/dominance/opportunity-cost/fetch/forced-resonance/gate-without-warning/reskinned-Warden smells are clear by visual scope; full storm scope mismatch remains present. Bare-core fun, world-loop emptiness, human art/motion, enemy telegraphs, allocations and full-world cost remain NOT ASSESSED.
+
+Next: real spatial terrain erasure/re-rippling with resident/evicted/save/collision agreement, audio/cloth feel and real Ridge shelter, Sun-disc/moving-camera/border/actor/surf-speed review. See `storm-erasure-contract.md` before implementation. Far crest coverage and saved meso migration with camp/ruin anchors remain open. D2's unchanged cold.4ms compute gate still fails; D3/D9b and D7–D12 remain unfinished. Do not enable storms or claim the full todo complete.

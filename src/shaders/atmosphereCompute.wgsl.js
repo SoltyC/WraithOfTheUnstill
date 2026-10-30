@@ -243,7 +243,21 @@ fn overcastRadiance(dir: vec3f) -> vec3f {
   return vec3f(0.90, 0.94, 1.0) * e * 0.22 * (1.0 - 0.45 * P.storm.x) / PI_A * (1.0 + 2.0 * max(dir.y, 0.0)) / 2.0;
 }
 fn skyRadiance(dir: vec3f, r: f32) -> vec3f {
-  return mix(clearSkyRadiance(dir, r), overcastRadiance(dir), deckCover() * 0.92);
+  let base=mix(clearSkyRadiance(dir, r), overcastRadiance(dir), deckCover() * 0.92);
+  if(P.storm.w>0.0){
+    // Low dust redistributes daylight into warm diffuse fill, rather than retaining a blue
+    // clear-sky fill after the direct beam has vanished. Undimmed weather illuminance is the source.
+    // Use the established overcast illuminance floor at the horizon too: dust is
+    // a scattering sky, and must not extinguish its diffuse source at sunset.
+    let e=P.weather.y*max(P.sunDir.y,0.04)+P.weather.z*max(P.moonDir.y,0.04)*.6;
+    // Match the existing overcast scattering scale near the horizon; daylight keeps
+    // the reviewed .07 coefficient. Moon-dominated dust takes a muted cool tint.
+    let lowSun=1.0-smoothstep(.04,.3,P.sunDir.y);
+    let tint=mix(vec3f(.42,.50,.64),vec3f(.68,.43,.22),smoothstep(-.08,.12,P.sunDir.y));
+    let dust=tint*e*mix(.07,.22,lowSun)/PI_A*(.65+.35*max(dir.y,0.0));
+    return mix(base,dust,clamp(P.storm.w,0.0,1.0)*.9);
+  }
+  return base;
 }
 fn clearSkyRadiance(dir: vec3f, r: f32) -> vec3f {
   var L = vec3f(0.0);
@@ -261,7 +275,9 @@ fn main() {
   // Key light: whichever of sun and moon is brighter after transmittance.
   let sunC = sampleTransmittance(r, P.sunDir.y) * P.sunDir.w * select(0.0, 1.0, P.sunDir.y > -0.02);
   let moonC = sampleTransmittance(r, P.moonDir.y) * P.moonDir.w * MOON_TINT * select(0.0, 1.0, P.moonDir.y > -0.02);
-  let keyBase = select(moonC, sunC, dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
+  var keyBase = select(moonC, sunC, dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
+  // Storm dust diffuses the direct beam locally without scaling away all sky fill with it.
+  if(P.storm.w>0.0){keyBase*=1.0-.97*clamp(P.storm.w,0.0,1.0);}
   outLight[0] = vec4f(keyBase, 0.0);
   // Cosine-weighted irradiance over the upper hemisphere (up normal) and a side normal.
   var up = vec3f(0.0);
@@ -339,7 +355,8 @@ fn main() {
   }
   // Weather: an overcast or snowing day is meant to read grey and heavy, not auto-exposed back
   // to a sunny day's brightness (−0.5 stop under a closed deck).
-  let wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * deckCover()) * (1.0 - 0.3 * P.storm.x);
+  var wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * deckCover()) * (1.0 - 0.3 * P.storm.x);
+  if(P.storm.w>0.0){wanted*=1.0-.3*clamp(P.storm.w,0.0,1.0);}
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));

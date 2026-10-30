@@ -22,6 +22,8 @@ export const worldState = {
   strike: null,
   /** Sandfall cascades forced frozen (photo spots), or null: the game's own (quest flags). */
   sandfallsFrozen: null,
+  /** A forced sandstorm's start (photo spots): null inside it, 'arriving' its front 700 m upwind. */
+  stormStart: null,
   /** @type {Record<string, 'stilled'|'restored'>} */
   restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' },
 };

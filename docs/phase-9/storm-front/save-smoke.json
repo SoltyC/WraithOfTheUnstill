@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-29T12:11:25.815Z",
+  "started": 142.9609666666193,
+  "captureEnded": 143.1297666665716,
+  "captureAdvanced": 0.16879999995231287,
+  "version": 4,
+  "pageCount": 2,
+  "latestPage": 143.0532666665716,
+  "watermark": 143.1297666665716,
+  "codecBytes": 10244,
+  "pages": [
+    {
+      "key": "2546",
+      "savedAt": 143.0532666665716,
+      "bytes": 3145728,
+      "hash": 2188986171
+    },
+    {
+      "key": "3432",
+      "savedAt": 142.9719666666193,
+      "bytes": 3145728,
+      "hash": 3453514574
+    }
+  ],
+  "historyKeys": 9,
+  "expectedExposure": 1.4915999999642224,
+  "exposureAfter": 1.4915999999642224,
+  "shiftedExposure": 1.4915999999642509,
+  "front": [
+    1,
+    0,
+    3087.90087890625,
+    1,
+    158.3016357421875,
+    450,
+    140,
+    5000,
+    96.49690246582031,
+    0.014999999664723873,
+    0,
+    0
+  ],
+  "frontAfter": [
+    1,
+    0,
+    3087.90087890625,
+    1,
+    158.3016357421875,
+    450,
+    140,
+    5000,
+    96.49690246582031,
+    0.014999999664723873,
+    0,
+    0
+  ],
+  "before": {
+    "fine": 0.039703369140625,
+    "coarse": 0.03948974609375,
+    "fineDisplaced": 0,
+    "coarseDisplaced": 0,
+    "fineRelief": -0.039703369140625,
+    "coarseRelief": -0.03948974609375,
+    "slot": 1,
+    "stored": 0,
+    "loading": 0
+  },
+  "after": {
+    "fine": 0.03961181640625,
+    "coarse": 0.03961181640625,
+    "fineDisplaced": 0,
+    "coarseDisplaced": 0,
+    "fineRelief": -0.03961181640625,
+    "coarseRelief": -0.03961181640625,
+    "slot": 0,
+    "stored": 0,
+    "loading": 0
+  },
+  "settled": true,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "normalStormReady": false,
+  "note": "Actual GPU page collection while simulation runs, real save-worker binary codec and in-memory apply. No IndexedDB writes. Verifies exposure persistence foundation, not terrain storm erosion or Ridge shelter."
+}

@@ -1,0 +1,87 @@
+{
+  "date": "2026-10-29T05:29:14.341Z",
+  "cases": [
+    {
+      "name": "off",
+      "age": 0,
+      "on": false,
+      "dx": 1,
+      "dz": 0,
+      "target": 1
+    },
+    {
+      "name": "incoming",
+      "age": 0,
+      "on": true,
+      "dx": 3,
+      "dz": 4,
+      "target": 1
+    },
+    {
+      "name": "leading-face",
+      "age": 75,
+      "on": true,
+      "dx": 1,
+      "dz": 0,
+      "target": 1
+    },
+    {
+      "name": "inside",
+      "age": 100,
+      "on": true,
+      "dx": 3,
+      "dz": 4,
+      "target": 1
+    },
+    {
+      "name": "tail",
+      "age": 250,
+      "on": true,
+      "dx": 1,
+      "dz": 0,
+      "target": 1
+    },
+    {
+      "name": "partial",
+      "age": 100,
+      "on": true,
+      "dx": -0.8,
+      "dz": 0.6,
+      "target": 0.4
+    }
+  ],
+  "samples": 26136,
+  "maxAbs": 0.000004747094969781429,
+  "nonFinite": 0,
+  "outOfRange": 0,
+  "mismatches": 0,
+  "perCase": [
+    {
+      "maxAbs": 0,
+      "active": 0
+    },
+    {
+      "maxAbs": 0.000003271460908171875,
+      "active": 585
+    },
+    {
+      "maxAbs": 0.000004747094969781429,
+      "active": 2246
+    },
+    {
+      "maxAbs": 0.000003915978089241712,
+      "active": 2936
+    },
+    {
+      "maxAbs": 2.9328120959570825e-8,
+      "active": 1848
+    },
+    {
+      "maxAbs": 0.0000023743245063378993,
+      "active": 2933
+    }
+  ],
+  "gpuErrors": 0,
+  "late": [],
+  "note": "Actual shared CPU model versus native GPU density function over fixed f32 inputs and six finite world-front phases.2e-5 absolute threshold, no filtered samples. Diagnostic pipeline compiled with late detector unarmed. This is density parity only, not a rendered wall, visibility/readability, storm gameplay, saved migration or cold-world pipeline acceptance."
+}

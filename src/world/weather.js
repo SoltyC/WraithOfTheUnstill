@@ -67,7 +67,9 @@ export function createWeather() {
      *  (0 frost … 1 meadow, eased by the owner), raw Dunes weight and its release flag, and dt (s); snap jumps straight to the target
      *  (captures, loads). */
     // (Double-initialised fields: V8 keeps them unboxed, so per-frame stores never allocate.)
-    restored: 0, meadowRestored: 0, dunesRestored:0, dunes:0.5-0.5, sand:0.5-0.5, duneStorms:false, meadow: 0.5 - 0.5, dt: 0.5 - 0.5, snap: true,
+    restored: 0, meadowRestored: 0, dunesRestored:0, dunes:0.5-0.5, sand:0.5-0.5, duneStorms:true,
+    /** Out: the erg's own state now (its cycle or the override), whatever biome the camera is in. */
+    duneName: 'clear', meadow: 0.5 - 0.5, dt: 0.5 - 0.5, snap: true,
     frost: f, meadowClock: m, dunesClock:d,
     update() {
       // All three machines run all the time (also under an override: it ends where the cycle is).
@@ -76,6 +78,7 @@ export function createWeather() {
       const dNat=w.dunesRestored?tick(d,w,DUNES_CYCLE,LEN_DUNES):tick(d,w,STILLED_DUNES_CYCLE,LEN_STILLED_DUNES);
       let duneName=resolveState(w.override||dNat,'dunes',w.dunesRestored);
       if(duneName==='sandstorm'&&!w.duneStorms)duneName='heat-haze';
+      w.duneName=duneName;
       const duneTarget=(w.dunesRestored?DUNES_STATES:STILLED_DUNES_STATES)[duneName];
       const duneWeight=Math.max(0,Math.min(1,w.dunes));
       const frostName = resolveState(w.override || fNat, 'frost', w.restored), meadowName = resolveState(w.override || mNat, 'meadow', w.meadowRestored);

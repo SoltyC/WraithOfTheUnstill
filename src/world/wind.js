@@ -9,8 +9,12 @@
 //   bursts    up to MAX_BURSTS injected local gusts (the Gale verbs; anything else may inject):
 //             an expanding ring from a point that pushes outward and dies away
 // The owner (systems/environment.js) sets the inputs once per frame; the uniform block (`block`,
-// 6 × vec4) is shared by reference with every material that declares `windField`.
+// 283 × vec4 (9 wind,1 shelter header,273 packed shelter values)) is shared by reference with every material that declares `windField`.
 // Allocation-free.
+
+import {sampleSandstorm,SANDSTORM_GUST} from './sandstormFront.js';
+import {SHELTER_VECTORS,SHELTER_DATA,SHELTER_FLOATS,sampleShelterInto} from './windShelter.js';
+export const WIND_VECTORS=10+SHELTER_VECTORS;
 
 export const FRONT_SPEED = 8;     // m/s
 export const MAX_BURSTS = 4;
@@ -19,20 +23,28 @@ const BURST_SPEED = 14, BURST_LIFE = 2.2, BURST_WIDTH = 5;
 /** Smooth front profile of a phase (radians): sharp-ish rises, long tails. Mirrors the WGSL. */
 function front(ph) { const s = 0.5 + 0.5 * Math.sin(ph); return s * s * s * s; } // inlined (tiny)
 
-export function createWind() {
+export function createWind(stormFront=null) {
   // [0] dir x, dir z, base strength, time; [1] gustiness, front speed, -, -; [2..5] bursts:
-  // x, z, start time, strength (strength 0 = none).
-  const block = new Array(24).fill(0);
+  // x, z, start time, strength (strength 0 = none). [6..8] world-front block.
+  // [9] shelter origin/step/enabled, [10..282] packed terrain-derived obstruction heights.
+  // Wind remains a 2D ground-reference field, shared by cloth and water.
+  const block = new Array(WIND_VECTORS*4).fill(0);
   block[0] = 1; block[5] = FRONT_SPEED;
   let next = 0;
   const w = {
-    block,
+    block,stormFront,shelter:null,stormWeight:0.5-0.5,stormOffset:24,
+    qx:0.5,qy:0.5,qz:0.5,density:0.5-0.5,signedDistance:0.5-0.5,
     /** Owner inputs, set each frame before update(). */
     dirX: 1, dirZ: 0, strength: 0.5 - 0.5, gustiness: 0.5 - 0.5, time: 0.5,
     update() {
       const l = Math.sqrt(this.dirX * this.dirX + this.dirZ * this.dirZ) || 1;
       block[0] = this.dirX / l; block[1] = this.dirZ / l; block[2] = this.strength; block[3] = this.time;
       block[4] = this.gustiness;
+      if(this.stormFront){const f=this.stormFront.block;for(let i=0;i<12;i++)block[24+i]=f[i];
+        block[27]=Math.fround(f[3]*Math.max(0,Math.min(1,this.stormWeight)));
+      }else block[27]=0;
+      const shelter=this.shelter;block[39]=shelter?.enabled?1:0;
+      if(block[39]){block[36]=shelter.originX;block[37]=shelter.originZ;block[38]=shelter.step;for(let i=0;i<SHELTER_FLOATS;i++)block[SHELTER_DATA+i]=shelter.data[i];}
       for (let i = 0; i < MAX_BURSTS; i++) { const o = 8 + i * 4; if (block[o + 3] > 0 && this.time - block[o + 2] > BURST_LIFE) block[o + 3] = 0; }
     },
     /** A local gust: an expanding ring from (x, z) pushing outward (the Gale's Gust, the Warden). */
@@ -41,7 +53,7 @@ export function createWind() {
       block[o] = x; block[o + 1] = z; block[o + 2] = this.time; block[o + 3] = strength;
     },
     /** Out fields of sample(): the wind at the queried point — direction (unit) and speed factor. */
-    sx: 0.5, sz: 0.5, outX: 0.5, outZ: 0.5, speed: 0.5,
+    sx: 0.5, sz: 0.5, outX: 0.5, outZ: 0.5, speed: 0.5, rawSpeed:0.5, exposure:1.0,shelterHeight:0.5,
     /** The wind at (sx, sz) now: outX, outZ (unit direction) and speed (≈ strength × gusts). */
     sample() { fieldAt(block, this); },
   };
@@ -63,6 +75,22 @@ function fieldAt(b, o) {
   const eddy = 0.12 * Math.sin(x * 0.21 + t * 1.3) * Math.sin(z * 0.17 - t * 1.1);
   const g = 0.55 + gu * (0.9 * f1 + 0.5 * f2) + eddy;
   let vx = dx * base * g, vz = dz * base * g;
+  if(b.length>=36&&b[27]>0){
+    o.block=b;o.stormOffset=24;o.qx=x;o.qy=b[28];o.qz=z;sampleSandstorm(o);
+    const sdX=b[24],sdZ=b[25],a=Math.fround(Math.fround(x*sdX)+Math.fround(z*sdZ)),cross=Math.fround(Math.fround(-x*sdZ)+Math.fround(z*sdX)),st=Math.fround(t);
+    // Short advected storm bands: mean push stays near the original, with strong gusts
+    // and a bounded crosswind. Cloth, grains and waves all sample these same pulses.
+    // Round the short-wave phases like WGSL: large world coordinates otherwise put
+    // cloth and GPU grains on different parts of a sharp pulse.
+    const phase1=Math.fround(Math.fround(a*Math.fround(.21))-Math.fround(st*Math.fround(2.4)));
+    const phase2=Math.fround(Math.fround(a*Math.fround(.43))-Math.fround(st*Math.fround(4.1)));
+    const p1=front(Math.fround(phase1+Math.fround(Math.fround(Math.sin(Math.fround(cross*Math.fround(.07))))*Math.fround(.8))));
+    const p2=front(Math.fround(phase2+Math.fround(1.7)));
+    const lateralPhase=Math.fround(Math.fround(Math.fround(a*Math.fround(.17))-Math.fround(st*Math.fround(3.2)))+Math.fround(cross*Math.fround(.11)));
+    const gain=.55+1.05*p1+.55*p2,lateral=.18*Math.sin(lateralPhase)*(.4+.6*p1);
+    const push=base*SANDSTORM_GUST*o.density;
+    vx+=push*(sdX*gain-sdZ*lateral);vz+=push*(sdZ*gain+sdX*lateral);
+  }else{o.density=0;o.signedDistance=0;}
   for (let i = 0; i < 4; i++) {
     const k = 8 + i * 4, s = b[k + 3]; if (s <= 0) continue;
     const age = t - b[k + 2]; if (age < 0 || age > BURST_LIFE) continue;
@@ -74,5 +102,6 @@ function fieldAt(b, o) {
   }
   const sp = Math.sqrt(vx * vx + vz * vz);
   if (sp > 1e-5) { o.outX = vx / sp; o.outZ = vz / sp; } else { o.outX = dx; o.outZ = dz; }
-  o.speed = sp;
+  o.rawSpeed=sp;sampleShelterInto(b,o);
+  o.speed = sp*o.exposure;
 }

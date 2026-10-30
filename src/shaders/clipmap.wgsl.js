@@ -547,7 +547,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let sst = stateSurface(wp.x, wp.z);
     let crestN = duneCrestNormal(Ngs, fragmentInputs.vCrest, crestGradient, fragmentInputs.vCrestSpacing, dist, fp);
     let ss = sandSurface(wp, crestN, normalize(fragmentInputs.vNormalC), fp, sst, L);
-    var scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, skyUp);
+    var sandSkyFill = skyUp;
+    // The painterly blue shadow boost follows the remaining direct beam in a dust storm.
+    // SH retains its diffuse fill, so a vanished sun does not leave a luminous blue shadow.
+    if (atmoParams.storm.w > 0.0) { sandSkyFill *= 1.0 - 0.97 * clamp(atmoParams.storm.w, 0.0, 1.0); }
+    var scol = sandLight(ss, wp, V, L, key, vis * cs, uniforms.envMisc.w, sandSkyFill);
     // Down between a ravine's walls the shade is warm: less of the blue sky reaches it, and the sunlit
     // walls and floor throw their orange back into it (the canyon kit's bounce, shaders/canyon.wgsl.js).
     let encl = fragmentInputs.vEncl * (1.0 - vis * cs);

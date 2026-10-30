@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-29T12:23:08.702Z",
+  "cases": [
+    {
+      "name": "off",
+      "on": false,
+      "age": 95,
+      "gate": 1
+    },
+    {
+      "name": "gate-zero",
+      "on": true,
+      "age": 95,
+      "gate": 0
+    },
+    {
+      "name": "incoming",
+      "on": true,
+      "age": 45,
+      "gate": 1
+    },
+    {
+      "name": "inside",
+      "on": true,
+      "age": 95,
+      "gate": 1
+    },
+    {
+      "name": "gate-quarter",
+      "on": true,
+      "age": 95,
+      "gate": 0.25
+    },
+    {
+      "name": "Gale-burst",
+      "on": true,
+      "age": 95,
+      "gate": 1,
+      "burst": true
+    },
+    {
+      "name": "zero-base",
+      "on": true,
+      "age": 95,
+      "gate": 1,
+      "zero": true
+    },
+    {
+      "name": "real-Ridge",
+      "on": true,
+      "age": 95,
+      "gate": 1,
+      "shelter": true
+    },
+    {
+      "name": "Ridge-ordinary",
+      "on": false,
+      "age": 95,
+      "gate": 1,
+      "shelter": true
+    }
+  ],
+  "samples": 10874,
+  "maxAbs": 0.00019037896673523846,
+  "mismatches": 0,
+  "nonFinite": 0,
+  "offBitMismatches": 0,
+  "perCase": [
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.0001365010968705782,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.00003001724087059454,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.00015115611944871432,
+      "samples": 738
+    },
+    {
+      "maxAbs": 2.384185793236071e-8,
+      "samples": 738
+    },
+    {
+      "maxAbs": 0.00019037896673523846,
+      "samples": 2854
+    },
+    {
+      "maxAbs": 0.000018926173012800973,
+      "samples": 2854
+    }
+  ],
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Actual CPU field versus shared GPU wind function over9cases including actual Ridge snapshot,2e-4 fixed absolute bound. Off and biome-gate0 are also bitwise compared to pinned2224f79 GPU wind on identical inputs. Burst slots unchanged. Diagnostic pipelines unarmed; not a cold-world/rendered wind, water SSR, cloth or allocation acceptance."
+}

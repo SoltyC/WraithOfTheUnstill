@@ -29,6 +29,8 @@ export function applySpot(spot, game) {
   worldState.strike = spot.strike || null;
   // Frozen sandfalls (D7b) for the shot: the cascades (render/sandfalls.js sites) to show frozen, or null (the game's own).
   worldState.sandfallsFrozen = spot.sandfallsFrozen || null;
+  // A forced sandstorm starts with the camera inside it, or with its front arriving ('arriving').
+  worldState.stormStart = spot.stormStart || null;
   // Spots show the land restored unless they ask for it stilled (the accepted gate looks).
   worldState.restoration[spot.biome === 'frost' ? 'frost' : spot.biome] = spot.restoration || 'restored';
   const { controller, arm, teleport } = game;

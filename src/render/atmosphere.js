@@ -103,7 +103,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   const desert=createDesertAerosol();
   let builtHaze = NaN,builtDust=NaN;
   return {
-    canopyTex, waterTex, villageTex, villageBox, desert, lutBuilds:0,
+    canopyTex, waterTex, villageTex, villageBox, desert, biomeA, lutBuilds:0, sandStorm:0.0,
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,
@@ -139,10 +139,10 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
       const cc = Math.min(1, Math.max(0, (this.cover - 0.35) / 0.65));
       this.deck = cc;
       const dim = 0.015 + 0.985 * (1 - cc) * (1 - cc) * (1 - cc);
-      p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim;
-      p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim;
-      desert.update();const dust=desert.quantized;
-      p[40] = this.storm; p[41] = this.flash; p[42] = dust; p[43] = 0;
+      p[20] = s.x; p[21] = s.y; p[22] = s.z; p[23] = SUN_ILLUMINANCE * dim*(1-.9*this.sandStorm);
+      p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim*(1-.9*this.sandStorm);
+      desert.update();const dust=desert.quantized+Math.round(this.sandStorm*3.2*8)/8;
+      p[40] = this.storm; p[41] = this.flash; p[42] = dust; p[43] = this.sandStorm;
       p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = 0;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;

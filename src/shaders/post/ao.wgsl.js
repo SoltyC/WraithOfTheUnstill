@@ -5,6 +5,7 @@
 // Wraith's hem on the snow, rocks bedded in drifts — and fades out with distance.
 // Output: r = AO (1 = open), g = linear distance of the sample (for the depth-aware upsample).
 
+import {SANDSTORM_VOLUME_WGSL} from './sandstormVolume.wgsl.js';
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
 import { WEATHER_FOG_WGSL } from './fog.wgsl.js';
 
@@ -92,6 +93,8 @@ ${POST_PARAMS_WGSL}
 @group(0) @binding(13) var canopyTex: texture_2d<f32>;
 @group(0) @binding(14) var hazeSampler: sampler;
 @group(0) @binding(15) var hazeTex: texture_2d<f32>;
+@group(0) @binding(16) var<storage,read> sandBiomeA:array<u32>;
+${SANDSTORM_VOLUME_WGSL}
 fn canopyC(p: vec2f) -> f32 { return textureSampleLevel(canopyTex, canopySampler, (p + 4096.0) / 8192.0, 0.0).r; }
 ${WEATHER_FOG_WGSL}
 
@@ -226,6 +229,22 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     // A fog lake is bright from above (its sunlit top) and dimmer within; dense droplets: white.
     let ins = (keyC * phase * 0.85 + skyUp * 1.05) * (1.0 - Tv);
     c = vec4f(c.rgb * Tv + ins * exposure, c.a);
+  }
+  if(P.desert[0].w>0.0&&P.desert[3].y>0.0){
+    let quarter=(sz+3)/4;let base=clamp((p-2)/4,vec2i(0),quarter-1);
+    var acc=0.0;var weight=0.0;
+    for(var j=0;j<2;j++){for(var i=0;i<2;i++){
+      let s=textureLoad(shaftTex,min(base+vec2i(i,j),quarter-1),0);
+      let w=1.0/(abs(s.b-dist)/max(dist*.025,.5)+.05);acc+=s.g*w;weight+=w;
+    }}
+    // A thin foreground silhouette without a matching quarter texel gets its own ray.
+    var tau=acc/max(weight,1e-5);
+    if(weight<=.1){tau=stormOpticalDepth(cam,dir,dist);}
+    let trans=exp(-tau);let cosT=dot(dir,P.sun.xyz);
+    let phase=mix(hgPhase(cosT,.6),.0795775,.55);
+    let light=atmoLight[0].xyz*phase*.8+atmoLight[1].xyz*.85;
+    let ins=vec3f(.8,.55,.3)*light*(1.0-trans);
+    c=vec4f(c.rgb*trans+ins*exposure,c.a);dbgT*=trans;
   }
   c = vec4f(select(c.rgb, vec3f(0.0), c.rgb != c.rgb), c.a);
   // Debug (?postDebug=4): AO factor, fog transmittance, SSR weight as r, g, b; NaN shows white.

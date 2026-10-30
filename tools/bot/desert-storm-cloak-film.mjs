@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import {checkFilmQaRuntime,verifyFrontFilm} from './desert-front-film-qa.mjs';
+checkFilmQaRuntime();
+const base='http://localhost:4181';
+const on=process.argv[2]!=='clear',name=on?'cloak-storm':'cloak-clear';
+async function cmd(body){const{id}=await(await fetch(base+'/__wraith/bot/cmd',{method:'POST',body:JSON.stringify(body)})).json();const r=await(await fetch(base+'/__wraith/bot/reply?id='+id+'&wait=240000')).json();if(!r.ok)throw new Error(JSON.stringify(r));return r.result??r;}
+const initial=await cmd({do:'eval',js:`
+ if(w.gpuStats.gpuErrors)throw new Error(JSON.stringify(w.gpuStats.gpuErrorMessages));const frame=()=>new Promise(r=>requestAnimationFrame(r));g.toggles.on.snapshot=false;g.engine.snapshotRendering=false;g.clock.frozen=true;g.clock.pinHour=13;w.params.v.timeOfDay=13;w.params.v.renderScale=1;w.params.v.dynamicRes=0;w.params.version++;
+ g.sandStreaks.on=true;const c=g.engine.getRenderingCanvas();c.style.width='2560px';c.style.height='1440px';g.engine.resize();g.engine.setSize(2560,1440);g.ws.restoration.frost=g.ws.restoration.meadow=g.ws.restoration.dunes='restored';g.restoration.snap=true;g.ws.weatherOverride='clear';g.ws.wetForce=0;g.ws.puddleForce=0;g.game.teleport(2400,900);
+ for(let i=0;i<600&&(!g.game.worldSettled()||!g.game.stateSettled());i++)await frame();for(let i=0;i<180;i++)await frame();g.game.killShaped();g.game.setPlayerVisible(true);g.arm.setFree(true);g.arm.freePos.x=2400;g.arm.freePos.y=g.controller.pos.y+1.35;g.arm.freePos.z=896.5;g.arm.yaw=0;g.arm.pitch=.035;g.arm.fov=.75;
+ g.restoration.snap=true;g.weather.snap=true;const f=g.sandstorm;f.enabled=${on};f.target=${on?1:0};f.active=false;f.strength=0;f.anchorX=2400;f.anchorZ=900;f.baseY=g.controller.pos.y;f.dirX=1;f.dirZ=0;f.dt=0;f.snap=true;f.update();f.age=95;f.update();g.post.heat.on=true;g.atmosphere.alwaysSnap=true;
+ // Settle at the actual incoming pose, not the previous inside-storm exposure from a benchmark.
+ for(let i=0;i<180;i++)await frame();g.restoration.snap=true;g.weather.snap=true;for(let i=0;i<90;i++)await frame();
+ const wasHeld=g.game.wraithHeld;g.game.wraithHeld=false;g.wraithView.wraith.teleport();w.cloakFilmSamples=[];g.atmosphere.alwaysSnap=false;g.clock.frozen=false;return {wasHeld,wind:g.wind.speed,camera:g.camera.position.asArray()};
+`});
+const film=await cmd({do:'film',name,dir:'d6-storm-cloak',seconds:8,fps:60,size:[2560,1440],warm:120,js:`cam.off();if(i>=0&&i%6===0){const a=g.wraithView.wraith,c=a.cloth,hems=[];for(const id of [0,1]){const garment=a.garments.find(q=>q.id===id);let x=0,z=0;for(let k=0;k<garment.cols;k++){const o=(garment.start+(garment.rows-1)*garment.cols+k)*3;x+=c.p[o]-a.bx;z+=c.p[o+2]-a.bz;}hems.push([x/garment.cols,z/garment.cols]);}w.cloakFilmSamples.push({time:t,force:[c.windX,c.windY,c.windZ],wind:a.windStrength,hems});}`});
+const final=await cmd({do:'eval',js:`const result={clothSamples:w.cloakFilmSamples,held:g.game.wraithHeld,age:g.sandstorm.age,localDensity:g.atmosphere.sandStorm,gpuErrors:w.gpuStats.gpuErrors,gpuMessages:w.gpuStats.gpuErrorMessages,late:w.gpuStats.late};g.sandstorm.enabled=false;g.sandstorm.target=0;g.sandstorm.snap=true;g.post.heat.on=true;g.atmosphere.alwaysSnap=false;return result;`});
+fs.writeFileSync('docs/phase-9/storm-front/'+name+'.json',JSON.stringify({date:new Date().toISOString(),initial,film,...final,note:'Native1440p/fixed60 8s close-up of actual player cloak in clear wind or inside storm. Same camera/restored clear weather, no manual cloth forces/pose animation. Shared wind samples feed existing Verlet solver, prior-frame force/hem probes every6frames. Global wind time is not rewound, so this is a visual comparison rather than an identical-phase pixel oracle. No shelter/cloth-body penetration or human art acceptance.'},null,2)+'\n');console.log(film,final);
+verifyFrontFilm("docs/phase-9/storm-front/"+name+".json","screenshots/d6-storm-cloak/frames/"+name,480);
+if(final.gpuErrors||final.late.length||film.frames!==480||film.failed)throw new Error('Arrival film verification failed');

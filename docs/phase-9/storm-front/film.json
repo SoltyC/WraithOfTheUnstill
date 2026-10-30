@@ -1,0 +1,214 @@
+{
+  "date": "2026-10-29T07:21:27.127Z",
+  "film": {
+    "ok": true,
+    "frames": 720,
+    "failed": 0,
+    "dir": "screenshots/d6-front-prototype/frames/front-arrival",
+    "wallS": 43.5,
+    "ms": 43523
+  },
+  "age": 81.01310000002304,
+  "localDensity": 0.9944598480048967,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Native1440p/fixed60 12s arrival with incoming exposure settled first, then normal SH/eye adaptation.12exported-frame samples inspect a fixed640x640near-ground strip away from Wraith (RGB>=253), including frame0. JPEG artifact check, not raw-HDR/whole-frame opaque clipping or real-time performance. Full storm consumers unfinished and normal capability false.",
+  "discardedBeforeRenderProbe": [
+    {
+      "frame": 0,
+      "time": 0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 60,
+      "time": 1,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 120,
+      "time": 2,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 180,
+      "time": 3,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 240,
+      "time": 4,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 300,
+      "time": 5,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 360,
+      "time": 6,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 420,
+      "time": 7,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 480,
+      "time": 8,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 540,
+      "time": 9,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 600,
+      "time": 10,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    },
+    {
+      "frame": 660,
+      "time": 11,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 0,
+      "luma": 0
+    }
+  ],
+  "samples": [
+    {
+      "frame": 0,
+      "time": 0.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 223,
+      "luma": 169.75220952197265
+    },
+    {
+      "frame": 60,
+      "time": 1.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 222,
+      "luma": 169.8471728227539
+    },
+    {
+      "frame": 120,
+      "time": 2.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 222,
+      "luma": 168.15918578125
+    },
+    {
+      "frame": 180,
+      "time": 3.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 213,
+      "luma": 154.88414232714842
+    },
+    {
+      "frame": 240,
+      "time": 4.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 199,
+      "luma": 135.836996984375
+    },
+    {
+      "frame": 300,
+      "time": 5.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 180,
+      "luma": 116.66687078515625
+    },
+    {
+      "frame": 360,
+      "time": 6.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 160,
+      "luma": 99.48926365380859
+    },
+    {
+      "frame": 420,
+      "time": 7.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 146,
+      "luma": 88.10396683007812
+    },
+    {
+      "frame": 480,
+      "time": 8.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 153,
+      "luma": 88.92577424804688
+    },
+    {
+      "frame": 540,
+      "time": 9.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 167,
+      "luma": 97.12710972216797
+    },
+    {
+      "frame": 600,
+      "time": 10.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 173,
+      "luma": 102.46120819384765
+    },
+    {
+      "frame": 660,
+      "time": 11.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 175,
+      "luma": 104.87274288720702
+    }
+  ],
+  "sampleSource": "Decoded native2560x1440 JPEGs captured immediately after render, not the discarded empty before-render canvas probe."
+}

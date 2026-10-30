@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-29T12:24:10.651Z",
+  "readsBefore": 314,
+  "readsAfter": 314,
+  "fieldEnabled": false,
+  "windHeader": 0,
+  "gpuErrors": 0,
+  "messages": [],
+  "late": [],
+  "note": "Explicit shelter teardown after submitted work completes, followed by manual updates and90real renderer frames. No reads resume, published field/header open, no GPU/late errors. Does not test device loss or destruction before queued commands submit."
+}

@@ -6,7 +6,7 @@
 import { DynamicRes } from '../core/dynamicRes.js';
 import { gpuTimer } from '../core/gpuTimer.js';
 import { SANDFALL_SITES } from '../render/sandfalls.js';
-import { sandHealingScale } from '../terrain/state/healing.js';
+import { sandHealingScale, STORM_ERASE } from '../terrain/state/healing.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 const BRUSH_MOUND = BRUSH.MOUND;
 
@@ -16,8 +16,36 @@ const smoothstep01 = (t) => { t = t < 0 ? 0 : t > 1 ? 1 : t; return t * t * (3 -
 export async function addEnvironmentSystems(g) {
   const { loop, engine, env, atmosphere, content, camera, streamer, shadows, post, rocks, weather, ws, clock, ground, pendingTp, warden, wardenMod, restoration,
     params, spindrift, dust, snowfall, sfx, SFX, arm, frost, controller, terrainState, footprints, toggles, game, registerToggle, ring, wraithView, setRenderScale } = g;
+  g.windShelter=(await import('../terrain/state/stormShelter.js')).createStormShelter(engine,terrainState,ground);
+  g.wind.shelter=g.windShelter.field;terrainState.shelter=g.windShelter;
+  const syncShelter=()=>{
+    const shelter=g.windShelter;shelter.enabled=shelter.on&&g.sandstorm.active&&g.sandstorm.strength>0;
+    shelter.px=controller.pos.x;shelter.pz=controller.pos.z;shelter.time=clock.simTime;shelter.dx=g.sandstorm.block[0];shelter.dz=g.sandstorm.block[1];shelter.validate();
+  };
   // Rain, lightning and thunder (systems/storm.js): the strike turns the key light, so it runs first.
   (await import('./storm.js')).addStormSystems(g);
+  // The sandstorm (D6): when the restored erg's weather turns to sandstorm with the Wraith in the erg,
+  // a front forms upwind of it (world/sandstormFront.js: 2.4 km out, rolling in at 32 m/s) and comes
+  // on with the wind; when the weather moves on, the storm dies away where it is.
+  let stormOv=null,stormSt=null;
+  loop.add({name:'sandstormFront',update:()=>{
+    const front=g.sandstorm;
+    const want=weather.duneName==='sandstorm'&&weather.dunesRestored&&weather.dunes>0.5;
+    front.enabled=true;
+    // A new forced weather (a photo spot, the dev overlay) starts its storm afresh.
+    if(ws.weatherOverride!==stormOv||ws.stormStart!==stormSt){stormOv=ws.weatherOverride;stormSt=ws.stormStart;front.active=false;front.strength=0;}
+    if(want&&!front.active){
+      front.anchorX=controller.pos.x;front.anchorZ=controller.pos.z;front.baseY=controller.pos.y;
+      front.dirX=g.wind.dirX;front.dirZ=g.wind.dirZ;
+      front.snap=!!(weather.snap||g.capture);front.startInside=!!weather.override;front.startAhead=weather.override&&ws.stormStart==='arriving'?700:0;
+    }
+    front.target=want?1:0;
+    front.dt=clock.dt;front.update();
+    g.stormExposure.time=clock.simTime;g.stormExposure.record();
+    g.wind.stormWeight=g.sandDust.duneWeight;post.fog.stormWindWeight=g.wind.stormWeight;
+    front.qx=camera.position.x;front.qy=camera.position.y;front.qz=camera.position.z;front.sample();
+    atmosphere.sandStorm=front.density*g.sandDust.duneWeight;
+  }});
   loop.add({ name: 'atmosphere', update: () => {
     // Materials read their own pixel position in the scene target: the internal size.
     env.env.screenInfo.x = post.post.width; env.env.screenInfo.y = post.post.height;
@@ -32,7 +60,6 @@ export async function addEnvironmentSystems(g) {
     content.clipmap.update();
   } });
   loop.add({ name: 'shadows', update: () => shadows.update() });
-  loop.add(post);
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
   // The canyon's cliff walls: levels of detail by distance (every few frames; the switches are rare).
   let canyonTick = 0;
@@ -171,7 +198,7 @@ export async function addEnvironmentSystems(g) {
     restoration.value = (rFrost + (rMeadow - rFrost) * mW)*(1-dW)+rDunes*dW;
     restoration.frost = rFrost; restoration.meadow = rMeadow; restoration.dunes=rDunes;
     post.heat.hour=params.v.timeOfDay;post.heat.time=clock.simTime;post.heat.weight=bwD;
-    post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover;
+    post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover+(1-weather.cover)*atmosphere.sandStorm;
     g.sandDust.duneWeight=bwD;
     const desert=atmosphere.desert;desert.weight=bwD;desert.restored=rDunes;desert.wet=weather.wet;desert.sunY=env.env.sunDir.y;
     const r = rFrost, gs = params.v.gradeStrength;
@@ -191,6 +218,7 @@ export async function addEnvironmentSystems(g) {
   let wdX = 1, wdZ = 0;
   loop.add({ name: 'wind', update: () => {
     const wf = g.wind; if (!wf) return;
+    syncShelter();
     const ke = 1 - Math.exp(-clock.realDt * 0.3);
     wdX += ((streamer.windX || 1) - wdX) * ke; wdZ += ((streamer.windZ || 0) - wdZ) * ke;
     wf.dirX = wdX; wf.dirZ = wdZ; wf.time = clock.simTime;
@@ -198,6 +226,10 @@ export async function addEnvironmentSystems(g) {
     wf.gustiness = 0.35 + 0.65 * weather.gust;
     wf.update();
   } });
+  loop.add({name:'sandStreaks',update:()=>{g.sandStreaks.dt=clock.dt;g.sandStreaks.wet=weather.wet;g.sandStreaks.update();}});
+  // Upload post/SSR inputs after the shared wind and weather have reached this frame.
+  // Otherwise water materials see current wind while SSR reflects the previous frame.
+  loop.add(post);
   // Water: its clock and the Wraith wading (ripples, the splash going in).
   loop.add({ name: 'water', update: () => {
     const wa = g.water; if (!wa) return;
@@ -282,6 +314,11 @@ export async function addEnvironmentSystems(g) {
     // The wind bed swells with the gust fronts passing the camera (the field at the listener).
     let gf = 1;
     if (g.wind && g.wind.strength > 1e-3) { g.wind.sx = cp.x; g.wind.sz = cp.z; g.wind.sample(); gf = Math.min(1.6, Math.max(0.5, g.wind.speed / (0.66 * g.wind.strength))); }
+    // Embodied storm exposure follows the player even when the third-person camera is
+    // outside shelter. Camera orientation still supplies the upwind stereo bearing.
+    const stormWind=g.wind;stormWind.sx=controller.pos.x;stormWind.sz=controller.pos.z;stormWind.sample();
+    sfx.stormDensity=stormWind.density;sfx.stormSpeed=stormWind.rawSpeed;sfx.stormDX=stormWind.outX;sfx.stormDZ=stormWind.outZ;
+    sfx.stormWet=weather.wet;sfx.stormExposure=stormWind.exposure;
     sfx.wind = Math.min(1, w / 1.1 * gf); sfx.hiss = Math.min(1, frost.ribbonStrength); sfx.time = clock.simTime;
     if (frost.crystalEvent) { sfx.x = frost.crystalX; sfx.y = controller.pos.y + 0.5; sfx.z = frost.crystalZ; sfx.gain = 1.1; sfx.play(SFX.CHIME); }
     const sf = controller.surf;
@@ -299,7 +336,12 @@ export async function addEnvironmentSystems(g) {
     terrainState.time = clock.simTime;
     // Falling snow fills depressions (BRIEF §4.3: weather writes too): refill runs faster under it.
     terrainState.healScale = params.v.refillRate * (1 + 5 * weather.snow);
-    terrainState.sandHealScale = sandHealingScale(ws.restoration.dunes === 'restored', g.wind ? g.wind.strength : 0);
+    // A sandstorm over the Wraith erases sand marks and lets the ripples back (D6): the resident sand heals
+    // faster under it, and the erosion clock lets stored pages catch up when they reload.
+    const sf = g.sandstorm; sf.qx = controller.pos.x; sf.qy = controller.pos.y; sf.qz = controller.pos.z; sf.sample();
+    const stormHere = sf.density * (g.sandDust ? g.sandDust.duneWeight : 0);
+    terrainState.stormErosion += stormHere * clock.dt;
+    terrainState.sandHealScale = sandHealingScale(ws.restoration.dunes === 'restored', g.wind ? g.wind.strength : 0) * (1 + STORM_ERASE * stormHere);
     footprints.enabled = toggles.on.footprints !== false;
     footprints.px = controller.pos.x; footprints.pz = controller.pos.z;
     footprints.grounded = controller.grounded && !arm.free && content.capsule.isEnabled();
@@ -313,6 +355,7 @@ export async function addEnvironmentSystems(g) {
       terrainState.bk = 3; terrainState.bwet = 0; terrainState.bbias = 0; terrainState.bberm = 0; terrainState.stamp();
     }
     terrainState.update();
+    syncShelter();g.windShelter.update();
   } });
 
   // Render scale follows the Quality slider (the maximum), stepped down/up by the dynamic-res

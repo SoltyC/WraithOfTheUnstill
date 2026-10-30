@@ -32,6 +32,9 @@ export const DIFFUSION = 0.0005; // σ ≈ 0.25 m after 60 s, 0.77 m after 10 mi
 
 /** Relative sand weathering: held erg barely changes; restored wind accelerates healing. */
 export const SAND_HEAL_STILLED = 0.08;
+/** A sandstorm erases sand marks: extra sand healing per unit of storm density (a full storm heals
+ *  sand ~25× faster: a footprint's half-life ~20 s instead of ~5 min); and on reload, per density-second. */
+export const STORM_ERASE = 24;
 export function sandHealingScale(restored,wind) { return restored ? 0.8+1.2*Math.min(1,Math.max(0,wind)/1.2) : SAND_HEAL_STILLED; }
 
 // Integer avalanche hash: absolute ticks change the rounding choice even at steady FPS.

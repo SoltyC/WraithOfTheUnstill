@@ -61,6 +61,14 @@ export async function createWorld(g) {
   const { createPostChain } = await import('../post/chain.js');
   const post = createPostChain(scene, camera, atmosphere, shadows, content.clipmap.buffers.surface, content.clipmap.buffers.wind);
   post.fog.keyDir = env.env.keyDir;
+  const {createSandstormFront}=await import('../world/sandstormFront.js');
+  const sandstorm=g.sandstorm=createSandstormFront();
+  // Prototype authored erg anchor; no automatic activation until all storm consumers pass.
+  sandstorm.anchorX=2400;sandstorm.anchorZ=900;sandstorm.baseY=180;
+  post.fog.stormFront=sandstorm;
+  g.stormExposure=new (await import('../world/stormExposure.js')).StormExposure();
+  g.stormExposure.source=sandstorm.block;
+  g.stormPersistence=await import('../world/stormPersistence.js');
   const ring = ringMod.createMountainRing(scene, atmosphere, await ringData);
   // Ground blow (spindrift): created after the opaque meshes, drawn in the transparent pass.
   const { createSpindrift } = await import('../render/spindrift.js');
@@ -123,7 +131,9 @@ export async function createWorld(g) {
   const canyon = (await import('../render/canyonWalls.js')).createCanyonWalls(scene, atmosphere, matLib, shadows, bindShadows);
   canyon.freeze();
   // The wind field (Phase 8 M1): one function of place and time shared by the CPU and the GPU.
-  const wind = (await import('../world/wind.js')).createWind();
+  const wind = (await import('../world/wind.js')).createWind(sandstorm);
+  const sandStreaks=g.sandStreaks=(await import('../render/sandStreaks.js')).createSandStreaks(scene,content.clipmap,atmosphere,wind,sandstorm,snowfall,post);
+  bindShadows(sandStreaks.material,shadows);post.setStreaks(sandStreaks);
   // Grass (Phase 8): GPU-built blades over the meadow, receiving the shadow cascades.
   const grass = (await import('../render/grass.js')).createGrass(scene, content.clipmap, atmosphere, wind);
   for (const m of grass.materials) bindShadows(m, shadows);
@@ -148,7 +158,7 @@ export async function createWorld(g) {
   bindShadows(water.materials[1], shadows); // the surface pass (the absorb pass reads no shadows)
   water.freeze();
   trees.setWater((x, z) => (water.wetAt(x, z) ? 1e9 : NaN)); // no trees in lakes, rivers or on their banks
-  post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k]; });
+  post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k];for(let k=36;k<b.length;k++)P[144+k-36]=b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
   // The Wraith's feet and hem stand on built floors too (solids arrive with the architecture).

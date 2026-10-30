@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-29T11:57:53.502Z",
+  "rate": 48000,
+  "seconds": 4,
+  "seed": "0x13579bdf",
+  "checks": {
+    "offBitIdentical": true,
+    "finite": true,
+    "noUpdateNodes": true,
+    "shelterQuieter": true,
+    "mutedTail": true,
+    "volumeZeroTail": true
+  },
+  "reports": [
+    {
+      "name": "head-off",
+      "rms": 0.038347429084625906,
+      "peak": 0.19340848922729492,
+      "nonFinite": 0,
+      "tailRms": 0.03703763837209427,
+      "perSecond": [
+        0.030531986027662862,
+        0.04697154230429135,
+        0.040384821557046494,
+        0.03335625129071979
+      ],
+      "initNodes": 138,
+      "updateNodes": 0,
+      "minSpeed": 0.5265673942346946,
+      "maxSpeed": 0.9801637067489206,
+      "minDensity": 0,
+      "maxDensity": 0
+    },
+    {
+      "name": "current-off",
+      "rms": 0.038347429084625906,
+      "peak": 0.19340848922729492,
+      "nonFinite": 0,
+      "tailRms": 0.03703763837209427,
+      "perSecond": [
+        0.030531986027662862,
+        0.04697154230429135,
+        0.040384821557046494,
+        0.03335625129071979
+      ],
+      "initNodes": 144,
+      "updateNodes": 0,
+      "minSpeed": 0.5265673942346946,
+      "maxSpeed": 0.9801637067489206,
+      "minDensity": 0,
+      "maxDensity": 0
+    },
+    {
+      "name": "storm-open",
+      "rms": 0.02846759344657859,
+      "peak": 0.1462172120809555,
+      "nonFinite": 0,
+      "tailRms": 0.029534314654887348,
+      "perSecond": [
+        0.02551495145470584,
+        0.029086960558896913,
+        0.030574038044748262,
+        0.02845662808391042
+      ],
+      "initNodes": 144,
+      "updateNodes": 0,
+      "minSpeed": 1.4693629927069978,
+      "maxSpeed": 3.672837938932854,
+      "minDensity": 1,
+      "maxDensity": 1
+    },
+    {
+      "name": "storm-shelter",
+      "rms": 0.01349575688343007,
+      "peak": 0.06617188453674316,
+      "nonFinite": 0,
+      "tailRms": 0.014044361887405854,
+      "perSecond": [
+        0.01043664983177451,
+        0.0150043311769194,
+        0.015048003231128452,
+        0.012963248065387295
+      ],
+      "initNodes": 144,
+      "updateNodes": 0,
+      "minSpeed": 1.4693629927069978,
+      "maxSpeed": 3.672837938932854,
+      "minDensity": 1,
+      "maxDensity": 1
+    },
+    {
+      "name": "storm-ramp",
+      "rms": 0.031495205186918805,
+      "peak": 0.1598045527935028,
+      "nonFinite": 0,
+      "tailRms": 0.030247166671910346,
+      "perSecond": [
+        0.028359367210649543,
+        0.0365206230384849,
+        0.0318937614874489,
+        0.02850561631570773
+      ],
+      "initNodes": 144,
+      "updateNodes": 0,
+      "minSpeed": 1.4693629927069978,
+      "maxSpeed": 3.672837938932854,
+      "minDensity": 0,
+      "maxDensity": 1
+    },
+    {
+      "name": "storm-muted",
+      "rms": 0.012853920596616412,
+      "peak": 0.12407068908214569,
+      "nonFinite": 0,
+      "tailRms": 0,
+      "perSecond": [
+        0.02551495145470584,
+        0.0031433025753952516,
+        0,
+        0
+      ],
+      "initNodes": 144,
+      "updateNodes": 0,
+      "minSpeed": 1.4693629927069978,
+      "maxSpeed": 3.672837938932854,
+      "minDensity": 1,
+      "maxDensity": 1
+    },
+    {
+      "name": "storm-volume-zero",
+      "rms": 0,
+      "peak": 0,
+      "nonFinite": 0,
+      "tailRms": 0,
+      "perSecond": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "initNodes": 144,
+      "updateNodes": 0,
+      "minSpeed": 1.4693629927069978,
+      "maxSpeed": 3.672837938932854,
+      "minDensity": 1,
+      "maxDensity": 1
+    }
+  ],
+  "scope": "Actual createSfx source with a local window/Math/context facade; actual shared CPU wind sampled at60Hz. OfflineAudioContext only. No live audio context or renderer mutation. Compares float PCM before WAV encoding. Shelter uses stormExposure only; ramp changes stormDensity; enabled mute begins at1s and zero volume is set before the timeline. Not a listening review or shelter geometry validation."
+}

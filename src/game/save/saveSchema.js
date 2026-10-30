@@ -2,8 +2,9 @@
 // A save is plain JSON-compatible data plus binary terrain pages (Uint8Array).
 
 import { MATERIALS, CONSUMABLES, FLASK } from '../economy/items.js';
+import {validateStormState} from '../../world/stormPersistence.js';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
 
 /**
@@ -14,7 +15,7 @@ export const SLOTS = ['auto', 'slot1', 'slot2', 'slot3'];
  *   progression: { elements: string[], echoes: string[], robes: string[], robe: string, shrines: string[] },
  *   quests: { quests: Record<string, { state: string, step: number }>, flags: string[] },
  *   journal: { lore: string[], map: string },
- *   world: { timeOfDay: number, weather: string, weatherOverride: string|null, biome: string, restoration: Record<string, string> },
+ *   world: { timeOfDay: number, weather: string, weatherOverride: string|null, biome: string, sandstorm: null|object, restoration: Record<string, string> },
  *   entities: { crystals: number[], warden: null | { state: string, x: number, z: number, heading: number } },
  *   terrainPages: TerrainPage[],
  *   inventory: { owned: { id: string, tier: number, infusion: string|null }[], carried: (string|null)[], held: number, marks: number,
@@ -50,7 +51,7 @@ export function createEmptySave(slot = 'auto', now = 0) {
     progression: { elements: [], echoes: [], robes: ['pilgrim'], robe: 'pilgrim', shrines: [] },
     quests: { quests: {}, flags: [] },
     journal: { lore: [], map: '' },
-    world: { timeOfDay: 16.5, weather: 'clear', weatherOverride: null, biome: 'frost', restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' } },
+    world: { timeOfDay: 16.5, weather: 'clear', weatherOverride: null, biome: 'frost', sandstorm:null, restoration: { frost: 'stilled', meadow: 'stilled', mire: 'stilled', dunes: 'stilled', ember: 'stilled', coast: 'stilled' } },
     entities: { crystals: [], warden: null },
     terrainPages: [],
     inventory: emptyInventory(),
@@ -65,6 +66,8 @@ export function createEmptySave(slot = 'auto', now = 0) {
  * @type {Record<number, (s: any) => any>}
  */
 export const migrations = {
+  // v3 → v4: no past storms are invented for legacy terrain pages.
+  3:(s)=>({...s,version:4,world:{...s.world,sandstorm:null}}),
   // v1 (Phase 0 skeleton) → v2 (Phase 7): the quest graph's state replaces the per-quest vars
   // (no v1 build had quests, so they start fresh); shrines, journal and the world's entities
   // (crystal formations, the Warden) are added empty; the weather is no longer forced.
@@ -133,6 +136,10 @@ export function validateSave(s) {
   if (w !== null && (typeof w?.state !== 'string' || !Number.isFinite(w.x) || !Number.isFinite(w.z) || !Number.isFinite(w.heading))) fail('entities.warden');
   if (!Number.isFinite(s.world?.timeOfDay)) fail('world.timeOfDay');
   if (!Array.isArray(s.terrainPages)) fail('terrainPages');
+  if(s.world.sandstorm!==null){
+    try{validateStormState(s.world.sandstorm);}catch{fail('world.sandstorm');}
+    if(s.world.sandstorm.exposure.through!==s.playSeconds||s.terrainPages.some(p=>!Number.isFinite(p.savedAt)||p.savedAt>s.playSeconds))fail('world.sandstorm.captureClock');
+  }
   const inv = s.inventory;
   if (!Array.isArray(inv?.owned) || !Array.isArray(inv.carried) || !Number.isFinite(inv.marks) || inv.marks < 0) fail('inventory');
   for (const w of inv.owned) if (typeof w?.id !== 'string' || !Number.isFinite(w.tier)) fail('inventory.owned[]');

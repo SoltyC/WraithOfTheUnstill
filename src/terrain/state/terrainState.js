@@ -152,7 +152,7 @@ export function createTerrainState(engine, opts) {
     setSlot(key, -1); slotKey[slot] = -1; freeSlots++;
     pageStored[key] = 1; self.stats.stored++;
     Promise.all(reads).then(() => {
-      if (g0 === gen) worker.postMessage({ type: 'store', key, time: now, words }, [words.buffer]);
+      if (g0 === gen) worker.postMessage({ type: 'store', key, time: now, erosion: self.stormErosion, words }, [words.buffer]);
       slotBusy[slot] = 0;
     }, () => { slotBusy[slot] = 0; if (g0 === gen) { pageStored[key] = 0; self.stats.stored--; } });
   }
@@ -161,10 +161,14 @@ export function createTerrainState(engine, opts) {
     fine, atlas, params, relaxation, collision, coarseRelaxation,
     /** Optional visual sink, notified only after brush dispatch succeeds. */
     brushFx: null,
+    shelter:null,
     /** Owner fields: player position (m) and game time (s), set before update(). */
     px: 0.5, pz: 0.5, time: 0.5,
     /** Healing speed multiplier (the 'Refill rate' art control). */
     healScale: 1.5 - 0.5, sandHealScale: 1.5 - 0.5,
+    /** Storm erosion (D6): cumulative sandstorm density-seconds over the Wraith (owner adds). A page
+     *  stored away heals on reload by the erosion that passed meanwhile, as well as by time. */
+    stormErosion: 0.5 - 0.5,
     /** Benchmarks: follow (followX, followZ) instead of the player. */
     followOverride: false, followX: 0.5, followZ: 0.5,
     /** Stats for the dev overlay. */
@@ -183,7 +187,7 @@ export function createTerrainState(engine, opts) {
         // arrived (update() holds brushes over loading pages), so nothing of either is lost.
         if (pageStored[key]) {
           pageStored[key] = 0; this.stats.stored--; pageLoading[key] = 1;
-          worker.postMessage({ type: 'load', key, time: this.time, sandScale: this.sandHealScale, gen });
+          worker.postMessage({ type: 'load', key, time: this.time, sandScale: this.sandHealScale, erosion: this.stormErosion, gen });
           continue;
         }
         if (allocSlot(key, this.time, true) < 0) ok = false;
@@ -275,7 +279,7 @@ export function createTerrainState(engine, opts) {
      * window approaches them, exactly like pages the player walked away from.
      */
     restore(pages) {
-      gen++;
+      gen++; this.shelter?.reset();
       if (relaxation) relaxation.queue.reset();
       if (collision) collision.reset();
       if (coarseRelaxation) coarseRelaxation.reset();
@@ -291,7 +295,7 @@ export function createTerrainState(engine, opts) {
         list.push({ key, time: p.savedAt, words });
       }
       this.stats.stored = list.length;
-      worker.postMessage({ type: 'restore', pages: list }, list.map((p) => p.words.buffer));
+      worker.postMessage({ type: 'restore', pages: list, erosion: this.stormErosion }, list.map((p) => p.words.buffer));
       origin[0] = NaN; origin[1] = NaN; // the whole window refills from the records
     },
     /** Pages near the player still to come back from the worker (loading waits on them). */
@@ -360,7 +364,7 @@ export function createTerrainState(engine, opts) {
         const key = pz * PAGES + px;
         if (pageStored[key] && !pageLoading[key] && pageSlot[key] < 0) {
           pageStored[key] = 0; pageLoading[key] = 1; this.stats.stored--;
-          worker.postMessage({ type: 'load', key, time: now, sandScale: this.sandHealScale, gen });
+          worker.postMessage({ type: 'load', key, time: now, sandScale: this.sandHealScale, erosion: this.stormErosion, gen });
         } else if (pageSlot[key] >= 0) slotUsed[pageSlot[key]] = now;
       }
       // Keep a reserve of free slots: evict the least recently used page outside KEEP_RADIUS.

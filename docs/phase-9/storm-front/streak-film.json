@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-29T09:00:18.133Z",
+  "film": {
+    "ok": true,
+    "frames": 480,
+    "failed": 0,
+    "dir": "screenshots/d6-storm-streaks/frames/streaks-inside",
+    "wallS": 29,
+    "ms": 29049
+  },
+  "age": 104.99999999999943,
+  "localDensity": 0.9944598480048967,
+  "gpuErrors": 0,
+  "gpuMessages": [],
+  "late": [],
+  "note": "Native1440p/fixed60 8second inside-storm sand-streak film, pose95 exposure settled while frozen first, then normal SH/exposure easing and2s warm gives age about97\u2192105.8once-per-second exported-frame samples test a fixed640x640near-ground strip away from the Wraith (RGB>=253), including frame0. This is not whole-frame opaque clipping or real-time performance. Shared wind and near sand streaks present, no erasure/audio/shelter consumers yet; normal storm capability remains false.",
+  "samples": [
+    {
+      "frame": 0,
+      "time": 0.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 190,
+      "luma": 97.58728488916014
+    },
+    {
+      "frame": 60,
+      "time": 1.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 192,
+      "luma": 97.58908514648438
+    },
+    {
+      "frame": 120,
+      "time": 2.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 191,
+      "luma": 97.58493553222655
+    },
+    {
+      "frame": 180,
+      "time": 3.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 191,
+      "luma": 97.59448703564452
+    },
+    {
+      "frame": 240,
+      "time": 4.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 191,
+      "luma": 97.59080497265624
+    },
+    {
+      "frame": 300,
+      "time": 5.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 191,
+      "luma": 97.58552804833984
+    },
+    {
+      "frame": 360,
+      "time": 6.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 191,
+      "luma": 97.58186737011718
+    },
+    {
+      "frame": 420,
+      "time": 7.0,
+      "foregroundPixels": 409600,
+      "foregroundClipped": 0,
+      "maxRGB": 192,
+      "luma": 97.56585889990234
+    }
+  ],
+  "sampleSource": "Decoded native2560x1440 JPEGs captured immediately after render, not the discarded empty before-render canvas probe.",
+  "exportQaNote": "Native1440p/fixed60 film with exposure settled first, then normal SH/eye adaptation. Once-per-second exported-frame samples inspect a fixed640x640near-ground strip away from Wraith (RGB>=253), including frame0. JPEG artifact check, not raw-HDR/whole-frame opaque clipping or real-time performance. Full storm consumers unfinished and normal capability false.",
+  "reviewEncode": {
+    "file": "screenshots/d6-storm-streaks/streaks-inside.mp4",
+    "size": [
+      1280,
+      720
+    ],
+    "fps": 60,
+    "verifiedDecodedFrames": 480
+  },
+  "graphicsLimit": "Stretch capped at8reference1440p pixels plus grain diameter, scaled by FOV and output resolution; subtle near grains, no claim of full storm art acceptance."
+}

@@ -34,8 +34,8 @@ export function createCompose(post, scene, camera, atmo, fog) {
       ['shaftSampler', 'sampler'], ['shaftTex', 'stex', fog.shaftTex], ['atmoLight', 'buffer', atmo.atmoLight],
       ['ssrSampler', 'sampler'], ['ssrTex', 'stex', ssrTex], ['outColor', 'storageTex', out],
       ['canopySampler', 'sampler'], ['canopyTex', 'stex', atmo.canopyTex],
-      ['hazeSampler', 'sampler'], ['hazeTex', 'stex', fog.hazeTex]]);
-    comp.out = out;
+      ['hazeSampler', 'sampler'], ['hazeTex', 'stex', fog.hazeTex], ['sandBiomeA','buffer',atmo.biomeA]]);
+    comp.out = out;comp.aoTex=aoTex;comp.ssrTex=ssrTex;
   };
   const comp = {
     aoOn: true,
@@ -45,7 +45,7 @@ export function createCompose(post, scene, camera, atmo, fog) {
     ssrOn: true,
     /** SSR: blend strength, max ray length (m), surface thickness (m). */
     ssrIntensity: 1, ssrRange: 40, ssrThickness: 0.6,
-    out: null,
+    out: null,aoTex:null,ssrTex:null,
     run() {
       const W = post.width, H = post.height;
       if (comp.aoOn) csAo.dispatch(Math.ceil(W / 16), Math.ceil(H / 16), 1);

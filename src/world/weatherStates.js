@@ -23,7 +23,7 @@ export const MEADOW_STATES = {
 export const DUNES_STATES = {
   clear: {cover:.08,snow:0,rain:0,storm:0,wind:1,fog:.02,gust:.25,sand:0},
   'heat-haze': {cover:.04,snow:0,rain:0,storm:0,wind:.8,fog:.14,gust:.35,sand:0},
-  sandstorm: {cover:.1,snow:0,rain:0,storm:0,wind:2.6,fog:.14,gust:1,sand:1},
+  sandstorm: {cover:.1,snow:0,rain:0,storm:0,wind:1,fog:.14,gust:.3,sand:1},
 };
 export const STILLED_DUNES_STATES = {
   clear:{...DUNES_STATES.clear,gust:0},

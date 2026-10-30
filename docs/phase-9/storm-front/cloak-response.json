@@ -1,0 +1,16 @@
+{
+  "baseline": "b321f6f",
+  "clearExactlyUnchanged": true,
+  "mantleMeanSpeedBefore": 0.018075646356984536,
+  "mantleMeanSpeedAfter": 0.1449621504710743,
+  "mantleSpeedRatio": 8.019749203328493,
+  "robeMeanSpeedBefore": 0.10898335141147272,
+  "robeMeanSpeedAfter": 0.5341509248108444,
+  "robeSpeedRatio": 4.901215808588302,
+  "meanForceBefore": 8.368496751455021,
+  "meanForceAfter": 8.145948611392686,
+  "maxConstraintRatioBefore": 1.201123934964185,
+  "maxConstraintRatioAfter": 1.3172295949291832,
+  "nonFinite": 0,
+  "note": "Actual Wraith/Verlet standing-pose comparison at matched world positions,12s timeline, first3s excluded. RMS free-hem particle speed averaged over samples. Not a universal multiplier, rendered penetration, human feel or allocation acceptance."
+}
