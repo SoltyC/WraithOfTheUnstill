@@ -144,12 +144,21 @@ export function ravineWalls(h2, mask, n2, c2, half, enc, feats, roadDist = null)
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (near[j * W + i]) for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) {
     const jj = j + b, ii = i + a; if (jj >= 0 && jj < H && ii >= 0 && ii < W) reach[jj * W + ii] = 1;
   }
-  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i; above[k] = reach[k] ? hf[k] - floorAt(wx(i), wz(j)) : 1e4; }
+  // The true floor beside a wall can lie well below the spine's (the floor dips toward a wall, or a
+  // sand bar rides the middle): a contour on the spine's floor then runs halfway up the riser and
+  // breaks off, leaving the riser bare. The local floor: the lowest ground within 10 m (a separable
+  // min filter), where that is lower than the spine's.
+  const lowest = new Float64Array(W * H), tmp = new Float64Array(W * H), RM = 5;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { let m = Infinity; for (let a = Math.max(0, i - RM); a <= Math.min(W - 1, i + RM); a++) m = Math.min(m, hf[j * W + a]); tmp[j * W + i] = m; }
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { let m = Infinity; for (let b = Math.max(0, j - RM); b <= Math.min(H - 1, j + RM); b++) m = Math.min(m, tmp[b * W + i]); lowest[j * W + i] = m; }
+  const lowAt = (x, z) => { const i = Math.max(0, Math.min(W - 1, Math.round((x + half) / c2 - 0.5 - i0))), j = Math.max(0, Math.min(H - 1, Math.round((half - z) / c2 - 0.5 - j0))); return lowest[j * W + i]; };
+  const footAt = (x, z) => Math.min(floorAt(x, z), lowAt(x, z));
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = j * W + i; above[k] = reach[k] ? hf[k] - footAt(wx(i), wz(j)) : 1e4; }
   // A cell is in play when its lowest corner is within one strata of the floor (a test on one
   // corner skipped the cells of a diagonal wall whose high corner it happened to be, breaking the line).
   const lowCell = (k) => near[k] && Math.min(above[k], above[k + 1], above[k + W], above[k + W + 1]) < STRATA + 4;
   for (const raw of contours(above, ISO_UP, lowCell)) {
-    const runs = measure(resample(raw), (x, z) => floorAt(x, z) + ISO_UP, hAt);
+    const runs = measure(resample(raw), (x, z) => footAt(x, z) + ISO_UP, hAt);
     if (runs) for (const pts of runs) walls.push({ L: -1, iso: r2(pts[0][6]), pts });
   }
   // Hoodoos and arches (D7b): on the Galleries' floor at the south end (z < 260) and in the Falls
@@ -234,10 +243,14 @@ function measure(P, isoAt, hAt) {
     const a = P[Math.max(0, k - 2)], b = P[Math.min(n - 1, k + 2)];
     let tx = b[0] - a[0], tz = b[1] - a[1]; const tl = sqrt(tx * tx + tz * tz) || 1; tx /= tl; tz /= tl;
     let nx = -tz, nz = tx;
-    const [x, z] = P[k];
+    let [x, z] = P[k];
     const iso = isoAt(x, z);
     // Out of the wall is downhill.
     if (hAt(x + nx * 2, z + nz * 2) > hAt(x - nx * 2, z - nz * 2)) { nx = -nx; nz = -nz; }
+    // Smoothing cuts the corners of a sharply bending riser, pulling the line up onto the rock
+    // (a face built there stands behind the riser's foot, and the terrain's bare slope shows in
+    // front of it): out along the normal until the line is back at its foot.
+    for (let m = 0; m < 16 && hAt(x, z) > iso + 0.4; m++) { x += nx * 0.25; z += nz * 0.25; }
     let prev = hAt(x, z), top = prev, depth = 0;
     for (let u = 0.5; u <= 16; u += 0.5) {
       const h = hAt(x - nx * u, z - nz * u);
