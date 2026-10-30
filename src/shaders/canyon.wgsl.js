@@ -128,6 +128,27 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var col = albedo * (key * diff * vis / PI + sky + bounce);
   let H = normalize(L + V);
   col += key * pow(max(dot(N, H), 0.0), select(20.0, 40.0, slot)) * select(0.03, 0.08, slot) * vis * diff;
+  if (rift) {
+    // Glass seams (dunes-design.md §7.1: "glass where the Walker's step split it"): thin veins of
+    // fused black-green glass running along the Stride's walls, here and there. Mirror-smooth: the
+    // sky in them at a glance, and where a facet turns to the sun a pinpoint glint, not a glow.
+    let u = fragmentInputs.vUv.x;
+    let c = (wp.y + 6.0 * noised(vec2f(u * 0.015, 3.7)).x + u * 0.12) / 9.0;
+    let d = abs(fract(c) - 0.5) * 9.0;
+    let w = 0.08 + 0.22 * (noised(vec2f(u * 0.05, floor(c) * 1.3)).x * 0.5 + 0.5);
+    let seam = (1.0 - smoothstep(w, w + fp * 1.5 + 0.02, d)) * smoothstep(0.05, 0.35, noised(vec2f(u * 0.006, floor(c) * 0.71)).x)
+      * smoothstep(4.0, 10.0, below) * (1.0 - sandK);
+    if (seam > 0.001) {
+      let fc = floor(vec2f(u, wp.y) / 0.18);
+      let fh = vec2f(cy_hash(fc.x * 17.0 + fc.y * 3.0), cy_hash(fc.x * 5.0 - fc.y * 11.0)) - 0.5;
+      let Nf = normalize(Ng + (vec3f(fh.x, fh.y, -fh.x) * 0.6));
+      let NV = max(dot(Ng, V), 0.0); let F = 0.04 + 0.96 * pow(1.0 - NV, 5.0);
+      var gcol = vec3f(0.02, 0.035, 0.03) * (key * diff * vis / PI + sky);
+      gcol += shIrradiance(reflect(-V, Ng)) * uniforms.envMisc.w * (F * 1.4 + 0.05);
+      gcol += key * vis * pow(max(dot(Nf, normalize(L + V)), 0.0), 1800.0) * 9.0 * step(0.0, nl);
+      col = mix(col, gcol, seam);
+    }
+  }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, uniforms.fogParams.z * atmoExposure()), 0.0);
 }
