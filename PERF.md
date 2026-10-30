@@ -444,3 +444,17 @@ Cliff kit alone (on − off): +0.34 ms canyon floor, +0.46–0.53 ms rim view (+
 | p7-monastery-approach | 12.88 | reference (meadow side) |
 
 The clipmap's enclosure term (6 ground lookups per vertex, flats only) and the wadi water + flowers together add ~0.15–0.25 ms on the erg's canyon views; the first version (8 lookups across levels) cost ~0.45 ms. Load 17.1–17.5 s to ready. No late pipelines at any p9r spot.
+
+## 30 October (finishing round) — same setup
+
+| View | GPU mean (ms) |
+|---|---|
+| p9r-galleries-dawn | 13.9–14.1 |
+| p9r-hoodoos-noon | 14.2 |
+| p9r-needle-noon | 14.1 |
+| p9r-braids-restored | 10.6 |
+| p9r-glass-field | 14.5 |
+| p9r-oasis-restored | 11.3 |
+| p8-meadow-golden | 14.8 (reference) |
+
+At p9r-galleries-dawn, trees off saves 0.32 ms (the canyon flora); the canyon kit with falls and beams 1.07 ms (more cliff lines after the bake fix). Load 18.0 s to ready. No late pipelines.
