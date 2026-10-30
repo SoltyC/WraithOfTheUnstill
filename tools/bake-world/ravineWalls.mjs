@@ -181,7 +181,22 @@ export function ravineWalls(h2, mask, n2, c2, half, enc, feats, roadDist = null)
     for (let k = 0; k < f.c.n; k += 4) pts.push([r2(f.c.x[k]), r2(f.c.z[k]), r2(f.W[k]), r2(f.F[k])]);
     return { id: f.id, kind: f.kind, pts };
   });
-  return { iso: ISO_UP, strata: STRATA, walls, spines, hoodoos, arches };
+  // The wadis' braided channels (the restored evening water, render/wadiWater.js): each braid's centre
+  // line every 20 m, with its half-width and bed height (the lowest of three across it).
+  const hG = (x, z) => {
+    const i = Math.max(0, Math.min(n2 - 1, Math.floor((x + half) / c2))), j = Math.max(0, Math.min(n2 - 1, Math.floor((half - z) / c2)));
+    return h2[j * n2 + i] / enc.scale - enc.offset;
+  };
+  const wadis = [];
+  for (const f of feats) for (const b of f.braids || []) {
+    const pts = [];
+    for (let k = 0; k < b.c.n; k += 2) {
+      const x = b.c.x[k], z = b.c.z[k], nx = b.c.nx[k], nz = b.c.nz[k];
+      pts.push([r2(x), r2(z), r2(b.wc), r2(Math.min(hG(x, z), hG(x + nx * 2, z + nz * 2), hG(x - nx * 2, z - nz * 2)))]);
+    }
+    wadis.push({ id: f.id + '-' + b.name, pts });
+  }
+  return { iso: ISO_UP, strata: STRATA, walls, spines, hoodoos, arches, wadis };
 }
 
 /** Polyline → points every STEP m along it, then smoothed (ends pinned). */

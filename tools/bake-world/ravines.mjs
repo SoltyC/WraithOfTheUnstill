@@ -180,7 +180,8 @@ export function carveRavines(h2, n2, c2, half, enc, roads = []) {
         const e = q.t / (c.n - 1), pinch = smooth(0, 0.05, e) * smooth(0, 0.05, 1 - e);
         cut(x, z, i, j, ground(x, z) - def.depth * df * pinch * (1 - smooth(0.5, 1, q.d / wc)), KIND.wadi);
       }
-      if (name === 'main') feats.push({ id: def.id, kind: def.kind, c, W: new Float64Array(c.n).fill(def.half) });
+      if (name === 'main') feats.push({ id: def.id, kind: def.kind, c, W: new Float64Array(c.n).fill(def.half), braids: [] });
+      feats[feats.length - 1].braids.push({ name, c, wc });
     }
   }
   return { mask, feats, roadDist: roadD.length ? dRoad : null };
