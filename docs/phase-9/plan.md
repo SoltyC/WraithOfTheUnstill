@@ -206,6 +206,18 @@ Merged from `codex/dune-relaxation` (e44d9af) into the phase branch and switched
 - **Bot feel test:** scripted runs down three slip faces with fixed inputs, filmed in film mode at 60 fps for the user's review, since feel is the user's call.
 - **Echo hooks:** surf speed and the avalanche size (D11 Echoes).
 
+### D3 — Done (integrated, 2026-10-30)
+
+Merged from `codex/sand-surf` (e5d4555): one surf controller with sand tuning (faster down slip faces, slower uphill, looser carve), the sand wake, momentum-preserving glide landings, wet/frozen-aware spray and cuts, procedural grain hiss and low rush. Then:
+- **Sand-surf comes with Stone** (the Long Walker's waking lends both, gameplay-design §5.1); until D10, `?stone=1` or the dev overlay.
+- **The wake:** sand berms are low, wide and smooth (snow's clumpy chunk berm read as rubble on sand, and its steep lip only slumped); the carve reads as a soft groove with lips.
+- **Avalanche sheets:** carving a slip face (slope over ~23°), the downhill berm pours away down the face as a curtain of sand and dust — particles only, drawn from the spray budget; the mass is moved by D2's relaxation, so nothing is created.
+- **The singing sand:** a low drone near 95 Hz with harmonics swells under the sheets and fades after (real booming dunes hum 70–105 Hz while the sand flows); built once at audio unlock, never on wet sand or a crust.
+- **Crest streams:** leaving a crest at speed, sand streams off it behind the Wraith for a moment.
+- **Dust streaks:** speed streaks over sand are warm dust.
+- **Checked:** three code-selected slip faces, 12 s each from rest with real inputs: 719/720 frames surfing, peaks 24.7 / 17.7 / 17.1 m/s, no GPU, collision or late-pipeline errors (`docs/phase-9/sand-surf/slipface-films-integ.json`, films in `screenshots/d3-slipfaces-integ/`). The chain glide → land on a slip face → surf carries 21.2 m/s through the landing. A run stays readable from across the field. GPU while surfing at 1440p/0.7: 13.0 ms (standing at the same place 10.6).
+**Not done:** human feel and sound review (the user's); Echo hooks (D11); the sled run (D11).
+
 ### D4 — Stone verbs (BRIEF §9.2)
 
 `game/bending/stone.js` and `render/stoneFx.js`. The element is registered in `BUILT`. Hand-light and cuffs are ochre.
