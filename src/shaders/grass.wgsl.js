@@ -107,6 +107,7 @@ uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
 uniform grassRing: vec4f;            // x = cell (m), y = grid cells per side, z = inner skip half (m), w = segments
 uniform grassParams: vec4f;          // x = time (s), y = wind strength (0 stilled … 1), z = density ×, w = ring index
+uniform grassErg: vec4f;             // x = the Dunes' restoration (0 stilled: the oasis's reeds stand dead)
 uniform grassPush: array<vec4f,8>;  // the Wraith and its trail: x, y, z, strength (render/grass.js)
 ${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
@@ -187,7 +188,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
+  var hgt = (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
@@ -249,7 +250,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vSeed = h4;
   vertexOutputs.vFar = far;
   vertexOutputs.vFrost = st.z;
-  vertexOutputs.vDry = max(max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw)));
+  vertexOutputs.vDry = max(max(max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw))), reed * (1.0 - uniforms.grassErg.x));
 }
 `;
 

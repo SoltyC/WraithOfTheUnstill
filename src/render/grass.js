@@ -30,6 +30,8 @@ export function createGrass(scene, clipmap, atmo, wind) {
   // Push: the Wraith parts the grass where it passes; the blades spring back over ~2.5 s. A trail
   // of PUSH_N points (x, y, z, strength): [0] follows the Wraith, the rest are where it was.
   const PUSH_N = 8, push = new Array(PUSH_N * 4).fill(0);
+  /** The erg (grassErg): x = the Dunes' restoration. */
+  const erg = new Vector4(1, 0, 0, 0);
   let trailHead = 1, lastX = 0, lastZ = 0;
   const rings = [], mats = [];
   GRASS_RINGS.forEach(([cell, n, blades, seg], ri) => {
@@ -52,7 +54,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
     const rp = new Vector4(0, 1, 1, ri);
     const mat = new ShaderMaterial('grass' + ri, scene, { vertex: 'grass', fragment: 'grass' }, {
       attributes: ['position'],
-      uniforms: ['viewProjection', 'levels', 'villageBox', 'grassRing', 'grassParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
+      uniforms: ['viewProjection', 'levels', 'villageBox', 'grassRing', 'grassParams', 'grassErg', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
       storageBuffers: ['levelData', 'biomeA', 'windMap', 'surfaceMat', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
       shaderLanguage: ShaderLanguage.WGSL,
@@ -62,7 +64,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
     mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
     mat.setStorageBuffer('windMap', clipmap.buffers.wind); mat.setStorageBuffer('surfaceMat', clipmap.buffers.surface);
-    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
+    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setVector4('grassErg', erg); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
     mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
     mat.backFaceCulling = false;
     mesh.material = mat;
@@ -70,6 +72,8 @@ export function createGrass(scene, clipmap, atmo, wind) {
   });
   return {
     meshes: rings.map((r) => r.mesh), materials: mats,
+    /** Owner field: the Dunes' restoration 0 (stilled: the oasis's reeds stand dead) … 1. */
+    dunesRestored: 1,
     /** The push trail (shared with the ground cover). */
     push,
     /** Owner fields, set before update(). */
@@ -78,6 +82,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
     px: 0.5, py: 0.5, pz: 0.5, pushK: 1.5 - 0.5, dt: 0.5 - 0.5,
     update() {
       for (const r of rings) { r.rp.x = this.time; r.rp.y = this.wind; r.rp.z = this.density; }
+      erg.x = this.dunesRestored;
       // Trail: drop a point every 0.45 m travelled; the old ones fade.
       for (let i = 1; i < PUSH_N; i++) push[i * 4 + 3] = Math.max(0, push[i * 4 + 3] - this.dt * 0.4);
       const lx = this.px - lastX, lz = this.pz - lastZ;

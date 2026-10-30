@@ -171,7 +171,7 @@ export async function addEnvironmentSystems(g) {
   // Grass: its clock and the push (its wind is the field; a stilled meadow stands rigid).
   loop.add({ name: 'grass', update: () => {
     const gr = g.grass; if (!gr) return;
-    gr.time = clock.simTime;
+    gr.time = clock.simTime; gr.dunesRestored = restoration.dunes;
     gr.wind = Math.min(1.6, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.4 + 2 * warden.gust);
     gr.density = 1;
     gr.px = controller.pos.x; gr.py = controller.pos.y; gr.pz = controller.pos.z; gr.dt = clock.realDt;
