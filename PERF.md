@@ -517,3 +517,22 @@ One earlier session's two replay loads took 33.5–34 s with the stall still the
 Rocks, drawing only used slots: −0.15 to −0.4 ms (GPU frame) in one session, and the new build beat the old in all six alternating comparisons on Low (0.15–0.39 ms). 3 re-records over 1.2 km with no frame above the median. Other applications held the GPU at 22–47%, so the absolute numbers here are about 6% above the preset table's: the old build itself read 8.6–9.0 ms against 8.15 there.
 
 **Caveat (user, 2026-11-01):** games were being played on this PC during these runs, so every absolute number in this section is unreliable, load times included. The old-against-new rock comparison alternated builds, so its direction should stand; its size, and the load figures, want a rerun on an idle machine.
+
+## 1 November (later) — rerun with the PC out of play
+
+No game in play, but Lunar Client still open and the GPU at about 20% before each run. Load, same tool:
+
+| Preset | First load (s) | Replay loads (s) |
+|---|---|---|
+| High | 33.8 | 17.4, 17.1 |
+| Low | 32.3 | 16.2, 16.2 |
+
+Preset medians (ms), `docs/perf/preset-perf.json`; the table above is the 31 October run.
+
+| View | Low | Medium | High | Ultra |
+|---|---|---|---|---|
+| Canyon at dawn | 8.81 | 11.81 | 15.78 | 19.78 |
+| Meadow, golden hour | 8.25 | 11.45 | 16.54 | 19.51 |
+| Dunes | 6.12 | 7.93 | 9.82 | 11.42 |
+
+These read 3–8% above 31 October's. Old and new builds alternating (above) put the new build ahead, so this is the machine's state, not the code; the cause was not isolated. No late pipelines.
