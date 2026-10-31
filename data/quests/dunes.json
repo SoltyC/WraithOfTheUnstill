@@ -1,39 +1,319 @@
 {
-  "_review": "Phase 9 D10: the Long Walker's line (docs/gameplay-design.md §5.1, dunes-design.md §4.3–4.4). D11 adds the camp, the instruments and the side sites; until then this is the erg's main line on its own.",
+  "_review": "Phase 9 D10–D11: the Long Walker's line and the Wellhouse camp (docs/phase-9/dunes-design.md §4.1). The instruments and side sites are still to come.",
   "chapter": "dunes",
   "title": "The Glass Dunes",
-  "npcs": [],
-  "places": {},
-  "names": {},
+  "npcs": [
+    {
+      "id": "sarai",
+      "name": "Sarai",
+      "archetype": "elder",
+      "home": {
+        "poi": "wellhouse",
+        "dx": 0.2999999999999545,
+        "dz": -4.100000000000023
+      },
+      "about": "Keeps the Wellhouse well, though it has been dry longer than the caravan has been stranded."
+    },
+    {
+      "id": "hesper",
+      "name": "Hesper",
+      "archetype": "staff",
+      "home": {
+        "poi": "wellhouse",
+        "dx": 9.299999999999955,
+        "dz": 1.7999999999999545
+      },
+      "about": "Caravan master. Brought the sledges this far and has no plan for getting them back."
+    },
+    {
+      "id": "iven",
+      "name": "Iven",
+      "archetype": "lantern",
+      "home": {
+        "poi": "wellhouse",
+        "dx": -10.700000000000045,
+        "dz": -1.7000000000000455
+      },
+      "about": "Reads old battles in fused glass, the way others read weather."
+    },
+    {
+      "id": "nadra",
+      "name": "Nadra",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "wellhouse",
+        "dx": 2.5,
+        "dz": 10.5
+      },
+      "about": "The caravan's mapmaker. Her map marks a cistern nobody has found."
+    },
+    {
+      "id": "pell",
+      "name": "Pell",
+      "archetype": "child",
+      "home": {
+        "poi": "wellhouse",
+        "dx": 2.7999999999999545,
+        "dz": 7.2999999999999545
+      },
+      "about": "Nadra's child. Wants to see everything from higher up."
+    }
+  ],
+  "places": {
+    "wellhouse": {
+      "pos": [
+        1810,
+        775
+      ],
+      "name": "The Wellhouse"
+    },
+    "wellhouse-sled": {
+      "pos": [
+        1791.7,
+        794.8
+      ],
+      "name": "The Buried Sled"
+    }
+  },
+  "names": {
+    "wellhouse": "The Wellhouse"
+  },
   "quests": [
+    {
+      "id": "dunes-into-the-erg",
+      "kind": "main",
+      "title": "Into the Erg",
+      "summary": "A stranded caravan holds the ruined caravanserai at the oasis, around a well with nothing in it.",
+      "start": {
+        "near": {
+          "x": 1810,
+          "z": 775,
+          "r": 90
+        }
+      },
+      "steps": [
+        {
+          "id": "sarai",
+          "journal": "Speak to Sarai by the dry well at the Wellhouse.",
+          "when": {
+            "event": "talk:sarai"
+          },
+          "goal": {
+            "npc": "sarai",
+            "radius": 6
+          }
+        },
+        {
+          "id": "sled",
+          "journal": "Free the caravan's sled behind the back wall. Sweep a channel beside it, then start the lip of the sand above: sand goes where the channel is cut.",
+          "when": {
+            "flag": "dunes:sled-freed"
+          },
+          "goal": {
+            "at": [
+              1791.7,
+              794.8
+            ],
+            "label": "The buried sled",
+            "radius": 14
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        },
+        {
+          "id": "tell",
+          "journal": "Tell Sarai the sled is free.",
+          "when": {
+            "event": "talk:sarai"
+          },
+          "goal": {
+            "npc": "sarai",
+            "radius": 6
+          },
+          "actions": [
+            {
+              "marks": 40
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "dunes-follow-the-glass",
       "kind": "main",
       "title": "Follow the Glass",
       "summary": "Footprints of glass, each as long as a house, cross the erg in a great loop. Something walked here, and the sand fused under it.",
-      "start": { "any": [ { "near": { "x": 2550, "z": 800, "r": 520 } }, { "flag": "dunes:walker-woke" } ] },
+      "start": {
+        "any": [
+          {
+            "near": {
+              "x": 2550,
+              "z": 800,
+              "r": 520
+            }
+          },
+          {
+            "flag": "dunes:walker-woke"
+          }
+        ]
+      },
       "steps": [
         {
           "id": "track",
           "journal": "Follow the glass footprints across the erg. They lead toward the great star dune.",
-          "when": { "flag": "dunes:walker-woke" },
-          "goal": { "dynamic": "walker", "label": "Glass footprint", "radius": 20 }
+          "when": {
+            "flag": "dunes:walker-woke"
+          },
+          "goal": {
+            "dynamic": "walker",
+            "label": "Glass footprint",
+            "radius": 20
+          }
         },
         {
           "id": "stumble",
           "journal": "The Long Walker walks its old circuit. Make it stumble: change the ground where a foot will land — a Ridge under it, a Bloom's pit, or sand bound hard with Frost. Then climb its kneeling leg onto its back.",
-          "when": { "flag": "dunes:walker-boarded" },
-          "goal": { "dynamic": "walker", "label": "The Long Walker", "radius": 40 },
-          "actions": [ { "autosave": true } ]
+          "when": {
+            "flag": "dunes:walker-boarded"
+          },
+          "goal": {
+            "dynamic": "walker",
+            "label": "The Long Walker",
+            "radius": 40
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
         },
         {
           "id": "home",
           "journal": "Steer the Long Walker home to the dry well at the Wellhouse, west round the Stride: a Shard against a glyph pillar on its back turns it to that side. At the well, light the shaft.",
-          "when": { "flag": "dunes:walker-released" },
-          "goal": { "dynamic": "walker", "label": "The dry well", "radius": 40 },
-          "actions": [ { "marks": 150 }, { "thread": true }, { "autosave": true } ]
+          "when": {
+            "flag": "dunes:walker-released"
+          },
+          "goal": {
+            "dynamic": "walker",
+            "label": "The dry well",
+            "radius": 40
+          },
+          "actions": [
+            {
+              "marks": 150
+            },
+            {
+              "thread": true
+            },
+            {
+              "autosave": true
+            }
+          ]
         }
       ]
     }
-  ]
+  ],
+  "talk": {
+    "sarai": [
+      {
+        "when": {
+          "flag": "dunes:sled-freed"
+        },
+        "say": "sarai.after"
+      },
+      {
+        "when": {
+          "quest": "dunes-into-the-erg"
+        },
+        "say": "sarai.sled"
+      },
+      {
+        "say": "sarai.sled"
+      }
+    ],
+    "hesper": [
+      {
+        "when": {
+          "flag": "dunes:sled-freed"
+        },
+        "say": "hesper.after"
+      },
+      {
+        "say": "hesper.first"
+      }
+    ],
+    "iven": [
+      {
+        "say": "iven.first"
+      }
+    ],
+    "nadra": [
+      {
+        "say": "nadra.first"
+      }
+    ],
+    "pell": [
+      {
+        "say": "pell.first"
+      }
+    ]
+  },
+  "dialogue": {
+    "sarai.sled": {
+      "speaker": "sarai",
+      "lines": [
+        "You came out of the sand with no water and no thirst. I'm Sarai. I keep this well.",
+        "There's nothing in it to keep. But our best sled is buried behind the back wall, and that I can ask for.",
+        "That heap above it is ready to go. Touch the lip and it pours straight over the runners. Sand takes the lowest way it can find.",
+        "So give it one. Sweep a channel beside the sled first, then start the lip."
+      ]
+    },
+    "sarai.after": {
+      "speaker": "sarai",
+      "lines": [
+        "It went where you cut it. Remember that. Most of this desert still will.",
+        "The well followed the Walker, and the Walker followed the Shapers' instruments: a light, a clock and a song.",
+        "Nothing has sounded in an age. I wouldn't know where to send you yet. Nadra might."
+      ]
+    },
+    "hesper.first": {
+      "speaker": "hesper",
+      "lines": [
+        "Hesper. This is my caravan, what's left of it.",
+        "No beasts out here. We pull the sledges ourselves, and the best one is under a dune. Talk to Sarai."
+      ]
+    },
+    "hesper.after": {
+      "speaker": "hesper",
+      "lines": [
+        "That sled has crossed more sand than I have. Thank you for it."
+      ]
+    },
+    "iven.first": {
+      "speaker": "iven",
+      "lines": [
+        "Iven. I read glass.",
+        "Every print out on the erg was made in one step. You can tell which way the weight went by the splash."
+      ]
+    },
+    "nadra.first": {
+      "speaker": "nadra",
+      "lines": [
+        "Nadra. I draw what's here, which is harder than it sounds. The dunes keep their shape now, and I don't trust it.",
+        "Sand that stops moving is not a thing I have a map for."
+      ]
+    },
+    "pell.first": {
+      "speaker": "pell",
+      "lines": [
+        "Have you been on top of the wall? You can see the whole glass from up there. Mother says I can't."
+      ]
+    }
+  }
 }

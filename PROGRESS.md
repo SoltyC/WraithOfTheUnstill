@@ -1,3 +1,5 @@
+> **Latest — 1 November (Claude): D11 begun.** The sand grammar runtime; the Wellhouse camp (five people, *Into the Erg*); the buried sled puzzle, played live by the bot. 967 tests. On the playtest page. Next: the Sun Gate, Hourglass and Singing Dunes. Status: plan.md "D11 — Progress".
+
 > **Latest — 1 November (Claude): loads halved.** Pipelines recorded and replayed in parallel: 36 s → about 18 s after a build's first load. Rocks draw only used slots (0.15–0.39 ms, far below the plan's estimate). Plan corrected: `docs/perf/performance-plan.md`. Low at 60 fps on the i5-1235U still not met, and now further off than planned. Next: D11.
 
 > **Latest — 31 October (Claude): presets, UI, D10 after play.** Low/Medium/High/Ultra in Settings; menus, title and inventory redesigned minimal dark; a health bar and a low-health vignette; an easier Walker stumble, Skitters aboard, the well fills, a release orbit. 943 tests. Low at 60 fps on the i5-1235U is **not met** (estimated 15–25 fps, unmeasured there): `docs/perf/performance-plan.md`. Next: performance step 1 and parallel pipelines, then D11, then D12.

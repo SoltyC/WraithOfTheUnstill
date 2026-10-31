@@ -525,6 +525,19 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
 - **HUD:** quest goals use the compass and waypoint wiring being built now (`goal.npc` and places).
 - **Save v3** if not already done: element unlocks and the active element, per-biome restoration, dune migration time, and medal times.
 
+### D11 — Progress (2026-11-01, in progress)
+
+**Done:**
+- Step 1, the grammar runtime: `src/game/puzzles/grammar.js`, tests `tests/grammar.test.js` (sun and shade, frost patches, beams with mirrors and lenses, the sand clock, the phrase of booms). Nothing uses beams, the clock or the phrase in the world yet.
+- Step 2, part: the Wellhouse camp. Sarai, Hesper, Iven, Nadra and Pell in the caravanserai's court (`data/quests/dunes.json`), three awnings, two sledges; *Into the Erg* and the buried sled (`src/game/puzzles/sled.js`, `src/systems/puzzleSled.js`, `tools/bot/puzzle-sled.mjs`). The heap, the channel and the slide are real terrain state. Checked live: the slide with no channel pours over the sled; with one it frees it; 0 late pipelines.
+
+**Not done:**
+- The bot's channel is PLOUGH stamps (Sweep's own path through `ts.stamp`), not a real Sweep cast; nor has a human played it.
+- The lip is started by standing on it. Striking it, surfing off it, and Gust or Shard (G1) do not start it yet.
+- The heap and channel do not persist if the save is reloaded before the sled is freed: untested.
+- The awnings read a little like planks (first pass). Pilgrims from Hearn and the frost are not placed. No Dry Stair or quicksand entries (§4.1).
+- Steps 3–6: the three instruments, the Walker hooks, the side sites, the shrines' "wait until". Echoes, robes, map and journal sketches.
+
 ### D12 — Gate
 
 - **Photo spots `p9-*`:**

@@ -132,6 +132,7 @@ async function boot() {
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/longWalker.js')).addLongWalkerSystem(g); // the dune Warden (after the chapter's interactables and the nav's goals)
+  (await import('./systems/puzzleSled.js')).addPuzzleSledSystem(g); // the Wellhouse's buried sled (dunes-design §4.1)
   (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)
   (await import('./systems/remembrance.js')).addRemembranceSystem(g); // before the nooks (their views remember)

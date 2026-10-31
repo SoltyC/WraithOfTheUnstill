@@ -15,7 +15,7 @@ describe('erg ruins', () => {
     for (const id of ids) expect(NO_SNOW.test(id), id).toBe(true);
   });
   it('builds finite geometry with collision, within the site budget', () => {
-    for (const v of built.positions) expect(Number.isFinite(v)).toBe(true);
+    expect(built.positions.every(Number.isFinite)).toBe(true);
     expect(built.blockers.length).toBeGreaterThan(40);
     expect(464 + sites.length).toBeLessThanOrEqual(ARCH_SITES);
   });
