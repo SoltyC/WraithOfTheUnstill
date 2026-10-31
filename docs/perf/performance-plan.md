@@ -75,10 +75,10 @@ Run `npm run playtest`, then open `/playtest.html`, then *Benchmark: Low* (`?ben
 
 1. **Rocks: draw only the slots in use. Done (2026-11-01), and worth less than this plan said.**
    - The draws now cover the used slots in buckets (64; 16 for the big outcrops), filled nearest first. A changed bucket re-records the snapshot: 3 times over 1.2 km of flight, with no visible hitch.
-   - Measured in one session (trimmed against the old 700 + 1700 + 160, with big's old rounding): **it saves 0.15–0.4 ms** of the rocks' 1.2–1.5 ms. This plan's "1.0–1.4 ms" was the cost of all rocks, not of the empty slots: the frost uses every far slot, and most of the cost is the rocks that show.
+   - Measured in one session (trimmed against the old 700 + 1700 + 160, with big's old rounding): **it saves 0.15–0.4 ms** of the rocks' 1.2–1.5 ms. Old build against new, alternating three times on Low: the new one won all six, by 0.15–0.39 ms. This plan's "1.0–1.4 ms" was the cost of all rocks, not of the empty slots: the frost uses every far slot, and most of the cost is the rocks that show.
 2. **Grass only where it can grow.** Done this session: grass and ground cover are switched off over the frost, the canyon floors and the heart of the erg (they cost about 0.55 ms there drawing nothing). Ground cover could go further: off beyond the meadow.
-3. **Shadow casters by distance.** Every caster is drawn into each cascade it is listed for, without culling. Cull rocks, trees and architecture per cascade by its bounds: one sphere test per thin-instance group, or GPU culling.
-4. **Clouds, fog and shafts at half resolution**, upsampled with depth: 0.7–1.3 ms in the canyon today.
+3. **Shadow casters by distance. Parked until step 0's numbers.** Every caster is drawn into each cascade it is listed for, without culling. All casters but the terrain cost about 1 ms a cascade in the meadow (0.6 in the last) and 0.3–0.55 in the canyon, so culling can only win part of that. Trees outside forests cost nothing (`docs/perf/graphics-costs.json`). The run was noisy: other applications held the GPU at 22–47%.
+4. **Clouds, fog and shafts at half resolution. Dropped: already there.** Clouds and shafts run at quarter resolution, the forest haze at half (`src/post/fog.js`). This plan was wrong to list it. The canyon's 0.6–0.7 ms is their real cost.
 
 **Step 2: what Low gives up (judge each by eye against High).**
 
@@ -100,18 +100,18 @@ Run `npm run playtest`, then open `/playtest.html`, then *Benchmark: Low* (`?ben
 1. If after steps 1–3 the laptop holds 45–55 fps rather than 60, Low gets dynamic resolution down to 0.4 (it now stops at 0.45).
 2. A "Steady 30" frame target (already a slider) stays available for older machines.
 
-**What it should come to (on the 3060, Low):**
+**What it should come to (on the 3060, Low; step 1 corrected 2026-11-01, the rest are still estimates):**
 
 | | Saving (ms) | Low (ms) |
 |---|---|---|
-| Today | | 6–8 |
-| Step 1 | −1.5 to −2 | |
+| Before step 1 | | 6–8 |
+| Step 1, measured | −0.15 to −0.4 | |
 | Clipmap | −1 to −1.5 | |
 | Shadows | −0.5 to −1 | |
 | Compute and post | −0.5 to −1 | |
-| **After** | | **≈ 2.5–3.5** |
+| **After** | | **≈ 3.5–5** |
 
-That is about 18–30 ms on the laptop. The last stretch to 16.7 ms depends on the measured numbers: memory bandwidth and the CPU are the unknowns. A steady 60 is plausible after step 2 at 960×540, with dynamic resolution doing the rest. **It is not promised before step 0's numbers exist.**
+That is about 25–45 ms on the laptop. The last stretch to 16.7 ms depends on the measured numbers: memory bandwidth and the CPU are the unknowns. With step 1 worth far less than planned, **a steady 60 is not in reach from these steps alone**; step 2 needs deeper cuts, and step 0's numbers decide which.
 
 ## 4. Loading: what to do, in order
 

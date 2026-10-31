@@ -502,3 +502,16 @@ About +0.2 ms near and +0.2–0.7 ms walking in view. ~690 chunks, through the '
 | Dunes | 5.88 | 7.48 | 9.35 | 10.69 |
 
 No late pipelines at any preset. Load: 33 s, of which 22 s is creating 99 pipelines one at a time. GPU memory about 3.1 GB. Low on the i5-1235U is an estimate (15–25 fps), not a measurement.
+
+## 1 November — Pipeline replay and rock slots
+
+Load, `tools/winchrome/load-replay.mjs` (spot p8-meadow-golden, same Chrome profile; the first load of a build records):
+
+| Preset | First load (s) | Replay loads (s) | Frames 2–4 (s) |
+|---|---|---|---|
+| High | 36.1–36.7 | 17.7–18.8 | 21.5 → 0.4 |
+| Low | 33.3 | 16.8–17.5 | 20.6 → 0.4 |
+
+One earlier session's two replay loads took 33.5–34 s with the stall still there, on the same code; cause not found, not seen again in 7 loads, including right after a Chrome restart. World phase +5 s (workers against the main thread).
+
+Rocks, drawing only used slots: −0.15 to −0.4 ms (GPU frame) in one session, and the new build beat the old in all six alternating comparisons on Low (0.15–0.39 ms). 3 re-records over 1.2 km with no frame above the median. Other applications held the GPU at 22–47%, so the absolute numbers here are about 6% above the preset table's: the old build itself read 8.6–9.0 ms against 8.15 there.

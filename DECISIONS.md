@@ -608,3 +608,9 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Menus are minimal dark glass** with hairlines and one gold accent (user); the map and the bestiary sketches keep their paper.
 - **An Inventory tab** (I) replaces hunting through the journal for counts, pouch, materials and weapons.
 - **Low holds 60 fps on an i5-1235U with no dedicated GPU** is the bar for Low (user). Not met yet, and unmeasured on that machine: `docs/perf/performance-plan.md`.
+
+## 2026-11-01 — Loading and performance
+
+- **Pipelines are recorded by the first load of a build and replayed by the next** (`src/core/pipelineCache.js`, IndexedDB, per preset, per build). A new build's first load stays slow: shipping the set with the build was left out, since a mismatch on another GPU or canvas format would only waste compiles, but it can be added.
+- **Replay finishes before the first frame:** a sync creation during an async one would compile twice.
+- **Shadow culling is parked** until the laptop's numbers show it matters; half-resolution clouds were already done.
