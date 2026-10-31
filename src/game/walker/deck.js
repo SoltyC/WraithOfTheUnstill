@@ -31,6 +31,18 @@ export function createDeck(w) {
     turned: 0.5 - 0.5,
     floorQ() { this.feet = this.qf; floor(); this.under = hit; },
     floorNearQ() { this.feet = this.refY + 0.9; floor(); },
+    /** The court's floor under (qx, qz) for a body that rides the deck (a Skitter aboard): tops up to a
+     *  step over the court's level (its floor and steps, not its walls and pillars). */
+    floorTopQ() { this.feet = w.y + 0.9; floor(); },
+    /** A Shaped body riding the deck (game/shaped/body.js): moved with it from last frame's pose to this one. */
+    carryBody(b) {
+      if (!this.on) return;
+      cp(b);
+      carryArr(b.sx, b.sy, b.sz); carryArr(b.tx, b.ty, b.tz); carryArr(b.fx, b.fy, b.fz); carryArr(b.ax, b.ay, b.az);
+      carryArr(b.kx, b.ky, b.kz); carryArr(b.px, b.py, b.pz); carryArr(b.bx, null, b.bz);
+      let d = Math.atan2(w.R[6], w.R[8]) - Math.atan2(w.Rp[6], w.Rp[8]); if (d > Math.PI) d -= Math.PI * 2; else if (d < -Math.PI) d += Math.PI * 2;
+      b.heading += d;
+    },
     feet: 0.5,
     /** Push the capsule at p out of the deck's walls; v loses its speed into them. */
     push(p, v) {
@@ -89,6 +101,25 @@ export function createDeck(w) {
       if (was && !this.riding && !grounded) { v.x += this.vx; v.z += this.vz; }
     },
   };
+  /** Last frame's body frame → this frame's, for point (P3[0..2]) in place. */
+  const P3 = new Float64Array(3);
+  function carryP() {
+    const R = w.R, Rp = w.Rp, Tp = w.Tp;
+    const dx = P3[0] - Tp[0], dy = P3[1] - Tp[1], dz = P3[2] - Tp[2];
+    const lx = Rp[0] * dx + Rp[1] * dy + Rp[2] * dz, ly = Rp[3] * dx + Rp[4] * dy + Rp[5] * dz, lz = Rp[6] * dx + Rp[7] * dy + Rp[8] * dz;
+    P3[0] = w.x + R[0] * lx + R[3] * ly + R[6] * lz; P3[1] = w.y + R[1] * lx + R[4] * ly + R[7] * lz; P3[2] = w.z + R[2] * lx + R[5] * ly + R[8] * lz;
+  }
+  function carryArr(X, Y, Z) {
+    for (let i = 0; i < X.length; i++) {
+      P3[0] = X[i]; P3[1] = Y !== null ? Y[i] : w.Tp[1]; P3[2] = Z[i]; carryP();
+      X[i] = P3[0]; if (Y !== null) Y[i] = P3[1]; Z[i] = P3[2];
+    }
+  }
+  /** The body's root and head (fields x, y, z and hx, hy, hz). */
+  function cp(b) {
+    P3[0] = b.x; P3[1] = b.y; P3[2] = b.z; carryP(); b.x = P3[0]; b.y = P3[1]; b.z = P3[2];
+    P3[0] = b.hx; P3[1] = b.hy; P3[2] = b.hz; carryP(); b.hx = P3[0]; b.hy = P3[1]; b.hz = P3[2];
+  }
   function local(p) {
     const R = w.R, dx = p.x - w.x, dy = p.y - w.y, dz = p.z - w.z;
     L[0] = R[0] * dx + R[1] * dy + R[2] * dz; L[1] = R[3] * dx + R[4] * dy + R[5] * dz; L[2] = R[6] * dx + R[7] * dy + R[8] * dz;

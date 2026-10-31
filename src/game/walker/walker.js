@@ -29,12 +29,12 @@ export const walkerTuning = {
   speed: 5,              // m/s walking
   accel: 1.4,            // m/s²
   turnRate: 0.16,        // rad/s
-  swing: 2.4,            // s a lifted foot is in the air
-  token: 1.2,            // s between lifts (two feet in the air at once)
+  swing: 3.2,            // s a lifted foot is in the air (time to change the ground under it)
+  token: 1.6,            // s between lifts (two feet in the air at once)
   lift: 7,               // m a foot rises
   standH: 22, kneelH: 9, buriedH: -1.3, restH: -1.1,   // deck above the feet's mean ground (m): buried and at rest only the court shows
   kneelRoll: 0.16, kneelPitch: 0.07,
-  wakeTime: 9, stumbleTime: 1.6, kneelTime: 13, riseWarn: 2.5, riseTime: 3, balkTime: 3.4, releaseTime: 16,
+  wakeTime: 9, stumbleTime: 1.6, kneelTime: 15, riseWarn: 2.5, riseTime: 3, balkTime: 3.4, releaseTime: 16,
   steerStep: 0.42,       // rad a glyph pillar turns it
   probe: [20, 28, 36, 44], probeDrop: 9,   // m ahead / a drop steeper than this over 8 m is the rift
   homeR: 110,                              // m from the well: it turns home
@@ -58,7 +58,7 @@ export const ROOF_Y = 4.45, WELL_LOCAL = [0, 2];
 const B_BODY = 0, B_UP = 1, B_LO = 7, B_FOOT = 13, B_MOUND = 19, B_NECK = 20, B_HEAD = 21, B_MIR = 22, B_WORLD = 24, B_NECK2 = 25, NB = 26;
 // Glow slots and alpha groups.
 const G_NONE = 0, G_GLYPH0 = 1, G_GLYPH1 = 2, G_EYES = 3, G_WELLEYE = 4, G_BEAM = 5, G_PLATES = 6, G_BRAKE = 7, NG = 8;
-const A_ALL = 0, A_LEGS = 1, A_MOUND = 2, A_BEAM0 = 3, A_BEAM1 = 4, A_BRAKE = 5, NA = 6;
+const A_ALL = 0, A_LEGS = 1, A_MOUND = 2, A_BEAM0 = 3, A_BEAM1 = 4, A_BRAKE = 5, A_WATER = 6, NA = 7;
 /** The brake stone in its forecourt (mound frame: on the ground ahead of the buried body). */
 export const BRAKE_LOCAL = [0, 31];
 const BEAM0 = 6, BEAM1 = 10;
@@ -110,8 +110,10 @@ function buildChunks(ctx) {
   // The mirror-stones: a drum, and a polished glass disc on it that turns (its own bone).
   MIRRORS.forEach(([x, z], k) => {
     add(B_BODY, x, ROOF_Y + 0.4, z, 1.2, 0.8, 1.2, SANDSTONE);
-    add(B_MIR + k, 0, 1.75, 0, 2.5, 2.5, 0.3, GLASS);
-    add(B_MIR + k, 0, 0.9, -0.2, 0.35, 1.2, 0.35, SANDSTONE);
+    // A carved frame of ruin stone on a squat post, the polished glass set in its face.
+    add(B_MIR + k, 0, 0.55, -0.25, 0.8, 1.1, 0.6, SANDSTONE);
+    add(B_MIR + k, 0, 1.8, -0.3, 2.9, 2.7, 0.45, RUIN);
+    add(B_MIR + k, 0, 1.8, -0.02, 2.2, 1.9, 0.16, GLASS);
   });
   // Flank stairs: ruin-stone plates set into the sand from each hip up to the deck (the climb).
   for (let leg = 0; leg < LEGS; leg++) {
@@ -152,6 +154,8 @@ function buildChunks(ctx) {
   // The light: amber motes along the beam (mirror → mirror, mirror → well), and the well's glass eye.
   for (let k = 0; k < BEAM0 + BEAM1; k++) add(B_WORLD, 0, 0, 0, 0.32, 0.32, 1.6, POD, { glow: G_BEAM, alpha: k < BEAM0 ? A_BEAM0 : A_BEAM1 });
   add(B_WORLD, 0, 0, 0, 1.3, 0.9, 1.3, POD, { glow: G_WELLEYE });
+  // The water that comes back into the camp's well when it lies down.
+  add(B_WORLD, 0, 0, 0, 2.8, 0.3, 2.8, CHUNK.WATER, { alpha: A_WATER });
   return list;
 }
 
@@ -173,7 +177,7 @@ export function createWalker(ctx) {
     const fl = Math.hypot(...c.f), ul = Math.hypot(...c.u);
     for (let q = 0; q < 3; q++) { cf[i * 3 + q] = c.f[q] / fl; cu[i * 3 + q] = c.u[q] / ul; }
   });
-  const beamStart = list.findIndex((c) => c.glow === G_BEAM), eyeIdx = list.findIndex((c) => c.glow === G_WELLEYE);
+  const beamStart = list.findIndex((c) => c.glow === G_BEAM), eyeIdx = list.findIndex((c) => c.glow === G_WELLEYE), waterIdx = list.findIndex((c) => c.alpha === A_WATER);
   // Bones: origin and basis (Ex, Ey, Ez), and a stretch along Ey for the neck (local y is a fraction).
   const BO = new Float64Array(NB * 3), BE = new Float64Array(NB * 9), BY = new Float64Array(NB).fill(1);
   const glow = new Float64Array(NG), alpha = new Float64Array(NA).fill(1);
@@ -647,6 +651,10 @@ export function createWalker(ctx) {
       cs[i * 3 + 2] = Math.min(3, l / n * 0.8);
     }
     cp[eyeIdx * 3] = s.wellX; cp[eyeIdx * 3 + 1] = s.wellY; cp[eyeIdx * 3 + 2] = s.wellZ;
+    // The well fills as it lies down (from the shaft up to just under the rim).
+    const fill = s.state === WK.RESTED ? 1 : s.state === WK.RELEASE ? clamp((s.rel - 0.45) / 0.5, 0, 1) : 0;
+    cp[waterIdx * 3] = s.wellX; cp[waterIdx * 3 + 1] = s.wellY - 1.2 + 1.5 * fill; cp[waterIdx * 3 + 2] = s.wellZ;
+    alpha[A_WATER] = fill > 0.02 ? 1 : 0;
     for (let i = 0; i < N; i++) {
       const b = cb[i], bo = b * 3, be = b * 9, o = i * CHUNK_FLOATS, i3 = i * 3;
       const lx = cp[i3], ly = cp[i3 + 1] * BY[b], lz = cp[i3 + 2];

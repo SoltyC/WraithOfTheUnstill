@@ -33,14 +33,16 @@ export const FLAG = { WOKE: 'dunes:walker-woke', BOARDED: 'dunes:walker-boarded'
 
 export const walkerSys = {
   near: 300, far: 3200,          // m: the near (finer) view within, drawn within, culled beyond
-  padR: 2.8,                     // m: a foot's pad (the stumble checks and the crush)
-  ridgeH: 0.6, pitH: 0.6,        // m of Stone's mass under the pad that trips it
+  padR: 4,                       // m: the ring round a landing spot — anything changed within it trips the foot (play: 2.8 was too tight)
+  crushPad: 2.8,                 // m: the foot's own pad (what it lands on)
+  ridgeH: 0.35, pitH: 0.35,      // m of Stone's mass within the ring that trips it
   groundDelta: 0.9,              // m the ground changed under a lifted foot
-  freezeLife: 40,                // s a Frost binding counts
+  freezeLife: 60,                // s a Frost binding counts
   crushR: 3.4, crushDamage: 30, crushShove: 9,
   shakeEvery: [26, 38], shakeWarn: 1.6, shakeTime: 2.6, shakeKick: 3.4, braceR: 1.7, brace: 0.25,
   balkKick: 15,                  // m/s the balk throws its rider out over the side
   skitterEvery: [38, 55], skitterNear: 170,
+  aboardEvery: [40, 60],         // s between Skitters climbing aboard while it is ridden
   steerIdle: 30,                 // s without a rider before a steered Walker returns to its circuit
   sunLow: [0.02, 0.36],          // sin(elevation) of a sun low enough to throw into the shaft
   mirrorTol: 0.42,               // rad: a mirror-stone turned within this of true
@@ -67,6 +69,8 @@ export async function addLongWalkerBody(g) {
   bindShadows(far.material, shadows);
   shadows.addCaster(far.mesh, far.makeShadowMaterial, 2, 2);
   far.freeze();
+  // Skitters aboard (slots, −1 empty): they ride the deck as the Wraith does (the director spawns them).
+  const aboard = g.walkerAboard = new Int8Array(4).fill(-1);
   g.walker = walker; g.walkerDeck = deck; g.walkerView = view; g.walkerFar = far; g.walkerSys = walkerSys;
   const drawn = new Map();
   const setOn = (mesh, on) => {
@@ -78,6 +82,7 @@ export async function addLongWalkerBody(g) {
   loop.add({ name: 'walkerBody', update: () => {
     if (!g.walkerPlaced) { deck.on = false; return; }
     walker.dt = clock.dt; walker.update();
+    for (let i = 0; i < aboard.length; i++) if (aboard[i] >= 0) deck.carryBody(g.shaped.slots[aboard[i]].body);
     deck.on = walker.state !== WK.BURIED;
     deck.refY = controller.pos.y;
     // Drawn from afar (the erg's landmark): the near view within `near`, the far one beyond.
@@ -177,8 +182,8 @@ export function addLongWalkerSystem(g) {
   function landedWrong() {
     const x = L3[0], z = L3[1], y = L3[2];
     if (mass && mass.count > 0) {
-      for (let q = 0; q < 5; q++) {
-        const a = q * TAU / 4, r = q === 4 ? 0 : S.padR * 0.7;
+      for (let q = 0; q < 9; q++) {
+        const a = q * TAU / 4 + (q > 4 ? TAU / 8 : 0), r = q === 0 ? 0 : q <= 4 ? S.padR * 0.5 : S.padR * 0.95;
         mass.qx = x + Math.cos(a) * r; mass.qz = z + Math.sin(a) * r; mass.heightQ(); const h = mass.h;
         if (h > S.ridgeH) return 'ridge';
         if (h < -S.pitH) return 'pit';
@@ -202,6 +207,12 @@ export function addLongWalkerSystem(g) {
   const wait = { kind: 'walker', id: 'walker-wait', verb: 'Wait for dusk', name: 'Its well', x: 0, y: 0, z: 0, r: 2.8, h: 1.2, hy: 1.6, hidden: true, onUse: () => waitDusk() };
   if (targets) targets.push(brake, ...mirrors, wait);
 
+  /** The ground a Skitter aboard stands on: the sand, or the deck's floor where it is over the deck. */
+  const deckGround = { qx: 0.5, qz: 0.5, h: 0.5,
+    sample() {
+      ground.qx = this.qx; ground.qz = this.qz; ground.sample(); this.h = ground.h;
+      if (deck.on) { deck.qx = this.qx; deck.qz = this.qz; deck.qh = this.h; deck.floorTopQ(); this.h = deck.h; }
+    } };
   /** The direction to the sun (render/environment.js), or null. */
   const sun = () => (g.env && g.env.env ? g.env.env.sunDir : null);
   const told = new Set();
@@ -244,6 +255,41 @@ export function addLongWalkerSystem(g) {
     g.calm?.note(controller.pos.x, controller.pos.z);
     musicOver = 'release'; musicUntil = clock.simTime + 50; music.rearm?.('release');
     hud.notice('The Long Walker', 'It lies down', 'It has come home. The wind returns to the erg; the dunes stream and walk again. Stone is yours, and the sand.', 10);
+    if (capture || !g.releaseCam) return;
+    // The camera: a slow letterboxed orbit over the camp as it lays its head on the well and lies down
+    // (Space or Interact skips). The Wraith watches from inside the court, by the well.
+    cine.on = true; cine.t = 0;
+    cine.cx = (W.x + W.wellX) * 0.5; cine.cz = (W.z + W.wellZ) * 0.5; cine.a0 = Math.atan2(W.x - W.wellX, W.z - W.wellZ) + 1.9;
+    deck.riding = false;
+    const ox = -W.gateX * 6 + W.gateZ * 4, oz = -W.gateZ * 6 - W.gateX * 4;
+    controller.teleport(W.wellX + ox, W.wellZ + oz); controller.yaw = Math.atan2(-ox, -oz);
+    controller.hold = true; g.releaseCam.hold = true; g.releaseCam.bars = Math.max(g.releaseCam.bars, 0.01);
+    if (g.post) g.post.post.resetHistory = true;
+  }
+  const cine = { on: false, t: 0, cx: 0, cz: 0, a0: 0 };
+  const CINE_T = 18;
+  function cineTick() {
+    const rc = g.releaseCam, rdt = clock.realDt;
+    cine.t += clock.dt;
+    if (input.pressed[Action.Jump] || input.pressed[Action.Interact]) cine.t = CINE_T;
+    const u = Math.min(1, cine.t / CINE_T), e = u * u * (3 - 2 * u);
+    const a = cine.a0 + 0.9 * e, R = 78 - 18 * e;
+    ground.qx = cine.cx; ground.qz = cine.cz; ground.sample();
+    const cx = cine.cx + Math.sin(a) * R, cz = cine.cz + Math.cos(a) * R, cy = ground.h + 30 - 12 * e;
+    // Looking at the neck's middle: from the Walker's front toward the well as its head goes down.
+    io[0] = 0; io[1] = -1; io[2] = 20; local3();
+    const tx = io[3] + (W.wellX - io[3]) * 0.5 * e, ty = io[4] + (W.wellY + 2 - io[4]) * 0.6 * e, tz = io[5] + (W.wellZ - io[5]) * 0.5 * e;
+    const dx = tx - cx, dy = ty - cy, dz = tz - cz;
+    rc.bars = Math.min(1, rc.bars + rdt * 1.6);
+    g.arm.setPose(cx, cy, cz, Math.atan2(dx, dz), Math.atan2(-dy, Math.sqrt(dx * dx + dz * dz)), 0.7);
+    controller.hold = true;
+    if (cine.t >= CINE_T) {
+      cine.on = false; rc.hold = false; controller.hold = false;
+      g.arm.setFree(false); g.arm.yaw = controller.yaw; g.arm.pitch = 0.2; g.arm.snap(controller.pos);
+      if (g.post) g.post.post.resetHistory = true;
+      // (A skipped cinematic: it has lain down.)
+      while (W.state === WK.RELEASE) { W.dt = 0.5; W.update(); }
+    }
   }
 
   // ── Music: the pursuit's bed while it is chased; the release bed after ──────────────────────
@@ -276,7 +322,7 @@ export function addLongWalkerSystem(g) {
   }
 
   // ── Frame ────────────────────────────────────────────────────────────────────────────────────
-  let boardAt = -1, moundT = 0, devDone = false, circT = 0, shakeT = 20, warnT = -1, kickT = 0, balkT = -1, skitT = 30, offT = 0, ringT = 0, wakeFx = 0;
+  let aboardT = 25, boardAt = -1, moundT = 0, devDone = false, circT = 0, shakeT = 20, warnT = -1, kickT = 0, balkT = -1, skitT = 30, offT = 0, ringT = 0, wakeFx = 0;
   let wasRiding = false, wasDying = false, shrineX = NaN, shrineZ = NaN, checkX = NaN, checkZ = NaN, glyphT0 = 0, glyphT1 = 0;
   const seen = new Uint32Array(64), gustSeen = new Uint32Array(8), ringed = new Uint8Array(6);
   const hasDust = (k) => W.swing[k] > 0.04 && W.swing[k] < 0.97;
@@ -382,8 +428,8 @@ export function addLongWalkerSystem(g) {
       ringed[k] = 1;
       const rx = W.tx[k] - p.x, rz = W.tz[k] - p.z;
       if (Math.abs(rx) > 36 || Math.abs(rz) > 36) continue;
-      for (let q = 0; q < 12; q++) {
-        const b = q * TAU / 12;
+      for (let q = 0; q < 16; q++) {
+        const b = q * TAU / 16;
         ts.bx = W.tx[k] + Math.cos(b) * S.padR; ts.bz = W.tz[k] + Math.sin(b) * S.padR; ts.bdx = -Math.sin(b); ts.bdz = Math.cos(b);
         ts.bl = 0.25; ts.bw = 0.32; ts.bd = 0.14; ts.bc = 0.5; ts.bk = BRUSH.PRESS; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0.6; ts.stamp();
       }
@@ -482,6 +528,37 @@ export function addLongWalkerSystem(g) {
       }
     }
 
+    // Ridden, Skitters climb aboard now and then: two spring up over the flanks onto the court and ride it.
+    const aboard = g.walkerAboard;
+    for (let i = 0; i < aboard.length; i++) {
+      const k = aboard[i];
+      if (k < 0) continue;
+      const sl = shaped.slots[k], st = sl.state;
+      if (st === shapedMod.S.EMPTY || st === shapedMod.S.FALLING || sl.arch !== 'skitter' || sl.body.ground !== deckGround) {
+        if (sl.body && sl.body.ground === deckGround) sl.body.ground = ground;
+        aboard[i] = -1;
+      }
+    }
+    if (W.state === WK.WALK && riding && !capture) {
+      aboardT -= dt;
+      if (aboardT <= 0) {
+        aboardT = S.aboardEvery[0] + rnd() * (S.aboardEvery[1] - S.aboardEvery[0]);
+        let free = 0; for (let i = 0; i < aboard.length; i++) if (aboard[i] < 0) free++;
+        if (free >= 2 && hasSpawnRoom(shaped, shapedMod.S.EMPTY, 2) && !g.calm?.holds(p.x, p.z)) {
+          for (let q = 0; q < 2; q++) {
+            io[0] = (q ? 1 : -1) * 9.5; io[1] = 0; io[2] = (rnd() - 0.5) * 22; local3();
+            const k = shaped.spawn('skitter', io[3], io[5]);
+            if (k < 0) continue;
+            const body = shaped.slots[k].body;
+            body.ground = deckGround; body.place(io[3], io[5], W.yaw + (q ? -Math.PI / 2 : Math.PI / 2));
+            for (let i = 0; i < aboard.length; i++) if (aboard[i] < 0) { aboard[i] = k; break; }
+            F[4] = io[3]; F[5] = io[5]; F[6] = 2; F[7] = 2; at();
+          }
+          tell('aboard', 'The Long Walker', 'Skitters climb aboard', 'They came up its flanks out of the dust.', 5);
+        }
+      }
+    }
+
     // Home: kneeling by the well; the mirror-stones; the light into the shaft; the release.
     const home = W.state === WK.HOME;
     if (ev & WEV.HOME) tell('home', 'The Long Walker', 'It kneels by the dry well', 'It will not lie down while the shaft is dark. Turn the two mirror-stones on its roof so the low sun goes from one to the other and down into the well.', 12);
@@ -509,6 +586,7 @@ export function addLongWalkerSystem(g) {
     litT = lit1 ? litT + dt : 0;
     W.wellEye += ((lit1 || released ? 1.2 : 0) - W.wellEye) * Math.min(1, dt * 2);
     if (litT > S.litHold && !released) startRelease();
+    if (cine.on) cineTick();
     if (ev & WEV.RESTED && !capture) g.game?.saves?.requestAutosave();
     // Lying down it becomes a dune range: sand heaped along its flanks and over its court (the terrain
     // state, within its window round the Wraith; the relaxation slumps the heaps to the sand's repose).
@@ -564,5 +642,5 @@ export function addLongWalkerSystem(g) {
     }
     return false;
   }
-  void HIP_Z; void input; void Action;
+  void HIP_Z;
 }

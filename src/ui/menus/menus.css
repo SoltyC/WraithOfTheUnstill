@@ -40,8 +40,9 @@
 .codex-title { font-size: clamp(28px, 2.6vw, 46px); letter-spacing: 0.02em; color: #2a1d10; }
 .codex-sub { font-family: var(--text); font-style: italic; font-size: clamp(14px, 1.05vw, 19px); color: #6a5236; }
 .codex-rule { height: 14px; margin: 10px 0 18px; position: relative; z-index: 1;
-  background: linear-gradient(90deg, transparent, rgba(60, 40, 20, 0.55) 12%, rgba(60, 40, 20, 0.55) 88%, transparent) center / 100% 1px no-repeat; }
-.codex-rule::after { content: '◇'; position: absolute; left: 50%; top: -4px; transform: translateX(-50%); font-size: 14px; color: #5a3f22; background: #e3d4b5; padding: 0 8px; }
+  /* The line breaks for the ornament (no backing patch: the parchment's gradient shows through). */
+  background: linear-gradient(90deg, transparent, rgba(60, 40, 20, 0.55) 12%, rgba(60, 40, 20, 0.55) calc(50% - 16px), transparent calc(50% - 16px), transparent calc(50% + 16px), rgba(60, 40, 20, 0.55) calc(50% + 16px), rgba(60, 40, 20, 0.55) 88%, transparent) center / 100% 1px no-repeat; }
+.codex-rule::after { content: '◇'; position: absolute; left: 50%; top: 0; transform: translateX(-50%); font-size: 14px; line-height: 1; color: #5a3f22; }
 
 .codex-tabs { display: flex; gap: 26px; position: relative; z-index: 1; }
 .codex-tabs button, .codex-list button, .codex-actions button {

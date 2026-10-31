@@ -46,7 +46,7 @@ describe('the Long Walker: gait', () => {
 });
 
 describe('the Long Walker: stumble, kneel, climb', () => {
-  it('a stumble kneels it on that side for about 13 s, then it rises and walks on (and is not tripped again at once)', () => {
+  it('a stumble kneels it on that side for about 15 s, then it rises and walks on (and is not tripped again at once)', () => {
     const { w } = setup();
     w.placeWalking(0, 0, 0); w.circuitX = 0; w.circuitZ = 1e5; run(w, 8);
     expect(w.stumble(4)).toBe(true);
