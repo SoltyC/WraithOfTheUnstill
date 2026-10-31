@@ -55,6 +55,8 @@ The pipelines are made one at a time, synchronously; 99 of them average about 22
 
 **GPU memory: about 3.1 GB** (2.3 GB of textures, 0.8 GB of buffers). That is too much for shared-memory laptops: it competes with system RAM, and every frame's sampling contends for the same bandwidth.
 
+**Caveat on the 2026-11-01 numbers in §3 and §4:** games were running on this PC during those runs. Rerun them idle before trusting their sizes.
+
 ## 2. The target: Low on an i5-1235U
 
 **The hardware.** Iris Xe with 80 EU at up to about 1.2 GHz gives roughly 1.5 TFLOPS. Its memory is shared DDR4/LPDDR4x at 50–68 GB/s. The 3060 has 12.7 TFLOPS and 360 GB/s. For this kind of renderer, expect the i5 to be **7–9× slower**.
