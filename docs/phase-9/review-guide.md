@@ -66,7 +66,7 @@ Worth walking too (no fixed spot):
   - The body's look up close (chunked sandstone: does it read as a colossus or as a heap?).
   - Whether the ring telegraph is readable at speed.
   - Whether stumbling it feels earned.
-  - The climb's pace against its 13 s.
+  - The climb's pace against its 15 s.
   - The calm of riding it.
   - The homecoming at dusk.
 

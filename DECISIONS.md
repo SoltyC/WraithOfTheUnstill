@@ -596,3 +596,15 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **It kneels at the well on the gate's axis, slanted:** the neck goes through the caravanserai's gateway to the well (over the wall it would cut through it); the oasis pool lies on that axis, so the body is slanted 54° to the side it came from (one side's feet stand at the pool's edge).
 - **The mirrors want the low sun:** sun elevation under ~21° (sin 0.36); "Wait for dusk" at the well on its back is the time skip (there are no dune shrines before D11).
 - Its body, deck and director pass numbers through fields, not arguments; the body object has no accessors (an accessor in the literal put it in dictionary mode, and every double stored on it was boxed).
+
+## 2026-10-31 — D10 after play, graphics presets, the UI
+
+- **The stumble is forgiving:** a foot 3.2 s in the air, a 4 m ring that trips at 0.35 m of Ridge or pit, Frost counting 60 s, a 15 s kneel. The user found the 2.4 s / 0.6 m version too tricky.
+- **Presets are Low, Medium, High, Ultra** (`src/core/graphics.js`). Live settings apply at once; shadows, grass and trees are read while the world is built, so they need a restart (Settings says so and offers it). Rebuilding those in place was not worth the risk of late pipelines.
+- **First start picks from the GPU:** integrated graphics start on Low, others on High. `?gfx=` overrides for one session.
+- **Rocks are not a preset lever:** their collision would stay, leaving invisible walls.
+- **`particles` covers crest dust and spindrift only;** sand dust stays on at Low because combat and terrain feedback read through it.
+- **A health bar, against BRIEF's no-bar line (user):** a thin bar low-left with focus as a hairline under it, fading when both are full and idle, off under Interface. The low-health vignette is dark red from ~40% with a faint beat near death.
+- **Menus are minimal dark glass** with hairlines and one gold accent (user); the map and the bestiary sketches keep their paper.
+- **An Inventory tab** (I) replaces hunting through the journal for counts, pouch, materials and weapons.
+- **Low holds 60 fps on an i5-1235U with no dedicated GPU** is the bar for Low (user). Not met yet, and unmeasured on that machine: `docs/perf/performance-plan.md`.

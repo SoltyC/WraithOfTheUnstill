@@ -442,8 +442,8 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
   - Footfalls press deep prints, throw dust and boom; a foot that lands on the Wraith hurts it (30) and throws it.
   - Skitters rise from its wake every 38–55 s while it is chased.
   - **The telegraph:** each lifted foot's landing spot is fixed at the lift. A dotted ring is pressed into the sand there (the terrain state, near the Wraith) and dust lifts off it until the foot lands exactly there.
-- **The stumble:** a foot that lands on a Ridge, into a Bloom's pit, on Frost-bound sand (any FREEZE brush in the last 40 s), or on ground that changed under it by more than 0.9 m buckles.
-  - It kneels 13 s on that side, rolled 9°, with a groan 2.5 s before it rises; then 6 s when it cannot be tripped again.
+- **The stumble (retuned after play, see below):** a foot that lands on a Ridge, into a Bloom's pit, on Frost-bound sand (any FREEZE brush in the last 60 s), or on ground that changed under it by more than 0.9 m buckles.
+  - It kneels 15 s on that side, rolled 9°, with a groan 2.5 s before it rises; then 6 s when it cannot be tripped again.
   - The kneeling leg is a **ramp of ruin plates**, and the flank above each hip a **stair of plates** (their glyphs glow while it kneels) up to an opening in the court's wall.
   - Dying near it brings the Wraith back 40 m off its last kneeling place (a checkpoint).
 - **Its back:** the court is a moving floor (`game/walker/deck.js`): floors, walls and carry in the body's own frame, solved on its tilted top planes.
@@ -468,13 +468,18 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
   - `tools/alloc/walker.mjs`: no GC in its update (the riding case's single GC is the controller's own, as at HEAD).
   - 940 tests.
 
+**After play (2026-10-31, user: paralysing a leg was too tricky):**
+- **An easier stumble:** a foot stays 3.2 s in the air (was 2.4), with a token 1.6 s lead on the telegraph; the ring is 4 m and anything in it trips the foot, at 0.35 m of Ridge or pit (was 0.6); Frost counts 60 s (was 40); the kneel is 15 s (was 13).
+- **Skitters climb aboard** while it is ridden, every 40–60 s; they ride the deck as the Wraith does (`deck.carryBody`, `g.walkerAboard`).
+- **The camp's well fills** as it lies down. **The mirror-stones are framed** in carved stone (they read as floating crystals before).
+- **The release has a letterboxed orbit** (18 s; Space or E skips).
+- The glass prints' spacing stays: the next is visible from the last without the compass.
+
 **Not done:**
-- The camp's well does not visibly fill (D11's camp and well).
-- Skitters do not climb aboard; its wake throws no real sandstorm, only dust and Skitters.
-- The release has no cinematic camera (the rider rides it down).
+- Skitters aboard pass their tests and the home script, but no live spawn has been watched on the deck.
+- Its wake throws no real sandstorm, only dust and Skitters.
 - The sand heaped at the release only takes within the terrain state's window round the Wraith, so at rest it reads as a court in the sand more than a dune range.
 - Its footfalls avalanche only through the sand they plough (D2's relaxation).
-- Up close the mirror discs read as floating crystals.
 - The pursuit's difficulty and pacing want human play.
 
 ### D11 — The camp, quests, shrines, Echoes and robes

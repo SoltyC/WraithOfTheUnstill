@@ -490,3 +490,15 @@ The branch's 512-cell clipmap measured 15.79 (canyon) and 15.80 (meadow) before 
 | Walking, 60–180 m (near, then far view) | 11.10 / 10.56 | 10.43 / 10.32 |
 
 About +0.2 ms near and +0.2–0.7 ms walking in view. ~690 chunks, through the 'shaped' material; near view within 300 m, far view to 3.2 km, culled beyond. No late pipelines. CPU: its update is allocation-free in Node (`tools/alloc/walker.mjs`).
+
+## 31 October — Graphics presets (same setup)
+
+`tools/bot/preset-perf.mjs`, each preset at its own render scale, dynamic resolution off, median GPU frame in ms. Full data: `docs/perf/preset-perf.json`; per-lever costs: `docs/perf/graphics-costs.json`; the plan: `docs/perf/performance-plan.md`.
+
+| View | Low | Medium | High | Ultra |
+|---|---|---|---|---|
+| Canyon at dawn | 8.15 | 10.88 | 14.73 | 18.60 |
+| Meadow, golden hour | 7.86 | 10.83 | 15.43 | 18.32 |
+| Dunes | 5.88 | 7.48 | 9.35 | 10.69 |
+
+No late pipelines at any preset. Load: 33 s, of which 22 s is creating 99 pipelines one at a time. GPU memory about 3.1 GB. Low on the i5-1235U is an estimate (15–25 fps), not a measurement.
