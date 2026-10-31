@@ -45,17 +45,25 @@ async function boot() {
   const fill = document.getElementById('loading-fill');
   const progress = (f) => { if (fill) fill.style.width = Math.round(f * 100) + '%'; };
   window.__wraith = { ready: false, captureReady: false, capture };
+  // Load phases (ms since navigation): for the loading-time work (docs/perf/performance-plan.md).
+  const loadTimes = window.__wraith.loadTimes = {}, mark = (k) => { loadTimes[k] = Math.round(performance.now()); };
+  mark('boot');
 
   const canvas = /** @type {HTMLCanvasElement} */ (document.getElementById('view'));
+  // The graphics preset (core/graphics.js): a first start picks one from the GPU; its boot settings
+  // (shadow maps, grass, trees) are fixed before anything that reads them is built.
+  const gfxMod = await import('./core/graphics.js');
+  await gfxMod.detectPreset(); gfxMod.freezeBoot(); mark('preset');
   const { createEngine } = await import('./boot/engine.js');
   const { engine, gpuTimer, setRenderScale } = await createEngine(canvas, qs);
-  progress(0.2);
+  progress(0.2); mark('engine');
 
   /** The shared boot context. */
   const g = { qs, capture, progress, engine, setRenderScale, canvas };
   await (await import('./boot/world.js')).createWorld(g);
-  progress(0.4);
+  progress(0.4); mark('world');
   await (await import('./boot/actors.js')).createActors(g);
+  mark('actors');
 
   const [loopMod, inputMod, paramsMod, systemsMod, spots, overlayMod] = await Promise.all([
     import('./core/loop.js'),
@@ -76,7 +84,7 @@ async function boot() {
   inputMod.attachInput(canvas);
   Object.assign(g, {
     loop, input: inputMod.input, Action: inputMod.Action, paramsMod, params: paramsMod.params,
-    toggles: systemsMod.toggles, registerToggle: systemsMod.registerToggle, spots,
+    toggles: systemsMod.toggles, registerToggle: systemsMod.registerToggle, setToggle: systemsMod.setToggle, spots,
   });
   const game = g.game = await (await import('./boot/game.js')).createGame(g);
 
@@ -134,6 +142,8 @@ async function boot() {
   (await import('./systems/audio.js')).addAudioSystem(g);
   if (!capture && !qs.get('bench')) (await import('./systems/titleCam.js')).addTitleCamSystem(g);
 
+  // The graphics preset's live settings (render scale, post effects, particles): after every toggle exists, before the warm-up.
+  g.graphics = gfxMod; gfxMod.bindGraphics(g);
   const overlay = new overlayMod.DevOverlay(game);
   overlay.refreshToggles(); overlay.addFlowTools(g);
   loop.addLate(overlay);
@@ -173,8 +183,9 @@ async function boot() {
   // (otherwise its fur and FX variants compile late the first time it is shown).
   const hideAfterWarm = !g.wraithView.isEnabled();
   if (hideAfterWarm) game.setPlayerVisible(true);
+  mark('systems');
   await scene.whenReadyAsync();
-  progress(0.5);
+  progress(0.5); mark('shaders');
   loop.start();
   await waitFrames(engine, 4);
   await waitUntil(engine, () => {
@@ -182,7 +193,7 @@ async function boot() {
     progress(0.5 + 0.5 * (1 - Math.min(1, need / 36)));
     return game.worldSettled();
   });
-  progress(1);
+  progress(1); mark('settled');
   if (hideAfterWarm) { game.setPlayerVisible(false); await waitFrames(engine, 2); }
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,

@@ -35,7 +35,8 @@ const VARIANTS = 8;
 const SPECIES_IDS = ['pine', 'oak', 'birch', 'shrub', 'log', 'acacia', 'deadwood', 'tamarisk', 'palm'];
 const CELL = 9, REPLACE = 20;       // placement rebuilds after the camera moves REPLACE m
 const HYST = 4, JUMP = 120;          // state hysteresis (m); a move beyond JUMP is a fresh placement (no fades)
-const MAX_NEAR = 90, MAX_FAR = 260, MAX_MID = 160;   // per variant
+import { boot } from '../core/graphics.js';
+const MAX_NEAR = boot.trees.near, MAX_FAR = boot.trees.far, MAX_MID = boot.trees.mid;   // per variant (the graphics preset's; high 90, 260, 160)
 const RADIUS = LOD_OUT + HYST + REPLACE + 2;
 const MID_REACH = SHADOW_SPLITS[1] + REPLACE;      // shadow-only casters for cascade 1
 const CANOPY_R = 45;                                // canopy cover around the camera (forest haze)

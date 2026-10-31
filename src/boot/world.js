@@ -4,6 +4,7 @@
 // reads. Results go onto the shared context `g`.
 
 /** @param {any} g  shared boot context: engine, qs, progress; receives the world objects */
+import { boot as gfxBoot } from '../core/graphics.js';
 export async function createWorld(g) {
   const { engine } = g;
   const [{ Scene }, { TargetCamera }, { Vector3 }, { Color4 }] = await Promise.all([
@@ -149,7 +150,8 @@ export async function createWorld(g) {
   // Trees (Phase 8): grown variants in groves; near ones shadow the near cascades, far the far.
   const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer, wind);
   for (const m of trees.materials) bindShadows(m, shadows);
-  for (const [m, c0, c1] of trees.casters) shadows.addCaster(m, trees.makeShadowMaterial, c1, c0);
+  // (Lower graphics presets leave trees out of the farther cascades — Low casts none: core/graphics.js treeCascades.)
+  for (const [m, c0, c1] of trees.casters) { if (c0 >= gfxBoot.shadows.treeCascades) continue; shadows.addCaster(m, trees.makeShadowMaterial, c1, c0); }
   if (keepOut) trees.setKeepOut(keepOut);
   trees.freeze();
   // Water (Phase 8): the bake's unfrozen lakes, flat at their levels; absorb + surface passes, the

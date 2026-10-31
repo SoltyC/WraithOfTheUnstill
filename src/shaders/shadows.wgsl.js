@@ -4,7 +4,9 @@
 // distance, blending across cascade borders.
 
 export const CASCADES = 4;
-export const SHADOW_SIZE = 2048;
+import { boot } from '../core/graphics.js';
+/** Each cascade's map (texels across): the graphics preset's shadows (core/graphics.js, read at boot). */
+export const SHADOW_SIZE = boot.shadows.size;
 
 /** Depth-only fragment shared by every caster: writes distance along the light direction. */
 export const shadowDepthFragmentWGSL = /* wgsl */ `

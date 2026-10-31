@@ -20,6 +20,8 @@ const grid = (s) => Math.round(Math.round(s / STEP + 1e-9) * STEP * 1000) / 1000
 export class DynamicRes {
   constructor() {
     this.scale = 1;
+    /** The lowest scale it steps to (the graphics preset's; MIN_SCALE by default). */
+    this.minScale = MIN_SCALE;
     this.buf = new Float32Array(WINDOW);
     this.n = 0; this.head = 0;
     this.overSince = -1; this.underSince = -1;
@@ -64,7 +66,8 @@ export class DynamicRes {
    * @returns {number} the scale to render at (changes at most once per 1.5 s, in 0.05 steps)
    */
   update(now, max, targetMs, gpuTimed = true) {
-    max = Math.min(1, Math.max(MIN_SCALE, max));
+    const minS = this.minScale;
+    max = Math.min(1, Math.max(minS, max));
     if (this.scale > max) { this._commit(now, max); return this.scale; } // slider lowered: follow at once
     if (this.n < MIN_SAMPLES) return this.scale;
     const med = this.median();
@@ -73,13 +76,13 @@ export class DynamicRes {
       tgt = Math.max(targetMs, this._sortedWindow()[0]); // refresh floor
       margin = FALLBACK_MARGIN_MS;
     }
-    const over = med > tgt * DOWN_FACTOR + margin && this.scale > MIN_SCALE;
+    const over = med > tgt * DOWN_FACTOR + margin && this.scale > minS;
     const under = med < tgt * UP_FACTOR && this.scale < max;
     this.overSince = over ? (this.overSince < 0 ? now : this.overSince) : -1;
     this.underSince = under ? (this.underSince < 0 ? now : this.underSince) : -1;
     if (now - this.lastChange < MIN_INTERVAL_S) return this.scale;
     if (over && now - this.overSince >= DOWN_HOLD_S) {
-      this._commit(now, Math.max(MIN_SCALE, Math.min(grid(this.scale - STEP), this.scale - 0.01)));
+      this._commit(now, Math.max(minS, Math.min(grid(this.scale - STEP), this.scale - 0.01)));
     } else if (under && now - this.underSince >= UP_HOLD_S) {
       this._commit(now, Math.min(max, Math.max(grid(this.scale + STEP), this.scale + 0.01)));
     }

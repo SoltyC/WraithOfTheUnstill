@@ -141,3 +141,18 @@
   pointer-events: none; z-index: 5; }
 .bark.on { opacity: 1; }
 .bark b { font-style: normal; font-weight: 600; letter-spacing: 0.06em; margin-right: 0.4em; color: rgba(214, 196, 160, 0.95); }
+
+/* Health and focus (ui/hud/vitals.js): a thin line low on the left, fading when full and idle. */
+.vitals { position: fixed; left: 3.4vw; bottom: 4.2vh; z-index: 5; width: clamp(160px, 15vw, 280px); display: flex; flex-direction: column; gap: 5px; pointer-events: none; opacity: 0; transition: opacity 0.8s ease; }
+.vitals.on { opacity: 1; transition: opacity 0.25s ease; }
+.vitals .vbar { position: relative; overflow: hidden; background: rgba(236, 230, 218, 0.12); box-shadow: 0 0 10px rgba(0, 0, 0, 0.35); }
+.vitals .vbar i { position: absolute; inset: 0; transform-origin: left center; }
+.vitals .hp { height: 3px; }
+.vitals .hp .loss { background: rgba(214, 120, 96, 0.75); }
+.vitals .hp .fill { background: #ece4d2; }
+.vitals.low .hp .fill { background: #e8a48e; animation: vitalsLow 1.6s ease-in-out infinite; }
+.vitals .hp .notches { position: absolute; inset: 0; }
+.vitals .hp .notches i { position: absolute; inset: 0 auto 0 auto; width: 2px; margin-left: -1px; background: rgba(8, 10, 12, 0.85); transform: none; }
+.vitals .focus { height: 1px; width: 72%; }
+.vitals .focus .fill { background: #a9cbea; }
+@keyframes vitalsLow { 50% { opacity: 0.55; } }

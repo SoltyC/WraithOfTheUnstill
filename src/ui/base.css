@@ -119,13 +119,13 @@ html, body {
 .bench-panel th { color: #7f8a97; font-weight: 400; }
 .bench-panel p { margin: 8px 0 0; color: #9aa4af; }
 
-/* Wounds (BRIEF §12): at very low health a subtle cold vignette, tinted by the biome. */
+/* Wounds: under ~40 % health a slight dark-red vignette at the edges, beating faintly when near death. */
 .wound-vignette {
   position: fixed;
   inset: 0;
   pointer-events: none;
   opacity: 0;
-  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 55%, rgba(40, 70, 110, 0.42) 100%);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 52%, rgba(60, 6, 4, 0.28) 78%, rgba(70, 8, 6, 0.55) 100%);
   transition: opacity 0.4s ease;
   z-index: 5;
 }

@@ -22,7 +22,9 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
 
 /** Rings: [cell (m), grid (cells per side), blades per clump, segments per blade]. */
-export const GRASS_RINGS = [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]];
+import { boot } from '../core/graphics.js';
+/** Rings of clumps round the camera: [cell (m), clumps across, blades per clump, segments] — the graphics preset's (core/graphics.js; high: [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]]). */
+export const GRASS_RINGS = boot.grass;
 export const vertsPerBlade = (seg) => (seg + 1) * 2;
 
 /** Field lookups shared with the ground cover (shaders/groundcover.wgsl.js): hashes, the rendered

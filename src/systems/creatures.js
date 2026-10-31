@@ -2,8 +2,11 @@
 // encounters (Shaped spawns, Warden placement, the release stepped to a given second, a climb).
 
 /** @param {any} g  shared boot context */
+import { createVitals } from '../ui/hud/vitals.js';
 export function addCreatureSystems(g) {
   const { loop, game, shaped, shapedMod, shapedView, warden, wardenMod, wardenView, controller, arm, clock, climb, combat, combatTuning, knock, knockCtl, releaseCam, wraithView, input, Action, vignette, castFlash, capture } = g;
+  const vitals = createVitals();
+  let vigShown = -1;
 
   /** Photo spots with Shaped (`shaped: { spawn: [[name, dx, dz], …], seconds }`): spawn them
    *  around the player, simulate a few substeps per frame (frozen capture clock), then hold. */
@@ -192,6 +195,11 @@ export function addCreatureSystems(g) {
     wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus + 1.2 * castFlash.v + 0.07 * g.flow.show) * Math.max(deathFade, reform);   // Flow brightens the hands a little
     wraithView.frost = Math.min(1, w * 1.15); wraithView.rime = g.buffs.sheen * (1 / 0.45);   // a Rime tonic frosts the wool all over, never dimming the cowl
     wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;
-    vignette.style.opacity = String(Math.max(0, (w - 0.65) / 0.35).toFixed(3));
+    // Low health: a slight vignette from ~40 % down, beating faintly below ~15 %.
+    const lowness = Math.max(0, Math.min(1, (w - 0.58) / 0.32)), beat = lowness > 0.8 ? 0.12 * Math.max(0, Math.sin(clock.simTime * 5.2)) : 0;
+    const vo = (lowness * 0.8 + beat) * (dying > 0 ? 0 : 1);
+    if (Math.abs(vo - vigShown) > 0.01) { vigShown = vo; vignette.style.opacity = vo.toFixed(3); }
+    vitals.update(combat.health, combat.maxHealth, combat.focus, combatTuning.focus, 1 + g.inventory.threads, clock.realDt,
+      g.healthBarOn !== false && !capture && !!g.menus?.started && !g.menus?.open_ && !releaseCam.active && !(g.hud && g.hud.hold));
   } });
 }

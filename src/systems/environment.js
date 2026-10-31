@@ -394,6 +394,7 @@ export async function addEnvironmentSystems(g) {
   // controller to hold params.v.targetMs of GPU time. Captures and benches stay fixed.
   let lastParamsVersion = -1;
   const dyn = new DynamicRes();
+  g.dynamicResMin = (m) => { dyn.minScale = m; };
   const fixedScale = !!g.capture || !!g.qs?.get('bench') || !!g.qs?.get('shots');
   let dynOn = false, timerOwned = false, lastGpuCount = 0, dynT = 0;
   const applyScale = (s) => { post.post.renderScale = s; };

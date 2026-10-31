@@ -18,11 +18,12 @@ const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
 export function createMenus(g) {
   const { chapter, game, clock, input, music, sfx, params, controller, arm } = g;
   const map = createMap();
-  const settings = { music: 0.8, sfx: 1, subtitles: 1, compass: 'fade' };
+  const settings = { music: 0.8, sfx: 1, subtitles: 1, compass: 'fade', healthBar: true };
   try { Object.assign(settings, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { /* private window */ }
   const applySettings = () => {
     music.volume = settings.music; sfx.setVolume(settings.sfx);
     if (g.compass) g.compass.mode = settings.compass;
+    g.healthBarOn = settings.healthBar !== false;
     document.documentElement.style.setProperty('--sub-scale', String(settings.subtitles));
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch { /* ignore */ }
   };
@@ -44,6 +45,7 @@ export function createMenus(g) {
   }
   function close() {
     if (!page) return;
+    if (g.graphics && title.classList.contains('on')) profileEl.textContent = 'Graphics · ' + (g.graphics.isCustom() ? 'Custom' : g.graphics.graphics.preset);
     page = null; shrine = null;
     veil.classList.remove('on');
     clock.frozen = wasFrozen; input.gameHasFocus = !title.classList.contains('on'); releaseAll();
@@ -53,7 +55,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['lore', 'Lore'], ['echoes', 'Echoes'], ['beasts', 'Bestiary'], ['robes', 'Robes'], ['arms', 'Arms'], ['pouch', 'Pouch'], ['remembrance', 'Remembrance']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['inventory', 'Inventory'], ['robes', 'Robes'], ['echoes', 'Echoes'], ['lore', 'Lore'], ['beasts', 'Bestiary'], ['remembrance', 'Remembrance']], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -77,10 +79,8 @@ export function createMenus(g) {
         fig.innerHTML = sketchSvg(vars['sketch:' + b.id]);
         el('p', null, pg, b.text);
       }, 'Nothing sketched yet. The Shaped rise out of the snow; look at them long enough to draw.');
-    } else if (tab === 'arms') {
-      listPage([['Weapons', econ.armsTab()]], (pg, w) => econ.armsPage(pg, w), 'Only the staff.');
-    } else if (tab === 'pouch') {
-      econ.pouchTab(el('div', 'codex-page wide', sheet));
+    } else if (tab === 'inventory' || tab === 'arms' || tab === 'pouch') {
+      econ.inventoryTab(sheet, () => open('journal', 'inventory'));
     } else if (tab === 'remembrance') {
       remembranceTab({ el, listPage, rem: g.remembrance, elements: g.elements });
     } else if (tab === 'robes') {
@@ -98,7 +98,7 @@ export function createMenus(g) {
         el('h2', null, pg, e.name); el('p', 'summary', pg, e.text); el('p', 'echo-effect', pg, e.effect);
       }, 'No Echoes yet. They wait at shrines, and with those who kept the Shapers’ things.');
     }
-    foot([['J', 'close'], ['M', 'map'], ['Esc', 'back']]);
+    foot([['J', 'close'], ['I', 'inventory'], ['M', 'map'], ['Esc', 'back']]);
   }
 
   let mapView = null;
@@ -173,25 +173,77 @@ export function createMenus(g) {
     foot([['Esc', 'back']]);
   }
 
-  function settingsPage() {
-    head('Settings');
-    const body = el('div', 'codex-page', sheet);
-    const row = (label, key, min, max, step, fmt) => {
-      const r = el('label', 'codex-setting', body);
-      el('span', null, r, label);
-      const i = el('input', null, r); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = settings[key];
-      const o = el('output', null, r, fmt(settings[key]));
-      i.oninput = () => { settings[key] = +i.value; o.textContent = fmt(+i.value); applySettings(); };
+  function settingsPage(section = 'graphics') {
+    head('Settings', section === 'graphics' ? 'Presets for the hardware; each setting can be changed alone' : null);
+    const wrap = el('div', 'settings', sheet);
+    const nav = el('div', 'codex-list', wrap), body = el('div', 'codex-page', wrap);
+    for (const [k, label] of [['graphics', 'Graphics'], ['interface', 'Interface'], ['sound', 'Sound'], ['controls', 'Controls']]) {
+      const b = el('button', k === section ? 'on' : null, nav, label); b.onclick = () => open('settings', k);
+    }
+    const row = (label, hint) => { const r = el('div', 'codex-setting', body); el('span', null, r, label); const c = el('div', null, r); const o = el('output', null, r); if (hint) el('div', 'hint', r, hint); return { c, o }; };
+    const slider = (label, get, set, min, max, step, fmt, hint) => {
+      const { c, o } = row(label, hint);
+      const i = el('input', null, c); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = get(); o.textContent = fmt(get());
+      i.oninput = () => { set(+i.value); o.textContent = fmt(+i.value); };
+    };
+    const toggle = (label, get, set, hint) => {
+      const { c } = row(label, hint);
+      const b = el('button', 'switch' + (get() ? ' on' : ''), c); b.setAttribute('aria-pressed', String(get()));
+      b.onclick = () => { set(!get()); b.classList.toggle('on', get()); b.setAttribute('aria-pressed', String(get())); after(); };
+    };
+    const choice = (label, opts, get, set, hint) => {
+      const { c } = row(label, hint);
+      const sg = el('div', 'seg', c);
+      for (const [v, t] of opts) { const b = el('button', get() === v ? 'on' : null, sg, t); b.onclick = () => { set(v); for (const x of sg.children) x.classList.remove('on'); b.classList.add('on'); after(); }; }
     };
     const pct = (v) => Math.round(v * 100) + '%';
-    row('Music', 'music', 0, 1, 0.05, pct);
-    row('Sounds', 'sfx', 0, 1, 0.05, pct);
-    row('Subtitle size', 'subtitles', 0.8, 1.5, 0.05, pct);
-    const cr = el('div', 'codex-setting', body); el('span', null, cr, 'Compass');
-    const cw = el('div', 'codex-actions', cr);
-    const MODES = [['fade', 'Fades when idle'], ['always', 'Always shown'], ['off', 'Hidden']];
-    const cb = el('button', null, cw, MODES.find((m) => m[0] === settings.compass)[1]);
-    cb.onclick = () => { const i = MODES.findIndex((m) => m[0] === settings.compass); settings.compass = MODES[(i + 1) % 3][0]; cb.textContent = MODES[(i + 1) % 3][1]; applySettings(); };
+    let after = () => {};
+    if (section === 'graphics') {
+      const G = g.graphics, gr = G.graphics;
+      el('h3', null, body, 'Preset');
+      const { c } = row(G.isCustom() ? 'Custom' : 'Preset', 'Low runs on integrated graphics; Ultra renders at full resolution.');
+      const sg = el('div', 'seg', c);
+      for (const name of G.PRESET_NAMES) { const b = el('button', gr.preset === name && !G.isCustom() ? 'on' : null, sg, name); b.onclick = () => { G.setPreset(name); open('settings', 'graphics'); }; }
+      el('h3', null, body, 'Image');
+      slider('Resolution', () => gr.renderScale, (v) => G.setGraphic('renderScale', v), 0.45, 1, 0.05, pct, 'The most it renders at; it steps down by itself to hold the frame rate.');
+      slider('Frame target', () => 1000 / gr.targetMs, (v) => G.setGraphic('targetMs', 1000 / v), 30, 90, 5, (v) => Math.round(v) + ' fps');
+      choice('Shadows', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High']], () => gr.shadows, (v) => G.setGraphic('shadows', v), 'Map detail and which trees cast. On restart.');
+      choice('Grass', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High']], () => gr.grass, (v) => G.setGraphic('grass', v), 'Blades and how far they reach. On restart.');
+      choice('Trees', [['low', 'Low'], ['medium', 'Medium'], ['high', 'High']], () => gr.trees, (v) => G.setGraphic('trees', v), 'How many, and how far. On restart.');
+      el('h3', null, body, 'Effects');
+      toggle('Ambient occlusion', () => gr.ao, (v) => G.setGraphic('ao', v));
+      toggle('Reflections', () => gr.ssr, (v) => G.setGraphic('ssr', v), 'On ice and wet ground.');
+      toggle('Bloom', () => gr.bloom, (v) => G.setGraphic('bloom', v));
+      toggle('Light shafts', () => gr.shafts, (v) => G.setGraphic('shafts', v));
+      toggle('Clouds and weather fog', () => gr.clouds, (v) => G.setGraphic('clouds', v));
+      toggle('Heat shimmer', () => gr.heat, (v) => G.setGraphic('heat', v));
+      toggle('Mirage', () => gr.mirage, (v) => G.setGraphic('mirage', v));
+      toggle('Sharpening', () => gr.sharpen, (v) => G.setGraphic('sharpen', v));
+      toggle('Drifting snow and sand', () => gr.particles, (v) => G.setGraphic('particles', v), 'Spindrift and the grains off dune crests.');
+      const rs = el('div', 'restart', body);
+      after = () => {
+        rs.replaceChildren();
+        if (!G.needsRestart()) return;
+        rs.append('Some changes apply when the game starts again.');
+        const b = el('button', null, rs, 'Restart now'); b.onclick = async () => { if (started) await game.saves.save('auto').catch(() => {}); location.reload(); };
+      };
+      after();
+    } else if (section === 'interface') {
+      el('h3', null, body, 'On screen');
+      toggle('Health bar', () => settings.healthBar, (v) => { settings.healthBar = v; applySettings(); }, 'A thin bar over the compass. Off: health shows only on the robe.');
+      choice('Compass', [['fade', 'Fades'], ['always', 'Always'], ['off', 'Hidden']], () => settings.compass, (v) => { settings.compass = v; applySettings(); });
+      slider('Subtitle size', () => settings.subtitles, (v) => { settings.subtitles = v; applySettings(); }, 0.8, 1.5, 0.05, pct);
+    } else if (section === 'sound') {
+      el('h3', null, body, 'Volume');
+      slider('Music', () => settings.music, (v) => { settings.music = v; applySettings(); }, 0, 1, 0.05, pct);
+      slider('Sounds', () => settings.sfx, (v) => { settings.sfx = v; applySettings(); }, 0, 1, 0.05, pct);
+    } else {
+      el('h3', null, body, 'Keys');
+      const k = el('div', 'keys', body);
+      for (const [a, b] of [['W A S D, mouse', 'Move, look'], ['Space', 'Jump; a stroke when swimming'], ['Ctrl', 'Dodge'], ['Right mouse (hold)', 'Surf; glide in the air; grip to climb'],
+        ['1 – 3', 'Frost, Gale, Stone'], ['Q (tap / hold), F', 'The element\'s three verbs'], ['Left mouse', 'Weapon'], ['X', 'Swap weapon'], ['R / C', 'Use the marked item / move the mark'],
+        ['E', 'Interact'], ['T', 'Follow another goal on the compass'], ['I', 'Inventory'], ['J', 'Journal'], ['M', 'Map'], ['Esc', 'Pause']]) { el('b', null, k, a); el('span', null, k, b); }
+    }
     foot([['Esc', 'back']]);
   }
 
@@ -249,6 +301,12 @@ export function createMenus(g) {
     else if (e.code === 'KeyJ') page === 'journal' ? close() : open('journal');
     else if (e.code === 'KeyM') page === 'map' ? close() : open('map');
   });
+  // I: the inventory (the journal's Inventory tab), in play or from another page.
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyI' || title.classList.contains('on') || !started || chapter.talking) return;
+    if (page === 'journal') close();
+    else if (page || input.gameHasFocus) open('journal', 'inventory');
+  });
   // Losing pointer lock in play (Esc) opens the pause page.
   document.addEventListener('pointerlockchange', () => {
     if (!document.pointerLockElement && !page && started && !title.classList.contains('on') && !chapter.talking) open('pause');
@@ -263,11 +321,14 @@ export function createMenus(g) {
   el('div', 'rule', card);
   const titleActions = el('div', 'menu', card);
   el('div', 'credit', title, 'Frost Steppe · Chapter One');
+  const profileEl = el('div', 'profile', title);
   let started = false;
   async function showTitle() {
     title.classList.add('on'); g.musicState.title = true; input.gameHasFocus = false; // the world keeps living behind it
     g.hud.hold = true;                       // no quest notices over the title
     g.titleCam?.start();                     // the slow bird's-eye orbit over the frost mountains
+    const G = g.graphics;
+    if (G) profileEl.textContent = 'Graphics · ' + (G.isCustom() ? 'Custom' : G.graphics.preset);
     const list = await game.saves.list().catch(() => []);
     titleActions.replaceChildren();
     // Begin / Continue: the title lifts, the camera swoops from the heights down to the Wraith in the
@@ -282,7 +343,7 @@ export function createMenus(g) {
     actions(titleActions, [
       ['Continue', () => begin(() => loadSlot(list[0].slot)), !list.length],
       ['Begin', () => { g.musicState.waking = true; begin(null, { kicker: 'The Frost Steppe', name: 'The Shapers’ Monastery' }); }],
-      ['Settings', () => { open('settings'); }],
+      ['Settings', () => { open('settings', 'graphics'); }],
     ]);
   }
 

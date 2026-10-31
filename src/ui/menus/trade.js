@@ -125,5 +125,42 @@ export function createEconomyPages(u) {
     if (I.equipped === w.id) b.disabled = true; else b.onclick = () => { I.equip(w.id); open('journal', 'arms'); };
   }
 
-  return { trade: tradePage, forge: forgePage, pouchTab, armsTab, armsPage };
+  /** The inventory (the journal's Inventory tab, redesigned minimal 2026-10-31): what the Wraith carries,
+   *  at a glance — its counts, the pouch (click marks the item R uses), materials, and the weapons
+   *  (click takes one in hand), each a quiet card. `reopen()` redraws it after a change. */
+  function inventoryTab(parent, reopen) {
+    const I = inv(), wrap = el('div', 'inv', parent);
+    const stats = el('div', 'stats', wrap);
+    const stat = (v, label) => { const d = el('div', 'stat', stats); el('b', null, d, String(v)); el('span', null, d, label); };
+    stat(I.marks, 'Marks'); stat(I.flask.charges + ' / ' + I.flask.max, 'Flask'); stat(I.threads + ' / ' + HEALTH.maxThreads, 'Health threads');
+    const card = (grid, name, qty, text, sel, onclick) => {
+      const c = el(onclick ? 'button' : 'div', 'item' + (sel ? ' sel' : ''), grid);
+      el('div', 'n', c, name); if (qty) el('div', 'q', c, qty); if (text) el('div', 't', c, text);
+      if (onclick) c.onclick = onclick;
+      return c;
+    };
+    el('h3', null, wrap, 'Pouch');
+    const pouch = el('div', 'grid', wrap);
+    const mark = (id) => () => { I.sel = id; I.version++; reopen(); };
+    card(pouch, FLASK.name, I.flask.charges + ' of ' + I.flask.max, FLASK.text, I.selected === 'flask', mark('flask'));
+    for (const id in CONSUMABLES) if (I.pouch[id] > 0) card(pouch, CONSUMABLES[id].name, '× ' + I.pouch[id], CONSUMABLES[id].text, I.selected === id, mark(id));
+    const mats = Object.keys(MATERIALS).filter((id) => I.materials[id] > 0);
+    if (mats.length) {
+      el('h3', null, wrap, 'Materials');
+      const g2 = el('div', 'grid', wrap);
+      for (const id of mats) card(g2, MATERIALS[id].name, '× ' + I.materials[id], MATERIALS[id].text, false, null);
+    }
+    el('h3', null, wrap, 'Arms');
+    const arms = el('div', 'grid', wrap);
+    for (const w of I.owned) {
+      const d = weaponDefs[w.id], inHand = I.equipped === w.id, carried = I.carried.includes(w.id);
+      const c = card(arms, d.name, inHand ? 'In hand' : carried ? 'Carried' : 'Owned', w.infusion ? 'Infused with ' + w.infusion + '.' : null, inHand, inHand ? null : () => { I.equip(w.id); reopen(); });
+      if (TIER_INFO[w.id]) { const p = el('div', 'pips', c); for (let t = 1; t <= 5; t++) el('i', t <= w.tier ? 'on' : null, p); }
+    }
+    el('div', 'hint', wrap, 'R uses the marked item, C moves the mark. X swaps the two weapons carried. The smith in Hearn forges them.');
+    const d2 = g.economy.drop;
+    if (d2.active) el('div', 'hint', wrap, d2.marks + ' marks lie where you fell. Walk back to the glow.');
+  }
+
+  return { trade: tradePage, forge: forgePage, pouchTab, armsTab, armsPage, inventoryTab };
 }
