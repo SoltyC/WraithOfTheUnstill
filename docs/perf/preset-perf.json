@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-31T06:49:51.724Z",
+  "note": "3060, headless Windows Chrome 2560x1440, dynamic resolution off (each preset at its own render scale), median GPU frame over 240 frames",
+  "presets": {
+    "low": {
+      "p9r-galleries-dawn": {
+        "median": 8.15,
+        "p95": 9,
+        "scale": 0.5,
+        "late": 0
+      },
+      "p8-meadow-golden": {
+        "median": 7.86,
+        "p95": 9.4,
+        "scale": 0.5,
+        "late": 0
+      },
+      "p9s1-star-mid": {
+        "median": 5.88,
+        "p95": 7.37,
+        "scale": 0.5,
+        "late": 0
+      }
+    },
+    "medium": {
+      "p9r-galleries-dawn": {
+        "median": 10.88,
+        "p95": 12.44,
+        "scale": 0.67,
+        "late": 0
+      },
+      "p8-meadow-golden": {
+        "median": 10.83,
+        "p95": 12.58,
+        "scale": 0.67,
+        "late": 0
+      },
+      "p9s1-star-mid": {
+        "median": 7.48,
+        "p95": 8.97,
+        "scale": 0.67,
+        "late": 0
+      }
+    },
+    "high": {
+      "p9r-galleries-dawn": {
+        "median": 14.73,
+        "p95": 16.37,
+        "scale": 0.8,
+        "late": 0
+      },
+      "p8-meadow-golden": {
+        "median": 15.43,
+        "p95": 17.13,
+        "scale": 0.8,
+        "late": 0
+      },
+      "p9s1-star-mid": {
+        "median": 9.35,
+        "p95": 10.88,
+        "scale": 0.8,
+        "late": 0
+      }
+    },
+    "ultra": {
+      "p9r-galleries-dawn": {
+        "median": 18.6,
+        "p95": 20.22,
+        "scale": 1,
+        "late": 0
+      },
+      "p8-meadow-golden": {
+        "median": 18.32,
+        "p95": 20.02,
+        "scale": 1,
+        "late": 0
+      },
+      "p9s1-star-mid": {
+        "median": 10.69,
+        "p95": 12.32,
+        "scale": 1,
+        "late": 0
+      }
+    }
+  }
+}

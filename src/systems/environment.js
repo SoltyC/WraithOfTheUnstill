@@ -272,9 +272,38 @@ export async function addEnvironmentSystems(g) {
     if (wa.setOasis(ws.restoration.dunes === 'restored')) engine.snapshotRenderingReset();
     wa.update();
   } });
+  // Grass and ground cover grow only on meadow ground, the erg's margin and round the oasis: where none can be in
+  // reach of the camera they are not drawn at all — their vertices otherwise cost ~0.5 ms even over
+  // snow, sand or rock (docs/perf/graphics-costs.json). Checked twice a second over a ring as wide as
+  // the grass reaches; kept on until they have drawn for a while (pipelines made in the warm-up).
+  let grassT = 0, grassOn = true, grassDrawn = 0;
+  const GRASS_REACH = 150, OASIS_XZ = [1846, 736];
+  function grassWanted() {
+    const st = g.streamer, c = g.camera.position;
+    if (!st || !st.sampleBiome) return true;
+    if (Math.hypot(c.x - OASIS_XZ[0], c.z - OASIS_XZ[1]) < GRASS_REACH + 40) return true;
+    for (let k = 0; k < 9; k++) {
+      const a = k * Math.PI / 4, r = k === 8 ? 0 : GRASS_REACH;
+      st.mqx = c.x + Math.cos(a) * r; st.mqz = c.z + Math.sin(a) * r; st.sampleBiome();
+      if (st.bw1 > 0.12 || st.bw3 > 0.08 && st.bw3 < 0.8) return true;   // the meadow, or the erg's margin (straw tussocks)
+    }
+    return false;
+  }
   // Grass: its clock and the push (its wind is the field; a stilled meadow stands rigid).
   loop.add({ name: 'grass', update: () => {
     const gr = g.grass; if (!gr) return;
+    if (grassOn) grassDrawn++;
+    grassT -= clock.realDt;
+    if (grassT <= 0 && grassDrawn > 30) {
+      grassT = 0.5;
+      const want = grassWanted();
+      if (want !== grassOn) {
+        grassOn = want;
+        for (const m of gr.meshes) m.setEnabled(want);
+        if (g.groundCover) g.groundCover.mesh.setEnabled(want);
+        engine.snapshotRenderingReset();
+      }
+    }
     gr.time = clock.simTime; gr.dunesRestored = restoration.dunes;
     gr.wind = Math.min(1.6, params.v.windStrength * weather.wind * (0.04 + 0.96 * restoration.value) * 1.4 + 2 * warden.gust);
     gr.density = 1;

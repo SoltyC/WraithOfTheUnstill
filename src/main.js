@@ -187,8 +187,15 @@ async function boot() {
   await scene.whenReadyAsync();
   progress(0.5); mark('shaders');
   loop.start();
-  await waitFrames(engine, 4);
+  await waitFrames(engine, 1); mark('frame1');
+  await waitFrames(engine, 3); mark('frame4');
   await waitUntil(engine, () => {
+    // (When each part of "settled" first held: the loading-time work, docs/perf/performance-plan.md.)
+    const ts0 = g.terrainState;
+    if (!loadTimes.tiles && streamer.pendingNear(controller.pos.x, controller.pos.z) === 0) mark('tiles');
+    if (!loadTimes.pages && ts0 && ts0.pendingPages === 0) mark('pages');
+    if (!loadTimes.relax && ts0 && (!ts0.relaxation || ts0.relaxation.ready) && (!ts0.coarseRelaxation || ts0.coarseRelaxation.ready)) mark('relax');
+    if (!loadTimes.collision && ts0 && (!ts0.collision || ts0.collision.ready)) mark('collision');
     const need = streamer.pendingNear(controller.pos.x, controller.pos.z);
     progress(0.5 + 0.5 * (1 - Math.min(1, need / 36)));
     return game.worldSettled();
