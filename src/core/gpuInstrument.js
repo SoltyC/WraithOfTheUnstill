@@ -10,6 +10,8 @@
 
 /** @typedef {{ kind: string, label: string, t: number, stack: string }} LatePipeline */
 
+import { recordPipelines } from './pipelineCache.js';
+
 export const gpuStats = {
   pipelinesTotal: 0,
   pipelinesAtArm: 0,
@@ -125,6 +127,7 @@ function instrumentDevice(device) {
     gpuStats.textureBytes += n;
     return t;
   };
+  recordPipelines(device);
 }
 
 function wrapDestroy(proto, field) {

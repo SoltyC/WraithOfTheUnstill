@@ -148,6 +148,8 @@ function botBridge() {
 
 export default defineConfig({
   plugins: [perfSink(), shotSink(), botBridge()],
+  // Pipelines recorded by one build are replayed only by it (src/core/pipelineCache.js).
+  define: { __BUILD_ID__: JSON.stringify(Date.now().toString(36)) },
   // data/ is served at the site root (baked world at /world/…) and copied into builds.
   publicDir: 'data',
   server: { host: '127.0.0.1', port: 5173, strictPort: true },

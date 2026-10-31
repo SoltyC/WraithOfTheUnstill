@@ -1,9 +1,10 @@
 // Rock outcrops (BRIEF §5.1, §6.1): deterministic placement on camera-centred grids (small
 // boulders every few metres in clustered fields, sparse half-buried outcrops), drawn as one
-// thin-instanced displaced icosphere (shaders/rocks.wgsl.js). The instance count is fixed so the
-// snapshot-rendered draw never needs re-recording: unused slots have size 0 and are discarded in
-// the vertex shader. Placement is rebuilt only when the camera crosses a grid cell, into a
-// preallocated buffer (no garbage). Rocks cast shadows into every cascade.
+// thin-instanced displaced icosphere (shaders/rocks.wgsl.js). Each draw covers the slots in use,
+// rounded up to a bucket with hysteresis, so the snapshot is re-recorded only when a bucket changes:
+// the slots past the used ones have size 0 and are discarded in the vertex shader. Placement is
+// rebuilt only when the camera crosses a grid cell, nearest cells first (a full budget drops the
+// farthest rocks), into a preallocated buffer (no garbage). Rocks cast shadows into every cascade.
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
@@ -28,6 +29,22 @@ const NEAR_R = 140; // m: closer rocks use the 642-vertex mesh, farther the 162-
 const BOULDER_CELL = 8, BOULDER_R = 52;    // cells: ±52 → 840 m square
 const OUTCROP_CELL = 48, OUTCROP_R = 12;   // ±12 → 1.2 km square
 const SEED = 0x726f;
+const BUCKET = 64, BIG_BUCKET = 16; // instances: the drawn count moves in these steps
+
+/** Grid offsets of a ±r square, nearest first: [i0, j0, i1, j1, …]. */
+function spiral(r) {
+  const cells = [];
+  for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) cells.push([i, j]);
+  cells.sort((a, b) => a[0] * a[0] + a[1] * a[1] - b[0] * b[0] - b[1] * b[1]);
+  return Int16Array.from(cells.flat());
+}
+/** The drawn count for `used` slots, given the current one: grows at once, shrinks only well past a bucket
+ *  (never 0: Babylon draws a mesh with no thin instances as a plain mesh). */
+export function drawnCount(used, drawn, max, bucket = BUCKET) {
+  const need = Math.max(bucket, Math.ceil(used / bucket) * bucket);
+  if (need > drawn) return Math.min(max, need + bucket);
+  return drawn - need >= 3 * bucket ? Math.min(max, need + bucket) : drawn;
+}
 
 /** Unit icosphere subdivided `level` times (shared vertices, smooth). */
 function icosphere(level) {
@@ -113,7 +130,7 @@ export function createRocks(scene, clipmap, atmo, matLib) {
   ShaderStore.ShadersStoreWGSL.rocksVertexShader = rocksVertexWGSL;
   ShaderStore.ShadersStoreWGSL.rocksShadowVertexShader = rocksShadowVertexWGSL;
   ShaderStore.ShadersStoreWGSL.rocksFragmentShader = rocksFragmentWGSL;
-  const makeMesh = (name, level, max) => {
+  const makeMesh = (name, level, max, bucket = BUCKET) => {
     const ico = icosphere(level);
     const m = new Mesh(name, scene);
     const vd = new VertexData(); vd.positions = ico.positions; vd.indices = ico.indices; vd.applyToMesh(m, false);
@@ -121,9 +138,11 @@ export function createRocks(scene, clipmap, atmo, matLib) {
     m.thinInstanceSetBuffer('matrix', b, 16, false);
     m.alwaysSelectAsActiveMesh = true;
     m.doNotSyncBoundingInfo = true;
-    return { mesh: m, buf: b, max, n: 0 };
+    m.thinInstanceCount = bucket;
+    return { mesh: m, buf: b, max, n: 0, drawn: bucket, bucket };
   };
-  const near = makeMesh('rocksNear', 3, MAX_NEAR), far = makeMesh('rocksFar', 2, MAX_FAR), big = makeMesh('rocksBig', 4, MAX_BIG);
+  const outcropCells = spiral(OUTCROP_R), boulderCells = spiral(BOULDER_R);
+  const near = makeMesh('rocksNear', 3, MAX_NEAR), far = makeMesh('rocksFar', 2, MAX_FAR), big = makeMesh('rocksBig', 4, MAX_BIG, BIG_BUCKET);
 
   const common = {
     attributes: ['position'],
@@ -177,23 +196,29 @@ export function createRocks(scene, clipmap, atmo, matLib) {
     camCX = (cx + 0.5) * BOULDER_CELL; camCZ = (cz + 0.5) * BOULDER_CELL;
     // Outcrops: large, half buried, sparse.
     const ox = Math.floor(cx * BOULDER_CELL / OUTCROP_CELL), oz = Math.floor(cz * BOULDER_CELL / OUTCROP_CELL);
-    for (let j = -OUTCROP_R; j <= OUTCROP_R; j++) for (let i = -OUTCROP_R; i <= OUTCROP_R; i++) {
-      if (outcropAt(ox + i, oz + j)) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 1);
+    for (let k = 0; k < outcropCells.length; k += 2) {
+      if (outcropAt(ox + outcropCells[k], oz + outcropCells[k + 1])) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 1);
     }
     // Boulders: clustered fields (a low-frequency density), a power law of sizes.
-    for (let j = -BOULDER_R; j <= BOULDER_R; j++) for (let i = -BOULDER_R; i <= BOULDER_R; i++) {
-      if (boulderAt(cx + i, cz + j)) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 0);
+    for (let k = 0; k < boulderCells.length; k += 2) {
+      if (boulderAt(cx + boulderCells[k], cz + boulderCells[k + 1])) put(n++, R.x, R.z, R.size, R.yaw, R.seed, R.aspect, R.burial, 0);
     }
-    // Unused slots: size 0 (discarded in the vertex shader; the draw count never changes).
+    // Unused slots: size 0. The draws cover the used ones, in buckets; a changed bucket re-records.
+    let changed = false;
     for (const t of [near, far, big]) {
-      for (let k = t.n; k < t.max; k++) t.buf[k * 16 + 2] = 0;
+      const drawn = drawnCount(t.n, t.drawn, t.max, t.bucket);
+      for (let k = t.n; k < Math.max(drawn, t.drawn); k++) t.buf[k * 16 + 2] = 0;
+      if (drawn !== t.drawn) { t.drawn = drawn; t.mesh.thinInstanceCount = drawn; changed = true; }
       t.mesh.thinInstanceBufferUpdated('matrix');
     }
+    if (changed) scene.getEngine().snapshotRenderingReset();
     return near.n + far.n + big.n;
   }
 
   return {
     meshes: [near.mesh, far.mesh, big.mesh], material: mat, count: 0,
+    /** Used and drawn slots per mesh (near, far, big): the perf tools read it. */
+    slots() { return [near, far, big].map((t) => [t.n, t.drawn, t.max]); },
     /** Builds a depth material for a shadow cascade (vertex shader without normals). */
     makeShadowMaterial(name, light, origin) {
       const m = new ShaderMaterial(name, scene, { vertex: 'rocksShadow', fragment: 'shadowDepth' }, {

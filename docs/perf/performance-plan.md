@@ -73,10 +73,9 @@ Run `npm run playtest`, then open `/playtest.html`, then *Benchmark: Low* (`?ben
 
 **Step 1: free wins (no visual cost), about −1.5 to −2 ms on the 3060 at every preset.**
 
-1. **Rocks: draw only the slots in use.**
-   - Today 700 + 1700 + 160 instances are always drawn. Unused ones are discarded in the vertex shader, but still cost about 1.1 M vertices per pass, plus their shadow passes. That is 1.0–1.4 ms everywhere.
-   - Fix: set the thin-instance count, rounded up to buckets of 64, so the recorded draws only change when a bucket does.
-   - Also fill by distance, so a full budget drops the farthest rocks, not arbitrary ones.
+1. **Rocks: draw only the slots in use. Done (2026-11-01), and worth less than this plan said.**
+   - The draws now cover the used slots in buckets (64; 16 for the big outcrops), filled nearest first. A changed bucket re-records the snapshot: 3 times over 1.2 km of flight, with no visible hitch.
+   - Measured in one session (trimmed against the old 700 + 1700 + 160, with big's old rounding): **it saves 0.15–0.4 ms** of the rocks' 1.2–1.5 ms. This plan's "1.0–1.4 ms" was the cost of all rocks, not of the empty slots: the frost uses every far slot, and most of the cost is the rocks that show.
 2. **Grass only where it can grow.** Done this session: grass and ground cover are switched off over the frost, the canyon floors and the heart of the erg (they cost about 0.55 ms there drawing nothing). Ground cover could go further: off beyond the meadow.
 3. **Shadow casters by distance.** Every caster is drawn into each cascade it is listed for, without culling. Cull rocks, trees and architecture per cascade by its bounds: one sphere test per thin-instance group, or GPU culling.
 4. **Clouds, fog and shafts at half resolution**, upsampled with depth: 0.7–1.3 ms in the canyon today.
@@ -116,7 +115,11 @@ That is about 18–30 ms on the laptop. The last stretch to 16.7 ms depends on t
 
 ## 4. Loading: what to do, in order
 
-1. **Make the pipelines in parallel and in advance (the 22 s).**
+1. **Make the pipelines in parallel and in advance (the 22 s). Done (2026-11-01): `src/core/pipelineCache.js`.**
+   - Measured, same Chrome profile: **36 s → about 18 s on High, 33 s → about 17 s on Low**, with frames 2–4 down from 22 s to 0.4 s. Every load after the first of a build (the first records); 7 replay loads across three sessions.
+   - One session's two replay loads, on the same code, took 33 s with that stall still there (`DeviceBase::APICreateRenderPipeline` 12 s, in the trace of a like load). The cause was not found, and it did not recur, including right after a Chrome restart.
+   - The world phase takes about 5 s longer (5.8 → 11 s): the workers compete with the main thread for cores.
+   - Plan as written:
    - Dawn compiles `createRenderPipelineAsync` and `createComputePipelineAsync` on worker threads. Babylon creates pipelines synchronously at their first draw, one at a time.
    - At the start of loading, replay last session's pipeline descriptors (shader code, layouts, states; recorded on the first run, stored per build in IndexedDB) through the async calls, in parallel with the world build.
    - Dawn's in-memory cache then hands Babylon's later synchronous creations the already-built pipelines.

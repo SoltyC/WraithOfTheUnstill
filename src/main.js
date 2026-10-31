@@ -57,6 +57,10 @@ async function boot() {
   const { createEngine } = await import('./boot/engine.js');
   const { engine, gpuTimer, setRenderScale } = await createEngine(canvas, qs);
   progress(0.2); mark('engine');
+  // Last load's pipelines, compiled in parallel while the world builds (core/pipelineCache.js).
+  const pipelineSet = gfxMod.graphics.preset;
+  const pipelineCache = await import('./core/pipelineCache.js');
+  const pipelinesMade = qs.get('pipelines') === '0' || capture ? Promise.resolve(0) : pipelineCache.replayPipelines((await import('./core/gpuInstrument.js')).gpuStats.device, pipelineSet);
 
   /** The shared boot context. */
   const g = { qs, capture, progress, engine, setRenderScale, canvas };
@@ -184,6 +188,7 @@ async function boot() {
   const hideAfterWarm = !g.wraithView.isEnabled();
   if (hideAfterWarm) game.setPlayerVisible(true);
   mark('systems');
+  window.__wraith.pipelinesReplayed = await pipelinesMade; mark('pipelines');
   await scene.whenReadyAsync();
   progress(0.5); mark('shaders');
   loop.start();
@@ -201,6 +206,7 @@ async function boot() {
     return game.worldSettled();
   });
   progress(1); mark('settled');
+  pipelineCache.savePipelines(pipelineSet);
   if (hideAfterWarm) { game.setPlayerVisible(false); await waitFrames(engine, 2); }
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,
