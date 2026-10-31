@@ -5963,7 +5963,7 @@
     {"id":"p9-side-falls","biome":"dunes","label":"D11: the hoodoos and the Sky Window","time":11,"weather":"clear","restoration":"stilled","player":[1578,124],"camera":{"mode":"follow","yaw":0.6,"pitch":0.22,"dist":6}},
     {"id":"p9-side-glass","biome":"dunes","label":"D11: the Wellhouse, to start the Glass Battle with Iven","time":12,"weather":"clear","restoration":"stilled","player":[1800,769],"camera":{"mode":"follow","yaw":0.6,"pitch":0.22,"dist":6}},
     {"id":"p9-side-door","biome":"dunes","label":"D11: the Sunken Temple","time":11,"weather":"clear","restoration":"stilled","player":[2935,1120],"camera":{"mode":"follow","yaw":0.6,"pitch":0.22,"dist":6}},
-    {"id":"p9-side-flood","biome":"dunes","label":"D11: the Flood Garden an hour before dusk","time":17,"weather":"clear","restoration":"restored","player":[1570,630],"camera":{"mode":"follow","yaw":0.6,"pitch":0.22,"dist":6}},
+    {"id":"p9-side-flood","biome":"dunes","label":"D11: the Flood Garden an hour before dusk","time":17,"weather":"clear","restoration":"restored","player":[1694,606],"camera":{"mode":"follow","yaw":0.6,"pitch":0.22,"dist":6}},
     {"id":"p9-wellhouse-camp","biome":"dunes","label":"D11: the Wellhouse: the caravan in the court, and the buried sled behind the back wall","time":15,"weather":"clear","restoration":"stilled","player":[1817,769],"camera":{"mode":"follow","yaw":-0.8,"pitch":0.25,"dist":6}},
     {"id":"p9-walker-release","biome":"dunes","label":"D10: the Long Walker lying at the oasis, the erg restored","time":17.2,"weather":"clear","restoration":"restored","player":[1860,700],"camera":{"mode":"follow","yaw":-0.6,"pitch":0.2,"dist":8}}
   ]

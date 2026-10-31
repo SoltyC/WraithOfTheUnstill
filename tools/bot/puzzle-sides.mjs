@@ -14,14 +14,14 @@ const has = (f) => js(`return g.chapter.graph.flags.has('${f}')`);
 // Mirage.
 await hour(9); await bot('teleport', { x: 1892, z: 124 }); await sleep(4500);
 log('cairn before noon', await use('mirage-cairn-0'), await js(`return g.sideSites.mirage.bearings`));
-await hour(12); await sleep(1500); await bot('face', { x: 1945, z: 205 }); await bot('shot', { name: 'side-mirage' });
+await hour(12); await sleep(1500); await bot('teleport', { x: 1888, z: 112 }); await sleep(1500); await bot('face', { x: 1945, z: 205 }); await bot('shot', { name: 'side-mirage' });
 await use('mirage-cairn-0'); await bot('teleport', { x: 1998, z: 138 }); await sleep(2500); await use('mirage-cairn-1');
 log('bearings', await js(`return g.sideSites.mirage.bearings`), await has('dunes:mirage-crossed'));
 await bot('teleport', { x: 1950, z: 196 }); await sleep(2500);
 for (let i = 0; i < 4; i++) await brush(K.PLOUGH, 1945 + i, 205);
 await sleep(2500); log('cistern', await has('dunes:mirage-found')); await bot('face', { x: 1945, z: 205 }); await bot('shot', { name: 'side-cistern' });
 // Falls: a real climb: frozen ramps, walked by the controller.
-await bot('teleport', { x: 1578, z: 122 }); await sleep(4000);
+await bot('teleport', { x: 1566, z: 138 }); await sleep(4000); await bot('face', { x: 1596, z: 108 });
 await brush(K.FREEZE, 1587, 116); await brush(K.FREEZE, 1602, 99); await sleep(600);
 log('falls', await js(`const s=g.sideSites.falls;return [s.life, g.controller.pos.y|0]`));
 await bot('shot', { name: 'side-falls' });
@@ -29,7 +29,7 @@ await js(`g.controller.teleport(1590,114,104.5);return 1;`); await sleep(900);
 log('on the ramp', await js(`return +g.controller.pos.y.toFixed(1)`));
 await js(`g.controller.teleport(1607.9,88.2,111.5);return 1;`); await sleep(1200);
 log('window', await has('dunes:falls-reached'), await js(`return +g.controller.pos.y.toFixed(1)`));
-await bot('shot', { name: 'side-window' });
+await bot('face', { x: 1700, z: 40 }); await bot('shot', { name: 'side-window' });
 // Glass.
 await js(`g.chapter.graph.flags.add('dunes:glass-heard');return 1;`);
 for (const [x, z, fx, fz, k] of [[2643, 825, 2634, 825, K.FREEZE], [2762, 698, 2762, 707, K.FREEZE], [2586, 629, 2595, 629, K.FREEZE], [2535, 468, 2535, 459, K.RIDGE], [2673, 553, 2680, 560, K.FREEZE]]) {
@@ -43,11 +43,11 @@ for (const k of [[2899, 1144], [2909, 1130], [2921, 1140], [2909, 1130], [2899, 
 log('door', await js(`return g.sideSites.door.clear`), await has('dunes:door-open'));
 await bot('shot', { name: 'side-door' });
 // Flood.
-await hour(12); await bot('teleport', { x: 1565, z: 630 }); await sleep(4000);
-await brush(K.RIDGE, 1545, 618); await brush(K.WET, 1575, 620); await brush(K.PLOUGH, 1575, 620); await brush(K.FREEZE, 1561, 636); await sleep(400);
+await hour(12); await bot('teleport', { x: 1694, z: 606 }); await sleep(4000);
+await brush(K.RIDGE, 1668, 592); await brush(K.WET, 1698, 594); await brush(K.PLOUGH, 1698, 594); await brush(K.FREEZE, 1684, 610); await sleep(400);
 log('gates', await js(`return g.sideSites.flood.open`));
-await hour(18); await sleep(4000); await bot('shot', { name: 'side-flood' });
-for (let i = 0; i < 28; i++) { await brush(K.FREEZE, 1561, 636); await sleep(1500); if (await has('dunes:garden-full')) break; }
+await hour(18); await sleep(4000); await bot('face', { x: 1682, z: 606 }); await bot('shot', { name: 'side-flood' });
+for (let i = 0; i < 28; i++) { await brush(K.FREEZE, 1684, 610); await sleep(1500); if (await has('dunes:garden-full')) break; }
 log('flood', await js(`const f=g.sideSites.flood;return {t:f.t|0,level:f.level.map(v=>+v.toFixed(2)),done:f.done}`));
 await bot('shot', { name: 'side-garden' });
 log('gpu', await js(`return {late:w.gpuStats.late.length,err:w.gpuStats.gpuErrors}`));

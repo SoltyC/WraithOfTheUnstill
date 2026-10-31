@@ -1,3 +1,5 @@
+> **Latest — 1 November (Claude): D11's content is in.** Walker hooks, five side sites, the sun sweep at shrines, Echoes and robes; all solved live by the bot, no human play yet. 1002 tests. Loads rerun with no game in play: 33.8 → 17.2 s (High), 32.3 → 16.2 s (Low). Gaps: plan.md "D11 — Progress". Next: D12.
+
 > **Latest — 1 November (Claude): the three Silent Instruments are in.** Sun Gate, Hourglass, Singing Dunes: machines, world, tests, solvers; a hub of three goals in any order. All solved live by the bot through the terrain-brush path; no human has played them. On the playtest page. Gaps: plan.md "D11 — Progress". Next: Walker hooks, side sites, shrines' "wait until".
 
 > **Latest — 1 November (Claude): D11 begun.** The sand grammar runtime; the Wellhouse camp (five people, *Into the Erg*); the buried sled puzzle, played live by the bot. 967 tests. On the playtest page. Next: the Sun Gate, Hourglass and Singing Dunes. Status: plan.md "D11 — Progress".

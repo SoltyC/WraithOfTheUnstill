@@ -532,6 +532,8 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
 - **The Wellhouse camp:** Sarai, Hesper, Iven, Nadra and Pell in the caravanserai's court (`data/quests/dunes.json`), awnings, sledges; *Into the Erg* and the buried sled (`src/game/puzzles/sled.js`, `src/systems/puzzleSled.js`). The heap, channel and slide are real terrain state.
 - **Step 3, the three instruments:** the Sun Gate, the Hourglass and the Singing Dunes (`src/game/puzzles/{sunGate,hourglass,singing}.js`, world wiring `src/systems/puzzles.js`, `puzzleHourglass.js`, `puzzleSinging.js`), one pool of moving chunks (`src/game/puzzles/props.js`, one draw, drawn near a site). Each has tests and a solver: `tools/bot/puzzle-{sled,sungate,hourglass,singing}.mjs`. All solved live; 0 late pipelines, 0 GPU errors. A solved Sun Gate's beam runs on past the gate. Remembrance entries, dialogue that changes with progress, three compass goals in any order (checked live).
 
+- **Steps 4–6 (2026-11-01):** the Walker hooks (the phrase known, a pillar turns it 1.4× as far; a third of the glass track lights per instrument and shows at dusk), the five side sites (`src/game/puzzles/sides.js`, `src/systems/puzzleSides.js`, `tools/bot/puzzle-sides.mjs`), the sun sweeping to the chosen hour at a shrine (`src/systems/timeSweep.js`), three Echoes (`echo-dunes-keep`, `-ridge`, `-run`), two robes (`glass-reader`, `sand-runner`). All five sites solved live; the Frozen Falls' ice stairs are real ramps the controller stands on.
+
 **Not checked by a human.** The solvers feed FREEZE and PLOUGH stamps through `ts.stamp` (the paths Crystallize and Sweep take) and call Interact targets; none casts a real verb, so reach and aim are unproven. Time-to-solve, whether the rules read without help, and whether 14 s between crests feels right are NOT ASSESSED.
 
 **Differs from the design:**
@@ -542,8 +544,9 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
 
 **Not done:**
 - Pressure: no Skitters in the Hourglass's bowls, no Whirler on the Singing Dunes' ring.
-- Shade: the sites run on sun time only (`update(dt, false, false)`); G4's real shade is built but not wired, so thaw ignores the canyon's shadow.
-- Lit footprints on the glass track; the Walker hooks (step 4); the mastery run and its robe; the side sites (step 5); shrines' "wait until" (step 6); Echoes, map, journal sketches.
+- Shade: the sites run on sun time only; G4's real shade is built but not wired, so thaw ignores the canyon's shadow, and the Frozen Falls cannot yet be planned through the shade.
+- The sand-runner's mastery has not been played live (surf needs the waking). Glass Battle "visions" are a chime and a line, no shown moment. Pell's kite, the camp's garden and Nadra's map layer are not built; the cistern gives marks, not a refill. The map has no dunes page, so bearings are not drawn: the quest's compass goal stands in.
+- The Mirage's avalanche step is a Sweep only. The Flood Garden's water is scripted levels in the cisterns, with no water through the canyon; the buried door opens nothing (Phase 13's cave).
 - Reloads mid-site: stages restore from flags, but a reload is untested.
 - Pedestals have collision; the moving parts do not. The Hourglass door does not block.
 - Art: the pan sand is overexposed, streams read as loose balls, ring stones' collars sit oddly on the slope, awnings still read a little like planks. No perf measurement of the sites: the PC was in use.

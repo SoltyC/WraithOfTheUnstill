@@ -292,7 +292,7 @@ function resonanceRing(b, facing) {
 function lipStone(b, facing) { b.box(0, 0, -1, 1.5, 0.75, 0.75, facing, MAT.GLYPH, 1310, { carve: 1 }); }
 
 // The side sites' stones (D11, game/puzzles/sides.js).
-function cairn(b, facing) { for (let k = 0; k < 5; k++) b.box(0.2 * Math.sin(k * 2), 0.2 * Math.cos(k * 2), -0.6 + k * 0.72, 0.1 + k * 0.72, 1 - k * 0.14, 0.9 - k * 0.12, k * 0.8, MAT.STONE, 1320 + k, { ...NS, solid: k === 0 }); }
+function cairn(b, facing) { for (let k = 0; k < 5; k++) b.box(0.2 * Math.sin(k * 2), 0.2 * Math.cos(k * 2), -0.6 + k * 0.72, 0.1 + k * 0.72, 1 - k * 0.14, 0.9 - k * 0.12, k * 0.8, MAT.STONE, 1320 + k, NS); }
 function skyWindow(b, facing) {
   for (const s of [-1, 1]) b.box(s * 1.5, 0, 0, 3.2, 0.32, 0.32, facing, MAT.STONE, 1330 + s, {});
   b.box(0, 0, 3.2, 3.7, 1.9, 0.4, facing, MAT.GLYPH, 1333, { ...NS, carve: 1 });

@@ -9,9 +9,9 @@ const SHOW_R = 260, FALL_N = 12;
 const TRACK = ['dunes:instrument-sun', 'dunes:instrument-clock', 'dunes:instrument-song'];
 
 export function buildSides(g, P) {
-  const { GLASS: GL, ICE, WATER, SAND, RUIN, POD, SEDGE } = CHUNK;
+  const { ICE, WATER, SAND, RUIN, POD, SEDGE } = CHUNK;
   const X = g.sideParts = {};
-  X.ghost = P.group(); P.add(X.ghost, 0, 8, 0, 18, 11, 18, GL, { glow: 0 });
+  X.ghost = P.group(); P.add(X.ghost, 0, 7, 0, 30, 9, 30, RUIN, { glow: 0 }); P.add(X.ghost, 0, 12.6, 0, 3, 3, 3, RUIN, { glow: 0 });
   X.dome = P.group(MIRAGE.cross[0], 0, MIRAGE.cross[1]); P.add(X.dome, 0, 1.4, 0, 9, 3.4, 9, RUIN, { glow: 0 });
   X.ramps = [];
   for (let r = 0; r < 2; r++) { const q = []; for (let k = 0; k < FALL_N; k++) { const c = P.group(); P.add(c, 0, 0, 0, 2.6, 1.1, 2.6, ICE, { glow: 0 }); q.push(c); } X.ramps.push(q); }

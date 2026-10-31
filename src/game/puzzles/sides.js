@@ -98,7 +98,7 @@ export function createBuriedDoor() {
 
 /** 5. The Flood Garden: at dusk, after the release, the wadi runs for about 90 s. Four cisterns; three need a way. */
 export const FLOOD = {
-  site: [1559, 626], window: [17.5, 19.5], run: 90, slump: 10, rate: 0.024,
+  site: [1682, 600], window: [17.5, 19.5], run: 90, slump: 10, rate: 0.024,
   /** Gates, site-local: how each is made to hold. */
   gates: [{ at: [-14, -8], need: 'ridge' }, { at: [2, 10], need: 'ice' }, { at: [16, -6], need: 'channel' }],
   cisterns: [[-22, 4], [-8, 18], [8, 22], [26, 6]], r: 7,

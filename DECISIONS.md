@@ -623,3 +623,7 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The phrase's first beat cannot fail** (any boom teaches it); the second is reached at two notes of the phrase, so the player meets the twist in the attempt.
 - **Interact stands in for striking** on mirrors, sluice and crust until weapon strikes reach these parts.
 - **Remembrance may hold up to 80 entries** (was 60): each instrument writes its rule there, and more biomes are coming.
+- **The Flood Garden sits on the gallery floor (1682, 600),** not the bake's `site-flood-garden` seat, which lies on the rim 75 m above it.
+- **The Flood Garden is G5's third use:** a channel cut in dry sand slumps in 10 s, wet first it holds.
+- **The Buried Door's order is door, vent, stair:** each clear pushes sand onto the next, so the far end has to go last.
+- **Shrines run the sun forward to the chosen hour over 5 s,** never a cut (dunes-design §8b). Forward only.

@@ -536,3 +536,5 @@ Preset medians (ms), `docs/perf/preset-perf.json`; the table above is the 31 Oct
 | Dunes | 6.12 | 7.93 | 9.82 | 11.42 |
 
 These read 3–8% above 31 October's. Old and new builds alternating (above) put the new build ahead, so this is the machine's state, not the code; the cause was not isolated. No late pipelines.
+
+Puzzle props shown against hidden at each instrument (3 alternating repeats, 120 frames, High, render scale 0.7): +0.06–0.08 ms. 257 chunks in one draw; hidden away from a site.
