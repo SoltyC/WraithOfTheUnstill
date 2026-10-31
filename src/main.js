@@ -102,6 +102,7 @@ async function boot() {
   ]);
   sysWorld.addWorldSystems(g);
   sysClimb.addClimbSystem(g);
+  await (await import('./systems/puzzles.js')).addPuzzleBody(g);
   await (await import('./systems/longWalker.js')).addLongWalkerBody(g); // the Long Walker's body: before the player (the Wraith rides this frame's pose)
   if (g.water) { g.controller.water = g.water; g.arm.water = g.water; } // swimming; the camera stays above the surface
   g.streams = new (await import('./game/restored/streams.js')).Streams((await import('../data/restored.json')).default.streams, g.restoration); // the restored biomes' rising air (docs §7)
@@ -132,6 +133,7 @@ async function boot() {
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/longWalker.js')).addLongWalkerSystem(g); // the dune Warden (after the chapter's interactables and the nav's goals)
+  (await import('./systems/puzzles.js')).addPuzzleSystem(g); // the dunes' instruments: their moving parts and machines
   (await import('./systems/puzzleSled.js')).addPuzzleSledSystem(g); // the Wellhouse's buried sled (dunes-design §4.1)
   (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)

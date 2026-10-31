@@ -16,6 +16,7 @@
 
 import { MAT } from './architecture.js';
 import { blob } from './blobStone.js';
+import { LAYOUT as SUN_LAYOUT, SUN_SITE } from '../game/puzzles/sunGate.js';
 
 const NS = { drift: false, cap: false };
 
@@ -255,6 +256,20 @@ function caravanserai(b, facing) {
   }
 }
 
+// The Sun Gate's stones on the canyon floor (D11, game/puzzles/sunGate.js): a site each, so each seats on
+// the sloping floor where it stands. The moving parts are chunks (systems/puzzles.js).
+function pedestal(b, facing) { b.drum(0, 0, -1, 1.0, 1.15, 1.0, 16, MAT.STONE, 1100, { }); }
+function glyphStone(b, facing) { b.box(0, 0, -1, 2.8, 1.0, 0.5, facing, MAT.GLYPH, 1101, { carve: 1 }); }
+function basin(b, facing) {
+  for (let k = 0; k < 14; k++) { const a = (k / 14) * Math.PI * 2; b.box(Math.cos(a) * 2.9, Math.sin(a) * 2.9, -0.6, 0.55, 0.42, 0.75, -a, MAT.STONE, 1110 + k, {}); }
+  b.box(0, 0, -0.6, 0.02, 2.6, 2.6, 0, MAT.STONE, 1130, { ...NS, solid: false });
+}
+function spout(b, facing) {
+  for (const s of [-1, 1]) b.box(s * 3.2, 0, -1, 7.6, 0.8, 0.8, facing, MAT.STONE, 1140 + s, {});
+  b.box(0, 0, 7.6, 8.5, 4.1, 1.0, facing, MAT.STONE, 1143, NS);
+  b.box(0, 0, 7.2, 7.6, 1.3, 1.3, facing, MAT.GLYPH, 1144, { ...NS, carve: 1, solid: false });
+}
+
 /**
  * The erg's ruin sites. `table` maps seat ids to POIs ({ pos }); `height(x, z)` is the baked ground
  * (world/stair.js loadBakedHeight) for the aqueduct's absolute channel level (null: no aqueduct).
@@ -274,6 +289,13 @@ export function ruinSites(table, height) {
   for (let k = 1; k <= 8; k++) { const a = (k / 8) * Math.PI * 2; sites.push({ id: 'ruin-obelisk-' + k, at: [o[0] + Math.cos(a) * 16, o[1] + Math.sin(a) * 16], facing: a, build: obelisk(k), footprint: 2.2, seatAt: 'center', sink: 0.6 * hh(k, 34) }); }
   // The Sun Gate on a ledge of the west wall above the canyon floor (the seat lies on the floor's edge), facing the sunrise.
   sites.push({ id: 'ruin-gate-sun', at: [1365, 1039], facing: 1.57, build: sunGate, footprint: 4, seatAt: 'center' });
+  // The Sun Gate puzzle: its layout is game/puzzles/sunGate.js LAYOUT from SUN_SITE.
+  const sg = ([u, v]) => [SUN_SITE[0] + u, SUN_SITE[1] + v];
+  sites.push({ id: 'ruin-sg-eye', at: sg(SUN_LAYOUT.eye), facing: 0, build: sunGate, footprint: 4, seatAt: 'center' });
+  sites.push({ id: 'ruin-sg-spout', at: sg(SUN_LAYOUT.fall), facing: 0, build: spout, footprint: 3.5, seatAt: 'center' });
+  sites.push({ id: 'ruin-sg-basin', at: sg(SUN_LAYOUT.basin), facing: 0, build: basin, footprint: 3.5, seatAt: 'center' });
+  for (const k of ['m1', 'm2']) sites.push({ id: 'ruin-sg-' + k, at: sg(SUN_LAYOUT[k]), facing: 0, build: pedestal, footprint: 1.6, seatAt: 'center' });
+  for (const k of ['g1', 'g2']) sites.push({ id: 'ruin-sg-' + k, at: sg(SUN_LAYOUT[k]), facing: 0, build: glyphStone, footprint: 1.6, seatAt: 'center' });
   sites.push({ id: 'ruin-colossus-head', at: [2318, 1030], facing: 3.6, build: colossusHead, footprint: 6, seatAt: 'center', sink: 0.5 });
   // The caravanserai at the oasis (the Wellhouse camp, D11), on the flat playa west of the pool (the
   // camp's seat at 1800, 700 is up a dune's flank), its gate toward the water.
