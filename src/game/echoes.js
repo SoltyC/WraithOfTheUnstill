@@ -5,6 +5,9 @@
 import { gustTuning, updraftTuning } from './bending/gale.js';
 
 /** @type {Record<string, (g: any) => void>} */
+import { GRAMMAR } from './puzzles/grammar.js';
+import { ridgeTuning } from './bending/stone.js';
+
 export const ECHO_EFFECTS = {
   // Ribbon reaches 25 % farther: its nodes fly faster for the same life.
   'echo-frost-reach': (g) => { g.frostMod.ribbonTuning.speed *= 1.25; },
@@ -17,6 +20,10 @@ export const ECHO_EFFECTS = {
   // Focus returns faster while standing still.
   'echo-frost-still': (g) => { g.combatTuning.focusIdle *= 2.2; },
   // The Listening Stones' (data/quests/meadow-side.json): the Gust runs farther down its lane, the Updraft's column stands taller.
+  // The dunes' (data/quests/dunes.json): frost holds sand longer; a Ridge runs farther; sand-surf holds its speed.
+  'echo-dunes-keep': () => { GRAMMAR.thawSun *= 1.4; },
+  'echo-dunes-ridge': () => { ridgeTuning.length *= 1.3; },
+  'echo-dunes-run': (g) => { g.surfTuning.friction *= 0.7; g.surfTuning.cruise *= 1.1; },
   'echo-meadow-wind': () => { gustTuning.range *= 1.3; updraftTuning.height *= 1.25; },
 };
 

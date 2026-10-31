@@ -45,6 +45,7 @@ export const walkerSys = {
   aboardEvery: [40, 60],         // s between Skitters climbing aboard while it is ridden
   steerIdle: 30,                 // s without a rider before a steered Walker returns to its circuit
   sunLow: [0.02, 0.36],          // sin(elevation) of a sun low enough to throw into the shaft
+  songSteer: 1.4,                // the phrase known (the Singing Dunes), a pillar turns it this much more
   mirrorTol: 0.42,               // rad: a mirror-stone turned within this of true
   litHold: 2.5,                  // s the eye must stay lit before it lies down
   restHour: 17.7,                // waiting by its well: the evening
@@ -471,10 +472,10 @@ export function addLongWalkerSystem(g) {
           if (dx * dx + dz * dz < (gl.gustHW[q] + 1.2) ** 2) { gustSeen[q] = gl.gustId[q]; hit = true; }
         }
         if (hit) {
-          W.steer(k === 0 ? -1 : 1);
+          W.steer(k === 0 ? -1 : 1, flags.has('dunes:instrument-song') ? S.songSteer : 1);
           if (k === 0) glyphT0 = 1.6; else glyphT1 = 1.6;
           F[0] = v3[0]; F[1] = v3[1] + 3; F[2] = v3[2]; F[3] = 1.5; sound(SFX.TOLL); F[3] = 1.0; sound(SFX.CHIME);
-          tell('steer', 'The Long Walker', 'The pillar sings', 'It turns toward the side you struck.', 5);
+          tell('steer', 'The Long Walker', 'The pillar sings', flags.has('dunes:instrument-song') ? 'It is the phrase from the dunes. It answers harder, toward the side you struck.' : 'It turns toward the side you struck.', 5);
         }
       }
     }

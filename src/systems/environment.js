@@ -89,7 +89,7 @@ export async function addEnvironmentSystems(g) {
     for (let k = 0; k < SANDFALL_SITES; k++) sf.freeze(k, ov ? ov.includes(k) : !!(flags && flags.has('frozen:sandfall-' + k)));
     if (ov !== fallSpot) { fallSpot = ov; sf.snap(); }
     sf.time = clock.simTime; sf.flow = g.canyon.on ? restoration.dunes : 0; sf.dt = clock.dt; sf.update();
-    if (g.solids) sf.fillRamps(g.solids.ramps);
+    if (g.solids) { sf.fillRamps(g.solids.ramps); g.addPuzzleRamps?.(g.solids.ramps); }
     // The sand a running fall pours piles in a cone at its foot (terrain state: displaced mass, which
     // heals once the fall stops or freezes): kept heaped every few seconds near the Wraith.
     fallPile += clock.dt;

@@ -308,6 +308,9 @@
           },
           "actions": [
             {
+              "echo": "echo-dunes-run"
+            },
+            {
               "marks": 150
             },
             {
@@ -319,10 +322,293 @@
           ]
         }
       ]
+    },
+    {
+      "id": "dunes-mirage",
+      "kind": "side",
+      "title": "The Mirage Map",
+      "summary": "Nadra's map marks a cistern that isn't there.",
+      "start": {
+        "flag": "dunes:sled-freed"
+      },
+      "steps": [
+        {
+          "id": "talk",
+          "journal": "Ask Nadra about the cistern on her map.",
+          "when": {
+            "event": "talk:nadra"
+          },
+          "goal": {
+            "npc": "nadra",
+            "radius": 6
+          }
+        },
+        {
+          "id": "bearings",
+          "journal": "Go to the salt pan's two cairns at noon, and take a bearing from each on the dome that shows there.",
+          "when": {
+            "flag": "dunes:mirage-crossed"
+          },
+          "goal": {
+            "at": [
+              1945,
+              130
+            ],
+            "label": "The salt-pan cairns",
+            "radius": 40
+          }
+        },
+        {
+          "id": "dig",
+          "journal": "The bearings cross on the pan. Sweep the sand there away.",
+          "when": {
+            "flag": "dunes:mirage-found"
+          },
+          "goal": {
+            "at": [
+              1945,
+              205
+            ],
+            "label": "Where the bearings cross",
+            "radius": 10
+          },
+          "actions": [
+            {
+              "marks": 120
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dunes-falls",
+      "kind": "side",
+      "title": "The Sky Window",
+      "summary": "Pell wants to know what the window on the tallest hoodoo shows.",
+      "start": {
+        "flag": "dunes:sled-freed"
+      },
+      "steps": [
+        {
+          "id": "talk",
+          "journal": "Ask Pell about the hoodoo.",
+          "when": {
+            "event": "talk:pell"
+          },
+          "goal": {
+            "npc": "pell",
+            "radius": 6
+          }
+        },
+        {
+          "id": "climb",
+          "journal": "Climb to the window on the tallest hoodoo, at the south end of the Galleries. Crystallize the falls: each stands as a stair for as long as the sun lets it.",
+          "when": {
+            "flag": "dunes:falls-reached"
+          },
+          "goal": {
+            "at": [
+              1600,
+              110
+            ],
+            "label": "The hoodoos",
+            "radius": 30
+          },
+          "actions": [
+            {
+              "echo": "echo-dunes-keep"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dunes-glass",
+      "kind": "side",
+      "title": "The Glass Battle",
+      "summary": "Iven reads five formations of fused glass as five moments of an old fight.",
+      "start": {
+        "flag": "dunes:sled-freed"
+      },
+      "steps": [
+        {
+          "id": "talk",
+          "journal": "Hear Iven read the glass.",
+          "when": {
+            "event": "talk:iven"
+          },
+          "goal": {
+            "npc": "iven",
+            "radius": 6
+          },
+          "actions": [
+            {
+              "setFlag": "dunes:glass-heard"
+            }
+          ]
+        },
+        {
+          "id": "read",
+          "journal": "At each glass field, stand where the blow came from and give its element back. Iven said: east, north and west were frost; the south stone; the fifth, anything.",
+          "when": {
+            "flag": "dunes:glass-done"
+          },
+          "goal": {
+            "at": [
+              2640,
+              700
+            ],
+            "label": "The glass fields",
+            "radius": 180
+          }
+        },
+        {
+          "id": "back",
+          "journal": "Go back to Iven.",
+          "when": {
+            "event": "talk:iven"
+          },
+          "goal": {
+            "npc": "iven",
+            "radius": 6
+          },
+          "actions": [
+            {
+              "robe": "glass-reader"
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dunes-door",
+      "kind": "side",
+      "title": "The Buried Door",
+      "summary": "The Sunken Temple's door, vent and stair lie under the sand.",
+      "start": {
+        "flag": "dunes:walker-released"
+      },
+      "steps": [
+        {
+          "id": "talk",
+          "journal": "Speak to Sarai about the temple.",
+          "when": {
+            "event": "talk:sarai"
+          },
+          "goal": {
+            "npc": "sarai",
+            "radius": 6
+          }
+        },
+        {
+          "id": "clear",
+          "journal": "Clear the temple's door, vent and stair with a Ridge. Every Ridge pushes sand somewhere, and what was cleared can be buried again.",
+          "when": {
+            "flag": "dunes:door-open"
+          },
+          "goal": {
+            "at": [
+              2909,
+              1136
+            ],
+            "label": "The Sunken Temple",
+            "radius": 30
+          },
+          "actions": [
+            {
+              "echo": "echo-dunes-ridge"
+            },
+            {
+              "marks": 150
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dunes-flood",
+      "kind": "side",
+      "title": "The Flood Garden",
+      "summary": "The restored wadi runs at dusk through a side canyon with four dry cisterns.",
+      "start": {
+        "flag": "dunes:walker-released"
+      },
+      "steps": [
+        {
+          "id": "talk",
+          "journal": "Speak to Sarai about the side canyon.",
+          "when": {
+            "event": "talk:sarai"
+          },
+          "goal": {
+            "npc": "sarai",
+            "radius": 6
+          }
+        },
+        {
+          "id": "fill",
+          "journal": "At dusk, fill all four cisterns in one flood: a Ridge dam, an ice dam, and a channel wet with Ribbon before it is cut.",
+          "when": {
+            "flag": "dunes:garden-full"
+          },
+          "goal": {
+            "at": [
+              1559,
+              626
+            ],
+            "label": "The Flood Garden",
+            "radius": 30
+          },
+          "actions": [
+            {
+              "marks": 150
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
     }
   ],
   "talk": {
     "sarai": [
+      {
+        "when": {
+          "flag": "dunes:door-open"
+        },
+        "say": "sarai.door"
+      },
+      {
+        "when": {
+          "flag": "dunes:garden-full"
+        },
+        "say": "sarai.garden"
+      },
+      {
+        "when": {
+          "quest": "dunes-door"
+        },
+        "say": "sarai.temple"
+      },
+      {
+        "when": {
+          "quest": "dunes-flood"
+        },
+        "say": "sarai.flood"
+      },
       {
         "when": {
           "flag": "dunes:walker-woke"
@@ -377,6 +663,18 @@
     "iven": [
       {
         "when": {
+          "flag": "dunes:glass-done"
+        },
+        "say": "iven.done"
+      },
+      {
+        "when": {
+          "quest": "dunes-glass"
+        },
+        "say": "iven.battle"
+      },
+      {
+        "when": {
           "flag": "dunes:instrument-sun"
         },
         "say": "iven.light"
@@ -388,6 +686,18 @@
     "nadra": [
       {
         "when": {
+          "flag": "dunes:mirage-found"
+        },
+        "say": "nadra.found"
+      },
+      {
+        "when": {
+          "quest": "dunes-mirage"
+        },
+        "say": "nadra.mirage"
+      },
+      {
+        "when": {
           "flag": "dunes:sled-freed"
         },
         "say": "nadra.after"
@@ -397,6 +707,18 @@
       }
     ],
     "pell": [
+      {
+        "when": {
+          "flag": "dunes:falls-reached"
+        },
+        "say": "pell.window"
+      },
+      {
+        "when": {
+          "quest": "dunes-falls"
+        },
+        "say": "pell.falls"
+      },
       {
         "when": {
           "flag": "dunes:instrument-song"
@@ -511,6 +833,91 @@
       "lines": [
         "I heard the dunes! Low, high, middle. Mother says I made it up. I didn't."
       ]
+    },
+    "nadra.found": {
+      "speaker": "nadra",
+      "lines": [
+        "It was there. Under where I drew it, not where it showed.",
+        "A mirage lies along the line you see it on, never at the end of it. I'm putting that on the map."
+      ]
+    },
+    "pell.window": {
+      "speaker": "pell",
+      "lines": [
+        "You went up! Is it true you can see the sky through it? I'm making a kite. It's going to fly from there."
+      ]
+    },
+    "iven.done": {
+      "speaker": "iven",
+      "lines": [
+        "Five blows, and you stood where each one started. I felt them from here.",
+        "Take this. I wove the beads from the fields. They've earned being worn by someone who has read them."
+      ]
+    },
+    "sarai.door": {
+      "speaker": "sarai",
+      "lines": [
+        "The temple's door. I'd stopped believing it had one."
+      ]
+    },
+    "sarai.garden": {
+      "speaker": "sarai",
+      "lines": [
+        "Four cisterns full. Do you know how long it's been since anyone here planted something?"
+      ]
+    },
+    "nadra.mirage": {
+      "speaker": "nadra",
+      "lines": [
+        "My map marks a cistern out on the salt pan, and nobody has ever found it. At noon you can see its dome, from those two cairns.",
+        "It isn't where it looks. Take the line from each cairn and see where they cross."
+      ]
+    },
+    "iven.battle": {
+      "speaker": "iven",
+      "lines": [
+        "Five fused formations, five frozen moments of the old fight. The splash in the south field came from the east, and froze before it fell.",
+        "The next, from the north. The third from the west: all frost. The fourth from the south was stone. The fifth took anything.",
+        "Stand where the blow came from, and give it back. The glass will ring."
+      ]
+    },
+    "pell.falls": {
+      "speaker": "pell",
+      "lines": [
+        "There's a window on the tallest hoodoo, at the south end of the Galleries. A sky window. Nobody will take me.",
+        "Falls run between the hoodoos there. Mother says frozen sand holds. In the sun it won't for long."
+      ]
+    },
+    "sarai.temple": {
+      "speaker": "sarai",
+      "lines": [
+        "With Stone you could clear the temple's door. It lies under the sand, with its vent and its stair.",
+        "Mind where you push. Each thing you clear goes onto the next, the door toward the vent and the vent toward the stair."
+      ]
+    },
+    "sarai.flood": {
+      "speaker": "sarai",
+      "lines": [
+        "The wadi runs in the side canyon at dusk now, for a minute or so. Four cisterns stand there, dry.",
+        "Hold it with a Ridge, a dam of ice and a channel. Wet the channel first or the dry sand will slump."
+      ]
+    }
+  },
+  "echoes": {
+    "echo-dunes-keep": {
+      "name": "Echo of the Long Shade",
+      "effect": "Frost on sand lasts 40% longer in the sun.",
+      "text": "What is held in shade can be carried a little way into the light."
+    },
+    "echo-dunes-ridge": {
+      "name": "Echo of the Standing Wave",
+      "effect": "A Ridge runs 30% farther.",
+      "text": "The sand was always a slow sea."
+    },
+    "echo-dunes-run": {
+      "name": "Echo of the Long Stride",
+      "effect": "Sand-surf keeps its speed on flats.",
+      "text": "It walked here. You may run."
     }
   }
 }

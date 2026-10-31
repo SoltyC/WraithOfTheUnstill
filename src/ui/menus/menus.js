@@ -248,11 +248,11 @@ export function createMenus(g) {
   }
 
   function shrinePage(t) {
-    head('Shrine', t.id.includes('meadow') ? 'The stones are warm in the grass' : 'The stones are warm under the frost');
+    head('Shrine', t.id.includes('meadow') ? 'The stones are warm in the grass' : t.id.includes('dunes') ? 'The stones are warm under the sand' : 'The stones are warm under the frost');
     const body = el('div', 'codex-body', sheet);
     const left = el('div', null, body);
     el('div', 'codex-sub', left, 'Rest until');
-    actions(left, REST.map(([name, tod]) => [name, () => { params.v.timeOfDay = tod; params.version++; g.weather.snap = true; g.post.post.resetHistory = true; close(); }]));
+    actions(left, REST.map(([name, tod]) => [name, () => { close(); g.sweepTime(tod); }]));
     const right = el('div', 'codex-page', body);
     // Echoes carried: attune them here (their effect from now on).
     const carried = [...chapter.echoes].sort();

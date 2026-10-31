@@ -38,6 +38,13 @@ export function createSinging() {
       if (song.done) { this.stage = STAGE.DONE; this.ev = 1; }
       return true;
     },
+    /** Mastery, once solved: the phrase in one unbroken ride. A boom on the run; `riding` false loses it. */
+    run: phrase(PHRASE, SD.fade),
+    ride(n, t, riding) {
+      if (!riding) { this.run.at = 0; return false; }
+      this.run.play(n, t);
+      return this.run.done;
+    },
     /** A Crystallize at (u, v). */
     freeze(u, v) {
       const m = LAYOUT.lips[NOTE.MIDDLE];

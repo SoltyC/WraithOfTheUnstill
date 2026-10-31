@@ -8,6 +8,7 @@ import { createProps } from '../game/puzzles/props.js';
 import { createSunGate, STAGE, EV, SG, SUN_SITE, LAYOUT } from '../game/puzzles/sunGate.js';
 import { addHourglassSite, buildHourglass } from './puzzleHourglass.js';
 import { addSingingSite, buildSinging } from './puzzleSinging.js';
+import { addSideSites, buildSides } from './puzzleSides.js';
 
 const SHOW_R = 260;      // m: the pool draws within this of a site
 const MOTES = 64;        // light along a beam
@@ -17,10 +18,11 @@ const EYE_Y = 11.5;      // m above the ground: the gate's eye, in the lintel's 
 /** The pool and its one view: while the world is built, so its pipelines warm with the rest. */
 export async function addPuzzleBody(g) {
   const { scene, atmosphere, bindShadows, shadows } = g;
-  const props = g.puzzleProps = createProps(760);
+  const props = g.puzzleProps = createProps(1040);
   buildSunGate(g, props);
   buildHourglass(g, props);
   buildSinging(g, props);
+  buildSides(g, props);
   props.write();
   const { createShapedView } = await import('../render/shapedView.js');
   const view = createShapedView(scene, atmosphere, props.chunks, { name: 'puzzleProps', subdivisions: 2 });
@@ -74,6 +76,7 @@ export function addPuzzleSystem(g) {
       if (ts.bk === BRUSH.FREEZE) { gate.freeze(ts.bx - SUN_SITE[0], ts.bz - SUN_SITE[1]); hourglass.freeze(ts.bx, ts.bz); singing.freeze(ts.bx, ts.bz); }
       else if (ts.bk === BRUSH.PLOUGH) hourglass.plough(ts.bx, ts.bz);
       else if (ts.bk === BRUSH.FLATTEN && Math.hypot(ts.bx - wx(LAYOUT.fall[0]), ts.bz - wz(LAYOUT.fall[1])) < SG.freezeR) gate.gust();
+      sides.brush(ts.bk, ts.bx, ts.bz);
       return stamp();
     };
   }
@@ -88,7 +91,7 @@ export function addPuzzleSystem(g) {
   const t2 = target('sg-mirror-2', 'Turn', 'Mirror-stone', LAYOUT.m2, turned(1));
   const tc = target('sg-column', 'Strike', 'Frozen sand', LAYOUT.fall, () => { if (gate.strike()) { chime(SFX.SHATTER, 1.2); tell('The fall', 'It shatters', 'The eye stands clear. The sand will come again.', 5); } });
 
-  const hourglass = addHourglassSite(g, P, tell, chime), singing = addSingingSite(g, P, tell, chime);
+  const hourglass = addHourglassSite(g, P, tell, chime), singing = addSingingSite(g, P, tell, chime), sides = addSideSites(g, P, tell, chime);
   let seated = false, shown = true, frames = 0, phase = 0;
   const h = {};
   function seat() {
@@ -109,13 +112,13 @@ export function addPuzzleSystem(g) {
   loop.add({ name: 'puzzles', update: () => {
     const dt = clock.dt, c = camera.position;
     const dx = c.x - wx(0), dz = c.z - wz(20), near = dx * dx + dz * dz < SHOW_R * SHOW_R;
-    const nearHour = hourglass.update(dt, c), nearSing = singing.update(dt, c);
+    const nearHour = hourglass.update(dt, c), nearSing = singing.update(dt, c), nearSide = sides.update(dt, c);
     frames++;
     // Drawn during loading (its pipelines warm), then only near a site.
-    const want = near || nearHour || nearSing || frames < 30 || capture;
+    const want = near || nearHour || nearSing || nearSide || frames < 30 || capture;
     if (want !== shown) { shown = want; view.mesh.setEnabled(want); engine.snapshotRenderingReset(); }
     t1.hidden = t2.hidden = tc.hidden = true;
-    if (!near) { if ((nearHour || nearSing) && P.write()) view.update(); return; }
+    if (!near) { if ((nearHour || nearSing || nearSide) && P.write()) view.update(); return; }
     if (!seated) seat();
     const sun = g.env.env.sunDir, ev = gate.update(dt, sun.x, sun.y);
     if (ev & EV.STAGE) {

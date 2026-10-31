@@ -133,6 +133,7 @@ async function boot() {
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/longWalker.js')).addLongWalkerSystem(g); // the dune Warden (after the chapter's interactables and the nav's goals)
+  (await import('./systems/timeSweep.js')).addTimeSweep(g); // resting at a shrine: the light sweeps across the land
   (await import('./systems/puzzles.js')).addPuzzleSystem(g); // the dunes' instruments: their moving parts and machines
   (await import('./systems/puzzleSled.js')).addPuzzleSledSystem(g); // the Wellhouse's buried sled (dunes-design §4.1)
   (await import('./systems/flame.js')).addFlameSystem(g);

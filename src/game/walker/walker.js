@@ -267,11 +267,11 @@ export function createWalker(ctx) {
       this.state = WK.STUMBLE; this.t = 0; this.kneelLeg = k; return true;
     },
     /** A glyph pillar struck: dir −1 left, +1 right. */
-    steer(dir) {
+    steer(dir, scale = 1) {
       if (this.mode === MODE.HOME) return;
       if (this.mode === MODE.CIRCUIT) this.targetYaw = this.yaw;
       this.mode = MODE.STEER;
-      this.targetYaw = wrap(this.targetYaw + dir * T.steerStep);
+      this.targetYaw = wrap(this.targetYaw + dir * T.steerStep * scale);
     },
     /** Back to its circuit (the director: nobody has steered it for a while). */
     toCircuit() { if (this.mode === MODE.STEER) this.mode = MODE.CIRCUIT; },

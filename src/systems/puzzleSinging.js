@@ -7,6 +7,7 @@ import { createSinging, NOTE, STAGE, LAYOUT, SING_SITE, SD, PHRASE } from '../ga
 const SHOW_R = 260, SOLVED = 'dunes:instrument-song';
 const FLAG = ['dunes:sing-teach', 'dunes:sing-combine'];
 const GAIN = [1.6, 1.3, 1.1];
+const ROBE = 'robe:sand-runner';
 
 export function buildSinging(g, P) {
   const { POD, ICE } = CHUNK;
@@ -69,6 +70,19 @@ export function addSingingSite(g, P, tell, chime) {
       for (let n = 0; n < 3; n++) {
         const lx = p.x - wx(lip(n)[0]), lz = p.z - wz(lip(n)[1]);
         if (lx * lx + lz * lz < SD.lipR * SD.lipR && s.slide(n, t)) { boom(n); after(); }
+      }
+      // Mastery: after the waking, the phrase in one unbroken ride, for the sand-runner's robe. It wants no freezing:
+      // on the run the crests are taken before the sympathy can start.
+      if (s.stage === STAGE.DONE && !flags.has(ROBE)) {
+        const riding = controller.surf.active;
+        if (!riding && s.run.at > 0) s.run.at = 0;
+        for (let n = 0; n < 3; n++) {
+          const lx = p.x - wx(lip(n)[0]), lz = p.z - wz(lip(n)[1]);
+          if (lx * lx + lz * lz < SD.lipR * SD.lipR * 4 && riding && s.wait[n] <= 0) {
+            s.wait[n] = SD.reset; boom(n);
+            if (s.ride(n, t, riding)) { flags.add(ROBE); chime(SFX.TOLL, 1.3); tell('The Singing Dunes', 'One unbroken ride', 'The sand-runner\'s robe is yours. Find it among your robes.', 9); }
+          }
+        }
       }
       if (s.lastNote === MID && s.song.at === 0 && s.stage >= STAGE.COMBINE && !told.hint) { told.hint = true; tell('The Singing Dunes', 'The middle dune slid with the low', 'It is overloaded: it goes when the low one goes.', 7); }
       // The hum: the phrase, note by note, on the stones.

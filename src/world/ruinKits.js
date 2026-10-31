@@ -19,6 +19,7 @@ import { blob } from './blobStone.js';
 import { LAYOUT as SUN_LAYOUT, SUN_SITE } from '../game/puzzles/sunGate.js';
 import { LAYOUT as HOUR, HOUR_SITE } from '../game/puzzles/hourglass.js';
 import { LAYOUT as SING, SING_SITE } from '../game/puzzles/singing.js';
+import { MIRAGE, FALLS, FLOOD } from '../game/puzzles/sides.js';
 
 const NS = { drift: false, cap: false };
 
@@ -290,6 +291,13 @@ function resonanceRing(b, facing) {
 }
 function lipStone(b, facing) { b.box(0, 0, -1, 1.5, 0.75, 0.75, facing, MAT.GLYPH, 1310, { carve: 1 }); }
 
+// The side sites' stones (D11, game/puzzles/sides.js).
+function cairn(b, facing) { for (let k = 0; k < 5; k++) b.box(0.2 * Math.sin(k * 2), 0.2 * Math.cos(k * 2), -0.6 + k * 0.72, 0.1 + k * 0.72, 1 - k * 0.14, 0.9 - k * 0.12, k * 0.8, MAT.STONE, 1320 + k, { ...NS, solid: k === 0 }); }
+function skyWindow(b, facing) {
+  for (const s of [-1, 1]) b.box(s * 1.5, 0, 0, 3.2, 0.32, 0.32, facing, MAT.STONE, 1330 + s, {});
+  b.box(0, 0, 3.2, 3.7, 1.9, 0.4, facing, MAT.GLYPH, 1333, { ...NS, carve: 1 });
+}
+
 /**
  * The erg's ruin sites. `table` maps seat ids to POIs ({ pos }); `height(x, z)` is the baked ground
  * (world/stair.js loadBakedHeight) for the aqueduct's absolute channel level (null: no aqueduct).
@@ -316,6 +324,9 @@ export function ruinSites(table, height) {
   sites.push({ id: 'ruin-sg-basin', at: sg(SUN_LAYOUT.basin), facing: 0, build: basin, footprint: 3.5, seatAt: 'center' });
   for (const k of ['m1', 'm2']) sites.push({ id: 'ruin-sg-' + k, at: sg(SUN_LAYOUT[k]), facing: 0, build: pedestal, footprint: 1.6, seatAt: 'center' });
   for (const k of ['g1', 'g2']) sites.push({ id: 'ruin-sg-' + k, at: sg(SUN_LAYOUT[k]), facing: 0, build: glyphStone, footprint: 1.6, seatAt: 'center' });
+  MIRAGE.cairns.forEach((c, k) => sites.push({ id: 'ruin-mirage-cairn' + k, at: c, facing: 0, build: cairn, footprint: 1.2, seatAt: 'center' }));
+  sites.push({ id: 'ruin-falls-window', at: [FALLS.high[0], FALLS.high[1]], facing: 0.4, build: skyWindow, footprint: 2.2, seatAt: 'center', seatY: FALLS.high[2] });
+  FLOOD.cisterns.forEach((c, k) => sites.push({ id: 'ruin-flood-' + k, at: [FLOOD.site[0] + c[0], FLOOD.site[1] + c[1]], facing: 0, build: basin, footprint: 3.5, seatAt: 'center' }));
   sites.push({ id: 'ruin-hourglass', at: HOUR_SITE, facing: 0, build: hourglassRig, footprint: 14, seatAt: 'center' });
   sites.push({ id: 'ruin-sing-ring', at: [SING_SITE[0] + SING.ring[0], SING_SITE[1] + SING.ring[1]], facing: 0, build: resonanceRing, footprint: 8, seatAt: 'center' });
   SING.lips.forEach((l, k) => sites.push({ id: 'ruin-sing-lip' + k, at: [SING_SITE[0] + l[0], SING_SITE[1] + l[1]], facing: k * 1.1, build: lipStone, footprint: 1.2, seatAt: 'center' }));
