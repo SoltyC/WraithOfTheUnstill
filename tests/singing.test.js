@@ -25,7 +25,7 @@ describe('the Singing Dunes', () => {
   });
   it('too slow loses the phrase', () => {
     const s = createSinging(); s.slide(HIGH, 0); let t = adv(s, 0, 9);
-    s.freeze(m[0], m[1]); s.slide(LOW, t); t = adv(s, t, t + 7); expect(s.song.at).toBe(0);
+    s.freeze(m[0], m[1]); s.slide(LOW, t); t = adv(s, t, t + SD.fade + 1); expect(s.song.at).toBe(0);
   });
   it('a face that slid needs time to slide again', () => {
     const s = createSinging(); s.slide(HIGH, 0); expect(s.slide(HIGH, 1)).toBe(false); adv(s, 1, 1 + SD.reset + 0.5); expect(s.slide(HIGH, 10)).toBe(true);

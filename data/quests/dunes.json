@@ -1,5 +1,5 @@
 {
-  "_review": "Phase 9 D10–D11: the Long Walker's line and the Wellhouse camp (docs/phase-9/dunes-design.md §4.1). The instruments and side sites are still to come.",
+  "_review": "Phase 9 D10–D11: the Long Walker's line, the Wellhouse camp and the three Silent Instruments (docs/phase-9/dunes-design.md §4). The side sites are still to come.",
   "chapter": "dunes",
   "title": "The Glass Dunes",
   "npcs": [
@@ -145,6 +145,108 @@
       ]
     },
     {
+      "id": "dunes-sun-gate",
+      "kind": "main",
+      "title": "A Light",
+      "summary": "Sarai says the Walker followed the Shapers' instruments: a light, a clock and a song. The light is in the Red Galleries.",
+      "start": {
+        "flag": "dunes:sled-freed"
+      },
+      "steps": [
+        {
+          "id": "site",
+          "journal": "Find the Shapers' gate on the floor of the Red Galleries. The sun comes down the canyon: from one end in the morning, from the other after noon, and not at all at night.",
+          "when": {
+            "flag": "dunes:instrument-sun"
+          },
+          "goal": {
+            "at": [
+              1484,
+              1076
+            ],
+            "label": "The Sun Gate",
+            "radius": 30
+          },
+          "actions": [
+            {
+              "marks": 80
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dunes-hourglass",
+      "kind": "main",
+      "title": "A Clock",
+      "summary": "The clock stands on the rim above the Needle, a Shaper thing that still moves.",
+      "start": {
+        "flag": "dunes:sled-freed"
+      },
+      "steps": [
+        {
+          "id": "site",
+          "journal": "Find the sand-clock on the rim above the Needle. Shaper sand never stops pouring. See where it goes, and where it should.",
+          "when": {
+            "flag": "dunes:instrument-clock"
+          },
+          "goal": {
+            "at": [
+              1660,
+              480
+            ],
+            "label": "The Hourglass",
+            "radius": 30
+          },
+          "actions": [
+            {
+              "marks": 80
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dunes-singing",
+      "kind": "main",
+      "title": "A Song",
+      "summary": "Three crests of a star dune that boom when they slide, and a ring of stones between them.",
+      "start": {
+        "flag": "dunes:sled-freed"
+      },
+      "steps": [
+        {
+          "id": "site",
+          "journal": "Find the ring of stones on the great star dune, east of the Stride. The stones hum a phrase; the same phrase is cut into them. The crests answer when they slide.",
+          "when": {
+            "flag": "dunes:instrument-song"
+          },
+          "goal": {
+            "at": [
+              2650,
+              680
+            ],
+            "label": "The Singing Dunes",
+            "radius": 30
+          },
+          "actions": [
+            {
+              "marks": 80
+            },
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "dunes-follow-the-glass",
       "kind": "main",
       "title": "Follow the Glass",
@@ -223,21 +325,45 @@
     "sarai": [
       {
         "when": {
-          "flag": "dunes:sled-freed"
+          "flag": "dunes:walker-woke"
         },
-        "say": "sarai.after"
+        "say": "sarai.woke"
       },
       {
         "when": {
-          "quest": "dunes-into-the-erg"
+          "flag": "dunes:instrument-song"
         },
-        "say": "sarai.sled"
+        "say": "sarai.song"
+      },
+      {
+        "when": {
+          "flag": "dunes:instrument-clock"
+        },
+        "say": "sarai.clock"
+      },
+      {
+        "when": {
+          "flag": "dunes:instrument-sun"
+        },
+        "say": "sarai.light"
+      },
+      {
+        "when": {
+          "flag": "dunes:sled-freed"
+        },
+        "say": "sarai.after"
       },
       {
         "say": "sarai.sled"
       }
     ],
     "hesper": [
+      {
+        "when": {
+          "flag": "dunes:instrument-clock"
+        },
+        "say": "hesper.clock"
+      },
       {
         "when": {
           "flag": "dunes:sled-freed"
@@ -250,15 +376,33 @@
     ],
     "iven": [
       {
+        "when": {
+          "flag": "dunes:instrument-sun"
+        },
+        "say": "iven.light"
+      },
+      {
         "say": "iven.first"
       }
     ],
     "nadra": [
       {
+        "when": {
+          "flag": "dunes:sled-freed"
+        },
+        "say": "nadra.after"
+      },
+      {
         "say": "nadra.first"
       }
     ],
     "pell": [
+      {
+        "when": {
+          "flag": "dunes:instrument-song"
+        },
+        "say": "pell.song"
+      },
       {
         "say": "pell.first"
       }
@@ -279,7 +423,7 @@
       "lines": [
         "It went where you cut it. Remember that. Most of this desert still will.",
         "The well followed the Walker, and the Walker followed the Shapers' instruments: a light, a clock and a song.",
-        "Nothing has sounded in an age. I wouldn't know where to send you yet. Nadra might."
+        "Nothing has sounded in an age. Nadra has them on her map, for what her map is worth."
       ]
     },
     "hesper.first": {
@@ -313,6 +457,59 @@
       "speaker": "pell",
       "lines": [
         "Have you been on top of the wall? You can see the whole glass from up there. Mother says I can't."
+      ]
+    },
+    "sarai.light": {
+      "speaker": "sarai",
+      "lines": [
+        "There was a line of light across the erg this morning. I've kept this well forty years and never seen it.",
+        "A clock and a song. Whichever you reach."
+      ]
+    },
+    "sarai.clock": {
+      "speaker": "sarai",
+      "lines": [
+        "Hesper says the sand behind the wall moved in the night. On its own, the way it used to.",
+        "Keep going. Something out there has started listening."
+      ]
+    },
+    "sarai.song": {
+      "speaker": "sarai",
+      "lines": [
+        "I felt that in the well stones. Low, then high, then the one between.",
+        "That's the Walker's own phrase. When you hear it again it won't be coming from the dunes."
+      ]
+    },
+    "sarai.woke": {
+      "speaker": "sarai",
+      "lines": [
+        "So it's up. Bring it home. The well has waited longer than either of us."
+      ]
+    },
+    "hesper.clock": {
+      "speaker": "hesper",
+      "lines": [
+        "Sand moving again. If that clock keeps time, I can plan a route for the first time since we stopped here."
+      ]
+    },
+    "nadra.after": {
+      "speaker": "nadra",
+      "lines": [
+        "The light is on the floor of the Red Galleries. The clock is on the rim above the Needle. The song is out on the great star dune, past the Stride.",
+        "Any order. I've marked them, and I'd like them back unbroken."
+      ]
+    },
+    "iven.light": {
+      "speaker": "iven",
+      "lines": [
+        "The beam left a mark on every print it crossed. I can read which way it went.",
+        "That gate was never for looking through. It was for pointing."
+      ]
+    },
+    "pell.song": {
+      "speaker": "pell",
+      "lines": [
+        "I heard the dunes! Low, high, middle. Mother says I made it up. I didn't."
       ]
     }
   }

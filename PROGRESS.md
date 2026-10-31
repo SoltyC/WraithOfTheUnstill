@@ -1,3 +1,5 @@
+> **Latest — 1 November (Claude): the three Silent Instruments are in.** Sun Gate, Hourglass, Singing Dunes: machines, world, tests, solvers; a hub of three goals in any order. All solved live by the bot through the terrain-brush path; no human has played them. On the playtest page. Gaps: plan.md "D11 — Progress". Next: Walker hooks, side sites, shrines' "wait until".
+
 > **Latest — 1 November (Claude): D11 begun.** The sand grammar runtime; the Wellhouse camp (five people, *Into the Erg*); the buried sled puzzle, played live by the bot. 967 tests. On the playtest page. Next: the Sun Gate, Hourglass and Singing Dunes. Status: plan.md "D11 — Progress".
 
 > **Latest — 1 November (Claude): loads halved.** Pipelines recorded and replayed in parallel: 36 s → about 18 s after a build's first load. Rocks draw only used slots (0.15–0.39 ms, far below the plan's estimate). Plan corrected: `docs/perf/performance-plan.md`. Low at 60 fps on the i5-1235U still not met, and now further off than planned. Next: D11.

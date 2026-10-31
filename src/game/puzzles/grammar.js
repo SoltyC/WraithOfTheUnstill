@@ -143,19 +143,19 @@ export function boomPitch(volume) {
 }
 
 /** A phrase of notes (G7). Each must start before the last has faded; a wrong note starts it over. */
-export function phrase(notes) {
+export function phrase(notes, fade = GRAMMAR.boomFade) {
   return {
     notes, at: 0, last: -1e9, done: false,
     /** A boom of `note` at time t (s). Returns how far along the phrase now stands. */
     play(note, t) {
       if (this.done) return this.at;
-      if (this.at > 0 && t - this.last > GRAMMAR.boomFade) this.at = 0;
+      if (this.at > 0 && t - this.last > fade) this.at = 0;
       if (note === notes[this.at]) { this.at++; this.last = t; if (this.at === notes.length) this.done = true; }
       else if (note === notes[0]) { this.at = 1; this.last = t; }
       else this.at = 0;
       return this.at;
     },
     /** Time passing with no boom: a fade loses the phrase. */
-    tick(t) { if (!this.done && this.at > 0 && t - this.last > GRAMMAR.boomFade) this.at = 0; },
+    tick(t) { if (!this.done && this.at > 0 && t - this.last > fade) this.at = 0; },
   };
 }

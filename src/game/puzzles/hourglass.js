@@ -9,7 +9,7 @@
 import { GRAMMAR, sandClock } from './grammar.js';
 
 /** The site's origin in the world (x, z): flat rim, just north of the Needle. */
-export const HOUR_SITE = [1660, 490];
+export const HOUR_SITE = [1660, 462];
 export const HG = {
   freezeR: 5, channelCuts: 3,    // m, ploughs needed in the middle bowl
   full: 0.92,                    // a cradle reads as full
@@ -53,6 +53,8 @@ export function createHourglass() {
       if (breach.frozen && (this.breachLife -= dt / (shade ? 10 : 1)) <= 0) breach.frozen = false;
       if (left.frozen && (this.leftLife -= dt / (leftShade ? 10 : 1)) <= 0) left.frozen = false;
       right.weight = this.cuts >= HG.channelCuts ? HG.bias : 1;
+      // With its chute frozen the left cradle lets its sand go: it hangs on a drain the flow otherwise outruns.
+      bowls[B.LEFT].drain = left.frozen;
       clock.step(dt);
       // The door's two counterweights: sand in the left pulls it shut.
       let ev = 0;

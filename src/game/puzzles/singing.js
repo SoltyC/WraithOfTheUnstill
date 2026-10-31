@@ -1,14 +1,15 @@
 // The Singing Dunes (docs/phase-9/dunes-design.md §4.2 C; sound, G1 with G7 and G3). Three crests boom when
 // their faces slide: low, middle and high. The ring of resonance stones where they meet hums a phrase, also
 // cut into its stones. Teach: one dune, one note. Combine: play low, high, middle before each boom fades, by
-// riding off one crest to the next. Twist: when the low dune booms the overloaded middle one slides in
+// running or riding from one crest to the next. Twist: when the low dune booms the overloaded middle one slides in
 // sympathy, out of order, unless its face is frozen first (a frozen face is silent); when its turn comes,
 // strike the crust to release it.
 
 import { GRAMMAR, phrase } from './grammar.js';
 
-export const SING_SITE = [2692, 744];
+export const SING_SITE = [2650, 680];
 export const SD = {
+  fade: 14,               // s a boom hangs here: the crests can be run between (sand-surf comes later, at the waking)
   lipR: 5, reset: 8,      // m around a lip; s before a face that slid can slide again
   sympathy: 0.4,          // s after the low boom
   freezeR: 7,
@@ -16,11 +17,11 @@ export const SD = {
 export const NOTE = { LOW: 0, MIDDLE: 1, HIGH: 2 };
 export const PHRASE = [NOTE.LOW, NOTE.HIGH, NOTE.MIDDLE];
 /** Crests, site-local (u east, v south, m), by note; the ring. */
-export const LAYOUT = { lips: [[-72, -60], [130, -115], [40, 95]], ring: [20, -10] };
+export const LAYOUT = { lips: [[-44, 4], [30, 35], [20, -50]], ring: [0, 0] };
 export const STAGE = { TEACH: 0, COMBINE: 1, TWIST: 2, DONE: 3 };
 
 export function createSinging() {
-  const song = phrase(PHRASE);
+  const song = phrase(PHRASE, SD.fade);
   const wait = new Float64Array(3);
   return {
     song, wait, stage: STAGE.TEACH, frozen: 0, heard: -1, ev: 0, sympathyT: -1, lastNote: -1,

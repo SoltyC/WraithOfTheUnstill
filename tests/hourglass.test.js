@@ -26,7 +26,7 @@ describe('the Hourglass', () => {
   it('twist solved: freeze the left chute, fill the right cradle', () => {
     const h = createHourglass(); h.freeze(...L.breach); h.strike(); run(h, 8);
     for (let i = 0; i < 3; i++) h.plough(2, 18);
-    h.bowls[BOWL.LEFT].level = 0; h.freeze(...mid); h.freeze(...L.breach); run(h, 2);
+    expect(h.bowls[BOWL.LEFT].level).toBeGreaterThan(0.25); h.freeze(...mid); h.freeze(...L.breach); run(h, 2);
     expect(h.left.frozen).toBe(true);
     let done = false; for (let t = 0; t < 58 && !done; t += 2) { h.freeze(...L.breach); run(h, 2); done = h.stage === STAGE.DONE; }
     expect(done).toBe(true);

@@ -58,6 +58,10 @@
     {"id":"l-shelf-stream","group":"land","title":"Where the Snow Streams Off the Shelf","text":"Under the Shelf the restored wind turns upward and climbs the face. A robe opened there rises with no spell at all. It is the wind's, so it breathes: a gust lifts hard, and a lull lets you down.","on":"stream:frost","reveal":["rw-shelf"]},
     {"id":"l-hill-wind","group":"land","title":"The Hill Is a Stair for the Wind","text":"The west wall of the manor hill sends the wind up it, and banners mark the places. Fly along the wall rather than at it, and the wind carries you above the crest.","on":"stream:meadow"},
     {"id":"l-wind-road","group":"land","title":"The Road of Two Winds","text":"The hill's wind and the lake ridge's wind make one road. A glider can cross Hearn, the lake and the Western Edge without touching the ground, if it banks its height on the hill first.","on":"road:done"},
-    {"id":"x-downwind","group":"reactions","title":"A Gust With the Wind","text":"A Gust cast with the wind goes farther and carries what it meets. Cast against the wind it only stirs the dust. The chaff on a threshing floor knows the difference.","on":"chaff:cleared"}
+    {"id":"x-downwind","group":"reactions","title":"A Gust With the Wind","text":"A Gust cast with the wind goes farther and carries what it meets. Cast against the wind it only stirs the dust. The chaff on a threshing floor knows the difference.","on":"chaff:cleared"},
+    { "id": "r-sand-channel", "group": "reactions", "title": "Sand Takes the Lowest Way", "text": "A slide does not choose. Cut it a channel and it goes there, and what you wanted kept stays kept.", "has": "dunes:sled-freed" },
+    { "id": "r-ice-sun", "group": "reactions", "title": "Ice Bends the Sun", "text": "A lens of ice turns a beam round a corner, and the beam takes the ice back. There is time for one thing, not two.", "has": "dunes:instrument-sun" },
+    { "id": "r-frozen-flow", "group": "reactions", "title": "Frozen Sand Does Not Flow", "text": "Sand goes where the channel is cut, and frost shuts a channel. In the sun, not for long.", "has": "dunes:instrument-clock" },
+    { "id": "r-frozen-silent", "group": "reactions", "title": "A Frozen Face Does Not Sing", "text": "A dune that is held cannot answer another. Struck, it gives the note it kept.", "has": "dunes:instrument-song" }
   ]
 }

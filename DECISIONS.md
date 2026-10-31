@@ -614,3 +614,12 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Pipelines are recorded by the first load of a build and replayed by the next** (`src/core/pipelineCache.js`, IndexedDB, per preset, per build). A new build's first load stays slow: shipping the set with the build was left out, since a mismatch on another GPU or canvas format would only waste compiles, but it can be added.
 - **Replay finishes before the first frame:** a sync creation during an async one would compile twice.
 - **Shadow culling is parked** until the laptop's numbers show it matters; half-resolution clouds were already done.
+
+## 2026-11-01 — D11: the Silent Instruments as built
+
+- **One chunk pool for every instrument's moving parts** (`src/game/puzzles/props.js`), through the Shaped pipeline: no new pipeline, one draw, disabled away from a site.
+- **Sites stand where they read:** the Sun Gate on the Galleries' floor, the Hourglass on the rim (a 10 m slot cannot show three tiers), against dunes-design §4.2.
+- **The Singing Dunes are playable on foot:** 85 m between crests and 14 s a boom, because sand-surf comes with the waking, after the instruments. The design assumed surfing.
+- **The phrase's first beat cannot fail** (any boom teaches it); the second is reached at two notes of the phrase, so the player meets the twist in the attempt.
+- **Interact stands in for striking** on mirrors, sluice and crust until weapon strikes reach these parts.
+- **Remembrance may hold up to 80 entries** (was 60): each instrument writes its rule there, and more biomes are coming.

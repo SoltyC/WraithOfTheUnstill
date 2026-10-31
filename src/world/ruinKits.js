@@ -17,6 +17,8 @@
 import { MAT } from './architecture.js';
 import { blob } from './blobStone.js';
 import { LAYOUT as SUN_LAYOUT, SUN_SITE } from '../game/puzzles/sunGate.js';
+import { LAYOUT as HOUR, HOUR_SITE } from '../game/puzzles/hourglass.js';
+import { LAYOUT as SING, SING_SITE } from '../game/puzzles/singing.js';
 
 const NS = { drift: false, cap: false };
 
@@ -270,6 +272,24 @@ function spout(b, facing) {
   b.box(0, 0, 7.2, 7.6, 1.3, 1.3, facing, MAT.GLYPH, 1144, { ...NS, carve: 1, solid: false });
 }
 
+// The Hourglass (D11, game/puzzles/hourglass.js): the top bowl on a plinth, a stone chute down to the sand pan
+// where the flow splits, two cradles, and the Needle's Eye: an arch whose slab is a moving part.
+function hourglassRig(b, facing) {
+  const ring = (cx, cz, r, n, y0, y1, seed) => { for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; b.box(cx + Math.cos(a) * r, cz + Math.sin(a) * r, y0, y1, 0.4, 0.95, -a, MAT.STONE, seed + k, {}); } };
+  b.box(HOUR.top[0], HOUR.top[1], -1, 6, 3.2, 3.2, 0, MAT.STONE, 1200, {});
+  ring(HOUR.top[0], HOUR.top[1], 3.1, 12, 6, 7.2, 1201);
+  b.box(HOUR.sluice[0], HOUR.sluice[1], -1, 1.1, 0.8, 0.8, 0, MAT.GLYPH, 1215, { carve: 1 });
+  for (let k = 0; k < 5; k++) { const z = 4 + k * 2.6; b.box(0, z, -1, 5.6 - k * 1.05, 0.55, 1.3, 0, MAT.STONE, 1216 + k, { ruin: 0.2, solid: k > 1 }); }
+  ring(HOUR.middle[0], HOUR.middle[1], 6.4, 18, -0.4, 0.5, 1225);
+  for (const s of [HOUR.left, HOUR.right]) { ring(s[0], s[1], 3.6, 12, -0.4, 1.5, 1245 + s[0]); b.box(s[0], s[1], -0.6, 0.1, 3.2, 3.2, 0, MAT.STONE, 1270 + s[0], { ...NS, solid: false }); }
+  for (const s of [-1, 1]) b.box(HOUR.door[0] + s * 4.2, HOUR.door[1], -1, 8.4, 1.1, 1.3, 0, MAT.STONE, 1290 + s, {});
+  b.box(HOUR.door[0], HOUR.door[1], 8.4, 9.6, 5.4, 1.5, 0, MAT.GLYPH, 1293, { ...NS, carve: 1 });
+}
+function resonanceRing(b, facing) {
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; b.box(Math.cos(a) * 7, Math.sin(a) * 7, -1, 2.4 + 0.5 * hh(k, 77), 0.7, 0.45, -a, MAT.GLYPH, 1300 + k, { carve: 1 }); }
+}
+function lipStone(b, facing) { b.box(0, 0, -1, 1.5, 0.75, 0.75, facing, MAT.GLYPH, 1310, { carve: 1 }); }
+
 /**
  * The erg's ruin sites. `table` maps seat ids to POIs ({ pos }); `height(x, z)` is the baked ground
  * (world/stair.js loadBakedHeight) for the aqueduct's absolute channel level (null: no aqueduct).
@@ -296,6 +316,9 @@ export function ruinSites(table, height) {
   sites.push({ id: 'ruin-sg-basin', at: sg(SUN_LAYOUT.basin), facing: 0, build: basin, footprint: 3.5, seatAt: 'center' });
   for (const k of ['m1', 'm2']) sites.push({ id: 'ruin-sg-' + k, at: sg(SUN_LAYOUT[k]), facing: 0, build: pedestal, footprint: 1.6, seatAt: 'center' });
   for (const k of ['g1', 'g2']) sites.push({ id: 'ruin-sg-' + k, at: sg(SUN_LAYOUT[k]), facing: 0, build: glyphStone, footprint: 1.6, seatAt: 'center' });
+  sites.push({ id: 'ruin-hourglass', at: HOUR_SITE, facing: 0, build: hourglassRig, footprint: 14, seatAt: 'center' });
+  sites.push({ id: 'ruin-sing-ring', at: [SING_SITE[0] + SING.ring[0], SING_SITE[1] + SING.ring[1]], facing: 0, build: resonanceRing, footprint: 8, seatAt: 'center' });
+  SING.lips.forEach((l, k) => sites.push({ id: 'ruin-sing-lip' + k, at: [SING_SITE[0] + l[0], SING_SITE[1] + l[1]], facing: k * 1.1, build: lipStone, footprint: 1.2, seatAt: 'center' }));
   sites.push({ id: 'ruin-colossus-head', at: [2318, 1030], facing: 3.6, build: colossusHead, footprint: 6, seatAt: 'center', sink: 0.5 });
   // The caravanserai at the oasis (the Wellhouse camp, D11), on the flat playa west of the pool (the
   // camp's seat at 1800, 700 is up a dune's flank), its gate toward the water.

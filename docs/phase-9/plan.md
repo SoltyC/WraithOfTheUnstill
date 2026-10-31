@@ -528,15 +528,25 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
 ### D11 — Progress (2026-11-01, in progress)
 
 **Done:**
-- Step 1, the grammar runtime: `src/game/puzzles/grammar.js`, tests `tests/grammar.test.js` (sun and shade, frost patches, beams with mirrors and lenses, the sand clock, the phrase of booms). Nothing uses beams, the clock or the phrase in the world yet.
-- Step 2, part: the Wellhouse camp. Sarai, Hesper, Iven, Nadra and Pell in the caravanserai's court (`data/quests/dunes.json`), three awnings, two sledges; *Into the Erg* and the buried sled (`src/game/puzzles/sled.js`, `src/systems/puzzleSled.js`, `tools/bot/puzzle-sled.mjs`). The heap, the channel and the slide are real terrain state. Checked live: the slide with no channel pours over the sled; with one it frees it; 0 late pipelines.
+- **Step 1, the grammar runtime:** `src/game/puzzles/grammar.js`, tests `tests/grammar.test.js`.
+- **The Wellhouse camp:** Sarai, Hesper, Iven, Nadra and Pell in the caravanserai's court (`data/quests/dunes.json`), awnings, sledges; *Into the Erg* and the buried sled (`src/game/puzzles/sled.js`, `src/systems/puzzleSled.js`). The heap, channel and slide are real terrain state.
+- **Step 3, the three instruments:** the Sun Gate, the Hourglass and the Singing Dunes (`src/game/puzzles/{sunGate,hourglass,singing}.js`, world wiring `src/systems/puzzles.js`, `puzzleHourglass.js`, `puzzleSinging.js`), one pool of moving chunks (`src/game/puzzles/props.js`, one draw, drawn near a site). Each has tests and a solver: `tools/bot/puzzle-{sled,sungate,hourglass,singing}.mjs`. All solved live; 0 late pipelines, 0 GPU errors. A solved Sun Gate's beam runs on past the gate. Remembrance entries, dialogue that changes with progress, three compass goals in any order (checked live).
+
+**Not checked by a human.** The solvers feed FREEZE and PLOUGH stamps through `ts.stamp` (the paths Crystallize and Sweep take) and call Interact targets; none casts a real verb, so reach and aim are unproven. Time-to-solve, whether the rules read without help, and whether 14 s between crests feels right are NOT ASSESSED.
+
+**Differs from the design:**
+- Mirrors, sluice and crust use Interact, not a weapon strike.
+- The Sun Gate stands on the Galleries' floor (1484, 1056), not in a side gallery; stage one raises a mirror and fills the basin rather than opening a ledge door. The gate's second source is simply the sun's side.
+- The Hourglass stands on the rim above the Needle (1660, 462), not in the slot, and its Needle's Eye opens nothing behind it yet. The pan's Sweep is counted, not simulated. Sand in the bowls is scripted (the §8b fallback), not real relaxation.
+- The Singing Dunes' crests are 85 m apart with 14 s between booms, playable on foot: sand-surf only comes at the waking, after this site.
 
 **Not done:**
-- The bot's channel is PLOUGH stamps (Sweep's own path through `ts.stamp`), not a real Sweep cast; nor has a human played it.
-- The lip is started by standing on it. Striking it, surfing off it, and Gust or Shard (G1) do not start it yet.
-- The heap and channel do not persist if the save is reloaded before the sled is freed: untested.
-- The awnings read a little like planks (first pass). Pilgrims from Hearn and the frost are not placed. No Dry Stair or quicksand entries (§4.1).
-- Steps 3–6: the three instruments, the Walker hooks, the side sites, the shrines' "wait until". Echoes, robes, map and journal sketches.
+- Pressure: no Skitters in the Hourglass's bowls, no Whirler on the Singing Dunes' ring.
+- Shade: the sites run on sun time only (`update(dt, false, false)`); G4's real shade is built but not wired, so thaw ignores the canyon's shadow.
+- Lit footprints on the glass track; the Walker hooks (step 4); the mastery run and its robe; the side sites (step 5); shrines' "wait until" (step 6); Echoes, map, journal sketches.
+- Reloads mid-site: stages restore from flags, but a reload is untested.
+- Pedestals have collision; the moving parts do not. The Hourglass door does not block.
+- Art: the pan sand is overexposed, streams read as loose balls, ring stones' collars sit oddly on the slope, awnings still read a little like planks. No perf measurement of the sites: the PC was in use.
 
 ### D12 — Gate
 
