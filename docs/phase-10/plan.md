@@ -62,7 +62,7 @@ Test with the user: does the morning land, does the player feel cheated or chang
 
 The user's direction: the gameplay must carry the story, and freeing the Warden plays a cutscene that makes it obvious, with animated flashbacks, ending on the floating robes of the dead.
 
-**U6 — The cinematic director and the people (4–5 sessions).** A data-driven shot timeline for every later cutscene. The five people's loops and Sefa, the child who follows the Wraith. The name record saved with each name said. **Checkpoints: the loops on film; Sefa alone.**
+**U6 — The cinematic director and the people (5–6 sessions, with a spike first).** How, and why: `cutscene-research.md`. **First, a 10-second spike** of one captured shot, to prove the approach before the rest is built. A data-driven shot timeline for every later cutscene. The five people's loops and Sefa, the child who follows the Wraith. The name record saved with each name said. **Checkpoints: the loops on film; Sefa alone.**
 
 **U7 — The release and the morning after (4–5 sessions).** A grey rough cut first, as soon as U4's rooms exist, then the 3-minute sequence: flashbacks in the real rooms, the frozen wave, the player's own record, the held key that no longer does anything, about 4,000 floating robes. Then the walk through them, the jetty, the night's count, the rewritten journal, the changed title screen. **Checkpoints: the rough cut; the comprehension test.**
 
@@ -312,7 +312,7 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 | 2 | F1 fen water | 2–3 | **mirror still and wake clip: go/no-go** |
 | 3 | U1 the dive | 2–3 | **the dive (the user plays it): go/no-go on the city** |
 | 4 | U3 + U4 undercroft and grey Ebbhold | 3 | the rooms, unlit |
-| 5 | U6 director and the people; voice player | 4–5 | **the loops; Sefa** |
+| 5 | U6 the spike, then the director, the people, the voice player | 5–6 | **the spike; the loops; Sefa** |
 | 6 | U7 grey rough cut, with temporary voices | 1 | **does it make the point?** |
 | 7 | F3 skim, F4 Tide | 4 | **skim feel** |
 | 8 | U2 the Lung and descent | 2 | **the tear and the whirlpool** |
@@ -324,7 +324,7 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 | 14 | F8 Shaped, F11 the tide | 2–3 | |
 | 15 | F12 gate | 1 | gate shots and bench |
 
-Roughly **37–46 sessions**, an estimate from Phase 9's 16–20 plan. It's the largest phase so far. **If it runs long, cut from step 12 and 14 first,** then the side quests. Steps 3–6 and 11 are the point of the chapter. Built in the main session unless the user asks for subagents.
+Roughly **38–47 sessions**, an estimate from Phase 9's 16–20 plan. It's the largest phase so far. **If it runs long, cut from step 12 and 14 first,** then the side quests. Steps 3–6 and 11 are the point of the chapter. Built in the main session unless the user asks for subagents.
 
 **Needed from the user, and when:**
 - **The stair song** and temporary voice takes by step 6.
@@ -373,4 +373,5 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 8. **Open order and locks** as in `cross-biome.md`.
 
 **Still open:**
-9. **The city's name:** a six-year-old in the meadow is called Ebb. Rename the city, or make it a deliberate link.
+9. **Captured movement for cutscenes and the Drowned's loops:** BRIEF §8 says characters are procedural only. Allow this change (recommended), and someone needs to film the performances.
+10. **The city's name:** a six-year-old in the meadow is called Ebb. Rename the city, or make it a deliberate link.
