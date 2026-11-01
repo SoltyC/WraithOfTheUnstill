@@ -182,6 +182,8 @@ async function boot() {
     game.applySpot(spot);
   }
   if (capture) { clock.frozen = true; atmosphere.alwaysSnap = true; }
+  // Benches and bots measure and solve at a fixed hour: the day runs for players (and their playtest spots).
+  if (qs.get('bench') || qs.get('bot')) paramsMod.params.v.timeScale = 0;
   env.updateEnvironment();
 
   // Warm-up (BRIEF §15): make every material ready, then render frames behind the loading
