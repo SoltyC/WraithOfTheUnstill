@@ -84,6 +84,8 @@ export function createShaped(ctx) {
     dustCloud(cx, cz) { caster.cloud(cx, cz); }, dustFx: null,
     /** The Wraith is on the ground (slams and shockwaves pass under a jump). */
     pgrounded: true, pdodging: false,
+    /** The Wraith's feet (m), owner: close blows and shots are judged against them. */
+    py: 0.5,
     /** The pack's lunge token: one hound attacks at a time while the rest circle (−1 free). */
     lungeToken: -1,
     /** A shattering kill happened this frame (owner: the big hit-stop and punch) at (bx, by, bz). */
@@ -364,7 +366,7 @@ export function createShaped(ctx) {
       }
       const dx = shot.x[k] - P.px, dz = shot.z[k] - P.pz;
       ground.qx = shot.x[k]; ground.qz = shot.z[k]; ground.sample();
-      if (dx * dx + dz * dz < 0.36 && shot.y[k] - ground.h < 1.9) { P.hits++; P.hitDamage += shot.dmg[k]; if(shot.kind[k]===11&&!P.pdodging)P.dustCloud(shot.x[k],shot.z[k]); shot.live[k] = 0; chunks[o + 15] = 0; continue; }
+      if (dx * dx + dz * dz < 0.36 && shot.y[k] - P.py < 1.9 && shot.y[k] - P.py > -0.3) { P.hits++; P.hitDamage += shot.dmg[k]; if(shot.kind[k]===11&&!P.pdodging)P.dustCloud(shot.x[k],shot.z[k]); shot.live[k] = 0; chunks[o + 15] = 0; continue; }
       if (shot.y[k] <= ground.h + 0.05) {
         // Buried in the snow: a scored gash along its flight, a puff of powder.
         const sx = shot.x[k] - ox, sz = shot.z[k] - oz, sl = Math.sqrt(sx*sx+sz*sz) || 1;
@@ -611,7 +613,7 @@ export function createShaped(ctx) {
         if (s.pass === 0) {
           BH.passSteer(sc, b.x, b.z, P.px, P.pz, s.side);
           b.wantVx = sc.x * sp; b.wantVz = sc.z * sp;
-          if (BH.slashHit(dist, s.hitDone)) { s.hitDone = true; P.hits++; P.hitDamage += A.slashDamage ?? 10; }
+          if (BH.slashHit(dist, s.hitDone) && BH.inReach(P.py, b.y)) { s.hitDone = true; P.hits++; P.hitDamage += A.slashDamage ?? 10; }
           if (BH.passCrossed(dist, b.vx, b.vz, dx, dz)) {
             // Over the Wraith: carry on along the line it crossed on.
             const vl = Math.sqrt(b.vx * b.vx + b.vz * b.vz);
@@ -759,7 +761,7 @@ export function createShaped(ctx) {
         b.crouch = 0;
         b.lift = Math.sin(Math.PI * u) * 0.6;
         b.vx = s.lungeX * 10; b.vz = s.lungeZ * 10; b.wantVx = b.vx; b.wantVz = b.vz;
-        if (!s.hitDone && dist < 1.1) { s.hitDone = true; P.hits++; P.hitDamage += 12; }
+        if (!s.hitDone && dist < 1.1 && BH.inReach(P.py, b.y)) { s.hitDone = true; P.hits++; P.hitDamage += 12; }
         if (u >= 1) { s.state = S.RECOVER; s.t = 0; b.lift = 0; }
         break;
       }

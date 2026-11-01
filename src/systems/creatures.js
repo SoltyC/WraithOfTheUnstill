@@ -125,6 +125,7 @@ export function addCreatureSystems(g) {
     shaped.px = controller.pos.x; shaped.pz = controller.pos.z; shaped.pvx = controller.vel.x; shaped.pvz = controller.vel.z;
     shaped.pdodging = controller.dodgeT > 0;
     shaped.pgrounded = controller.grounded && controller.dodgeT <= 0;
+    shaped.py = controller.pos.y;
     if (game.pendingShaped !== null) {
       if (game.worldSettled() && game.pendingTrail === null) stepShapedRoll();
     } else if (!game.wraithHeld || !capture) {

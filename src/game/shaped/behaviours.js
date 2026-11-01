@@ -38,6 +38,12 @@ export function passSteer(out, x, z, px, pz, side) {
 /** Angle (rad) between the pass heading and the straight line to the target at distance d. */
 export function passAngle(d) { return PASS_BEND * clamp01((d - 1) / 6); }
 /** The slash lands: within reach during a pass, once per pass. */
+/** How far above a Shaped's feet its close blows reach (m). A Wraith lifted past this, by an Updraft, a jump or a throw,
+ *  stands over the enemy, not in reach of it. */
+export const REACH_UP = 1.5;
+/** Can a blow from a body at height by reach the Wraith's feet at py? */
+export function inReach(py, by) { return py - by < REACH_UP; }
+
 export function slashHit(dist, done) { return !done && dist < SLASH_RADIUS; }
 /** The pass is over once it has crossed (close, or already past with the target behind). */
 export function passCrossed(dist, vx, vz, dx, dz) { return dist < 0.9 || (dist < 3 && vx * dx + vz * dz < 0); }

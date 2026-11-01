@@ -69,4 +69,3 @@ The playthrough's Walker leg starts 150 m from the camp (`?walker=home`), and th
 - **A Ridge on sand:** hard rectangular trenches.
 - **Human play** of everything after the Hourglass; the laptop benchmark.
 - Stand-ins from plan.md D11: Glass Battle visions, Pell's kite, the camp garden, Nadra's map layer, a dunes map page, what the two doors open.
-- The frost Warden's climb may share the Bellwether's steering trap: not reproduced; boss fights are not to be changed without an explicit request.
