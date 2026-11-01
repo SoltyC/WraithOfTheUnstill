@@ -168,13 +168,14 @@ export class SpringArmCamera {
         if (oc.probe()) { room = (shoulder * (i - 1)) / 4; break; }
       }
     }
-    this._shoulder += (room - this._shoulder) * damp(room < this._shoulder ? T.collisionInHalfLife : T.collisionOutHalfLife, dt);
+    // In at once (a fast swing would carry it into the rock for a frame or two), out slowly.
+    this._shoulder = room < this._shoulder ? room : this._shoulder + (room - this._shoulder) * damp(T.collisionOutHalfLife, dt);
     if (this._snapped) this._shoulder = room;
     const ox = this.pivot.x + cy * this._shoulder, oy = this.pivot.y, oz = this.pivot.z - sy * this._shoulder;
 
     // Terrain collision: march the arm and keep the first safe length.
     const g = this.ground;
-    let safe = this.zoom;
+    let safe = this.zoom, solid = false;
     const steps = 16;
     for (let i = 1; i <= steps; i++) {
       const d = (this.zoom * i) / steps;
@@ -185,12 +186,13 @@ export class SpringArmCamera {
         oc.qx = x; oc.qy = y; oc.qz = z;
         const inside = oc.probe();
         if (!inside) out = true;
-        else if (out) { safe = Math.max(0.3, (this.zoom * (i - 1)) / steps); break; }
+        else if (out) { safe = Math.max(0.3, (this.zoom * (i - 1)) / steps); solid = true; break; }
       }
     }
     const hl = safe < this.armLen ? T.collisionInHalfLife : T.collisionOutHalfLife;
     this.armLen += (safe - this.armLen) * damp(hl, dt);
-    if (this._snapped) { this.armLen = safe; this._snapped = false; }
+    if (this._snapped || (solid && safe < this.armLen)) this.armLen = safe;   // rock is never eased into
+    this._snapped = false;
 
     let x = ox + bx * this.armLen, y = oy + by * this.armLen, z = oz + bz * this.armLen;
     g.qx = x; g.qz = z; g.sample();

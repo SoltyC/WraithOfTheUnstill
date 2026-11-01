@@ -235,7 +235,7 @@ function tube(out, centres, U, W, radius, segs, cliffOf, uScale) {
       // Blended over the turn so the last column meets the first (the noise is not periodic: it left a slit).
       const c = centres[i], f = j / segs, r = (1 - f) * radius(i, a) + f * radius(i, a - Math.PI * 2), u = U[i], w = W[i], cl = cliffOf(i);
       out.pos.push(c[0] + (u[0] * ca + w[0] * sa) * r, c[1] + (u[1] * ca + w[1] * sa) * r, c[2] + (u[2] * ca + w[2] * sa) * r);
-      out.uv.push(a * uScale, c[1] + (u[1] * ca + w[1] * sa) * r);
+      out.uv.push(Math.min(a, Math.PI * 2 - a) * uScale, c[1] + (u[1] * ca + w[1] * sa) * r);   // mirrored at the far side: no break where the turn closes
       out.cliff.push(cl[0], cl[1], WALL.canyon, cl[2]);
       out.nrm.push(0, 0, 0);
     }

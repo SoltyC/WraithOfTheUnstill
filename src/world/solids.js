@@ -270,7 +270,8 @@ export function createSolids(sites, built, stairRuns = null) {
         let f = -1e9;
         for (let q = Math.max(0, Math.floor((p.y - wl.y0[k]) / span * FACE_ROWS)); q <= r1; q++) if (wl.face[k * FACE_ROWS + q] > f) f = wl.face[k * FACE_ROWS + q];
         if (d >= f + R || d < f - 2.5) continue;
-        const pen = f + R - d;
+        // Out of the rock by degrees (stepping off a lip, the leaning face is met a body's depth in), up to the face at once.
+        const pen = d < f ? Math.min(f + R - d, 0.12) : f + R - d;
         p.x += wl.nx[k] * pen; p.z += wl.nz[k] * pen;
         const into = v.x * wl.nx[k] + v.z * wl.nz[k]; if (into < 0) { v.x -= into * wl.nx[k]; v.z -= into * wl.nz[k]; }
       }

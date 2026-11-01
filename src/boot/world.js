@@ -23,6 +23,9 @@ export async function createWorld(g) {
   // Scanned PBR materials (src/materials): decoded and uploaded while the world loads.
   const matLibP = import('../materials/library.js').then((m) => m.loadMaterialLibrary(engine, scene));
   camera.minZ = 0.1;
+  // Babylon rebuilds the up vector only when rotation.z changes: left to that, each shake or lean kept the up of its
+  // last frame, and turning afterwards tilted the horizon by up to the pitch until the next one (user: F).
+  camera.updateUpVectorFromRotation = true;
   camera.maxZ = 40000; // the mountain ring reaches 28 km from the centre
 
   const [{ createWorldScene }, { WorldStreamer }, { PatchGround }, env] = await Promise.all([

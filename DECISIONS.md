@@ -660,4 +660,5 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **A cliff's cap is ground,** from the lip back over the riser. The terrain's ramp stays hidden in the rock, and walking off a rim used to sink the Wraith into it.
 - **Hoodoos and arch legs are ellipses in the rock solids,** not rings of wall segments; the camera keeps out of them too. The tubes blend their noise round the turn so the last column meets the first.
 - **The arm's shoulder offset draws in beside a solid,** and the arm may shorten to 0.3 m against one: it used to start inside a wall and then ignore that wall.
-- **Not played yet.** Checked by tests against the baked ravines only; the terrain was not part of the check.
+- **Rock is never eased into:** the arm and the shoulder offset stop at once at a solid, and only ease back out. A body behind the face comes out by degrees, so stepping off a lip does not jolt it.
+- **The camera's up vector follows its rotation every frame** (`updateUpVectorFromRotation`). Babylon otherwise rebuilds it only when `rotation.z` changes, so a shake's last frame kept a stale up and turning tilted the horizon by up to the pitch, until the next shake. This was the bug on F: with the setting off, F then a 90° turn tilted the view 18–71°, and a second F cleared it.
