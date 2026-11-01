@@ -6,6 +6,62 @@ This file is the work order for the phase. `docs/cross-biome.md` still governs o
 
 **Status: a proposal. Nothing here is approved until the decisions at the end are answered.**
 
+**Revised the same day:** the user asked for the phase to be planned around underwater play: an abandoned city under the water, with the Warden and the Drowned inside. The story is in `docs/phase-10/storylines.md`. Everything below that was written for the fen still stands; the section *Under the water* adds to it and changes the Warden's arena.
+
+---
+
+## Under the water (added 2026-11-01)
+
+**Second half of the biome: Ebbhold, a Shaper city at the bottom of the Sounding.** The player arrives by the Lung, can't go back, and goes through the city to the Listener. This suits the biome's idea: sound carries under water, and the city's Drowned hear for the Listener.
+
+### What exists today
+
+Nothing below the surface.
+- The spring arm stops the camera 0.35 m above any water (`springArm.js`).
+- Swimming floats the Wraith at the surface (`capsuleController._swim`); there is no diving.
+- No underwater view, no surface seen from below.
+- No interiors under terrain: collision is one height per point, and caves (Phase 13, SDF) aren't started.
+- The height encoding stops at −128 m. The lowest ground today is −86 m.
+
+### New milestones (between F3 and F8)
+
+**U1 — The dive (the second proving ground; 2–3 sessions).** Do this straight after F1, as a slice in a bare pit, before any city.
+- A 3D swim: pitch by aim, buoyancy, the robe spread and drifting (cloth with water drag).
+- The camera through the surface in both directions, with no pop.
+- The underwater view: depth fog and colour falloff, caustics, light shafts from above, drifting particles, the surface as a bright ceiling from below.
+- **Checkpoint: the user dives.** If swimming down isn't a joy alone, the city does not get built.
+
+**U2 — The Lung and the descent (2 sessions).** Air shown on the body only: cowl light, bubbles, the robe's life. The Sounding carved in the bake with a shaft wall from the canyon kit. Kelp that reacts to the body. The tear, the failed ascent (a wake-up, never a death), the bubble column and whirlpool.
+
+**U3 — The undercroft (1 session).** **The whirlpool hides a cut:** the screen is all bubbles, so the Wraith can be moved to another place at no cost. Interiors therefore live in their own sealed space outside the terrain, not under it. It avoids holes in the heightfield and keeps Phase 13's SDF work out of this phase. The cave is a hand-shaped mesh kit, and Phase 13 can replace it.
+
+**U4 — Ebbhold (4–5 sessions).** A kit of halls, stairs and sea-doors in Shaper stone, drowned and dry versions.
+- The outside, seen from the descent, is a streamed site in the pit: it must look vast from 100 m up. The inside is a much smaller number of real rooms.
+- **Real scale: about 8–12 rooms and a great hall, not a walkable metropolis.** Doors, collapses and a few long sight lines give the "mega palace" sense.
+- A **per-room water level** (the shader, the CPU's `levelAt`, swim or walk at the line). Tide floods and drains rooms once lent, which is the Warden's herding at city scale.
+- Air pockets for fights; **no real combat when fully submerged in the first pass.** Under water the player hides, flees and solves.
+
+**U5 — The Drowned and the register (2 sessions).** They replace the "Drowned" elite in F8, and the elite gets a new name. Veiled bodies from the robe system with floating veils, each with a looped task. They hear (F3's noise), and they swarm. Saying a name stops one for good. Twenty or so named, with the register as a journal page.
+
+### Changes to the plan
+
+- **F9, the Listener:** the arena moves from the fen's channels to **Ebbhold**, and `warden-mire` moves with it. *Hear* is played in flooded halls. *Herd* uses the sea-doors and Tide. *Strand* happens in the Tide Hall's great well. The climb and the last breath are unchanged. If the fen channels are kept, they carry the Soundings and the Sluice in F10.
+- **F10:** the main thread becomes *The Lung*. The three sites shrink to teaching the noise rule on the way to the jetty.
+- **F11:** at low tide, Ebbhold's towers stand out of the Sounding, and the roofs can be walked.
+- **Combat with Tide:** lent inside the city, so mud Shaped in the fen are met with Frost first. The fen is revisited with the skim after, which is its restored play.
+
+### Performance
+
+Under water is likely to be cheap: fog closes the view, so the clipmap, far shadows and trees can be cut hard. NOT MEASURED. Interiors need portal culling. The price is load: the kit's pipelines must warm at start like everything else. Budget for the swim view is the same frame as the fen.
+
+### Risks
+
+- **Scope.** This is the largest addition to any phase. See the estimate and decision 8.
+- **A forced trap can feel cheap.** The tear must happen to the player, not to a cutscene. Bot and user test: does anyone feel cheated by it?
+- **No way back.** Once past the whirlpool the player is committed. **Warn and save before the jetty,** keep a shrine in the undercroft, and open a way out through the city as soon as possible (a sea-door shortcut). The quest must still fit open order: nothing in it may need Gale or Stone.
+- **The Wraith under water with weapons:** turned off, and that has to read as natural.
+- **Horror against tone:** the tone is melancholy, not jump-scares. The Drowned should be sad first.
+
 ---
 
 ## The idea of the biome
@@ -136,7 +192,7 @@ Level 1 (flanking allowed). **All must be beatable with Frost alone,** because T
 | **Mudlings** | swarmer | rise from any mud near noise; drag and slow | bubbles run towards you | frozen crust traps them; Draw crumbles them |
 | **Rootback** | bruiser | root-bound mud; roots across the skim line, a slam that floods | roots lift the mud before the slam | freeze the wet joints and shatter; Draw dries the mud and exposes the root |
 | **Lampfish** | caster | a light in the fog that lures, then spits a slowing tar | the light dips and swells | break line of sight; Sweep through the tar; Gust blows off its fog |
-| **The Drowned** (elite) | elite | walks the bottom unseen, seizes from below | a line of bubbles on still water | read it and step on to ice; Undertow |
+| **The Bottom-walker** (elite; was "the Drowned", now the city's people) | elite | walks the bottom unseen, seizes from below | a line of bubbles on still water | read it and step on to ice; Undertow |
 
 - **All hunt by noise** (F3), so a fight can be avoided by walking, and a skim past one has a price.
 - Encounter anchors per the director; a storm surge in heavy rain.
@@ -236,8 +292,15 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 | F10 camp and quests | 2–3 | **story (the user plays it)** |
 | F11 restoration | 1–2 | the tide turning |
 | F12 gate | 1 | gate shots and bench |
+| *U1 the dive* | 2–3 | **the dive (the user plays it): go/no-go on the city** |
+| *U2 Lung and descent* | 2 | **the tear and the whirlpool (the user plays it)** |
+| *U3 undercroft* | 1 | |
+| *U4 Ebbhold* | 4–5 | the city from above, and its rooms |
+| *U5 Drowned and register* | 2 | **the first room of them** |
 
-Roughly **19–26 sessions**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
+Order: F0, F1, **U1**, F2–F4, then U2–U5 with F8–F11, and F12 last.
+
+Roughly **19–26 sessions for the fen, plus 11–13 for the city: 30–39 in all**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
 
 ## Performance budget
 
@@ -270,7 +333,10 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 3. **The biome's idea:** noise as danger, with the Listener (recommended). Alternatives:
    - **A simple hunt:** same Warden, without noise as a system: it tracks by distance only. Cheaper; loses the biome's identity.
    - **The Drowned Tree:** a vast mangrove that walks the shallows, climbable. Readable, but too near the Walker.
-4. **The moving tide after the release** (F11): real, on the clock (recommended), or two fixed states.
+4. **The moving tide after the release** (F11): real, on the clock (recommended; Ebbhold's towers depend on it), or two fixed states.
 5. **Shaped roster:** Mudlings, Rootback, Lampfish, the Drowned elite.
 6. **Skim before the Warden?** Lent at the waking like sand-surf (recommended), or only at the release. Later keeps the first half on foot but removes the fight's core tension.
-7. **Open order and locks** (`cross-biome.md` decisions 1, 2 and 4) are still recorded as open, and this plan assumes the recommended answers.
+7. **The story:** The Lung as the main thread (`storylines.md`), including Morrow's twist.
+8. **Scope:** build the city inside Phase 10 at 30–39 sessions (recommended only if U1 is a joy), or split it: Phase 10 the fen and the dive, and a Phase 10b for Ebbhold, with the Warden held until then.
+9. **Size of Ebbhold:** 8–12 real rooms that look vast (recommended), or a larger walkable city at a much higher cost.
+10. **Open order and locks** (`cross-biome.md` decisions 1, 2 and 4) are still recorded as open, and this plan assumes the recommended answers.
