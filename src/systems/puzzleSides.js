@@ -61,13 +61,15 @@ export function addSideSites(g, P, tell, chime) {
         chime(SFX.CHIME, 0.8);
         if (S.mirage.crossed()) { flags.add(F.crossed); tell('The Mirage Map', 'The two lines cross', 'The dome stands on neither. It lies where they meet.', 8); }
         else tell('The Mirage Map', 'One line drawn', 'It runs on past the shimmer. It wants a second, from the other cairn.', 6);
-      } else if (!S.mirage.isNoon(h)) tell('The cairn', 'Nothing shimmers', 'The dome only shows when the sun is high.', 5);
+      } else if (!S.mirage.isNoon(h)) { g.sweepTime(12.5); tell('The cairn', 'You wait for the sun', 'The dome only shows when the sun is high.', 5); }
     } };
     g.interactables?.push(t); return t;
   });
 
   P.show(X.ghost, false); P.show(X.dome, false); P.show(X.iceDam, false);
   for (const q of [...X.ramps.flat(), ...X.water, ...X.bloom, ...X.prints]) P.show(q, false);
+  const dusk = { kind: 'puzzle', id: 'flood-wait', verb: 'Wait for dusk', name: 'The dry channel', x: FLOOD.site[0], y: 0, z: FLOOD.site[1], r: 4, h: 2.5, hy: 1.2, hidden: true, onUse: () => g.sweepTime(FLOOD.window[0] + 0.2) };
+  g.interactables?.push(dusk);
   const seated = { mirage: false, falls: false, glass: false, door: false, flood: false };
   const dist2 = (c, x, z) => (c.x - x) ** 2 + (c.z - z) ** 2;
   const within = (c, x, z, r) => dist2(c, x, z) < r * r;
@@ -103,6 +105,7 @@ export function addSideSites(g, P, tell, chime) {
     update(dt, c) {
       let any = false;
       for (const t of cairns) t.hidden = true;
+      dusk.hidden = true;
       // The Mirage Map.
       if (within(c, 1945, 165, SHOW_R)) {
         any = true;
@@ -169,6 +172,7 @@ export function addSideSites(g, P, tell, chime) {
           seatGroup(X.iceDam, groundAt(P.group_(X.iceDam).x, P.group_(X.iceDam).z)); seated.flood = true;
         }
         const r = S.flood.update(dt, params.v.timeOfDay);
+        dusk.y = groundAt(dusk.x, dusk.z); dusk.hidden = S.flood.done || S.flood.t >= 0;
         if (r === 1) { flags.add(F.full); chapter.raise('garden:full'); chime(SFX.TOLL, 1.3); tell('The Flood Garden', 'Four cisterns full', 'Water stands in the side canyon, and it will stay.', 8); }
         else if (r === -1) tell('The Flood Garden', 'The water goes on', 'It will run again at the next dusk.', 6);
         for (let k = 0; k < 4; k++) { P.show(X.water[k], S.flood.level[k] > 0.02 || S.flood.done); P.scale(X.water[k], S.flood.done ? 1 : Math.max(0.05, S.flood.level[k])); P.show(X.bloom[k], S.flood.done); }

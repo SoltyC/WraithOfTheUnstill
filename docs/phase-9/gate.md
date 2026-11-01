@@ -34,3 +34,8 @@ The playthrough's Walker leg starts 150 m from the camp (`?walker=home`), and th
 - Puzzle machines read their state only at boot.
 - 128 empty tree meshes bound into three shadow cascades in the erg: no GPU cost, about half the main thread's frame (35 → 17.5 ms).
 - Every bench crashed at its results without `?sysprof=1`.
+
+## Found in the user's playthrough (2026-11-01)
+
+- The buried sled showed nothing: mast, lip stone and stakes added.
+- **The game clock does not run in play** (`timeScale` defaults to 0): the hour changes only at shrines and a few set places. Any line implying time passes on its own is wrong. The cairns now wait for noon on Interact, and the Flood Garden for dusk. Whether the clock should run in play is the user's call.
