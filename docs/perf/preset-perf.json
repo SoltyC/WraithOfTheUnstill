@@ -1,83 +1,83 @@
 {
-  "date": "2026-10-31T23:21:22.139Z",
+  "date": "2026-11-01T01:10:06.066Z",
   "note": "3060, headless Windows Chrome 2560x1440, dynamic resolution off (each preset at its own render scale), median GPU frame over 240 frames",
   "presets": {
     "low": {
       "p9r-galleries-dawn": {
-        "median": 8.81,
-        "p95": 9.64,
+        "median": 8.18,
+        "p95": 8.23,
         "scale": 0.5,
         "late": 0
       },
       "p8-meadow-golden": {
-        "median": 8.25,
-        "p95": 9.16,
+        "median": 7.54,
+        "p95": 7.59,
         "scale": 0.5,
         "late": 0
       },
       "p9s1-star-mid": {
-        "median": 6.12,
-        "p95": 6.95,
+        "median": 5.77,
+        "p95": 5.81,
         "scale": 0.5,
         "late": 0
       }
     },
     "medium": {
       "p9r-galleries-dawn": {
-        "median": 11.81,
-        "p95": 12.37,
+        "median": 11.01,
+        "p95": 11.07,
         "scale": 0.67,
         "late": 0
       },
       "p8-meadow-golden": {
-        "median": 11.45,
-        "p95": 12.25,
+        "median": 10.61,
+        "p95": 10.89,
         "scale": 0.67,
         "late": 0
       },
       "p9s1-star-mid": {
-        "median": 7.93,
-        "p95": 8.85,
+        "median": 7.3,
+        "p95": 7.35,
         "scale": 0.67,
         "late": 0
       }
     },
     "high": {
       "p9r-galleries-dawn": {
-        "median": 15.78,
-        "p95": 16.45,
+        "median": 14.91,
+        "p95": 14.99,
         "scale": 0.8,
         "late": 0
       },
       "p8-meadow-golden": {
-        "median": 16.54,
-        "p95": 17.71,
+        "median": 15.43,
+        "p95": 15.66,
         "scale": 0.8,
         "late": 0
       },
       "p9s1-star-mid": {
-        "median": 9.82,
-        "p95": 10.71,
+        "median": 9.19,
+        "p95": 9.22,
         "scale": 0.8,
         "late": 0
       }
     },
     "ultra": {
       "p9r-galleries-dawn": {
-        "median": 19.78,
-        "p95": 20.77,
+        "median": 18.43,
+        "p95": 18.52,
         "scale": 1,
         "late": 0
       },
       "p8-meadow-golden": {
-        "median": 19.51,
-        "p95": 20.85,
+        "median": 18.4,
+        "p95": 18.65,
         "scale": 1,
         "late": 0
       },
       "p9s1-star-mid": {
-        "median": 11.42,
-        "p95": 12.03,
+        "median": 10.62,
+        "p95": 10.7,
         "scale": 1,
         "late": 0
       }

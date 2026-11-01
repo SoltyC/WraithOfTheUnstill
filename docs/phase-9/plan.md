@@ -577,6 +577,12 @@ The Long Walker, built to `docs/gameplay-design.md` §5.1 ("bring it home"), not
 
 ---
 
+### D12 — Done (2026-11-01): see `docs/phase-9/gate.md`
+
+The systems pass: full playthrough, save and reload, 0 late pipelines, 60–65 fps median on High. **Not met:** 1% lows above 60 (40–53) and the art bar on the Walker, the signature frame and the veil pair. No human play yet.
+
+---
+
 ## Order, estimate and checkpoints
 
 | | Sessions | Review with the user |

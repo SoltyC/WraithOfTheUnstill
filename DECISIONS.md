@@ -627,3 +627,9 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The Flood Garden is G5's third use:** a channel cut in dry sand slumps in 10 s, wet first it holds.
 - **The Buried Door's order is door, vent, stair:** each clear pushes sand onto the next, so the far end has to go last.
 - **Shrines run the sun forward to the chosen hour over 5 s,** never a cut (dunes-design §8b). Forward only.
+
+## 2026-11-01 — D12
+
+- **The gate closes with its misses on record** (`docs/phase-9/gate.md`): the 1% lows and the art bar stay open rather than the targets being moved.
+- **The gate's film and veil frames use existing diagnostic cameras** where a new one would only have shown flat sand.
+- **The save slots stay `auto`, `slot1–3`;** the playthrough uses `slot1`.

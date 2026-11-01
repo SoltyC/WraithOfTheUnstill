@@ -538,3 +538,18 @@ Preset medians (ms), `docs/perf/preset-perf.json`; the table above is the 31 Oct
 These read 3–8% above 31 October's. Old and new builds alternating (above) put the new build ahead, so this is the machine's state, not the code; the cause was not isolated. No late pipelines.
 
 Puzzle props shown against hidden at each instrument (3 alternating repeats, 120 frames, High, render scale 0.7): +0.06–0.08 ms. 257 chunks in one draw; hidden away from a site.
+
+## 1 November — D12, `?bench=dunes` (no other load: GPU 0–3%)
+
+`tools/winchrome/bench-dunes.mjs`, 2560×1440, 12 s a phase, 0 late pipelines.
+
+| Phase | High: fps / 1% low | High: GPU median | Low: fps / 1% low | Low: GPU median |
+|---|---|---|---|---|
+| Surf | 65 / 44 | 14.3 | 107 / 73 | 8.8 |
+| Ridge spam | 60 / 40 | 16.8 | 96 / 60 | 9.2 |
+| 8 Skitters, sandstorm | 62 / 53 | 15.7 | 104 / 88 | 8.9 |
+| Clear to sandstorm | 64 / 53 | 15.3 | 107 / 90 | 8.6 |
+
+Before empty tree sets were switched off, High presented 32–35 fps here with the same GPU time. Gate target (1% lows above 60) not met on High.
+
+Presets, idle, after that change (ms, Low / Medium / High / Ultra): canyon 8.18 / 11.01 / 14.91 / 18.43, meadow 7.54 / 10.61 / 15.43 / 18.40, dunes 5.77 / 7.30 / 9.19 / 10.62. These match 31 October's, so the 3–8% seen earlier was outside load.

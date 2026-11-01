@@ -1,3 +1,5 @@
+> **Latest — 1 November (Claude): Phase 9 gate run, `docs/phase-9/gate.md`.** Full playthrough, save and reload pass; 0 late pipelines; High 60–65 fps median at 1440p (was 32–35), Low 96–107. **Open:** 1% lows on High (40–53), the art bar on the Long Walker, the signature frame and the veil pair, and any human play of D11. Laptop `?bench=1&gfx=low` still wanted (the crash that would have stopped it is fixed).
+
 > **Latest — 1 November (Claude): D11's content is in.** Walker hooks, five side sites, the sun sweep at shrines, Echoes and robes; all solved live by the bot, no human play yet. 1002 tests. Loads rerun with no game in play: 33.8 → 17.2 s (High), 32.3 → 16.2 s (Low). Gaps: plan.md "D11 — Progress". Next: D12.
 
 > **Latest — 1 November (Claude): the three Silent Instruments are in.** Sun Gate, Hourglass, Singing Dunes: machines, world, tests, solvers; a hub of three goals in any order. All solved live by the bot through the terrain-brush path; no human has played them. On the playtest page. Gaps: plan.md "D11 — Progress". Next: Walker hooks, side sites, shrines' "wait until".

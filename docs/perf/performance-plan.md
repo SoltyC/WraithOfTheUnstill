@@ -57,6 +57,8 @@ The pipelines are made one at a time, synchronously; 99 of them average about 22
 
 **Caveat on the 2026-11-01 numbers in §3 and §4:** games were running on this PC during those runs. Rerun them idle before trusting their sizes.
 
+**The main thread (found at D12, 2026-11-01).** This plan looked only at the GPU, and missed the bigger cost. With snapshot rendering Babylon still binds every enabled mesh's material each frame (standard mode). 128 empty tree meshes in three cascades cost about half the frame in the erg: 35 → 17.5 ms presented once empty sets were switched off, with no GPU change. The meadow still presents about 24 ms (42 fps): cloth 5.3, `solids.floor` 3.7, uniforms 5. On the laptop, whose CPU is the unmeasured half of the budget, **this is likely worth more than any step in §3.** Next: fewer live binds (freezing shadow materials' constants, sharing `levels`), cloth and `solids.floor`. Tool: `tools/winchrome/frame-profile.mjs`.
+
 ## 2. The target: Low on an i5-1235U
 
 **The hardware.** Iris Xe with 80 EU at up to about 1.2 GHz gives roughly 1.5 TFLOPS. Its memory is shared DDR4/LPDDR4x at 50–68 GB/s. The 3060 has 12.7 TFLOPS and 360 GB/s. For this kind of renderer, expect the i5 to be **7–9× slower**.
