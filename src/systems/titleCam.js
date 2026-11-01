@@ -55,7 +55,7 @@ export function addTitleCamSystem(g) {
     ground.sample();
     return ground.h > st ? ground.h : st;
   }
-  function inside(x, y, z) { const so = g.solids; if (!so) return false; so.px = x; so.py = y; so.pz = z; return so.insideQ(); }
+  function inside(x, y, z) { const so = g.solids; if (!so) return false; so.cullCam(x, z, 1); so.px = x; so.py = y; so.pz = z; return so.insideQ(); }
 
   /** Lift needed over the planned height: the highest ground under here and 30 / 90 / 180 m ahead. */
   function need(x, y, z, dx, dz) {

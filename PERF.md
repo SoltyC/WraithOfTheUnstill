@@ -553,3 +553,7 @@ Puzzle props shown against hidden at each instrument (3 alternating repeats, 120
 Before empty tree sets were switched off, High presented 32–35 fps here with the same GPU time. Gate target (1% lows above 60) not met on High.
 
 Presets, idle, after that change (ms, Low / Medium / High / Ultra): canyon 8.18 / 11.01 / 14.91 / 18.43, meadow 7.54 / 10.61 / 15.43 / 18.40, dunes 5.77 / 7.30 / 9.19 / 10.62. These match 31 October's, so the 3–8% seen earlier was outside load.
+
+## 2 November — Phase 10 F0, the meadow's main thread
+
+`tools/winchrome/frame-profile.mjs p8-meadow-golden 8`, 2560×1440, High. Median presented frame 23.5 → 21.2 ms. The camera's probes tested every blocker and platform in the world about twenty times a frame (`insideQ` 1.5 ms); they now test only the sites the arm can reach, and it no longer shows in the profile. Left: cloth about 4.9 ms, per-mesh uniforms and bind about 6 ms.

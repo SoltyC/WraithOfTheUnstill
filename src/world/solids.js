@@ -17,6 +17,13 @@ export function createSolids(sites, built, stairRuns = null) {
   for (const b of blockers) { const s = S[b.site]; s.rad = Math.max(s.rad, Math.hypot(b.x - s.x, b.z - s.z) + (b.r || Math.hypot(b.hx, b.hz)) + 2); }
   for (const p of platforms) { const s = S[p.site]; s.rad = Math.max(s.rad, Math.hypot(p.x - s.x, p.z - s.z) + Math.hypot(p.hx, p.hz) + 2); }
   const near = new Uint8Array(S.length);
+  // Blockers and platforms by site, for the camera's probes: it asks about twenty times a frame, and the whole world's
+  // list cost 1.5 ms in Hearn. camNear marks the sites a query point may touch (cullCam, once a frame).
+  const siteBlockers = S.map(() => []), sitePlatforms = S.map(() => []);
+  for (const b of blockers) siteBlockers[b.site].push(b);
+  for (const p of platforms) sitePlatforms[p.site].push(p);
+  const camList = new Int32Array(S.length);
+  let camN = 0;
   // The monumental stair's runs (world/stair.js stairSegments): straight segments { x0, z0, x1, z1, halfWidth,
   // y0, y1, tread } with a stepped floor — y0 + (y1 − y0) · ceil(d / tread) / m along the axis (d from the
   // start, m = round(length / tread)), within halfWidth of it. Absolute heights (no site seat). Grouped
@@ -81,6 +88,14 @@ export function createSolids(sites, built, stairRuns = null) {
     /** Mark sites near (x, z) (call once per frame before the substeps). */
     cull(x, z) {
       for (let i = 0; i < S.length; i++) { const s = S[i], dx = x - s.x, dz = z - s.z; near[i] = !Number.isNaN(s.seat) && dx * dx + dz * dz < s.rad * s.rad ? 1 : 0; }
+    },
+    /** The sites the camera's probes this frame can reach: those within `reach` m of their radius round (x, z). */
+    cullCam(x, z, reach) {
+      camN = 0;
+      for (let i = 0; i < S.length; i++) {
+        const s = S[i], dx = x - s.x, dz = z - s.z, r = s.rad + reach;
+        if (s.rad > 0 && !Number.isNaN(s.seat) && dx * dx + dz * dz < r * r) camList[camN++] = i;
+      }
     },
     /** Query fields for floorQ() (no doubles across calls on the substep path): position qx, qz,
      *  terrain height qh, feet height qf (a top higher than a step above the feet is not stood on) → h. */
@@ -159,21 +174,24 @@ export function createSolids(sites, built, stairRuns = null) {
         const row = Math.min(FACE_ROWS - 1, Math.floor((y - wl.y0[k]) / (wl.y1[k] - wl.y0[k]) * FACE_ROWS)), f = wl.face[k * FACE_ROWS + row];
         if (d < f + m + 0.1 && d > f - 4) return true;
       }
-      for (let i = 0; i < blockers.length; i++) {
-        const b = blockers[i], seat = S[b.site].seat;
-        if (Number.isNaN(seat) || y > seat + b.y1 + m || y < seat + b.y0 - m) continue;
-        const dx = x - b.x, dz = z - b.z;
-        if (b.kind === 'circle') { if (dx * dx + dz * dz < (b.r + m) * (b.r + m)) return true; }
-        else {
-          const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
-          if (lx > -b.hx - m && lx < b.hx + m && lz > -b.hz - m && lz < b.hz + m) return true;
+      for (let c = 0; c < camN; c++) {
+        const site = camList[c], seat = S[site].seat, bl = siteBlockers[site], pl = sitePlatforms[site];
+        for (let i = 0; i < bl.length; i++) {
+          const b = bl[i];
+          if (y > seat + b.y1 + m || y < seat + b.y0 - m) continue;
+          const dx = x - b.x, dz = z - b.z;
+          if (b.kind === 'circle') { if (dx * dx + dz * dz < (b.r + m) * (b.r + m)) return true; }
+          else {
+            const lx = dx * b.cos - dz * b.sin, lz = dx * b.sin + dz * b.cos;
+            if (lx > -b.hx - m && lx < b.hx + m && lz > -b.hz - m && lz < b.hz + m) return true;
+          }
         }
-      }
-      for (let i = 0; i < platforms.length; i++) {
-        const p = platforms[i], seat = S[p.site].seat;
-        if (Number.isNaN(seat) || y > seat + p.top + m) continue;
-        const dx = x - p.x, dz = z - p.z, lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
-        if (lx > -p.hx && lx < p.hx && lz > -p.hz && lz < p.hz) return true;
+        for (let i = 0; i < pl.length; i++) {
+          const p = pl[i];
+          if (y > seat + p.top + m) continue;
+          const dx = x - p.x, dz = z - p.z, lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;
+          if (lx > -p.hx && lx < p.hx && lz > -p.hz && lz < p.hz) return true;
+        }
       }
       return false;
     },

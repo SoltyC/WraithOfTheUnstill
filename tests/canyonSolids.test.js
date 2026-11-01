@@ -99,6 +99,20 @@ describe('the cap of a cliff', () => {
   });
 });
 
+describe('camera probes by site', () => {
+  const built = { blockers: [{ site: 0, kind: 'circle', x: 0, z: 0, r: 2, y0: 0, y1: 5 }], platforms: [] };
+  const seated = () => { const s = createSolids([{ at: [100, 100] }], built); s.sites[0].seat = 0; return s; };
+  it('finds a site within reach, and only after cullCam', () => {
+    const s = seated(); s.px = 100; s.py = 2; s.pz = 100;
+    expect(s.insideQ()).toBe(false);
+    s.cullCam(100, 90, 8); expect(s.insideQ()).toBe(true);
+  });
+  it('skips a site out of reach', () => {
+    const s = seated(); s.px = 100; s.py = 2; s.pz = 100;
+    s.cullCam(0, 0, 8); expect(s.insideQ()).toBe(false);
+  });
+});
+
 describe('the arm beside a wall', () => {
   /** A wall on the camera's right: the shoulder would reach through it. */
   function armByWall() {

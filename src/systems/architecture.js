@@ -62,7 +62,9 @@ export async function addArchitectureSystem(g) {
   // The camera keeps out of walls, columns and plinths (with the Warden's own occluder).
   const wardenOcc = g.arm.occluder;
   g.arm.occluder = {
-    qx: 0.5, qy: 0.5, qz: 0.5,
+    qx: 0.5, qy: 0.5, qz: 0.5, reach: 0.5,
+    /** Once a frame, before the probes: only the sites the arm can reach are tested. */
+    frame(x, z) { solids.cullCam(x, z, this.reach); },
     probe() {
       if (wardenOcc !== null) { wardenOcc.qx = this.qx; wardenOcc.qy = this.qy; wardenOcc.qz = this.qz; if (wardenOcc.probe()) return true; }
       solids.px = this.qx; solids.py = this.qy; solids.pz = this.qz;

@@ -160,6 +160,7 @@ export class SpringArmCamera {
     // stays on the pivot's side of it (in a slot it reached through the wall, and the arm then started in the rock).
     let out = false, room = shoulder;
     if (oc !== null) {
+      oc.reach = this.zoom + 1; if (oc.frame) oc.frame(this.pivot.x, this.pivot.z);
       oc.qx = this.pivot.x; oc.qy = this.pivot.y; oc.qz = this.pivot.z;
       out = !oc.probe();
       if (out) for (let i = 1; i <= 4; i++) {
