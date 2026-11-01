@@ -646,3 +646,10 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Boss fights (user):** the meadow and frost fights are not changed unless explicitly asked.
 - **The scarp stays for now:** removing it means a re-bake and re-placing what stands on it, too much risk at the end of a phase.
 - **Ploughed berms form only alongside the segment,** for every plough: the tip of a Sweep has no rim of its own.
+
+## 2026-11-01 — Fixes from the user's play
+
+- **Tobin is away from the start** until he is found: never at the fire first.
+- **The Shelf:** ring 2 raised to 880 and ring 3 set to 864 (r 14), so ring 3 is a straight glide; the frost stream's rise went 5.5 → 7. Ring 4 still needs the wind, and the HUD says so when the Wraith is too low.
+- **The Warden's release sets the Wraith 17 m clear on the cut into the cinematic,** so it can never lie down on top of the player.
+- **Close blows reach 1.5 m above an enemy's feet;** Warden and Bellwether attacks are unchanged.

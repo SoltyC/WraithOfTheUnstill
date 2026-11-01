@@ -19,10 +19,12 @@ const r = await page.evaluate(async () => {
   const v = []; for (let i = 1; i < L.length; i++) { const dt = (L[i][0] - L[i - 1][0]) / 1000 || 1 / 60; v.push([(L[i][2] - L[i - 1][2]) / dt, Math.hypot(L[i][1] - L[i - 1][1], L[i][3] - L[i - 1][3]) / dt, dt]); }
   let acc = 0, firstJump = 0;
   const smooth = v.filter((q) => q[2] > 0.008); let rises = 0;
-  for (let i = 1; i < smooth.length; i++) { acc = Math.max(acc, Math.abs(smooth[i][0] - smooth[i - 1][0])); if (smooth[i][0] > 1.5 && smooth[i - 1][0] <= 1.5) rises++; }
+  let worst = 0;
+  for (let i = 1; i < smooth.length; i++) { const c = Math.abs(smooth[i][0] - smooth[i - 1][0]); if (c > acc) { acc = c; worst = i / smooth.length; } if (smooth[i][0] > 1.5 && smooth[i - 1][0] <= 1.5) rises++; }
   for (let i = 0; i < 6 && i < v.length; i++) firstJump = Math.max(firstJump, Math.abs(v[i][0]));
+  const big = []; for (let i = 1; i < L.length; i++) { const d = Math.abs(L[i][2] - L[i - 1][2]); if (d > 1) big.push([Math.round(L[i][0]), +d.toFixed(2), Math.round(L[i][2])]); }
   const ys = []; for (let i = 0; i < L.length; i += Math.ceil(L.length / 12)) ys.push(Math.round(L[i][2]));
-  return { frames: L.length, secs: +(L.at(-1)[0] / 1000).toFixed(1), maxFrameChange: +acc.toFixed(2), rises, firstFramesV: +firstJump.toFixed(1), heights: ys };
+  return { frames: L.length, secs: +(L.at(-1)[0] / 1000).toFixed(1), maxFrameChange: +acc.toFixed(2), worstAt: +worst.toFixed(3), rises, firstFramesV: +firstJump.toFixed(1), heights: ys, bigSteps: big.slice(0, 10) };
 });
 console.log(JSON.stringify(r), errs.slice(0, 3).join(' | '));
 await ctx.close(); await close();
