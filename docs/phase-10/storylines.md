@@ -30,7 +30,9 @@ This gives the game its gauge without a HUD (BRIEF: state on the body):
 **The city:** the Shapers turned the tides from here. The Veiled who served them lived in it, a whole people, under great sea-doors that held the water out. When the world began to still, the Listener was set here to keep the tide asleep. It did what it was told. It silenced everything. The doors stopped turning, and the water came in.
 
 ### 1. The jetty
-At the end of the jetty sits **Morrow**, a Veiled diver with a lantern and a pile of brass. Morrow has a want: *"My sister's down there. She was on the doors. I can't go down again. You can."* Morrow fits the Lung to the Wraith's chest with shaking hands and warns: *"You've air to go down and come back. No more. Don't stop to look."*
+At the end of the jetty sits **Morrow**, a Veiled diver with a lantern and a pile of brass.
+
+**The player must love Morrow before this.** Morrow is the fen's guide for the whole first half of the chapter: teaches the quiet walk, shares a fire, jokes about the Wraith having no feet, saves it once from the Mudlings. This takes hours, not a conversation. Then, finally, the ask: *"My sister's down there. She was on the doors. I can't go down again. You can."* Morrow fits the Lung to the Wraith's chest with shaking hands and warns: *"You've air to go down and come back. No more. Don't stop to look."*
 
 ### 2. The descent
 It's the most beautiful moment in the phase. The light goes green, then blue. The robe spreads. Towers show far below. Then the kelp forest, tall as the mangroves above it.
@@ -50,34 +52,106 @@ The bubbles refill the Lung, and the light comes back, a huge relief. Then the p
 The Wraith wakes in a hidden cave, in air, on black sand, under the city. The Lung is finished. There's no way back up. The tunnel runs one way: into Ebbhold.
 
 ### 7. The city
-Dry halls and flooded ones, joined by old doors. And the Drowned.
+Dry halls and flooded ones, joined by old doors. And the Drowned: that's what Morrow calls them, and what the player will call them too.
 
-**The Drowned are the people.** They aren't monsters. They keep doing what they were doing: one kneads bread that isn't there, one rocks an empty cradle, one sweeps a stair. Their veils float round their heads. They don't see. **They hear,** because the Listener hears through them. A noise turns every head in the room.
-
-The player learns the rule: be quiet, or be swarmed. Morrow's sister is here somewhere.
+They keep doing what they were doing: one kneads bread, one rocks a cradle, one sweeps a stair. Their veils float round their heads. They don't see, but a noise turns every head in the room, and they come, hands out, and hold on to the robe.
 
 ### 8. The register
-In the Tide Hall, a stone book of everyone who lived here: **the register**. Each Drowned has a name in it. Saying a name to a Drowned (Interact, close by) stops them. They put down what they're holding and go still for good. **This is optional, and it's a side story for the entire city.**
+In the Tide Hall, a stone book names everyone who lived here. Saying a name to one of the Drowned stops them: they put down what they're holding and go still for good. It feels like mercy. Morrow told the player it would be. **The player does this as many times as they like, believing they're being kind.**
 
-Then the player finds Morrow's name. And the date. Morrow died with the rest.
-
-### 9. The truth
-Deep in the city, in the door machinery, there are two figures. One's the sister, still at her wheel. The other's in a diver's rig, seated, with a torn Lung in one hand and, held out in the other, **a second Lung**. It's Morrow.
-
-Morrow drowned bringing her air, and has been on that jetty ever since, sending down anyone who comes, because someone has to carry the air the last few metres. Every Lung leaks in the same place: Morrow cut it, to be sure they couldn't turn back. Round the room lie the others who came.
-
-*No villain. A person who could not stop.*
-
-The player's choice, one level deep: take the Lung from Morrow's hand and give it to the sister, or say Morrow's name. Either ends it. Each leaves a different mark on the jetty afterwards.
+### 9. Morrow
+Morrow's sister, still at her wheel, has a torn Lung beside her and Morrow's name carved on it. The player assumes the obvious: Morrow is dead too. It's a false bottom, and it's the sad ending the player expects. They carry on, moved, sure they've understood the story.
 
 ### 10. The Listener
-It's in the Tide Hall's great well, the one thing still awake. The Wraith's noise has been reaching it the whole way. **It wakes, and lends Tide.** Now the Wraith can flood and drain Ebbhold room by room.
+It wakes and lends Tide. The fight is the biggest of the game so far, ending with one long Draw and the Undertow. The sea-doors turn. The Drowned lift their heads. **Music swells. The game gives the player the same triumph as every release before it.**
 
-### 11. The release
-The Warden is stranded and drawn dry, then Undertow sends the water home. The sea-doors turn for the first time in an age. The Drowned, all of them, lift their heads and walk out into the current.
+### 11. The morning
+The Wraith surfaces at dawn, into the signature frame: mirror water, mist-hung trees. It's the most beautiful thing in the game. Then the camera settles, and the player sees what's on the water.
 
-### 12. The tide
-The tide comes back to the fen. **At low water, Ebbhold's towers stand out of the Sounding.** The player can walk its roofs. A Veiled party comes to read the register aloud. Morrow's jetty stands empty, with the lantern still lit, or out, depending on the choice.
+**Veils. Thousands of them, floating up, spreading across the fen.**
+
+Morrow is on the jetty, alive, and not surprised. So is someone else: **Aud**, the first voice in the game, the keeper who met the Wraith when it woke.
+
+---
+
+## The betrayal
+
+**The Drowned were not dead.**
+
+Ebbhold's flood was the tide, and motion was what killed the city. The Listener wasn't its gaoler; it was its rescue. In the hour the water came in, it stopped everything, and held every person in that moment, alive, between one breath and the next. It has held them for an age, waiting for someone to come and open the doors.
+
+**That's what "held in stillness" means.** Each Warden is keeping something from happening.
+
+The Wraith came, and everything it did reads differently now:
+
+| What the player saw | What it was |
+|---|---|
+| The Drowned swarm towards any noise | They were waking. They heard someone at last |
+| Hands on the robe, dragging it back | They were begging it to stop |
+| The Listener hunting every sound | It was protecting them: noise breaks the hold |
+| The bread, the cradle | Not a ghost's habit. The same second, still happening |
+| Saying a name "stops them for good" | **The player was killing them, one at a time, thinking it was mercy** |
+| The release, with the music | Everyone still held drowned, all at once, in the hour they'd been saved from |
+
+### Who betrayed the Wraith
+
+**Morrow** knew. There was no leak by accident: Morrow cut the Lung so that the Wraith couldn't turn back. Morrow's sister was alive down there the whole time.
+
+*"Forty years I've sat here. She's been one breath from dying for forty years, and she'll never finish it. I couldn't do it. You could. You don't know what you're doing. That's why it had to be you."*
+
+**Aud** knew too, and that's the one that hurts, because Aud is who the player has trusted since the first minute. Aud has sent the Wraith to every Warden, and has known what each release costs.
+
+*"The rivers were dying. Then the fields. Then us. I swept round his body for nine winters and I did the sum every day. One city, or everyone. You'd have stopped if you'd known, so I didn't tell you. You'd have stopped. Isn't that the worst of it?"*
+
+**It's a defensible choice.** That's why it stays with the player: they can't be sure Aud was wrong. The fen is alive, the tide is back, the camp's children have water. The first time in the game, the world looks better and feels worse.
+
+### Did the player do anything right?
+
+**Some people lived.** The ones still held in **rooms with their doors shut** survive: the sea came in only where it could reach them. Every door the player forced, every room drained or flooded on the way through, every name said, changed that number. Nobody told them. Quiet, careful players saved more without knowing why.
+
+That night the survivors come ashore, and the camp counts them. **The count is the chapter's real ending,** and it can't be redone without replaying the city. Some will look at the Wraith. None will speak to it.
+
+The rule from `quest-template.md` holds: nothing fails; a missed moment changes the outcome.
+
+### What stays changed
+
+The twist has to change play, or it was only a cutscene.
+
+- **The Veiled stop kneeling.** The pilgrims who revered the Wraith turn away as it passes. Barks change everywhere. The Wraith is feared now, not revered.
+- **The fen's people won't trade with it** until the survivors' quest (below) is done.
+- **The robe keeps the water.** Its hem drips for the rest of the game, and leaves wet footprints in every biome: a permanent mark on the terrain state.
+- **The cowl light is a shade dimmer.** A small thing the player will notice is gone.
+- **The Remembrance page** gains the names of everyone the player named. All of them.
+- **Aud leaves the monastery.** The keeper's stool is empty, the broom against the wall. They can be found once more, and the player gets to say something (one choice, one level): forgive, or walk away. It changes what Aud does at the end.
+
+### The rest of the game
+
+- **The next release isn't the same.** The Ember Warden is reached by a player who now knows that stopping might be the kind thing and that the release might be a crime. **That doubt is the point.** Before it, the player can go looking for what that Warden is holding.
+- **The sealed library** in the frost (Ember key) holds what Aud hid: the last Shaper's journal, proving Aud knew, and addressed to the Wraith: *"Do not let them send you to the water."*
+- **The ending gains its meaning.** "The Wraith settles into the tide" stops being a poetic exit. It goes into the water that it filled. Not a victory: a debt paid.
+- **A survivors' quest:** *The Register.* Read the names aloud at the jetty, with the survivors. It doesn't fix anything, but it's what's left to do.
+
+### Keeping it fair
+
+A twist only works if the second look shows it was all there. Plant these, and say nothing:
+
+- Candle flames in the city are lit, and don't flicker.
+- The bread on the table is fresh. The ink in the register is wet.
+- When a name is said, the person's mouth moves. The sound is under the water, so the player can't quite hear it. In the final replay it's a word: *"Don't."*
+- The Listener never kills a Drowned, and turns away from them when it strikes.
+- Morrow never says they're dead. Only "gone down", "stayed down", "she's waiting".
+- At the jetty Morrow's hands shake while fitting the Lung, and they're the hands of someone doing something terrible.
+- Aud, in the frost: *"There's a cost to all of this. Not yours to carry yet."* Small lines added to the early chapters, in dialogue only.
+
+**Don't tell the player there's a twist, and don't hint with music.** It must play straight, right up to the veils.
+
+### Alternatives
+
+**1. The Listener is on your side.** The same reveal, happening **before** the release: the player learns the truth at the well, and has to choose. Cleaner morally and more player choice, but they feel torn, not betrayed. This one is the fallback if the main version proves too bleak.
+
+**2. The Wraith did it.** A smaller change: the flood that drowned Ebbhold's last survivors is the meltwater from the Frost Warden's release. The player killed them a chapter ago, with the game's first victory. It's sharp, but without Aud and without the names it's a fact to absorb, not a wound.
+
+**3. Morrow alone.** Morrow is the only betrayer, and Aud stays innocent. Much smaller, and it can be undone without touching earlier chapters, but the player will have met Morrow only an hour ago.
 
 ---
 
@@ -111,6 +185,7 @@ The tide comes back to the fen. **At low water, Ebbhold's towers stand out of th
 
 ## How they connect
 
-- **Every biome keeps one person who can't stop:** Morrow at the jetty, the keeper at the light, the miner's guilt. This mirrors the Wardens, and it's what the Wraith does at the very end, when it too settles into the tide.
+- **Every biome keeps one person who can't stop:** the keeper at the light, the miner's guilt. Morrow is the one who stopped, and paid someone else to.
+- **After Ebbhold, every set piece reads as a warning:** the player will look at the clock under the dunes and the light on the coast and wonder what each one is holding back.
 - **Morrow's Lung returns.** A repaired one gives limited dives anywhere after the release, opening underwater nooks in the meadow's lakes and on the coast: new use for old places (pillar 2).
 - **The Listener's noise rule** runs through the fen, the city and the fight, so it's taught three times before it's tested.

@@ -43,6 +43,20 @@ Nothing below the surface.
 
 **U5 — The Drowned and the register (2 sessions).** They replace the "Drowned" elite in F8, and the elite gets a new name. Veiled bodies from the robe system with floating veils, each with a looped task. They hear (F3's noise), and they swarm. Saying a name stops one for good. Twenty or so named, with the register as a journal page.
 
+### The twist (added 2026-11-01; `storylines.md`, *The betrayal*)
+
+The user wants the player betrayed and changed by this chapter. The proposal: the Drowned were alive, held by the Listener; the release kills them; Morrow and Aud knew. It needs:
+
+- **F10 grows:** Morrow as the guide of the whole fen, with several scenes before the jetty, so the betrayal lands.
+- **U4:** tracked state per room (door forced, flooded, drained) and per person (named). The survivors' count comes from it, and is saved.
+- **U5:** the *held* look: flames that don't flicker, wet ink, mouths moving when named. Each Drowned's name-and-word is recorded in the Remembrance page.
+- **The morning after:** a scripted dawn on the signature frame with thousands of veils on the water (one instanced cloth card; the same mirror as F1). A bespoke sequence on the jetty with Aud and Morrow.
+- **World changes that last:** Veiled barks and kneeling in every biome; fen trade closed; the robe's wet hem and footprints in all biomes; a slightly dimmer cowl light; Aud leaving the monastery. Save flags for each.
+- **Small earlier edits, dialogue only:** a few of Aud's lines in the frost. **The boss fights are not touched.**
+- **Phase 11 and 12 follow:** the sealed library's journal, Aud's last scene, and the ending's new meaning. Add them to those phases' plans.
+
+Adds about 3–4 sessions. Test with the user: does the morning land, does the player feel cheated or changed, and does anyone want to replay the city? **Order:** Aud must have been met in every order of play, and the frost is always first, so this holds. Aud's words must not depend on which other Wardens are released.
+
 ### Changes to the plan
 
 - **F9, the Listener:** the arena moves from the fen's channels to **Ebbhold**, and `warden-mire` moves with it. *Hear* is played in flooded halls. *Herd* uses the sea-doors and Tide. *Strand* happens in the Tide Hall's great well. The climb and the last breath are unchanged. If the fen channels are kept, they carry the Soundings and the Sluice in F10.
@@ -300,7 +314,7 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 
 Order: F0, F1, **U1**, F2–F4, then U2–U5 with F8–F11, and F12 last.
 
-Roughly **19–26 sessions for the fen, plus 11–13 for the city: 30–39 in all**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
+Roughly **19–26 sessions for the fen, plus 14–17 for the city and the twist: 33–43 in all**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
 
 ## Performance budget
 
@@ -336,7 +350,7 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 4. **The moving tide after the release** (F11): real, on the clock (recommended; Ebbhold's towers depend on it), or two fixed states.
 5. **Shaped roster:** Mudlings, Rootback, Lampfish, the Drowned elite.
 6. **Skim before the Warden?** Lent at the waking like sand-surf (recommended), or only at the release. Later keeps the first half on foot but removes the fight's core tension.
-7. **The story:** The Lung as the main thread (`storylines.md`), including Morrow's twist.
-8. **Scope:** build the city inside Phase 10 at 30–39 sessions (recommended only if U1 is a joy), or split it: Phase 10 the fen and the dive, and a Phase 10b for Ebbhold, with the Warden held until then.
+7. **The story:** The Lung as the main thread (`storylines.md`), and the betrayal: the release kills the people of Ebbhold, and Morrow and Aud knew. It changes the rest of the game, including the ending.
+8. **Scope:** build the city inside Phase 10 at 33–43 sessions (recommended only if U1 is a joy), or split it: Phase 10 the fen and the dive, and a Phase 10b for Ebbhold, with the Warden held until then.
 9. **Size of Ebbhold:** 8–12 real rooms that look vast (recommended), or a larger walkable city at a much higher cost.
 10. **Open order and locks** (`cross-biome.md` decisions 1, 2 and 4) are still recorded as open, and this plan assumes the recommended answers.
