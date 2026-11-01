@@ -105,7 +105,7 @@
         },
         {
           "id": "sled",
-          "journal": "Free the caravan's sled behind the back wall. Sweep a channel beside it, then start the lip of the sand above: sand goes where the channel is cut.",
+          "journal": "Free the caravan's sled behind the back wall: its mast shows above the heap. Sweep a channel between the two stakes, then stand at the marker stone on the lip: sand goes where the channel is cut.",
           "when": {
             "flag": "dunes:sled-freed"
           },
@@ -737,7 +737,7 @@
         "You came out of the sand with no water and no thirst. I'm Sarai. I keep this well.",
         "There's nothing in it to keep. But our best sled is buried behind the back wall, and that I can ask for.",
         "That heap above it is ready to go. Touch the lip and it pours straight over the runners. Sand takes the lowest way it can find.",
-        "So give it one. Sweep a channel beside the sled first, then start the lip."
+        "So give it one. Hesper staked out the line. Sweep a channel between the stakes, then stand by the marker on the lip."
       ]
     },
     "sarai.after": {

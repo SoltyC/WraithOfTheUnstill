@@ -241,6 +241,12 @@ function caravanserai(b, facing) {
     for (let k = -4; k <= 4; k++) { const [x, z] = P(lx + k * 0.55, lz); b.box(x, z, 0.3, 0.38, 0.25, 0.95, facing, MAT.WOOD, seed + 2 + k + 4, NS); }
   };
   sled(-10, -6.2, 990); sled(0, -27, 1010);
+  // What shows of the buried one, so the site reads: its mast and pennant above the heap; a stone on the lip that
+  // starts the slide; two stakes at the ends of the lane a channel must take (systems/puzzleSled.js).
+  { const [x, z] = P(0.4, -27); b.box(x, z, 0, 5.4, 0.09, 0.09, facing, MAT.WOOD, 1020, NS); }
+  { const [x, z] = P(1.1, -27); b.box(x, z, 4.6, 5.2, 0.7, 0.03, facing, MAT.CANVAS, 1021, NS); }
+  { const [x, z] = P(0, -33); b.box(x, z, -0.5, 2.6, 0.5, 0.5, facing, MAT.GLYPH, 1022, { carve: 1 }); }
+  for (const lx of [4, 16]) { const [x, z] = P(lx, -29); b.box(x, z, -0.3, 1.5, 0.07, 0.07, facing, MAT.WOOD, 1023 + lx, NS); }
   // Sand: banked against the walls outside and in, and a drift half filling the gateway — a mound
   // you walk up and over, its platforms stepped with its slope (≤ 0.35 m a step).
   for (let k = 0; k < 9; k++) {
