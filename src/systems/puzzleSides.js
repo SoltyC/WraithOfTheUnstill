@@ -156,9 +156,9 @@ export function addSideSites(g, P, tell, chime) {
         stamping = false; flags.add(F.heap);
       }
       // The glass track.
-      const dusk = g.env.env.sunDir.y < 0.32;
+      const lowSun = g.env.env.sunDir.y < 0.32;
       for (let k = 0; k < X.prints.length; k++) {
-        const q = X.prints[k], G = P.group_(q), lit = dusk && flags.has(TRACK[k % 3]);
+        const q = X.prints[k], G = P.group_(q), lit = lowSun && flags.has(TRACK[k % 3]);
         if (!seated['p' + k]) { if (!within(c, G.x, G.z, SHOW_R)) { continue; } P.pose(q, G.x, groundAt(G.x, G.z), G.z, 0); seated['p' + k] = true; }
         P.glow(q, lit ? 1.4 : 0); P.show(q, lit);
         if (lit && within(c, G.x, G.z, SHOW_R)) any = true;
