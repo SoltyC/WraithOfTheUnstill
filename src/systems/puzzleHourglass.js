@@ -37,7 +37,7 @@ export function addHourglassSite(g, P, tell, chime) {
     g.interactables?.push(t); return t;
   };
   const sluice = target('hg-sluice', 'Strike', 'Sluice stone', LAYOUT.sluice, () => { h.strike(); chime(SFX.CLANG, 0.7); });
-  let seated = false, base = 0, door = 0, phase = 0;
+  let seated = false, seatedFar = false, base = 0, door = 0, phase = 0;
   const streamAt = (k, ax, ay, az, bx, by, bz, on, t) => {
     const f = X.stream[k];
     P.show(f, on);
@@ -50,7 +50,8 @@ export function addHourglassSite(g, P, tell, chime) {
       const dx = c.x - wx(0), dz = c.z - wz(20), d2 = dx * dx + dz * dz, near = d2 < SHOW_R * SHOW_R;
       sluice.hidden = true;
       if (!near) return false;
-      if (!seated) {
+      if (!seated || (seatedFar && d2 < 80 * 80)) {
+        seatedFar = !seated;
         ground.qx = wx(0); ground.qz = wz(20); ground.sample(); base = ground.h; seated = true;
         sluice.y = base; const y = base;
         X.sand.forEach((s, k) => { const G = P.group_(s); P.pose(s, G.x, y + (k === 0 ? 6.4 : 0.2), G.z, 0); });

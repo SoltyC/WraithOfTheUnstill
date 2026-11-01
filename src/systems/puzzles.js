@@ -94,7 +94,7 @@ export function addPuzzleSystem(g) {
   const tc = target('sg-column', 'Strike', 'Frozen sand', LAYOUT.fall, () => { if (gate.strike()) { chime(SFX.SHATTER, 1.2); tell('The fall', 'It shatters', 'The eye stands clear. The sand will come again.', 5); } });
 
   const hourglass = addHourglassSite(g, P, tell, chime), singing = addSingingSite(g, P, tell, chime), sides = addSideSites(g, P, tell, chime);
-  let seated = false, shown = true, frames = 0, phase = 0;
+  let seated = false, seatedFar = false, shown = true, frames = 0, phase = 0;
   const h = {};
   function seat() {
     for (const k of Object.keys(LAYOUT)) h[k] = groundAt(wx(LAYOUT[k][0]), wz(LAYOUT[k][1]));
@@ -111,8 +111,21 @@ export function addPuzzleSystem(g) {
   const lerpLift = (cur, to, dt) => cur + (to - cur) * Math.min(1, dt * 1.5);
   let m2Lift = 0, waterLift = 0;
 
+  // A site is seated from far off, before the fine ground has streamed in: heights are taken again close up, or
+  // an Interact target sits outside its reach (`hy`) and its prompt never shows.
+  const targets = () => g.interactables.filter((t) => t.kind === 'puzzle');
+  let puzzleTargets = null;
+  function refreshTargets() {
+    puzzleTargets ??= targets();
+    const p = controller.pos;
+    for (let i = 0; i < puzzleTargets.length; i++) {
+      const t = puzzleTargets[i], dx = t.x - p.x, dz = t.z - p.z;
+      if (dx * dx + dz * dz < 40 * 40) t.y = groundAt(t.x, t.z);
+    }
+  }
   loop.add({ name: 'puzzles', update: () => {
     const dt = clock.dt, c = camera.position;
+    refreshTargets();
     const dx = c.x - wx(0), dz = c.z - wz(20), near = dx * dx + dz * dz < SHOW_R * SHOW_R;
     const nearHour = hourglass.update(dt, c), nearSing = singing.update(dt, c), nearSide = sides.update(dt, c);
     frames++;
@@ -121,7 +134,7 @@ export function addPuzzleSystem(g) {
     if (want !== shown) { shown = want; view.mesh.setEnabled(want); engine.snapshotRenderingReset(); }
     t1.hidden = t2.hidden = tc.hidden = true;
     if (!near) { if ((nearHour || nearSing || nearSide) && P.write()) view.update(); return; }
-    if (!seated) seat();
+    if (!seated || (seatedFar && dx * dx + dz * dz < 80 * 80)) { seatedFar = !seated; seat(); }
     const sun = g.env.env.sunDir, ev = gate.update(dt, sun.x, sun.y);
     if (ev & EV.STAGE) {
       flags.add(FLAG[gate.stage - 1]);

@@ -27,7 +27,7 @@ export function addSingingSite(g, P, tell, chime) {
   const wx = (u) => SING_SITE[0] + u, wz = (v) => SING_SITE[1] + v;
   const lip = (n) => LAYOUT.lips[n], MID = NOTE.MIDDLE;
   const heights = [0, 0, 0];
-  let seated = false, baseY = 0, humT = -1, humAt = 0, wasFrozen = false;
+  let seated = false, seatedFar = false, baseY = 0, humT = -1, humAt = 0, wasFrozen = false;
 
   /** A face lets go: the boom, sand poured down the face (real state), dust. */
   function boom(n) {
@@ -52,7 +52,8 @@ export function addSingingSite(g, P, tell, chime) {
       const dx = c.x - wx(0), dz = c.z - wz(0), near = dx * dx + dz * dz < SHOW_R * SHOW_R;
       ring.hidden = crust.hidden = true;
       if (!near) return false;
-      if (!seated) {
+      if (!seated || (seatedFar && dx * dx + dz * dz < 110 * 110)) {
+        seatedFar = !seated;
         for (let n = 0; n < 3; n++) {
           ground.qx = wx(lip(n)[0]); ground.qz = wz(lip(n)[1]); ground.sample(); heights[n] = ground.h;
           P.pose(X.lipGlow[n], ground.qx, ground.h, ground.qz, 0);
