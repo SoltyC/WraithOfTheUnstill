@@ -268,7 +268,11 @@ fn main(@builtin(global_invocation_id) g: vec3u, @builtin(workgroup_id) wg: vec3
     // Snow throws high, clumpy berms; loose sand pours into a low, wide, smooth lip (about the same
     // mass over twice the width: steep sand would only slump, and lumps read as rubble).
     let sandy = material == 1u || material == 6u;
-    let rim = select(smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.65, d)),
+    // Only alongside the segment: a rim round its ends is a crescent the next stamp's clearing can't reach, and a
+    // surf wake came out as a row of scallops.
+    let overrun = abs(dot(rel, bd.xy)) - br.z;
+    let sideOnly = 1.0 - smoothstep(0.0, bd.z * 0.5, overrun);
+    let rim = sideOnly * select(smoothstep(0.82, 1.08, d) * (1.0 - smoothstep(1.08, 1.65, d)),
                      smoothstep(0.78, 1.0, d) * (1.0 - smoothstep(1.0, 1.88, d)) * 0.55, sandy);
     let bias = clamp(1.0 + ex.z * side * select(1.0, 0.6, sandy), 0.15, 1.85);
     let clump = select(0.72 + 0.4 * smoothHash(p, 0.11) + 0.18 * smoothHash(p + vec2f(3.7, 1.3), 0.045),

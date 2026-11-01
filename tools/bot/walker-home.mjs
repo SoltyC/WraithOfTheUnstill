@@ -24,7 +24,7 @@ await bot('teleport', view); await sleep(2000);
 await bot('face', await js(W + 'return {x:(w.x+w.wellX)/2, z:(w.z+w.wellZ)/2}'));
 await bot('shot', { name: 'walker-home' });
 // Back on its back; dusk; the mirrors.
-await onDeck(-2, -10);
+await onDeck(-2, -10); await sleep(600);
 await js('const t=g.interactables.find(t=>t.id==="walker-wait"); if (!t.hidden) t.onUse(); return g.params.v.timeOfDay;');
 await sleep(2500);
 log('sun y', await js('return +g.env.env.sunDir.y.toFixed(3)'), 'tod', await js('return g.params.v.timeOfDay'));

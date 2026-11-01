@@ -29,7 +29,7 @@ import { hasSpawnRoom } from '../game/shaped/spawnRoom.js';
 import { worldState } from '../game/worldState.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 
-export const FLAG = { WOKE: 'dunes:walker-woke', BOARDED: 'dunes:walker-boarded', RELEASED: 'dunes:walker-released' };
+export const FLAG = { HEAPED: 'dunes:court-heaped', WOKE: 'dunes:walker-woke', BOARDED: 'dunes:walker-boarded', RELEASED: 'dunes:walker-released' };
 
 export const walkerSys = {
   near: 300, far: 3200,          // m: the near (finer) view within, drawn within, culled beyond
@@ -348,6 +348,17 @@ export function addLongWalkerSystem(g) {
   }
 
   loop.add({ name: 'longWalker', update: () => {
+    // Buried, its flat court sits on sloping sand: the sand is heaped round it once, so nothing hovers (the state only
+    // exists near the Wraith, so this waits until it is close).
+    if (W.state === WK.BURIED && ts && !flags.has(FLAG.HEAPED) && Math.abs(W.x - controller.pos.x) < 34 && Math.abs(W.z - controller.pos.z) < 34) {
+      flags.add(FLAG.HEAPED);
+      const c = Math.cos(W.yaw), s = Math.sin(W.yaw);
+      for (let k = 0; k < 24; k++) {
+        const a = k / 24 * Math.PI * 2, lx = Math.cos(a) * 15, lz = Math.sin(a) * 21;
+        ts.bx = W.x + lx * c + lz * s; ts.bz = W.z - lx * s + lz * c; ts.bdx = Math.cos(a); ts.bdz = Math.sin(a); ts.bl = 3; ts.bw = 4.2; ts.bd = 1.3; ts.bc = 0.5;
+        ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
+      }
+    }
     const dt = clock.dt, p = controller.pos;
     if (!devDone) devHooks();
     if (!placed) { if (!tryPlace()) return; afterPlace(); }
