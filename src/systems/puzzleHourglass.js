@@ -28,7 +28,8 @@ export function buildHourglass(g, P) {
 export function addHourglassSite(g, P, tell, chime) {
   const { chapter, ground, sfx, SFX, qs } = g;
   const X = g.hourParts, flags = chapter.graph.flags, h = g.hourglass = createHourglass();
-  h.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
+  const restore = () => h.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
+  restore(); g.puzzleRestores.push(restore);
   if (qs?.get('hourglass')) h.restore(Number(qs.get('hourglass')));
   const wx = (u) => HOUR_SITE[0] + u, wz = (v) => HOUR_SITE[1] + v;
   const target = (id, verb, name, p, onUse) => {

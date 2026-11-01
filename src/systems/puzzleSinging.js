@@ -20,7 +20,8 @@ export function buildSinging(g, P) {
 export function addSingingSite(g, P, tell, chime) {
   const { chapter, ground, sfx, SFX, clock, controller, terrainState: ts, arm, qs } = g;
   const X = g.singParts, flags = chapter.graph.flags, s = g.singing = createSinging();
-  s.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
+  const restore = () => s.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
+  restore(); g.puzzleRestores.push(restore);
   if (qs?.get('singing')) s.restore(Number(qs.get('singing')));
   const dust = g.sandDust ? g.sandDust.bursts : null;
   const wx = (u) => SING_SITE[0] + u, wz = (v) => SING_SITE[1] + v;

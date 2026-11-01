@@ -174,6 +174,29 @@ export async function runBench(game, qs) {
       setTimeout(() => { worldState.weatherOverride = 'storm'; }, settle * 1000);
       setTimeout(() => { worldState.strike = { bearing: 10, dist: 1200, age: 0 }; }, (settle + seconds * 0.6) * 1000);
     }));
+  } else if (qs.get('bench') === 'dunes') {
+    // The Glass Dunes' gate (docs/phase-9/plan.md D12); run with &stone=1: surf, Ridge spam, the fight, the front.
+    const G = window.__wraith.g, keep = setInterval(() => { G.combat.health = G.combat.maxHealth; G.combat.focus = 100; }, 200);
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('surf', seconds, settle, () => {
+      release(); yawRate = 0; game.applySpot(findSpot('p9b-surf'));
+      setTimeout(() => { injectAction(Action.Traverse, true); injectAction(Action.MoveForward, true); }, 1500);
+    }));
+    phaseStarts.push(Math.round(performance.now() - t0));
+    let bend = 0;
+    phases.push(await phase('ridge', seconds, settle, () => {
+      release(); yawRate = 0.2; game.applySpot(findSpot('p9g-ridge-sand')); G.elements.select('stone');
+      bend = setInterval(() => { injectAction(Action.Bend, true); setTimeout(() => injectAction(Action.Bend, false), 450); }, 900);
+    }));
+    clearInterval(bend);
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('fight', seconds, settle, () => { release(); yawRate = 0.15; game.applySpot(findSpot('p9b-fight')); }));
+    phaseStarts.push(Math.round(performance.now() - t0));
+    phases.push(await phase('front', seconds, settle, () => {
+      release(); yawRate = 0.1; game.applySpot(findSpot('p9b-clear'));
+      setTimeout(() => { G.ws.weatherOverride = 'sandstorm'; }, 1000);
+    }));
+    clearInterval(keep);
   } else if (qs.get('bench') === 'fight') {
     // Phase 5: the Warden in view (awake, advancing), climbing it, and a pack of Shaped.
     phaseStarts.push(Math.round(performance.now() - t0));
@@ -227,7 +250,7 @@ export async function runBench(game, qs) {
     // (measurement starts `settle` seconds later). Used to explain hitches.
     events, phaseSetupAtMs: phaseStarts,
   };
-  if (window.__wraith.g && window.__wraith.g.loop && window.__wraith.g.loop.prof) result.sysProf = window.__wraith.g.loop.prof.report(); result.sysProf.resets = window.__wraith.g.loop.prof.resets; result.sysProf.snapshot = window.__wraith.g.loop.prof.engine ? window.__wraith.g.loop.prof.engine.snapshotRendering : null;
+  if (window.__wraith.g && window.__wraith.g.loop && window.__wraith.g.loop.prof) { result.sysProf = window.__wraith.g.loop.prof.report(); result.sysProf.resets = window.__wraith.g.loop.prof.resets; result.sysProf.snapshot = window.__wraith.g.loop.prof.engine ? window.__wraith.g.loop.prof.engine.snapshotRendering : null; }
   window.__wraith.benchResult = result;
   let saved = '';
   try {
@@ -258,7 +281,7 @@ async function runFlightBench(game, qs) {
     scene: { drawCalls: gpuStats.drawCallsLastFrame, pipelines: gpuStats.pipelinesTotal, latePipelines: gpuStats.late.length, gpuMB: Math.round((gpuStats.bufferBytes + gpuStats.textureBytes) / 1048576) },
     phases,
   };
-  if (window.__wraith.g && window.__wraith.g.loop && window.__wraith.g.loop.prof) result.sysProf = window.__wraith.g.loop.prof.report(); result.sysProf.resets = window.__wraith.g.loop.prof.resets; result.sysProf.snapshot = window.__wraith.g.loop.prof.engine ? window.__wraith.g.loop.prof.engine.snapshotRendering : null;
+  if (window.__wraith.g && window.__wraith.g.loop && window.__wraith.g.loop.prof) { result.sysProf = window.__wraith.g.loop.prof.report(); result.sysProf.resets = window.__wraith.g.loop.prof.resets; result.sysProf.snapshot = window.__wraith.g.loop.prof.engine ? window.__wraith.g.loop.prof.engine.snapshotRendering : null; }
   window.__wraith.benchResult = result;
   let saved = '';
   try {

@@ -17,6 +17,7 @@ const EYE_Y = 11.5;      // m above the ground: the gate's eye, in the lintel's 
 
 /** The pool and its one view: while the world is built, so its pipelines warm with the rest. */
 export async function addPuzzleBody(g) {
+  g.puzzleRestores = []; // run after a save is applied: the sites take their state from the flags
   const { scene, atmosphere, bindShadows, shadows } = g;
   const props = g.puzzleProps = createProps(1040);
   buildSunGate(g, props);
@@ -61,7 +62,8 @@ export function addPuzzleSystem(g) {
   const gate = g.sunGate = createSunGate(), X = g.sunGateParts;
   const FLAG = ['dunes:sg-teach', 'dunes:sg-combine', 'dunes:sg-twist'];
   const SOLVED = 'dunes:instrument-sun';
-  gate.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
+  const restoreGate = () => gate.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
+  restoreGate(); g.puzzleRestores.push(restoreGate);
   if (qs?.get('sungate')) gate.restore(Number(qs.get('sungate')));
 
   const wx = (u) => SUN_SITE[0] + u, wz = (v) => SUN_SITE[1] + v;

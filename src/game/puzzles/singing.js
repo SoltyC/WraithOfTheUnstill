@@ -61,6 +61,6 @@ export function createSinging() {
       const ev = this.ev; this.ev = 0;
       return ev ? (sound >= 0 ? 3 : 1) : (sound >= 0 ? 2 : 0);
     },
-    restore(stage) { this.stage = stage; if (stage === STAGE.DONE) song.done = true; },
+    restore(stage) { this.stage = stage; song.done = stage === STAGE.DONE; song.at = 0; },
   };
 }

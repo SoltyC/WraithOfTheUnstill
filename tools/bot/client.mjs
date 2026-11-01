@@ -1,5 +1,7 @@
 // A tiny client for the bot bridge (src/core/bot.js): `await bot('walkTo', { x, z })`.
 const base = process.env.WRAITH_URL || 'http://localhost:4173';
+/** One retry: a kept-alive socket can go stale while a script waits. */
+const fetch = (u, o) => globalThis.fetch(u, o).catch(() => new Promise((r) => setTimeout(r, 300)).then(() => globalThis.fetch(u, o)));
 export async function bot(cmd, args = {}, wait = 180000) {
   const { id } = await (await fetch(base + '/__wraith/bot/cmd', { method: 'POST', body: JSON.stringify({ do: cmd, ...args }) })).json();
   const r = await fetch(`${base}/__wraith/bot/reply?id=${id}&wait=${wait}`);

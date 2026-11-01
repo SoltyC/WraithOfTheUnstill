@@ -71,6 +71,10 @@ export function createHourglass() {
       for (const k of [B.LEFT, B.RIGHT, B.MIDDLE]) bowls[k].level = Math.max(0, bowls[k].level - GRAMMAR.flowRate * dt);
       if (sluice.open) { sluice.open = false; breach.open = false; }
     },
-    restore(stage) { this.stage = stage; if (stage === STAGE.DONE) { bowls[B.RIGHT].level = 1; sluice.open = true; breach.frozen = true; this.cuts = HG.channelCuts; } if (stage >= STAGE.TWIST) this.cuts = HG.channelCuts; },
+    restore(stage) {
+      this.stage = stage; this.cuts = stage >= STAGE.TWIST ? HG.channelCuts : 0;
+      const done = stage === STAGE.DONE;
+      bowls[B.RIGHT].level = done ? 1 : 0; sluice.open = done; breach.open = done; breach.frozen = done;
+    },
   };
 }

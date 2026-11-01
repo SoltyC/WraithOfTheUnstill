@@ -14,7 +14,9 @@ export function addPuzzleSledSystem(g) {
   const { loop, controller, chapter, hud, sfx, SFX, arm, terrainState: ts, capture, clock } = g;
   if (!ts) return;
   const flags = chapter.graph.flags, sled = g.sled = createSled();
-  if (flags.has(FLAG.FREED)) sled.state = STATE.FREED;
+  const restore = () => { sled.state = flags.has(FLAG.FREED) ? STATE.FREED : STATE.BURIED; sled.cut.fill(0); };
+  restore();
+  g.puzzleRestores.push(restore);
   const dust = g.sandDust ? g.sandDust.bursts : null;
   const wx = (x, z) => AT[0] + x * C + z * S, wz = (x, z) => AT[1] - x * S + z * C;
   const dirX = C, dirZ = -S; // the site's +x in the world

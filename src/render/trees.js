@@ -287,6 +287,7 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     atmo.canopyTex.update(b);
     canopyDirty = false;
   }
+  let warmed = false; // every mesh draws through loading, so all its pipelines exist
   function rebuild(cx, cz, fresh, now) {
     for (const s of sets) s.n = 0;
     fading = false; canopySum = 0;
@@ -338,6 +339,9 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
       for (const m of s.meshes) {
         m.thinInstanceBufferUpdated('matrix');
         m.thinInstanceCount = Math.max(1, s.n); // never 0: a mesh with no instances loses its instance attributes (and pipelines)
+        // Once warmed, an empty set is switched off: in the erg 128 meshes bound into three cascades drew nothing,
+        // at no GPU cost and about 10 ms of the main thread's frame. Its pipelines stay made.
+        if (warmed) m.setEnabled(s.n > 0);
       }
     }
     engine.snapshotRenderingReset();
@@ -354,6 +358,8 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     canopy: 0.5 - 0.5,
     /** Canopy cover at the last placement (unsmoothed). */
     cover: 0.5 - 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
+    /** Loading is over: from here an empty set is switched off (see rebuild). */
+    warmed() { warmed = true; for (const s of sets) for (const m of s.meshes) m.setEnabled(s.n > 0); engine.snapshotRenderingReset(); },
     /** True: keep the current placement however far the camera moves (filmed camera moves: no trees fading in and out at the
      *  edge, no shadows shifting with them). */
     hold: false,

@@ -31,12 +31,14 @@ export function addSideSites(g, P, tell, chime) {
     crossed: 'dunes:mirage-crossed', found: 'dunes:mirage-found', reached: 'dunes:falls-reached', heard: 'dunes:glass-heard', glass: 'dunes:glass-done', door: 'dunes:door-open', full: 'dunes:garden-full', heap: 'dunes:door-heaped',
   };
   const S = g.sideSites = { mirage: createMirage(), falls: createFalls(), glass: createGlassBattle(), door: createBuriedDoor(), flood: createFloodGarden() };
-  if (flags.has(F.crossed)) S.mirage.bearings.fill(true);
-  if (flags.has(F.found)) S.mirage.found = true;
-  if (flags.has(F.reached)) S.falls.reached = true;
-  if (flags.has(F.glass)) S.glass.done.fill(true);
-  if (flags.has(F.door)) { S.door.open = true; S.door.clear.fill(true); }
-  if (flags.has(F.full)) S.flood.done = true;
+  const restore = () => {
+    S.mirage.bearings.fill(flags.has(F.crossed)); S.mirage.found = flags.has(F.found); S.mirage.digs = 0;
+    S.falls.reached = flags.has(F.reached);
+    S.glass.done.fill(flags.has(F.glass));
+    S.door.open = flags.has(F.door); S.door.clear.fill(S.door.open);
+    S.flood.done = flags.has(F.full);
+  };
+  restore(); g.puzzleRestores.push(restore);
   const groundAt = (x, z) => { ground.qx = x; ground.qz = z; ground.sample(); return ground.h; };
   const seatGroup = (q, y) => { const G = P.group_(q); P.pose(q, G.x, y, G.z, 0); };
 

@@ -143,6 +143,7 @@ async function createSaves(g) {
       weather.snap = true;
       if (g.quests) g.quests.restore(s.quests);
       if (g.progress) g.progress.apply(s);
+      for (const f of g.puzzleRestores || []) f();
       g.navSync?.();
       // Saved game times (pages, formations) move onto this session's clock.
       const shift = clock.simTime - s.playSeconds;

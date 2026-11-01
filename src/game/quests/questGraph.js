@@ -61,7 +61,9 @@ export class QuestGraph {
   /** Restore from a save; unknown quests are ignored, new ones stay locked (forward compatible). */
   restore(data) {
     for (const id in this.quests) this.quests[id] = { state: 'locked', step: 0, opt: [] };
-    this.flags = new Set(data?.flags || []);
+    // The same Set, refilled: every system holds it (a new one left them reading the old flags after a load).
+    this.flags.clear();
+    for (const f of data?.flags || []) this.flags.add(f);
     this.vars = { ...(data?.vars || {}) };
     for (const id in data?.quests || {}) {
       if (!this.quests[id]) continue;

@@ -96,3 +96,11 @@ describe('optional objectives, variables and goals', () => {
     expect(() => validateQuests([{ id: 'a', kind: 'side', steps: [{ id: 's', journal: 'x', when: { var: { name: 'n' } } }] }])).toThrow(/var/);
   });
 });
+
+describe('a load', () => {
+  it('refills the same flag set: systems hold on to it', () => {
+    const g = new QuestGraph([], {}), held = g.flags;
+    g.flags.add('old'); g.restore({ quests: {}, flags: ['new'], vars: {} });
+    expect(g.flags).toBe(held); expect(held.has('new')).toBe(true); expect(held.has('old')).toBe(false);
+  });
+});
