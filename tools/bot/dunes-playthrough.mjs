@@ -14,7 +14,7 @@ const fails = [];
 const check = (name, ok, more = '') => { log(ok ? 'ok  ' : 'FAIL', name, more); if (!ok) fails.push(name); };
 const has = (f) => js(`return g.chapter.graph.flags.has(${JSON.stringify(f)})`);
 const run = promisify(execFile);
-const solver = async (name) => { const { stdout } = await run('node', ['tools/bot/' + name], { encoding: 'utf8', timeout: 300000 }); return name + ': ' + stdout.trim().split('\n').slice(-1)[0]; };
+const solver = async (name) => { await js('g.game.killShaped();g.combat.health=g.combat.maxHealth;return 1'); const { stdout } = await run('node', ['tools/bot/' + name], { encoding: 'utf8', timeout: 300000 }); return name + ': ' + stdout.trim().split('\n').slice(-1)[0]; };
 const FLAGS = ['dunes:sled-freed', 'dunes:instrument-sun', 'dunes:instrument-clock', 'dunes:instrument-song', 'dunes:mirage-found', 'dunes:falls-reached', 'dunes:glass-done', 'dunes:door-open', 'dunes:garden-full'];
 
 // Into the Erg: from the lip of the Dry Stair, to the camp.
@@ -41,7 +41,8 @@ const stand = async (x, z) => {
 const heights = { flat: await stand(1880, 890), groove: await stand(1896, 906), heap: await stand(1908, 906) };
 log('marks', JSON.stringify(heights));
 // The Walker home and released.
-log(await solver('walker-home.mjs'));
+log('before the Walker', JSON.stringify(await js(`const a=g.shaped.slots.map((s,i)=>s.state?[i,s.name||s.kind,s.body.x|0,s.body.z|0]:null).filter(Boolean);return {shaped:a,hp:g.combat.health|0,w:[g.walker.x|0,g.walker.z|0,g.walker.state,g.walker.mode]}`)));
+{ const { stdout } = await run('node', ['tools/bot/walker-home.mjs'], { encoding: 'utf8', timeout: 300000 }); log(stdout.trim().split('\n').slice(0, 12).join(' | ').slice(0, 700)); }
 check('released', await has('dunes:walker-released'));
 check('erg restored', (await js(`return g.ws?.restoration?.dunes ?? null`)) === 'restored');
 await sleep(2000);
@@ -58,6 +59,7 @@ const hello = await fetch('http://localhost:4173/__wraith/bot/status').then((r) 
 await js(`setTimeout(()=>{location.href='/?bot=1&title=0';},200);return 1`).catch(() => 0);
 for (let i = 0; i < 80; i++) { await sleep(3000); const s = await fetch('http://localhost:4173/__wraith/bot/status').then((r) => r.json()); if (s.hello !== hello.hello && s.hello) break; }
 await sleep(5000);
+await js(`w.__errs=[];addEventListener('error',(e)=>w.__errs.push(String(e.message)));return 1`);
 const loaded = await js(`const s=await g.game.saves.load('slot1');return !!s`);
 check('loaded', loaded);
 await sleep(9000);

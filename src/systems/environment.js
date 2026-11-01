@@ -234,8 +234,8 @@ export async function addEnvironmentSystems(g) {
     g.sandDust.duneWeight=bwD;
     const desert=atmosphere.desert;desert.weight=bwD;desert.restored=rDunes;desert.wet=weather.wet;desert.sunY=env.env.sunDir.y;
     const r = rFrost, gs = params.v.gradeStrength;
-    // The ice halo (sky shader) belongs to the stilled air: gone with the first wind, hidden by a deck.
-    env.env.artParams.y = Math.max(0, 1 - restoration.value * 1.6) * Math.max(0, 1 - weather.cover * 1.4);
+    // The ice halo (sky shader) belongs to the frost's stilled air: gone with the first wind, hidden by a deck.
+    env.env.artParams.y = bwF * Math.max(0, 1 - restoration.value * 1.6) * Math.max(0, 1 - weather.cover * 1.4); // the frost's only: no ice over the erg
     const mBlend = bwM / Math.max(bwF + bwM, 1e-3);
     // Compare independent inputs; a weighted scalar key can cancel two simultaneous changes.
     if (Math.abs(r-lastGradeR)>.002 || Math.abs(mBlend-lastGradeM)>.002 || Math.abs(rMeadow-lastGradeMR)>.002 || Math.abs(dW-lastGradeD)>.002 || Math.abs(rDunes-lastGradeDR)>.002 || gs!==lastGradeS) {

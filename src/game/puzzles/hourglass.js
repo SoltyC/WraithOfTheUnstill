@@ -34,7 +34,7 @@ export function createHourglass() {
   const right = { from: B.MIDDLE, to: B.RIGHT, open: true, frozen: false, weight: 1 };
   const clock = sandClock(bowls, [sluice, breach, left, right]);
   return {
-    bowls, sluice, breach, left, right, stage: STAGE.TEACH, cuts: 0, breachLife: 0, leftLife: 0, running: 0,
+    bowls, sluice, breach, left, right, stage: STAGE.TEACH, cuts: 0, breachLife: 0, leftLife: 0, running: 0, burrowed: false, panIce: 0,
     /** The sluice is struck: it opens or shuts. */
     strike() { sluice.open = !sluice.open; breach.open = sluice.open; },
     /** A Crystallize at (u, v), with the shade flag for that spot. */
@@ -42,6 +42,7 @@ export function createHourglass() {
       const L = LAYOUT;
       if (Math.hypot(u - L.breach[0], v - L.breach[1]) < HG.freezeR) { breach.frozen = true; this.breachLife = GRAMMAR.thawSun; }
       if (Math.hypot(u - (L.middle[0] + L.left[0]) / 2, v - (L.middle[1] + L.left[1]) / 2) < HG.freezeR) { left.frozen = true; this.leftLife = GRAMMAR.thawSun; }
+      if (Math.hypot(u - L.middle[0], v - L.middle[1]) < 6) this.panIce = GRAMMAR.thawSun;
     },
     /** A Sweep's plough at (u, v): in the middle bowl's floor it leans the flow right. */
     plough(u, v) {
@@ -52,7 +53,9 @@ export function createHourglass() {
     update(dt, shade, leftShade) {
       if (breach.frozen && (this.breachLife -= dt / (shade ? 10 : 1)) <= 0) breach.frozen = false;
       if (left.frozen && (this.leftLife -= dt / (leftShade ? 10 : 1)) <= 0) left.frozen = false;
-      right.weight = this.cuts >= HG.channelCuts ? HG.bias : 1;
+      // A Skitter burrowing in the pan spills the flow back both ways, until the pan is frozen under it (§4.2 B.4).
+      if (this.panIce > 0) this.panIce = Math.max(0, this.panIce - dt);
+      right.weight = this.cuts >= HG.channelCuts && !(this.burrowed && this.panIce <= 0) ? HG.bias : 1;
       // With its chute frozen the left cradle lets its sand go: it hangs on a drain the flow otherwise outruns.
       bowls[B.LEFT].drain = left.frozen;
       clock.step(dt);

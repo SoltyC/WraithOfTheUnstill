@@ -152,7 +152,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         zm.material = zmat;
         meshes.push(zm); mats.push(zmat);
       }
-      sets.push({ sid, si, v, lod, meshes, buf, max, n: 0 });
+      sets.push({ sid, si, v, lod, meshes, buf, max, n: 0, drawn: -1 });
       // Cascade 1 (to SHADOW_SPLITS[1], 140 m): every tree within its reach casts from the far geometry — a
       // shadow does not need every twig, and the far set (out to the placement radius) would run
       // all its vertices there. Shadow-only meshes with their own instances: a layer outside the
@@ -174,7 +174,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
           mesh.material = meshes.find((m) => m.name.startsWith(`tree-${part}-`)).material; // never drawn by the view; avoids a default material
           smeshes.push(mesh); shadowOnly.push(mesh);
         }
-        sets.push({ sid, si, v, lod: 2, meshes: smeshes, buf: sbuf, max: MAX_MID, n: 0 });
+        sets.push({ sid, si, v, lod: 2, meshes: smeshes, buf: sbuf, max: MAX_MID, n: 0, drawn: -1 });
       }
     }
   });
@@ -334,8 +334,10 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     const ck = Math.min(1, Math.max(0, (canopySum - 3) / 11));
     canopyTarget = ck * ck * (3 - 2 * ck); api.cover = canopyTarget;
     // Draw only what was placed: an unused slot still ran the whole tree's vertices (×cascades).
+    let changed = false;
     for (const s of sets) {
       for (let k = s.n; k < s.max; k++) s.buf[k * 16 + 2] = 0;
+      if (s.n !== s.drawn) { s.drawn = s.n; changed = true; }
       for (const m of s.meshes) {
         m.thinInstanceBufferUpdated('matrix');
         m.thinInstanceCount = Math.max(1, s.n); // never 0: a mesh with no instances loses its instance attributes (and pipelines)
@@ -344,7 +346,8 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
         if (warmed) m.setEnabled(s.n > 0);
       }
     }
-    engine.snapshotRenderingReset();
+    // A re-record is a hitch: none when the counts stayed (every placement in treeless country).
+    if (changed) engine.snapshotRenderingReset();
   }
 
   const api = {

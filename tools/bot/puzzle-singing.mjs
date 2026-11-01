@@ -17,7 +17,7 @@ await bot('face', { x: O[0], z: O[1] }); await bot('shot', { name: 'singing-ring
 log('arrive', await state(), 'heights', await js('return g.controller.pos.y|0'));
 log('hum', await use('sing-ring')); await sleep(1500); await bot('shot', { name: 'singing-hum' });
 await go(2); log('teach (high)', await state());
-await sleep(8500);
+await sleep(9000); await js('g.game.killShaped();return 1'); await sleep(500); // deal with the Whirler first, as the design asks
 await go(0); await sleep(800); log('low, unfrozen: the middle goes too', await state());
 await sleep(9000);
 await go(1); await freezeMid(); await sleep(500);

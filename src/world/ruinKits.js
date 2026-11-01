@@ -16,6 +16,7 @@
 
 import { MAT } from './architecture.js';
 import { blob } from './blobStone.js';
+import { feltTent } from './camp.js';
 import { LAYOUT as SUN_LAYOUT, SUN_SITE } from '../game/puzzles/sunGate.js';
 import { LAYOUT as HOUR, HOUR_SITE } from '../game/puzzles/hourglass.js';
 import { LAYOUT as SING, SING_SITE } from '../game/puzzles/singing.js';
@@ -221,20 +222,12 @@ function caravanserai(b, facing) {
   for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2, [x, z] = P(Math.cos(a) * 1.5, Math.sin(a) * 1.5 + 1); b.box(x, z, -0.3, 0.75, 0.32, 0.5, facing + a, MAT.STONE, 850 + k, { ...NS }); }
   { const [x, z] = P(0, 1); b.blockers.push({ site: b.site, kind: 'circle', x, z, r: 1.9, y0: -0.3, y1: 0.75 }); }
   { const [x, z] = P(1.9, 1); b.box(x, z, -0.2, 2.2, 0.18, 0.18, facing, MAT.WOOD, 870, { ...NS, tilt: 0.2 }); }
-  // The stranded caravan (the Wellhouse, D11): canvas awnings on poles against the arcade, cloth rolled
-  // on the sledges, and behind the back wall the best sand-sled, heaped under sand until it is freed
+  // The stranded caravan (the Wellhouse, D11): felt tents in the court, the sledges, and behind the back wall the best sand-sled, heaped under sand until it is freed
   // (systems/puzzleSled.js; a sled is two long runners and a deck of planks).
-  [[-8, 6.5, 3.6, 2.4], [8.5, 6, 3.2, 2.2], [0, -8.5, 4, 2.2]].forEach(([lx, lz, hx, hz], k) => {
-    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-      const [x, z] = P(lx + sx * hx * 0.92, lz + sz * hz * 0.92);
-      b.box(x, z, -0.2, 2.5 + (sz < 0 ? 0.5 : 0), 0.07, 0.07, facing, MAT.WOOD, 960 + k * 4 + sx + sz, NS);
-    }
-    // The cloth: strips across the poles, sagging between them and falling toward the front.
-    const N = 7;
-    for (let q = 0; q < N; q++) {
-      const t = (q + 0.5) / N * 2 - 1, [x, z] = P(lx, lz + t * hz), y = 2.72 - 0.32 * t - 0.2 * (1 - t * t);
-      b.box(x, z, y, y + 0.05, hx, hz / N * 1.6, facing, MAT.CANVAS, 980 + k * 8 + q, NS);
-    }
+  // Felt tents in the meadow market's language (world/camp.js), sun-bleached by the kit's canvas.
+  [[-9, 7, 2.9, 2.9, 0.4], [9.5, 6, 2.5, 2.6, -2.6], [2.5, -9, 2.7, 2.8, 1.8]].forEach(([lx, lz, r, h, door], k) => {
+    const [x, z] = P(lx, lz);
+    feltTent(b, x, z, r, h, door + facing, 980 + k * 7, { ribs: 8 });
   });
   const sled = (lx, lz, seed) => {
     for (const s of [-1, 1]) { const [x, z] = P(lx, lz + s * 0.75); b.box(x, z, 0.05, 0.3, 2.6, 0.09, facing, MAT.WOOD, seed + s, NS); }
@@ -293,9 +286,9 @@ function hourglassRig(b, facing) {
   b.box(HOUR.door[0], HOUR.door[1], 8.4, 9.6, 5.4, 1.5, 0, MAT.GLYPH, 1293, { ...NS, carve: 1 });
 }
 function resonanceRing(b, facing) {
-  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; b.box(Math.cos(a) * 7, Math.sin(a) * 7, -1, 2.4 + 0.5 * hh(k, 77), 0.7, 0.45, -a, MAT.GLYPH, 1300 + k, { carve: 1 }); }
+  for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; b.box(Math.cos(a) * 7, Math.sin(a) * 7, -1.6, 2.4 + 0.5 * hh(k, 77), 0.7, 0.45, -a, MAT.GLYPH, 1300 + k, { carve: 1, drift: false }); }
 }
-function lipStone(b, facing) { b.box(0, 0, -1, 1.5, 0.75, 0.75, facing, MAT.GLYPH, 1310, { carve: 1 }); }
+function lipStone(b, facing) { b.box(0, 0, -1.6, 1.5, 0.75, 0.75, facing, MAT.GLYPH, 1310, { carve: 1, drift: false }); }
 
 // The side sites' stones (D11, game/puzzles/sides.js).
 function cairn(b, facing) { for (let k = 0; k < 5; k++) b.box(0.2 * Math.sin(k * 2), 0.2 * Math.cos(k * 2), -0.6 + k * 0.72, 0.1 + k * 0.72, 1 - k * 0.14, 0.9 - k * 0.12, k * 0.8, MAT.STONE, 1320 + k, NS); }

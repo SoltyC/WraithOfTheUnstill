@@ -44,6 +44,22 @@ export function createSolids(sites, built, stairRuns = null) {
   const MAXRAMP = 96;
   const rp = { n: 0, on: new Uint8Array(MAXRAMP), x0: new Float64Array(MAXRAMP), z0: new Float64Array(MAXRAMP), x1: new Float64Array(MAXRAMP), z1: new Float64Array(MAXRAMP),
     y0: new Float64Array(MAXRAMP), y1: new Float64Array(MAXRAMP), hw: new Float64Array(MAXRAMP), steps: new Float64Array(MAXRAMP) };
+  const GRID = 32;
+  const cellKey = (x, z) => Math.floor(x / GRID) * 100003 + Math.floor(z / GRID);
+  const grid = new Map();
+  let gridN = -1;
+  function buildGrid() {
+    grid.clear(); gridN = platforms.length;
+    for (let i = 0; i < platforms.length; i++) {
+      const p = platforms[i], r = Math.hypot(p.hx, p.hz);
+      for (let cx = Math.floor((p.x - r) / GRID); cx <= Math.floor((p.x + r) / GRID); cx++) for (let cz = Math.floor((p.z - r) / GRID); cz <= Math.floor((p.z + r) / GRID); cz++) {
+        const k = cx * 100003 + cz;
+        let l = grid.get(k);
+        if (l === undefined) { l = []; grid.set(k, l); }
+        l.push(p);
+      }
+    }
+  }
   return {
     sites: S, blockers, platforms, rocks: rk, walls: wl, stair: ST, gates, ramps: rp,
     /** An invisible wall: centre (x, z), half-extents hx (across) × hz (along its facing), facing yaw. Returns the gate; set .on. */
@@ -70,8 +86,12 @@ export function createSolids(sites, built, stairRuns = null) {
     /** Ground under (x, z) given the terrain height gy: the highest platform top beneath, if higher. */
     floor(x, z, gy, any = false, feet = Infinity) {
       let h = gy;
-      for (let i = 0; i < platforms.length; i++) {
-        const p = platforms[i];
+      // Platforms by grid cell: the Wraith's cloth asks this for every particle, and the whole world's list cost ~4 ms.
+      if (gridN !== platforms.length) buildGrid();
+      const list = grid.get(cellKey(x, z));
+      const nList = list === undefined ? 0 : list.length;
+      for (let i = 0; i < nList; i++) {
+        const p = list[i];
         if (any ? Number.isNaN(S[p.site].seat) : !near[p.site]) continue;
         const dx = x - p.x, dz = z - p.z;
         const lx = dx * p.cos - dz * p.sin, lz = dx * p.sin + dz * p.cos;

@@ -3,6 +3,7 @@
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
 import { CHUNK } from '../game/shaped/rig.js';
 import { trackPrints } from '../game/walker/route.js';
+import { sunlit } from '../game/puzzles/grammar.js';
 import { MIRAGE, createMirage, FALLS, createFalls, GLASS, createGlassBattle, DOOR, createBuriedDoor, FLOOD, createFloodGarden } from '../game/puzzles/sides.js';
 
 const SHOW_R = 260, FALL_N = 12;
@@ -73,7 +74,7 @@ export function addSideSites(g, P, tell, chime) {
   const seated = { mirage: false, falls: false, glass: false, door: false, flood: false };
   const dist2 = (c, x, z) => (c.x - x) ** 2 + (c.z - z) ** 2;
   const within = (c, x, z, r) => dist2(c, x, z) < r * r;
-  let ghostOn = false, phase = 0;
+  let ghostOn = false, phase = 0, shadeT = 0, fallShade = false;
 
   function mound(x, z, r, d, kind) {
     ts.bx = x; ts.bz = z; ts.bdx = 1; ts.bdz = 0; ts.bl = r * 0.6; ts.bw = r; ts.bd = d; ts.bc = 0.5; ts.bk = kind; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0; ts.stamp();
@@ -126,7 +127,9 @@ export function addSideSites(g, P, tell, chime) {
       // The Frozen Falls.
       if (within(c, FALLS.low[0], FALLS.low[1], SHOW_R)) {
         any = true;
-        S.falls.update(dt, false);
+        shadeT -= dt;
+        if (shadeT <= 0) { shadeT = 1; const sun = g.env.env.sunDir, m = FALLS.low; fallShade = !sunlit(m[0], m[2] - 6, m[1], sun.x, sun.y, sun.z, groundAt); }
+        S.falls.update(dt, fallShade);
         phase = (phase + dt * 1.5) % 1;
         for (let r = 0; r < 2; r++) {
           const [a, b] = R[r], frozen = S.falls.life[r] > 0;

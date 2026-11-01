@@ -42,3 +42,12 @@ describe('the Hourglass', () => {
     expect(h.bowls[BOWL.LEFT].level).toBe(0); expect(h.sluice.open).toBe(false);
   });
 });
+
+describe('a Skitter in the pan', () => {
+  it('spills the flow back both ways, and frozen sand stops it', () => {
+    const h = createHourglass(); h.stage = STAGE.TWIST; h.cuts = HG.channelCuts;
+    h.update(0.1, false, false); expect(h.right.weight).toBe(HG.bias);
+    h.burrowed = true; h.update(0.1, false, false); expect(h.right.weight).toBe(1);
+    h.freeze(...LAYOUT.middle); h.update(0.1, false, false); expect(h.right.weight).toBe(HG.bias);
+  });
+});

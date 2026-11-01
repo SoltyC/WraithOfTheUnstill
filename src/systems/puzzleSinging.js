@@ -18,7 +18,7 @@ export function buildSinging(g, P) {
 }
 
 export function addSingingSite(g, P, tell, chime) {
-  const { chapter, ground, sfx, SFX, clock, controller, terrainState: ts, arm, qs } = g;
+  const { chapter, ground, sfx, SFX, clock, controller, terrainState: ts, arm, qs, capture } = g;
   const X = g.singParts, flags = chapter.graph.flags, s = g.singing = createSinging();
   const restore = () => s.restore(flags.has(SOLVED) ? STAGE.DONE : flags.has(FLAG[1]) ? STAGE.TWIST : flags.has(FLAG[0]) ? STAGE.COMBINE : STAGE.TEACH);
   restore(); g.puzzleRestores.push(restore);
@@ -27,6 +27,7 @@ export function addSingingSite(g, P, tell, chime) {
   const wx = (u) => SING_SITE[0] + u, wz = (v) => SING_SITE[1] + v;
   const lip = (n) => LAYOUT.lips[n], MID = NOTE.MIDDLE;
   const heights = [0, 0, 0];
+  let whirl = -1, devilT = 0;
   let seated = false, seatedFar = false, baseY = 0, humT = -1, humAt = 0, wasFrozen = false;
 
   /** A face lets go: the boom, sand poured down the face (real state), dust. */
@@ -68,6 +69,16 @@ export function addSingingSite(g, P, tell, chime) {
       const ev = s.update(dt, t);
       if (ev & 2) boom(MID);
       if (ev & 1) after();
+      // A Whirler patrols the ring from the second beat, and its devils set off a face at random (§4.2 C.4).
+      if (s.stage > STAGE.TEACH && s.stage < STAGE.DONE && whirl < 0 && near && g.shaped && !capture) { whirl = g.shaped.spawn('whirler', wx(LAYOUT.ring[0] + 14), wz(LAYOUT.ring[1])); devilT = 24; }
+      if (whirl >= 0) {
+        if (g.shaped.slots[whirl].state === 0) { whirl = -2; }
+        else if ((devilT -= dt) <= 0) {
+          devilT = 20 + 14 * Math.random();
+          const n = Math.floor(Math.random() * 3);
+          if (s.slide(n, t)) { boom(n); after(); tell('The Singing Dunes', 'A devil crosses a crest', 'The face lets go. Read its path, or bind it.', 5); }
+        }
+      }
       // Standing on a lip lets the face go.
       for (let n = 0; n < 3; n++) {
         const lx = p.x - wx(lip(n)[0]), lz = p.z - wz(lip(n)[1]);
