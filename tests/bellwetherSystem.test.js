@@ -4,7 +4,7 @@ import { B } from '../src/game/bellwether/bellwether.js';
 import { manorSites, manorWorld, MANOR, BACK } from '../src/world/manor.js';
 import {
   ventPositions, arenaCentre, bellForDirector, createWindReporter, galeFrontDistance, sweepHeading, frontRadius, frontArrival,
-  releaseCamPose, pipsLeft, bellSys,
+  releaseCamPose, pipsLeft, bellSys, pickVent,
 } from '../src/systems/bellwetherFight.js';
 
 describe('bellwether wiring', () => {
@@ -121,6 +121,28 @@ describe('bellwether wiring', () => {
       if (prev) expect(Math.hypot(out.x - prev.x, out.z - prev.z)).toBeGreaterThan(1);
       prev = { x: out.x, z: out.z };
     }
+  });
+
+  describe('aiming a Gust at a chimney', () => {
+    const v = ventPositions(), a = arenaCentre(), vp = { x: 0, y: 0, z: 0 };
+    const fight = (left = [3, 3, 3]) => ({ vents: Float64Array.from(left), ventPos: (k, o) => { o.x = v[k].x; o.y = v[k].y; o.z = v[k].z; return o; } });
+    const dir = (tx, ty, tz, ox, oy, oz) => { const dx = tx - ox, dy = ty - oy, dz = tz - oz, l = Math.hypot(dx, dy, dz); return [dx / l, dy / l, dz / l]; };
+    const eye = [a.x, a.y + 2, a.z];
+    it('takes the chimney the view is on, from the forecourt', () => {
+      for (let k = 0; k < 3; k++) expect(pickVent(...eye, ...dir(v[k].x, v[k].y, v[k].z, ...eye), fight(), vp)).toBe(k);
+    });
+    it('forgives a rough aim: there is no reticle and the Wraith stands in the middle of the view', () => {
+      const d = dir(v[1].x + 7, v[1].y - 5, v[1].z - 7, ...eye);   // about 10 m off, at about 70 m
+      expect(pickVent(...eye, ...d, fight(), vp)).toBe(1);
+    });
+    it('passes over a stripped chimney to the next nearest', () => {
+      expect(pickVent(...eye, ...dir(v[1].x, v[1].y, v[1].z, ...eye), fight([3, 0, 3]), vp)).not.toBe(1);
+    });
+    it('wants the view raised: straight ahead at the hall strips nothing, nor does looking away or past its range', () => {
+      expect(pickVent(...eye, ...dir(v[1].x, eye[1], v[1].z, ...eye), fight(), vp)).toBe(-1);
+      expect(pickVent(...eye, ...dir(2 * eye[0] - v[1].x, v[1].y, 2 * eye[2] - v[1].z, ...eye), fight(), vp)).toBe(-1);
+      expect(pickVent(...eye, ...dir(v[1].x, v[1].y, v[1].z, ...eye), fight(), vp, { ...bellSys, aimRange: 10 })).toBe(-1);
+    });
   });
 
   it('shows what is left as pips: vents first, then valves', () => {

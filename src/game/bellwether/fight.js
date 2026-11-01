@@ -12,6 +12,7 @@
 //
 // ctx: { bell, B, arena:{x,z,y}, vents:[{x,y,z}*3] (optional; default near the arena),
 //        allowed():bool, sheltered(px,pz,mx,mz):bool, nearValve():int (-1 none),
+//        valveWay():int (optional; neckClimb's VALVE_WAY: which way the next valve lies),
 //        spawn(name,x,z):slot (<0 none), alive(slot), kill(slot), summonNames:string[] }
 
 export const BFIGHT = { IDLE: 0, VENTS: 1, CLIMB: 2, FRENZY: 3, DONE: 4 };
@@ -35,7 +36,12 @@ export const bellTuning = {
   frenzyAt: 4,          // progress (of 6) that calls the Shaped
   summonMax: 6, summonR: 28, summonGap: 4, // cap, m from the centre, s before a lost one is replaced
   ventReach: 0,         // extra metres added to a burst's radius
+  reachHint: 5,         // s the "out of reach" hint stays up
 };
+
+/** The climbing hint by neckClimb's VALVE_WAY (NONE, UP, DOWN, ROUND). */
+const WAY_HINT = ['Climb its neck and open the valves.', 'A shut valve above you: climb (W).', 'A shut valve below you: climb down (S).', 'A shut valve round the neck: hold A or D.'];
+const VENT_HINT = 'Look up at a chimney and tap Q to Gust its turf off.';
 
 export function createBellFight(ctx) {
   const { bell, B, arena, spawn, alive, kill } = ctx;
@@ -67,6 +73,8 @@ export function createBellFight(ctx) {
     shoveX: 0, shoveZ: 0, shove: 0, damage: 0,
     /** Shaped it has called, and the seconds until a replacement may come. */
     summoned: 0, frenzied: false, _summonT: 0, _shakeT: T.shakeEvery, _dead: false, _clock: 0,
+    /** s the "out of reach" hint still shows (see reachedForVent). */
+    _reachT: 0,
 
     get active() { return this.phase !== BFIGHT.IDLE && this.phase !== BFIGHT.DONE; },
     get progress() { return this.strippedCount + this.valvesOpen; },
@@ -107,6 +115,8 @@ export function createBellFight(ctx) {
       if (this.valvesOpen >= T.valveCount) release(this);
       return true;
     },
+    /** The Wraith clicked or gripped at a chimney: nothing climbs up there, so say what does reach it. */
+    reachedForVent() { if (this.phase === BFIGHT.VENTS) this._reachT = T.reachHint; },
     /** The owner reports the Wraith died; the fight resets on the next update. */
     playerDead() { this._dead = true; },
 
@@ -116,7 +126,7 @@ export function createBellFight(ctx) {
       vents.fill(0);
       this.phase = BFIGHT.IDLE; this.t = 0; this.valvesOpen = 0; this.frenzied = false; this.summoned = 0;
       galeStage = 0; galeT = 0; this.galeIn = T.firstGale; this.galeK = 0; this.galeActive = false; this.galeWarn = false;
-      this.shakeWarn = false; this._shakeT = T.shakeEvery; this._summonT = 0; leashT = 0; this._dead = false;
+      this.shakeWarn = false; this._shakeT = T.shakeEvery; this._summonT = 0; leashT = 0; this._dead = false; this._reachT = 0;
       this.hint = '';
       _ev |= BEV.RESET;
     },
@@ -138,7 +148,7 @@ export function createBellFight(ctx) {
           this.galeIn = T.firstGale; galeStage = 0;
           bell.wake(); bell.inhale();
           this.ev |= BEV.WAKE;
-          this.hint = 'Blow the turf off the chimneys with Gust.';
+          this.hint = VENT_HINT;
         }
         return;
       }
@@ -148,6 +158,7 @@ export function createBellFight(ctx) {
       if (d2 > T.leashR * T.leashR) { leashT += dt; if (leashT >= T.leashT) { this.reset(); this.ev |= _ev; _ev = 0; return; } } else leashT = 0;
 
       this.t += dt;
+      if (this._reachT > 0) this._reachT -= dt;
       this.valvesOpen = countOpen();
       if (this.valvesOpen >= T.valveCount && this.phase !== BFIGHT.VENTS) { release(this); this.ev |= _ev; _ev = 0; return; }
 
@@ -247,9 +258,9 @@ export function createBellFight(ctx) {
 
   function hintFor(F) {
     if (F.galeWarn || F.galeActive) F.hint = 'Get behind a wall — it\'s going to breathe!';
-    else if (F.phase === BFIGHT.VENTS) F.hint = 'Blow the turf off the chimneys with Gust.';
+    else if (F.phase === BFIGHT.VENTS) F.hint = F._reachT > 0 ? 'Too high to climb to. Tap Q to Gust it from here.' : VENT_HINT;
     else if (F.shakeWarn) F.hint = 'It is about to shake. Hold on!';
-    else F.hint = ctx.nearValve() >= 0 ? 'Strike to open the valve.' : 'Climb its neck and open the valves.';
+    else F.hint = ctx.nearValve() >= 0 ? 'Strike to open the valve.' : WAY_HINT[ctx.valveWay ? ctx.valveWay() : 0];
   }
 
   return self;

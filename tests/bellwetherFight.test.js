@@ -19,7 +19,7 @@ function setup(opts = {}) {
   const fight = createBellFight({
     bell, B, arena: { x: 0, z: 0, y: 0 },
     vents: [{ x: -20, y: 30, z: 0 }, { x: 0, y: 30, z: 0 }, { x: 20, y: 30, z: 0 }],
-    allowed: () => state.allowed, sheltered: () => state.sheltered, nearValve: () => state.near,
+    allowed: () => state.allowed, sheltered: () => state.sheltered, nearValve: () => state.near, valveWay: opts.valveWay,
     spawn: (name) => { if (opts.noSpawn) return -1; const s = next++; live.set(s, name); return s; },
     alive: (s) => live.has(s), kill: (s) => live.delete(s),
     summonNames: ['grazer', 'stalker', 'brute'],
@@ -79,6 +79,24 @@ describe('the Bellwether fight', () => {
     s.step(T.shakeEvery + 0.5);
     expect(s.calls).toContain('shake');
     expect(s.evs() & BEV.SHAKE).toBeTruthy();
+  });
+
+  it('names the key for the chimneys, and says so again when the Wraith clicks or grips at one', () => {
+    const s = setup(); s.wakeIt(); s.step(0.1);
+    expect(s.fight.hint).toMatch(/tap Q/);
+    s.fight.reachedForVent(); s.step(0.1);
+    expect(s.fight.hint).toMatch(/Too high/);
+    s.step(T.reachHint + 0.1);
+    expect(s.fight.hint).not.toMatch(/Too high/);
+  });
+
+  it('points the way to the next valve while climbing', () => {
+    let way = 0;
+    const s = setup({ valveWay: () => way }); s.wakeIt(); s.strip(); s.step(0.1);
+    expect(s.fight.hint).toMatch(/Climb its neck/);
+    way = 2; s.step(0.1); expect(s.fight.hint).toMatch(/below you/);
+    way = 3; s.step(0.1); expect(s.fight.hint).toMatch(/A or D/);
+    s.state.near = 0; s.step(0.1); expect(s.fight.hint).toMatch(/Strike/);
   });
 
   it('gale timing: first after 12 s, inhale 3 s then 2.5 s of gale, every 25 s', () => {

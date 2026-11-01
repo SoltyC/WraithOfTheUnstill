@@ -2,11 +2,15 @@
 // on a tube surface, here the neck's own (s along the spine, th round it; th 0 = the dorsal top).
 // The Wraith holds a position in those parameters, so it rides every sway, inhale and thrash
 // exactly. W/S climb toward the head / the shoulders, A/D round the neck; gripping spends focus
-// and SHAKE spends a great deal more (out of focus: thrown off). Reaching a valve within ~3 m sets
+// and SHAKE spends a great deal more (out of focus: thrown off). Reaching a valve within ~5 m sets
 // `nearValve` (the owner opens it with bell.openValve(k)). Same output fields as the Warden's climb
 // so the climb system can drive either. Allocation-free.
+//
+// A/D pick their way round the neck from the camera when pressed and keep it while held. Steering
+// by the camera every move stops at the tube's silhouette (past it, "right" on screen is back the
+// way the Wraith came), so the far flank and its valve were out of reach unless the camera swung round too.
 
-import { NECK_SEGS, neckRadius, VALVES } from './bellwether.js';
+import { NECK_SEGS, SEG_LEN, neckRadius, VALVES, VALVE_S, VALVE_TH } from './bellwether.js';
 
 export const neckTuning = {
   stride: 0.9, reachTime: 0.24, pullTime: 0.34, beat: 0.06,
@@ -26,6 +30,8 @@ export const neckTuning = {
 const NECK = 1;
 export const NECK_MODE = { NECK };
 const HANG = 0, REACH = 1, PULL = 2;
+/** Where the nearest shut valve lies from the climber (`valveWay`). */
+export const VALVE_WAY = { NONE: 0, UP: 1, DOWN: 2, ROUND: 3 };
 
 /** @param {{ bell: any, ground?: any }} ctx */
 export function createNeckClimb(ctx) {
@@ -47,11 +53,15 @@ export function createNeckClimb(ctx) {
     grabbed: false, gx: 0.5, gy: 0.5, gz: 0.5,
     /** Valve within reach (0..2) or -1. */
     nearValve: -1,
+    /** While climbing with none in reach: the way to the nearest shut valve (VALVE_WAY). */
+    valveWay: 0,
     /** Events this frame: 1 thrown off, 2 let go, 3 slipped (no focus). */
     fell: 0,
     mx: 0.5 - 0.5, mz: 0.5 - 0.5, crx: 1.5 - 0.5, crz: 0.5 - 0.5, px: 0.5, py: 0.5, pz: 0.5, dt: 0.5,
     spend: null,
     _f1: 0.5, _f2: 0.5, _t1: 0.5, _t2: 0.5, _feetMoved: 0,
+    /** The A/D key held (-1, 0, 1) and the way round (sign of th) it took when pressed; 0 until the next move picks it. */
+    _key: 0, _around: 0,
     get climbing() { return this.mode !== 0; },
     regrip() { if (this.mode) { regrip(this); writeHolds(this); this.blend = 1; } },
 
@@ -61,12 +71,14 @@ export function createNeckClimb(ctx) {
       if (this.mode !== 0 && !bell.active) { letGo(this, 2); this.blend = Math.max(0, this.blend - dt * T.ease); return; }
       if (this.mode === 0) {
         this.blend = Math.max(0, this.blend - dt * T.ease);
-        this.nearValve = -1;
+        this.nearValve = -1; this.valveWay = 0;
         if (this.grip) tryMount(this);
         if (this.mode === 0) return;
       }
       if (!this.grip) { letGo(this, 2); return; }
       const wants = Math.abs(this.mx) + Math.abs(this.mz) > 0.1;
+      const key = this.mx > 0.1 ? 1 : this.mx < -0.1 ? -1 : 0;
+      if (key !== this._key) { this._key = key; this._around = 0; }
       const shaking = bell.shaking > 0.3;
       const cost = (this.cycle !== HANG ? T.drainMove : T.drainIdle) + (shaking ? T.drainShake * bell.shaking : 0);
       if (!this.spend(cost * dt)) { letGo(this, shaking ? 1 : 3); return; }
@@ -111,8 +123,22 @@ export function createNeckClimb(ctx) {
         const d = Math.hypot(V.x[k] - this.x, V.y[k] - this.y, V.z[k] - this.z);
         if (d < best) { best = d; this.nearValve = k; }
       }
+      this.valveWay = this.nearValve >= 0 ? VALVE_WAY.NONE : wayToValve(this);
     },
   };
+
+  /** The way to the nearest shut valve over the surface: along the neck first, round it once level. */
+  function wayToValve(c) {
+    const V = bell.valves;
+    let bd = 1e18, ds = 0, dth = 0;
+    for (let k = 0; k < VALVES; k++) {
+      if (V.open[k]) continue;
+      const a = (VALVE_S[k] - c.s) * SEG_LEN, b = (VALVE_TH[k] - c.th) * neckRadius(VALVE_S[k]), d = a * a + b * b;
+      if (d < bd) { bd = d; ds = a; dth = b; }
+    }
+    if (bd === 1e18) return VALVE_WAY.NONE;
+    return Math.abs(ds) > T.valveReach * 0.6 ? (ds > 0 ? VALVE_WAY.UP : VALVE_WAY.DOWN) : VALVE_WAY.ROUND;
+  }
 
   /** Point/normal/tangent at (s, th) → P, Nn, Tt. */
   function evalAt(s, th) {
@@ -144,9 +170,11 @@ export function createNeckClimb(ctx) {
 
   function startMove(c) {
     surface(c); tangents(c);
-    const m = Math.hypot(c.mx, c.mz) || 1;
-    const dx = (c.ux * c.mz + c.rx * c.mx) / m * T.stride, dy = (c.uy * c.mz + c.ry * c.mx) / m * T.stride, dz = (c.uz * c.mz + c.rz * c.mx) / m * T.stride;
     const ss = Ts[0] * Ts[0] + Ts[1] * Ts[1] + Ts[2] * Ts[2] || 1, aa = Ta[0] * Ta[0] + Ta[1] * Ta[1] + Ta[2] * Ta[2] || 1;
+    // Round the neck: the camera's right (c.r) picks the way once, then the held key keeps to it.
+    if (c._key !== 0 && c._around === 0) c._around = c._key * (Ta[0] * c.rx + Ta[1] * c.ry + Ta[2] * c.rz >= 0 ? 1 : -1);
+    const m = Math.hypot(c.mx, c.mz) || 1, across = c._around * Math.abs(c.mx) / Math.sqrt(aa);
+    const dx = (c.ux * c.mz + Ta[0] * across) / m * T.stride, dy = (c.uy * c.mz + Ta[1] * across) / m * T.stride, dz = (c.uz * c.mz + Ta[2] * across) / m * T.stride;
     const d1 = (dx * Ts[0] + dy * Ts[1] + dz * Ts[2]) / ss, d2 = (dx * Ta[0] + dy * Ta[1] + dz * Ta[2]) / aa;
     c._f1 = c.s; c._f2 = c.th;
     c._t1 = Math.max(T.sMin - 0.3, Math.min(T.sMax, c.s + d1));
@@ -219,7 +247,7 @@ export function createNeckClimb(ctx) {
       }
     }
     if (bestS < 0 || bestD > T.reach) return;
-    c.mode = NECK; c.s = Math.max(T.sMin + 0.2, bestS); c.th = Math.max(-T.thMax, Math.min(T.thMax, bestTh)); c.phase = 0;
+    c.mode = NECK; c._key = 0; c._around = 0; c.s = Math.max(T.sMin + 0.2, bestS); c.th = Math.max(-T.thMax, Math.min(T.thMax, bestTh)); c.phase = 0;
     // Mount with the feet clear of the floor (grabbing it low means reaching up it).
     for (let k = 0; k < 20; k++) { surface(c); if (!feetBelowFloor(c)) break; c.s = Math.min(T.sMax, c.s + 0.1); }
     bell.climbed = true;
@@ -232,7 +260,7 @@ export function createNeckClimb(ctx) {
     const sp = why === 1 ? T.throwSpeed : T.dropSpeed;
     c.vx = -c.fx * sp + c.vx * 0.5; c.vy = (why === 1 ? 4 : 0.5) + c.vy * 0.5; c.vz = -c.fz * sp + c.vz * 0.5;
     bell.climbed = false;
-    c.mode = 0; c.fell = why; c.nearValve = -1;
+    c.mode = 0; c.fell = why; c.nearValve = -1; c.valveWay = 0;
   }
 
   return self;
