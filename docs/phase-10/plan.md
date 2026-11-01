@@ -373,5 +373,5 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 8. **Open order and locks** as in `cross-biome.md`.
 
 **Still open:**
-9. **Captured movement for cutscenes and the Drowned's loops:** BRIEF §8 says characters are procedural only. Allow this change (recommended), and someone needs to film the performances.
+9. **Generated movement for cutscenes and the Drowned's loops** (no filming; the user declined it): BRIEF §8 says characters are procedural only. Allow this change (recommended), using Kimodo locally.
 10. **The city's name:** a six-year-old in the meadow is called Ebb. Rename the city, or make it a deliberate link.

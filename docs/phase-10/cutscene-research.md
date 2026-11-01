@@ -86,6 +86,21 @@ It would remove stutter, but it can't show the player's own record (shot 12), it
 
 ---
 
+## No filming: motion generated locally (added 2026-11-01)
+
+The user doesn't want to record video, so motion comes from text, generated on this machine (RTX 3060, 12 GB; 113 GB free on C:). This replaces recommendation 1's phone capture. Everything after that step is unchanged.
+
+**Use NVIDIA Kimodo.** A text-to-motion model trained on 700 hours of optical capture, with text and kinematic controls.
+- **Local:** the official version has a low-VRAM mode (`TEXT_ENCODER_DEVICE=cpu`); the `kimodo.cpp` port runs on CPU or Vulkan, with skeleton GLB export.
+- **Licence:** code Apache-2.0. The SOMA v1.1 models are under the NVIDIA Open Model License: commercially usable, and NVIDIA claims no ownership of outputs. **Check the licence of any newer version before using it, and avoid the SMPL-X variant:** `kimodo.cpp` lists it under a research licence.
+- **Skeleton:** SOMA 77 joints, so a converter maps it to our body's joints.
+
+**Don't use HY-Motion 1.0.** It runs locally, and a ComfyUI plugin claims about 8 GB (the model card says 24–26 GB), but its licence **excludes the EU, the UK and South Korea, including outputs.** A game sold worldwide can't use it.
+
+**Not assessed:** whether generated motion is good enough, especially for specific actions such as kneading. The spike answers that. Expect to generate several versions of each action and choose, with clean-up in Cascadeur if needed.
+
+---
+
 ## Tools
 
 | Tool | For | Cost (check first; from reviews) |
@@ -106,7 +121,7 @@ Before building the director, one shot to measure all this.
 
 **Hanne kneading, sunlit, in a grey room, with 3 people working behind her and 30 in the back.**
 
-1. Someone films the kneading on a phone. Through Rokoko Vision, then cleaned in Cascadeur.
+1. Kimodo generates the kneading from text, several times; the best is chosen.
 2. Converter to our body; played on a curve.
 3. Hanne in live cloth; the crowd as interpolated baked robes.
 4. Camera-only motion blur; a hand-placed camera; one cut.
@@ -119,6 +134,10 @@ Before building the director, one shot to measure all this.
 
 ## Sources
 
+- [NVIDIA Kimodo](https://github.com/nv-tlabs/kimodo)
+- [kimodo.cpp](https://github.com/localai-org/kimodo.cpp)
+- [NVIDIA Open Model License](https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-open-model-license/)
+- [HY-Motion 1.0 licence](https://raw.githubusercontent.com/Tencent-Hunyuan/HY-Motion-1.0/master/License.txt)
 - [Keyframes and Cardboard Props: the cinematic process behind God of War (GDC)](https://gdcvault.com/play/1026025/Keyframes-and-Cardboard-Props-The)
 - [Naughty Dog's cinematic process, as described by an animator (PC Gamer)](https://www.pcgamer.com/how-developers-create-cinematics)
 - [Uncharted 2's cinematic production process (Game Informer)](https://gameinformer.com/b/news/archive/2010/03/12/behind-the-scenes-uncharted-2s-unique-cinematic-production-process)
