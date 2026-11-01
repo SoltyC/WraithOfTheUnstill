@@ -72,7 +72,7 @@ The Wraith surfaces at dawn, into the signature frame: mirror water, mist-hung t
 
 **Veils. Thousands of them, floating up, spreading across the fen.**
 
-Morrow is on the jetty, alive, and not surprised. So is someone else: **Aud**, the first voice in the game, the keeper who met the Wraith when it woke.
+Morrow is on the jetty, alive, and not surprised.
 
 ---
 
@@ -80,7 +80,7 @@ Morrow is on the jetty, alive, and not surprised. So is someone else: **Aud**, t
 
 **The Drowned were not dead.**
 
-Ebbhold's flood was the tide, and motion was what killed the city. The Listener wasn't its gaoler; it was its rescue. In the hour the water came in, it stopped everything, and held every person in that moment, alive, between one breath and the next. It has held them for an age, waiting for someone to come and open the doors.
+Ebbhold's flood was the tide, and motion was what killed the city. The Listener wasn't its gaoler; it was its rescue. In the hour the water came in, it stopped everything, and held every person in that moment, alive, between one breath and the next. It has held them for forty years, waiting for someone to come and open the doors.
 
 **That's what "held in stillness" means.** Each Warden is keeping something from happening.
 
@@ -97,15 +97,15 @@ The Wraith came, and everything it did reads differently now:
 
 ### Who betrayed the Wraith
 
-**Morrow** knew. There was no leak by accident: Morrow cut the Lung so that the Wraith couldn't turn back. Morrow's sister was alive down there the whole time.
+**Morrow,** alone (user: Aud is out; most players will have forgotten the keeper by now). Everything rests on the player loving her first: she's their guide, friend and rescuer through the whole fen.
 
-*"Forty years I've sat here. She's been one breath from dying for forty years, and she'll never finish it. I couldn't do it. You could. You don't know what you're doing. That's why it had to be you."*
+She knew. There was no accident: she cut the Lung so that the Wraith couldn't turn back. She told it to say the names. Her sister was alive down there the whole time, and Morrow stood at that well three times and couldn't do it herself.
 
-**Aud** knew too, and that's the one that hurts, because Aud is who the player has trusted since the first minute. Aud has sent the Wraith to every Warden, and has known what each release costs.
+*"I cut the Lung. I told you to say the names. You'd never have gone all the way if you'd known. That's why it had to be you."*
 
-*"The rivers were dying. Then the fields. Then us. I swept round his body for nine winters and I did the sum every day. One city, or everyone. You'd have stopped if you'd known, so I didn't tell you. You'd have stopped. Isn't that the worst of it?"*
+**It's a defensible choice.** That's why it stays with the player. Liese has been one breath from drowning for forty years, and nothing was ever going to come. The fen is alive, the tide is back. For the first time in the game, the world looks better and feels worse.
 
-**It's a defensible choice.** That's why it stays with the player: they can't be sure Aud was wrong. The fen is alive, the tide is back, the camp's children have water. The first time in the game, the world looks better and feels worse.
+The full scene is in `voice-script.md`, section 9.
 
 ### Did the player do anything right?
 
@@ -124,12 +124,12 @@ The twist has to change play, or it was only a cutscene.
 - **The robe keeps the water.** Its hem drips for the rest of the game, and leaves wet footprints in every biome: a permanent mark on the terrain state.
 - **The cowl light is a shade dimmer.** A small thing the player will notice is gone.
 - **The Remembrance page** gains the names of everyone the player named. All of them.
-- **Aud leaves the monastery.** The keeper's stool is empty, the broom against the wall. They can be found once more, and the player gets to say something (one choice, one level): forgive, or walk away. It changes what Aud does at the end.
+- **Morrow stays on the jetty.** The lantern stays lit. She can be found there, reading the names, for the rest of the game.
 
 ### The rest of the game
 
 - **The next release isn't the same.** The Ember Warden is reached by a player who now knows that stopping might be the kind thing and that the release might be a crime. **That doubt is the point.** Before it, the player can go looking for what that Warden is holding.
-- **The sealed library** in the frost (Ember key) holds what Aud hid: the last Shaper's journal, proving Aud knew, and addressed to the Wraith: *"Do not let them send you to the water."*
+- **The sealed library** in the frost (Ember key) holds the last Shaper's journal, addressed to the Wraith: *"Do not let them send you to the water."* Too late, and the player will know it.
 - **The ending gains its meaning.** "The Wraith settles into the tide" stops being a poetic exit. It goes into the water that it filled. Not a victory: a debt paid.
 - **A survivors' quest:** *The Register.* Read the names aloud at the jetty, with the survivors. It doesn't fix anything, but it's what's left to do.
 
@@ -143,7 +143,7 @@ A twist only works if the second look shows it was all there. Plant these, and s
 - The Listener never kills a Drowned, and turns away from them when it strikes.
 - Morrow never says they're dead. Only "gone down", "stayed down", "she's waiting".
 - At the jetty Morrow's hands shake while fitting the Lung, and they're the hands of someone doing something terrible.
-- Aud, in the frost: *"There's a cost to all of this. Not yours to carry yet."* Small lines added to the early chapters, in dialogue only.
+- At the fire she asks whether things stop when the Wraith finishes with them, and says "Good" a little too steadily.
 
 **Don't tell the player there's a twist, and don't hint with music.** It must play straight, right up to the veils.
 
@@ -151,9 +151,7 @@ A twist only works if the second look shows it was all there. Plant these, and s
 
 **1. The Listener is on your side.** The same reveal, happening **before** the release: the player learns the truth at the well, and has to choose. Cleaner morally and more player choice, but they feel torn, not betrayed. This one is the fallback if the main version proves too bleak.
 
-**2. The Wraith did it.** A smaller change: the flood that drowned Ebbhold's last survivors is the meltwater from the Frost Warden's release. The player killed them a chapter ago, with the game's first victory. It's sharp, but without Aud and without the names it's a fact to absorb, not a wound.
-
-**3. Morrow alone.** Morrow is the only betrayer, and Aud stays innocent. Much smaller, and it can be undone without touching earlier chapters, but the player will have met Morrow only an hour ago.
+**2. The Wraith did it.** A smaller change: the flood that drowned Ebbhold's last survivors is the meltwater from the Frost Warden's release. The player killed them a chapter ago, with the game's first victory. It's sharp, but without Morrow and without the names it's a fact to absorb, not a wound.
 
 ---
 

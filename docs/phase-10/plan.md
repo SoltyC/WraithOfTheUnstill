@@ -4,7 +4,9 @@ BRIEF §17: *mud material, mire water, mangroves, fog, Tide verbs, water-skim, m
 
 This file is the work order for the phase. `docs/cross-biome.md` still governs order, locks and reactions. Same rules as Phase 9: risky tech first, every milestone checked on the 3060, and the user reviews at the marked checkpoints.
 
-**Status: a proposal. Nothing here is approved until the decisions at the end are answered.**
+**Status: agreed in outline (user, 2026-11-01), not started.**
+
+**The main part of this phase is Ebbhold and The Lung** (user): the dive, the city, the Drowned, the release and what follows. The fen is there to serve it: to make the player love Morrow and to teach them to be quiet. Morrow is the only betrayer; Aud is out. The user sources voices (`voice-script.md`) and music (`music-cues.md`).
 
 **Revised the same day:** the user asked for the phase to be planned around underwater play: an abandoned city under the water, with the Warden and the Drowned inside. The story is in `docs/phase-10/storylines.md`. Everything below that was written for the fen still stands; the section *Under the water* adds to it and changes the Warden's arena.
 
@@ -45,17 +47,16 @@ Nothing below the surface.
 
 ### The twist (added 2026-11-01; `storylines.md`, *The betrayal*)
 
-The user wants the player betrayed and changed by this chapter. The proposal: the Drowned were alive, held by the Listener; the release kills them; Morrow and Aud knew. It needs:
+The user wants the player betrayed and changed by this chapter. The Drowned were alive, held by the Listener; the release kills them; Morrow knew. It needs:
 
 - **F10 grows:** Morrow as the guide of the whole fen, with several scenes before the jetty, so the betrayal lands.
 - **U4:** tracked state per room (door forced, flooded, drained) and per person (named). The survivors' count comes from it, and is saved.
 - **U5:** the *held* look: flames that don't flicker, wet ink, mouths moving when named. Each Drowned's name-and-word is recorded in the Remembrance page.
-- **The morning after:** a scripted dawn on the signature frame with thousands of veils on the water (one instanced cloth card; the same mirror as F1). A bespoke sequence on the jetty with Aud and Morrow.
-- **World changes that last:** Veiled barks and kneeling in every biome; fen trade closed; the robe's wet hem and footprints in all biomes; a slightly dimmer cowl light; Aud leaving the monastery. Save flags for each.
-- **Small earlier edits, dialogue only:** a few of Aud's lines in the frost. **The boss fights are not touched.**
-- **Phase 11 and 12 follow:** the sealed library's journal, Aud's last scene, and the ending's new meaning. Add them to those phases' plans.
+- **The morning after:** a scripted dawn on the signature frame with thousands of veils on the water (one instanced cloth card; the same mirror as F1). A bespoke, fully voiced sequence with Morrow on the jetty.
+- **World changes that last:** Veiled barks and kneeling in every biome; fen trade closed; the robe's wet hem and footprints in all biomes; a slightly dimmer cowl light. Save flags for each.
+- **Phase 11 and 12 follow:** the sealed library's journal and the ending's new meaning. Add them to those phases' plans.
 
-Test with the user: does the morning land, does the player feel cheated or changed, and does anyone want to replay the city? **Order:** Aud must have been met in every order of play, and the frost is always first, so this holds. Aud's words must not depend on which other Wardens are released.
+Test with the user: does the morning land, does the player feel cheated or changed, and does anyone want to replay the city? **Order:** Morrow's lines about the Wraith "putting things right" must make sense however many Wardens are released: the frost's alone is enough.
 
 ### Making the player understand (added 2026-11-01; `release-cinematic.md`)
 
@@ -234,7 +235,8 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 
 - **The camp:** a stilted Veiled settlement on the causeway near `shrine-mire-3`. A trader and smith per §11. One person from an earlier settlement, per `cross-biome` §7.
 - **Rumours:** a far trigger in Hearn, so the mire is heard of early.
-- **Main thread, three sites that teach the water** (cut if the Warden teaches it already):
+- **The fen with Morrow, the chapter's first half** (`voice-script.md` sections 1–5): the meeting, learning to be quiet, her rescue, three nights at her fire, the jetty. Several hours of real company, built as carefully as the fight.
+- **Sites that teach the water** (cut if the Warden teaches it already):
   - *The Soundings:* learn what it hears: walk the mirror behind a Veiled guide.
   - *The Sluice:* with Frost alone, hold a channel shut with ice and see the water level fall behind it. This is the herding lesson of the fight.
   - *The Stranded:* a drowned Shaper bell or boat raised as the water falls: the lore of why the tide was stopped.
@@ -302,31 +304,31 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 
 ## Order, estimate and checkpoints
 
-| | Sessions | Review with the user |
-|---|---|---|
-| F0 carry-over and bake | 1–2 | the grown fen on the map |
-| F1 fen water | 2–3 | **mirror still and wake clip: go/no-go** |
-| F2 mud | 1–2 | mud close, mid, far |
-| F3 water-skim | 2 | **skim feel (the user plays it)** |
-| F4 Tide verbs | 2 | Surge, Draw and Undertow on every surface |
-| F5 + F6 fog, mangroves | 3–4 | the fen composed; signature attempt |
-| F7 sites, borders | 1–2 | the walk in from the meadow |
-| F8 Shaped | 1–2 | fights in the bot's footage |
-| F9 Warden | 3 | **the fight (the user plays it)** |
-| F10 camp and quests | 2–3 | **story (the user plays it)** |
-| F11 restoration | 1–2 | the tide turning |
-| F12 gate | 1 | gate shots and bench |
-| *U1 the dive* | 2–3 | **the dive (the user plays it): go/no-go on the city** |
-| *U2 Lung and descent* | 2 | **the tear and the whirlpool (the user plays it)** |
-| *U3 undercroft* | 1 | |
-| *U4 Ebbhold* | 4–5 | the city from above, and its rooms |
-| *U5 Drowned and register* | 2 | **the first room of them** |
-| *U6 director and people* | 4–5 | **the loops; Sefa** |
-| *U7 the release and after* | 4–5 | **rough cut; comprehension test** |
+**Ebbhold first.** The risky, important thing leads, and the fen is fitted round what it needs.
 
-Order: F0, F1, **U1**, F2–F4, then U2–U7 with F8–F11, and F12 last.
+| Step | Work | Sessions | Review with the user |
+|---|---|---|---|
+| 1 | F0 carry-over and bake | 1–2 | the grown fen on the map |
+| 2 | F1 fen water | 2–3 | **mirror still and wake clip: go/no-go** |
+| 3 | U1 the dive | 2–3 | **the dive (the user plays it): go/no-go on the city** |
+| 4 | U3 + U4 undercroft and grey Ebbhold | 3 | the rooms, unlit |
+| 5 | U6 director and the people; voice player | 4–5 | **the loops; Sefa** |
+| 6 | U7 grey rough cut, with temporary voices | 1 | **does it make the point?** |
+| 7 | F3 skim, F4 Tide | 4 | **skim feel** |
+| 8 | U2 the Lung and descent | 2 | **the tear and the whirlpool** |
+| 9 | U5 the Drowned and the register | 2 | the first room of them |
+| 10 | F9 the Listener | 3 | **the fight** |
+| 11 | U4 art, U7 final: the release and after | 5–6 | **the real thing; comprehension test** |
+| 12 | F2 mud, F5 + F6 fog, trees, F7 sites | 5–6 | the fen composed |
+| 13 | F10 Morrow, the fire, the camp | 2–3 | **the first half, played** |
+| 14 | F8 Shaped, F11 the tide | 2–3 | |
+| 15 | F12 gate | 1 | gate shots and bench |
 
-Roughly **19–26 sessions for the fen, plus 19–23 for the city, the twist and its telling: 38–49 in all**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
+Roughly **37–46 sessions**, an estimate from Phase 9's 16–20 plan. It's the largest phase so far. **If it runs long, cut from step 12 and 14 first,** then the side quests. Steps 3–6 and 11 are the point of the chapter. Built in the main session unless the user asks for subagents.
+
+**Needed from the user, and when:**
+- **The stair song** and temporary voice takes by step 6.
+- All voices and music by step 11.
 
 ## Performance budget
 
@@ -354,15 +356,21 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 
 ## Decisions for the user
 
-1. **Scope of carry-over (F0):** do the meadow CPU, the High lows and the laptop bench before the fen (recommended), or start the fen now and accept the risk. The rest of Phase 9's open list (signature wake, veil pair, Ridge trenches, stand-ins) stays open for the whole-world pass unless you say otherwise.
-2. **Grow the mire** to 8–10 km² with 40–50 % open water, a bake change that leaves everything east of x = −900 identical (recommended), or keep today's 2.35 km².
-3. **The biome's idea:** noise as danger, with the Listener (recommended). Alternatives:
-   - **A simple hunt:** same Warden, without noise as a system: it tracks by distance only. Cheaper; loses the biome's identity.
-   - **The Drowned Tree:** a vast mangrove that walks the shallows, climbable. Readable, but too near the Walker.
-4. **The moving tide after the release** (F11): real, on the clock (recommended; Ebbhold's towers depend on it), or two fixed states.
-5. **Shaped roster:** Mudlings, Rootback, Lampfish, the Drowned elite.
-6. **Skim before the Warden?** Lent at the waking like sand-surf (recommended), or only at the release. Later keeps the first half on foot but removes the fight's core tension.
-7. **The story:** The Lung as the main thread (`storylines.md`), and the betrayal: the release kills the people of Ebbhold, and Morrow and Aud knew. It changes the rest of the game, including the ending.
-8. **Scope:** split it (recommended): Phase 10 is the fen, the skim and the dive, and Phase 10b is Ebbhold, the Warden and the release; or build everything as one phase of 38–49 sessions.
-9. **Size of Ebbhold:** 8–12 real rooms that look vast (recommended), or a larger walkable city at a much higher cost.
-10. **Open order and locks** (`cross-biome.md` decisions 1, 2 and 4) are still recorded as open, and this plan assumes the recommended answers.
+**Answered (user, 2026-11-01):**
+- Underwater play and Ebbhold: yes, and they're the main part of the phase. **No split.**
+- The betrayal, with the release killing the people of Ebbhold, shown by a cutscene with animated flashbacks, ending on the floating robes.
+- Morrow is the betrayer. **Aud is not involved.**
+- The user supplies generated voices and music.
+
+**Assumed, unless the user says otherwise:**
+1. **The performance work comes first** (F0).
+2. **The mire grows** to 8–10 km² with 40–50 % open water.
+3. **Noise as danger,** with the Listener.
+4. **The tide really moves** after the release; Ebbhold's towers depend on it.
+5. **The Shaped:** Mudlings, Rootback, Lampfish, the Bottom-walker. Fewer if the time goes to the city.
+6. **The skim is lent at the waking,** like sand-surf.
+7. **Ebbhold has 8–12 real rooms** that look vast.
+8. **Open order and locks** as in `cross-biome.md`.
+
+**Still open:**
+9. **The city's name:** a six-year-old in the meadow is called Ebb. Rename the city, or make it a deliberate link.

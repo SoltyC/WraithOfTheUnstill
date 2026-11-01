@@ -17,7 +17,7 @@ Mood and hints aren't enough. Five things have to land, in order, and each has i
 | 1 | These were people | the city alive, the same people they walked past |
 | 2 | The Listener saved them | the moment it stops the wave |
 | 3 | They were alive all along | the frozen crowd in the exact poses they saw |
-| 4 | I was betrayed | Morrow's knife on the Lung; Aud on the jetty |
+| 4 | I was betrayed | Morrow's knife on the Lung, at the exact spot it tore |
 | 5 | **I did this** | the player's own actions, replayed |
 
 **The test:** after the chapter, ask a player who hasn't read this: what happened, and who did it? If they can't say, the sequence has failed. Fix it before anything else in the phase.
@@ -89,7 +89,7 @@ That's the feeling of betrayal in the hands, not in a story. It costs little to 
 
 About 3 minutes. In-engine, in the real rooms, letterboxed. **The first viewing can't be skipped.** (Today Jump and Interact skip every release, and a player mashing Space in the climax would lose the whole chapter. Replays later can be skipped.)
 
-No spoken voices; the game has none. Plain subtitles only where marked.
+**Voiced:** the user is sourcing generated voices. The script, cast and timing are in `voice-script.md`, the score in `music-cues.md`. Subtitles for every line.
 
 **Grade:** the past is warm and sunlit. The held age is green-blue and still. The present is the true colour of the fight.
 
@@ -103,8 +103,8 @@ No spoken voices; the game has none. Plain subtitles only where marked.
 | 6 | 0:52 | Close: the wave over Sefa, inches from her raised hand. | |
 | 7 | 0:54 | From the well, the Listener rises, and opens its arms. **Everything stops.** Water, spray, a falling cup. Silence. | 2 |
 | 8 | 1:00 | The camera moves through the frozen crowd, in the **exact poses the player has walked past**. Hanne's hands in the dough. Teodor at the cradle. It reaches Sefa's hand, and the eyes behind her veil **move**. | 3 |
-| 9 | 1:15 | Time passes over them: the green comes in, weed grows, the light changes. The flames don't move. The Listener sits by the well, listening. Subtitle: *They waited.* | 3 |
-| 10 | 1:28 | The jetty, years on. Morrow, old. A knife on the Lung, cutting it at the seam. **The player knows that spot: it's the tear.** Aud sits beside Morrow, watching. | 4 |
+| 9 | 1:15 | Time passes over them: the green comes in, weed grows, the light changes. The flames don't move. The Listener sits by the well, listening. The Listener: *"Stay. I have you."* | 3 |
+| 10 | 1:28 | The jetty, years on. Morrow, old. A knife on the Lung, cutting it at the seam. **The player knows that spot: it's the tear.** She sits there a long time with it in her lap. | 4 |
 | 11 | 1:42 | Hard cut: **the Wraith comes down through the kelp**, as seen from below by the held people. It's their view. Heads turn. Hands reach. | 5 |
 | 12 | 1:50 | **The player's own record** (see *Your record*). Each person they named, in the place they named them, from that person's view: the dark robe bending down. Their mouth moves, and now the subtitle shows it: *Don't.* Name after name, faster, one per person, with their name and task on screen. | 5 |
 | 13 | 2:15 | Back to now. The player's hand, the Undertow. The Listener turns its head to the Wraith, and for the first time it's not listening for anything. **It lets go.** | 5 |
@@ -131,7 +131,7 @@ No spoken voices; the game has none. Plain subtitles only where marked.
 
 ### The jetty
 
-Morrow and Aud, waiting. Morrow's line, then Aud's (`storylines.md`). **Plain facts, per the dialogue rules:** *"They were alive. All of them. You knew that by the end, didn't you."*
+Morrow, waiting at the end of the jetty. **Voiced in full: `voice-script.md`, section 9.** *"They were alive. All of them. You knew that by the end, didn't you."*
 
 The only choice is what to do with the Lung still on the Wraith's chest: hand it to Morrow, or drop it in the water. It changes one thing later.
 
@@ -188,7 +188,7 @@ Today's release cinematics are one hand-written camera (`releaseCam.js`, `longWa
 
 **The held key:** Undertow's input goes on reading the hold, and stops affecting anything. Small, and essential.
 
-**Sound:** the music cut, the single silence and the sound-only drowning. The music is the user's, and these cues need it.
+**Sound:** a voice player with subtitles (new), the same take muffled in play and clean in the cutscene, the hard music cut and the silences. Lines and cues: `voice-script.md` and `music-cues.md`.
 
 **Chapter state saved:** every flag above, plus the rewritten journal, the survivors' count and the name record. The title screen reads the flag.
 
@@ -205,7 +205,7 @@ The rough cut is the important one. **If a grey version doesn't make the point, 
 ### Risks
 
 - **Quality is the whole bet.** Stiff animation or a stuttering cut turns this into something embarrassing. It's the highest bar in the game so far.
-- **No voices:** all of this is picture, sound and a few words. Silent shots must be very clear.
+- **Generated voices:** a flat read of the confession would sink it. Key lines (★) get several takes, and silent shots must still make sense with the sound off.
 - **The child:** she's the emotional centre, and it's easy to overdo. No shot shows her in harm. Her ending stays small.
 - **Too long, too hard:** the walk through the robes must be just long enough. Test it at 60, 90 and 120 seconds.
 - **Cut scope last here.** If the phase runs long, cut side quests and sites before any of this: it's the reason for the chapter.

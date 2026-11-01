@@ -667,3 +667,9 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 
 - **User:** the player must realise what happened; the release plays a cutscene with animated flashbacks, ending on the floating robes of the dead. Design in `docs/phase-10/release-cinematic.md`. The test is that a player can say unprompted that they were alive and that they killed them.
 - **The first viewing of this release cannot be skipped;** a player mashing Space in the climax would otherwise lose the chapter. Later releases and replays keep their skip.
+
+## 2026-11-01 — Phase 10 is Ebbhold
+
+- **User:** The Lung is the main part of Phase 10, not a split-off phase. Morrow is the only betrayer: Aud stays out, because most players will have forgotten the keeper by then. Morrow must be loved first, so the fen is built round her.
+- **User:** voices are generated and music sourced by the user, from `docs/phase-10/voice-script.md` and `music-cues.md`. The Wraith has no voice. The same take plays muffled in the city and clean in the cutscene.
+- **Ebbhold is built first,** with a grey rough cut before the art.
