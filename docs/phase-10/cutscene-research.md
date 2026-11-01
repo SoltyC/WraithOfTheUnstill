@@ -97,7 +97,33 @@ The user doesn't want to record video, so motion comes from text, generated on t
 
 **Don't use HY-Motion 1.0.** It runs locally, and a ComfyUI plugin claims about 8 GB (the model card says 24–26 GB), but its licence **excludes the EU, the UK and South Korea, including outputs.** A game sold worldwide can't use it.
 
-**Not assessed:** whether generated motion is good enough, especially for specific actions such as kneading. The spike answers that. Expect to generate several versions of each action and choose, with clean-up in Cascadeur if needed.
+### Tested on this machine (2026-11-01)
+
+`kimodo.cpp` (commit 75ed52d), SOMA-RP v1.1, Q4_K text encoder, CPU only, built with MinGW in `C:\wraith-tools\kimodo`. 100 diffusion steps.
+
+- **Speed:** 5 s of motion in about 100 s, 8 s in 138 s. Peak memory reported 1.2–1.45 GB.
+- **Bridge:** `tools/motion/kimodo_clip.py` → `src/character/performance.js` (Catmull-Rom per rendered frame) → the Wraith's body and live cloth. Filmed with `tools/bot/perform-film.mjs`.
+
+| Prompt | Result |
+|---|---|
+| Kneading, one plain sentence | Good person and weight; hands too gentle and low |
+| Kneading, long and specific | Squats instead |
+| Seated, rocking a cradle | Plausible pose; barely moves |
+| Sweeping, long or short | Energetic, wrong: reads as shovelling |
+| Hauling a wheel; pulling a rope | Erratic, one-armed or flailing |
+| A timid walk holding something | Hunched, arms up: wrong |
+| **"A person rocks a baby in their arms."** | **Very good** |
+| **"A person walks nervously, looking around."** | **Very good** |
+
+**Conclusions:**
+- Short sentences beat long ones.
+- **Mood, posture, weight and walking are strong. Exact work with a tool or a held object is not:** the model doesn't know where a hand must be.
+- Measured on `knead1`: planted feet slide about 0.005 m/s, and nothing jitters.
+- **Plan: Kimodo for the body, our hand IK (`Body._reach`) for the hands.** Hands follow an authored path (dough, wheel, broom) while the body keeps the generated weight. Not built yet.
+
+**On the robe:** the pose reads, but `garments.js` was built for the gait. With the arms held forward, the mantle bunches into a flat wedge across the chest, and the open cuff shows no hand. This needs fixing before the spike passes.
+
+**Not tested:** the Q8 text encoder, Vulkan, other seeds, the newer v1.2 models, looping.
 
 ---
 

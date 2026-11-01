@@ -673,3 +673,9 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **User:** The Lung is the main part of Phase 10, not a split-off phase. Morrow is the only betrayer: Aud stays out, because most players will have forgotten the keeper by then. Morrow must be loved first, so the fen is built round her.
 - **User:** voices are generated and music sourced by the user, from `docs/phase-10/voice-script.md` and `music-cues.md`. The Wraith has no voice. The same take plays muffled in the city and clean in the cutscene.
 - **Ebbhold is built first,** with a grey rough cut before the art.
+
+## 2026-11-01 — Generated movement, tested
+
+- **User:** no filming. Kimodo generates movement locally (`kimodo.cpp`, in `C:\wraith-tools\kimodo`, outside the repo). The user approved trying it, which allows generated clips for cutscene tests; BRIEF §8 itself is not yet amended.
+- **A clip plays on a curve through the procedural body,** so the live cloth rides on it unchanged (`src/character/performance.js`).
+- **Generated bodies, authored hands:** text is strong for mood, posture and walking, and weak for exact work with objects.

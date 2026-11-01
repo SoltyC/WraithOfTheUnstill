@@ -62,6 +62,8 @@ export class Wraith {
     this.facing = 0.5 - 0.5;
     /** Wind (unit direction blown toward) and strength factor, including storm/Gale gusts. */
     this.windX = 0.76; this.windZ = -0.65; this.windStrength = 0.6; this.time = 0.5;
+    /** A Performance playing through this body, or null (then the gait drives it). */
+    this.performance = null;
     /** Flow 0..3 (game/flow.js): the cloth streams longer. */
     this.flow = 0.5 - 0.5;
     // Place the body once so garments can be built in the world.
@@ -161,6 +163,8 @@ export class Wraith {
     b.cast += (this.cast - b.cast) * (1 - Math.exp(-this.dt * (this.cast > b.cast ? 18 : 5)));
     b.collapse = this.collapse;
     b.update(g);
+    // An authored performance takes the body from the gait (character/performance.js).
+    if (this.performance !== null) { this.performance.step(this.dt); this.performance.apply(b, g); g.solveKnees(); }
     this._colliders();
     // Wind: the field's direction and strength here (systems/wraith.js samples it, gusts included);
     // a little flutter of its own.

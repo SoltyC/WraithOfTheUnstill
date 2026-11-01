@@ -4,6 +4,7 @@
 // and a state snapshot, so a player at a terminal can look, move, cast, talk and screenshot, turn by
 // turn. Dev only: nothing loads it without ?bot=1.
 
+import { Performance } from '../character/performance.js';
 import { Action } from '../input/actions.js';
 import { params, setParam } from './params.js';
 
@@ -293,7 +294,18 @@ export function startBot(w, qs) {
     return { frames: n, failed, dir: `screenshots/${dir}/frames/${name}`, wallS: +((performance.now() - t0) / 1000).toFixed(1) };
   }
 
+  /** Play a clip through the Wraith's body where it stands (name null: stop). */
+  async function perform({ name = null, loop = true, t = 0 }) {
+    const wr = g.wraithView.wraith, c = g.controller;
+    if (!name) { wr.performance = null; c.hold = false; return { stopped: true }; }
+    const p = new Performance(await (await fetch(`/motion/${name}.bin`)).arrayBuffer());
+    p.x = c.pos.x; p.y = c.pos.y; p.z = c.pos.z; p.yaw = c.yaw; p.loop = loop; p.t = t;
+    c.hold = true; wr.performance = p;
+    return { frames: p.n };
+  }
+
   const cmds = {
+    perform: (c) => perform(c),
     film: (c) => filmRun(c),
     recStart: (c) => recStart(c),
     recStop: async (c) => recStop(c.name, c.dir),

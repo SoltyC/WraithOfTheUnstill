@@ -196,6 +196,9 @@ export class Gait {
     for (let f = 0; f < 2; f++) this._knee(f);
   }
 
+  /** Knees for feet and a pelvis set from outside (a performance). */
+  solveKnees() { for (let f = 0; f < 2; f++) this._knee(f); }
+
   /** Surf stance: feet staggered along the heading and turned across it, riding with the body
    *  on the crest (no planting, no footfalls: the wake writes the snow); the pelvis sinks. */
   _surfStance() {
