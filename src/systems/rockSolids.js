@@ -4,7 +4,8 @@
 // controller's solids (world/solids.js). Tall rocks block; low ones are stepped onto. The seat
 // follows the vertex shader's (the lowest of the centre and four samples, eased), and rocks the
 // shader drops (off the frost steppe and most of the meadow, on steep ground) are dropped here too. Tree trunks join them
-// (render/trees.js trunksNear): tall circles round the root.
+// (render/trees.js trunksNear): tall circles round the root. The canyon's hoodoos and arch legs come first
+// (render/canyonWalls.js postsNear): they are the ones the camera keeps out of too.
 
 import { rocksNear } from '../render/rocks.js';
 
@@ -50,8 +51,16 @@ export function addRockSolidSystem(g) {
     rk.x[n] = x; rk.z[n] = z; rk.c[n] = Math.cos(yaw); rk.s[n] = Math.sin(yaw);
     rk.rx[n] = len > 0 ? len * 0.5 : r; rk.rz[n] = r; rk.y0[n] = ground.h - 0.5; rk.y1[n] = ground.h + (len > 0 ? r * 1.7 : 12);
   }
+  function addPost(x, z, rx, rz, yaw, y0, y1) {
+    if (rk.n >= MAX) return;
+    const n = rk.n++;
+    rk.x[n] = x; rk.z[n] = z; rk.c[n] = Math.cos(yaw); rk.s[n] = Math.sin(yaw);
+    rk.rx[n] = rx; rk.rz[n] = rz; rk.y0[n] = y0; rk.y1[n] = y1;
+  }
   function rebuild(px, pz) {
     rk.n = 0; pending = false;
+    if (g.canyon?.ready) g.canyon.postsNear(px, pz, RADIUS, addPost); else if (g.canyon) pending = true;
+    rk.posts = rk.n;
     rocksNear(px, pz, RADIUS, rocks.exclusions, add);
     if (g.trees) g.trees.trunksNear(px, pz, RADIUS, addTrunk);
   }

@@ -653,3 +653,11 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The Shelf:** ring 2 raised to 880 and ring 3 set to 864 (r 14), so ring 3 is a straight glide; the frost stream's rise went 5.5 → 7. Ring 4 still needs the wind, and the HUD says so when the Wraith is too low.
 - **The Warden's release sets the Wraith 17 m clear on the cut into the cinematic,** so it can never lie down on top of the player.
 - **Close blows reach 1.5 m above an enemy's feet;** Warden and Bellwether attacks are unchanged.
+
+## 2026-11-01 — The canyon's solids follow the drawn rock
+
+- **Wall collision reads the face at the body's own height:** each collision point stores the rock's reach in 12 rows, foot to top. The camera reads the same rows, because a slot wall bulges more above the body than at it.
+- **A cliff's cap is ground,** from the lip back over the riser. The terrain's ramp stays hidden in the rock, and walking off a rim used to sink the Wraith into it.
+- **Hoodoos and arch legs are ellipses in the rock solids,** not rings of wall segments; the camera keeps out of them too. The tubes blend their noise round the turn so the last column meets the first.
+- **The arm's shoulder offset draws in beside a solid,** and the arm may shorten to 0.3 m against one: it used to start inside a wall and then ignore that wall.
+- **Not played yet.** Checked by tests against the baked ravines only; the terrain was not part of the check.

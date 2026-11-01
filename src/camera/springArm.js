@@ -67,6 +67,8 @@ export class SpringArmCamera {
     this.pushX = 0.5 - 0.5; this.pushY = 0.5 - 0.5; this.pushZ = 0.5 - 0.5;
     this._px = 0.5 - 0.5; this._py = 0.5 - 0.5; this._pz = 0.5 - 0.5;
     this._snapped = false;
+    /** The shoulder offset in use (m): drawn in when something solid stands beside the pivot. */
+    this._shoulder = armTuning.shoulder;
     /** Punch (rad): a sudden zoom-in on heavy impacts, eased out (owner adds impulses). */
     this.kick = 0.5 - 0.5;
   }
@@ -153,14 +155,27 @@ export class SpringArmCamera {
     const sy = Math.sin(this.yaw), cy = Math.cos(this.yaw);
     const bx = -sy * cp, by = sp, bz = -cy * cp;
     const shoulder = T.shoulder * clamp(this.zoom / T.defaultDist, 0.6, 1.4);
-    const ox = this.pivot.x + cy * shoulder, oy = this.pivot.y, oz = this.pivot.z - sy * shoulder;
+    const oc = this.occluder;
+    // The occluder only blocks when the pivot is outside it (a pivot inside it is ignored). The shoulder offset
+    // stays on the pivot's side of it (in a slot it reached through the wall, and the arm then started in the rock).
+    let out = false, room = shoulder;
+    if (oc !== null) {
+      oc.qx = this.pivot.x; oc.qy = this.pivot.y; oc.qz = this.pivot.z;
+      out = !oc.probe();
+      if (out) for (let i = 1; i <= 4; i++) {
+        const d = (shoulder * i) / 4;
+        oc.qx = this.pivot.x + cy * d; oc.qy = this.pivot.y; oc.qz = this.pivot.z - sy * d;
+        if (oc.probe()) { room = (shoulder * (i - 1)) / 4; break; }
+      }
+    }
+    this._shoulder += (room - this._shoulder) * damp(room < this._shoulder ? T.collisionInHalfLife : T.collisionOutHalfLife, dt);
+    if (this._snapped) this._shoulder = room;
+    const ox = this.pivot.x + cy * this._shoulder, oy = this.pivot.y, oz = this.pivot.z - sy * this._shoulder;
 
     // Terrain collision: march the arm and keep the first safe length.
     const g = this.ground;
     let safe = this.zoom;
-    const steps = 16, oc = this.occluder;
-    // The occluder only blocks once the arm has been outside it (a pivot inside it is ignored).
-    let out = false;
+    const steps = 16;
     for (let i = 1; i <= steps; i++) {
       const d = (this.zoom * i) / steps;
       const x = ox + bx * d, y = oy + by * d, z = oz + bz * d;
@@ -170,7 +185,7 @@ export class SpringArmCamera {
         oc.qx = x; oc.qy = y; oc.qz = z;
         const inside = oc.probe();
         if (!inside) out = true;
-        else if (out) { safe = Math.max(T.minDist * 0.4, (this.zoom * (i - 1)) / steps); break; }
+        else if (out) { safe = Math.max(0.3, (this.zoom * (i - 1)) / steps); break; }
       }
     }
     const hl = safe < this.armLen ? T.collisionInHalfLife : T.collisionOutHalfLife;

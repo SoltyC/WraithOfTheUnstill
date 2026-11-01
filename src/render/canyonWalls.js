@@ -17,7 +17,7 @@ import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { canyonVertexWGSL, canyonFragmentWGSL } from '../shaders/canyon.wgsl.js';
-import { CANYON_LODS } from '../world/canyonKit.js';
+import { CANYON_LODS, COL_STRIDE, FACE_ROWS } from '../world/canyonKit.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -143,7 +143,7 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
     },
     /**
      * Copy the cliff walls' collision segments within `r` m of (x, z) into `wl` (world/solids.js
-     * walls: fixed arrays, n set). Each chunk's line holds points [x, z, nx, nz, foot, top, start].
+     * walls: fixed arrays, n set). Each chunk's line holds points of COL_STRIDE floats (world/canyonKit.js).
      */
     fillSolids(wl, x, z, r) {
       let n = 0;
@@ -152,18 +152,29 @@ export function createCanyonWalls(scene, atmo, matLib, shadows, bindShadows) {
         const c = chunks[i], dc = Math.hypot(c.cx - x, c.cz - z);
         if (dc > c.radius + r) continue;
         const L = c.collision;
-        for (let o = 7; o < L.length && n < max; o += 7) {
+        const S = COL_STRIDE;
+        for (let o = S; o < L.length && n < max; o += S) {
           if (L[o + 6] > 0.5) continue; // a new wall starts: no segment back to the last one
-          const ax = L[o - 7], az = L[o - 6], bx = L[o], bz = L[o + 1];
+          const a = o - S, ax = L[a], az = L[a + 1], bx = L[o], bz = L[o + 1];
           const mx = (ax + bx) * 0.5 - x, mz = (az + bz) * 0.5 - z;
           if (mx * mx + mz * mz > r * r) continue;
-          let nx = (L[o - 5] + L[o + 2]) * 0.5, nz = (L[o - 4] + L[o + 3]) * 0.5; const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
+          let nx = (L[a + 2] + L[o + 2]) * 0.5, nz = (L[a + 3] + L[o + 3]) * 0.5; const nl = Math.hypot(nx, nz) || 1; nx /= nl; nz /= nl;
           wl.ax[n] = ax; wl.az[n] = az; wl.bx[n] = bx; wl.bz[n] = bz; wl.nx[n] = nx; wl.nz[n] = nz;
-          wl.y0[n] = Math.min(L[o - 3], L[o + 4]); wl.y1[n] = Math.max(L[o - 2], L[o + 5]);
+          wl.y0[n] = Math.min(L[a + 4], L[o + 4]); wl.y1[n] = Math.max(L[a + 5], L[o + 5]);
+          wl.lip[n] = Math.min(L[a + 7], L[o + 7]); wl.back[n] = Math.max(L[a + 8], L[o + 8]);
+          for (let r2 = 0; r2 < FACE_ROWS; r2++) wl.face[n * FACE_ROWS + r2] = Math.max(L[a + 9 + r2], L[o + 9 + r2]);
           n++;
         }
       }
       wl.n = n;
+    },
+    /** Each hoodoo and arch leg within r m of (x, z): add(x, z, rx, rz, yaw, y0, y1) (fields of world/canyonKit.js posts). */
+    postsNear(x, z, r, add) {
+      for (let i = 0; i < chunks.length; i++) {
+        const c = chunks[i], P = c.posts;
+        if (P.length === 0 || Math.hypot(c.cx - x, c.cz - z) > c.radius + r) continue;
+        for (let o = 0; o < P.length; o += 7) if (Math.hypot(P[o] - x, P[o + 1] - z) < r) add(P[o], P[o + 1], P[o + 2], P[o + 3], P[o + 4], P[o + 5], P[o + 6]);
+      }
     },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
   };

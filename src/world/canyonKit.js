@@ -26,6 +26,10 @@ export const CANYON_LODS = [
 ];
 /** The collision lines' sampling (a cheap pass: one row only matters, the profile is evaluated directly). */
 const COLLIDE_LOD = { ds: 1.5, dy: 50, lip: 0, range: 0 };
+/** Rows of the face's reach stored with each collision point, foot to top (the rock at a body's or the camera's height). */
+export const FACE_ROWS = 12;
+/** Floats per collision point: x, z, out-normal x, z, foot, top, 1 at a wall's start, lip and cap's back (both off the line), then the rows. */
+export const COL_STRIDE = 9 + FACE_ROWS;
 /** Chunk cell (m). */
 export const CANYON_CELL = 128;
 /** Wall kinds (the `cliff` attribute's z): the Galleries' red strata, the Stride's dark bedrock, a slot's smooth sandstone. */
@@ -143,7 +147,15 @@ function buildWall(out, wall, lod, kind, seed, s0 = 0, s1 = Infinity) {
       // Collision: the face's reach at the body's heights (the tread up to 2.4 m above it).
       let om = -1e9;
       for (let y = iso - 1.5; y <= iso + 1.0; y += 0.5) om = Math.max(om, cliffOffset(s, y, iso, top, depth, seed, kind) - retreat);
-      out.col.push(x + nx * om, z + nz * om, nx, nz, iso - 1.7, top, k === k0 ? 1 : 0);
+      // The lip and the cap's back end, off this line (the cap is walked on); then the reach of the
+      // rock in each row of the face, off this line (it leans back, and a slot's bulges reach out above the body).
+      const foot = iso - 1.7, oTop = cliffOffset(s, top - 0.45, iso, top, depth, seed, kind) - retreat, oLip = oTop - 0.45;
+      out.col.push(x + nx * om, z + nz * om, nx, nz, foot, top, k === k0 ? 1 : 0, oLip - om, -Math.min(depth + 1.0, -oLip + 4.5) - retreat - om);
+      for (let i = 0; i < FACE_ROWS; i++) {
+        let reach = -1e9;
+        for (let q = 0; q <= 2; q++) reach = Math.max(reach, cliffOffset(s, foot + (top - foot) * (i + q / 2) / FACE_ROWS, iso, top, depth, seed, kind) - retreat);
+        out.col.push(reach - om);
+      }
     }
     for (let i = 0; i <= nf; i++) {
       const y = yBot + (yFace - yBot) * i / nf;
@@ -220,7 +232,8 @@ function tube(out, centres, U, W, radius, segs, cliffOf, uScale) {
   for (let j = 0; j < cols; j++) {
     const a = (j / segs) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
     for (let i = 0; i < rows; i++) {
-      const c = centres[i], r = radius(i, a), u = U[i], w = W[i], cl = cliffOf(i);
+      // Blended over the turn so the last column meets the first (the noise is not periodic: it left a slit).
+      const c = centres[i], f = j / segs, r = (1 - f) * radius(i, a) + f * radius(i, a - Math.PI * 2), u = U[i], w = W[i], cl = cliffOf(i);
       out.pos.push(c[0] + (u[0] * ca + w[0] * sa) * r, c[1] + (u[1] * ca + w[1] * sa) * r, c[2] + (u[2] * ca + w[2] * sa) * r);
       out.uv.push(a * uScale, c[1] + (u[1] * ca + w[1] * sa) * r);
       out.cliff.push(cl[0], cl[1], WALL.canyon, cl[2]);
@@ -248,30 +261,14 @@ function tube(out, centres, U, W, radius, segs, cliffOf, uScale) {
   }
 }
 
-/** Collision: a square of wall segments round (x, z) at radius r, from y0 to y1. */
-function ring(out, x, z, r, y0, y1) {
-  if (!out.col) return;
-  for (let k = 0; k <= 8; k++) {
-    const a = (k / 8) * Math.PI * 2, nx = Math.cos(a), nz = Math.sin(a);
-    out.col.push(x + nx * r, z + nz * r, nx, nz, y0, y1, k === 0 ? 1 : 0);
-  }
-}
-
 /** A hoodoo: [x, z, base, height, radius, seed]. Beds by world height (as the walls), a neck under a
  *  wider caprock, a talus flare at the foot; the rings wobble by angle so no two are round. */
-function buildHoodoo(out, h, lod) {
-  const [x, z, g, H, r0, seed] = h;
-  const segs = lod.lip >= 3 ? 16 : lod.lip >= 1 ? 9 : 6;
-  const dy = Math.max(0.3, lod.dy * 0.7);
+function hoodooRadius(h) {
+  const [, , g, H, r0, seed] = h;
   // A third are bare spires (the cap long fallen); the rest wear a thick, irregular caprock.
   const spire = seed < 0.33, top = g + H, capT = spire ? 0.01 : 0.9 + 0.9 * seed;
-  const ys = [];
-  for (let y = g - 2; y < top - capT - 1.4; y += dy) ys.push(y);
-  for (let k = 0; k <= 3; k++) ys.push(top - capT - 1.4 + k * 0.45);
-  ys.push(top - capT + 0.05, top - 0.25, top, top + 0.02);
-  const C = ys.map((y) => [x, y, z]), U = ys.map(() => [1, 0, 0]), Wv = ys.map(() => [0, 0, 1]);
-  const radius = (i, a) => {
-    const y = ys[i], t = (y - g) / H;
+  return { spire, top, capT, at: (y, a) => {
+    const t = (y - g) / H;
     const wob = 1 + 0.13 * n1(a * 1.6 + seed * 9, SEED + 11) + 0.07 * n1(a * 4.1 + y * 0.3 + seed * 3, SEED + 12);
     let r = r0 * (1.0 - (spire ? 0.7 : 0.25) * t) * (1 + 0.2 * bandOut(y));
     r *= 1 + 0.45 * Math.max(0, 1 - (y - g) / 1.8) ** 2;                   // talus at the foot
@@ -280,9 +277,34 @@ function buildHoodoo(out, h, lod) {
     if (!spire && y >= top - capT) r = r0 * (1.05 + 0.15 * seed) * (y >= top ? (y > top + 0.01 ? 0.05 : 0.8) : 1) * (1 + 0.25 * n1(a * 1.3 + seed * 17, SEED + 14));
     if (spire && y >= top - 0.3) r *= y > top + 0.01 ? 0.05 : 0.5;
     return Math.max(0.05, r * wob);
-  };
-  tube(out, C, U, Wv, radius, segs, (i) => [g + 1.5, top, ys[i] >= top - capT ? 1 : 0], r0);
-  ring(out, x, z, r0 * 1.15, g - 1, top);
+  } };
+}
+
+function buildHoodoo(out, h, lod) {
+  const [x, z, g, , r0] = h;
+  const segs = lod.lip >= 3 ? 16 : lod.lip >= 1 ? 9 : 6;
+  const dy = Math.max(0.3, lod.dy * 0.7);
+  const shape = hoodooRadius(h), { top, capT } = shape;
+  const ys = [];
+  for (let y = g - 2; y < top - capT - 1.4; y += dy) ys.push(y);
+  for (let k = 0; k <= 3; k++) ys.push(top - capT - 1.4 + k * 0.45);
+  ys.push(top - capT + 0.05, top - 0.25, top, top + 0.02);
+  const C = ys.map((y) => [x, y, z]), U = ys.map(() => [1, 0, 0]), Wv = ys.map(() => [0, 0, 1]);
+  tube(out, C, U, Wv, (i, a) => shape.at(ys[i], a), segs, (i) => [g + 1.5, top, ys[i] >= top - capT ? 1 : 0], r0);
+}
+
+/** The solid of a hoodoo: as wide as the drawn rock at the body's height. [x, z, rx, rz, yaw, y0, y1] */
+function hoodooPost(h) {
+  const [x, z, g, H] = h, shape = hoodooRadius(h);
+  let r = 0;
+  for (let k = 0; k < 12; k++) r += shape.at(g + 0.5, (k / 12) * Math.PI * 2) / 12;
+  return [x, z, r, r, 0, g - 1, g + H];
+}
+/** The solids of an arch's legs: ellipses along the span, drawn width at the body's height. */
+function archPosts(a) {
+  const [x, z, g, span, H, yaw, seed] = a, dx = Math.cos(yaw), dz = Math.sin(yaw);
+  const r = 2.1 + 0.6 * seed + 0.9;
+  return [0.07, 0.93].map((t) => [x + dx * (t - 0.5) * span, z + dz * (t - 0.5) * span, r * 1.15, r * 0.65, yaw, g - 1, g + H * 0.6]);
 }
 
 /** A natural arch: [x, z, base, span, height, yaw, seed] — a fin swept along an arc, legs swelling at the ground. */
@@ -307,7 +329,6 @@ function buildArch(out, a, lod) {
   // A fin: thin across (U), deep in the arch's plane (W), the span's top flattened.
   const radius = (i, ang) => rad[i] * (Math.abs(Math.cos(ang)) * 0.55 + Math.abs(Math.sin(ang)) * 1.05 + 0.1) * (1 + 0.15 * n1(ang * 2 + i * 0.4 + seed * 7, SEED + 13));
   tube(out, C, U, Wv, radius, segs, () => [g + 1.5, g + H + 2, 0], 2);
-  for (const t of [0.04, 0.96]) ring(out, x + dx * (t - 0.5) * span, z + dz * (t - 0.5) * span, 2.6, g - 1, g + H * 0.6);
 }
 
 /**
@@ -350,16 +371,15 @@ export function buildCanyonKit(data, cell = CANYON_CELL) {
       return { positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv), cliff: new Float32Array(out.cliff), indices: new Uint32Array(out.idx) };
     };
     const far = build(CANYON_LODS.length - 1);
-    // Collision lines (one point per 1.5 m column: x, z, out-normal, foot, top, 1 at a wall's start).
+    // Collision lines (one point per 1.5 m column: COL_STRIDE floats).
     const colOut = { pos: [], nrm: [], uv: [], cliff: [], idx: [], col: [] };
     for (const p of pieces) buildWall(colOut, p.w, COLLIDE_LOD, p.kind, p.seed, p.s0 === 0 ? 0 : p.s0 - 1e-6, p.s1);
-    for (const h of extra.hoodoos) ring(colOut, h[0], h[1], h[4] * 1.15, h[2] - 1, h[2] + h[3]);
-    for (const ar of extra.arches) for (const t of [0.04, 0.96]) ring(colOut, ar[0] + Math.cos(ar[5]) * (t - 0.5) * ar[3], ar[1] + Math.sin(ar[5]) * (t - 0.5) * ar[3], 2.6, ar[2] - 1, ar[2] + ar[4] * 0.6);
     const collision = new Float32Array(colOut.col);
+    const posts = new Float32Array([...extra.hoodoos.map(hoodooPost), ...extra.arches.flatMap(archPosts)].flat());
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     const P = far.positions;
     for (let i = 0; i < P.length; i += 3) { x0 = Math.min(x0, P[i]); x1 = Math.max(x1, P[i]); y0 = Math.min(y0, P[i + 1]); y1 = Math.max(y1, P[i + 1]); z0 = Math.min(z0, P[i + 2]); z1 = Math.max(z1, P[i + 2]); }
     const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-    return { key, cx, cz, y0: y0 - 2, y1: y1 + 2, radius: Math.hypot(x1 - x0, z1 - z0) / 2 + 3, far, collision, build: (l) => (l === CANYON_LODS.length - 1 ? far : build(l)) };
+    return { key, cx, cz, y0: y0 - 2, y1: y1 + 2, radius: Math.hypot(x1 - x0, z1 - z0) / 2 + 3, far, collision, posts, build: (l) => (l === CANYON_LODS.length - 1 ? far : build(l)) };
   }).filter((c) => c.far.indices.length > 0);
 }
