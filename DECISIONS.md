@@ -639,3 +639,10 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **A/D on the neck keep their way round while held.** The camera picks the way at the press, not every move: steering by the camera stops at the tube's silhouette, so the far flank was out of reach at most camera angles and a climb up one side left valve 0 shut with no way to it. No valve moved. Past the silhouette A/D run against the screen, as round a pole; the camera does not orbit for the player.
 - **The chimneys stay a Gust's target, not a climb.** Nothing climbs the stacks and no route was added (the plan's Updraft and tower routes were never built). A Gust takes the chimney nearest the view ray within 0.3 of slope rather than a 5 m miss (no reticle, and the Wraith stands mid-view), from the forecourt or from the neck. A click or grip aimed at one says Q; a click is the weapon since docs §11.1, and the old text said "click".
 - **The climbing hint says where the next valve lies** (above, below, round the neck), from `neckClimb.valveWay`. Valves block the verbs only once they can open, so a Gust casts beside one in the vents phase.
+
+## 2026-11-01 — Phase 9 finish pass
+
+- **The clock runs in play** (user): a 40-minute day. Benches and bots hold a fixed hour.
+- **Boss fights (user):** the meadow and frost fights are not changed unless explicitly asked.
+- **The scarp stays for now:** removing it means a re-bake and re-placing what stands on it, too much risk at the end of a phase.
+- **Ploughed berms form only alongside the segment,** for every plough: the tip of a Sweep has no rim of its own.

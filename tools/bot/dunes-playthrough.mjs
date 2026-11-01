@@ -52,14 +52,15 @@ const before = await stages();
 log('before', JSON.stringify(before), JSON.stringify(walker));
 await bot('teleport', { x: 1880, z: 890 }); await sleep(2500);
 /** Long calls are fired and polled: the bot's reply can outlast a held connection. */
-const poll = async (call) => { await js(`w.__r=undefined;${call}.then((r)=>{w.__r=r;},(e)=>{w.__r='error '+e;});return 1`); for (let i = 0; i < 60; i++) { await sleep(1000); const r = await js('return w.__r ?? null'); if (r !== null) return r; } return null; };
+const poll = async (call) => { await js(`w.__r=undefined;${call}.then((r)=>{w.__r=!!r;},(e)=>{w.__r='error '+e;});return 1`); for (let i = 0; i < 60; i++) { await sleep(1000); const r = await js('return w.__r ?? null'); if (r !== null) return r; } return null; };
 const saved = await poll(`g.game.saves.save('slot1')`);
 check('saved', !!saved, String(saved).slice(0, 80));
 await sleep(1000);
 // A fresh page, then the load.
 const hello = await fetch('http://localhost:4173/__wraith/bot/status').then((r) => r.json());
 await js(`setTimeout(()=>{location.href='/?bot=1&title=0';},200);return 1`).catch(() => 0);
-for (let i = 0; i < 80; i++) { await sleep(3000); const s = await fetch('http://localhost:4173/__wraith/bot/status').then((r) => r.json()); if (s.hello !== hello.hello && s.hello) break; }
+// The page says hello early, then is silent while it boots: a command sent in that gap is lost.
+for (let i = 0; i < 80; i++) { await sleep(3000); const s = await fetch('http://localhost:4173/__wraith/bot/status').then((r) => r.json()); if (s.hello !== hello.hello && s.hello && s.pageSeenMsAgo < 1500) break; }
 await sleep(5000);
 await js(`w.__errs=[];addEventListener('error',(e)=>w.__errs.push(String(e.message)));return 1`);
 const loaded = !!(await poll(`g.game.saves.load('slot1')`));
