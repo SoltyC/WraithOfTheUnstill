@@ -160,6 +160,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let flare = 1.0 + 3.0 * (1.0 - smoothstep(0.0, 1.0, fragmentInputs.vGrow));
   let core = pow(1.0 - fragmentInputs.vH, 2.0) * (0.35 + 0.65 * nv);
   col += vec3f(0.35, 0.65, 1.0) * core * 0.045 * flare / max(exposure, 1e-6);
+  // A body of their own (the Warden's and the seedling's): deep blue ice with a lit core, so they read against snow.
+  let bodyK = uniforms.crystalParams.y;
+  col = mix(col, col * vec3f(0.34, 0.6, 0.95) + vec3f(0.18, 0.46, 0.95) * (0.1 + 0.2 * (1.0 - fragmentInputs.vH)) / max(exposure, 1e-6), bodyK);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, exposure);
   fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)

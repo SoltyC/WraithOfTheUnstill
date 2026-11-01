@@ -83,6 +83,8 @@ export function createSolids(sites, built, stairRuns = null) {
     floorQ() { this.h = this.floor(this.qx, this.qz, this.qh, false, this.qf); },
     /** The same for anyone anywhere (the Veiled, feet, cloth): every seated site, any height. */
     floorAnyQ() { this.h = this.floor(this.qx, this.qz, this.qh, true, Infinity); },
+    /** floorAnyQ, but only floors within reach of feet at qf. */
+    floorReachQ() { this.h = this.floor(this.qx, this.qz, this.qh, true, this.qf); },
     /** Ground under (x, z) given the terrain height gy: the highest platform top beneath, if higher. */
     floor(x, z, gy, any = false, feet = Infinity) {
       let h = gy;
@@ -290,12 +292,15 @@ export function createSolids(sites, built, stairRuns = null) {
 /** A ground query that also stands on built floors (once `solids` is set): for feet and cloth. */
 export function flooredGround(ground) {
   return {
+    /** The Wraith's feet (owner): a floor far above them is not this cloth's floor (a pillar's top, while climbing it,
+     *  dragged the robe up through the air). */
+    feet: Infinity,
     qx: 0.5, qz: 0.5, h: 0.5, solids: null, deck: null,
     sample() {
       ground.qx = this.qx; ground.qz = this.qz; ground.sample();
       const so = this.solids;
       if (so === null) this.h = ground.h;
-      else { so.qx = this.qx; so.qz = this.qz; so.qh = ground.h; so.floorAnyQ(); this.h = so.h; }
+      else { so.qx = this.qx; so.qz = this.qz; so.qh = ground.h; so.qf = this.feet; so.floorReachQ(); this.h = so.h; }
       // The Long Walker's back (game/walker/deck.js), near the Wraith's own height.
       const dk = this.deck;
       if (dk !== null && dk.on) { dk.qx = this.qx; dk.qz = this.qz; dk.qh = this.h; dk.floorNearQ(); this.h = dk.h; }

@@ -75,10 +75,11 @@ export function createCrystals(scene, atmo, data) {
       return m;
     },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
-    /** Owner fields: sim time; dirty when records changed. */
-    time: 0.5, dirty: false,
+    /** Owner fields: sim time; dirty when records changed; body 0..1: a cold colour of their own, for crystals that must
+     *  read against snow (clear ice shows the snow behind it). */
+    time: 0.5, dirty: false, body: 0.5 - 0.5,
     update() {
-      params.x = this.time;
+      params.x = this.time; params.y = this.body;
       if (this.dirty) { buf.update(data); this.dirty = false; }
     },
   };

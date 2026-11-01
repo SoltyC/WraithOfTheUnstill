@@ -135,6 +135,7 @@ export async function createActors(g) {
   bindShadows(pillarCrystals.material, shadows);
   shadows.addCaster(pillarCrystals.mesh, pillarCrystals.makeShadowMaterial, 2);
   pillarCrystals.freeze();
+  pillarCrystals.body = 1;
   // Line of sight against the built solids (set by the architecture system once they exist).
   // With `body` set (an aimed spike looking for the Wraith), the Warden's own bulk counts too:
   // under its belly the spikes off its back cannot reach.

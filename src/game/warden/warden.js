@@ -39,6 +39,7 @@ export const WARDEN_FIGHT = { hp: 100, seamDamage: 20, chargeTime: 3.5, barrageT
 /** The release, in seconds from the last joint breaking. */
 function noop() {}
 export const RELEASE_T = { rear: 1.6, slam: 2.7, impact: 3.05, rested: 15 };
+const BANK_STEPS = 12, BANK_EVERY = 0.4;   // the drifts along its flanks, a little at a time
 const SHOCK_SPEED = 24, SHOCK_MAX = 95, SHOCK_RAYS = 64;
 
 /**
@@ -81,7 +82,7 @@ export function createWarden(ctx) {
     /** Release: the exhale's wind gust 0..1 (owner adds it to the wind), and its wave radius. */
     gust: 0.5 - 0.5, wave: -1.5 + 0.5,
     /** The slam's shockwave: centre and radius (−1: none); slam is set on the impact frame. */
-    shockX: 0.5, shockZ: 0.5, shockR: -1.5 + 0.5, slam: false, drifts: false,
+    shockX: 0.5, shockZ: 0.5, shockR: -1.5 + 0.5, slam: false, drifts: false, bankN: 0,
     /** 0..1 snow cover as it lies down into the land (chunk records carry it in alpha). */
     cover: 0.5 - 0.5,
     /** Struck flash (0..1) and the stomp's ground ring (centre, radius; −1 none). */
@@ -201,7 +202,7 @@ export function createWarden(ctx) {
       body.place(x, z, heading);
       body.rise = 1; body.crouch = 0; body.lift = 0; body.frozen = false; body.rear = 0; body.lie = 0;
       this.active = true; this.state = W.DORMANT; this.t = 0; this.settle = 0; this.restore = 0;
-      this.cover = 0; this.shockR = -1; this.slam = false; this.gust = 0; this.drifts = false;
+      this.cover = 0; this.shockR = -1; this.slam = false; this.gust = 0; this.drifts = false; this.bankN = 0;
       this.hurt = 0; this.ringR = -1; this.cool = 3; this.flinch = 0;
       this.hp = WARDEN_FIGHT.hp; this.ward = false; this.homeX = x; this.homeZ = z; this.chip = 0;
       this.nbrReady = false;
@@ -255,7 +256,7 @@ export function createWarden(ctx) {
       this.t = RELEASE_T.rested - 0.01;
       body.rear = 0; body.crouch = 1; body.lie = 1; this.glow = 0;
       this.shockR = -1; this.gust = 0;
-      if (!this.drifts) banks(this);
+      if (!this.drifts) { banks((BANK_STEPS - this.bankN) / BANK_STEPS); this.drifts = true; }
       const d = this.dt; this.dt = 0.02; this.update(); this.dt = d;
     },
     update() {
@@ -575,7 +576,12 @@ export function createWarden(ctx) {
       body.lie += (1 - body.lie) * Math.min(1, dt * 1.2);
       W0.glow = Math.max(0, 1 - (t - R.impact) / 2.2);
       shockwave(W0);
-      if (t > 6 && !W0.drifts) banks(W0);
+      // The snow banks up along it over a few seconds; a skipped release gets them all at once.
+      if (t > 6 && !W0.drifts) {
+        if (t > 6 + BANK_STEPS * BANK_EVERY + 1) { banks(1); W0.bankN = BANK_STEPS; }
+        else for (const want = Math.min(BANK_STEPS, Math.ceil((t - 6) / BANK_EVERY)); W0.bankN < want; W0.bankN++) banks(1 / BANK_STEPS);
+        if (W0.bankN >= BANK_STEPS) W0.drifts = true;
+      }
     }
     // Snow over it, and the land restored around it.
     const c = Math.min(1, Math.max(0, (t - 4.5) / 8)); W0.cover = c * c * (3 - 2 * c);
@@ -639,14 +645,13 @@ export function createWarden(ctx) {
   }
 
   /** Drifts bank up against it as it lies down: one long mound per spine segment, either side. */
-  function banks(W0) {
-    W0.drifts = true;
+  function banks(share) {
     const rx = Math.cos(body.heading), rz = -Math.sin(body.heading), w = WARDEN_SHAPE.hip * 0.62;
     for (let i = 0; i < WARDEN_SHAPE.spine; i++) {
       for (let s = -1; s <= 1; s += 2) {
         ts.bx = body.sx[i] + rx * s * w; ts.bz = body.sz[i] + rz * s * w;
         ts.bdx = Math.sin(body.heading); ts.bdz = Math.cos(body.heading);
-        ts.bl = WARDEN_SHAPE.spacing * 1.2; ts.bw = WARDEN_SHAPE.hip * 0.5; ts.bd = 2.3; ts.bc = 0.3;
+        ts.bl = WARDEN_SHAPE.spacing * 1.2; ts.bw = WARDEN_SHAPE.hip * 0.5; ts.bd = 2.3 * share; ts.bc = 0.3;
         ts.bk = BRUSH.MOUND; ts.bwet = 0; ts.bbias = 0; ts.bberm = 0;
         ts.stamp();
       }

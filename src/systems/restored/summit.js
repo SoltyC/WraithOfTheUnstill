@@ -55,7 +55,11 @@ export function addShelf(ctx) {
         const m = medalFor(secs, medals);
         if (!capture) hud.notice('The Shelf Stream', fmt(secs) + (m ? ' · ' + m : ''), prev === undefined || secs < prev ? 'Your best. Gold is under ' + medals.gold + ' seconds, silver ' + medals.silver + ', bronze ' + medals.bronze + '.' : 'Best: ' + fmt(prev), 7);
       }
-      if (course.running && !capture) hud.line('shelf', 'Ring ' + (course.next + 1) + ' of ' + rings.length + ' · ' + fmt(course.t));
+      if (course.running && !capture) {
+        // A ring above the Wraith is reached by riding the wind up the face, not by gliding at it: say so.
+        const low = p.y < rings[course.next].y - 4;
+        hud.line('shelf', 'Ring ' + (course.next + 1) + ' of ' + rings.length + ' · ' + fmt(course.t) + (low ? ' · too low: hold over the face and let the wind lift you' : ''));
+      }
     },
   };
 }

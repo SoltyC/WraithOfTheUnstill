@@ -73,8 +73,9 @@ export function addNpcSystems(g) {
   const tobinLost = place(data.npcs.find((d) => d.id === 'tobin').lost);
   function station(n) {
     if (n.id === 'tobin') {
-      const q = chapter.graph.quests['trail-in-snow'], fl = chapter.graph.flags;
-      if (q && q.state === 'active' && !fl.has('tobin-found')) return tobinLost;
+      const fl = chapter.graph.flags;
+      // He has wandered off before the Wraith ever reaches the camp: never at the fire until he has been found.
+      if (!fl.has('tobin-found')) return tobinLost;
       // Let him listen: he stays at the spring until the steppe moves again.
       if (fl.has('tobin-listened') && !chapter.facts.restored.has('frost')) return tobinLost;
     }

@@ -115,6 +115,35 @@ export function addTitleCamSystem(g) {
     out.z = b0 * S.z + b1 * p1z + b2 * p2z + b3 * E.z;
   }
 
+  // The dive's clearance is planned once over the whole path, not reacted to: rising only when a roof comes in reach made
+  // the flight lurch over the monastery. Held early enough to climb gently, and smoothed so it never kicks.
+  const LIFT_N = 96, liftPlan = new Float64Array(LIFT_N), liftTmp = new Float64Array(LIFT_N), MAX_STEP = 1.1;
+  function planLift() {
+    for (let i = 0; i < LIFT_N; i++) {
+      const s0 = i / (LIFT_N - 1);
+      bezier(s0, pose);
+      const x = pose.x, y = pose.y, z = pose.z;
+      bezier(Math.min(1, s0 + 0.01), pose);
+      const dx = pose.x - x, dz = pose.z - z, l = Math.sqrt(dx * dx + dz * dz) || 1;
+      const dE = Math.sqrt((x - E.x) ** 2 + (y - E.y) ** 2 + (z - E.z) ** 2);
+      let r = need(x, y, z, dx / l, dz / l) * Math.min(1, Math.max(0, (dE - 5) / 25));
+      let guard = 0;
+      while (guard++ < 40 && inside(x, y + r, z)) r += 0.5;
+      liftPlan[i] = r;
+    }
+    for (let i = 1; i < LIFT_N; i++) liftPlan[i] = Math.max(liftPlan[i], liftPlan[i - 1] - MAX_STEP);
+    for (let i = LIFT_N - 2; i >= 0; i--) liftPlan[i] = Math.max(liftPlan[i], liftPlan[i + 1] - MAX_STEP);
+    for (let pass = 0; pass < 4; pass++) {
+      liftTmp.set(liftPlan);
+      for (let i = 1; i < LIFT_N - 1; i++) liftPlan[i] = (liftTmp[i - 1] + 2 * liftTmp[i] + liftTmp[i + 1]) / 4;
+    }
+    liftPlan[LIFT_N - 1] = 0;
+  }
+  function plannedLift(s0) {
+    const f = s0 * (LIFT_N - 1), i = Math.min(LIFT_N - 2, Math.floor(f)), u = f - i;
+    return liftPlan[i] + (liftPlan[i + 1] - liftPlan[i]) * u;
+  }
+
   const self = g.titleCam = {
     get active() { return mode !== 'off'; },
     /** Tests only: run the camera faster than real time. */
@@ -159,6 +188,8 @@ export function addTitleCamSystem(g) {
       if (!ready && waited < 6) return;
       followPose(E);
       chooseApproach();
+      lift = 0; // S.y already holds it: the plan starts from there
+      planLift();
       arm.setPose(S.x, S.y, S.z, S.yaw, S.pitch, S.fov);
       mode = 'dive'; diveT = 0;
       bars.classList.add('on');
@@ -179,12 +210,7 @@ export function addTitleCamSystem(g) {
     pose.yaw = pose.yaw + wrap(E.yaw - pose.yaw) * w;
     pose.pitch = pose.pitch + (E.pitch - pose.pitch) * w;
     pose.fov = S.fov + (E.fov - S.fov) * s;
-    const sx = Math.sin(pose.yaw), sz = Math.cos(pose.yaw);
-    const dE = Math.sqrt((pose.x - E.x) ** 2 + (pose.y - E.y) ** 2 + (pose.z - E.z) ** 2);
-    const away = Math.min(1, Math.max(0, (dE - 5) / 25));            // near the end the approach line itself is clear
-    applyLift(dt, need(pose.x, pose.y, pose.z, sx, sz) * away);
-    let guard = 0;
-    while (guard++ < 30 && inside(pose.x, pose.y + lift, pose.z)) lift += 0.5;   // never inside stone
+    lift = plannedLift(s);
     put(pose);
     // Depth of field: focus on the Wraith, loose at height, tight as the camera arrives.
     const dxw = tx - pose.x, dyw = ty - pose.y - lift, dzw = tz - pose.z;

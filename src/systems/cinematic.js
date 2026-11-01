@@ -17,13 +17,39 @@ export function addCinematicSystem(g) {
     rc.hitT = knockCtl.hitT;
   }
   g.feedReleaseCam = feedReleaseCam;
+  /** It lies down where it stands: a Wraith beside or under it would end up inside it, so it is set clear, on the side
+   *  it was already on. Wide enough for the chest's slam forward and the drifts along the flanks. */
+  const CLEAR = 17;
+  function clearOfBody() {
+    const b = warden.body, p = controller.pos;
+    let near = 0, best = Infinity;
+    for (let i = 0; i < b.sx.length; i++) { const d = Math.hypot(p.x - b.sx[i], p.z - b.sz[i]); if (d < best) { best = d; near = i; } }
+    if (best >= CLEAR) return;
+    let dx = p.x - b.sx[near], dz = p.z - b.sz[near];
+    if (Math.hypot(dx, dz) < 0.5) { dx = Math.cos(b.heading); dz = -Math.sin(b.heading); }
+    const l = Math.hypot(dx, dz);
+    let x = p.x, z = p.z;
+    for (let k = 0; k < 12; k++) { // out along that line until every part of the body is far enough
+      let m = Infinity;
+      for (let i = 0; i < b.sx.length; i++) m = Math.min(m, Math.hypot(x - b.sx[i], z - b.sz[i]));
+      if (m >= CLEAR) break;
+      x += dx / l * (CLEAR - m + 0.5); z += dz / l * (CLEAR - m + 0.5);
+    }
+    controller.teleport(x, z);
+    controller.vel.x = 0; controller.vel.y = 0; controller.vel.z = 0;
+  }
   loop.add({ name: 'releaseCam', update: () => {
     const rc = releaseCam;
     rc.dt = clock.realDt;
     const releasing = warden.active && warden.state === wardenMod.W.RELEASE;
     if (releasing) {
       feedReleaseCam(rc);
-      if (!rc.played && !rc.active && !capture) { knockCtl.hitT = -1; rc.start(); }
+      if (!rc.played && !rc.active && !capture) {
+        knockCtl.hitT = -1;
+        clearOfBody(); // on the cut into the cinematic, unseen
+        feedReleaseCam(rc);
+        rc.start();
+      }
       if (warden.slam && !capture) { clock.hitStop = Math.max(clock.hitStop, 0.22); flash = 0.85; }
     } else if (!rc.active && warden.state !== wardenMod.W.RESTED) rc.played = false;
     const was = rc.active;

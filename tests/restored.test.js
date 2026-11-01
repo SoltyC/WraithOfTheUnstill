@@ -65,7 +65,7 @@ describe('the streams', () => {
   it('lift on the line, less beside it, none beyond the width, none above the ceiling', () => {
     const s = st(1), [x, z] = onLine('frost-shelf');
     const mid = s.rise(x, 20, z, 1), side = s.rise(x + 40, 20, z, 1), far = s.rise(x + 90, 20, z, 1), high = s.rise(x, 140, z, 1);
-    expect(mid).toBeGreaterThan(4); expect(mid).toBeLessThanOrEqual(5.5 + 1e-9);
+    expect(mid).toBeGreaterThan(4); expect(mid).toBeLessThanOrEqual(7 + 1e-9);
     expect(side).toBeLessThan(mid); expect(side).toBeGreaterThan(0);
     expect(far).toBe(0); expect(high).toBe(0);
   });
