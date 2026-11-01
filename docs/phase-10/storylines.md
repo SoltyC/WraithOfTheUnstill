@@ -65,6 +65,8 @@ Morrow's sister, still at her wheel, has a torn Lung beside her and Morrow's nam
 ### 10. The Listener
 It wakes and lends Tide. The fight is the biggest of the game so far, ending with one long Draw and the Undertow. The sea-doors turn. The Drowned lift their heads. **Music swells. The game gives the player the same triumph as every release before it.**
 
+**How the truth is told:** `release-cinematic.md`. The player holds the key through the flashbacks that show it, and letting go doesn't stop it.
+
 ### 11. The morning
 The Wraith surfaces at dawn, into the signature frame: mirror water, mist-hung trees. It's the most beautiful thing in the game. Then the camera settles, and the player sees what's on the water.
 

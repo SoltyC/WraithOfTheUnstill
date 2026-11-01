@@ -662,3 +662,8 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The arm's shoulder offset draws in beside a solid,** and the arm may shorten to 0.3 m against one: it used to start inside a wall and then ignore that wall.
 - **Rock is never eased into:** the arm and the shoulder offset stop at once at a solid, and only ease back out. A body behind the face comes out by degrees, so stepping off a lip does not jolt it.
 - **The camera's up vector follows its rotation every frame** (`updateUpVectorFromRotation`). Babylon otherwise rebuilds it only when `rotation.z` changes, so a shake's last frame kept a stale up and turning tilted the horizon by up to the pitch, until the next shake. This was the bug on F: with the setting off, F then a 90° turn tilted the view 18–71°, and a second F cleared it.
+
+## 2026-11-01 — Phase 10's story must be understood, not hinted
+
+- **User:** the player must realise what happened; the release plays a cutscene with animated flashbacks, ending on the floating robes of the dead. Design in `docs/phase-10/release-cinematic.md`. The test is that a player can say unprompted that they were alive and that they killed them.
+- **The first viewing of this release cannot be skipped;** a player mashing Space in the climax would otherwise lose the chapter. Later releases and replays keep their skip.

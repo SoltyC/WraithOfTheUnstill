@@ -55,7 +55,17 @@ The user wants the player betrayed and changed by this chapter. The proposal: th
 - **Small earlier edits, dialogue only:** a few of Aud's lines in the frost. **The boss fights are not touched.**
 - **Phase 11 and 12 follow:** the sealed library's journal, Aud's last scene, and the ending's new meaning. Add them to those phases' plans.
 
-Adds about 3–4 sessions. Test with the user: does the morning land, does the player feel cheated or changed, and does anyone want to replay the city? **Order:** Aud must have been met in every order of play, and the frost is always first, so this holds. Aud's words must not depend on which other Wardens are released.
+Test with the user: does the morning land, does the player feel cheated or changed, and does anyone want to replay the city? **Order:** Aud must have been met in every order of play, and the frost is always first, so this holds. Aud's words must not depend on which other Wardens are released.
+
+### Making the player understand (added 2026-11-01; `release-cinematic.md`)
+
+The user's direction: the gameplay must carry the story, and freeing the Warden plays a cutscene that makes it obvious, with animated flashbacks, ending on the floating robes of the dead.
+
+**U6 — The cinematic director and the people (4–5 sessions).** A data-driven shot timeline for every later cutscene. The five people's loops and Sefa, the child who follows the Wraith. The name record saved with each name said. **Checkpoints: the loops on film; Sefa alone.**
+
+**U7 — The release and the morning after (4–5 sessions).** A grey rough cut first, as soon as U4's rooms exist, then the 3-minute sequence: flashbacks in the real rooms, the frozen wave, the player's own record, the held key that no longer does anything, about 4,000 floating robes. Then the walk through them, the jetty, the night's count, the rewritten journal, the changed title screen. **Checkpoints: the rough cut; the comprehension test.**
+
+**Cut scope here last.** This is the reason for the chapter.
 
 ### Changes to the plan
 
@@ -311,10 +321,12 @@ Per BRIEF §2.5: 2–3 main, 3–5 side, Echoes 3–5, robes 2–3.
 | *U3 undercroft* | 1 | |
 | *U4 Ebbhold* | 4–5 | the city from above, and its rooms |
 | *U5 Drowned and register* | 2 | **the first room of them** |
+| *U6 director and people* | 4–5 | **the loops; Sefa** |
+| *U7 the release and after* | 4–5 | **rough cut; comprehension test** |
 
-Order: F0, F1, **U1**, F2–F4, then U2–U5 with F8–F11, and F12 last.
+Order: F0, F1, **U1**, F2–F4, then U2–U7 with F8–F11, and F12 last.
 
-Roughly **19–26 sessions for the fen, plus 14–17 for the city and the twist: 33–43 in all**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
+Roughly **19–26 sessions for the fen, plus 19–23 for the city, the twist and its telling: 38–49 in all**, an estimate from Phase 9's 16–20 plan. Built in the main session unless the user asks for subagents.
 
 ## Performance budget
 
@@ -351,6 +363,6 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 5. **Shaped roster:** Mudlings, Rootback, Lampfish, the Drowned elite.
 6. **Skim before the Warden?** Lent at the waking like sand-surf (recommended), or only at the release. Later keeps the first half on foot but removes the fight's core tension.
 7. **The story:** The Lung as the main thread (`storylines.md`), and the betrayal: the release kills the people of Ebbhold, and Morrow and Aud knew. It changes the rest of the game, including the ending.
-8. **Scope:** build the city inside Phase 10 at 33–43 sessions (recommended only if U1 is a joy), or split it: Phase 10 the fen and the dive, and a Phase 10b for Ebbhold, with the Warden held until then.
+8. **Scope:** split it (recommended): Phase 10 is the fen, the skim and the dive, and Phase 10b is Ebbhold, the Warden and the release; or build everything as one phase of 38–49 sessions.
 9. **Size of Ebbhold:** 8–12 real rooms that look vast (recommended), or a larger walkable city at a much higher cost.
 10. **Open order and locks** (`cross-biome.md` decisions 1, 2 and 4) are still recorded as open, and this plan assumes the recommended answers.
