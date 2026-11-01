@@ -18,7 +18,9 @@ const SPINE = 0, HEAD = 1, TAIL = 2, UPPER = 3, LOWER = 4;
 // (amber), awn (thin spike trailing back), root (thin dark strand hanging down).
 export const CHUNK = { SNOW: 0, ICE: 1, CORE: 2, WATER: 3, SEDGE: 4, TURF: 5, STONE: 6, REED: 7, POD: 8, AWN: 9, ROOT: 10,
   /** Dune kinds (D9a, rigDune.js): packed sand, banded sandstone, carved ruin stone, a sandstone thorn. */
-  SAND: 11, SANDSTONE: 12, RUIN: 13, THORN: 14, GLASS: 15 };
+  SAND: 11, SANDSTONE: 12, RUIN: 13, THORN: 14, GLASS: 15,
+  /** The Long Walker's hide: broad worn strata under drifted sand. */
+  DUNEHIDE: 17 };
 /** Floats per chunk record: (pos, sx), (fwd, sy), (up, sz), (seed, kind, glow, alpha). */
 export const CHUNK_FLOATS = 16;
 

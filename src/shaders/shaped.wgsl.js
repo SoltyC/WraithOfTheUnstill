@@ -48,6 +48,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
     // Awn / sandstone thorn: a spike tapering to a point trailing backward (-z).
     let t = 1.0 - 0.85 * max(-v.z, 0.0);
     v = vec3f(v.x * t, v.y * t, v.z);
+  } else if (mk == 17) {
+    // A long worn mass: a smooth body, slightly flattened sides, a little lumpy (no chipped corners).
+    let q = vertexInputs.position;
+    v = q * (0.95 + 0.07 * sin(dot(q, vec3f(2.1, 3.3, 1.7)) + seed) + 0.03 * sin(dot(q, vec3f(5.3, 2.9, 6.1)) + seed * 2.0));
   } else if (mk == 15) {
     v=vec3f(v.x*(1.0-0.5*max(v.y,0.0)),v.y,v.z*(1.0-0.5*max(v.y,0.0)));
   } else if (mk == 10) {
@@ -156,6 +160,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       let thin = 0.5 + 0.5 * sin((lv.y + wob * 0.2) * 41.0 + sd);
       albedo = mix(vec3f(0.50, 0.27, 0.15), vec3f(0.80, 0.62, 0.40), band) * (0.88 + 0.16 * thin);
       if (kind == 14) { albedo = albedo * 0.82; }
+    } else if (kind == 17) {
+      // The Walker's hide: a dune that walks. Broad, faint strata worn through a skin of drifted sand, which lies on
+      // whatever faces up. The strata are wide and low in contrast, so neighbouring masses do not read as striped.
+      let wob = noised(vec2f(lv.x * 1.3 + sd, lv.z * 1.3)).x;
+      let band = 0.5 + 0.5 * sin((lv.y + wob * 0.5) * 4.5 + sd * 0.3);
+      let grit = noised(wp.xz * 3.0 + wp.y * 2.0 + vec2f(sd, 1.0)).x;
+      let rock = mix(vec3f(0.56, 0.39, 0.25), vec3f(0.70, 0.55, 0.37), band) * (0.92 + 0.14 * grit);
+      let drift = smoothstep(0.05, 0.62, up + 0.3 * (grit - 0.5));
+      albedo = mix(rock, vec3f(0.80, 0.66, 0.44), drift);
+      trans = 0.1 * drift;
     } else if (kind == 13) {
       // Ruin plate: pale carved limestone, dark incised lines (a stepped glyph band and edge rules), wind-polished, rust streaks.
       let g = lv.xz * 5.0 + vec2f(sd, 0.0);

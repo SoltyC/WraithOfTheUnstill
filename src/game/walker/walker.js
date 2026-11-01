@@ -73,12 +73,12 @@ function buildChunks(ctx) {
   const list = [];
   let seed = 1;
   const add = (bone, x, y, z, sx, sy, sz, kind, o = {}) => list.push({ bone, x, y, z, sx, sy, sz, kind, f: o.f || [0, 0, 1], u: o.u || [0, 1, 0], glow: o.glow || G_NONE, alpha: o.alpha || A_ALL, seed: seed++ });
-  const { SAND, SANDSTONE, RUIN, THORN, POD, GLASS } = CHUNK;
+  const { SAND, RUIN, THORN, POD, GLASS } = CHUNK, SANDSTONE = CHUNK.SANDSTONE, HIDE = CHUNK.DUNEHIDE;
   // Hull: banded sandstone masses under the deck, packed sand at the belly and draped down the flanks.
-  for (const z of [-15, -9, -3, 3, 9, 15]) for (const x of [-7, 0, 7]) add(B_BODY, x + (hh(x, z) - 0.5), -3.7, z, 8.6, 7.2, 7.4, SANDSTONE);
+  for (const z of [-15, -9, -3, 3, 9, 15]) for (const x of [-7, 0, 7]) add(B_BODY, x + (hh(x, z) - 0.5), -3.9, z, 10.5, 8.0, 9.0, HIDE, { seed: 7 });
   for (const z of [-15, -9, -3, 3, 9, 15]) add(B_BODY, 0, -6.9, z, 15, 3.6, 7.6, SAND);
   for (const z of [-14, -7, 0, 7, 14]) for (const s of [-1, 1]) add(B_BODY, s * 11.9, -3.2, z, 2.6, 6, 7.2, SAND);
-  for (const s of [-1, 1]) add(B_BODY, 0, -3.2, s * 18.4, 21, 6, 3, SANDSTONE);
+  for (const s of [-1, 1]) add(B_BODY, 0, -3.2, s * 18.4, 23, 6.5, 4.5, HIDE, { seed: 9 });
   // The court's floor: carved plates.
   for (let i = 0; i < 8; i++) for (let j = 0; j < 12; j++) add(B_BODY, -10.5 + 3 * i, -0.36, -16.5 + 3 * j, 3.55, 0.72, 3.55, RUIN);
   // Walls: ragged tops; the side walls open where the flank stairs arrive, the front at the gate.
@@ -123,30 +123,32 @@ function buildChunks(ctx) {
   // Legs: sandstone cores with packed sand, ruin plates along the top (the climb on a kneeling leg).
   for (let leg = 0; leg < LEGS; leg++) {
     const up = B_UP + leg, lo = B_LO + leg, ft = B_FOOT + leg, al = A_LEGS;
-    for (let j = 0; j < 7; j++) {
-      const y = 1.0 + j * 2.0;
-      add(up, 0, y, 0, 3.6, 3.0, 3.2, SANDSTONE, { alpha: al });
-      for (const s of [-1, 1]) add(up, s * 1.3, y + 0.6, -0.8, 2.2, 2.6, 2.0, SAND, { alpha: al });
-      add(up, 0, y, 1.75, 1.9, 0.45, 1.7, RUIN, { u: [0, 0, 1], f: [0, 1, 0], glow: G_PLATES, alpha: al });
+    // Long overlapping masses that taper to the knee and the foot, so a leg reads as one worn column; sand hangs off
+    // them in tongues. The plates stay as the climb's steps on a kneeling leg.
+    for (let j = 0; j < 4; j++) {
+      const y = UPPER * (j + 0.5) / 4, k = 1.08 - 0.1 * j;
+      add(up, 0, y, 0, 5.0 * k, UPPER / 2.2, 4.5 * k, HIDE, { alpha: al, seed: 40 + leg });
+      for (const s of [-1, 1]) add(up, s * 1.5 * k, y + 0.9, -0.9, 2.6, UPPER / 3.2, 2.5, SAND, { alpha: al });
     }
-    add(up, 0, UPPER, 0, 4.4, 4.4, 4.4, SANDSTONE, { alpha: al });
-    for (let j = 0; j < 9; j++) {
-      const y = 1.4 + j * 2.5, k = 1 - 0.35 * y / LOWER;
-      add(lo, 0, y, 0, 3.0 * k, 3.3, 2.8 * k, SANDSTONE, { alpha: al });
-      add(lo, (j % 2 ? 1 : -1) * 1.1 * k, y, 0.3, 2.0 * k, 2.8, 1.8 * k, SAND, { alpha: al });
-      if (j % 2 === 0) add(lo, 0, y, 1.45 * k, 1.6 * k, 0.4, 1.6, RUIN, { u: [0, 0, 1], f: [0, 1, 0], alpha: al });
+    for (let j = 0; j < 7; j++) add(up, 0, 1.0 + j * 2.0, 1.95, 1.9, 0.45, 1.7, RUIN, { u: [0, 0, 1], f: [0, 1, 0], glow: G_PLATES, alpha: al });
+    add(up, 0, UPPER, 0, 5.2, 5.0, 5.0, HIDE, { alpha: al, seed: 50 + leg });
+    for (let j = 0; j < 5; j++) {
+      const y = LOWER * (j + 0.5) / 5, k = 1 - 0.42 * y / LOWER;
+      add(lo, 0, y, 0, 4.2 * k, LOWER / 3, 3.9 * k, HIDE, { alpha: al, seed: 60 + leg });
+      add(lo, (j % 2 ? 1 : -1) * 1.0 * k, y + 0.6, 0.2, 2.5 * k, LOWER / 4, 2.3 * k, SAND, { alpha: al });
     }
-    add(ft, 0, 0.6, 0, 5.2, 1.6, 6, SANDSTONE, { alpha: al });
+    for (let j = 0; j < 5; j++) { const y = 1.4 + j * 5, k = 1 - 0.42 * y / LOWER; add(lo, 0, y, 1.75 * k, 1.6 * k, 0.4, 1.6, RUIN, { u: [0, 0, 1], f: [0, 1, 0], alpha: al }); }
+    add(ft, 0, 0.7, 0, 6, 1.9, 6.8, HIDE, { alpha: al, seed: 70 + leg });
     for (const [x, z] of [[-1.7, 2.8], [0, 3.4], [1.7, 2.8]]) add(ft, x, 0.45, z, 1.3, 1.0, 2.4, THORN, { alpha: al });
-    add(ft, 0, 0.5, -2.6, 2.6, 1.2, 2.2, SANDSTONE, { alpha: al });
+    add(ft, 0, 0.6, -2.6, 3, 1.4, 2.6, HIDE, { alpha: al, seed: 70 + leg });
   }
   // Neck (stretches on release) and head: a long sandstone skull, a carved face plate, amber eyes.
-  for (const nb of [B_NECK, B_NECK2]) for (let j = 0; j < 3; j++) { const y = 0.17 + j * 0.33, w = nb === B_NECK ? 3.4 - j * 0.15 : 2.95 - j * 0.15; add(nb, 0, y, 0, w, 3.4, w * 0.9, SANDSTONE); add(nb, 0, y + 0.12, 1.1, 2.0, 2.4, 1.6, SAND); }
-  add(B_HEAD, 0, 0, 0, 5, 4, 6.5, SANDSTONE);
+  for (const nb of [B_NECK, B_NECK2]) for (let j = 0; j < 3; j++) { const y = 0.17 + j * 0.33, w = nb === B_NECK ? 3.4 - j * 0.15 : 2.95 - j * 0.15; add(nb, 0, y, 0, w, 3.4, w * 0.9, HIDE); add(nb, 0, y + 0.12, 1.1, 2.0, 2.4, 1.6, SAND); }
+  add(B_HEAD, 0, 0, 0, 5.4, 4.2, 7.5, HIDE, { seed: 11 });
   add(B_HEAD, 0, 0.2, 3.1, 4.2, 3.2, 0.8, RUIN, { u: [0, 0, 1], f: [0, 1, 0] });
   for (const s of [-1, 1]) add(B_HEAD, s * 1.25, 0.7, 3.5, 0.75, 0.6, 0.6, POD, { glow: G_EYES });
   for (const s of [-1, 1]) add(B_HEAD, s * 2.0, 1.9, -0.5, 0.9, 2.6, 0.9, THORN, { f: [0, 0.4, -0.9] });
-  add(B_HEAD, 0, -1.7, 1.2, 3.6, 1.4, 4.2, SANDSTONE);
+  add(B_HEAD, 0, -1.7, 1.2, 3.8, 1.6, 4.6, HIDE, { seed: 11 });
   // The brake stone in the forecourt: a carved stele with a glyph band, an amber stone set in its top.
   add(B_MOUND, BRAKE_LOCAL[0], 1.2, BRAKE_LOCAL[1], 1.8, 2.8, 1.2, RUIN, { glow: G_BRAKE, alpha: A_BRAKE });
   add(B_MOUND, BRAKE_LOCAL[0], 2.85, BRAKE_LOCAL[1], 0.7, 0.6, 0.7, POD, { glow: G_BRAKE, alpha: A_BRAKE });
