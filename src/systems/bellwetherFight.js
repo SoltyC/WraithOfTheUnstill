@@ -23,7 +23,7 @@ export const FLAG = { WOKE: 'meadow:bellwether-woke', RELEASED: 'meadow:bellweth
 
 /** Tunables of the wiring (the director's own are in bellTuning). */
 export const bellSys = {
-  aimRange: 120, aimR: 5,   // an aimed Gust (the view ray) strips a chimney this far off, within this miss
+  aimRange: 120, aimR: 5, aimTan: 0.3,   // an aimed Gust (the view ray) strips the nearest chimney this far off, within this miss or this slope off the ray (no reticle, and the Wraith stands mid-view)
   gustReach: 12,         // m added to a Gust's half width: the burst is felt this far in 3D (the vents are 38 m up the hall)
   vortexEvery: 0.6,      // s between a held Vortex's strips
   vortexPower: 1.5,      // Gust is power 1 (see fight.js windHit)
@@ -95,6 +95,23 @@ export function createWindReporter(fight, cfg = bellSys) {
   };
 }
 
+/**
+ * The sealed chimney a view ray from (ox, oy, oz) along unit (fx, fy, fz) is aimed at: the one nearest the ray, or -1.
+ * @param {{ vents: Float64Array, ventPos: (k:number, out:any) => any }} fight
+ */
+export function pickVent(ox, oy, oz, fx, fy, fz, fight, vp, cfg = bellSys) {
+  let best = -1, bestK = 1e18;
+  for (let k = 0; k < 3; k++) {
+    if (!(fight.vents[k] > 0)) continue;
+    fight.ventPos(k, vp);
+    const dx = vp.x - ox, dy = vp.y - oy, dz = vp.z - oz, t = dx * fx + dy * fy + dz * fz;
+    if (t <= 0 || t > cfg.aimRange) continue;
+    const ex = dx - fx * t, ey = dy - fy * t, ez = dz - fz * t, miss = Math.sqrt(ex * ex + ey * ey + ez * ez);
+    if (miss < Math.max(cfg.aimR, t * cfg.aimTan) && miss / t < bestK) { bestK = miss / t; best = k; }
+  }
+  return best;
+}
+
 /** How far the gale's wind wall has run (m from the mouth) at director progress k (0..1). */
 export function galeFrontDistance(k, reach = bellTuning.galeR, speedK = bellSys.galeFrontK) { return reach * Math.min(1, Math.max(0, k) * speedK); }
 
@@ -156,12 +173,13 @@ export function addBellwetherFightSystem(g) {
     allowed: () => devFight || flags.has(FLAG.STAIR),
     sheltered,
     nearValve: () => bellClimb.nearValve,
+    valveWay: () => bellClimb.valveWay,
     spawn: (name, x, z) => shaped.spawn(name, x, z),
     alive: (i) => shaped.isLive(i) || shaped.slots[i].state === shapedMod.S.RISING,
     kill: (i) => shaped.damage(i, 1e9, false, 0, 0),
     summonNames: bellSys.summonNames,
   });
-  const windRep = createWindReporter(fight), vp = { x: 0, y: 0, z: 0 }, aimSeen = new Uint32Array(8), aimDir = { x: 0, y: 0, z: 1 };
+  const windRep = createWindReporter(fight), vp = { x: 0, y: 0, z: 0 }, aimSeen = new Uint32Array(8);
 
   let seed = 90211;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
@@ -434,18 +452,14 @@ export function addBellwetherFightSystem(g) {
         // aimRange m (bot playtest 2026-10-24: from the forecourt nothing could reach them).
         let fresh = false;   // a Gust cast this frame (castGust is consumed by the bending system before this runs)
         for (let k = 0; k < gale.gustActive.length; k++) if (gale.gustActive[k] && gale.gustId[k] !== aimSeen[k]) { aimSeen[k] = gale.gustId[k]; fresh = true; }
-        if (fresh) {
+        // A click or a grip at a chimney does nothing (LMB is the weapon, and the stacks are not climbed): the hint says what does.
+        const reached = !bellClimb.climbing && (input.pressed[Action.Primary] || input.pressed[Action.Traverse]);
+        if (fresh || reached) {
           // View direction from the camera's Euler rotation (the spring arm sets rotation (pitch, yaw, roll); pitch + is down).
           const c = g.camera, rp = c.rotation.x, ry = c.rotation.y, cp = Math.cos(rp);
-          const fwd = aimDir; fwd.x = Math.sin(ry) * cp; fwd.y = -Math.sin(rp); fwd.z = Math.cos(ry) * cp;
-          const ox = c.position.x, oy = c.position.y, oz = c.position.z;
-          for (let k = 0; k < 3; k++) {
-            if (!(fight.vents[k] > 0)) continue;
-            fight.ventPos(k, vp);
-            const dx = vp.x - ox, dy = vp.y - oy, dz = vp.z - oz, t = dx * fwd.x + dy * fwd.y + dz * fwd.z;
-            if (t < 0 || t > bellSys.aimRange) continue;
-            const ex = dx - fwd.x * t, ey = dy - fwd.y * t, ez = dz - fwd.z * t;
-            if (ex * ex + ey * ey + ez * ez < bellSys.aimR * bellSys.aimR) { fight.windHit(vp.x, vp.y, vp.z, 0.5, 1); break; }
+          const k = pickVent(c.position.x, c.position.y, c.position.z, Math.sin(ry) * cp, -Math.sin(rp), Math.cos(ry) * cp, fight, vp);
+          if (k >= 0) {
+            if (fresh) { fight.ventPos(k, vp); fight.windHit(vp.x, vp.y, vp.z, 0.5, 1); } else fight.reachedForVent();
           }
         }
       }
@@ -453,7 +467,8 @@ export function addBellwetherFightSystem(g) {
       if (dying && !wasDying) fight.playerDead();
       wasDying = dying;
       lastNear = bellClimb.nearValve;
-      g.verbBlock = g.verbBlock || (fight.active && bellClimb.climbing && lastNear >= 0);
+      // (Only once a valve can open: in the vents phase a Gust from the neck must still cast beside one.)
+      g.verbBlock = g.verbBlock || (fight.phase !== BFIGHT.VENTS && fight.active && bellClimb.climbing && lastNear >= 0);
       if (bellClimb.climbing && input.pressed[Action.Primary] && !dying && fight.tryValve()) {
         const k = lastNear;
         if (k >= 0) { puff(bell.valves.x[k], bell.valves.y[k], bell.valves.z[k], 28, 5, 0.6); sound(bell.valves.x[k], bell.valves.y[k], bell.valves.z[k], 1.4, SFX.CHIME); }
@@ -471,9 +486,9 @@ export function addBellwetherFightSystem(g) {
           // release makes it hers for good (bot playtest 2026-10-24: without ?gale=1 the chimneys could not be stripped).
           const fresh = !g.elements?.unlocked.has('gale');
           g.elements?.unlock('gale'); g.elements?.select('gale');
-          if (!capture) hud.notice('The Bellwether', 'The manor wakes', (fresh ? 'Its held wind leaks out of the stones: you can bend it (Gale, key 2). ' : '') + 'Blow the turf off the three chimneys: look up at one and Gust.', 10);
+          if (!capture) hud.notice('The Bellwether', 'The manor wakes', (fresh ? 'Its held wind leaks out of the stones: you can bend it (Gale, key 2). ' : '') + 'Blow the turf off the three chimneys: look up at one and tap Q to Gust.', 10);
         }
-        if (ev & BEV.NECK_RISES && !capture) hud.notice('The Bellwether', 'Its neck rears', 'Climb it (hold right mouse at its base). Strike each valve (click) when you reach it.', 9);
+        if (ev & BEV.NECK_RISES && !capture) hud.notice('The Bellwether', 'Its neck rears', 'Climb it (hold right mouse at its base, A/D go round it). Strike each valve (click) when you reach it.', 9);
         if (ev & BEV.INHALE) sound(bell.mx, bell.my, bell.mz, 1.8, SFX.CHARGE);
         if (ev & BEV.GALE) sound(bell.mx, bell.my, bell.mz, 2, SFX.BOOM, SFX.WHOOSH);
         if (ev & BEV.GALE_HIT) galeHit();

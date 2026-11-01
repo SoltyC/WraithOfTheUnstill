@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createBellwether, B, BELL_T, BELL_MAX, NECK_SEGS, SEG_LEN, neckRadius, VALVE_S, VALVE_TH } from '../src/game/bellwether/bellwether.js';
-import { createNeckClimb } from '../src/game/bellwether/neckClimb.js';
+import { createNeckClimb, VALVE_WAY } from '../src/game/bellwether/neckClimb.js';
 import { CHUNK_FLOATS } from '../src/game/shaped/rig.js';
 import { manorWorld, MANOR } from '../src/world/manor.js';
 
@@ -159,6 +159,61 @@ describe('neck climb', () => {
     let near = -1;
     step(r, 60, () => { r.c.mx = 0; r.c.mz = 0.3; r.focus = 100; if (r.c.nearValve >= 0) near = r.c.nearValve; });
     expect(near).toBe(1);
+  });
+  // On a tube, steering by the camera's right each move stops at the silhouette: held A/D could not pass it, so the valve
+  // on the far flank (valve 0, with the climb up the other side) was out of reach at most camera angles.
+  describe('round the neck', () => {
+    const atS = (r, s, th, yaw) => {
+      r.c.mode = 1; r.c.s = s; r.c.th = th; r.c.grip = true; r.c.crx = Math.cos(yaw); r.c.crz = -Math.sin(yaw); r.c.regrip();
+    };
+    const heading = (r, s) => { r.b.neckEval(s, 0, 0); return Math.atan2(r.b.st[0], r.b.st[2]); };
+    for (const off of [0, 0.8, 1.57, 2.4, 3.14, -1.57]) {
+      it('a held key goes all the way round, past the silhouette, with the camera ' + off + ' off the neck', () => {
+        const r = rig(), yaw = heading(r, VALVE_S[0]) + off;
+        let far = 0;
+        for (const mx of [1, -1]) {
+          atS(r, VALVE_S[0], -2, yaw); r.c._key = 0;
+          let reversals = 0, last = r.c.th, dir = 0, top = r.c.th;
+          step(r, 60 * 24, () => {
+            r.focus = 100; r.c.mx = mx; r.c.mz = 0;
+            if (Math.abs(r.c.th - last) > 0.05) { const sg = Math.sign(r.c.th - last); if (dir && sg !== dir) reversals++; dir = sg; last = r.c.th; }
+            if (r.c.th > top) top = r.c.th;
+          });
+          expect(reversals).toBe(0);
+          far = Math.max(far, top);
+        }
+        expect(far).toBeGreaterThan(VALVE_TH[0]);   // one of A and D carries it right over the top to the far flank
+      });
+    }
+    it('A undoes D on the side the camera sees: the way is taken anew at each press', () => {
+      const r = rig(); atS(r, 6, 0, heading(r, 6));
+      step(r, 60 * 2, () => { r.focus = 100; r.c.mx = 1; r.c.mz = 0; });
+      const way = Math.sign(r.c.th);
+      expect(Math.abs(r.c.th)).toBeGreaterThan(0.1); expect(Math.abs(r.c.th)).toBeLessThan(1);
+      step(r, 30, () => { r.focus = 100; r.c.mx = 0; });
+      const th = r.c.th;
+      step(r, 60 * 3, () => { r.focus = 100; r.c.mx = -1; });
+      expect(Math.sign(r.c.th - th)).toBe(-way);
+    });
+    it('from the top of the neck the last valve is reached by the hint alone: down, then round', () => {
+      const r = rig(); r.b.openValve(1); r.b.openValve(2);
+      atS(r, 13, -1, heading(r, 13) + 1.57);
+      const ways = new Set();
+      let mx = 1, near = -1;
+      for (let k = 0; k < 60 * 90 && near < 0; k++) {
+        r.focus = 100;
+        const w = r.c.valveWay; ways.add(w);
+        r.c.mz = w === VALVE_WAY.UP ? 1 : w === VALVE_WAY.DOWN ? -1 : 0;
+        const th0 = r.c.th;
+        r.c.mx = w === VALVE_WAY.ROUND ? mx : 0;
+        r.c.dt = 1 / 60; r.c.update(); r.b.update(1 / 60, 0);
+        if (w === VALVE_WAY.ROUND && Math.abs(r.c.th) >= 2.29 && th0 === r.c.th) mx = -mx;   // a flank's end: the other key
+        near = r.c.nearValve;
+        expect(r.c.climbing).toBe(true);
+      }
+      expect(near).toBe(0);
+      expect(ways.has(VALVE_WAY.DOWN)).toBe(true);
+    });
   });
   it('a shake drains focus fast and throws the Wraith off when it runs out', () => {
     const r = rig();

@@ -633,3 +633,9 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The gate closes with its misses on record** (`docs/phase-9/gate.md`): the 1% lows and the art bar stay open rather than the targets being moved.
 - **The gate's film and veil frames use existing diagnostic cameras** where a new one would only have shown flat sand.
 - **The save slots stay `auto`, `slot1–3`;** the playthrough uses `slot1`.
+
+## 2026-11-01 — The Bellwether's reach
+
+- **A/D on the neck keep their way round while held.** The camera picks the way at the press, not every move: steering by the camera stops at the tube's silhouette, so the far flank was out of reach at most camera angles and a climb up one side left valve 0 shut with no way to it. No valve moved. Past the silhouette A/D run against the screen, as round a pole; the camera does not orbit for the player.
+- **The chimneys stay a Gust's target, not a climb.** Nothing climbs the stacks and no route was added (the plan's Updraft and tower routes were never built). A Gust takes the chimney nearest the view ray within 0.3 of slope rather than a 5 m miss (no reticle, and the Wraith stands mid-view), from the forecourt or from the neck. A click or grip aimed at one says Q; a click is the weapon since docs §11.1, and the old text said "click".
+- **The climbing hint says where the next valve lies** (above, below, round the neck), from `neckClimb.valveWay`. Valves block the verbs only once they can open, so a Gust casts beside one in the vents phase.
