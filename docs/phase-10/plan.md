@@ -192,6 +192,14 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
 - **Tests:** `tests/release.test.js` covers the length and order, the replays, twelve in full, and a record of holds only.
 - **The film:** names three (Hanne, Teodor, Liese), then the whole cut. 0 GPU errors, 0 late pipelines.
 - **Not yet:** the held key (needs the Listener, F9), sound and voices (the user's), the after (the walk among the robes, the jetty, the night's count, the rewritten journal, the title screen), and every captioned piece.
+- **User's review (2026-11-03):** the order "kinda" makes the point, but many animations look bad, the meaning is carried by the captions rather than the pictures, some shots are glitched, and nothing is smooth. Checked against the film's frames:
+  - the well shot is near black;
+  - Ise's shot shows a wall, not Ise;
+  - the stair (4) and sea-door (5) shots and the Listener's rise (7) are empty rooms carrying captions;
+  - the frozen-crowd dolly (8) passes through a figure;
+  - Teodor's close-up shows a blotchy, clipping hood;
+  - Hanne's lean is stiff.
+- **Decision:** the order stands. Don't polish the card version. Build the captioned pieces as real footage, one at a time, each reviewed alone before it goes into the cut (release-cinematic.md's "Sefa alone" checkpoint). Start with Sefa, the wave and the freeze, because shots 4–8 hang on them. Fix the broken real shots (well, Ise, the dolly through a figure, Teodor's hood) in the same pass, then re-cut.
 
 **Cut scope here last.** This is the reason for the chapter.
 
