@@ -275,6 +275,7 @@ export function startBot(w, qs) {
         // out at the edge and their shadows shifting — trailer review 2026-10-24).
         if (i === 0 && g.trees) g.trees.hold = true;
         ctx.drawImage(canvas, 0, 0, size[0], size[1]);
+        if (g.director && g.director.active) g.director.drawOverlay(ctx, size[0], size[1]);   // a cutscene's captions and subtitles
         const blob = await off.convertToBlob({ type: 'image/jpeg', quality });
         inflight++;
         fetch(`/__wraith/frame?dir=${dir}&name=${name}&i=${i}`, { method: 'POST', body: blob }).then((r) => { if (!r.ok) failed++; }, () => failed++).finally(() => inflight--);

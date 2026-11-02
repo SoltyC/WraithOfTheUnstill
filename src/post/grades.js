@@ -14,7 +14,17 @@ export const GRADES = {
   meadowRestored: { g0: [0.02, 0.3, -0.08], g1: [0.92, 0.97, 1.06], g2: [1.04, 1.01, 0.94] },
   dunesStilled: { g0: [0.48, -0.1, 0.04], g1: [0.97, 0.96, 1.04], g2: [0.99, 0.985, 1.02] },
   dunesRestored: { g0: [0.03, 0.16, -0.06], g1: [0.92, 0.97, 1.08], g2: [1.025, 1.0, 0.955] },
+  // The cutscenes (release-cinematic.md, "Grade"): the past warm and sunlit; the held age green-blue and still.
+  past: { g0: [-0.12, 0.42, -0.08], g1: [1.04, 0.98, 0.9], g2: [1.1, 1.02, 0.86] },
+  held: { g0: [0.6, -0.45, 0.12], g1: [0.9, 1.03, 1.06], g2: [0.93, 1.02, 1.01] },
 };
+
+/** Blend two named grades (GRADES) at u into out, at full strength. */
+export function mixGrades(out, a, b, u) {
+  const A = GRADES[a] || GRADES.neutral, B = GRADES[b] || GRADES.neutral;
+  for (let i = 0; i < 3; i++) { out[i] = A.g0[i] + (B.g0[i] - A.g0[i]) * u; out[4 + i] = A.g1[i] + (B.g1[i] - A.g1[i]) * u; out[8 + i] = A.g2[i] + (B.g2[i] - A.g2[i]) * u; }
+  out[3] = 1;
+}
 
 /**
  * Blend the frost and meadow grades (meadow = its weight at the camera; r and rMeadow each biome's

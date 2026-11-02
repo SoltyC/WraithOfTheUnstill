@@ -28,6 +28,17 @@ export function addDrownedSystem(g) {
   const inp = { x: 0, y: 0, z: 0, speed: 0, grounded: true, quiet: false, swimming: false, landed: false, landV: 0, jumped: false, dodged: false, attacked: false };
   let wasGrounded = true, lastVy = 0, lastDodge = 0, lastWalkMul = 1;
   const w = { x: 0, y: 0, z: 0, quietFor: 0 };
+  // The Wraith's last 4 s (8 a second: x, y, z, facing; local), for the record (release-cinematic.md "Your record").
+  const TRAIL = 32, trail = new Float64Array(TRAIL * 4);
+  let trailAt = 0, trailN = 0, trailT = 0;
+  /** Write a record entry (saved: chapter vars 'ebb.record'): who, what, where they stood, and the Wraith's last 4 s. */
+  function record(p, kind) {
+    const list = vars['ebb.record'] || (vars['ebb.record'] = []);
+    if (kind === 'held' && list.some((r) => r.id === p.d.id)) return;
+    const path = [], r2 = (v) => Math.round(v * 100) / 100;
+    for (let k = 0; k < trailN; k++) { const o = ((trailAt - trailN + k + TRAIL) % TRAIL) * 4; path.push([r2(trail[o]), r2(trail[o + 1]), r2(trail[o + 2]), r2(trail[o + 3])]); }
+    list.push({ id: p.d.id, kind, at: [r2(p.x), r2(p.y), r2(p.z)], path });
+  }
   const probe = { x: 0, y: 0, z: 0 }, still0 = { x: 0, y: 0, z: 0 };
 
   /** Through the city: onto a floor of the person's tier (never off an edge), out of walls, rails and statues. */
@@ -150,6 +161,7 @@ export function addDrownedSystem(g) {
     const r = sayName(p, carried);
     if (r === 'named') {
       flags.add('ebb:named:' + p.d.id); vars['ebb.carry'] = null;
+      record(p, 'named');
       chapter.raise?.('ebb:named');
       hud.notice(p.d.name, '…', 'They put down what they were holding, and are still.', 6);
     } else if (r === 'wrong') {
@@ -184,17 +196,24 @@ export function addDrownedSystem(g) {
     wasGrounded = controller.grounded; lastVy = V.y; lastDodge = controller.dodgeT; lastWalkMul = controller.walkMul;
     noiseStep(noise, inp, dt);
     quietFor = noise.level < 0.15 ? quietFor + dt : 0;
+    if ((trailT += dt) >= 0.125) {
+      trailT = 0; const o = trailAt * 4;
+      trail[o] = inp.x; trail[o + 1] = inp.y; trail[o + 2] = inp.z; trail[o + 3] = controller.yaw;
+      trailAt = (trailAt + 1) % TRAIL; trailN = Math.min(TRAIL, trailN + 1);
+    }
     w.x = inp.x; w.y = inp.y; w.z = inp.z; w.quietFor = quietFor;
     // The people.
     let holders = 0;
     handSlot = 0;
     doughStep(dt);
     for (const p of people) {
+      if (p.npc && p.npc.frozen) continue;   // held in a cutscene
       if (stepPerson(p, noise, w, dt, move)) {
         p.slot = Math.atan2(p.x - w.x, p.z - w.z);
         if (!flags.has('ebb:held-hint') && !capture) { flags.add('ebb:held-hint'); hud.notice('Ebbhold', 'Hands on the robe', 'They hold on while it moves. Be still, and they let go.', 7); }
       }
       clipStep(p, dt);
+      if (inp.dodged && p.state === ST.HOLD) record(p, 'held');
       if (inp.dodged) shakeOff(p, w);
       if (p.state === ST.HOLD) holders++;
       const t = p.target;

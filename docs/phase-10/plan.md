@@ -176,6 +176,23 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
 
 **U7 — The release and the morning after (4–5 sessions).** A grey rough cut first, as soon as U4's rooms exist, then the 3-minute sequence: flashbacks in the real rooms, the frozen wave, the player's own record, the held key that no longer does anything, about 4,000 floating robes. Then the walk through them, the jetty, the night's count, the rewritten journal, the changed title screen. **Checkpoints: the rough cut; the comprehension test.**
 
+**U7 rough cut, 2026-11-03** (`review/release/release-rough.mp4`, 3:10; `?cutscene=release` plays it in the game):
+- **`game/release.js`** builds the document's 17 shots in the real rooms, with the real people and the player's own record.
+- **Caption cards** stand in for what isn't built yet (Sefa, the Listener, the wave, Morrow and the jetty, the kelp, the robes rising and on the water), so the order and the timing can be judged now.
+- **The director now does:**
+  - **grades:** the past warm and sunlit, the held age green-blue, the present the world's own, blended across a shot;
+  - **the city's light** per shot;
+  - **frozen time:** the crowd's clock held and the Drowned not simulated;
+  - **shake;**
+  - **caption cards and subtitles:** DOM in play, drawn into the films;
+  - **the Wraith** hidden, or moved along a recorded path.
+- **The record** (`systems/drowned.js`): every name said (and every hold shaken off) is saved in `ebb.record` with where the person stood and the Wraith's last 4 s, 8 a second.
+  - Shot 12 replays each from the named person's eyes ("Don't."): twelve in full, the rest as a run of names.
+  - Having named no one, it uses the holds broken, or a card.
+- **Tests:** `tests/release.test.js` covers the length and order, the replays, twelve in full, and a record of holds only.
+- **The film:** names three (Hanne, Teodor, Liese), then the whole cut. 0 GPU errors, 0 late pipelines.
+- **Not yet:** the held key (needs the Listener, F9), sound and voices (the user's), the after (the walk among the robes, the jetty, the night's count, the rewritten journal, the title screen), and every captioned piece.
+
 **Cut scope here last.** This is the reason for the chapter.
 
 ### Changes to the plan

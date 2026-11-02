@@ -49,7 +49,7 @@ export function addNpcSystems(g) {
       id, name, archetype, A, view, xf, home, x: home[0], z: home[1], y: 0, yaw: rnd() * 6.28,
       shown: false, placed: false, shiftT: A.shift[0] + rnd() * (A.shift[1] - A.shift[0]), offX: 0.5 - 0.5, offZ: 0.5 - 0.5,
       lod: 0.5 - 0.5, path: null, pathT: 0.5 - 0.5, at: null, vx: 0.5 - 0.5, vz: 0.5 - 0.5,
-      brain: null, hunch: undefined, noLook: false, gnd: opt.ground || null, hide: false,
+      brain: null, hunch: undefined, noLook: false, gnd: opt.ground || null, hide: false, frozen: false,
       target: (opt.interact ?? !!name) ? { kind: 'npc', id, verb: 'Speak', name, x: 0.5, y: 0.5, z: 0.5, r: TALK_R, h: 0.25, hidden: true } : null,
     };
     if (n.target) g.interactables.push(n.target);
@@ -207,6 +207,7 @@ export function addNpcSystems(g) {
     for (let j = 0, N = npcs.length; j < N; j++) {
       const i = (j + frame) % N;
       const n = npcs[i], w = n.view.wraith, xf = n.xf;
+      if (n.frozen && n.shown) continue;   // held in time (a cutscene's frozen crowd): not moved, not simulated, still drawn
       // Station (and the walker's path).
       if (n.path) {
         n.pathT += dt * 1.05;
