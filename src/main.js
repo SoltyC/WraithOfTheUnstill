@@ -221,6 +221,8 @@ async function boot() {
   g.waterReflect?.warmed();
   // A test link into the sealed city (?ebbhold=undercroft | gate | tideHall | gallery) until the whirlpool brings the Wraith there (U2).
   if (qs.get('ebbhold') && g.ebbhold) g.ebbhold.enter(qs.get('ebbhold'));
+  // A cutscene to watch (?cutscene=bakehouse): played a few seconds after the start, blended out of the player's camera.
+  if (qs.get('cutscene') && g.director) setTimeout(() => g.director.playCutscene(qs.get('cutscene')), 6000);
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,
   // skipping its per-draw JS path (pipeline-cache lookups, labels, iterators) — most of the

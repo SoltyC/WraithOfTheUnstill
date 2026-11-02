@@ -37,3 +37,16 @@ describe('the director timeline', () => {
     expect(o[7]).toBeCloseTo(6, 5);
   });
 });
+
+import { CUTSCENES, build } from '../src/game/cutscenes.js';
+import { EBB_ORIGIN } from '../src/world/ebbhold.js';
+describe('cutscenes as data', () => {
+  it('build the bakehouse into world-space shots with their crowds', () => {
+    const b = build(CUTSCENES.bakehouse);
+    expect(b.shots.length).toBe(4);
+    expect(b.shots[0].keys[0].p[0]).toBeCloseTo(4 + EBB_ORIGIN.x, 6);
+    expect(b.shots[0].crowd.length).toBeGreaterThan(30);
+    expect(b.shots[3].crowd).toBe(null);
+    expect(b.opt.blendIn).toBeGreaterThan(0);
+  });
+});

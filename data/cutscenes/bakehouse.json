@@ -1,0 +1,16 @@
+{
+  "note": "The U6 spike: the Tide Hall alive, then into the bakehouse to Hanne. Coordinates are Ebbhold's local metres (world/ebbhold.js EBB_ORIGIN). Crowds name game/crowds.js. Played by systems/director.js (game/cutscenes.js builds it).",
+  "space": "ebbhold",
+  "blendIn": 1.6,
+  "blendOut": 1.4,
+  "shots": [
+    { "dur": 4.5, "ease": 1, "drift": 0.03, "dof": 0, "blur": 0.5, "crowd": "hallAlive",
+      "keys": [ { "t": 0, "p": [4, 3.2, -3], "at": [60, 1.5, 0], "fov": 0.75 }, { "t": 1, "p": [14, 2.6, -2], "at": [70, 1.4, 0], "fov": 0.7 } ] },
+    { "dur": 4.5, "ease": 1, "drift": 0.02, "dof": 2.5, "blur": 0.5, "crowd": "bakehouseBehind",
+      "keys": [ { "t": 0, "p": [37.8, 1.75, 37.0], "at": [38.85, 1.25, 55.02], "fov": 0.62 }, { "t": 1, "p": [38.4, 1.6, 44.0], "at": [38.85, 1.2, 55.02], "fov": 0.55 } ] },
+    { "dur": 4.5, "ease": 0.6, "drift": 0.012, "dof": 0.9, "blur": 0.5, "crowd": "bakehouseBehind",
+      "keys": [ { "t": 0, "p": [41.3, 1.5, 53.7], "at": [39.1, 1.15, 55.2], "fov": 0.5 }, { "t": 1, "p": [40.9, 1.42, 53.35], "at": [39.0, 1.12, 55.25], "fov": 0.47 } ] },
+    { "dur": 3.5, "ease": 0.5, "drift": 0.006, "dof": 0.25, "blur": 0.5,
+      "keys": [ { "t": 0, "p": [40.35, 1.5, 56.0], "at": [38.7, 1.08, 55.62], "fov": 0.42 }, { "t": 1, "p": [40.2, 1.45, 55.9], "at": [38.68, 1.07, 55.6], "fov": 0.4 } ] }
+  ]
+}
