@@ -32,7 +32,7 @@ Tests of the tool, **rejected by the user on 2026-11-02**. None of this goes in 
 
 ## Audio: Stable Audio 3.0 Medium samples
 
-The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as ACE-Step's 01 and 03. 60 s each, 224 kbps MP3; the WAVs are in `C:\wraith-tools\sa3-out`. Nothing is built on this until the user judges them.
+The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as ACE-Step's 01 and 03. 60 s each, 224 kbps MP3; the WAVs are in `C:\wraith-tools\sa3-out`. **Rejected by the user's ear on 2026-11-02; the tool was deleted.**
 
 | File | Prompt |
 |---|---|

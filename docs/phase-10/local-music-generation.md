@@ -2,9 +2,9 @@
 
 Research 2026-11-02, then installed and tested the same day. Installed tool: **ACE-Step 1.5** at `C:\wraith-tools\ACE-Step-1.5` (commit `ca1e85f`, MIT). The first version of this page came from third-party guides. Everything below was checked against the project's own docs or run on this machine, and the corrections are listed at the end.
 
-## Now on trial: Stable Audio 3.0 Medium
+## Stable Audio 3.0 Medium: also rejected by ear
 
-Installed 2026-11-02 at `C:\wraith-tools\stable-audio-3`, from Stability's own repository. The test clips are **not generated yet:** the weights are gated (401 without a login), so the user has to accept the terms. Nothing is built on it until the user has heard two samples.
+Installed 2026-11-02 at `C:\wraith-tools\stable-audio-3`, from Stability's own repository. **The user heard the two samples (`review/audio-stable/`) on 2026-11-02 and said the music sucks.** The install, model cache, login script and `tools/audio/stable` were deleted the same day; only the WAVs in `C:\wraith-tools\sa3-out` remain. No local generator is in use. The notes below are kept as a record.
 
 - **Windows:** the repository supports NVIDIA only on Linux, so PyTorch 2.7.1 CUDA 12.6 was installed by hand. It sees the 3060. Flash Attention has no Windows build; the code falls back to its own SDPA path, which may be slower.
 - **Sample:** after the login, `tools/audio/stable/sample.sh` writes 60 s of `fen-day` and `morrow-fire` to `C:\wraith-tools\sa3-out`.
