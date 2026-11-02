@@ -12,23 +12,46 @@ import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './com
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
-import { BEAM_WGSL } from '../world/ebbhold.js';
+import { BEAM_WGSL, EBB_ORIGIN } from '../world/ebbhold.js';
 
-export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14 };
+export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14, dough: 15, loaf: 16 };
 
 export const ebbVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
 attribute normal: vec3f;
 attribute info: vec4f;               // x = kind (EBB_KIND), y = per-piece seed, z = cavity (a flame: its height 0..1)
 uniform viewProjection: mat4x4f;
+uniform ebbHands: array<vec4f, 4>;   // hands on the dough: world position, w = 1 pressing (systems/drowned.js)
+uniform ebbCarry: array<vec4f, 2>;   // a carried thing (info.w = 2, built at the city's origin): [0] world position, yaw; [1].w shown
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vInfo: vec4f;
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
-  vertexOutputs.position = uniforms.viewProjection * vec4f(vertexInputs.position, 1.0);
-  vertexOutputs.vWorldPos = vertexInputs.position;
-  vertexOutputs.vNormal = vertexInputs.normal;
+  var p = vertexInputs.position;
+  // Dough (info.w = 1) gives under a hand: the palm's dent follows it down, the dough pushed out round it and rising a little.
+  if (vertexInputs.info.w > 0.5) {
+    for (var i = 0; i < 4; i++) {
+      let h = uniforms.ebbHands[i];
+      if (h.w < 0.5) { continue; }
+      let d = p.xz - h.xz; let r = length(d);
+      let palm = 1.0 - smoothstep(0.03, 0.13, r);
+      let floorY = h.y - 0.015 + r * r * 3.0;
+      let sink = max(0.0, p.y - floorY) * palm;
+      p.y -= sink;
+      p = vec3f(p.x + d.x / max(r, 1e-3) * sink * 0.5, p.y, p.z + d.y / max(r, 1e-3) * sink * 0.5);
+    }
+  }
+  var nrm = vertexInputs.normal;
+  if (vertexInputs.info.w > 1.5) {
+    let c = uniforms.ebbCarry[0]; let cs = cos(c.w); let sn = sin(c.w);
+    let l = (p - vec3f(${EBB_ORIGIN.x}.0, ${EBB_ORIGIN.y}.0, ${EBB_ORIGIN.z}.0)) * uniforms.ebbCarry[1].w;
+    p = c.xyz + vec3f(l.x * cs + l.z * sn, l.y, -l.x * sn + l.z * cs);
+    nrm = vec3f(nrm.x * cs + nrm.z * sn, nrm.y, -nrm.x * sn + nrm.z * cs);
+  }
+  vertexOutputs.position = uniforms.viewProjection * vec4f(p, 1.0);
+  vertexOutputs.vWorldPos = p;
+  vertexOutputs.vNormal = nrm;
   vertexOutputs.vInfo = vertexInputs.info;
 }
 `;
@@ -197,6 +220,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // The scan's normal detail, then the carving's on top.
   var N = normalize(ms.N - T * dh.x - Bv * dh.y);
   if (dot(N, Ng) < 0.05) { N = Ng; }
+  if (kind == 15) { let fn0 = normalize(cross(dpx, dpy)); N = normalize(mix(Ng, select(-fn0, fn0, dot(fn0, Ng) > 0.0), 0.45)); }
   let gold = r0.y;
   var ao = (0.45 + 0.55 * r0.x) * mix(1.0, ms.ao, 0.6) * (1.0 - 0.85 * cav);
   let seed = fragmentInputs.vInfo.y;
@@ -226,6 +250,18 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     rough = 0.42 + ms.rough * 0.2;
   } else if (kind == 1) {
     albedo = matRetint(ms, layer, vec3f(0.06, 0.058, 0.062), 0.3); rough = 0.9;
+  } else if (kind == 15) {
+    // Dough: soft cream, floured where the hands have not just been, a little sheen where they have; its own normal from the
+    // surface (it is dented in the vertex shader).
+    let fl = smoothstep(0.45, 0.75, eNoise(lp * 38.0 + seed * 9.0) * 0.7 + eNoise(lp * 140.0) * 0.3) * smoothstep(0.2, 0.8, cav);
+    albedo = mix(vec3f(0.74, 0.64, 0.47), vec3f(0.88, 0.86, 0.8), fl * 0.7) * (0.94 + 0.12 * eNoise(lp * 25.0));
+    rough = mix(0.62, 0.9, fl);
+  } else if (kind == 16) {
+    // A loaf: a deep golden-brown crust, darker where it rose and split, paler at the base, flour left in the score's lips.
+    let score = band(fract(lp.x * 7.0 + lp.z * 3.0 + seed * 3.0) - 0.5, 0.06, fw * 7.0) * smoothstep(0.55, 0.9, cav);
+    let tone = mix(vec3f(0.55, 0.36, 0.16), vec3f(0.36, 0.18, 0.06), smoothstep(0.25, 0.95, cav)) * (0.85 + 0.3 * eNoise(lp * 60.0));
+    albedo = mix(tone, vec3f(0.78, 0.7, 0.55), score * 0.8);
+    rough = 0.6;
   } else if (kind == 14) {
     // Linen, parchment, dough: pale and soft, each piece its own shade.
     albedo = matRetint(ms, layer, mix(vec3f(0.5, 0.44, 0.34), vec3f(0.36, 0.3, 0.22), fract(seed * 7.3)), 0.3); rough = 0.85;
@@ -239,7 +275,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     albedo = mix(bronze * (0.7 + 0.3 * worn), vec3f(0.07, 0.17, 0.14), pat);
     metal = 1.0 - pat; rough = mix(0.28 + ms.rough * 0.2, 0.75, pat);
   }
-  albedo *= grime * mix(1.0, 0.6, wet);
+  if (kind < 14) { albedo *= grime * mix(1.0, 0.6, wet); }
   rough = mix(rough, 0.12, wet * 0.8);
   albedo = mix(albedo, vec3f(0.85, 0.62, 0.25), gold); metal = max(metal, gold); rough = mix(rough, 0.28, gold);
   // The sea-light: the hall's own, down the roof's slits at a fixed slant (not the sun): sharp pools where it lands.

@@ -54,6 +54,9 @@ export function addDrownedSystem(g) {
   for (const name of new Set(PEOPLE.filter((d) => d.clip).map((d) => d.clip))) {
     fetch(import.meta.env.BASE_URL + 'motion/' + name + '.bin').then((r) => r.arrayBuffer()).then((b) => { clipBufs[name] = b; }).catch(() => {});
   }
+  // The dough under the bakers' hands (render/ebbhold.js dents it): four hand slots, world space.
+  const doughHands = g.ebbholdView ? g.ebbholdView.hands : null, carryArr = g.ebbholdView ? g.ebbholdView.carry : null;
+  let handSlot = 0;
   let rnd = 11;
   const rand = () => { rnd = (rnd * 1664525 + 1013904223) >>> 0; return rnd / 4294967296; };
 
@@ -65,7 +68,7 @@ export function addDrownedSystem(g) {
     const c = p.perf, n = p.npc, wr = n.view.wraith, xf = n.xf;
     const want = p.state === ST.TASK && n.shown;
     const playing = wr.performance === c;
-    if (!playing && p.clipOn) { p.clipOn = false; p.rest = 0.5 + rand() * 1.5; }
+    if (!playing && p.clipOn) { p.clipOn = false; p.rest = d.rest ?? 0.5 + rand() * 1.5; }
     if (want && !playing) {
       if ((p.rest -= dt) <= 0) { c.restart(p.firstT ?? 0); p.firstT = 0; wr.performance = c; p.clipOn = true; }
     } else if (playing) {
@@ -82,6 +85,25 @@ export function addDrownedSystem(g) {
         if (H.at) { put(0, H.at); put(3, H.at); c.handSpread = H.spread / xf.s; } else { put(0, H.l); put(3, H.r); c.handSpread = 0; }
         c.handW = 0.9;
       }
+      // The dough's hands: where this body's hands are now, back in the world (one frame late: the body steps after this).
+      if (H && H.at && doughHands && handSlot < 4) {
+        const b = wr.body;
+        for (let k = 0; k < 2 && handSlot < 4; k++, handSlot++) {
+          const o = handSlot * 4, q = k * 3;
+          // The palm, a little past the wrist along the forearm.
+          const ax = b.ha[q] - b.el[q], ay = b.ha[q + 1] - b.el[q + 1], az = b.ha[q + 2] - b.el[q + 2], al = Math.hypot(ax, ay, az) || 1;
+          doughHands[o] = xf.ox + (b.ha[q] + ax / al * 0.08 - xf.ox) * xf.s; doughHands[o + 1] = xf.oy + (b.ha[q + 1] + ay / al * 0.08 - xf.oy) * xf.s;
+          doughHands[o + 2] = xf.oz + (b.ha[q + 2] + az / al * 0.08 - xf.oz) * xf.s;
+          doughHands[o + 3] = c.weight > 0.5 ? 1 : 0;
+        }
+      }
+    }
+    // Teodor's daughter in his arms (shown whenever he is, gone once he is still): between his hands, a little up, lying across.
+    if (d.carry && carryArr) {
+      const b = wr.body, show = n.shown && p.state !== ST.STILL;
+      carryArr[0] = xf.ox + ((b.ha[0] + b.ha[3]) * 0.5 - xf.ox) * xf.s; carryArr[1] = xf.oy + ((b.ha[1] + b.ha[4]) * 0.5 + 0.05 - xf.oy) * xf.s;
+      carryArr[2] = xf.oz + ((b.ha[2] + b.ha[5]) * 0.5 - xf.oz) * xf.s;
+      carryArr[3] = Math.atan2(-(b.ha[5] - b.ha[2]), b.ha[3] - b.ha[0]); carryArr[7] = show ? 1 : 0;
     }
   }
 
@@ -151,6 +173,8 @@ export function addDrownedSystem(g) {
     w.x = inp.x; w.y = inp.y; w.z = inp.z; w.quietFor = quietFor;
     // The people.
     let holders = 0;
+    handSlot = 0;
+    if (doughHands) for (let k = 3; k < 16; k += 4) doughHands[k] = 0;
     for (const p of people) {
       if (stepPerson(p, noise, w, dt, move)) {
         p.slot = Math.atan2(p.x - w.x, p.z - w.z);

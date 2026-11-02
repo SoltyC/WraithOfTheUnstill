@@ -142,6 +142,13 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - the wide dark cuffs that hide the hands in close shots;
   - the dough reads as stone.
 - **Loops on film:** `review/loops/`.
+- **Second pass, after the user's look** ("making the bread better, making the characters interact look more like they're interacting with the world"):
+  - **The dough gives under the hands:** the bakers' palms are fed to the city's vertex shader, which dents the dough and pushes it out round them. It's floured cream, matte, and finely divided.
+  - **Loaves:** scored, golden-brown loaves cool at the end of the table.
+  - **Reach:** the bakers stand where their arms reach the dough.
+  - **Teodor's daughter:** swaddled, carried between his hands (the `ebbCarry` transform). He no longer rests between rocks.
+  - **The fur:** the cuffs' and hood's fur now take lamp, fire and spell light. They went black indoors, and for the Wraith by firelight too.
+  - **The spike:** three shots, adding an insert of the hands in the dough. Live p99 is 13.7 ms.
 
 **U7 — The release and the morning after (4–5 sessions).** A grey rough cut first, as soon as U4's rooms exist, then the 3-minute sequence: flashbacks in the real rooms, the frozen wave, the player's own record, the held key that no longer does anything, about 4,000 floating robes. Then the walk through them, the jetty, the night's count, the rewritten journal, the changed title screen. **Checkpoints: the rough cut; the comprehension test.**
 

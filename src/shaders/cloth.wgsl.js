@@ -339,6 +339,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
 
 export const furFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
+${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vUv: vec2f;
@@ -349,6 +350,7 @@ ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${CLOTH_COMMON}
+${SPELL_LIGHT_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -396,8 +398,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let spec = pow(sqrt(max(1.0 - th * th, 0.0)), 60.0) * 0.05 + pow(sqrt(max(1.0 - th * th, 0.0)), 12.0) * albedo.x * 0.5;
   var col = albedo * key * diff * vis * selfShadow / PI + key * spec * vis * selfShadow
           + albedo * (shIrradiance(T) * uniforms.envMisc.w * canopySky(canopyAt(wp.xz)) + canopyFill(canopyAt(wp.xz), T)) * selfShadow;
+  // Fire, lamp and spell light on the fur too (a strand scatters all round: fully wrapped), as on the cloth it grows from —
+  // without it the ruffs went black by firelight and indoors.
+  let fex = uniforms.fogParams.z * atmoExposure();
+  col += spellLit(wp, V, albedo, 1.0, 1.0) * selfShadow / max(fex, 1e-6);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
-  var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
+  var outc = displayTransform(col, fex);
   fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;

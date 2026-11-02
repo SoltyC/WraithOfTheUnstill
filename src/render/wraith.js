@@ -126,13 +126,14 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const furParams = new Vector4(0, 0, 0, 0);
   const furMat = new ShaderMaterial('wraithFur', scene, { vertex: 'wraithFur', fragment: 'wraithFur' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'furParams', ...ENV_UNIFORMS],
-    samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage],
+    uniforms: ['viewProjection', 'furParams', 'spellLights', ...ENV_UNIFORMS],
+    samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage, 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(furMat); bindAtmosphere(furMat, atmo);
   furMat.setStorageBuffer('clothVerts', verts);
   furMat.setVector4('furParams', furParams);
+  furMat.setStorageBuffer('lightGrid', clipmap.lightGrid); furMat.setArray4('spellLights', clipmap.spellLights);
   furMat.backFaceCulling = false;
   fur.material = furMat;
 

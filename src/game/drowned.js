@@ -27,11 +27,11 @@ function round(c, r, a) {
  * where the hands go on the thing worked (local, y above the tier's floor): { at, spread } one point under both, or { l, r } each. line: the register's entry — what it says is how the player tells who is who.
  */
 export const PEOPLE = [
-  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', hands: { at: [38.75, 1.12, 55.78], spread: 0.11 }, at: [39, 54.85], yaw: 0,
+  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', hands: { at: [38.7, 1.1, 55.62], spread: 0.1 }, at: [38.85, 55.02], yaw: 0,
     line: 'Hanne, baker, of the walk gallery’s north side. Fed the door crews through the last night. Her hands were never out of the dough.' },
-  { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', clip: 'knead1', clipT: 3.1, hands: { at: [39.3, 1.11, 56.2], spread: 0.1 }, at: [39, 57.15], yaw: 3.1416,
+  { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', clip: 'knead1', clipT: 3.1, hands: { at: [39.3, 1.09, 56.36], spread: 0.09 }, at: [39.2, 56.98], yaw: 3.1416,
     line: 'Ysolde, Hanne’s mother, who taught her. Worked the far side of Hanne’s table, facing her, and would not sit.' },
-  { id: 'teodor', name: 'Teodor', arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', clip: 'rock', at: [119, -54.4], yaw: 3.1416,
+  { id: 'teodor', name: 'Teodor', arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', clip: 'rock', carry: true, rest: 0, at: [119, -54.4], yaw: 3.1416,
     line: 'Teodor, rope-maker, a father this week. He would not put his daughter down in the low nursery; he rocked her in his arms by the cradle.' },
   { id: 'ise', name: 'Ise', arch: 'elder', dye: 'kelp', y: W, task: 'sweep', path: [[24, 42.6], [46, 42.6]], yaw: 1.5708,
     line: 'Old Ise, who swept the long stair from the walk gallery every morning, and sang while she did it, so the children could find her.' },

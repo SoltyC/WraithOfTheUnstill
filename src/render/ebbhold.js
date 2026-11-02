@@ -42,7 +42,7 @@ const dAng = (a, b) => { let d = (a - b) % TAU; if (d > Math.PI) d -= TAU; if (d
 export function ebbholdGeometry(city = buildCity()) {
   const O = EBB_ORIGIN, H = HALL;
   const pos = [], nrm = [], info = [], idx = [];
-  const vert = (x, y, z, n, k, seed, cav = 0) => { pos.push(x + O.x, y + O.y, z + O.z); nrm.push(n[0], n[1], n[2]); info.push(k, seed, cav, 0); };
+  const vert = (x, y, z, n, k, seed, cav = 0, w = 0) => { pos.push(x + O.x, y + O.y, z + O.z); nrm.push(n[0], n[1], n[2]); info.push(k, seed, cav, w); };
   /** Four corners listed counter-clockwise from outside → two triangles, clockwise as seen (Babylon's front). */
   const quad = (a, b, c, d, n, k, seed) => {
     const v = pos.length / 3;
@@ -84,7 +84,7 @@ export function ebbholdGeometry(city = buildCity()) {
    * section scaled by sz(t) along z; normals from the grid. cav(t, a) → info.z. Closed where the radius reaches 0.
    */
   const lathe = (cx, cz, rings, sides, fy, rad, k, seed, opt = {}) => {
-    const sz = opt.sz || (() => 1), cav = opt.cav || (() => 0), kOf = opt.kind || (() => k);
+    const sz = opt.sz || (() => 1), cav = opt.cav || (() => 0), kOf = opt.kind || (() => k), wv = opt.w || 0;
     const base = pos.length / 3, P = [];
     for (let i = 0; i <= rings; i++) {
       const t = i / rings, y = fy(t), s = sz(t);
@@ -97,7 +97,7 @@ export function ebbholdGeometry(city = buildCity()) {
       let n = [dv[1] * du[2] - dv[2] * du[1], dv[2] * du[0] - dv[0] * du[2], dv[0] * du[1] - dv[1] * du[0]];
       let l = Math.hypot(...n);
       if (l < 1e-9) { n = [0, i > rings / 2 ? 1 : -1, 0]; l = 1; }
-      vert(p[0], p[1], p[2], [n[0] / l, n[1] / l, n[2] / l], kOf(p[3], p[4]), seed, cav(p[3], p[4]));
+      vert(p[0], p[1], p[2], [n[0] / l, n[1] / l, n[2] / l], kOf(p[3], p[4]), seed, cav(p[3], p[4]), wv);
     }
     for (let i = 0; i < rings; i++) for (let j = 0; j < sides; j++) {
       const a = base + i * sides + j, b = base + (i + 1) * sides + j, c = base + (i + 1) * sides + ((j + 1) % sides), d = base + i * sides + ((j + 1) % sides);
@@ -126,6 +126,13 @@ export function ebbholdGeometry(city = buildCity()) {
   };
   /** A soft lump (dough, a blanket, a roll): a squashed spheroid. */
   const lump = (x, y, z, rx, ry, rz, k, seed) => lathe(x, z, 8, 14, (t) => y + ry * (1 - Math.cos(Math.PI * t)), (t) => rx * Math.sin(Math.PI * t) * (1 + 0.06 * Math.sin(t * 9 + seed * 6)), k, seed, { sz: () => rz / rx });
+  /** Dough: a slumped, folded mound (flat-bottomed, a seam where it was folded over), finely divided so the hands can press it
+   *  (info.w = 1: the vertex shader dents it under the hands it is given). info.z: height 0..1. */
+  const dough = (x, y, z, rx, ry, rz, seed) => lathe(x, z, 16, 28, (t) => y + ry * Math.sin(Math.PI * 0.5 * Math.min(1, t * 1.15)) * (t > 0.87 ? 1 - (t - 0.87) * 0.4 : 1),
+    (t, a) => rx * Math.pow(Math.sin(Math.PI * (0.5 + 0.5 * t)), 0.7) * (1 + 0.08 * Math.sin(a * 2 + seed * 5) + 0.04 * Math.sin(a * 5 + seed * 3)) * (1 - 0.12 * Math.exp(-((Math.sin(a - seed * 4)) ** 2) / 0.02) * t),
+    K.dough, seed, { sz: () => rz / rx, cav: (t) => t, w: 1 });
+  /** A baked loaf: a domed oval, slashed along its top (the shader scores it), info.z: height 0..1. */
+  const loaf = (x, y, z, rx, ry, rz, seed) => lathe(x, z, 12, 24, (t) => y + ry * Math.sin(Math.PI * 0.5 * t), (t) => rx * Math.pow(Math.cos(Math.PI * 0.5 * t), 0.55) * (1 + 0.03 * Math.sin(t * 13 + seed * 7)), K.loaf, seed, { sz: () => rz / rx, cav: (t) => t });
   /** The things the people work at (world/ebbhold.js 'prop' boxes). */
   const prop = (b, seed) => {
     const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, y0 = b.y0, y1 = b.y1;
@@ -133,9 +140,12 @@ export function ebbholdGeometry(city = buildCity()) {
       // A stone table on two trestles, the dough on a floured board, a bronze bowl.
       box(b.x0, b.x1, y1 - 0.12, y1, b.z0, b.z1, K.prop, seed);
       for (const x of [b.x0 + 0.3, b.x1 - 0.3]) { box(x - 0.12, x + 0.12, y0 + 0.1, y1 - 0.12, b.z0 + 0.12, b.z1 - 0.12, K.prop, seed); box(x - 0.2, x + 0.2, y0, y0 + 0.1, b.z0 + 0.02, b.z1 - 0.02, K.prop, seed); }
-      box(cx - 0.75, cx + 0.75, y1, y1 + 0.03, cz - 0.4, cz + 0.4, K.linen, 0.9);
-      lump(cx - 0.35, y1 + 0.03, cz - 0.05, 0.24, 0.12, 0.2, K.linen, 0.2);
-      lump(cx + 0.3, y1 + 0.03, cz + 0.08, 0.2, 0.1, 0.17, K.linen, 0.5);
+      box(cx - 0.62, cx + 0.62, y1, y1 + 0.03, cz - 0.42, cz + 0.42, K.linen, 0.9);
+      // Near the table's edges, under each baker's hands.
+      dough(cx - 0.3, y1 + 0.03, cz - 0.32, 0.24, 0.11, 0.19, 0.2);
+      dough(cx + 0.3, y1 + 0.03, cz + 0.3, 0.21, 0.1, 0.17, 0.5);
+      // Loaves already shaped and baked, cooling at the far end; a dusting of flour on the board.
+      for (const [dx, dz, sd] of [[-1.1, 0.24, 0.1], [-1.0, -0.22, 0.6], [-0.84, 0.02, 0.35]]) loaf(cx + dx, y1, cz + dz, 0.17, 0.09, 0.1, sd);
       turned(b.x1 - 0.32, cz + 0.2, [[y1, 0.1], [y1 + 0.04, 0.16], [y1 + 0.16, 0.22], [y1 + 0.17, 0.2], [y1 + 0.06, 0.001]], 14, K.bronze, seed);
     } else if (b.prop === 'cradle') {
       // A bronze cradle on rockers, a blanket heaped in it.
@@ -371,6 +381,17 @@ export function ebbholdGeometry(city = buildCity()) {
     // A still flame: a teardrop that never moves.
     lathe(x, z, 14, 12, (t) => y - 0.2 + t * 0.95, (t) => 0.27 * Math.pow(Math.sin(Math.PI * Math.min(1, t * 1.25 + 0.02)), 0.75) * (1 - 0.55 * t) * (t > 0.78 ? 1 - (t - 0.78) / 0.22 : 1), K.flame, sd, { cav: (t) => t });
   }
+  // Teodor's daughter, swaddled (info.w = 2: built at the city's origin, lying along x; the vertex shader carries it in his arms,
+  // ebbCarry). A bundle, and the small round of the head at one end under a fold of the cloth.
+  { const v0 = pos.length / 3;
+    lathe(0, 0, 10, 16, (t) => -0.2 + 0.4 * t, (t) => 0.095 * Math.pow(Math.sin(Math.PI * t), 0.6) * (1 + 0.05 * Math.sin(t * 17)), K.linen, 0.97, { sz: () => 0.85 });
+    lathe(0, 0, 8, 12, (t) => 0.17 + 0.13 * t, (t) => 0.072 * Math.sin(Math.PI * t), K.linen, 0.93, {});
+    for (let v = v0; v < pos.length / 3; v++) {
+      // y (the lathe's axis) → x: lie it down.
+      const x = pos[v * 3] - O.x, y = pos[v * 3 + 1] - O.y, nx = nrm[v * 3], ny = nrm[v * 3 + 1];
+      pos[v * 3] = y + O.x; pos[v * 3 + 1] = -x + O.y; nrm[v * 3] = ny; nrm[v * 3 + 1] = -nx; info[v * 4 + 3] = 2;
+    }
+  }
   return { positions: new Float32Array(pos), normals: new Float32Array(nrm), info: new Float32Array(info), indices: new Uint32Array(idx) };
 }
 
@@ -396,17 +417,23 @@ export function createEbbholdView(scene, atmo, clipmap, matLib) {
   const params = new Vector4(0, 0.035, 3.2, 0);   // z: the sea-light's strength on the stone (display-referred)
   const mat = new ShaderMaterial('ebbhold', scene, { vertex: 'ebb', fragment: 'ebb' }, {
     attributes: ['position', 'normal', 'info'],
-    uniforms: ['viewProjection', 'spellLights', 'ebbParams', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'spellLights', 'ebbParams', 'ebbHands', 'ebbCarry', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'lightGrid', 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
   mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid); mat.setVector4('ebbParams', params);
+  /** Up to four hands on the dough (world x, y, z, 1 = pressing; systems/drowned.js writes them in place). */
+  const hands = new Array(16).fill(0);
+  mat.setArray4('ebbHands', hands);
+  /** A carried thing (Teodor's daughter): world x, y, z, yaw; w of the second: 1 shown. */
+  const carry = [0, 0, 0, 0, 0, 0, 0, 0];
+  mat.setArray4('ebbCarry', carry);
   mesh.material = mat;
   const O = EBB_ORIGIN;
   return {
-    mesh, material: mat, params, city, triangles: g.indices.length / 3,
+    mesh, material: mat, params, city, hands, carry, triangles: g.indices.length / 3,
     /** The lamps and glows (world, for systems/lights.js): flames that do not flicker, the cold light of the sea and the well. */
     lamps: [...city.lamps.map(([x, y, z]) => ({ x: x + O.x, y: y + O.y, z: z + O.z, radius: 20, color: [1, 0.62, 0.3], intensity: 7, kind: 'held' })),
       ...city.glows.map(([x, y, z, color, intensity, radius]) => ({ x: x + O.x, y: y + O.y, z: z + O.z, radius, color, intensity, kind: 'held' }))],
