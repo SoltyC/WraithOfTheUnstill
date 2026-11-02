@@ -579,3 +579,14 @@ Two compute steps of 512² cells a frame. Fen water at (−2596, −289), the bo
 | Simulation off | 11.55, 11.58 | 11.4, 11.4 | 14.2, 14.1 |
 
 About 0.2 ms, inside F1's 1.5 ms water budget. 0 GPU errors, 0 late pipelines.
+
+## 2 November — Phase 10 F1, the planar reflection
+
+`p8-lake-noon` (a meadow lake with a grove on the far shore), camera level, High at 2560×1440 scale 0.8, 400 frames per run. **Minecraft was open.**
+
+| | mean ms | p50 | p95 | draws |
+|---|---|---|---|---|
+| Reflection on | 18.17, 18.17 | 18, 18 | 19.9, 19.8 | 586 |
+| Reflection off | 17.10, 17.11 | 17, 17 | 18.6, 18.9 | 493 |
+
+About 1.07 ms against a 1.0 ms budget. GPU and main thread not separated. 0 GPU errors, 0 late pipelines.

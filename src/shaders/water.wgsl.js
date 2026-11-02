@@ -19,6 +19,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WSIM_SAMPLE_WGSL } from './waterSim.wgsl.js';
+import { WEATHER_FOG_WGSL } from './post/fog.wgsl.js';
 
 /** Ripple slots (render/water.js writes them; the SSR pass reads the same buffer). One more vec4
  *  follows them: the ripple simulation's window (shaders/waterSim.wgsl.js). */
@@ -204,6 +205,11 @@ ${ENV_DECL}
 ${WIND_DECL}
 uniform levels: array<vec4f,16>;
 uniform waterParams: vec4f;          // x = time (s), y = caustics strength, z, w = −
+${absorb ? '' : `uniform reflVP: mat4x4f;             // the planar reflection's camera (render/waterReflect.js)
+uniform reflFog: vec4f;              // the post chain's weather fog (density, 1/height, base, −)
+uniform reflHaze: vec4f;             // and its forest haze (density, 1/height, base, −)
+var reflTex: texture_2d<f32>;
+var reflTexSampler: sampler;`}
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> waterRipples: array<vec4f>;
 var<storage, read> waterSim: array<vec4f>;
@@ -257,6 +263,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
 export const waterSurfaceFragmentWGSL = /* wgsl */ `
 ${HEADER(false)}
+${WEATHER_FOG_WGSL}
 fn ggxD(nh: f32, a: f32) -> f32 { let a2 = a * a; let d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -299,7 +306,38 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let tilt = 0.32 * sigV * (1.0 - smoothstep(0.0, 2.5, aV));
   let nV = normalize(N + normalize(vec3f(V.x, 0.0, V.z) + vec3f(1e-5, 0.0, 0.0)) * tilt);
   var R = reflect(-V, nV); R.y = abs(R.y);
-  let sky = atmoSky(R) * (1.0 - 0.75 * canopy);
+  var sky = atmoSky(R) * (1.0 - 0.75 * canopy);
+  let ex = uniforms.fogParams.z * atmoExposure();
+  // The planar reflection (trees off screen too), on its plane only, bent by the waves; where it
+  // holds a tree the post chain's SSR leaves this pixel to it (alpha below).
+  var planar = 0.0;
+  if (abs(wp.y - waterRipples[${WATER_RIPPLES}u].w) < 0.05) {
+    // A tilted facet turns the reflected ray by twice its slope, so what is mirrored shifts by
+    // slope × its own distance: one look for the distance, then the bent look.
+    let c0 = uniforms.reflVP * vec4f(wp, 1.0);
+    let uv0 = vec2f(c0.x / c0.w * 0.5 + 0.5, 0.5 - c0.y / c0.w * 0.5);
+    let a0 = textureSampleLevel(reflTex, reflTexSampler, uv0, 0.0).a;
+    let bend = clamp(select(dist * 0.12, (a0 - 1.0) * 1000.0 - dist, a0 > 1.0) * 0.6, 1.5, 40.0);
+    let c = uniforms.reflVP * vec4f(wp.x + sl.x * bend, wp.y, wp.z + sl.y * bend, 1.0);
+    if (c.w > 0.0 && c0.w > 0.0) {
+      let uv = vec2f(c.x / c.w * 0.5 + 0.5, 0.5 - c.y / c.w * 0.5);
+      let rf = textureSampleLevel(reflTex, reflTexSampler, uv, 0.0);
+      let edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+      planar = clamp(rf.a, 0.0, 1.0) * smoothstep(0.0, 0.03, edge);
+      if (planar > 0.0) {
+        // The air between the water and the tree: the post chain hazes only the view's path to
+        // the water, so the reflected path gets the same weather fog and forest haze here.
+        let dR = max((rf.a - 1.0) * 1000.0 - dist, 0.0);
+        let cosT = dot(R, L);
+        let Tf = exp(-fogOpticalDepth(wp, R, dR, uniforms.reflFog));
+        let Th = exp(-fogOpticalDepth(wp, R, min(dR, 200.0), uniforms.reflHaze));
+        let insF = (key * mix(hgPhase(cosT, 0.55), 0.0795775, 0.45) * 0.9 + atmoSkyUp() * 0.95) * (1.0 - Tf);
+        let insH = (key * mix(hgPhase(cosT, 0.72), 0.0795775, 0.25) * 1.4 + atmoSkyUp() * 0.35) * (1.0 - Th);
+        let tree = (rf.rgb / max(ex, 1e-6) * Tf + insF) * Th + insH;
+        sky = mix(sky, tree, planar);
+      }
+    }
+  }
   let H = normalize(L + V);
   let nl = max(dot(N, L), 0.0);
   let Fs = 0.02 + 0.98 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
@@ -321,10 +359,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let foamCol = vec3f(0.8) * (key * max(L.y, 0.1) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
   var col = body * (1.0 - F) + sky * F + spec;
   col = mix(col, foamCol, foam * 0.8);
-  let ex = uniforms.fogParams.z * atmoExposure();
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
-  // Negative alpha: water (post/ssr bends its ray by these waves); magnitude = reflectance.
+  // Negative alpha: water (post/ssr bends its ray by these waves); magnitude = reflectance, plus 1
+  // where the planar reflection holds a tree (SSR then adds no far fallback over it).
   let mask = max(F * (1.0 - foam), 0.035);
-  fragmentOutputs.color = vec4f(displayTransform(col, ex), -mask);
+  fragmentOutputs.color = vec4f(displayTransform(col, ex), -mask - select(0.0, 1.0, planar > 0.5));
 }
 `;

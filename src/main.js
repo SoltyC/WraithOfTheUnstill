@@ -215,6 +215,7 @@ async function boot() {
   pipelineCache.savePipelines(pipelineSet);
   if (hideAfterWarm) { game.setPlayerVisible(false); await waitFrames(engine, 2); }
   g.trees?.warmed();
+  g.waterReflect?.warmed();
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,
   // skipping its per-draw JS path (pipeline-cache lookups, labels, iterators) — most of the

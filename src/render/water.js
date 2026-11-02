@@ -12,7 +12,7 @@ import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
 import { ShaderLanguage } from '@babylonjs/core/Materials/shaderLanguage.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
-import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
+import { Matrix, Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { Constants } from '@babylonjs/core/Engines/constants.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
@@ -252,8 +252,8 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     const mesh = meshOf(name, pos, idx, flow, absorb);
     const mat = new ShaderMaterial(name, scene, { vertex: 'water', fragment }, {
       attributes: ['position', 'flow'],
-      uniforms: ['viewProjection', 'levels', 'waterParams', ...ENV_UNIFORMS],
-      samplers: [...ATMO_MATERIAL_TEXTURES, ...(absorb ? [] : SHADOW_TEXTURES)],
+      uniforms: ['viewProjection', 'levels', 'waterParams', ...(absorb ? [] : ['reflVP', 'reflFog', 'reflHaze']), ...ENV_UNIFORMS],
+      samplers: [...ATMO_MATERIAL_TEXTURES, ...(absorb ? [] : [...SHADOW_TEXTURES, 'reflTex'])],
       storageBuffers: ['levelData', 'waterRipples', 'waterSim', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
       shaderLanguage: ShaderLanguage.WGSL,
       needAlphaBlending: true,
@@ -266,11 +266,15 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     // Absorb: dst × transmittance (alpha kept). Surface: dst + light, alpha replaced (the SSR mark).
     mat.alphaMode = absorb ? Constants.ALPHA_MULTIPLY : Constants.ALPHA_ONEONE_ONEZERO;
     mat.disableDepthWrite = absorb;
-    if (!absorb) mat.forceDepthWrite = true;
+    if (!absorb) { mat.forceDepthWrite = true; mat.setMatrix('reflVP', reflVP); mat.setVector4('reflFog', reflFog); mat.setVector4('reflHaze', reflHaze); }
     mesh.material = mat;
     return { mesh, mat };
   };
   const params = new Vector4(0, 1, 0, 0);
+  /** The planar reflection's camera (render/waterReflect.js fills it in place). */
+  const reflVP = Matrix.Identity();
+  /** The post chain's weather fog and forest haze (written in place by render/waterReflect.js). */
+  const reflFog = new Vector4(0, 0, 0, 0), reflHaze = new Vector4(0, 0, 0, 0);
   const absorb = make('waterAbsorb', 'waterAbsorb', true), surface = make('waterSurface', 'waterSurface', false);
   // The oasis's own pair, sharing the materials (no new pipelines).
   const oasisMeshes = oIdx.length ? [meshOf('oasisAbsorb', oPos, oIdx, oFlow, true), meshOf('oasisSurface', oPos, oIdx, oFlow, false)] : [];
@@ -377,6 +381,12 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     splash(x, z, r, d) { splat(x, z, r, d); },
     /** The ripple simulation runs (graphics preset; owner). */
     simOn: true,
+    /** The planar reflection's plane level (render/waterReflect.js), −1e4: none. */
+    reflectLevel: -1e4,
+    /** Binds the planar reflection: its target and its camera's view-projection (written in place). */
+    setReflection(tex, vp) { surface.mat.setTexture('reflTex', tex); surface.mat.setMatrix('reflVP', vp); },
+    /** The fog and haze vectors the reflected path is hazed with (owner writes them in place). */
+    reflFog, reflHaze,
     /** Owner fields: time (s); the Wraith's position, horizontal speed (m/s). */
     time: 0.5, px: 0.5, py: 0.5, pz: 0.5, speed: 0.5 - 0.5,
     /** Swimming (owner): the stroke phase 0..1 — each stroke's sweep throws a ring and a little foam. */
@@ -415,7 +425,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
         if (!this.inWater) { bodyX = this.px; bodyZ = this.pz; }
         if (simStep(this.px, this.pz, this.time, rate)) { simWarm++; on = this.simOn ? 1 : 0; }
       } else { simPox = 1e7; simPoz = 1e7; simT = -1; nSplat = 0; }
-      if (rip[INFO] !== simOx || rip[INFO + 1] !== simOz || rip[INFO + 2] !== on) { rip[INFO] = simOx; rip[INFO + 1] = simOz; rip[INFO + 2] = on; dirty = true; }
+      if (rip[INFO] !== simOx || rip[INFO + 1] !== simOz || rip[INFO + 2] !== on || rip[INFO + 3] !== this.reflectLevel) { rip[INFO] = simOx; rip[INFO + 1] = simOz; rip[INFO + 2] = on; rip[INFO + 3] = this.reflectLevel; dirty = true; }
       if (dirty) { ripples.update(rip); dirty = false; }
     },
     freeze() { for (const m of water.materials) { m.freeze(); fastFrozenIsReady(m); } },

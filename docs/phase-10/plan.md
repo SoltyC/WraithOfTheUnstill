@@ -171,7 +171,15 @@ The biggest technical risk. Nothing else is worth building if this frame fails.
 - **Low:** off (`waterSim` in the presets), so the analytic wake is used. The pipelines warm at load on every preset.
 - **Cost:** about 0.2 ms a frame (11.75 against 11.57 ms mean, 300 frames, two runs each) on the 3060 at 2560×1440, scale 0.8. Minecraft was open, so this is not an idle-GPU number. 0 GPU errors, 0 late pipelines.
 - Stills: `screenshots/phase-10-water/` (`ab-compare.png`: off above, on below, 1.5 s after a short wade).
-- **Still to do in F1:** reflection (the planar pass), black water, the Low V-wake, and the wake clip for the checkpoint.
+
+**Planar reflection spike done 2026-11-02 (`render/waterReflect.js`, `treeReflectFragmentWGSL`):**
+- A camera mirrored under the water plane draws only the trees, with cheap shading, into a target 0.4× the window's size and 15 % wider than the view. The plane is the water at or near the Wraith. The pass leaves the frame when there is none for 2 s.
+- The water projects each pixel with that camera, bends the lookup by slope × the tree's distance, and hazes the reflected path with the post chain's weather fog and forest haze. Without that haze the reflection was darker and more saturated than the trees themselves.
+- Where it holds a tree, SSR adds no far fallback. Elsewhere sky and SSR work as before, including the far shore, which is not in this pass.
+- **Result at `p8-lake-noon`:** looking down at the water, trees above the top of the screen now reflect; SSR showed sky there. Looking level, it matches SSR's look and also covers trees off the edges. Shots: `screenshots/phase-10-water/cmp-*.png`.
+- **Cost there: about 1.07 ms** (18.17 against 17.1 ms mean, 400 frames, two runs each; 93 more draw calls). That's just over the 1.0 ms reflection budget, at the meadow's densest grove, with Minecraft open. Most of it is likely the main thread binding the extra draws (`perf-main-thread`); not measured apart. Levers, if it stays over in the fen: fewer species and LODs in the pass, or drawing it every second frame.
+- **High and Ultra only** (`waterReflect`); warmed at load on every preset. 0 GPU errors, 0 late pipelines.
+- **Still to do in F1:** black water, the Low V-wake, a dawn still and the wake clip for the checkpoint. The fen has no trees yet (F6), so the signature frame can only be judged at a lake until then.
 
 **Go/no-go checkpoint:** a still of the mirror at dawn and a clip of a wake crossing it, before F2. **The fallback,** if planar reflection misses budget, is to frame the signature shot so SSR holds and keep trees on screen; cheaper, but a smaller frame.
 

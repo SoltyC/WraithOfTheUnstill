@@ -270,6 +270,9 @@ export async function addEnvironmentSystems(g) {
     wa.swimming = controller.swimming; wa.strokePhase = g.wraithView.wraith.swimPhase;
     // The oasis's well is choked while the erg is stilled: its pool fills once the Dunes are restored.
     if (wa.setOasis(ws.restoration.dunes === 'restored')) engine.snapshotRenderingReset();
+    // The planar reflection's plane and camera, before the water uploads its level.
+    const wr = g.waterReflect;
+    if (wr) { wr.px = controller.pos.x; wr.pz = controller.pos.z; wr.time = clock.simTime; wr.update(); }
     wa.update();
   } });
   // Grass and ground cover grow only on meadow ground, the erg's margin and round the oasis: where none can be in
@@ -465,6 +468,7 @@ export async function addEnvironmentSystems(g) {
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'desertAir', label: 'desert aerosol', group: 'System', on: true, onChange: (on) => { atmosphere.desert.on=on;post.post.resetHistory=true; } });
+  reg({ key: 'waterReflect', label: 'water reflection of trees', group: 'System', on: true, onChange: (on) => { if (g.waterReflect) g.waterReflect.on = on; } });
   reg({ key: 'waterSim', label: 'water ripple simulation', group: 'System', on: true, onChange: (on) => { if (g.water) g.water.simOn = on; } });
   reg({ key: 'crestDust', label: 'dune crest grains', group: 'System', on: true, onChange: (on) => { g.sandDust.crests=on; } });
   reg({ key: 'sandDust', label: 'sand dust', group: 'System', on: true, onChange: meshToggle(g.sandDust.mesh) });

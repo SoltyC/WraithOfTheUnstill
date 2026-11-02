@@ -21,25 +21,25 @@ export const PRESETS = {
     renderScale: 0.5, minScale: 0.45, targetMs: 15.5,
     shadows: 'low', grass: 'low', trees: 'low',
     ao: false, ssr: false, bloom: false, shafts: false, clouds: true, heat: false, mirage: false, sharpen: false,
-    particles: false, rocks: true, waterSim: false,
+    particles: false, rocks: true, waterSim: false, waterReflect: false,
   },
   medium: {
     renderScale: 0.67, minScale: 0.55, targetMs: 15.5,
     shadows: 'medium', grass: 'medium', trees: 'medium',
     ao: true, ssr: false, bloom: true, shafts: false, clouds: true, heat: true, mirage: false, sharpen: false,
-    particles: true, rocks: true, waterSim: true,
+    particles: true, rocks: true, waterSim: true, waterReflect: false,
   },
   high: {
     renderScale: 0.8, minScale: 0.6, targetMs: 15,
     shadows: 'high', grass: 'high', trees: 'high',
     ao: true, ssr: true, bloom: true, shafts: true, clouds: true, heat: true, mirage: true, sharpen: true,
-    particles: true, rocks: true, waterSim: true,
+    particles: true, rocks: true, waterSim: true, waterReflect: true,
   },
   ultra: {
     renderScale: 1, minScale: 0.7, targetMs: 15,
     shadows: 'high', grass: 'high', trees: 'high',
     ao: true, ssr: true, bloom: true, shafts: true, clouds: true, heat: true, mirage: true, sharpen: true,
-    particles: true, rocks: true, waterSim: true,
+    particles: true, rocks: true, waterSim: true, waterReflect: true,
   },
 };
 export const PRESET_NAMES = ['low', 'medium', 'high', 'ultra'];
@@ -140,6 +140,6 @@ export function apply() {
   if (T) {
     T('postAo', graphics.ao); T('postSsr', graphics.ssr); T('postBloom', graphics.bloom); T('postShafts', graphics.shafts);
     T('postClouds', graphics.clouds); T('postHeat', graphics.heat); T('postMirage', graphics.mirage); T('postSharpen', graphics.sharpen);
-    T('crestDust', graphics.particles); T('spindrift', graphics.particles); T('waterSim', graphics.waterSim);
+    T('crestDust', graphics.particles); T('spindrift', graphics.particles); T('waterSim', graphics.waterSim); T('waterReflect', graphics.waterReflect);
   }
 }

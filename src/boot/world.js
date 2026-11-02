@@ -166,6 +166,8 @@ export async function createWorld(g) {
   // post chain's SSR reflects on them (waves and ripples shared through the wind block and a buffer).
   const water = await (await import('../render/water.js')).createWater(scene, content.clipmap, atmosphere, wind, streamer, post.post.waterRipples, import.meta.env.BASE_URL + 'world/', ground, post.post.waterSim);
   bindShadows(water.materials[1], shadows); // the surface pass (the absorb pass reads no shadows)
+  // The water's planar reflection of the trees (Phase 10 F1), bound before the water freezes.
+  const waterReflect = (await import('../render/waterReflect.js')).createWaterReflect(scene, camera, trees, water, (m) => bindShadows(m, shadows), post.post.params);
   water.freeze();
   trees.setWater((x, z) => (water.wetAt(x, z) ? 1e9 : NaN)); // no trees in lakes, rivers or on their banks
   post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k];for(let k=36;k<b.length;k++)P[144+k-36]=b[k]; });
@@ -205,5 +207,5 @@ export async function createWorld(g) {
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
   const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground, post.post.waterSim[0]);
   water.extra = wadiWater;   // wading in the braids when they run
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect });
 }

@@ -52,7 +52,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let p = hp * 2;
   let mask0 = textureLoad(sceneTex, p, 0).a;
   let isWater = mask0 < 0.0;
-  let mask = abs(mask0);
+  // Below −1: water whose planar reflection holds a tree here (shaders/water.wgsl.js).
+  let planar = mask0 < -1.0;
+  let mask = abs(mask0) - select(0.0, 1.0, planar);
   let d = textureLoad(depthTex, p, 0);
   if (P.ssr.w < 0.5 || mask < 0.03 || d <= 0.0) { textureStore(outSsr, hp, vec4f(0.0)); return; }
   let pos = worldPos(texelNdc(p, P.size), d, P.invVP);
@@ -128,7 +130,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   if (hitUv.x < 0.0 || hd <= 0.0 || length(vec2f(hp2 - p)) < 3.0) {
     // Water with nothing hit nearby: what lies far along the reflected ray — the far shore, the
     // mountains, the sky with its clouds — read from the frame where that direction lands.
-    if (isWater) {
+    if (isWater && !planar) {
       var Rf = R; Rf.y = max(Rf.y, 0.01);
       let cf = P.vp * vec4f(P.cam.xyz + Rf * 1e4, 1.0);
       if (cf.w > 0.0) {

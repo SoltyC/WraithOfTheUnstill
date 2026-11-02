@@ -311,3 +311,57 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   fragmentOutputs.color = vec4f(0.0);
 }
 `;
+
+/** The water's planar reflection (render/waterReflect.js): trees seen from the camera mirrored
+ *  under the water plane, at quarter resolution and blurred by the waves, so a cheap shading —
+ *  the leaf cut-out, sun and sky light, shadows, aerial perspective — and nothing under the
+ *  plane. Alpha 1 + km marks a tree (the water falls back to its sky and SSR elsewhere). */
+export const treeReflectFragmentWGSL = (leaf) => /* wgsl */ `
+${ENV_DECL}
+uniform treeMat: vec4f;
+uniform reflPlane: vec4f;            // x = water level; y = 1: flip the aerial lookup's v (0: the real tree's)
+${leaf ? 'var leafAtlas: texture_2d<f32>;\nvar leafAtlasSampler: sampler;' : ''}
+varying vWorldPos: vec3f;
+varying vNormal: vec3f;
+varying vUv: vec2f;
+varying vInfo: vec4f;
+varying vHue: f32;
+varying vFade: f32;
+${COMMON_WGSL}
+${ATMO_MATERIAL_WGSL}
+${SHADOW_RECEIVE_WGSL}
+${leaf ? LEAF_UV : ''}
+@fragment
+fn main(input: FragmentInputs) -> FragmentOutputs {
+  let wp = fragmentInputs.vWorldPos;
+  ${leaf ? 'let lc = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z));' : ''}
+  if (wp.y < uniforms.reflPlane.x${leaf ? ' || lc.a < 0.5' : ''}) { discard; }
+  let camPos = uniforms.cameraPosition;
+  let V = normalize(camPos - wp);
+  var N = normalize(fragmentInputs.vNormal);
+  if (dot(N, V) < 0.0) { N = -N; }
+  let L = uniforms.keyDir;
+  let key = atmoKeyColor();
+  let ex = uniforms.fogParams.z * atmoExposure();
+  let vis = shadowVisibilityFast(wp, camPos);
+  let sp = uniforms.treeMat.y;
+  ${leaf ? `
+  var albedo = lc.rgb * (0.85 + 0.35 * fragmentInputs.vHue);
+  let lum = dot(albedo, vec3f(0.3, 0.55, 0.15));
+  if (sp > 4.5) { albedo = mix(albedo * 1.5, lum * vec3f(1.0, 0.92, 0.78) * 1.35, 0.8 * (1.0 - uniforms.treeMat.z)); }
+  let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, fragmentInputs.vInfo.w);
+  let diff = clamp((dot(N, L) + 0.35) / 1.35, 0.0, 1.0);
+  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * 0.5;
+  var col = albedo * (key * (diff * inner / PI + back * vec3f(0.95, 1.2, 0.5) * 0.7) * vis + shIrradiance(N) * uniforms.envMisc.w * inner * 1.2);` : `
+  var albedo = select(vec3f(0.17, 0.13, 0.1), vec3f(0.3, 0.29, 0.27), abs(sp - 2.0) < 0.5);
+  if (abs(sp - 6.0) < 0.5) { albedo = vec3f(0.46, 0.43, 0.39); }
+  if (abs(sp - 8.0) < 0.5) { albedo = vec3f(0.24, 0.19, 0.14); }
+  albedo *= mix(1.0, 0.62, uniforms.wetParams.x);
+  var col = albedo * (key * clamp(dot(N, L), 0.0, 1.0) * vis / PI + shIrradiance(N) * uniforms.envMisc.w);`}
+  var suv = fragmentInputs.position.xy * uniforms.screenInfo.zw;
+  suv.y = mix(suv.y, 1.0 - suv.y, uniforms.reflPlane.y);
+  col = atmoApply(col, suv, length(camPos - wp) * 0.001);
+  // Alpha: 1 + the distance (km) from the mirrored camera — the water hazes the reflected path.
+  fragmentOutputs.color = vec4f(displayTransform(col, ex), 1.0 + length(camPos - wp) * 0.001);
+}
+`;

@@ -701,3 +701,4 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 
 - **Music comes from Suno (user, 2026-11-02).** Both local generators (ACE-Step 1.5, Stable Audio 3.0 Medium) were rejected by ear and deleted. Cues stay as specified in `docs/phase-10/music-cues.md`.
 - **F1's ripples are simulated, not analytic, on Medium and up.** A wave equation reflects off banks and settles back to a mirror, which the analytic rings can't do. Low keeps the analytic wake; nothing else changes there.
+- **The planar reflection draws trees only.** Off-screen trees are what SSR loses, and they are the signature frame. The far shore stays SSR's, and the sky the water's own. The reflected path is hazed in the water shader with the post chain's fog values, because the post chain hazes only the path to the water.

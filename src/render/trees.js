@@ -20,7 +20,7 @@ import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMa
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
 import { SHADOW_SPLITS } from './shadows.js';
 import { CANOPY_N } from './atmosphere.js';
-import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL, treeLeafDepthFragmentWGSL } from '../shaders/trees.wgsl.js';
+import { LOD_NEAR, LOD_OUT, FADE, treeVertexWGSL, treeLeafFragmentWGSL, treeBarkFragmentWGSL, treeShadowFragmentWGSL, treeBarkShadowFragmentWGSL, treeLeafDepthFragmentWGSL, treeReflectFragmentWGSL } from '../shaders/trees.wgsl.js';
 import { growTree, growLog, SPECIES } from '../world/trees/generator.js';
 import { drawLeafAtlases } from './leafAtlas.js';
 import { canvasAtlasTexture } from './atlasTexture.js';
@@ -81,6 +81,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   const engine = scene.getEngine();
   const S = ShaderStore.ShadersStoreWGSL;
   S.treeVertexShader = treeVertexWGSL; S.treeLeafFragmentShader = treeLeafFragmentWGSL; S.treeBarkFragmentShader = treeBarkFragmentWGSL;
+  S.treeReflectLeafFragmentShader = treeReflectFragmentWGSL(true); S.treeReflectBarkFragmentShader = treeReflectFragmentWGSL(false);
   S.treeShadowFragmentShader = treeShadowFragmentWGSL; S.treeLeafDepthFragmentShader = treeLeafDepthFragmentWGSL; S.treeBarkShadowFragmentShader = treeBarkShadowFragmentWGSL;
   const atlases = leafAtlasTextures(engine, scene), atlas = atlases.color;
   const params = new Vector4(0, 1, 1, 0);
@@ -125,7 +126,9 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         bindEnvironment(mat); bindAtmosphere(mat, atmo);
         if (leaf) { mat.setTexture('leafAtlas', atlas); mat.setTexture('leafSurface', atlases.surface); } else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-        mat.setVector4('treeParams', params); mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', si >= 5 ? desertMat[si] : new Vector4(barkLayer, si, 0, 0));
+        const treeMat = si >= 5 ? desertMat[si] : new Vector4(barkLayer, si, 0, 0);
+        mat.setVector4('treeParams', params); mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', treeMat);
+        mesh.metadata = { treeMat, lod, leaf };
         mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
         mat.backFaceCulling = leaf ? false : true;
         mesh.material = mat;
@@ -422,6 +425,25 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     /** Keep clear of the village's plots and roads. */
     setKeepOut(fn) { keepOut = fn; lastX = 1e9; canopyDirty = true; },
     setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },
+    /** The water's planar reflection material for a drawn mesh (render/waterReflect.js):
+     *  reflPlane (level, aerial flip), screenInfo (the reflection target's size). */
+    makeReflectMaterial(mesh, reflPlane, screenInfo) {
+      const { treeMat, lod, leaf } = mesh.metadata;
+      const m = new ShaderMaterial('reflect-' + mesh.name, scene, { vertex: 'tree', fragment: leaf ? 'treeReflectLeaf' : 'treeReflectBark' }, {
+        attributes: ['position', 'normal', 'uv', 'info'],
+        uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'treeMat', 'reflPlane', ...ENV_UNIFORMS],
+        samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas'] : [])],
+        storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+        shaderLanguage: ShaderLanguage.WGSL,
+      });
+      bindEnvironment(m); bindAtmosphere(m, atmo);
+      m.setArray4('levels', clipmap.levels); m.setStorageBuffer('levelData', clipmap.levelData);
+      m.setVector4('treeParams', params); m.setUniformBuffer('windBlock', wind.buffer); m.setVector4('treeLod', lodV[lod]); m.setVector4('treeMat', treeMat);
+      m.setVector4('reflPlane', reflPlane); m.setVector4('screenInfo', screenInfo);
+      if (leaf) m.setTexture('leafAtlas', atlas);
+      m.backFaceCulling = false;
+      return m;
+    },
     makeShadowMaterial(name, light, origin) {
       const leaf = name.includes('-leaf-');
       const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: leaf ? 'treeShadow' : 'treeBarkShadow' }, {
