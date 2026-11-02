@@ -48,6 +48,7 @@ export function createPlayerSystem(ctx) {
       } else {
         // One surf controller: snow, or sand once the Walker has lent/granted it.
         sf.want = d[Action.Traverse] === 1 && !controller.swimming; // no surfing in the water
+        controller.quiet = d[Action.Quiet] === 1;
         // Sand-surf comes with Stone (the Long Walker's waking lends both: docs/gameplay-design.md §5.1;
         // until D10, ?stone=1 or the dev overlay).
         const els = ctx.world ? ctx.world.elements : null;

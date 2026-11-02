@@ -15,6 +15,7 @@ import { Glide } from './glide.js';
 
 export const controllerTuning = {
   walkSpeed: 5.2,       // m/s on flat ground
+  quietMul: 0.42,       // the quiet walk's share of it (Shift held: game/noise.js)
   accel: 26,            // m/s² toward the wish velocity
   decel: 30,            // m/s² when there is no input
   airControl: 0.25,     // fraction of accel available in the air
@@ -73,6 +74,8 @@ export class CapsuleController {
     this.submerged = false; this.swimPitch = 0.5 - 0.5;
     /** Walking speed scale (an attack's committed footing, game/weapons) and a hold on the facing (the swing's heading). */
     this.walkMul = 1; this.faceLock = false;
+    /** The quiet walk (input, Shift); dragMul: hands holding the robe slow it (systems/drowned.js), 1 = free. */
+    this.quiet = false; this.dragMul = 1;
     this.jumpRequested = false;
     /** Upward acceleration from rising air (m/s², owner, per frame; the Gale's Updraft): lifts
      *  the body off the ground when it beats gravity. */
@@ -203,7 +206,8 @@ export class CapsuleController {
       // A plunge in the air: the drift it was given is held (the fall is the only way down).
     } else {
       // Horizontal acceleration toward wish velocity.
-      const tx = wx * T.walkSpeed * this.walkMul, tz = wz * T.walkSpeed * this.walkMul;
+      const sm = T.walkSpeed * this.walkMul * this.dragMul * (this.quiet ? T.quietMul : 1);
+      const tx = wx * sm, tz = wz * sm;
       // In rising air the robe catches the wind: the body steers well within the column (and out of it onto a ledge).
       const control = this.grounded ? 1 : this.lift > 0 ? T.liftControl : T.airControl;
       const rate = (wl > 0.01 ? T.accel : T.decel) * control;

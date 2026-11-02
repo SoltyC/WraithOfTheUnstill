@@ -130,6 +130,7 @@ async function boot() {
   (await import('./systems/encounters.js')).addEncounterSystem(g);
   (await import('./systems/ergHaunts.js')).addErgHauntSystem(g); // the erg's Shaped on their own ground, and Skitters riding the storms
   (await import('./systems/villagers.js')).addVillagerSystem(g);
+  (await import('./systems/drowned.js')).addDrownedSystem(g); // Ebbhold's people (after the npcs: their bodies)
   (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);

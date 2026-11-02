@@ -98,6 +98,16 @@ Nothing below the surface.
 
 **U5 — The Drowned and the register (2 sessions).** They replace the "Drowned" elite in F8, and the elite gets a new name. Veiled bodies from the robe system with floating veils, each with a looped task. They hear (F3's noise), and they swarm. Saying a name stops one for good. Twenty or so named, with the register as a journal page.
 
+**U5 first pass done 2026-11-03** (design review: `u5-design.md`).
+- **Noise** (`game/noise.js`; the part of F3 the city needs): Shift is the quiet walk. Each action has a level that fades. It is shared as `g.noise` for the Listener.
+- **Twenty people** (`game/drowned.js`; `systems/drowned.js`): Hanne and Ysolde kneading, Teodor at the cradle, Old Ise sweeping the long stair, Liese and her crew of four walking the north door-wheel, and thirteen more. Each is a Veiled robe figure on the city's floors with a loop. They hear, turn, come and hold the robe (four pin it), and let go after 2.5 s of stillness. A dodge shakes them off, loudly.
+- **The register:** a journal page; carry a name, then say it. The right name stills them for good (saved); a wrong name cries out.
+- **Checked:**
+  - Tests: `tests/drowned.test.js` (8): noise ranges, every person on a floor of their tier, hear → come → hold → let go, losing a quiet sound, shake-off, naming.
+  - Bot: a quiet approach is heard only at about 1.5 m; a walk at 7 m; two hold (speed ×0.36) and let go; wrong and right names.
+  - Cost: 9.92 ms on the causeway (+0.3 ms for the twenty). 0 GPU errors, 0 late pipelines.
+- **Not yet (U6):** hand animation and real props for the loops; the floating veils; the held look; Sefa. The compass still shows outside goals in the city.
+
 ### The twist (added 2026-11-01; `storylines.md`, *The betrayal*)
 
 The user wants the player betrayed and changed by this chapter. The Drowned were alive, held by the Listener; the release kills them; Morrow knew. It needs:

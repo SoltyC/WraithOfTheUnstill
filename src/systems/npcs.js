@@ -30,11 +30,12 @@ export function addNpcSystems(g) {
 
   function place(ref) { const p = table[ref.poi].pos; return [p[0] + (ref.dx || 0), p[1] + (ref.dz || 0)]; }
 
-  /** @param {{ tint?: number[], interact?: boolean }} [opt]  tint: dyed robe (multiplier); interact: a Speak target (default: when named) */
+  /** @param {{ tint?: number[], interact?: boolean, ground?: any }} [opt]  tint: dyed robe (multiplier); interact: a Speak target (default: when named);
+   *  ground: its own ground ({ qx, qz, h, sample(), covers() }: a sealed interior's floors), used instead of the terrain and the world's solids, and no footprints */
   function makeNpc(id, name, archetype, home, opt = {}) {
     const A = ARCHETYPES[archetype];
     const xf = { ox: home[0], oy: 0, oz: home[1], s: A.scale };
-    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: opt.tint || A.tint, simGround: scaledGround(ground, xf, g.solids || null), xform: xf });
+    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: opt.tint || A.tint, simGround: opt.ground ? scaledGround(opt.ground, xf, null) : scaledGround(ground, xf, g.solids || null), xform: xf });
     bindShadows(view.material, shadows); bindShadows(view.fur.material, shadows); bindShadows(view.fx.material, shadows);
     shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
     view.freeze();
@@ -48,7 +49,7 @@ export function addNpcSystems(g) {
       id, name, archetype, A, view, xf, home, x: home[0], z: home[1], y: 0, yaw: rnd() * 6.28,
       shown: false, placed: false, shiftT: A.shift[0] + rnd() * (A.shift[1] - A.shift[0]), offX: 0.5 - 0.5, offZ: 0.5 - 0.5,
       lod: 0.5 - 0.5, path: null, pathT: 0.5 - 0.5, at: null, vx: 0.5 - 0.5, vz: 0.5 - 0.5,
-      brain: null, hunch: undefined, noLook: false,
+      brain: null, hunch: undefined, noLook: false, gnd: opt.ground || null, hide: false,
       target: (opt.interact ?? !!name) ? { kind: 'npc', id, verb: 'Speak', name, x: 0.5, y: 0.5, z: 0.5, r: TALK_R, h: 0.25, hidden: true } : null,
     };
     if (n.target) g.interactables.push(n.target);
@@ -225,9 +226,10 @@ export function addNpcSystems(g) {
       }
       const dcx = n.x - cp.x, dcz = n.z - cp.z, dc = Math.sqrt(dcx * dcx + dcz * dcz);
       n.dc = dc;
-      ground.qx = n.x; ground.qz = n.z;
-      const known = ground.covers();
-      const show = known && dc < FAR;
+      const gd = n.gnd || ground;
+      gd.qx = n.x; gd.qz = n.z;
+      const known = gd.covers();
+      const show = known && dc < FAR && !n.hide;
       if (show !== n.shown) {
         n.shown = show; n.view.setEnabled(show); changed = true; if (!show) n.placed = false;
         const prop = g.props?.[n.id];
@@ -235,8 +237,8 @@ export function addNpcSystems(g) {
       }
       if (n.target) n.target.hidden = !show;
       if (!show) continue;
-      ground.sample(); n.y = ground.h;
-      if (g.solids) { const so = g.solids; so.qx = n.x; so.qz = n.z; so.qh = n.y; so.floorAnyQ(); n.y = so.h; }
+      gd.sample(); n.y = gd.h;
+      if (g.solids && !n.gnd) { const so = g.solids; so.qx = n.x; so.qz = n.z; so.qh = n.y; so.floorAnyQ(); n.y = so.h; }
       if (!n.placed) { xf.oy = n.y; n.placed = true; }
       // Idle life: shift weight now and then (a small corrective step), turn toward the Wraith.
       if (!n.path && !n.vx && !n.vz && !n.noLook) {
@@ -261,11 +263,12 @@ export function addNpcSystems(g) {
       w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1); w.time = clock.simTime;
       if (g.wind) { g.wind.sx = n.x; g.wind.sz = n.z; g.wind.sample(); w.windStrength = g.wind.speed * 0.9; w.windX = g.wind.outX; w.windZ = g.wind.outZ; }
       else { w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ; }
+      if (n.gnd) w.windStrength = 0.12;   // a sealed interior: only the stir of their own moving
       n.view.time = clock.simTime;
       n.view.update();
       // Footprints where the feet planted (world space), sized to the figure.
       const gt = w.gait, ev = gt.ev;
-      if (dc < 70) for (let e = 0; e < gt.evCount; e++) {
+      if (dc < 70 && !n.gnd) for (let e = 0; e < gt.evCount; e++) {
         const o = e * 7;
         footprints.ex = xf.ox + (ev[o] - xf.ox) * xf.s; footprints.ez = xf.oz + (ev[o + 2] - xf.oz) * xf.s;
         footprints.edx = ev[o + 3]; footprints.edz = ev[o + 4]; footprints.size = xf.s;

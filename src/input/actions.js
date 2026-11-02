@@ -16,6 +16,9 @@ export const Action = Object.freeze({
   WeaponSwap: 25,
   /** R / C: use / cycle the selected consumable (reserved: no-ops until the inventory has them). */
   Consume: 26, ConsumeNext: 27,
+  /** Shift held: the quiet walk (slow, soft steps: the Drowned and the Listener hear less; game/noise.js). The same key as the
+   *  free camera's fast flight (dev) and Shift + wheel zoom, so it shares that action's slot. */
+  Quiet: 22,
 });
 const COUNT = 28;
 

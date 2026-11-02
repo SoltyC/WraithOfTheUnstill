@@ -11,6 +11,7 @@ import { createEconomyPages } from './trade.js';
 import { el, createCodex } from './codex.js';
 import { remembranceTab } from './remembrance.js';
 import { foundNookMarks } from '../../game/nooks.js';
+import { PEOPLE } from '../../game/drowned.js';
 
 const SETTINGS_KEY = 'wraith-settings';
 const REST = [['Dawn', 6.2], ['Midday', 12.5], ['Dusk', 18.2], ['Night', 23]];
@@ -55,7 +56,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['inventory', 'Inventory'], ['robes', 'Robes'], ['echoes', 'Echoes'], ['lore', 'Lore'], ['beasts', 'Bestiary'], ['remembrance', 'Remembrance']], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['inventory', 'Inventory'], ['robes', 'Robes'], ['echoes', 'Echoes'], ['lore', 'Lore'], ['beasts', 'Bestiary'], ['remembrance', 'Remembrance'], ...(chapter.graph.flags.has('ebb:register-read') ? [['register', 'Register']] : [])], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -83,6 +84,15 @@ export function createMenus(g) {
       econ.inventoryTab(sheet, () => open('journal', 'inventory'));
     } else if (tab === 'remembrance') {
       remembranceTab({ el, listPage, rem: g.remembrance, elements: g.elements });
+    } else if (tab === 'register') {
+      // Ebbhold's register (systems/drowned.js): a name carried from here is the one said to the Drowned.
+      const flags = chapter.graph.flags, vars = chapter.graph.vars;
+      listPage([['The Register', PEOPLE.map((d) => ({ ...d, title: d.name, done: flags.has('ebb:named:' + d.id) }))]], (pg, d) => {
+        el('h2', null, pg, d.name); el('p', null, pg, d.line);
+        if (flags.has('ebb:named:' + d.id)) { el('p', 'past', pg, 'Still.'); return; }
+        const on = vars['ebb.carry'] === d.name, b = el('button', 'robe-wear', pg, on ? 'Carried' : 'Carry this name');
+        if (on) b.disabled = true; else b.onclick = () => { vars['ebb.carry'] = d.name; close(); };
+      }, 'The book is empty.');
     } else if (tab === 'robes') {
       const flags = chapter.graph.flags, vars = chapter.graph.vars;
       const worn = wornRobe(flags, vars).id;
@@ -280,6 +290,7 @@ export function createMenus(g) {
   const econ = createEconomyPages({ g, el, head, foot, tabs, listPage, sheet, open });
   const PAGES = { journal, map: mapPage, pause, saves, settings: settingsPage, shrine: shrinePage, trade: econ.trade, forge: econ.forge };
   // The talk interaction opens a trader's stall, or the smith's forge (data: { trade: 'corin' }).
+  g.openJournal = (tab) => open('journal', tab);
   g.openTrade = (id) => open(id === 'garrow' ? 'forge' : 'trade', id === 'garrow' ? { id } : { id, tab: 'buy' });
 
   async function loadSlot(slot) {

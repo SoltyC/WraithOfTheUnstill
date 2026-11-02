@@ -712,3 +712,7 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Ebbhold is one colossal hall** (user, 2026-11-02, after the first grey box of rooms): huge first, the people's rooms as alcoves off its galleries.
 - **The hall's beams are its own fixed sea-light,** not the sun. They are computed analytically (traced up to the roof's slits, blocked by the slab levels), so they look the same at any hour.
 - **The sealed city sits 400 m above sea level, with the terrain off while inside.** Below sea level the atmosphere model has no sunlight, and the terrain shadowed the roof.
+- **Ebbhold's mesh is wound clockwise as seen** (Babylon's front faces). Wound the other way, the hall's outsides were culled: pillars showed their insides and hidden faces z-fought through the floors (user: "the pillars aren't enclosed, the texture is glitched").
+- **The quiet walk is Shift** (the free camera's fast key and Shift + wheel zoom share its slot). Noise is one level and a place (`game/noise.js`), made from what the body does, so every listener (the Drowned, then the Listener) hears by one rule.
+- **The Drowned let go when the robe is still,** not when they are hurt or beaten. Being held costs time, never health: they are sad first (the plan's tone), and in the betrayal they were begging it to stop.
+- **A name is carried from the register's page and said by speaking,** because dialogue is at most one choice deep: the matching is done by reading the register, not by picking from a list in conversation.
