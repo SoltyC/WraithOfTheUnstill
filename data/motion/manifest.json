@@ -86,6 +86,21 @@
         "verdict": "The films look good"
       },
       "sha256": "8863669e60902a15923482c2b46c1a9e092e21c4ef22a9ef58706441656f14a8"
+    },
+    "scribe": {
+      "prompt": "A person stands at a tall desk, writing slowly with one hand.",
+      "seed": 2,
+      "steps": 100,
+      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+      "repairs": [
+        "fit",
+        "loop=0.7"
+      ],
+      "gate": {
+        "loop": true
+      },
+      "cues": [],
+      "sha256": "1fd1b56cf825c0a524f57f152fd36b98608cbab6bca7b3dd1e6e630742296725"
     }
   }
 }

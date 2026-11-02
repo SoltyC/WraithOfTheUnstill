@@ -83,6 +83,15 @@ Normal play does not pay for or change with either: the cloth over 600 frames of
 
 Seen and left alone: the fur rim of the hood catches a low sun (the same in play, and the art is not to be restyled), the wide dark cuffs hide the hands in close work, and the Wraith's staff stays on its back through a clip.
 
+## Second batch, 2026-11-03 (the Drowned's still tasks)
+
+Prompts: kneel ("A person kneels on the floor with head bowed, praying."), scribe ("A person stands at a tall desk, writing slowly with one hand."), scrub ("A person kneels and scrubs the floor with a cloth."). Seeds 1–3 each, repaired `fit loop=0.7`.
+
+- **Kneel:** all three fail stage one: alive (a prayer is near still), soles on the ground (the shins are), and frames square or foot creep. Gil keeps his procedural kneel.
+- **Scrub:** all three fail on frames square; seed 2 also on tipping and sitting on nothing. Orla keeps her procedural scrub.
+- **Scribe seed 2:** passes stage one and stage two in the meadow (cloth 9.6 cm a frame against a run's 37.1, nothing added to the frame). It is listed with no cue: the film `screenshots/kimodo/gate-scribe.mp4` waits for the user's eye before Aldo plays it.
+- **Stage two's yardstick** read a run of 0 cm at the default start (the Wraith couldn't run there), so every clip failed. In the open meadow (`p8-meadow-golden`) it reads properly.
+
 ## Known gaps
 
 - Stage one has no measure for a good performance: mood, timing, whether it reads. Only the eye does.

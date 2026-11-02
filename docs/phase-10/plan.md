@@ -161,8 +161,16 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - **Placement:** `game/crowds.js`. `hallAlive` is the Tide Hall in use (48 people); `bakehouseBehind` is three in the bakehouse. A shot's `crowd` shows them on its cut.
   - **Tests:** `tests/crowds.test.js` checks every figure and every walk end stands on a floor.
 - **The spike** (17 s): the hall alive, the push into the bakehouse with people working behind, the bakers, and the insert. Live: mean 11.3 ms, p99 16.3 ms, max 18.2 ms. It's under the 20 ms gate, but with little room.
+- **Fourth pass** (user: the baby "looks like a piece of plastic"; the dough "pushes back too quickly… squishy plastic"; the bread has no texture):
+  - **Dough:** dents now stay. Each press leaves a palm-sized hollow whose floor rises back over seconds (half in about 2 s, gone in about 8), with its rim swollen, and it never goes through the board. The surface has bubbles, stretch and soft flour.
+  - **Loaves:** three oven-opened slashes across the top with floury lips, a deep-brown top fading to a pale base, and a fine crackle.
+  - **The baby:** a wound wool swaddle with a faded madder band and fold relief, a linen fold round her head, and her sleeping face.
+  - **The crowd:** walkers now dissolve at the ends of their walks.
+- **Play to cutscene and back:** cutscenes are data (`data/cutscenes/*.json`; `?cutscene=bakehouse`).
+  - The director blends from the player's camera into the first shot, and from the last shot back to the player's camera. The difference dies away (inertialization); a blend becomes a cut beyond 25 m.
+  - The letterbox slides.
 - **Still to do:**
-  - Walkers shrink at the ends of their walks, rather than fading or turning.
+  - Walkers turn round at the ends of their walks: not built; they dissolve instead.
   - The crowd has no fur and casts no shadows.
   - The twelve Drowned without clips need new generated motion through the gate.
 
