@@ -231,7 +231,11 @@ export function buildCity() {
 
   // ── Lamps (flames that never flicker) and the cold glows ────────────────────────────────────────────────────────────────
   for (let x = 20; x < L - 34; x += 32) for (const s of [1, -1]) lamps.push([x, 2.2, s * 5]);
-  for (const y of [H.walk, H.g1, H.g2]) for (let x = 10; x < L; x += 30) for (const s of [1, -1]) lamps.push([x, y + 2.5, s * (HW - 1.5)]);
+  // (None in front of a room's door: moved along the wall clear of it.)
+  for (const y of [H.walk, H.g1, H.g2]) for (let x = 10; x < L; x += 30) for (const s of [1, -1]) {
+    const door = alcoveDoors.find((d) => d.side === s && Math.abs(d.y0 - y) < 1.5 && x > d.x0 - 3 && x < d.x1 + 3);
+    lamps.push([door ? door.x1 + 4 : x, y + 2.5, s * (HW - 1.5)]);
+  }
   for (const [x, z] of [[112, 30], [148, 30], [112, -30], [148, -30], [L - 6, 17], [L - 6, -17]]) lamps.push([x, 2.5, z]);
   for (const [x, y, z] of [[-16, 3, 8], [-16, 3, -8], [-46, -14, 0], [-70, -27, 12], [-96, -27, 16], [-80, -27, -16]]) lamps.push([x, y, z]);
   for (const x of [60, 130, 200]) glows.push([x, H.water + 4, 0, [0.3, 0.7, 0.95], 10, 40]);

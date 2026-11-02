@@ -70,6 +70,7 @@ export function addCinematicSystem(g) {
     // The cinematic's restrained depth of field: focus on the Warden, the far steppe softens.
     const taa = post.taa;
     const cine = rc.active || (rc.hold && rc.bars > 0.5); // held cinematic frames (captures) too
+    if (g.director && g.director.active) return;   // the director has the lens and the bars
     const tc = g.titleCam;
     taa.dofOn = cine || (tc && tc.dof);
     if (!cine && tc && tc.dof) { taa.focus = tc.focus; taa.focusRange = tc.focusRange; }

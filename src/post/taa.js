@@ -39,10 +39,12 @@ export function createTaa(post, scene, input, heat) {
     /** DOF: focus distance (m), in-focus half range (m), max blur (px), far blur on (0..1);
      *  dofOn runs the pass (the release cinematic). */
     dofOn: false, focus: 40, focusRange: 25, maxBlur: 9, farBlur: 1,
+    /** Camera motion blur (the director's cutscenes): shutter share 0..1, 0 off. Replaces the depth of field's gather while on. */
+    blur: 0,
     run() {
       const W = post.outWidth, H = post.outHeight, even = (post.frame & 1) === 0;
       (even ? a : b).dispatch(Math.ceil(W / 8), Math.ceil(H / 8), 1);
-      if (taa.dofOn || warm < 3) {
+      if (taa.dofOn || taa.blur > 0 || warm < 3) {
         if ((even ? dofA : dofB).dispatch(Math.ceil(W / 8), Math.ceil(H / 8), 1)) warm |= even ? 1 : 2;
       }
     },
@@ -53,6 +55,7 @@ export function createTaa(post, scene, input, heat) {
   post.onParams((P) => {
     P[44] = taa.feedback; P[46] = taa.on ? 1 : 0; post.jitter = taa.on;
     P[76] = taa.focus; P[77] = taa.focusRange; P[78] = taa.maxBlur; P[79] = taa.dofOn ? taa.farBlur : 0;
+    P[1240] = taa.blur;
   });
   return taa;
 }

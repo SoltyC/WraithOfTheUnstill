@@ -29,14 +29,42 @@ fn coc(dist: f32) -> f32 {
   return max(c, near) * P.dof.z * sign(s + 1e-4);
 }
 
+// Camera motion blur (cutscenes: docs/phase-10/cutscene-research.md §5): each pixel's screen motion since the last frame from
+// its depth and the two cameras (the camera's motion only: what moves by itself is not smeared), a 12-tap line along it scaled by
+// the shutter share. Where the frame barely moves the depth of field's gather is kept, mixed into the line as motion grows past
+// 3 px (the line samples the unfocused image: a moving pixel loses its depth of field).
+fn motionBlur(p: vec2i, sz: vec2i) -> vec4f {
+  let c = clamp(vec2i(vec2f(p) * P.size.xy * P.pad[2].zw), vec2i(0), vec2i(P.size.xy) - 1);
+  let d = textureLoad(depthTex, c, 0);
+  let ndc = (vec2f(p) + 0.5) / vec2f(sz) * 2.0 - 1.0;
+  let h = worldFromDepth(ndc, d, P.invVP);
+  let ph = P.prevVP * h;
+  if (abs(ph.w) < 1e-6) { return vec4f(0.0); }
+  let pn = ph.xy / ph.w;
+  var v = (ndc - pn) * 0.5 * vec2f(sz) * P.cine.x;
+  let l = length(v);
+  if (l < 0.6) { return vec4f(0.0); }
+  v *= min(1.0, 48.0 / l);
+  var acc = vec3f(0.0);
+  for (var i = 0; i < 12; i++) {
+    let s = (f32(i) + 0.5) / 12.0 - 0.5;
+    let q = clamp(p + vec2i(round(v * s)), vec2i(0), sz - 1);
+    acc += textureLoad(src, q, 0).rgb;
+  }
+  // How much it moves decides how much the line wins over the focus gather (w: 1 = all of it).
+  return vec4f(acc / 12.0, smoothstep(0.6, 3.0, l));
+}
+
 @compute @workgroup_size(8, 8, 1)
 fn main(@builtin(global_invocation_id) gid: vec3u) {
   let sz = vec2i(P.pad[2].xy);
   let p = vec2i(gid.xy);
   if (p.x >= sz.x || p.y >= sz.y) { return; }
   let c0 = textureLoad(src, p, 0).rgb;
+  var mb = vec4f(0.0);
+  if (P.cine.x > 0.0) { mb = motionBlur(p, sz); if (mb.w >= 1.0) { textureStore(outColor, p, vec4f(mb.rgb, 1.0)); return; } }
   let r0 = abs(coc(distAt(p, sz)));
-  if (r0 < 0.5) { textureStore(outColor, p, vec4f(c0, 1.0)); return; }
+  if (r0 < 0.5) { textureStore(outColor, p, vec4f(mix(c0, mb.rgb, mb.w), 1.0)); return; }
   var acc = c0; var wsum = 1.0;
   for (var i = 0; i < 24; i++) {
     let t = (f32(i) + 0.5) / 24.0;
@@ -49,6 +77,6 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     acc += textureLoad(src, clamp(q, vec2i(0), sz - 1), 0).rgb * w;
     wsum += w;
   }
-  textureStore(outColor, p, vec4f(acc / wsum, 1.0));
+  textureStore(outColor, p, vec4f(mix(acc / wsum, mb.rgb, mb.w), 1.0));
 }
 `;

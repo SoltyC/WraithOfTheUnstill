@@ -127,6 +127,22 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
 
 **U6 — The cinematic director and the people (5–6 sessions, with a spike first).** How, and why: `cutscene-research.md`. **First, a 10-second spike** of one captured shot, to prove the approach before the rest is built. A data-driven shot timeline for every later cutscene. The five people's loops and Sefa, the child who follows the Wraith. The name record saved with each name said. **Checkpoints: the loops on film; Sefa alone.**
 
+**U6 started 2026-11-03.**
+- **The people's loops:** the gated clips play on the Drowned's own robe bodies (`Performance.restart`: played through, eased out to a rest of 0.5–2 s, played again). Hanne and Ysolde knead (`knead1`), Teodor rocks his daughter (`rock`), and Liese's crew of five haul the door-wheel's bars (`wheel`). The manifest lists each as a cue.
+- **Hand IK on a clip:** the hands go to the thing worked (the dough, the bar) and keep the clip's own rhythm about its running mean (`Performance.handT/handW/handSpread`, a two-bone reach after the clip's pose). This is the research's "Kimodo for the body, IK for the hands".
+- **Props:** the kneading table with its board, dough and bowl; a bronze cradle on rockers; the door-wheel's drum, five bars and shaft; the archive's shelves of books; the register as an open book on a lectern; the shrine's stele.
+- **The director** (`game/director.js`, `systems/director.js`): a shot list with hand-placed keys on a curve, eased, hand-held drift, and focus pulled per shot. A hard cut resets the temporal history and snaps the exposure. It has the camera, the controls and the letterbox, and can be driven by `seek()` for films.
+- **Camera motion blur** (DOF pass, `P.cine`): 12 taps along each pixel's camera motion, at a 180° shutter by default. Where the frame barely moves, the depth of field is kept.
+- **The spike** (`review/spike/spike-hanne.mp4`, 10 s): a push into the bakehouse, then a cut to a close side shot of Hanne kneading with Ysolde opposite. Live: 10.8 ms mean, p99 13.1 ms, max 14.2 ms (the gate is no frame over 20 ms). 0 GPU errors, 0 late pipelines.
+- **Not yet:**
+  - the crowd ("3 behind, 30 in the back") as baked, interpolated robes (VAT);
+  - inertial blending between play and film;
+  - pre-roll of the next shot's cloth;
+  - Sefa;
+  - the wide dark cuffs that hide the hands in close shots;
+  - the dough reads as stone.
+- **Loops on film:** `review/loops/`.
+
 **U7 — The release and the morning after (4–5 sessions).** A grey rough cut first, as soon as U4's rooms exist, then the 3-minute sequence: flashbacks in the real rooms, the frozen wave, the player's own record, the held key that no longer does anything, about 4,000 floating robes. Then the walk through them, the jetty, the night's count, the rewritten journal, the changed title screen. **Checkpoints: the rough cut; the comprehension test.**
 
 **Cut scope here last.** This is the reason for the chapter.

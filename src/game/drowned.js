@@ -15,17 +15,21 @@ const W = HALL.walk, G1 = HALL.g1, G2 = HALL.g2;
 export const DYE = { rust: [2.1, 1.25, 0.85], kelp: [1.15, 1.6, 1.2], slate: [1.1, 1.3, 1.65], bone: [2.2, 2.1, 1.85], ink: [0.8, 0.85, 1.05], ochre: [2.0, 1.6, 0.9] };
 
 /** A place round a centre, facing it (the door-wheel's crew at its bars). */
-function round(c, r, a) { return { at: [c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r], yaw: Math.atan2(-Math.cos(a), -Math.sin(a)), c }; }
+function round(c, r, a) {
+  const bar = (q) => [c[0] + Math.cos(a) * q, 1.06, c[1] + Math.sin(a) * q];
+  return { at: [c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r], yaw: Math.atan2(-Math.cos(a), -Math.sin(a)), c, hands: { l: bar(1.72), r: bar(1.98) } };
+}
 
 /**
  * The people. task: knead | rock | haul | sweep | wheel | shelve | tend | pace | carry | scribe | kneel | mend.
  * at: [x, z] the task's anchor; yaw: facing there; path: the walked line (ping-pong) for the walking tasks; c, r: the wheel's
- * centre and radius. clip: a motion clip (data/motion, through the gate) the body plays at the task, clipT where it starts. line: the register's entry — what it says is how the player tells who is who.
+ * centre and radius. clip: a motion clip (data/motion, through the gate) the body plays at the task, clipT where it starts; hands:
+ * where the hands go on the thing worked (local, y above the tier's floor): { at, spread } one point under both, or { l, r } each. line: the register's entry — what it says is how the player tells who is who.
  */
 export const PEOPLE = [
-  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', at: [39, 54.85], yaw: 0,
+  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', hands: { at: [38.75, 1.12, 55.78], spread: 0.11 }, at: [39, 54.85], yaw: 0,
     line: 'Hanne, baker, of the walk gallery’s north side. Fed the door crews through the last night. Her hands were never out of the dough.' },
-  { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', clip: 'knead1', clipT: 3.1, at: [39, 57.15], yaw: 3.1416,
+  { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', clip: 'knead1', clipT: 3.1, hands: { at: [39.3, 1.11, 56.2], spread: 0.1 }, at: [39, 57.15], yaw: 3.1416,
     line: 'Ysolde, Hanne’s mother, who taught her. Worked the far side of Hanne’s table, facing her, and would not sit.' },
   { id: 'teodor', name: 'Teodor', arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', clip: 'rock', at: [119, -54.4], yaw: 3.1416,
     line: 'Teodor, rope-maker, a father this week. He would not put his daughter down in the low nursery; he rocked her in his arms by the cradle.' },

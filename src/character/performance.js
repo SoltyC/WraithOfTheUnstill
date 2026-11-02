@@ -31,6 +31,13 @@ export class Performance {
     this._from = new Float64Array(CLIP_FIELDS - 6);
     /** How far the clip has the body this frame, 0..1, and how far down its nod is, 0..1 (the cowl's drape tucks in with it). */
     this.weight = 0.5 - 0.5; this.tuck = 0.5 - 0.5;
+    /** Hands on a thing (docs/phase-10/cutscene-research.md: generated motion for the body, IK for the hands): targets in the
+     *  body's space (x, y, z per hand), how far the hands go to them 0..1, and how much of the clip's own hand rhythm rides on
+     *  the targets (the push of the kneading, the pull on the bar) — measured about its running mean. */
+    this.handT = new Float64Array(6); this.handW = 0.5 - 0.5; this.handRhythm = 0.7;
+    /** Spread each hand's target this far along the body's own right (both targets at one point: the dough under two hands). */
+    this.handSpread = 0.5 - 0.5;
+    this._hm = new Float64Array(6); this._hmSet = false;
   }
 
   /** Play again from t (a held loop between rests: the Drowned's tasks), easing in from the pose the body is in. Allocation-free. */
@@ -92,6 +99,23 @@ export class Performance {
     return w * w * (3 - 2 * w);
   }
 
+  /** Two-bone reach of hand s to (tx, ty, tz) by weight w (upper arm 0.3, forearm 0.28: the body's own), the elbow out and down. */
+  _ik(body, s, tx, ty, tz, w) {
+    const o = s * 3, side = s === 0 ? -1 : 1, ua = 0.3, fa = 0.28;
+    const sx = body.sh[o], sy = body.sh[o + 1], sz = body.sh[o + 2];
+    let dx = tx - sx, dy = ty - sy, dz = tz - sz;
+    const dl = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-4;
+    dx /= dl; dy /= dl; dz /= dl;
+    const L = Math.min(dl, ua + fa - 1e-3), along = (ua * ua - fa * fa + L * L) / (2 * L), h = Math.sqrt(Math.max(ua * ua - along * along, 0));
+    const r = body.r, u = body.u, f = body.f;
+    let px = r[0] * side * 0.6 - u[0] * 0.8 - f[0] * 0.15, py = r[1] * side * 0.6 - u[1] * 0.8 - f[1] * 0.15, pz = r[2] * side * 0.6 - u[2] * 0.8 - f[2] * 0.15;
+    const pd = px * dx + py * dy + pz * dz; px -= dx * pd; py -= dy * pd; pz -= dz * pd;
+    const pl = Math.sqrt(px * px + py * py + pz * pz) || 1; px /= pl; py /= pl; pz /= pl;
+    const el = body.el, ha = body.ha;
+    el[o] += (sx + dx * along + px * h - el[o]) * w; el[o + 1] += (sy + dy * along + py * h - el[o + 1]) * w; el[o + 2] += (sz + dz * along + pz * h - el[o + 2]) * w;
+    ha[o] += (sx + dx * L - ha[o]) * w; ha[o + 1] += (sy + dy * L - ha[o + 1]) * w; ha[o + 2] += (sz + dz * L - ha[o + 2]) * w;
+  }
+
   /** Pose the body (after Body.update) and put the feet on the gait. */
   apply(body, gait) {
     const w = this.weight = this._weight(), from = this._from;
@@ -119,6 +143,13 @@ export class Performance {
       body.px = from[36] + (body.px - from[36]) * w; body.py = from[37] + (body.py - from[37]) * w; body.pz = from[38] + (body.pz - from[38]) * w;
     }
     this._norm3(body.r, body.u, body.f); this._norm3(body.hr, body.hu, body.hf);
+    // Hands on their thing: the targets, moved by the clip's own hand rhythm about its running mean.
+    if (this.handW > 0) {
+      const ha = body.ha, m = this._hm, T = this.handT, k = this._hmSet ? 0.02 : 1, hw = this.handW * w, R = this.handRhythm, sp = this.handSpread, r = body.r;
+      for (let i = 0; i < 6; i++) m[i] += (ha[i] - m[i]) * k;
+      this._hmSet = true;
+      for (let s = 0; s < 2; s++) { const o = s * 3, q = (s === 0 ? -1 : 1) * sp; this._ik(body, s, T[o] + r[0] * q + (ha[o] - m[o]) * R, T[o + 1] + r[1] * q + (ha[o + 1] - m[o + 1]) * R, T[o + 2] + r[2] * q + (ha[o + 2] - m[o + 2]) * R, hw); }
+    }
     gait.px = body.px; gait.py = body.py; gait.pz = body.pz;
     body.toWorld(0, 0.42, 0); body.chest[0] = body.out[0]; body.chest[1] = body.out[1]; body.chest[2] = body.out[2];
     const u = body.u, sy = body.sh; body.head[0] = (sy[0] + sy[3]) * 0.5 + u[0] * 0.26; body.head[1] = (sy[1] + sy[4]) * 0.5 + u[1] * 0.26; body.head[2] = (sy[2] + sy[5]) * 0.5 + u[2] * 0.26;

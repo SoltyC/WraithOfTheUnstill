@@ -116,6 +116,7 @@ async function boot() {
   (await import('./systems/weaponView.js')).addWeaponViewSystem(g); // after it: the weapon follows the hand
   sysCreatures.addCreatureSystems(g);
   sysCinematic.addCinematicSystem(g);
+  (await import('./systems/director.js')).addDirectorSystem(g); // cutscenes: shot lists on the camera (Phase 10 U6)
   await sysEnv.addEnvironmentSystems(g);
   (await import('./systems/chapter.js')).addChapterSystem(g);
   (await import('./systems/lights.js')).addLightSystem(g);

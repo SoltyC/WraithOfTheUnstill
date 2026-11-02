@@ -3,7 +3,7 @@
 // Texel convention: row 0 is the bottom of the view, so ndc = (texel + 0.5) / size · 2 − 1.
 
 /** Floats in the parameter block (post.js fills [0..43]; passes add theirs via onParams). */
-export const POST_PARAM_FLOATS = 1240;
+export const POST_PARAM_FLOATS = 1244;
 
 export const POST_PARAMS_WGSL = /* wgsl */ `
 struct PostParams {
@@ -28,6 +28,7 @@ struct PostParams {
   desert: array<vec4f,4>, // world storm direction/plane/strength, base/height/width/depth, age/sigma, wind gate and volume enable
   shelterInfo:vec4f,
   shelter:array<vec4f,273>,
+  cine: vec4f,        // (floats 1240..1243) camera motion blur: shutter share 0..1 (0 off), −, −, −
 };
 
 fn texelNdc(p: vec2i, size: vec4f) -> vec2f {

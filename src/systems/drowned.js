@@ -75,6 +75,13 @@ export function addDrownedSystem(g) {
       // Where it stands, in the figure's simulation space (built at the Wraith's size).
       c.x = xf.ox + (p.x + O.x - xf.ox) / xf.s; c.y = xf.oy + (p.y + O.y - xf.oy) / xf.s; c.z = xf.oz + (p.z + O.z - xf.oz) / xf.s;
       c.yaw = d.yaw; c.scale = 1;
+      // The hands on the thing worked (the dough, the bar), in the same space.
+      const H = d.hands;
+      if (H) {
+        const T = c.handT, put = (o, q) => { T[o] = xf.ox + (q[0] + O.x - xf.ox) / xf.s; T[o + 1] = xf.oy + (d.y + q[1] + O.y - xf.oy) / xf.s; T[o + 2] = xf.oz + (q[2] + O.z - xf.oz) / xf.s; };
+        if (H.at) { put(0, H.at); put(3, H.at); c.handSpread = H.spread / xf.s; } else { put(0, H.l); put(3, H.r); c.handSpread = 0; }
+        c.handW = 0.9;
+      }
     }
   }
 
