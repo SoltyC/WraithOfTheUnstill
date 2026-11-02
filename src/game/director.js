@@ -5,7 +5,7 @@
 //
 // A shot: { dur (s), keys: [{ t (0..1 of the shot), p: [x, y, z], at: [x, y, z], fov (rad), focus (m, or omitted: the look-at's
 // distance) }], ease (0 linear … 1 smootherstep across the shot), drift (m of hand-held sway), dof (in-focus half range, m, or 0
-// for none), blur (motion blur, 0..1 of a 180° shutter) }.
+// for none), blur (motion blur, 0..1 of a 180° shutter), crowd (render/crowd.js figures shown through the shot, or none) }.
 
 /** Catmull-Rom between b and c at u. */
 const cr = (a, b, c, d, u) => b + 0.5 * u * (c - a + u * (2 * a - 5 * b + 4 * c - d + u * (3 * (b - c) + d - a)));

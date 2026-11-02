@@ -149,6 +149,22 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - **Teodor's daughter:** swaddled, carried between his hands (the `ebbCarry` transform). He no longer rests between rocks.
   - **The fur:** the cuffs' and hood's fur now take lamp, fire and spell light. They went black indoors, and for the Wraith by firelight too.
   - **The spike:** three shots, adding an insert of the hands in the dough. Live p99 is 13.7 ms.
+- **Third pass** (user: "the daughter doesn't show, and he stops mid animation"):
+  - **Teodor's daughter:** larger, in a madder-red swaddle, held out from his chest. She was there, but lost against his robe inside the sleeves.
+  - **No stops:** a clip now loops by cross-fading its last 1.2 s into its start (`Performance.xfade`), so no one stops between cycles.
+  - **Sleeves:** the Drowned at work have their sleeves turned back (`clothRobe.w`, `furParams.w`), so their hands show.
+  - **The nursery:** its water is ankle-deep.
+- **The crowd** (`render/crowd.js`, `render/crowdBake.worker.js`, `shaders/crowd.wgsl.js`):
+  - **The bake:** up to 48 robed figures in one draw. Their cloth is baked after load in a worker by our own body and cloth (standing, walking in place, kneading, rocking, hauling) at 15 fps.
+  - **Playback:** half floats, played back blended between baked frames, so it never steps. The robe's own fragment shader shades them, with a dye per figure.
+  - **Walkers** cover their range and start again, shrinking out at its ends.
+  - **Placement:** `game/crowds.js`. `hallAlive` is the Tide Hall in use (48 people); `bakehouseBehind` is three in the bakehouse. A shot's `crowd` shows them on its cut.
+  - **Tests:** `tests/crowds.test.js` checks every figure and every walk end stands on a floor.
+- **The spike** (17 s): the hall alive, the push into the bakehouse with people working behind, the bakers, and the insert. Live: mean 11.3 ms, p99 16.3 ms, max 18.2 ms. It's under the 20 ms gate, but with little room.
+- **Still to do:**
+  - Walkers shrink at the ends of their walks, rather than fading or turning.
+  - The crowd has no fur and casts no shadows.
+  - The twelve Drowned without clips need new generated motion through the gate.
 
 **U7 — The release and the morning after (4–5 sessions).** A grey rough cut first, as soon as U4's rooms exist, then the 3-minute sequence: flashbacks in the real rooms, the frozen wave, the player's own record, the held key that no longer does anything, about 4,000 floating robes. Then the walk through them, the jetty, the night's count, the rewritten journal, the changed title screen. **Checkpoints: the rough cut; the comprehension test.**
 

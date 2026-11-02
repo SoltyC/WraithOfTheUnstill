@@ -4,6 +4,7 @@
 // clock, or from seek() (a fixed-step film; later the audio clock).
 
 import { shotAt, evalShot, totalLength } from '../game/director.js';
+import { hallAlive, bakehouseBehind } from '../game/crowds.js';
 
 /** @param {any} g  shared boot context */
 export function addDirectorSystem(g) {
@@ -22,14 +23,18 @@ export function addDirectorSystem(g) {
     stop() {
       if (!d.active) return;
       d.active = false; shots = null; controller.hold = false; post.taa.dofOn = false; post.taa.blur = 0;
+      if (g.crowd) g.crowd.show(false);
       if (g.arm) { g.arm.setFree(false); g.arm.snap(controller.pos); }
       post.post.resetHistory = true;
       const f = onEnd; onEnd = null; f?.();
     },
     get time() { return t; },
     letterbox: true,
+    /** The cutscenes' crowds (game/crowds.js), for shot lists. */
+    crowds: { hallAlive, bakehouseBehind },
   };
   const sys = { name: 'director', update: () => {
+    if (g.crowd) g.crowd.update(clock.simTime);
     const b = d.active && d.letterbox ? 1 : 0, shown = b * 100;
     if (bars && shown !== barsShown) { barsShown = shown; bars[0].style.transform = bars[1].style.transform = 'scaleY(' + b + ')'; }
     if (!d.active) return;
@@ -37,7 +42,11 @@ export function addDirectorSystem(g) {
     if (t >= len && !manual) { d.stop(); return; }
     shotAt(shots, t, 0, at);
     const sh = shots[at.i];
-    if (at.i !== lastI) { lastI = at.i; post.post.resetHistory = true; if (g.atmosphere) g.atmosphere.snapExposure = true; }
+    if (at.i !== lastI) {
+      lastI = at.i; post.post.resetHistory = true; if (g.atmosphere) g.atmosphere.snapExposure = true;
+      // A shot's crowd (render/crowd.js): placed on its cut; a shot without one shows none.
+      if (g.crowd) { if (sh.crowd) { g.crowd.set(sh.crowd); g.crowd.show(true); } else g.crowd.show(false); }
+    }
     evalShot(sh, at.u, t, cam);
     const dx = cam[3] - cam[0], dy = cam[4] - cam[1], dz = cam[5] - cam[2];
     camera.position.set(cam[0], cam[1], cam[2]);
