@@ -254,13 +254,13 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       attributes: ['position', 'flow'],
       uniforms: ['viewProjection', 'levels', 'waterParams', ...(absorb ? [] : ['reflVP', 'reflFog', 'reflHaze']), ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...(absorb ? [] : [...SHADOW_TEXTURES, 'reflTex'])],
-      storageBuffers: ['levelData', 'waterRipples', 'waterSim', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
+      storageBuffers: ['levelData', 'waterRipples', 'waterSim', 'biomeA', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
       shaderLanguage: ShaderLanguage.WGSL,
       needAlphaBlending: true,
     });
     bindEnvironment(mat); bindAtmosphere(mat, atmo);
     mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-    mat.setStorageBuffer('waterRipples', ripples); mat.setStorageBuffer('waterSim', sim[0]);
+    mat.setStorageBuffer('waterRipples', ripples); mat.setStorageBuffer('waterSim', sim[0]); mat.setStorageBuffer('biomeA', atmo.biomeA);
     mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('waterParams', params);
     mat.backFaceCulling = false;
     // Absorb: dst × transmittance (alpha kept). Surface: dst + light, alpha replaced (the SSR mark).

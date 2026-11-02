@@ -197,6 +197,18 @@ fn main(input: VertexInputs) -> FragmentInputs {
 const OPTICS = /* wgsl */ `
 const W_SIGMA: vec3f = vec3f(0.42, 0.085, 0.075);   // absorption + scattering out (1/m)
 const W_BODY: vec3f = vec3f(0.010, 0.026, 0.022);    // what the deep body sends back up (≈ 2–3 %: lakes are dark)
+// The mire's black water (Phase 10 F1): humic tannins take the blue first, then the green, so a
+// hand's depth is amber, a knee's depth tea, and anything deeper black; it sends back almost
+// nothing (a mirror over a dark body). Blended in by the mire's biome weight.
+const T_SIGMA: vec3f = vec3f(1.0, 1.45, 2.6);   // a 1.4 m path keeps G at half of R: brown, not red
+const T_BODY: vec3f = vec3f(0.006, 0.0032, 0.0012);
+var<storage, read> biomeA: array<u32>;
+/** The mire's share of the biome weights at p (render/world biome map, 8 m). */
+fn wMire(p: vec2f) -> f32 {
+  let i = clamp(i32((p.x + 4096.0) / 8.0), 0, 1023); let j = clamp(i32((4096.0 - p.y) / 8.0), 0, 1023);
+  let a = unpack4x8unorm(biomeA[j * 1024 + i]);
+  return smoothstep(0.25, 0.6, a.z / max(a.x + a.y + a.z + a.w, 0.05));
+}
 fn wPath(depth: f32, V: vec3f) -> f32 { return min(depth / max(abs(V.y), 0.1), 60.0); }
 `;
 
@@ -245,7 +257,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let wp = fragmentInputs.vWorldPos;
   let V = normalize(uniforms.cameraPosition - wp);
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
-  let T = exp(-W_SIGMA * wPath(depth, V));
+  let mire = wMire(wp.xz);
+  let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   // Light lost at the surface (flat-water Fresnel: the surface pass adds the reflection back).
   let F = 0.02 + 0.98 * pow(1.0 - abs(V.y), 5.0);
   // Caustics on the bed: two drifting cell layers focusing the sun, strongest in the shallows and
@@ -256,7 +269,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let c1 = 1.0 - abs(noised(bed * 1.6 + vec2f(t * 0.21, t * 0.13)).x);
   let c2 = 1.0 - abs(noised(bed * 2.3 - vec2f(t * 0.17, -t * 0.19) + 7.0).x);
   let caust = pow(c1 * c2, 7.0) * 2.6 * clamp(wf.z, 0.0, 1.0) * exp(-depth * 0.6) * smoothstep(0.02, 0.3, depth)
-            * clamp(uniforms.keyDir.y * 3.0, 0.0, 1.0) * uniforms.waterParams.y;
+            * clamp(uniforms.keyDir.y * 3.0, 0.0, 1.0) * uniforms.waterParams.y * (1.0 - 0.8 * mire);
   fragmentOutputs.color = vec4f(T * (1.0 - F) * (1.0 + caust), 0.0);
 }
 `;
@@ -282,7 +295,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
-  let T = exp(-W_SIGMA * wPath(depth, V));
+  let mire = wMire(wp.xz);
+  let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   let shore = smoothstep(0.0, 0.25, depth);   // a believable fade-out width over a gentle bank
   let nv = max(dot(N, V), 0.0);
   let F = (0.02 + 0.98 * pow(1.0 - nv, 5.0)) * shore;
@@ -344,7 +358,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let spec = key * ggxD(max(dot(N, H), 0.0), rough) * Fs * nl / max(4.0 * nv * nl, 0.05) * vis * nl * shore;
   // The water body: light scattered back up out of it (its colour), lit by the sun and the sky.
   let light = key * max(L.y, 0.0) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, vec3f(0.0, 1.0, 0.0));
-  let body = W_BODY * light * (1.0 - T);
+  let body = mix(W_BODY, T_BODY, mire) * light * (1.0 - T);
   // Foam where the ripples are young (the Wraith's splashes), lit like a rough white surface.
   var foam = clamp(sl.z * (0.6 + 0.4 * noised(wp.xz * 9.0 + t).x), 0.0, 1.0);
   // A soft wet fringe where the water thins to nothing (a faint foam line, broken up by noise).

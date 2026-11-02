@@ -179,7 +179,10 @@ The biggest technical risk. Nothing else is worth building if this frame fails.
 - **Result at `p8-lake-noon`:** looking down at the water, trees above the top of the screen now reflect; SSR showed sky there. Looking level, it matches SSR's look and also covers trees off the edges. Shots: `screenshots/phase-10-water/cmp-*.png`.
 - **Cost there: about 1.07 ms** (18.17 against 17.1 ms mean, 400 frames, two runs each; 93 more draw calls). That's just over the 1.0 ms reflection budget, at the meadow's densest grove, with Minecraft open. Most of it is likely the main thread binding the extra draws (`perf-main-thread`); not measured apart. Levers, if it stays over in the fen: fewer species and LODs in the pass, or drawing it every second frame.
 - **High and Ultra only** (`waterReflect`); warmed at load on every preset. 0 GPU errors, 0 late pipelines.
-- **Still to do in F1:** black water, the Low V-wake, a dawn still and the wake clip for the checkpoint. The fen has no trees yet (F6), so the signature frame can only be judged at a lake until then.
+
+**Black water done 2026-11-02 (`shaders/water.wgsl.js` T_SIGMA, T_BODY):** tannin optics blended in by the mire's biome weight. Blue goes first, then green, so shallows are tea-brown and anything past a metre or so is near black. The body sends back almost nothing, and caustics fade to a fifth. Lakes elsewhere are unchanged (mire weight 0). A first try at (0.6, 1.5, 3.3)/m read red-pink over the bare ground; (1.0, 1.45, 2.6) reads brown. Dawn shots: `screenshots/phase-10-water/fen-dawn-*.png` (the still mirror with the mountains in it, the wake, looking down into it).
+
+- **Still to do in F1:** floating litter, sparse bubbles and mist at the surface; the Low V-wake; the wake clip for the checkpoint. The fen has no trees yet (F6), so the trees-in-the-mirror half of the signature frame can only be judged at a lake until then.
 
 **Go/no-go checkpoint:** a still of the mirror at dawn and a clip of a wake crossing it, before F2. **The fallback,** if planar reflection misses budget, is to frame the signature shot so SSR holds and keep trees on screen; cheaper, but a smaller frame.
 
