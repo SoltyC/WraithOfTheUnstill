@@ -194,7 +194,11 @@ export function buildCity() {
     if (r.side > 0) B(r.x0 - 1, r.x1 + 1, r.y - 1, r.y + r.h, z1, z1 + 1, 'wall'); else B(r.x0 - 1, r.x1 + 1, r.y - 1, r.y + r.h, z0 - 1, z0, 'wall');
     alcoveDoors.push({ side: r.side, x0: (r.x0 + r.x1) / 2 - 2, x1: (r.x0 + r.x1) / 2 + 2, y0: r.y, y1: r.y + 4.5 });
     const cx = (r.x0 + r.x1) / 2, cz = (z0 + z1) / 2 + r.side * 2;
-    B(cx - 1.5, cx + 1.5, r.y, r.y + 1, cz - 0.7, cz + 0.7, 'prop', { prop: r.prop });
+    // What the room's people work at (render/ebbhold.js draws each): the kneading table, the cradle, the door-wheel's drum,
+    // the sweepers' bucket, the archive's shelves along the back wall.
+    const zb = r.side > 0 ? z1 : z0, PS = { kneader: [1.3, 0.55, 0.95], cradle: [0.55, 0.32, 0.75], wheel: [0.7, 0.7, 1.3], broom: [0.3, 0.3, 0.6] };
+    if (r.prop === 'shelves') B(r.x0 + 1, r.x1 - 1, r.y, r.y + 3.6, Math.min(zb, zb - r.side * 0.8), Math.max(zb, zb - r.side * 0.8), 'prop', { prop: 'shelves' });
+    else { const [hx, hz, hh] = PS[r.prop]; B(cx - hx, cx + hx, r.y, r.y + hh, cz - hz, cz + hz, 'prop', { prop: r.prop }); }
     lamps.push([r.x0 + 2, r.y + 3, cz], [r.x1 - 2, r.y + 3, cz]);
   }
   for (const side of [1, -1]) {

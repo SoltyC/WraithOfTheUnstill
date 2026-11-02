@@ -11,6 +11,7 @@
 import { PEOPLE, DYE as DYES, newPerson, stepPerson, sayName, shakeOff, ST } from '../game/drowned.js';
 import { createNoise, noiseStep, noiseAt } from '../game/noise.js';
 import { createEbbholdSolids, EBB_ORIGIN as O } from '../world/ebbhold.js';
+import { Performance } from '../character/performance.js';
 
 const TALK_R = 2.3;
 
@@ -48,6 +49,35 @@ export function addDrownedSystem(g) {
     };
   }
 
+  // The task clips (data/motion, every one through docs/phase-10/motion-gate.md and listed with its cue in the manifest).
+  const clipBufs = {};
+  for (const name of new Set(PEOPLE.filter((d) => d.clip).map((d) => d.clip))) {
+    fetch(import.meta.env.BASE_URL + 'motion/' + name + '.bin').then((r) => r.arrayBuffer()).then((b) => { clipBufs[name] = b; }).catch(() => {});
+  }
+  let rnd = 11;
+  const rand = () => { rnd = (rnd * 1664525 + 1013904223) >>> 0; return rnd / 4294967296; };
+
+  /** The body's clip at its task: played through, eased out to a breath's rest, played again; let go of when the task is. */
+  function clipStep(p, dt) {
+    const d = p.d;
+    if (!d.clip || !p.npc) return;
+    if (!p.perf) { if (!clipBufs[d.clip]) return; p.perf = new Performance(clipBufs[d.clip]); p.perf.t = d.clipT || 0; p.rest = d.clipT ? 0.3 : 0; }
+    const c = p.perf, n = p.npc, wr = n.view.wraith, xf = n.xf;
+    const want = p.state === ST.TASK && n.shown;
+    const playing = wr.performance === c;
+    if (!playing && p.clipOn) { p.clipOn = false; p.rest = 0.5 + rand() * 1.5; }
+    if (want && !playing) {
+      if ((p.rest -= dt) <= 0) { c.restart(p.firstT ?? 0); p.firstT = 0; wr.performance = c; p.clipOn = true; }
+    } else if (playing) {
+      if (!want || c.t >= c.length - c.fade) c.leave();
+    }
+    if (wr.performance === c) {
+      // Where it stands, in the figure's simulation space (built at the Wraith's size).
+      c.x = xf.ox + (p.x + O.x - xf.ox) / xf.s; c.y = xf.oy + (p.y + O.y - xf.oy) / xf.s; c.z = xf.oz + (p.z + O.z - xf.oz) / xf.s;
+      c.yaw = d.yaw; c.scale = 1;
+    }
+  }
+
   function make() {
     made = true;
     for (const p of people) {
@@ -61,7 +91,10 @@ export function addDrownedSystem(g) {
       p.npc = n;
       p.target = { kind: 'drowned', id: d.id, verb: 'Listen', name: 'One of the Drowned', x: 0, y: 0, z: 0, r: TALK_R, h: 1.7, hy: 2.5, hidden: true, onUse: () => speak(p) };
       g.interactables.push(p.target);
+      // Stand on the floor under the anchor (a stair's tread, not the tier's level).
+      S.qx = p.x + O.x; S.qz = p.z + O.z; S.ref = d.y + O.y + 3; S.floorQ(); if (S.h > -1e3) p.y = S.h - O.y;
       if (flags.has('ebb:named:' + d.id)) p.state = ST.STILL;
+      p.firstT = d.clipT || 0;
     }
   }
 
@@ -116,6 +149,7 @@ export function addDrownedSystem(g) {
         p.slot = Math.atan2(p.x - w.x, p.z - w.z);
         if (!flags.has('ebb:held-hint') && !capture) { flags.add('ebb:held-hint'); hud.notice('Ebbhold', 'Hands on the robe', 'They hold on while it moves. Be still, and they let go.', 7); }
       }
+      clipStep(p, dt);
       if (inp.dodged) shakeOff(p, w);
       if (p.state === ST.HOLD) holders++;
       const t = p.target;

@@ -33,6 +33,12 @@ export class Performance {
     this.weight = 0.5 - 0.5; this.tuck = 0.5 - 0.5;
   }
 
+  /** Play again from t (a held loop between rests: the Drowned's tasks), easing in from the pose the body is in. Allocation-free. */
+  restart(t = 0) { this.t = t; this._in = 0.5 - 0.5; this._out = -1.5 + 0.5; this.done = false; this.weight = 0.5 - 0.5; }
+
+  /** Seconds the clip runs. */
+  get length() { return (this.n - 1) / FPS; }
+
   /** Ease back to the gait; `done` when the body is its own again. */
   leave(fade = this.fade) { if (this._out < 0) { this._out = 0.5 - 0.5; this._outOver = fade; } }
 

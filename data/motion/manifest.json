@@ -10,7 +10,10 @@
         "fit"
       ],
       "gate": {},
-      "cues": [],
+      "cues": [
+        "drowned:hanne",
+        "drowned:ysolde"
+      ],
       "eye": {
         "by": "user",
         "date": "2026-11-02",
@@ -28,7 +31,9 @@
         "fit"
       ],
       "gate": {},
-      "cues": [],
+      "cues": [
+        "drowned:teodor"
+      ],
       "eye": {
         "by": "user",
         "date": "2026-11-02",
@@ -67,7 +72,13 @@
         "fit"
       ],
       "gate": {},
-      "cues": [],
+      "cues": [
+        "drowned:liese",
+        "drowned:brannoc",
+        "drowned:oda",
+        "drowned:pell",
+        "drowned:wyn"
+      ],
       "eye": {
         "by": "user",
         "date": "2026-11-02",

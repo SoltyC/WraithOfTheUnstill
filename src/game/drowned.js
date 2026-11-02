@@ -14,29 +14,32 @@ const W = HALL.walk, G1 = HALL.g1, G2 = HALL.g2;
 // Muted, sea-washed dyes (multipliers on the charcoal wool).
 export const DYE = { rust: [2.1, 1.25, 0.85], kelp: [1.15, 1.6, 1.2], slate: [1.1, 1.3, 1.65], bone: [2.2, 2.1, 1.85], ink: [0.8, 0.85, 1.05], ochre: [2.0, 1.6, 0.9] };
 
+/** A place round a centre, facing it (the door-wheel's crew at its bars). */
+function round(c, r, a) { return { at: [c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r], yaw: Math.atan2(-Math.cos(a), -Math.sin(a)), c }; }
+
 /**
- * The people. task: knead | rock | sweep | wheel | shelve | tend | pace | carry | scribe | kneel | mend.
+ * The people. task: knead | rock | haul | sweep | wheel | shelve | tend | pace | carry | scribe | kneel | mend.
  * at: [x, z] the task's anchor; yaw: facing there; path: the walked line (ping-pong) for the walking tasks; c, r: the wheel's
- * centre and radius. line: the register's entry — what it says is how the player tells who is who.
+ * centre and radius. clip: a motion clip (data/motion, through the gate) the body plays at the task, clipT where it starts. line: the register's entry — what it says is how the player tells who is who.
  */
 export const PEOPLE = [
-  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', at: [39, 54.4], yaw: 0,
+  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', at: [39, 54.85], yaw: 0,
     line: 'Hanne, baker, of the walk gallery’s north side. Fed the door crews through the last night. Her hands were never out of the dough.' },
-  { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', at: [33.5, 57], yaw: 1.5708,
-    line: 'Ysolde, Hanne’s mother, who taught her. Bent double over the board by the oven wall, and would not sit.' },
-  { id: 'teodor', name: 'Teodor', arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', at: [119, -54.4], yaw: 3.1416,
-    line: 'Teodor, rope-maker, a father this week. He would not leave the cradle in the low nursery; he rocked it in his sleep.' },
+  { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', clip: 'knead1', clipT: 3.1, at: [39, 57.15], yaw: 3.1416,
+    line: 'Ysolde, Hanne’s mother, who taught her. Worked the far side of Hanne’s table, facing her, and would not sit.' },
+  { id: 'teodor', name: 'Teodor', arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', clip: 'rock', at: [119, -54.4], yaw: 3.1416,
+    line: 'Teodor, rope-maker, a father this week. He would not put his daughter down in the low nursery; he rocked her in his arms by the cradle.' },
   { id: 'ise', name: 'Ise', arch: 'elder', dye: 'kelp', y: W, task: 'sweep', path: [[24, 42.6], [46, 42.6]], yaw: 1.5708,
     line: 'Old Ise, who swept the long stair from the walk gallery every morning, and sang while she did it, so the children could find her.' },
-  { id: 'liese', name: 'Liese', arch: 'staff', dye: 'rust', y: G1, task: 'wheel', c: [161, 56], r: 3.2, phase: 0,
-    line: 'Liese, who ran the north door-wheel, high on the first gallery. Her crew walked it round to her count. Tall, and loud with it.' },
-  { id: 'brannoc', name: 'Brannoc', arch: 'monk', dye: 'ink', y: G1, task: 'wheel', c: [161, 56], r: 3.2, phase: 1.2566,
+  { id: 'liese', name: 'Liese', arch: 'staff', dye: 'rust', y: G1, task: 'haul', clip: 'wheel', clipT: 0.0, ...round([161, 56], 2.4, 0),
+    line: 'Liese, who ran the north door-wheel, high on the first gallery. Her crew hauled at its bars to her count. Tall, and loud with it.' },
+  { id: 'brannoc', name: 'Brannoc', arch: 'monk', dye: 'ink', y: G1, task: 'haul', clip: 'wheel', clipT: 1.1, ...round([161, 56], 2.4, 1.2566),
     line: 'Brannoc, of Liese’s door crew. The broadest back on the wheel; he dyed his robe as dark as the deep.' },
-  { id: 'oda', name: 'Oda', arch: 'pilgrim', dye: 'rust', y: G1, task: 'wheel', c: [161, 56], r: 3.2, phase: 2.5133,
+  { id: 'oda', name: 'Oda', arch: 'pilgrim', dye: 'rust', y: G1, task: 'haul', clip: 'wheel', clipT: 2.3, ...round([161, 56], 2.4, 2.5133),
     line: 'Oda, of Liese’s door crew, who wore her robe the colour of rust, like her captain’s, to annoy her.' },
-  { id: 'pell', name: 'Pell', arch: 'elder', dye: 'bone', y: G1, task: 'wheel', c: [161, 56], r: 3.2, phase: 3.7699,
+  { id: 'pell', name: 'Pell', arch: 'elder', dye: 'bone', y: G1, task: 'haul', clip: 'wheel', clipT: 3.4, ...round([161, 56], 2.4, 3.7699),
     line: 'Pell, of Liese’s door crew, the oldest who still walked a wheel. Stooped, in bleached wool.' },
-  { id: 'wyn', name: 'Wyn', arch: 'lantern', dye: 'slate', y: G1, task: 'wheel', c: [161, 56], r: 3.2, phase: 5.0265,
+  { id: 'wyn', name: 'Wyn', arch: 'lantern', dye: 'slate', y: G1, task: 'haul', clip: 'wheel', clipT: 4.5, ...round([161, 56], 2.4, 5.0265),
     line: 'Wyn, of Liese’s door crew, who carried a lamp even at the wheel, because she was afraid of the dark.' },
   { id: 'corran', name: 'Corran', arch: 'pilgrim', dye: 'kelp', y: G1, task: 'sweep', path: [[123, -53], [135, -53]], yaw: 1.5708,
     line: 'Corran, sweeper, of the sweepers’ hall on the first gallery’s south side. Kept the floor so clean you could see the lamps in it.' },
@@ -100,6 +103,7 @@ export function stepTask(p, dt, move) {
   const d = p.d; p.taskT += dt;
   const t = p.taskT;
   p.offX = 0; p.offZ = 0; p.vx = 0; p.vz = 0;
+  if (d.clip && p.clipOn) { p.yaw = d.yaw; return; }   // the clip has the body
   const fx = Math.sin(p.yaw), fz = Math.cos(p.yaw);
   switch (d.task) {
     case 'knead': {   // bowing into the dough and back, the weight going forward with each push
@@ -110,6 +114,7 @@ export function stepTask(p, dt, move) {
       const s = Math.sin(t * TAU / 2.4);
       p.hunch = 0.32 + 0.04 * Math.abs(s); p.offX = fz * 0.1 * s; p.offZ = -fx * 0.1 * s; p.yaw = d.yaw; return;
     }
+    case 'haul': p.hunch = 0.3; p.yaw = d.yaw; return;
     case 'scribe': p.hunch = 0.45 + 0.04 * Math.sin(t * TAU / 0.7); p.yaw = d.yaw; return;
     case 'kneel': p.hunch = 0.72 + 0.02 * Math.sin(t * TAU / 4); p.yaw = d.yaw; return;
     case 'mend': { const s = Math.sin(t * TAU / 0.9); p.hunch = 0.62; p.offX = fz * 0.08 * s; p.offZ = -fx * 0.08 * s; p.yaw = d.yaw; return; }

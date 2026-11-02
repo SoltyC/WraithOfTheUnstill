@@ -113,6 +113,75 @@ export function ebbholdGeometry(city = buildCity()) {
   const octR = (s) => s / 2 / Math.cos(Math.PI / 8);
   const OCT = Math.PI / 8;
 
+
+  /** A beam from (ax, az) to (bx, bz) at heights y0..y1, w wide: an oriented box. */
+  const beam = (ax, az, bx, bz, y0, y1, w, k, seed = 0) => {
+    const dx = bx - ax, dz = bz - az, l = Math.hypot(dx, dz) || 1, ux = dx / l, uz = dz / l, sx = -uz * w / 2, sz = ux * w / 2;
+    const c = [[ax - sx, az - sz], [bx - sx, bz - sz], [bx + sx, bz + sz], [ax + sx, az + sz]];
+    const P = (i, y) => [c[i][0], y, c[i][1]];
+    quad(P(0, y1), P(3, y1), P(2, y1), P(1, y1), [0, 1, 0], k, seed);
+    quad(P(0, y0), P(1, y0), P(2, y0), P(3, y0), [0, -1, 0], k, seed);
+    const side = (i, j) => { const ex = c[j][0] - c[i][0], ez = c[j][1] - c[i][1], el = Math.hypot(ex, ez) || 1; quad(P(i, y0), P(j, y0), P(j, y1), P(i, y1), [ez / el, 0, -ex / el], k, seed); };
+    side(0, 1); side(1, 2); side(2, 3); side(3, 0);
+  };
+  /** A soft lump (dough, a blanket, a roll): a squashed spheroid. */
+  const lump = (x, y, z, rx, ry, rz, k, seed) => lathe(x, z, 8, 14, (t) => y + ry * (1 - Math.cos(Math.PI * t)), (t) => rx * Math.sin(Math.PI * t) * (1 + 0.06 * Math.sin(t * 9 + seed * 6)), k, seed, { sz: () => rz / rx });
+  /** The things the people work at (world/ebbhold.js 'prop' boxes). */
+  const prop = (b, seed) => {
+    const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, y0 = b.y0, y1 = b.y1;
+    if (b.prop === 'kneader') {
+      // A stone table on two trestles, the dough on a floured board, a bronze bowl.
+      box(b.x0, b.x1, y1 - 0.12, y1, b.z0, b.z1, K.prop, seed);
+      for (const x of [b.x0 + 0.3, b.x1 - 0.3]) { box(x - 0.12, x + 0.12, y0 + 0.1, y1 - 0.12, b.z0 + 0.12, b.z1 - 0.12, K.prop, seed); box(x - 0.2, x + 0.2, y0, y0 + 0.1, b.z0 + 0.02, b.z1 - 0.02, K.prop, seed); }
+      box(cx - 0.75, cx + 0.75, y1, y1 + 0.03, cz - 0.4, cz + 0.4, K.linen, 0.9);
+      lump(cx - 0.35, y1 + 0.03, cz - 0.05, 0.24, 0.12, 0.2, K.linen, 0.2);
+      lump(cx + 0.3, y1 + 0.03, cz + 0.08, 0.2, 0.1, 0.17, K.linen, 0.5);
+      turned(b.x1 - 0.32, cz + 0.2, [[y1, 0.1], [y1 + 0.04, 0.16], [y1 + 0.16, 0.22], [y1 + 0.17, 0.2], [y1 + 0.06, 0.001]], 14, K.bronze, seed);
+    } else if (b.prop === 'cradle') {
+      // A bronze cradle on rockers, a blanket heaped in it.
+      for (const x of [b.x0 + 0.08, b.x1 - 0.08]) beam(x, b.z0 - 0.12, x, b.z1 + 0.12, y0, y0 + 0.14, 0.06, K.bronze, seed);
+      box(b.x0, b.x1, y0 + 0.14, y0 + 0.22, b.z0, b.z1, K.bronze, seed);
+      box(b.x0, b.x1, y0 + 0.22, y1, b.z0, b.z0 + 0.04, K.bronze, seed); box(b.x0, b.x1, y0 + 0.22, y1, b.z1 - 0.04, b.z1, K.bronze, seed);
+      box(b.x0, b.x0 + 0.04, y0 + 0.22, y1 + 0.12, b.z0, b.z1, K.bronze, seed); box(b.x1 - 0.04, b.x1, y0 + 0.22, y1, b.z0, b.z1, K.bronze, seed);
+      lump(cx, y0 + 0.22, cz, 0.42, 0.3, 0.22, K.linen, 0.4);
+    } else if (b.prop === 'wheel') {
+      // The door-wheel: a bronze drum, five bars at its crew's hands, its shaft rising to the chains in the ceiling.
+      turned(cx, cz, [[y0, 0.75], [y0 + 0.12, 0.72], [y0 + 0.2, 0.58], [y1 - 0.35, 0.55], [y1 - 0.3, 0.66], [y1 - 0.18, 0.66], [y1 - 0.12, 0.5], [y1, 0.32], [y1 + 6, 0.16], [y1 + 6.9, 0.16], [y1 + 7.0, 0.001]], 20, K.bronze, seed);
+      for (let k = 0; k < 5; k++) {
+        const a = k * 1.2566, r1 = 2.05;
+        beam(cx + Math.cos(a) * 0.5, cz + Math.sin(a) * 0.5, cx + Math.cos(a) * r1, cz + Math.sin(a) * r1, y1 - 0.3, y1 - 0.18, 0.11, K.bronze, seed);
+        turned(cx + Math.cos(a) * r1, cz + Math.sin(a) * r1, [[y1 - 0.34, 0.001], [y1 - 0.32, 0.07], [y1 - 0.16, 0.07], [y1 - 0.14, 0.001]], 8, K.trim, seed);
+      }
+    } else if (b.prop === 'broom') {
+      turned(cx, cz, [[y0, 0.2], [y0 + 0.45, 0.25], [y0 + 0.47, 0.26], [y0 + 0.46, 0.001]], 14, K.bronze, seed);
+      beam(cx + 0.3, cz, cx + 0.32, cz + 0.02, y0, y0 + 1.5, 0.05, K.trim, seed);
+    } else if (b.prop === 'shelves') {
+      // The archive: a long case against the wall, five shelves of rolls and bound books, each a little different.
+      const along = b.x1 - b.x0, back = b.z0 + b.z1 > 0 ? b.z1 : b.z0, front = back === b.z1 ? b.z0 : b.z1;
+      box(b.x0, b.x1, y0, y1, Math.min(back, back - Math.sign(back) * 0.08), Math.max(back, back - Math.sign(back) * 0.08), K.wall, seed);
+      const zA = Math.min(back, front), zB = Math.max(back, front);
+      for (let s2 = 0; s2 <= 5; s2++) box(b.x0, b.x1, y0 + s2 * 0.7, y0 + s2 * 0.7 + 0.06, zA, zB, K.prop, seed);
+      for (let x = b.x0; x <= b.x1 + 1e-3; x += along / 8) box(x - 0.06, x + 0.06, y0, y1, zA, zB, K.prop, seed);
+      let h = seed * 977 + 1;
+      const rn = () => { h = (h * 16807) % 2147483647; return h / 2147483647; };
+      for (let s2 = 0; s2 < 5; s2++) for (let x = b.x0 + 0.1; x < b.x1 - 0.3;) {
+        const w = 0.12 + rn() * 0.35, ht = 0.25 + rn() * 0.35;
+        if (rn() > 0.15) box(x, x + w, y0 + s2 * 0.7 + 0.06, y0 + s2 * 0.7 + 0.06 + ht, zA + 0.05, zB - 0.12, K.linen, rn());
+        x += w + 0.02;
+      }
+    } else if (b.prop === 'register') {
+      // The register: a stone lectern, the book open on it, bronze-bound.
+      box(b.x0 + 0.35, b.x1 - 0.35, y0, y1 - 0.25, b.z0 + 0.35, b.z1 - 0.35, K.wall, seed);
+      box(b.x0 + 0.1, b.x1 - 0.1, y1 - 0.25, y1 - 0.15, b.z0 + 0.1, b.z1 - 0.1, K.trim, seed);
+      box(b.x0 + 0.2, cx - 0.03, y1 - 0.15, y1 - 0.02, b.z0 + 0.2, b.z1 - 0.2, K.linen, 0.95);
+      box(cx + 0.03, b.x1 - 0.2, y1 - 0.15, y1 - 0.02, b.z0 + 0.2, b.z1 - 0.2, K.linen, 0.95);
+    } else if (b.prop === 'shrine') {
+      box(b.x0, b.x1, y0, y0 + 0.3, b.z0, b.z1, K.wall, seed);
+      box(b.x0 + 0.2, b.x1 - 0.2, y0 + 0.3, y1 + 0.8, b.z0 + 0.25, b.z1 - 0.25, K.wall, seed);
+      box(b.x0 + 0.15, b.x1 - 0.15, y1 + 0.5, y1 + 0.6, b.z0 + 0.2, b.z1 - 0.2, K.trim, seed);
+    } else box(b.x0, b.x1, y0, y1, b.z0, b.z1, K.prop, seed);
+  };
+
   // ── The boxes ─────────────────────────────────────────────────────────────────────────────────────────────────────────
   city.boxes.forEach((b, i) => {
     const seed = (i * 0.6180339) % 1;
@@ -149,6 +218,7 @@ export function ebbholdGeometry(city = buildCity()) {
       }
       return;
     }
+    if (b.kind === 'prop') { prop(b, seed); return; }
     box(b.x0, b.x1, b.y0, b.y1, b.z0, b.z1, k, seed);
     if (b.kind === 'plinth') {
       // A statue's plinth: a moulded base and a bronze band under its top.

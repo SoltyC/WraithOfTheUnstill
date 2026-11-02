@@ -14,7 +14,7 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { BEAM_WGSL } from '../world/ebbhold.js';
 
-export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13 };
+export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14 };
 
 export const ebbVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
@@ -165,6 +165,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (uniforms.ebbParams.w > 0.5) { fragmentOutputs.color = vec4f(vec3f(vis, max(dot(Ng, uniforms.keyDir), 0.0), 0.0) * 0.5, 0.0); return fragmentOutputs; }
   var layer = MAT_STONE_PALE; var tile = 0.22;
   if (kind == 7 || kind == 2) { layer = MAT_STONE_DRESSED; tile = 0.35; }
+  if (kind == 14) { layer = MAT_LINEN; tile = 1.6; }
   if (kind == 6) { layer = MAT_STONE_PALE; tile = 0.3; }
   if (kind == 1) { layer = MAT_SAND_FINE; tile = 0.5; }
   if (kind == 3 || kind == 9 || kind == 13) { layer = MAT_IRON; tile = 0.45; }
@@ -225,12 +226,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     rough = 0.42 + ms.rough * 0.2;
   } else if (kind == 1) {
     albedo = matRetint(ms, layer, vec3f(0.06, 0.058, 0.062), 0.3); rough = 0.9;
+  } else if (kind == 14) {
+    // Linen, parchment, dough: pale and soft, each piece its own shade.
+    albedo = matRetint(ms, layer, mix(vec3f(0.5, 0.44, 0.34), vec3f(0.36, 0.3, 0.22), fract(seed * 7.3)), 0.3); rough = 0.85;
   } else if (kind == 2) {
     albedo = matRetint(ms, layer, vec3f(0.36, 0.36, 0.33), 0.3); rough = 0.6;
   } else {
     // Bronze (3, 9, 13): the iron scan's pitting as its wear, verdigris settling in the hollows and the low places.
     let worn = clamp(ms.h * 1.4 - 0.2, 0.0, 1.0);
-    let bronze = select(vec3f(0.8, 0.6, 0.3), vec3f(0.66, 0.46, 0.22), kind == 3);
+    let bronze = select(vec3f(0.66, 0.46, 0.2), vec3f(0.5, 0.33, 0.14), kind == 3);
     let pat = clamp((1.0 - worn) * 0.8 + (1.0 - r0.x) * 0.9 - 0.35, 0.0, 1.0) * (0.6 + 0.4 * eNoise(lp * 0.7));
     albedo = mix(bronze * (0.7 + 0.3 * worn), vec3f(0.07, 0.17, 0.14), pat);
     metal = 1.0 - pat; rough = mix(0.28 + ms.rough * 0.2, 0.75, pat);
