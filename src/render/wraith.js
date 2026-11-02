@@ -102,7 +102,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const tint = opts.tint || [1, 1, 1];
   const tintV = new Vector4(tint[0], tint[1], tint[2], 1);
   // Robe look (game/robes.js): x = embroidered hem band on, y = sash re-dyed; band / sash colours.
-  const robeV = new Vector4(0, 0, 0, 0), bandV = new Vector4(0, 0, 0, 0), sashV = new Vector4(0, 0, 0, 0);
+  const robeV = new Vector4(0, 0, 0, opts.sleeveCut || 0), bandV = new Vector4(0, 0, 0, 0), sashV = new Vector4(0, 0, 0, 0);
   mat.setVector4('clothTint', tintV); mat.setVector4('clothRobe', robeV); mat.setVector4('clothBand', bandV); mat.setVector4('clothSash', sashV);
   mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
   mat.setArray4('spellLights', clipmap.spellLights); // fire, lantern and spell light on the robe
@@ -123,7 +123,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   }
   const fur = staticMesh(new Mesh((opts.name || 'wraith') + '-fur', scene));
   const fvd = new VertexData(); fvd.positions = fpos; fvd.indices = fidx; fvd.applyToMesh(fur, false);
-  const furParams = new Vector4(0, 0, 0, 0);
+  const furParams = new Vector4(0, 0, 0, opts.sleeveCut || 0);
   const furMat = new ShaderMaterial('wraithFur', scene, { vertex: 'wraithFur', fragment: 'wraithFur' }, {
     attributes: ['position'],
     uniforms: ['viewProjection', 'furParams', 'spellLights', ...ENV_UNIFORMS],
@@ -171,7 +171,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     /** Wear a robe's look (game/robes.js entry): dye, hem band, sash. */
     setRobe(r) {
       tintV.set(r.tint[0], r.tint[1], r.tint[2], 1);
-      robeV.set(r.band ? 1 : 0, r.sash ? 1 : 0, 0, 0);
+      robeV.set(r.band ? 1 : 0, r.sash ? 1 : 0, 0, robeV.w);
       if (r.band) bandV.set(r.band[0], r.band[1], r.band[2], 1);
       if (r.sash) sashV.set(r.sash[0], r.sash[1], r.sash[2], 1);
     },

@@ -18,9 +18,11 @@ export class Performance {
   constructor(buffer) {
     const v = new Float32Array(buffer);
     this.n = v[0]; this.d = v.subarray(1);
-    this.s = new Float64Array(CLIP_FIELDS);
+    this.s = new Float64Array(CLIP_FIELDS); this._s2 = new Float64Array(CLIP_FIELDS);
     this.t = 0.5 - 0.5;
     this.loop = false;
+    /** A clip that isn't closed as a loop can still loop: its last `xfade` seconds cross-fade into its first (0: off). */
+    this.xfade = 0.5 - 0.5;
     /** Where the clip stands: the ground point (x, y, z), its facing (rad) and its scale (the Veiled's sizes). */
     this.x = 0.5; this.y = 0.5; this.z = 0.5; this.yaw = 0.5 - 0.5; this.scale = 1.5 - 0.5;
     this._sy = 0.5 - 0.5; this._cy = 1.5 - 0.5;
@@ -51,17 +53,37 @@ export class Performance {
 
   /** Advance by dt and sample every field for this frame. */
   step(dt) {
-    const n = this.n, L = (n - 1) / FPS, P = n - 1;
+    const L = (this.n - 1) / FPS;
     this._in += dt;
     if (this._out >= 0) { this._out += dt; if (this._out >= this._outOver) this.done = true; }
     this.t += dt;
+    const X = this.xfade > 0 ? Math.min(this.xfade, L * 0.4) : 0;
+    if (X > 0) {
+      // Cross-faded loop: past the end, carry on from where the fade began in the start.
+      if (this.t > L) this.t -= L - X;
+      this._sample(this.t, false, this.s);
+      if (this.t > L - X) {
+        this._sample(this.t - (L - X), false, this._s2);
+        let w = (this.t - (L - X)) / X; w = w * w * (3 - 2 * w);
+        const s = this.s, s2 = this._s2;
+        for (let k = 0; k < CLIP_FIELDS; k++) s[k] += (s2[k] - s[k]) * w;
+      }
+      this._sy = Math.sin(this.yaw); this._cy = Math.cos(this.yaw);
+      return;
+    }
     if (this.t > L) this.t = this.loop ? this.t % L : L;
-    const q = this.t * FPS, i = Math.min(n - 2, Math.floor(q)), u = q - i;
-    // A loop's last frame is its first (tools/motion/clipRepair.mjs), so the curve runs round the period, past the join.
-    const i0 = this.loop ? (i - 1 + P) % P : Math.max(0, i - 1), i3 = this.loop ? (i + 2) % P : Math.min(n - 1, i + 2);
-    const d = this.d, s = this.s, C = CLIP_FIELDS;
-    for (let k = 0; k < C; k++) s[k] = cr(d[i0 * C + k], d[i * C + k], d[(i + 1) * C + k], d[i3 * C + k], u);
+    this._sample(this.t, this.loop, this.s);
     this._sy = Math.sin(this.yaw); this._cy = Math.cos(this.yaw);
+  }
+
+  /** Every field at time t (s) on the curve into out. */
+  _sample(t, loop, out) {
+    const n = this.n, P = n - 1;
+    const q = t * FPS, i = Math.min(n - 2, Math.floor(q)), u = q - i;
+    // A loop's last frame is its first (tools/motion/clipRepair.mjs), so the curve runs round the period, past the join.
+    const i0 = loop ? (i - 1 + P) % P : Math.max(0, i - 1), i3 = loop ? (i + 2) % P : Math.min(n - 1, i + 2);
+    const d = this.d, C = CLIP_FIELDS;
+    for (let k = 0; k < C; k++) out[k] = cr(d[i0 * C + k], d[i * C + k], d[(i + 1) * C + k], d[i3 * C + k], u);
   }
 
   /** Direction field k → out (rotated by the facing). */

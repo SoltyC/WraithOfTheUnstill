@@ -35,7 +35,7 @@ export function addNpcSystems(g) {
   function makeNpc(id, name, archetype, home, opt = {}) {
     const A = ARCHETYPES[archetype];
     const xf = { ox: home[0], oy: 0, oz: home[1], s: A.scale };
-    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: opt.tint || A.tint, simGround: opt.ground ? scaledGround(opt.ground, xf, null) : scaledGround(ground, xf, g.solids || null), xform: xf });
+    const view = createWraithView(scene, atmosphere, ground, content.clipmap, { veiled: true, name: 'veiled-' + id, tint: opt.tint || A.tint, sleeveCut: opt.sleeveCut || 0, simGround: opt.ground ? scaledGround(opt.ground, xf, null) : scaledGround(ground, xf, g.solids || null), xform: xf });
     bindShadows(view.material, shadows); bindShadows(view.fur.material, shadows); bindShadows(view.fx.material, shadows);
     shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
     view.freeze();

@@ -14,7 +14,7 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { BEAM_WGSL, EBB_ORIGIN } from '../world/ebbhold.js';
 
-export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14, dough: 15, loaf: 16 };
+export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14, dough: 15, loaf: 16, blanket: 17 };
 
 export const ebbVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
@@ -188,7 +188,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (uniforms.ebbParams.w > 0.5) { fragmentOutputs.color = vec4f(vec3f(vis, max(dot(Ng, uniforms.keyDir), 0.0), 0.0) * 0.5, 0.0); return fragmentOutputs; }
   var layer = MAT_STONE_PALE; var tile = 0.22;
   if (kind == 7 || kind == 2) { layer = MAT_STONE_DRESSED; tile = 0.35; }
-  if (kind == 14) { layer = MAT_LINEN; tile = 1.6; }
+  if (kind == 14 || kind == 17) { layer = MAT_LINEN; tile = 1.6; }
   if (kind == 6) { layer = MAT_STONE_PALE; tile = 0.3; }
   if (kind == 1) { layer = MAT_SAND_FINE; tile = 0.5; }
   if (kind == 3 || kind == 9 || kind == 13) { layer = MAT_IRON; tile = 0.45; }
@@ -262,6 +262,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let tone = mix(vec3f(0.55, 0.36, 0.16), vec3f(0.36, 0.18, 0.06), smoothstep(0.25, 0.95, cav)) * (0.85 + 0.3 * eNoise(lp * 60.0));
     albedo = mix(tone, vec3f(0.78, 0.7, 0.55), score * 0.8);
     rough = 0.6;
+  } else if (kind == 17) {
+    // A dyed wool swaddle: madder red, its weave in the scan's grain.
+    albedo = matRetint(ms, layer, vec3f(0.27, 0.075, 0.06), 0.25); rough = 0.9;
   } else if (kind == 14) {
     // Linen, parchment, dough: pale and soft, each piece its own shade.
     albedo = matRetint(ms, layer, mix(vec3f(0.5, 0.44, 0.34), vec3f(0.36, 0.3, 0.22), fract(seed * 7.3)), 0.3); rough = 0.85;

@@ -67,7 +67,7 @@ uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
 uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1), y = Ember tea's warm hands (0..1), z = Rime tonic's frosted wool (0..1)
 uniform clothTint: vec4f;            // rgb = robe dye (multiplies the outer garments), w = undyed trims kept (1)
-uniform clothRobe: vec4f;            // x = embroidered hem band, y = sash re-dyed (game/robes.js)
+uniform clothRobe: vec4f;            // x = embroidered hem band, y = sash re-dyed (game/robes.js), w = sleeves turned back (m of cuff gone: the Drowned at work)
 uniform clothBand: vec4f;            // rgb = the band's thread
 uniform clothSash: vec4f;            // rgb = the sash's dye
 uniform clothFlow: vec4f;            // rgb = the element's light x Flow (hems and cuffs catch it), w = Flow 0..1
@@ -119,6 +119,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let t = vn1(m.x * 26.0) * 0.65 + vn1(m.x * 95.0 + 3.0) * 0.35;
     if (edgeM < depth * t * t * t * 1.8 - 0.004) { discard; }
   }
+  // Sleeves turned back from the hands (a Veiled at work): the cuff's last stretch is not there.
+  if ((g == 2 || g == 3) && edgeM < uniforms.clothRobe.w) { discard; }
 
   // Base colours: a slate-charcoal under-robe and sleeves; a darker heavy wool mantle and cowl;
   // grey, worn linen wrappings; a hemp cord; an oxblood sash. (Dark, but wool, not a void: lifted
@@ -304,7 +306,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 export const furVertexWGSL = /* wgsl */ `
 attribute position: vec3f;          // x = particle id + 4096·shell, yz = garment uv
 uniform viewProjection: mat4x4f;
-uniform furParams: vec4f;           // x = wind x, y = wind z, z = time
+uniform furParams: vec4f;           // x = wind x, y = wind z, z = time, w = sleeves turned back (m: no fur on the cuff's last stretch)
 var<storage, read> clothVerts: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -357,6 +359,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let g = i32(fragmentInputs.vGarment + 0.5);
   let h = fragmentInputs.vH;
   let m = fragmentInputs.vUv * garmentScale(g);
+  if ((g == 2 || g == 3) && (1.0 - fragmentInputs.vUv.y) * garmentScale(g).y < uniforms.furParams.w) { discard; }
   // Strand cells (~2.6 mm), jittered; each strand has its own length and tapers to its tip.
   // Strands: a jittered grid (~3 mm) in garment metres, each strand leaning across the surface
   // as it rises (seen end-on it is a short streak, not a dot), with its own length and taper.

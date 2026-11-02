@@ -180,7 +180,7 @@ export function buildCity() {
   // ── The people's rooms, off the galleries ────────────────────────────────────────────────────────────────────────────────
   const ROOMS = [
     { id: 'bakehouse', side: 1, x0: 30, x1: 48, y: H.walk, h: 7, water: null, prop: 'kneader' },
-    { id: 'nursery', side: -1, x0: 110, x1: 128, y: H.walk - 1, h: 7, water: H.walk + 0.1, prop: 'cradle' },
+    { id: 'nursery', side: -1, x0: 110, x1: 128, y: H.walk - 1, h: 7, water: H.walk - 0.72, prop: 'cradle' },   // ankle-deep: the sea seeping in
     { id: 'wheelRoom', side: 1, x0: 150, x1: 172, y: H.g1, h: 10, water: null, prop: 'wheel' },
     { id: 'sweepers', side: -1, x0: 120, x1: 138, y: H.g1, h: 8, water: null, prop: 'broom' },
     { id: 'archive', side: 1, x0: 100, x1: 120, y: H.g2, h: 9, water: null, prop: 'shelves' },

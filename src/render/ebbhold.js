@@ -384,8 +384,9 @@ export function ebbholdGeometry(city = buildCity()) {
   // Teodor's daughter, swaddled (info.w = 2: built at the city's origin, lying along x; the vertex shader carries it in his arms,
   // ebbCarry). A bundle, and the small round of the head at one end under a fold of the cloth.
   { const v0 = pos.length / 3;
-    lathe(0, 0, 10, 16, (t) => -0.2 + 0.4 * t, (t) => 0.095 * Math.pow(Math.sin(Math.PI * t), 0.6) * (1 + 0.05 * Math.sin(t * 17)), K.linen, 0.97, { sz: () => 0.85 });
-    lathe(0, 0, 8, 12, (t) => 0.17 + 0.13 * t, (t) => 0.072 * Math.sin(Math.PI * t), K.linen, 0.93, {});
+    // A madder-red wool swaddle, a fold of pale linen round the small head, the face a shadow in it.
+    lathe(0, 0, 18, 28, (t) => -0.26 + 0.5 * t, (t) => 0.12 * Math.pow(Math.sin(Math.PI * t), 0.55) * (1 + 0.06 * Math.sin(t * 17)), K.blanket, 0.3, { sz: () => 0.85 });
+    lathe(0, 0, 10, 14, (t) => 0.2 + 0.17 * t, (t) => 0.088 * Math.pow(Math.sin(Math.PI * t), 0.8), K.linen, 0.93, { cav: (t, a) => Math.max(0, Math.cos(a - Math.PI / 2)) * Math.sin(Math.PI * t) * 0.9 });
     for (let v = v0; v < pos.length / 3; v++) {
       // y (the lathe's axis) → x: lie it down.
       const x = pos[v * 3] - O.x, y = pos[v * 3 + 1] - O.y, nx = nrm[v * 3], ny = nrm[v * 3 + 1];

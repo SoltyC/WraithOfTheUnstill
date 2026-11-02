@@ -60,20 +60,18 @@ export function addDrownedSystem(g) {
   let rnd = 11;
   const rand = () => { rnd = (rnd * 1664525 + 1013904223) >>> 0; return rnd / 4294967296; };
 
-  /** The body's clip at its task: played through, eased out to a breath's rest, played again; let go of when the task is. */
+  /** The body's clip at its task, looped without a break (the end cross-fades into the start); let go of when the task is. */
   function clipStep(p, dt) {
     const d = p.d;
     if (!d.clip || !p.npc) return;
-    if (!p.perf) { if (!clipBufs[d.clip]) return; p.perf = new Performance(clipBufs[d.clip]); p.perf.t = d.clipT || 0; p.rest = d.clipT ? 0.3 : 0; }
+    if (!p.perf) { if (!clipBufs[d.clip]) return; p.perf = new Performance(clipBufs[d.clip]); p.perf.xfade = 1.2; p.perf.t = d.clipT || 0; p.rest = d.clipT ? 0.3 : 0; }
     const c = p.perf, n = p.npc, wr = n.view.wraith, xf = n.xf;
     const want = p.state === ST.TASK && n.shown;
     const playing = wr.performance === c;
     if (!playing && p.clipOn) { p.clipOn = false; p.rest = d.rest ?? 0.5 + rand() * 1.5; }
     if (want && !playing) {
       if ((p.rest -= dt) <= 0) { c.restart(p.firstT ?? 0); p.firstT = 0; wr.performance = c; p.clipOn = true; }
-    } else if (playing) {
-      if (!want || c.t >= c.length - c.fade) c.leave();
-    }
+    } else if (playing && !want) c.leave();
     if (wr.performance === c) {
       // Where it stands, in the figure's simulation space (built at the Wraith's size).
       c.x = xf.ox + (p.x + O.x - xf.ox) / xf.s; c.y = xf.oy + (p.y + O.y - xf.oy) / xf.s; c.z = xf.oz + (p.z + O.z - xf.oz) / xf.s;
@@ -101,8 +99,10 @@ export function addDrownedSystem(g) {
     // Teodor's daughter in his arms (shown whenever he is, gone once he is still): between his hands, a little up, lying across.
     if (d.carry && carryArr) {
       const b = wr.body, show = n.shown && p.state !== ST.STILL;
-      carryArr[0] = xf.ox + ((b.ha[0] + b.ha[3]) * 0.5 - xf.ox) * xf.s; carryArr[1] = xf.oy + ((b.ha[1] + b.ha[4]) * 0.5 + 0.05 - xf.oy) * xf.s;
-      carryArr[2] = xf.oz + ((b.ha[2] + b.ha[5]) * 0.5 - xf.oz) * xf.s;
+      // (held a little out from his chest, in front of the hands, so the sleeves don't swallow her)
+      const fx = Math.sin(p.yaw) * 0.09, fz = Math.cos(p.yaw) * 0.09;
+      carryArr[0] = xf.ox + ((b.ha[0] + b.ha[3]) * 0.5 - xf.ox) * xf.s + fx; carryArr[1] = xf.oy + ((b.ha[1] + b.ha[4]) * 0.5 + 0.07 - xf.oy) * xf.s;
+      carryArr[2] = xf.oz + ((b.ha[2] + b.ha[5]) * 0.5 - xf.oz) * xf.s + fz;
       carryArr[3] = Math.atan2(-(b.ha[5] - b.ha[2]), b.ha[3] - b.ha[0]); carryArr[7] = show ? 1 : 0;
     }
   }
@@ -111,7 +111,7 @@ export function addDrownedSystem(g) {
     made = true;
     for (const p of people) {
       const d = p.d;
-      const n = api.make('drowned-' + d.id, null, d.arch, [p.x + O.x, p.z + O.z], { tint: DYES[d.dye], interact: false, ground: groundFor(p) });
+      const n = api.make('drowned-' + d.id, null, d.arch, [p.x + O.x, p.z + O.z], { tint: DYES[d.dye], interact: false, ground: groundFor(p), sleeveCut: d.hands || d.carry ? 0.12 : 0 });
       n.noLook = true;
       n.brain = (nn) => {
         nn.x = p.x + O.x; nn.z = p.z + O.z; nn.vx = p.vx; nn.vz = p.vz; nn.yaw = p.yaw; nn.hunch = p.hunch;
