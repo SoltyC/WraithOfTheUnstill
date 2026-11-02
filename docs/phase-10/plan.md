@@ -138,6 +138,12 @@ Letters are F for fen. Each ends in something reviewable on the 3060.
 
 **Acceptance:** a diff test proves height and biome maps are **byte-identical east of x = −900 and north of the snowline**; Hearn, the Bellwether's manor and the frost are untouched. Every shrine stays dry and reachable.
 
+**Measured 2026-11-02, half-scale trial bakes (nothing committed):**
+- **Weights alone do not reach it.** Dropping the wetness factor west of x = −900 gives 7.85 km² dominant, but 4.88 of that is open sea. Real mire land goes from 2.50 to 2.97 km².
+- **The land is not there.** West of x = −900, land above sea level is mire 2.90, meadow 4.05 (mostly the scarp at 60–300 m, only 0.5 under 60 m), frost 4.78, coast 0.39 km².
+- **Hummock noise alone does not make the water.** At up to 8 m broad and 10 m fine noise over reg.west, lake share reaches only 15.7 % (target 40–50 %). The ground slopes to the sea, so hollows drain. The basin needs flattening towards one low level first.
+- **Recommended:** grow the fen west over the shallows by raising the seabed into low marsh. That adds up to 4.9 km² without touching the meadow or the frost, for about 8 km² in all, and most of it can stay water. The alternative, cutting down the meadow's scarp, moves shrines and finished land. The coast shrines and `warden-coast` need checking either way. **Not started: this redraws the west coast, so the user sees it first.**
+
 *Optional:* the sawtooth scarp at (2420, 1354) needs a re-bake too. Do it in the same bake only if the diff stays limited to that area.
 
 ### F1 — Fen water (the proving ground of this phase; 2–3 sessions)
