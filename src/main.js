@@ -106,6 +106,7 @@ async function boot() {
   await (await import('./systems/longWalker.js')).addLongWalkerBody(g); // the Long Walker's body: before the player (the Wraith rides this frame's pose)
   if (g.water) { g.controller.water = g.water; g.arm.water = g.water; } // swimming; the camera stays above the surface
   g.streams = new (await import('./game/restored/streams.js')).Streams((await import('../data/restored.json')).default.streams, g.restoration); // the restored biomes' rising air (docs §7)
+  (await import('./systems/ebbhold.js')).addEbbholdSystem(g); // before the player: the city's floors know this frame's feet
   loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind, streams: g.streams, world: g }));
   (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
@@ -216,6 +217,8 @@ async function boot() {
   if (hideAfterWarm) { game.setPlayerVisible(false); await waitFrames(engine, 2); }
   g.trees?.warmed();
   g.waterReflect?.warmed();
+  // A test link into the sealed city (?ebbhold=undercroft | gate | tideHall | gallery) until the whirlpool brings the Wraith there (U2).
+  if (qs.get('ebbhold') && g.ebbhold) g.ebbhold.enter(qs.get('ebbhold'));
   armLatePipelineDetector();
   // Snapshot rendering (standard mode): Babylon records render bundles once and replays them,
   // skipping its per-draw JS path (pipeline-cache lookups, labels, iterators) — most of the

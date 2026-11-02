@@ -64,7 +64,7 @@ fn simLevel(x: f32, z: f32) -> f32 {
  * One step. `first`: the frame's first step (A→B): it clears cells that entered the window and
  * takes the splats; the body source is applied in both, along its path over the frame.
  * Job: [0] window min cell x, z, previous min x, z; [1] k = (c·dt/dx)², keep (damping per step),
- * dt, splat count; [2] body path x0, z0, x1, z1; [3] body radius, rate (m/s of depression), −, −;
+ * dt, splat count; [2] body path x0, z0, x1, z1; [3] body radius, rate (m/s of depression), interior (1), −;
  * then splats (x, z, radius, depth).
  */
 export const waterSimStepWGSL = (first) => /* wgsl */ `
@@ -97,7 +97,8 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let slope = vec2f(hr - hl, hu - hd) / (2.0 * DX);
   // Water here? The level map (4 m) and the drawn ground (the clipmap): land and the last few
   // centimetres hold still.
-  let depth = simLevel(p.x, p.y) - simGround(p.x, p.y);
+  // (In a sealed interior — job[3].z — there is no level map or terrain: its water is taken as deep throughout.)
+  let depth = select(simLevel(p.x, p.y) - simGround(p.x, p.y), 4.0, job[3].z > 0.5);
   let wet = smoothstep(0.02, 0.12, depth);
   // The window's edge is a sponge.
   let e = max(abs(f32(w.x - o.x) - f32(N) * 0.5), abs(f32(w.y - o.y) - f32(N) * 0.5)) / (f32(N) * 0.5);

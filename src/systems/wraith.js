@@ -85,7 +85,7 @@ export function addWraithSystem(g) {
   function wraithFootfalls() {
     const gt = wraithView.wraith.gait, ev = gt.ev;
     // (Riding the Long Walker the feet are on its back, not in the sand below.)
-    footprints.enabled = toggles.on.footprints !== false && !(controller.deck !== null && controller.deck.riding);
+    footprints.enabled = toggles.on.footprints !== false && !(controller.deck !== null && controller.deck.riding) && !(g.ebbhold && g.ebbhold.active); // stone floors in the city
     // Swimming has no footfalls: no step, no print on the bed below, no spray thrown in the water.
     const n = controller.swimming ? 0 : gt.evCount;
     for (let e = 0; e < n; e++) {

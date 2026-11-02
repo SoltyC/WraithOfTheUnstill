@@ -24,6 +24,8 @@ export class PatchGround {
     this.mass = null;
     /** Latest sand-state snapshot; replaces older analytic shapes after they slump. */
     this.state = null;
+    /** A sealed interior the Wraith is in (world/ebbhold.js createEbbholdSolids: qx, qz → floorQ() → h), or null: its floors replace the terrain. */
+    this.interior = null;
   }
 
   /** Install a patch from the worker. */
@@ -63,6 +65,8 @@ export class PatchGround {
 
   /** Height at (qx, qz) → h. Fine patch first, then coarse, then anchors; 0 if none covers it. */
   sample() {
+    const it = this.interior;
+    if (it !== null) { it.qx = this.qx; it.qz = this.qz; it.floorQ(); this.h = it.h; return; }
     if (!this._from(this.f) && !this._from(this.c)) {
       let found = false;
       for (let k = 0; k < this.anchors.length && !found; k++) found = this._from(this.anchors[k]);

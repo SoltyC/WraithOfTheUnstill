@@ -171,11 +171,13 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   if (under) {
     let tan = P.bloom.w;
     let sig = mix(UW_SIG_CLEAR, UW_SIG_TANNIN, tan);
-    let E = (atmoLight[0].xyz * max(P.sun.y, 0.0) * 0.318 + atmoLight[1].xyz) * exp(-sig * max(uwL - cam.y, 0.0));
+    // A sealed interior (ambCol.w = 1: Ebbhold) has no sky over its water: only a faint cold glow, no shafts, no caustics.
+    let inside = P.ambCol.w > 0.5;
+    let E = select((atmoLight[0].xyz * max(P.sun.y, 0.0) * 0.318 + atmoLight[1].xyz) * exp(-sig * max(uwL - cam.y, 0.0)), vec3f(0.035, 0.06, 0.065) / max(exposure, 1e-6), inside);
     let alb = mix(UW_ALB_CLEAR, UW_ALB_TANNIN, tan);
     // Caustics: on everything under the water (the bed, the walls, the Wraith) the sun arrives
     // focused into the same moving net of light the shafts come from.
-    if (d > 0.0 && P.sun.y > 0.04) {
+    if (!inside && d > 0.0 && P.sun.y > 0.04) {
       let q = cam + dir * dist;
       let upq = uwL - q.y;
       if (upq > 0.0) {
@@ -191,7 +193,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     // jittered samples along the first 45 m of the view ray, each lit from where its beam left the
     // surface, dimmed along the beam and on to the eye (TAA integrates the jitter).
     let Ls = P.sun.xyz;
-    if (Ls.y > 0.04) {
+    if (!inside && Ls.y > 0.04) {
       let rs = refract(-Ls, vec3f(0.0, 1.0, 0.0), 0.7502);
       let len = min(dist, 45.0);
       let jit = fract(52.9829189 * fract(dot(vec2f(p) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));

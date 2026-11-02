@@ -8,7 +8,7 @@
 import { LightGrid } from '../render/lightGrid.js';
 
 /** Flicker per kind: depth, two rates (rad/s). */
-const FLICKER = { fire: [0.22, 7.1, 12.7], candle: [0.08, 9.3, 15.1], lamp: [0.04, 5.3, 8.1], bounce: [0, 0, 0] };
+const FLICKER = { fire: [0.22, 7.1, 12.7], candle: [0.08, 9.3, 15.1], lamp: [0.04, 5.3, 8.1], bounce: [0, 0, 0], held: [0, 0, 0] };   // held: Ebbhold's flames, which never flicker
 
 /** Night 0 (day) … 1 (night) from the hour, eased across dawn and dusk. */
 export function nightAt(tod) {

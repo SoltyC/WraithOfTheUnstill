@@ -65,3 +65,12 @@ The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as A
 | [dive-stills.png](dive/dive-stills.png) | The first pass, for comparison |
 
 Play: open the game with `?spot=u1-sounding`, swim west, look down and move forward to dive. Space strokes up, Ctrl strokes down.
+
+## Ebbhold, grey box (Phase 10 U3–U4): walk the rooms
+
+| File | What it shows |
+|---|---|
+| [ebbhold-grey-flythrough.mp4](city/ebbhold-grey-flythrough.mp4) | **Start here.** The undercroft, the intake, the gate, the sweeper's stair, the upper hall, the wheel room, the Tide Hall and its well, the sea-doors |
+| [ebbhold-grey-sheet.png](city/ebbhold-grey-sheet.png) | Nine frames from it |
+
+Walk it: `?ebbhold=undercroft` (also `gate`, `tideHall`, `gallery`). The bronze doors at the far end of the sea-door hall lead back out to the Sounding.

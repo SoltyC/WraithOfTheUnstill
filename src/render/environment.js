@@ -29,6 +29,8 @@ export const env = {
   wetParams: new Vector4(0, 0, 0, 0),
   /** (render width, height, 1/width, 1/height), set by the owner each frame. */
   screenInfo: new Vector4(1, 1, 1, 1),
+  /** 0 outdoors, 1 inside a sealed interior (systems/ebbhold.js; call invalidateEnvironment after changing it). */
+  interior: 0,
   /** 0 = day, 1 = full night. */
   night: 0.5,
   sunElevation: 0.5,
@@ -116,7 +118,8 @@ export function updateEnvironment() {
   // Exposure here is the user bias; eye adaptation is computed on the GPU (atmosphere ambient pass).
   fp.x = p.fogDensity; fp.y = p.fogHeightFalloff; fp.z = p.exposure;
   const em = env.envMisc;
-  em.x = night; em.y = day; em.z = twilight; em.w = p.skylight;
+  // In a sealed interior (Ebbhold) the sky is not there: only a trace of its light (the rooms have their own lamps).
+  em.x = night; em.y = day; em.z = twilight; em.w = p.skylight * (1 - 0.94 * env.interior);
   env.artParams.x = p.glintIntensity;
 }
 

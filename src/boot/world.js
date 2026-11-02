@@ -169,6 +169,12 @@ export async function createWorld(g) {
   // The water's planar reflection of the trees (Phase 10 F1), bound before the water freezes.
   const waterReflect = (await import('../render/waterReflect.js')).createWaterReflect(scene, camera, trees, water, (m) => bindShadows(m, shadows), post.post.params);
   water.freeze();
+  // Ebbhold (Phase 10 U3–U4): the sealed city's grey box, its rooms' water on the lakes' materials, its ceilings in the shadow maps.
+  const ebbMod = await import('../render/ebbhold.js');
+  const ebbholdView = ebbMod.createEbbholdView(scene, atmosphere, content.clipmap);
+  shadows.addCaster(ebbholdView.mesh, ebbholdView.makeShadowMaterial, 2);
+  water.addInterior(ebbMod.ebbholdWaterQuads());
+  ebbholdView.freeze();
   // Under the water (Phase 10 U1): marine snow and the robe's bubbles.
   const underwaterFx = (await import('../render/underwaterFx.js')).createUnderwaterFx(scene, atmosphere);
   underwaterFx.freeze();
@@ -210,5 +216,5 @@ export async function createWorld(g) {
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
   const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground, post.post.waterSim[0]);
   water.extra = wadiWater;   // wading in the braids when they run
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, ebbholdView });
 }

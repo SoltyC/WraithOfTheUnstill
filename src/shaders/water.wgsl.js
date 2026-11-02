@@ -215,7 +215,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   }
   vertexOutputs.position = uniforms.viewProjection * vec4f(p, 1.0);
   vertexOutputs.vWorldPos = p;
-  vertexOutputs.vFlow = vec4f(fl.xy * (0.5 + 1.6 * max(fl.w, 0.0)), rapids, fl.w);
+  vertexOutputs.vFlow = vec4f(fl.xy * (0.5 + 1.6 * max(fl.w, 0.0)), select(rapids, fl.z, fl.w < -1.5), fl.w);   // interiors keep their depth in z
 }
 `;
 
@@ -287,8 +287,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let V = normalize(uniforms.cameraPosition - wp);
   // Seen from below (U1): the surface pass draws all of it; nothing of what lies past it is kept.
   if (uniforms.cameraPosition.y < wp.y) { fragmentOutputs.color = vec4f(0.0); return fragmentOutputs; }
-  let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
-  let mire = wMire(wp.xz);
+  let depth = select(max(wp.y - wGround(wp.x, wp.z), 0.0), fragmentInputs.vFlow.z, fragmentInputs.vFlow.w < -1.5);   // −2: an interior's water of known depth
+  let mire = wMire(wp.xz) * select(1.0, 0.0, fragmentInputs.vFlow.w < -1.5);   // an interior's water is clear
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   // Light lost at the surface (flat-water Fresnel: the surface pass adds the reflection back).
   let F = 0.02 + 0.98 * pow(1.0 - abs(V.y), 5.0);
@@ -369,14 +369,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   // Screen derivatives of the slope (specular AA, below) before any branch: they need uniform flow.
   let dsx = dpdx(sl.xy); let dsy = dpdy(sl.xy);
-  let mire = wMire(wp.xz);
+  let mire = wMire(wp.xz) * select(1.0, 0.0, fragmentInputs.vFlow.w < -1.5);   // an interior's water is clear
   if (camPos.y < wp.y) {
     // The surface from below: Snell's window (the sky and the sun bent in through a cone of about
     // 49° round the vertical) and, outside it, the water itself mirrored by total internal reflection.
     let L0 = uniforms.keyDir; let key0 = atmoKeyColor();
     let ex0 = uniforms.fogParams.z * atmoExposure();
     let Nb = normalize(vec3f(sl.x, -1.0, sl.y));
-    let E = key0 * max(L0.y, 0.0) * 0.318 + atmoSkyUp();
+    // (An interior's water has no sky over it: only a trace of cold light, display-referred.)
+    let E = select(key0 * max(L0.y, 0.0) * 0.318 + atmoSkyUp(), vec3f(0.010, 0.016, 0.018) / max(ex0, 1e-6), fragmentInputs.vFlow.w < -1.5);
     let body = mix(UW_ALB_CLEAR, UW_ALB_TANNIN, mire) * E;
     let rr = refract(-V, Nb, 1.333);
     var colB = body;
@@ -384,7 +385,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       let Fr = 0.02 + 0.98 * pow(1.0 - max(dot(normalize(rr), -Nb), 0.0), 5.0);
       let R = normalize(rr);
       let sun = key0 * pow(max(dot(R, L0), 0.0), 900.0) * 40.0;
-      colB = mix(atmoSky(R) + sun, body, Fr);
+      colB = select(mix(atmoSky(R) + sun, body, Fr), body, fragmentInputs.vFlow.w < -1.5);
     }
     fragmentOutputs.color = vec4f(displayTransform(colB, ex0), 0.0);
     return fragmentOutputs;
@@ -392,7 +393,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var bead = 0.0;
   if (mire > 0.05) { let bb = bogBubbles(wp.xz, t, fp) * mire; sl = vec4f(sl.xy + bb.xy, sl.zw); bead = bb.z; }
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
-  let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
+  let depth = select(max(wp.y - wGround(wp.x, wp.z), 0.0), fragmentInputs.vFlow.z, fragmentInputs.vFlow.w < -1.5);   // −2: an interior's water of known depth
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   let shore = smoothstep(0.0, 0.25, depth);   // a believable fade-out width over a gentle bank
   let nv = max(dot(N, V), 0.0);
@@ -416,8 +417,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let tilt = 0.32 * sigV * (1.0 - smoothstep(0.0, 2.5, aV));
   let nV = normalize(N + normalize(vec3f(V.x, 0.0, V.z) + vec3f(1e-5, 0.0, 0.0)) * tilt);
   var R = reflect(-V, nV); R.y = abs(R.y);
-  var sky = atmoSky(R) * (1.0 - 0.75 * canopy);
   let ex = uniforms.fogParams.z * atmoExposure();
+  let interiorW = fragmentInputs.vFlow.w < -1.5;
+  // An interior's water mirrors no sky: the dark of the room (SSR adds the lamps and walls it can see).
+  var sky = select(atmoSky(R) * (1.0 - 0.75 * canopy), vec3f(0.004, 0.006, 0.007) / max(ex, 1e-6), interiorW);
   // The planar reflection (trees off screen too), on its plane only, bent by the waves; where it
   // holds a tree the post chain's SSR leaves this pixel to it (alpha below).
   var planar = 0.0;
@@ -467,7 +470,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     foam = max(foam, clamp(fl.z * (0.5 + 0.5 * streak) + 0.08 * streak * min(length(fl.xy) / 2.0, 1.0), 0.0, 0.85));
   }
   let foamCol = vec3f(0.8) * (key * max(L.y, 0.1) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
-  var col = body * (1.0 - F) + sky * F + spec;
+  var col = body * (1.0 - F) + sky * F + select(spec, vec3f(0.0), interiorW);
   col = mix(col, foamCol, foam * 0.8);
   // The mire's surface: litter afloat (nudged by the ripples), the bubbles' wet beads.
   var litter = 0.0;

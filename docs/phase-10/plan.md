@@ -54,7 +54,7 @@ Nothing below the surface.
   - **Clip:** `review/dive/dive-sounding.mp4` re-filmed at 60 fps; stills in `review/dive/underwater-stills.png` (the burst, the wall with caustics, the shelf from below, open water).
 - **Still bare:** the bed is 105 m down and unseen, and the walls are plain terrain. U2 dresses the Sounding (shaft wall, kelp).
 
-**Checkpoint: the user dives** (go/no-go on the city).
+**Checkpoint: go.** The user dived on 2026-11-02 ("looks good, continue building through the steps"); the city is on.
 
 **U2 — The Lung and the descent (2 sessions).** Air shown on the body only: cowl light, bubbles, the robe's life. The Sounding carved in the bake with a shaft wall from the canyon kit. Kelp that reacts to the body. The tear, the failed ascent (a wake-up, never a death), the bubble column and whirlpool.
 
@@ -65,6 +65,25 @@ Nothing below the surface.
 - **Real scale: about 8–12 rooms and a great hall, not a walkable metropolis.** Doors, collapses and a few long sight lines give the "mega palace" sense.
 - A **per-room water level** (the shader, the CPU's `levelAt`, swim or walk at the line). Tide floods and drains rooms once lent, which is the Warden's herding at city scale.
 - Air pockets for fights; **no real combat when fully submerged in the first pass.** Under water the player hides, flees and solves.
+
+**U3 + U4 grey built 2026-11-02, for the user to walk (`world/ebbhold.js`, `render/ebbhold.js`, `systems/ebbhold.js`):**
+- **Where:** a sealed space of its own at (−4700, −300, −1400), beyond the world's west edge and under anything, as planned for the whirlpool's cut. Nothing there asks the terrain: while the Wraith is inside, the ground (`PatchGround.interior`), the controller's solids, the camera's probe (stay in the rooms' air) and the water (`water.interior`) all ask the rooms.
+- **The layout:** 12 spaces from one data table (rooms, doors, features, lamps); `tests/ebbhold.test.js` checks that every door is in a shared wall and fits both rooms, that every room can be reached, and checks the floors, walls, ceilings, water and camera.
+  - The undercroft: black sand, the pool, the shrine.
+  - The intake tunnel, rising 6 m into the lower gate (columns).
+  - The sweeper's stair: one grand 12 m flight to a landing.
+  - The bakehouse (the kneader); the nursery, flooded to the waist (the cradle); the flooded gallery, a colonnade wholly under water, joined to the Tide Hall by a low arch you swim through.
+  - The upper hall; the wheel room (Liese's wheel).
+  - The Tide Hall, 60 × 60 × 36 m: a balcony and a stair down; a metre of water over its floor; the register; the great well, 40 m deep, with a rim, flooded and lit cold from below.
+  - The sea-door hall: the bronze doors are the way out, back to the Sounding's rim.
+- **Light:** no sun (the ceilings cast into the shadow maps) and almost no sky (`env.interior` scales the ambient; post/compose's interior flag gives the rooms' water no sky, shafts or caustics). The lamps are world lights of a new `held` kind that never flicker, so they light the Wraith as they light the stone. A cold glow rises from the well.
+- **The look is grey box:** stone in courses, black sand, pale blocks for the people's places, bronze for the doors. Water is dark and mirrors only what SSR finds (the lamps, the walls). Ripples run in the rooms (the simulation treats an interior as all water; walls don't stop waves yet).
+- **Checked by walking (bot):** gate → stair → upper hall; Tide Hall balcony → floor → stopped by the well's rim; undercroft → intake → gate; out through the sea-doors to the Sounding. 0 GPU errors, 0 late pipelines.
+- **Cost:** 7.9 ms mean in the Tide Hall, 7.4 under water in the gallery (High; 86 draws, 3,900 triangles).
+- **Review:** `review/city/ebbhold-grey-flythrough.mp4` (30 s). Walk it at `?ebbhold=undercroft` (or `gate`, `tideHall`, `gallery`).
+- **Not yet:** the whirlpool's cut (U2); the outside of the city seen from the descent; doors that open, close and flood; drained or flooded rooms as state (U4 tracked state); the people (U5–U6). While inside, actors outdoors also see the city's floors; nothing outdoors runs near enough to matter yet. Weather is not shut out: rain or snow would fall indoors.
+
+**Checkpoint: the user walks the rooms.**
 
 **U5 — The Drowned and the register (2 sessions).** They replace the "Drowned" elite in F8, and the elite gets a new name. Veiled bodies from the robe system with floating veils, each with a looped task. They hear (F3's noise), and they swarm. Saying a name stops one for good. Twenty or so named, with the register as a journal page.
 

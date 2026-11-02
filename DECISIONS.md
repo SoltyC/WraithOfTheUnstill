@@ -707,3 +707,5 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The Sounding is carved now, bare,** because U1 needs deep water and nothing else in the world has it (the sea is not drawn as water; the one deep lake is frozen). U2 shapes it.
 - **Swimming has no footfalls.**
 - **Underwater particles are opaque dithered specks that write depth,** not additive sprites. Compose fogs by the depth in each pixel, so a sprite would be fogged at the distance of whatever lies behind it.
+- **Ebbhold lives beyond the world's west edge, 300 m down,** and every terrain query hands over to its rooms while the Wraith is inside. Under the Sounding itself, the pit's lake and the clipmap's terrain would answer the city's water and ground queries.
+- **The city's lamps are world lights** (a `held` kind with no flicker), so one lighting model lights the stone and the Wraith; display-referred, so the dark doesn't depend on exposure.

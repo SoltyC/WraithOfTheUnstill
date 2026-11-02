@@ -325,7 +325,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     const cr = WAVE_C * h / WSIM_DX;
     job[4] = cr * cr; job[5] = Math.exp(-h * 0.55); job[6] = h; job[7] = nSplat;
     job[8] = bodyX; job[9] = bodyZ; job[10] = px; job[11] = pz;
-    job[12] = 0.38; job[13] = h > 0 ? rate : 0;
+    job[12] = 0.38; job[13] = h > 0 ? rate : 0; job[14] = water.interior !== null && water.interior.contains(px, pz) ? 1 : 0;
     jobBuf.update(job);
     if (!steps[0].dispatch(WSIM_N / 8, WSIM_N / 8, 1)) return false;
     if (!steps[1].dispatch(WSIM_N / 8, WSIM_N / 8, 1)) return false;
@@ -343,6 +343,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     },
     /** Lake level at (x, z) (m), or NaN where there is none (the rim under the shore excluded). */
     levelAt(x, z) {
+      if (this.interior !== null && this.interior.contains(x, z)) { this.qx = x; this.qz = z; this.levelQ(); return this.lv; }
       const i = Math.floor((x + HALF) / C), j = Math.floor((HALF - z) / C);
       if (i < 0 || j < 0 || i >= N || j >= N) return NaN;
       const o = j * N + i;
@@ -352,7 +353,25 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     qx: 0.5, qz: 0.5, lv: 0.5, fx: 0.5 - 0.5, fz: 0.5 - 0.5,
     /** Another water source asked where there is none here ({ qx, qz, levelQ() → lv }), or null. */
     extra: null,
+    /** A sealed interior's rooms (world/ebbhold.js: contains(x, z); qx, qz → levelQ() → lv), asked first, or null. */
+    interior: null,
+    /** The interior's rooms' water (render/ebbhold.js ebbholdWaterQuads): one more mesh pair on the lakes' materials. */
+    addInterior(quads) {
+      const P = [], I = [], F = [];
+      for (const q of quads) {
+        const b = P.length / 3;
+        P.push(q.x0, q.level, q.z1, q.x1, q.level, q.z1, q.x1, q.level, q.z0, q.x0, q.level, q.z0);
+        for (let k = 0; k < 4; k++) F.push(0, 0, q.depth, -2);   // flow.w −2: still water of a known depth (no terrain under it)
+        I.push(b, b + 2, b + 1, b, b + 3, b + 2);
+      }
+      const ms = [meshOf('interiorAbsorb', P, I, F, true), meshOf('interiorSurface', P, I, F, false)];
+      ms[0].material = absorb.mat; ms[1].material = surface.mat;
+      water.meshes.push(...ms);
+      return ms;
+    },
     levelQ() {
+      const it = this.interior;
+      if (it !== null && it.contains(this.qx, this.qz)) { it.qx = this.qx; it.qz = this.qz; it.levelQ(); this.lv = it.lv; this.fx = 0; this.fz = 0; return; }
       const i = Math.floor((this.qx + HALF) / C), j = Math.floor((HALF - this.qz) / C);
       this.fx = 0; this.fz = 0;
       if (i < 0 || j < 0 || i >= N || j >= N) { this.lv = NaN; return; }
