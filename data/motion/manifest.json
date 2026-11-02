@@ -11,9 +11,13 @@
       ],
       "gate": {},
       "cues": [],
-      "eye": null,
-      "sha256": "ed5e09d0c37c79f77c7665190be6f12def12b5b4683a807334a7113475733878",
-      "eyeNotes": "Close view 2026-11-02: movement good; collar beak and upper arm through the mantle. Not accepted. The user's approval was on the film before the rig fit."
+      "eye": {
+        "by": "user",
+        "date": "2026-11-02",
+        "film": "screenshots/kimodo/gate-knead1.mp4",
+        "verdict": "The films look good"
+      },
+      "sha256": "ed5e09d0c37c79f77c7665190be6f12def12b5b4683a807334a7113475733878"
     },
     "rock": {
       "prompt": "A person rocks a baby in their arms.",
@@ -25,7 +29,12 @@
       ],
       "gate": {},
       "cues": [],
-      "eye": null,
+      "eye": {
+        "by": "user",
+        "date": "2026-11-02",
+        "film": "screenshots/kimodo/gate-rock.mp4",
+        "verdict": "The films look good"
+      },
       "sha256": "70ca860bb49c078e360f5def896971da0adde3868c74c556e4907bad49d798c1"
     },
     "walk": {
@@ -41,7 +50,12 @@
         "travels": true
       },
       "cues": [],
-      "eye": null,
+      "eye": {
+        "by": "user",
+        "date": "2026-11-02",
+        "film": "screenshots/kimodo/gate-walk.mp4",
+        "verdict": "The films look good"
+      },
       "sha256": "14d0abb73266da0f69763af514f21f2d81e6f067cf739163586d1422ebfbb6c0"
     },
     "wheel": {
@@ -54,7 +68,12 @@
       ],
       "gate": {},
       "cues": [],
-      "eye": null,
+      "eye": {
+        "by": "user",
+        "date": "2026-11-02",
+        "film": "screenshots/kimodo/gate-wheel.mp4",
+        "verdict": "The films look good"
+      },
       "sha256": "8863669e60902a15923482c2b46c1a9e092e21c4ef22a9ef58706441656f14a8"
     }
   }

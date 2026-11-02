@@ -2,7 +2,11 @@
 
 Research 2026-11-02, then installed and tested the same day. Installed tool: **ACE-Step 1.5** at `C:\wraith-tools\ACE-Step-1.5` (commit `ca1e85f`, MIT). The first version of this page came from third-party guides. Everything below was checked against the project's own docs or run on this machine, and the corrections are listed at the end.
 
-## Decision: ACE-Step 1.5, for beds and textures
+## Verdict: rejected by ear
+
+**The user listened to the test clips on 2026-11-02 and said the audio is terrible. No cue in the game comes from ACE-Step.** It stays installed only until the user decides whether to remove it (about 24 GB). The fast runs and licence below don't matter if the music isn't good enough, and the page's earlier recommendation of it for beds is withdrawn. The notes are kept as a record of what was tried.
+
+## What was chosen, and why (superseded)
 
 Of the models licensed for use in a game, it has the best mix for this score: instrumental mode, reference and cover modes, repaint, LoRA training, and fast local runs.
 
@@ -43,7 +47,7 @@ Minecraft was running throughout. Close it when generating: it costs memory, and
 | Orchestra, cover 1.0 | 0.53 |
 | sft model, lyre, cover 1.0 | 0.17 |
 
-Different instruments lower this measure, so it can't prove a tune was lost, but only the orchestra clearly beats the control. **Nobody has listened to these yet.** Plan on this until ears say otherwise:
+Different instruments lower this measure, so it can't prove a tune was lost, but only the orchestra clearly beats the control. This was the plan before the verdict:
 
 1. **Write the stair song as notes** and approve it first. `sefa`, `sefa-lets-go`, `held-years`, `your-record`, `robes` and `morrow-fire` depend on those exact notes, so they are played from the notes on sampled or synthesised instruments, or by a person.
 2. **Use ACE-Step for what has no fixed tune:** `fen-*`, `ebbhold-*`, `listener-hunt`, `no-way-up`, `night-camp`, and swells and textures under the rest.
@@ -73,7 +77,7 @@ Different instruments lower this measure, so it can't prove a tune was lost, but
 - **Instrumental mode exists:** `instrumental=True` or the `[Instrumental]` lyric.
 - **Reference and cover modes exist,** but cover doesn't keep a tune reliably (above).
 - **Newer than the first search:** YuE2 and Stable Audio 3.0, listed above.
-- **Speed:** turbo is 10 times faster than real time here, much better than the guides suggested. Quality has not been judged.
+- **Speed:** turbo is 10 times faster than real time here, much better than the guides suggested. Quality was judged afterwards: see the verdict at the top.
 
 ## Sources
 

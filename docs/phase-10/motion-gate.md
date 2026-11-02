@@ -65,9 +65,9 @@ Six of the 13 pass as they are or after repair, and `hanne` is a sitter that nee
 
 In the game: `knead1`, `rock`, `wheel`, `walk`. All four pass stage two. `cradle` was removed.
 
-## Stage three so far: Claude's look done, the user's still to come
+## Stage three: accepted
 
-Clips stay unaccepted in `manifest.json` until the user has watched them. Films are all in `screenshots/kimodo/`.
+The user watched the four films on 2026-11-02 and said they look good, so all four are accepted in `manifest.json`. Changing a clip means filming it again and getting a new look. Films are all in `screenshots/kimodo/`. Claude's notes from the first look:
 
 - **`knead1` (`gate-knead1.mp4`):** reads as standing and kneading, with good weight. Collar and sleeves are clean from four sides.
 - **`rock` (`gate-rock.mp4`):** reads as cradling something.

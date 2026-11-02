@@ -4,7 +4,7 @@ Files waiting for the user's eyes and ears. These are copies: the working origin
 
 ## Films: the four generated movement clips
 
-None of these is accepted until they're watched (`docs/phase-10/motion-gate.md`).
+Accepted by the user on 2026-11-02 (`docs/phase-10/motion-gate.md`).
 
 | Clip | What to judge | Contact sheet |
 |---|---|---|
@@ -15,7 +15,7 @@ None of these is accepted until they're watched (`docs/phase-10/motion-gate.md`)
 
 ## Audio: ACE-Step test clips
 
-Tests of the tool, not finished cues. Nobody has listened to them yet. These are 224 kbps MP3s; the 48 kHz WAVs are in `C:\wraith-tools\ace-out\listen`. On GitHub, open a file and use **View raw** or the download button.
+Tests of the tool, **rejected by the user on 2026-11-02**. None of this goes in the game. These are 224 kbps MP3s; the 48 kHz WAVs are in `C:\wraith-tools\ace-out\listen`. On GitHub, open a file and use **View raw** or the download button.
 
 | File | What it is |
 |---|---|
