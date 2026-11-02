@@ -2,6 +2,7 @@
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
 import { ShaderLanguage } from '@babylonjs/core/Materials/shaderLanguage.js';
+import { createSharedBlock } from './sharedBlock.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
@@ -40,9 +41,10 @@ export function createSandDust(scene, clipmap, atmo, wind, ts) {
   const crestParams = new Vector4(0, 1, 0, 0);
   const bursts = createSandDustEvents();
   const dustWind = new Float32Array(wind.block);
+  const dustWindBlock = createSharedBlock(scene.getEngine(), dustWind, 'dust-wind');
   const mat = new ShaderMaterial('sandDust', scene, { vertex: 'sandDust', fragment: 'sandDust' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'dustParams', 'crestParams', 'dustEvents', 'windField', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'dustParams', 'crestParams', 'dustEvents', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
     storageBuffers: ['levelData', 'surface', 'stateFine0', 'stateFine1', 'stateParams', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -54,7 +56,7 @@ export function createSandDust(scene, clipmap, atmo, wind, ts) {
   mat.setVector4('dustParams', dustParams);
   mat.setVector4('crestParams', crestParams);
   mat.setArray4('dustEvents', bursts.events);
-  mat.setArray4('windField', wind.block);
+  mat.setUniformBuffer('windBlock', dustWindBlock);
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('surface', clipmap.buffers.surface);
   mat.setStorageBuffer('stateFine0', ts.fine[0]);
@@ -77,7 +79,7 @@ export function createSandDust(scene, clipmap, atmo, wind, ts) {
       mat.setVector4('crestParams', crestParams);
       mat.setArray4('dustEvents', bursts.events);
       dustWind.set(wind.block); dustWind[2] = this.windStrength;
-      mat.setArray4('windField', dustWind);
+      dustWindBlock.update();
     },
   };
 }

@@ -54,7 +54,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
     const rp = new Vector4(0, 1, 1, ri);
     const mat = new ShaderMaterial('grass' + ri, scene, { vertex: 'grass', fragment: 'grass' }, {
       attributes: ['position'],
-      uniforms: ['viewProjection', 'levels', 'villageBox', 'grassRing', 'grassParams', 'grassErg', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
+      uniforms: ['viewProjection', 'levels', 'villageBox', 'grassRing', 'grassParams', 'grassErg', 'grassPush', 'spellLights', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
       storageBuffers: ['levelData', 'biomeA', 'windMap', 'surfaceMat', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS, ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
       shaderLanguage: ShaderLanguage.WGSL,
@@ -64,7 +64,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
     mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
     mat.setStorageBuffer('windMap', clipmap.buffers.wind); mat.setStorageBuffer('surfaceMat', clipmap.buffers.surface);
-    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setVector4('grassErg', erg); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
+    mat.setVector4('grassRing', ring); mat.setVector4('grassParams', rp); mat.setVector4('grassErg', erg); mat.setArray4('grassPush', push); mat.setUniformBuffer('windBlock', wind.buffer);
     mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
     mat.backFaceCulling = false;
     mesh.material = mat;

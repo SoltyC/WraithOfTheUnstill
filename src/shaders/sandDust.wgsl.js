@@ -93,10 +93,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let t = uniforms.dustParams.x; let cam = uniforms.cameraPosition;
   let h1 = dh(id * 7u + 1u); let h2 = dh(id * 7u + 2u); let h3 = dh(id * 7u + 3u); let h4 = dh(id * 7u + 4u);
   var p = cam.xz; var lift = 0.0; var alpha = 0.0; var sx = 0.3; var sy = 0.12;
-  var direction = uniforms.windField[0].xy;
+  var direction = windBlock[0].xy;
   var source = p;var crestY=0.0;var particleSeed=h1;
   if (id < ${WIND_COUNT}u) {
-    let speed = (1.5 + 3.5 * h3) * uniforms.windField[0].z;
+    let speed = (1.5 + 3.5 * h3) * windBlock[0].z;
     let seed = vec2f(h1, h2) * 80.0 + direction * t * speed;
     let rel = seed - cam.xz; let wrapped = rel - 80.0 * floor((rel + 40.0) / 80.0);
     p = cam.xz + wrapped; source = p;
@@ -132,7 +132,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let candidate=(cell+.5)*8.0+vec2f(seed-.5,seed2-.5)*2.0;
     let ridge=dustCrest(candidate);source=ridge.xy;crestY=ridge.z+dustRelief(source);
     let restored=clamp(uniforms.dustParams.w,0.0,1.0);
-    let wf=windField(source);direction=normalize(mix(uniforms.windField[0].xy,wf.xy,restored)+vec2f(.00001,0.0));
+    let wf=windField(source);direction=normalize(mix(windBlock[0].xy,wf.xy,restored)+vec2f(.00001,0.0));
     let motion=uniforms.crestParams.x;
     let age=fract(seed3+motion*(.17+seed*.08));
     let gust=clamp(wf.z,0.0,1.8)*restored;

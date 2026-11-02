@@ -247,7 +247,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     const mesh = meshOf(name, pos, idx, flow, absorb);
     const mat = new ShaderMaterial(name, scene, { vertex: 'water', fragment }, {
       attributes: ['position', 'flow'],
-      uniforms: ['viewProjection', 'levels', 'waterParams', 'windField', ...ENV_UNIFORMS],
+      uniforms: ['viewProjection', 'levels', 'waterParams', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...(absorb ? [] : SHADOW_TEXTURES)],
       storageBuffers: ['levelData', 'waterRipples', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
       shaderLanguage: ShaderLanguage.WGSL,
@@ -256,7 +256,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     bindEnvironment(mat); bindAtmosphere(mat, atmo);
     mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('waterRipples', ripples);
-    mat.setArray4('windField', wind.block); mat.setVector4('waterParams', params);
+    mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('waterParams', params);
     mat.backFaceCulling = false;
     // Absorb: dst × transmittance (alpha kept). Surface: dst + light, alpha replaced (the SSR mark).
     mat.alphaMode = absorb ? Constants.ALPHA_MULTIPLY : Constants.ALPHA_ONEONE_ONEZERO;

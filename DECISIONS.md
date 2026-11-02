@@ -686,6 +686,7 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Three stages:** numbers on the game's own clip (`tools/motion/clipGate.mjs`), the real robe in Chrome (`tools/bot/perform-gate.mjs`), then the eye. See `docs/phase-10/motion-gate.md`.
 - **In the test suite:** `tests/motionGate.test.js` fails on an unlisted, changed or failing clip, and plants every fault the gate claims to catch.
 - **The gate reads the converted clip, not the model's output,** because repairs and conversion add faults of their own. It caught both.
+- **Data shared by many draws lives in a shared uniform buffer, not a material array or a storage buffer.** Material arrays are copied per draw. Storage buffers hit the core limit of 8 a stage, and we do not raise it because a weak GPU may not offer more.
 - **A clip's nod is limited at playback, not in the clip.** It is a limit of the rig's hood, so it holds for every clip and the Veiled. The mantle's sleeve-sized capsules run only during a clip: play stays byte-identical.
 - **A clip owns the body and feet while it plays, eases in and out, and doesn't loop unless asked.** During a clip the arms push the mantle in three dimensions, not flat.
 - **Limits come from real clips and the walking robe, not from what makes a clip pass.** The nervous walk failed honestly until the foot measure itself was shown to be wrong; four seeds were tried first.

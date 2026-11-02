@@ -34,7 +34,7 @@ export function createMotes(scene, clipmap, atmo, wind) {
   const params = new Vector4(0, 1, 0, 0);
   const mat = new ShaderMaterial('motes', scene, { vertex: 'motes', fragment: 'motes' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'motes', 'windField', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'motes', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
     storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -42,7 +42,7 @@ export function createMotes(scene, clipmap, atmo, wind) {
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
   mat.setArray4('levels', clipmap.levels);
-  mat.setVector4('motes', params); mat.setArray4('windField', wind.block);
+  mat.setVector4('motes', params); mat.setUniformBuffer('windBlock', wind.buffer);
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
   mat.setStorageBuffer('windMap', clipmap.buffers.wind);

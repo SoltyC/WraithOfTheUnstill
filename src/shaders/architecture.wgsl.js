@@ -18,7 +18,7 @@ attribute normal: vec3f;
 attribute uv: vec2f;
 attribute info: vec4f;       // site, material, seed, carve
 uniform viewProjection: mat4x4f;
-uniform sites: array<vec4f, ${ARCH_SITES}>;
+var<uniform> archSites: array<vec4f,${ARCH_SITES * 9 / 4}>;  // sites, then glow, then char: render/architecture.js
 uniform siteSpin: vec4f;     // x = the turning site (the mill's sails; -1 none), y = angle, zw = axis x, z (horizontal, unit)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -28,7 +28,7 @@ varying vLocalY: f32;
 
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
-  let s = uniforms.sites[u32(vertexInputs.info.x + 0.5)];
+  let s = archSites[u32(vertexInputs.info.x + 0.5)];
   var lp = vertexInputs.position;
   var ln = vertexInputs.normal;
   let sp = uniforms.siteSpin;
@@ -54,8 +54,7 @@ export const archVertexWGSL = ARCH_VERTEX;
 
 export const archFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
-uniform siteGlow: array<vec4f, ${ARCH_SITES}>;  // x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world); where y = 0: z = 1 no snow (the meadow), w = embers 0..1
-uniform siteChar: array<vec4f, ${ARCH_SITES / 4}>; // soot/char 0..1 per site (systems/villageFire.js; 4 sites per vec4: site >> 2, component site & 3); 0 = untouched
+var<uniform> archSites: array<vec4f,${ARCH_SITES * 9 / 4}>;  // [site] anchor; [${ARCH_SITES} + site] glow: x = glyph light 0..1, y = fire 0..1, zw = hearth x, z (world); where y = 0: z = 1 no snow (the meadow), w = embers 0..1; [${ARCH_SITES * 2} + (site >> 2)][site & 3] soot/char 0..1 (systems/villageFire.js; 0 = untouched)
 uniform archParams: vec4f;                       // x = time, y = snow cover 0..1, z = restored 0..1
 ${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -145,7 +144,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let uv = fragmentInputs.vUv;
   let fp = length(fwidth(wp)) * 0.7;
   let t = uniforms.archParams.x;
-  let glowS = uniforms.siteGlow[site];
+  let glowS = archSites[${ARCH_SITES}u + site];
 
   // Scanned surface (src/materials): chosen per material and per block (the seed), sampled once,
   // here in uniform control flow (the derivatives it needs). Stone blocks show different parts of
@@ -358,7 +357,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // Char (a burnt village building): blackened plaster and timber, scorched roofs; soot streaks climb from the base and
   // run up under the eaves; gloss goes (roughness up), lit windows die. 0 = untouched: skipped, so unburnt sites are bit-identical.
-  let charK = uniforms.siteChar[site >> 2u][site & 3u];
+  let charK = archSites[${ARCH_SITES * 2}u + (site >> 2u)][site & 3u];
   if (charK > 0.001 && mid != 5) {
     let streak = 0.6 + 0.4 * smoothstep(-0.3, 0.7, n1 * 0.5 + 0.5 + 0.35 * sin(uv.x * 7.0 + seed));
     let up = 1.0 - 0.45 * smoothstep(0.0, 6.0, fragmentInputs.vLocalY);
@@ -456,7 +455,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     col += key * vis * pow(max(dot(N, H), 0.0), 900.0) * 14.0 * clamp(nl, 0.0, 1.0);
   }
   // Firelight on the camp's stones, packs and snow: falls off from the hearth (site origin).
-  let s0 = uniforms.siteGlow[site];
+  let s0 = archSites[${ARCH_SITES}u + site];
   if (s0.y > 0.0 && trans == 0.0) {
     let toFire = vec3f(s0.z, 0.0, s0.w) - wp; // hearth xz in z/w (world)
     let d = length(toFire.xz);

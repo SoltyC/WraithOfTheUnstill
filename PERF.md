@@ -557,3 +557,14 @@ Presets, idle, after that change (ms, Low / Medium / High / Ultra): canyon 8.18 
 ## 2 November — Phase 10 F0, the meadow's main thread
 
 `tools/winchrome/frame-profile.mjs p8-meadow-golden 8`, 2560×1440, High. Median presented frame 23.5 → 21.2 ms. The camera's probes tested every blocker and platform in the world about twenty times a frame (`insideQ` 1.5 ms); they now test only the sites the arm can reach, and it no longer shows in the profile. Left: cloth about 4.9 ms, per-mesh uniforms and bind about 6 ms.
+
+Then the arrays. Every draw copied its material's uniform arrays: architecture 23 KB (`sites`, `siteGlow`, `siteChar`, 59+ draws), wind 4.5 KB (`windField`, about 220 tree draws), over 2 MB a frame of identical data. Both now live in one shared uniform buffer each (`render/sharedBlock.js`), written once a frame just before rendering.
+
+Same page, 8 s under the profiler, High: frames 396 → about 518, mean presented frame 20.2 → 15.4 ms. `setArray` (2.09 ms) is gone from the profile, `writeBuffer` 2.69 → about 0.9 ms, `_copyBuffer` 1.10 ms gone. Median presented frame stayed at 17.6 ms.
+
+The first attempt used storage buffers and showed a median of 11.8 ms. **That number was false:** a ninth storage buffer in the vertex stage failed validation (the device runs at the core limit of 8), so materials were not drawn. Only `gpuStats.gpuErrors` showed it. The profiler now prints that count.
+
+Six frozen views, old build against new: no visible difference, 31 to 43 dB, the same as two runs of one build (34 and 41 dB). 0 GPU errors, 0 late pipelines. Wind uploads once a frame while the clock runs.
+
+Meadow, GPU median over 240 frames after this change (ms, Low / Medium / High / Ultra): 7.84 / 10.96 / 15.99 / 19.03. That is 3–6% above 1 November's. No old build was run alongside, so whether this is the machine's state, as it was before, is not settled.
+

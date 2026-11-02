@@ -1,7 +1,7 @@
 // The architecture's meshes and material (shaders/architecture.wgsl.js): one static mesh per chunk
 // (world/architecture.js chunkArchitecture: a spatial cell of sites, plus one chunk of NPC-held
-// props), all sharing ONE material and ONE site uniform array (anchor, seat, shown) so nothing is
-// ever re-uploaded. Which chunks draw and cast is decided by systems/architecture.js (distance).
+// props), all sharing ONE material and ONE shared site block (anchor, seat, shown; glow; char),
+// uploaded once a frame: as uniform arrays they were copied for every draw, 23 KB each. Which chunks draw and cast is decided by systems/architecture.js (distance).
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
@@ -16,6 +16,7 @@ import { archVertexWGSL, archFragmentWGSL, ARCH_SITES } from '../shaders/archite
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
+import { createSharedBlock } from './sharedBlock.js';
 import { BoundingInfo } from '@babylonjs/core/Culling/boundingInfo.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
@@ -26,21 +27,24 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
   S.archVertexShader = archVertexWGSL; S.archFragmentShader = archFragmentWGSL;
   /** Per site: x, seat y, z, shown (0/1); glow: glyph light, fire, hearth x, hearth z. Written in
    *  place by the owner (materials keep the array references and read them every bind). */
-  const sites = new Float32Array(ARCH_SITES * 4), glow = new Float32Array(ARCH_SITES * 4);
+  const block = new Float32Array(ARCH_SITES * 9);
+  const sites = block.subarray(0, ARCH_SITES * 4), glow = block.subarray(ARCH_SITES * 4, ARCH_SITES * 8);
   /** Per site char 0..1 (4 sites per vec4), written by systems/villageFire.js. */
-  const char = new Float32Array(ARCH_SITES);
+  const char = block.subarray(ARCH_SITES * 8);
+  const siteBlock = createSharedBlock(scene.getEngine(), block, 'arch-sites');
+  scene.onBeforeRenderObservable.add(() => siteBlock.update());
   const params = new Vector4(0, 0, 0, 0);
   /** The turning site (the mill's sails): x = site index (-1 none), y = angle, zw = axis x, z. */
   const spin = new Vector4(-1, 0, 1, 0);
   const mat = new ShaderMaterial('arch', scene, { vertex: 'arch', fragment: 'arch' }, {
     attributes: ['position', 'normal', 'uv', 'info'],
-    uniforms: ['viewProjection', 'sites', 'siteSpin', 'siteGlow', 'siteChar', 'archParams', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'siteSpin', 'archParams', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS],
     storageBuffers: [...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
-  mat.setArray4('sites', sites); mat.setVector4('siteSpin', spin); mat.setArray4('siteGlow', glow); mat.setArray4('siteChar', char); mat.setVector4('archParams', params);
+  mat.setUniformBuffer('archSites', siteBlock); mat.setVector4('siteSpin', spin); mat.setVector4('archParams', params);
   mat.backFaceCulling = false;
   // Y is unknown at build time (seats arrive later): generous bounds. The meshes stay
   // alwaysSelectAsActiveMesh: with snapshot rendering the recorded bundle is replayed, so Babylon's
@@ -66,10 +70,10 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
     makeShadowMaterial(name, light, origin) {
       if (shadowMats.has(light)) return shadowMats.get(light);
       const m = new ShaderMaterial(name, scene, { vertex: 'arch', fragment: 'shadowDepth' }, {
-        attributes: ['position', 'normal', 'uv', 'info'], uniforms: ['viewProjection', 'sites', 'siteSpin', 'shadowLight', 'shadowOrigin'],
+        attributes: ['position', 'normal', 'uv', 'info'], uniforms: ['viewProjection', 'siteSpin', 'shadowLight', 'shadowOrigin'],
         shaderLanguage: ShaderLanguage.WGSL,
       });
-      m.setArray4('sites', sites); m.setVector4('siteSpin', spin);
+      m.setUniformBuffer('archSites', siteBlock); m.setVector4('siteSpin', spin);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       m.backFaceCulling = false;
       shadowMats.set(light, m);

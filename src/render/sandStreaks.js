@@ -21,13 +21,13 @@ export function createSandStreaks(scene,clipmap,atmo,wind,front,snowfall,chain){
   mesh.layerMask=0;mesh.alwaysSelectAsActiveMesh=false;mesh.freezeWorldMatrix();
   const travel=new Vector4(0,0,0,0),view=new Vector4(Math.tan(scene.activeCamera.fov*.5)*8/1440,0,0,0);
   const mat=new ShaderMaterial('sandStreaks',scene,{vertex:'sandStreaks',fragment:'sandStreaks'},{
-    attributes:['position'],uniforms:['viewProjection','levels','grainTravel','grainView','windField',...ENV_UNIFORMS],
+    attributes:['position'],uniforms:['viewProjection','levels','grainTravel','grainView',...ENV_UNIFORMS],
     samplers:[...ATMO_MATERIAL_TEXTURES,...SHADOW_TEXTURES],
     storageBuffers:['levelData','biomeA','windMap',...ATMO_MATERIAL_BUFFERS,'shadowData'],
     shaderLanguage:ShaderLanguage.WGSL,needAlphaBlending:true,
   });
   bindEnvironment(mat);bindAtmosphere(mat,atmo);
-  mat.setArray4('levels',clipmap.levels);mat.setArray4('windField',wind.block);mat.setVector4('grainTravel',travel);mat.setVector4('grainView',view);
+  mat.setArray4('levels',clipmap.levels);mat.setUniformBuffer('windBlock',wind.buffer);mat.setVector4('grainTravel',travel);mat.setVector4('grainView',view);
   mat.setStorageBuffer('levelData',clipmap.levelData);mat.setStorageBuffer('biomeA',clipmap.buffers.biomeA);mat.setStorageBuffer('windMap',clipmap.buffers.wind);
   mat.alphaMode=Constants.ALPHA_PREMULTIPLIED_PORTERDUFF;mat.disableDepthWrite=true;mat.backFaceCulling=false;
   mat.depthFunction=Constants.GREATER;mesh.material=mat;mat.freeze();fastFrozenIsReady(mat);

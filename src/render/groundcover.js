@@ -46,7 +46,7 @@ export function createGroundCover(scene, clipmap, atmo, push, wind) {
   const params = new Vector4(0, 1, cell, n);
   const mat = new ShaderMaterial('groundCover', scene, { vertex: 'groundCover', fragment: 'groundCover' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'villageBox', 'gcParams', 'grassPush', 'windField', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'villageBox', 'gcParams', 'grassPush', 'spellLights', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, 'gcAtlas'],
     storageBuffers: ['levelData', 'biomeA', 'windMap', 'surfaceMat', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -56,7 +56,7 @@ export function createGroundCover(scene, clipmap, atmo, push, wind) {
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
   mat.setStorageBuffer('windMap', clipmap.buffers.wind); mat.setStorageBuffer('surfaceMat', clipmap.buffers.surface);
-  mat.setVector4('gcParams', params); mat.setArray4('grassPush', push); mat.setArray4('windField', wind.block);
+  mat.setVector4('gcParams', params); mat.setArray4('grassPush', push); mat.setUniformBuffer('windBlock', wind.buffer);
   mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
   mat.setTexture('gcAtlas', canvasAtlasTexture(scene.getEngine(), scene, drawGroundAtlas(), 'ground-atlas'));
   mat.backFaceCulling = false;

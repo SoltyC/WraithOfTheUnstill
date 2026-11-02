@@ -117,7 +117,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         const leaf = part === 'leaf';
         const mat = new ShaderMaterial(mesh.name, scene, { vertex: 'tree', fragment: leaf ? 'treeLeaf' : 'treeBark' }, {
           attributes: ['position', 'normal', 'uv', 'info'],
-          uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
+          uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'treeMat', 'spellLights', ...ENV_UNIFORMS],
           samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(leaf ? ['leafAtlas', 'leafSurface'] : MAT_SAMPLERS)],
           storageBuffers: ['levelData', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid'],
           shaderLanguage: ShaderLanguage.WGSL,
@@ -125,7 +125,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         bindEnvironment(mat); bindAtmosphere(mat, atmo);
         if (leaf) { mat.setTexture('leafAtlas', atlas); mat.setTexture('leafSurface', atlases.surface); } else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-        mat.setVector4('treeParams', params); mat.setArray4('windField', wind.block); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', si >= 5 ? desertMat[si] : new Vector4(barkLayer, si, 0, 0));
+        mat.setVector4('treeParams', params); mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', si >= 5 ? desertMat[si] : new Vector4(barkLayer, si, 0, 0));
         mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
         mat.backFaceCulling = leaf ? false : true;
         mesh.material = mat;
@@ -142,11 +142,11 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         zm.alwaysSelectAsActiveMesh = true; zm.doNotSyncBoundingInfo = true;
         const zmat = new ShaderMaterial(zm.name, scene, { vertex: 'tree', fragment: 'treeLeafDepth' }, {
           attributes: ['position', 'normal', 'uv', 'info'],
-          uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'artParams', 'cameraPosition'],
+          uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'artParams', 'cameraPosition'],
           samplers: ['leafAtlas'], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
         });
         zmat.setArray4('levels', clipmap.levels); zmat.setStorageBuffer('levelData', clipmap.levelData);
-        zmat.setVector4('treeParams', params); zmat.setArray4('windField', wind.block); mat.setArray4('windField', wind.block); zmat.setVector4('treeLod', lodV[lod]); zmat.setVector4('artParams', envArt);
+        zmat.setVector4('treeParams', params); zmat.setUniformBuffer('windBlock', wind.buffer); mat.setUniformBuffer('windBlock', wind.buffer); zmat.setVector4('treeLod', lodV[lod]); zmat.setVector4('artParams', envArt);
         zmat.setTexture('leafAtlas', atlas);
         zmat.backFaceCulling = false; zmat.disableColorWrite = true;
         zm.material = zmat;
@@ -426,11 +426,11 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
       const leaf = name.includes('-leaf-');
       const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: leaf ? 'treeShadow' : 'treeBarkShadow' }, {
         attributes: ['position', 'normal', 'uv', 'info'],
-        uniforms: ['viewProjection', 'levels', 'treeParams', 'windField', 'treeLod', 'shadowLight', 'shadowOrigin'],
+        uniforms: ['viewProjection', 'levels', 'treeParams', 'treeLod', 'shadowLight', 'shadowOrigin'],
         samplers: leaf ? ['leafAtlas'] : [], storageBuffers: ['levelData'], shaderLanguage: ShaderLanguage.WGSL,
       });
       m.setArray4('levels', clipmap.levels); m.setStorageBuffer('levelData', clipmap.levelData);
-      m.setVector4('treeParams', params); m.setArray4('windField', wind.block); m.setVector4('treeLod', lodV[name.includes('treeShadow') ? 2 : 3]); if (leaf) m.setTexture('leafAtlas', atlas);
+      m.setVector4('treeParams', params); m.setUniformBuffer('windBlock', wind.buffer); m.setVector4('treeLod', lodV[name.includes('treeShadow') ? 2 : 3]); if (leaf) m.setTexture('leafAtlas', atlas);
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       m.backFaceCulling = !leaf;
       return m;

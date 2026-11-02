@@ -4,6 +4,7 @@
 // reads. Results go onto the shared context `g`.
 
 /** @param {any} g  shared boot context: engine, qs, progress; receives the world objects */
+import { createSharedBlock } from '../render/sharedBlock.js';
 import { boot as gfxBoot } from '../core/graphics.js';
 export async function createWorld(g) {
   const { engine } = g;
@@ -136,6 +137,10 @@ export async function createWorld(g) {
   canyon.freeze();
   // The wind field (Phase 8 M1): one function of place and time shared by the CPU and the GPU.
   const wind = (await import('../world/wind.js')).createWind(sandstorm);
+  // One upload a frame for every material that reads the field (shaders/wind.wgsl.js), just before anything is drawn.
+  const windData = new Float32Array(wind.block.length);
+  wind.buffer = createSharedBlock(scene.getEngine(), windData, 'wind-block');
+  scene.onBeforeRenderObservable.add(() => { windData.set(wind.block); wind.buffer.update(); });
   const sandStreaks=g.sandStreaks=(await import('../render/sandStreaks.js')).createSandStreaks(scene,content.clipmap,atmosphere,wind,sandstorm,snowfall,post);
   bindShadows(sandStreaks.material,shadows);post.setStreaks(sandStreaks);
   // Grass (Phase 8): GPU-built blades over the meadow, receiving the shadow cascades.

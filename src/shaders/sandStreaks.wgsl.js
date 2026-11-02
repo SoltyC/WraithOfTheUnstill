@@ -32,7 +32,7 @@ fn grainDunes(p:vec2f)->f32{
     mix(unpack4x8unorm(biomeA[u32(b.y*1024+a.x)]).w,unpack4x8unorm(biomeA[u32(b.y*1024+b.x)]).w,f.x),f.y);
 }
 fn grainDensity(p:vec3f)->f32{
-  return sandstormDensity(p,uniforms.windField[6],uniforms.windField[7],uniforms.windField[8])*grainDunes(p.xz);
+  return sandstormDensity(p,windBlock[6],windBlock[7],windBlock[8])*grainDunes(p.xz);
 }
 @vertex
 fn main(input:VertexInputs)->FragmentInputs{
@@ -56,7 +56,7 @@ fn main(input:VertexInputs)->FragmentInputs{
   let wp=wp0+ax*corner.x*(size+stretch)+ay*corner.y*size;
   alpha*=sqrt(size/(size+stretch*.6));
   // Simpson integration over at most the near column, using the actual front and biome.
-  let tau=dist*uniforms.windField[8].y*(grainDensity(cam)+4.0*grainDensity((cam+wp0)*.5)+density)/6.0;
+  let tau=dist*windBlock[8].y*(grainDensity(cam)+4.0*grainDensity((cam+wp0)*.5)+density)/6.0;
   vertexOutputs.position=uniforms.viewProjection*vec4f(wp,1.0);
   if(alpha<.002){vertexOutputs.position=vec4f(0.0,0.0,-2.0,1.0);}
   vertexOutputs.vUv=corner;vertexOutputs.vAlpha=alpha;vertexOutputs.vWorldPos=wp0;vertexOutputs.vTau=tau;

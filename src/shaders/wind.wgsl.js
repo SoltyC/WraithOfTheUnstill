@@ -3,10 +3,10 @@ import {WIND_VECTORS} from '../world/wind.js';
 import {SANDSTORM_GUST} from '../world/sandstormFront.js';
 import {SANDSTORM_FRONT_WGSL} from './sandstormFront.wgsl.js';
 // The wind field on the GPU (world/wind.js is the CPU twin: keep the two in step). Materials that
-// declare WIND_DECL get the shared uniform block (render side: mat.setArray4('windField', wind.block)).
+// declare WIND_DECL read one shared uniform buffer (render side: mat.setUniformBuffer('windBlock', wind.buffer); render/sharedBlock.js).
 
 export const WIND_DECL = /* wgsl */ `
-uniform windField: array<vec4f,${WIND_VECTORS}>;  // world/wind.js block: [0] dir, base, time; [1] gustiness, front speed; [2..5] bursts, [6..8] storm front
+var<uniform> windBlock: array<vec4f,${WIND_VECTORS}>;  // world/wind.js block: [0] dir, base, time; [1] gustiness, front speed; [2..5] bursts, [6..8] storm front
 `;
 
 /** The field from its first two block entries (fronts and eddies; no bursts) — usable anywhere,
@@ -42,14 +42,14 @@ fn windStorm(p:vec2f,W0:vec4f,W1:vec4f,A:vec4f,B:vec4f,C:vec4f)->vec2f{
 export const WIND_WGSL = /* wgsl */ `
 ${WIND_CORE_WGSL}
 ${WIND_STORM_WGSL}
-${shelterWGSL('windShelter','uniforms.windField[9]',k=>`uniforms.windField[10u+${k}/4u][${k}%4u]`)}
+${shelterWGSL('windShelter','windBlock[9]',k=>`windBlock[10u+${k}/4u][${k}%4u]`)}
 /** The wind at (x, z): xy = direction (unit), z = speed factor (≈ strength × gusts; 0 when still). */
 fn windField(p: vec2f) -> vec3f {
-  let W0 = uniforms.windField[0]; let W1 = uniforms.windField[1];
+  let W0 = windBlock[0]; let W1 = windBlock[1];
   let d = W0.xy; let t = W0.w;
-  var v = windStorm(p,W0,W1,uniforms.windField[6],uniforms.windField[7],uniforms.windField[8]);
+  var v = windStorm(p,W0,W1,windBlock[6],windBlock[7],windBlock[8]);
   for (var i = 2u; i < 6u; i++) {
-    let B = uniforms.windField[i];
+    let B = windBlock[i];
     if (B.w <= 0.0) { continue; }
     let age = t - B.z;
     if (age < 0.0 || age > 2.2) { continue; }

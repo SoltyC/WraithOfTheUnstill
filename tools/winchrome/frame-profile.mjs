@@ -14,6 +14,9 @@ const cdp = await ctx.newCDPSession(page);
 await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 500 }); await cdp.send('Profiler.start');
 const frames = await page.evaluate((s) => new Promise((r) => { let n = 0; const t0 = performance.now(), d = []; let last = t0; const f = (t) => { d.push(t - last); last = t; n++; if (t - t0 > s * 1000) r({ n, median: d.sort((a, b) => a - b)[n >> 1] }); else requestAnimationFrame(f); }; requestAnimationFrame(f); }), secs);
 const { profile } = await cdp.send('Profiler.stop');
+// A speed-up can be draws that failed: nothing else in this output would show it.
+const gpuErrors = await page.evaluate(() => window.__wraith.gpuStats?.gpuErrors ?? 'unknown');
+if (gpuErrors !== 0) console.log(`GPU ERRORS: ${gpuErrors}: these timings are not valid`);
 const byId = new Map(profile.nodes.map((n) => [n.id, n])), self = new Map(); let total = 0;
 for (let i = 0; i < profile.samples.length; i++) {
   const n = byId.get(profile.samples[i]), key = (n.callFrame.functionName || '(anon)') + ' ' + (n.callFrame.url || '').split('/').pop() + ':' + n.callFrame.lineNumber;
