@@ -84,7 +84,7 @@ export function ebbholdGeometry(city = buildCity()) {
    * section scaled by sz(t) along z; normals from the grid. cav(t, a) → info.z. Closed where the radius reaches 0.
    */
   const lathe = (cx, cz, rings, sides, fy, rad, k, seed, opt = {}) => {
-    const sz = opt.sz || (() => 1), cav = opt.cav || (() => 0), kOf = opt.kind || (() => k), wv = opt.w || 0;
+    const sz = opt.sz || (() => 1), cav = opt.cav || (() => 0), kOf = opt.kind || (() => k), wv = opt.w || 0, sOf = opt.seed || (() => seed);
     const base = pos.length / 3, P = [];
     for (let i = 0; i <= rings; i++) {
       const t = i / rings, y = fy(t), s = sz(t);
@@ -97,7 +97,7 @@ export function ebbholdGeometry(city = buildCity()) {
       let n = [dv[1] * du[2] - dv[2] * du[1], dv[2] * du[0] - dv[0] * du[2], dv[0] * du[1] - dv[1] * du[0]];
       let l = Math.hypot(...n);
       if (l < 1e-9) { n = [0, i > rings / 2 ? 1 : -1, 0]; l = 1; }
-      vert(p[0], p[1], p[2], [n[0] / l, n[1] / l, n[2] / l], kOf(p[3], p[4]), seed, cav(p[3], p[4]), wv);
+      vert(p[0], p[1], p[2], [n[0] / l, n[1] / l, n[2] / l], kOf(p[3], p[4]), sOf(p[3], p[4]), cav(p[3], p[4]), wv);
     }
     for (let i = 0; i < rings; i++) for (let j = 0; j < sides; j++) {
       const a = base + i * sides + j, b = base + (i + 1) * sides + j, c = base + (i + 1) * sides + ((j + 1) % sides), d = base + i * sides + ((j + 1) % sides);
@@ -131,8 +131,8 @@ export function ebbholdGeometry(city = buildCity()) {
   const dough = (x, y, z, rx, ry, rz, seed) => lathe(x, z, 16, 28, (t) => y + ry * Math.sin(Math.PI * 0.5 * Math.min(1, t * 1.15)) * (t > 0.87 ? 1 - (t - 0.87) * 0.4 : 1),
     (t, a) => rx * Math.pow(Math.sin(Math.PI * (0.5 + 0.5 * t)), 0.7) * (1 + 0.08 * Math.sin(a * 2 + seed * 5) + 0.04 * Math.sin(a * 5 + seed * 3)) * (1 - 0.12 * Math.exp(-((Math.sin(a - seed * 4)) ** 2) / 0.02) * t),
     K.dough, seed, { sz: () => rz / rx, cav: (t) => t, w: 1 });
-  /** A baked loaf: a domed oval, slashed along its top (the shader scores it), info.z: height 0..1. */
-  const loaf = (x, y, z, rx, ry, rz, seed) => lathe(x, z, 12, 24, (t) => y + ry * Math.sin(Math.PI * 0.5 * t), (t) => rx * Math.pow(Math.cos(Math.PI * 0.5 * t), 0.55) * (1 + 0.03 * Math.sin(t * 13 + seed * 7)), K.loaf, seed, { sz: () => rz / rx, cav: (t) => t });
+  /** A baked loaf: a domed oval, slashed along its top (the shader scores it), info.z: height 0..1, info.y: the angle round it. */
+  const loaf = (x, y, z, rx, ry, rz, seed) => lathe(x, z, 12, 24, (t) => y + ry * Math.sin(Math.PI * 0.5 * t), (t) => rx * Math.pow(Math.cos(Math.PI * 0.5 * t), 0.55) * (1 + 0.03 * Math.sin(t * 13 + seed * 7)), K.loaf, seed, { sz: () => rz / rx, cav: (t) => t, seed: (t, a) => a / (Math.PI * 2) });   // (seed: the angle round it, for the scores)
   /** The things the people work at (world/ebbhold.js 'prop' boxes). */
   const prop = (b, seed) => {
     const cx = (b.x0 + b.x1) / 2, cz = (b.z0 + b.z1) / 2, y0 = b.y0, y1 = b.y1;
@@ -384,14 +384,19 @@ export function ebbholdGeometry(city = buildCity()) {
   // Teodor's daughter, swaddled (info.w = 2: built at the city's origin, lying along x; the vertex shader carries it in his arms,
   // ebbCarry). A bundle, and the small round of the head at one end under a fold of the cloth.
   { const v0 = pos.length / 3;
-    // A madder-red wool swaddle, a fold of pale linen round the small head, the face a shadow in it.
-    lathe(0, 0, 18, 28, (t) => -0.26 + 0.5 * t, (t) => 0.12 * Math.pow(Math.sin(Math.PI * t), 0.55) * (1 + 0.06 * Math.sin(t * 17)), K.blanket, 0.3, { sz: () => 0.85 });
-    lathe(0, 0, 10, 14, (t) => 0.2 + 0.17 * t, (t) => 0.088 * Math.pow(Math.sin(Math.PI * t), 0.8), K.linen, 0.93, { cav: (t, a) => Math.max(0, Math.cos(a - Math.PI / 2)) * Math.sin(Math.PI * t) * 0.9 });
+    // A wool swaddle wound round her (bulges where each turn of the cloth crosses), a fold of pale linen framing the small head.
+    lathe(0, 0, 22, 32, (t) => -0.25 + 0.47 * t, (t, a) => 0.112 * Math.pow(Math.sin(Math.PI * t), 0.5) * (1 + 0.07 * Math.max(0, Math.sin(t * 19 + a * 1.0)) - 0.04 * Math.cos(a * 2)), K.blanket, 0.3, { sz: () => 0.82 });
+    lathe(0, 0, 14, 20, (t) => 0.19 + 0.17 * t, (t, a) => 0.09 * Math.pow(Math.sin(Math.PI * t), 0.75) * (1 + 0.08 * Math.sin(a * 6 + t * 5)), K.linen, 0.93, { cav: (t, a) => Math.max(0, Math.cos(a - Math.PI / 2)) * Math.sin(Math.PI * t) * 0.6 });
     for (let v = v0; v < pos.length / 3; v++) {
       // y (the lathe's axis) → x: lie it down.
       const x = pos[v * 3] - O.x, y = pos[v * 3 + 1] - O.y, nx = nrm[v * 3], ny = nrm[v * 3 + 1];
       pos[v * 3] = y + O.x; pos[v * 3 + 1] = -x + O.y; nrm[v * 3] = ny; nrm[v * 3 + 1] = -nx; info[v * 4 + 3] = 2;
     }
+  }
+  // Her face, asleep, in the linen's opening (already lying as carried: up is up).
+  { const v0 = pos.length / 3;
+    lathe(0.275, 0, 8, 14, (t) => 0.075 + 0.045 * t, (t) => 0.056 * Math.sin(Math.PI * (0.25 + 0.75 * t)) * (t > 0.85 ? 1 - (t - 0.85) * 3 : 1), K.skin, 0.5, { sz: () => 0.85 });
+    for (let v = v0; v < pos.length / 3; v++) info[v * 4 + 3] = 2;
   }
   return { positions: new Float32Array(pos), normals: new Float32Array(nrm), info: new Float32Array(info), indices: new Uint32Array(idx) };
 }
@@ -425,8 +430,8 @@ export function createEbbholdView(scene, atmo, clipmap, matLib) {
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo); bindMaterialLibrary(mat, matLib);
   mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid); mat.setVector4('ebbParams', params);
-  /** Up to four hands on the dough (world x, y, z, 1 = pressing; systems/drowned.js writes them in place). */
-  const hands = new Array(16).fill(0);
+  /** Dents in the dough (world x, floor y, z, strength; systems/drowned.js writes them in place). */
+  const hands = new Array(64).fill(0);
   mat.setArray4('ebbHands', hands);
   /** A carried thing (Teodor's daughter): world x, y, z, yaw; w of the second: 1 shown. */
   const carry = [0, 0, 0, 0, 0, 0, 0, 0];

@@ -56,7 +56,18 @@ export function addDrownedSystem(g) {
   }
   // The dough under the bakers' hands (render/ebbhold.js dents it): four hand slots, world space.
   const doughHands = g.ebbholdView ? g.ebbholdView.hands : null, carryArr = g.ebbholdView ? g.ebbholdView.carry : null;
-  let handSlot = 0;
+  let handSlot = 0, dentNext = 0;
+  const handDent = new Int32Array(4).fill(-1), dentTop = new Float64Array(16);
+  /** The dents rise back: half way in about 2 s, gone in about 8 (bread dough is slow, not springy). */
+  function doughStep(dt) {
+    if (!doughHands) return;
+    const k = 1 - Math.exp(-dt / 2.8);
+    for (let j = 0; j < 16; j++) {
+      if (doughHands[j * 4 + 3] <= 0 || handDent.includes(j)) continue;
+      doughHands[j * 4 + 1] += (dentTop[j] - doughHands[j * 4 + 1]) * k;
+      if (dentTop[j] - doughHands[j * 4 + 1] < 0.002) doughHands[j * 4 + 3] = 0;
+    }
+  }
   let rnd = 11;
   const rand = () => { rnd = (rnd * 1664525 + 1013904223) >>> 0; return rnd / 4294967296; };
 
@@ -83,16 +94,19 @@ export function addDrownedSystem(g) {
         if (H.at) { put(0, H.at); put(3, H.at); c.handSpread = H.spread / xf.s; } else { put(0, H.l); put(3, H.r); c.handSpread = 0; }
         c.handW = 0.9;
       }
-      // The dough's hands: where this body's hands are now, back in the world (one frame late: the body steps after this).
+      // The dough under the hands: a palm below its top presses a dent there (a new one once the hand has moved on); the
+      // dents rise back slowly (doughStep).
       if (H && H.at && doughHands && handSlot < 4) {
-        const b = wr.body;
+        const b = wr.body, top = d.y + H.at[1] + 0.02;
         for (let k = 0; k < 2 && handSlot < 4; k++, handSlot++) {
-          const o = handSlot * 4, q = k * 3;
-          // The palm, a little past the wrist along the forearm.
+          const q = k * 3;
           const ax = b.ha[q] - b.el[q], ay = b.ha[q + 1] - b.el[q + 1], az = b.ha[q + 2] - b.el[q + 2], al = Math.hypot(ax, ay, az) || 1;
-          doughHands[o] = xf.ox + (b.ha[q] + ax / al * 0.08 - xf.ox) * xf.s; doughHands[o + 1] = xf.oy + (b.ha[q + 1] + ay / al * 0.08 - xf.oy) * xf.s;
-          doughHands[o + 2] = xf.oz + (b.ha[q + 2] + az / al * 0.08 - xf.oz) * xf.s;
-          doughHands[o + 3] = c.weight > 0.5 ? 1 : 0;
+          const hx = xf.ox + (b.ha[q] + ax / al * 0.08 - xf.ox) * xf.s, hy = xf.oy + (b.ha[q + 1] + ay / al * 0.08 - xf.oy) * xf.s, hz = xf.oz + (b.ha[q + 2] + az / al * 0.08 - xf.oz) * xf.s;
+          if (c.weight < 0.5 || hy - O.y > top) { handDent[handSlot] = -1; continue; }
+          let j = handDent[handSlot];
+          if (j < 0 || Math.hypot(doughHands[j * 4] - hx, doughHands[j * 4 + 2] - hz) > 0.035) { j = handDent[handSlot] = dentNext; dentNext = (dentNext + 1) % 16; doughHands[j * 4 + 1] = hy; }
+          doughHands[j * 4] = hx; doughHands[j * 4 + 2] = hz; doughHands[j * 4 + 1] = Math.max(d.y + 1.0 + O.y, Math.min(doughHands[j * 4 + 1], hy)); doughHands[j * 4 + 3] = 1;   // (never through the board)
+          dentTop[j] = top + O.y;
         }
       }
     }
@@ -174,7 +188,7 @@ export function addDrownedSystem(g) {
     // The people.
     let holders = 0;
     handSlot = 0;
-    if (doughHands) for (let k = 3; k < 16; k += 4) doughHands[k] = 0;
+    doughStep(dt);
     for (const p of people) {
       if (stepPerson(p, noise, w, dt, move)) {
         p.slot = Math.atan2(p.x - w.x, p.z - w.z);

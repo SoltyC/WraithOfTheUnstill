@@ -22,6 +22,7 @@ varying vGarment: f32;
 varying vThin: f32;
 varying vOcc: f32;
 varying vTint: vec3f;
+varying vFade: f32;
 
 fn bakeAt(f: u32, i: u32, n: u32, pos: ptr<function, vec4f>, nrm: ptr<function, vec4f>) {
   let q = crowdBake[f * n + i];
@@ -45,7 +46,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   bakeAt(u32(clip.x) + f1, i, n, &p1, &n1);
   let lp = mix(p0.xyz, p1.xyz, u) * B.x;
   let ln = normalize(mix(n0.xyz, n1.xyz, u));
-  // Walkers go along their facing over B.w metres and start again; they fade in and out at the ends (scale from the feet).
+  // Walkers go along their facing over B.w metres and start again; they fade in and out at the ends (a dissolve: fragment).
   var walk = 0.0; var fade = 1.0;
   if (B.w > 0.0) {
     let s = (t * clip.w) - B.w * floor(t * clip.w / B.w);
@@ -53,7 +54,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
     fade = smoothstep(0.0, 1.5, s) * smoothstep(B.w, B.w - 1.5, s);
   }
   let cs = cos(A.w); let sn = sin(A.w);
-  let r = vec3f(lp.x * cs + lp.z * sn, lp.y, -lp.x * sn + lp.z * cs) * fade * C.w;
+  let r = vec3f(lp.x * cs + lp.z * sn, lp.y, -lp.x * sn + lp.z * cs) * C.w;
+  vertexOutputs.vFade = fade;
   let wp = A.xyz + vec3f(sn, 0.0, cs) * walk + r;
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   vertexOutputs.vWorldPos = wp;
@@ -69,5 +71,6 @@ fn main(input: VertexInputs) -> FragmentInputs {
 
 /** The robe's fragment shader with the dye per figure. */
 export const crowdFragmentWGSL = clothFragmentWGSL
-  .replace('uniform clothTint: vec4f;', 'varying vTint: vec3f;\nuniform clothTint: vec4f;')
+  .replace('uniform clothTint: vec4f;', 'varying vTint: vec3f;\nvarying vFade: f32;\nuniform clothTint: vec4f;')
+  .replace('fn main(input: FragmentInputs) -> FragmentOutputs {', 'fn main(input: FragmentInputs) -> FragmentOutputs {\n  if (fragmentInputs.vFade < 0.999 && fract(sin(dot(floor(fragmentInputs.position.xy), vec2f(12.9898, 78.233))) * 43758.5453) > fragmentInputs.vFade) { discard; }')
   .replace('albedo *= uniforms.clothTint.rgb;', 'albedo *= fragmentInputs.vTint;');

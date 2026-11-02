@@ -14,35 +14,40 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { BEAM_WGSL, EBB_ORIGIN } from '../world/ebbhold.js';
 
-export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14, dough: 15, loaf: 16, blanket: 17 };
+export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13, linen: 14, dough: 15, loaf: 16, blanket: 17, skin: 18 };
 
 export const ebbVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
 attribute normal: vec3f;
 attribute info: vec4f;               // x = kind (EBB_KIND), y = per-piece seed, z = cavity (a flame: its height 0..1)
 uniform viewProjection: mat4x4f;
-uniform ebbHands: array<vec4f, 4>;   // hands on the dough: world position, w = 1 pressing (systems/drowned.js)
+uniform ebbHands: array<vec4f, 16>;  // dents in the dough: world x, the dent's floor y, z; w = 1 while it lasts (systems/drowned.js: they rise back slowly)
 uniform ebbCarry: array<vec4f, 2>;   // a carried thing (info.w = 2, built at the city's origin): [0] world position, yaw; [1].w shown
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vInfo: vec4f;
+varying vLocal: vec3f;               // a carried thing's own coordinates (else the city's)
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   var p = vertexInputs.position;
-  // Dough (info.w = 1) gives under a hand: the palm's dent follows it down, the dough pushed out round it and rising a little.
-  if (vertexInputs.info.w > 0.5) {
-    for (var i = 0; i < 4; i++) {
+  // Dough (info.w = 1) holds the dents the hands made: each a palm-sized hollow whose floor rises back over seconds; what is
+  // pressed out of a hollow swells round its rim.
+  if (vertexInputs.info.w > 0.5 && vertexInputs.info.w < 1.5) {
+    var sinkT = 0.0; var push = vec2f(0.0);
+    for (var i = 0; i < 16; i++) {
       let h = uniforms.ebbHands[i];
-      if (h.w < 0.5) { continue; }
+      if (h.w <= 0.0) { continue; }
       let d = p.xz - h.xz; let r = length(d);
-      let palm = 1.0 - smoothstep(0.03, 0.13, r);
-      let floorY = h.y - 0.015 + r * r * 3.0;
-      let sink = max(0.0, p.y - floorY) * palm;
-      p.y -= sink;
-      p = vec3f(p.x + d.x / max(r, 1e-3) * sink * 0.5, p.y, p.z + d.y / max(r, 1e-3) * sink * 0.5);
+      let palm = 1.0 - smoothstep(0.035, 0.12, r);
+      let floorY = h.y + r * r * 2.5;
+      let sink = max(0.0, p.y - floorY) * palm * h.w;
+      sinkT = max(sinkT, sink);
+      push += d / max(r, 1e-3) * sink * 0.45;
     }
+    p = vec3f(p.x + push.x, p.y - sinkT, p.z + push.y);
   }
   var nrm = vertexInputs.normal;
+  vertexOutputs.vLocal = p - vec3f(${EBB_ORIGIN.x}.0, ${EBB_ORIGIN.y}.0, ${EBB_ORIGIN.z}.0);
   if (vertexInputs.info.w > 1.5) {
     let c = uniforms.ebbCarry[0]; let cs = cos(c.w); let sn = sin(c.w);
     let l = (p - vec3f(${EBB_ORIGIN.x}.0, ${EBB_ORIGIN.y}.0, ${EBB_ORIGIN.z}.0)) * uniforms.ebbCarry[1].w;
@@ -64,6 +69,7 @@ uniform ebbParams: vec4f;            // y = fill (display-referred), z = sea-lig
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vInfo: vec4f;
+varying vLocal: vec3f;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
@@ -222,7 +228,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (dot(N, Ng) < 0.05) { N = Ng; }
   if (kind == 15) { let fn0 = normalize(cross(dpx, dpy)); N = normalize(mix(Ng, select(-fn0, fn0, dot(fn0, Ng) > 0.0), 0.45)); }
   let gold = r0.y;
-  var ao = (0.45 + 0.55 * r0.x) * mix(1.0, ms.ao, 0.6) * (1.0 - 0.85 * cav);
+  // (info.z is a height, not a cavity, on bread)
+  var ao = (0.45 + 0.55 * r0.x) * mix(1.0, ms.ao, 0.6) * (1.0 - 0.85 * select(cav, 0.0, kind == 15 || kind == 16));
   let seed = fragmentInputs.vInfo.y;
   let vary = 0.88 + 0.24 * eHash(floor(lp / 3.0) + seed * 17.0);
   let vn = veins(lp + seed * 31.0, fw);
@@ -250,21 +257,27 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     rough = 0.42 + ms.rough * 0.2;
   } else if (kind == 1) {
     albedo = matRetint(ms, layer, vec3f(0.06, 0.058, 0.062), 0.3); rough = 0.9;
+  } else if (kind == 18) {
+    // A baby's face, asleep in the fold: warm skin, soft, a flush on the cheeks.
+    albedo = vec3f(0.58, 0.39, 0.3) * (0.95 + 0.1 * eNoise(fragmentInputs.vLocal * 90.0)); rough = 0.55;
   } else if (kind == 15) {
     // Dough: soft cream, floured where the hands have not just been, a little sheen where they have; its own normal from the
     // surface (it is dented in the vertex shader).
-    let fl = smoothstep(0.45, 0.75, eNoise(lp * 38.0 + seed * 9.0) * 0.7 + eNoise(lp * 140.0) * 0.3) * smoothstep(0.2, 0.8, cav);
+    let fl = smoothstep(0.4, 0.85, eNoise(lp * 13.0 + seed * 9.0) * 0.65 + eNoise(lp * 42.0) * 0.35) * smoothstep(0.2, 0.8, cav);
     albedo = mix(vec3f(0.74, 0.64, 0.47), vec3f(0.88, 0.86, 0.8), fl * 0.7) * (0.94 + 0.12 * eNoise(lp * 25.0));
     rough = mix(0.62, 0.9, fl);
   } else if (kind == 16) {
-    // A loaf: a deep golden-brown crust, darker where it rose and split, paler at the base, flour left in the score's lips.
-    let score = band(fract(lp.x * 7.0 + lp.z * 3.0 + seed * 3.0) - 0.5, 0.06, fw * 7.0) * smoothstep(0.55, 0.9, cav);
-    let tone = mix(vec3f(0.55, 0.36, 0.16), vec3f(0.36, 0.18, 0.06), smoothstep(0.25, 0.95, cav)) * (0.85 + 0.3 * eNoise(lp * 60.0));
-    albedo = mix(tone, vec3f(0.78, 0.7, 0.55), score * 0.8);
-    rough = 0.6;
-  } else if (kind == 17) {
-    // A dyed wool swaddle: madder red, its weave in the scan's grain.
-    albedo = matRetint(ms, layer, vec3f(0.27, 0.075, 0.06), 0.25); rough = 0.9;
+    // A loaf: three slashes across its top opened in the oven (pale, floury, their lips risen and dark); the crust deep brown on
+    // top, golden down the sides, pale where it sat on the tray. (info.y: the angle round it; info.z: the height.)
+    let ang = seed * 6.2831853; let rr = 1.0 - cav;
+    let tu = cos(ang) * rr; let tv = sin(ang) * rr;
+    let dd = fract((tu * 0.85 + tv * 0.5) * 3.2 + 0.5) - 0.5;
+    let inTop = smoothstep(0.35, 0.6, cav) * (1.0 - smoothstep(0.45, 0.7, abs(-tu * 0.5 + tv * 0.85)));
+    let slash = (1.0 - smoothstep(0.05, 0.1, abs(dd))) * inTop;
+    let lip = (1.0 - smoothstep(0.1, 0.16, abs(dd))) * inTop - slash;
+    let tone = mix(mix(vec3f(0.66, 0.52, 0.34), vec3f(0.48, 0.29, 0.11), smoothstep(0.0, 0.3, cav)), vec3f(0.27, 0.14, 0.05), smoothstep(0.45, 0.95, cav));
+    albedo = mix(tone * (0.85 + 0.3 * eNoise(lp * 70.0)) * (1.0 - 0.3 * lip), vec3f(0.8, 0.7, 0.52), slash);
+    rough = mix(0.55, 0.8, slash);
   } else if (kind == 14) {
     // Linen, parchment, dough: pale and soft, each piece its own shade.
     albedo = matRetint(ms, layer, mix(vec3f(0.5, 0.44, 0.34), vec3f(0.36, 0.3, 0.22), fract(seed * 7.3)), 0.3); rough = 0.85;
@@ -281,6 +294,28 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (kind < 14) { albedo *= grime * mix(1.0, 0.6, wet); }
   rough = mix(rough, 0.12, wet * 0.8);
   albedo = mix(albedo, vec3f(0.85, 0.62, 0.25), gold); metal = max(metal, gold); rough = mix(rough, 0.28, gold);
+  // Bread and cloth carry their own fine surface: the dough's bubbles and stretch, the crust's crackle and blisters, the
+  // swaddle's wrapped folds. A height field by noise, its slope bent into the normal (no screen derivatives: any branch).
+  if (kind >= 15 && kind <= 17 && fw < 0.02) {
+    let q = select(lp, fragmentInputs.vLocal, kind == 17);
+    var hgt = 0.0; var hx = 0.0; var hz = 0.0; var hy = 0.0; let e2 = 0.002;
+    for (var k = 0; k < 4; k++) {
+      let o = select(select(select(vec3f(0.0), vec3f(e2, 0.0, 0.0), k == 1), vec3f(0.0, e2, 0.0), k == 2), vec3f(0.0, 0.0, e2), k == 3);
+      let x = q + o;
+      var v = 0.0;
+      if (kind == 15) { v = -0.6 * smoothstep(0.62, 0.8, eNoise(x * 160.0)) + 0.25 * eNoise(x * vec3f(40.0, 90.0, 40.0)); }
+      else if (kind == 16) { v = 0.45 * eNoise(x * 60.0) + 0.3 * eNoise(x * 170.0) - 0.4 * (1.0 - smoothstep(0.0, 0.04, abs(eNoise(x * 75.0) - 0.5))); }
+      else { let w = sin((x.x * 0.8 + x.y * 1.4 + x.z * 0.6) * 38.0 + eNoise(x * 12.0) * 3.0); v = 0.5 * smoothstep(-0.2, 0.9, w) + 0.15 * eNoise(x * 140.0); }
+      if (k == 0) { hgt = v; } else if (k == 1) { hx = v; } else if (k == 2) { hy = v; } else { hz = v; }
+    }
+    let amp = select(select(0.0016, 0.0035, kind == 16), 0.004, kind == 17);
+    let gq = vec3f(hx - hgt, hy - hgt, hz - hgt) / e2 * amp;
+    N = normalize(N - (gq - N * dot(gq, N)));
+    if (kind == 16) { albedo *= mix(0.7, 1.0, smoothstep(-0.4, 0.1, hgt)); }        // the crackle's small dark seams
+    if (kind == 15) { albedo *= mix(0.86, 1.0, smoothstep(-0.5, 0.0, hgt)); }
+    if (kind == 17) { albedo *= 0.8 + 0.25 * hgt; }
+    ao *= 0.85 + 0.15 * smoothstep(-0.6, 0.4, hgt);
+  }
   // The sea-light: the hall's own, down the roof's slits at a fixed slant (not the sun): sharp pools where it lands.
   let L = -EBB_BEAM;
   let lit = beamAt(lp + Ng * 0.05) * uniforms.ebbParams.z;
