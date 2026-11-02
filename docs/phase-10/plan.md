@@ -142,7 +142,14 @@ Letters are F for fen. Each ends in something reviewable on the 3060.
 - **Weights alone do not reach it.** Dropping the wetness factor west of x = −900 gives 7.85 km² dominant, but 4.88 of that is open sea. Real mire land goes from 2.50 to 2.97 km².
 - **The land is not there.** West of x = −900, land above sea level is mire 2.90, meadow 4.05 (mostly the scarp at 60–300 m, only 0.5 under 60 m), frost 4.78, coast 0.39 km².
 - **Hummock noise alone does not make the water.** At up to 8 m broad and 10 m fine noise over reg.west, lake share reaches only 15.7 % (target 40–50 %). The ground slopes to the sea, so hollows drain. The basin needs flattening towards one low level first.
-- **Recommended:** grow the fen west over the shallows by raising the seabed into low marsh. That adds up to 4.9 km² without touching the meadow or the frost, for about 8 km² in all, and most of it can stay water. The alternative, cutting down the meadow's scarp, moves shrines and finished land. The coast shrines and `warden-coast` need checking either way. **Not started: this redraws the west coast, so the user sees it first.**
+- **Recommended:** grow the fen west over the shallows by raising the seabed into low marsh. That adds up to 4.9 km² without touching the meadow or the frost, for about 8 km² in all, and most of it can stay water. The alternative, cutting down the meadow's scarp, moves shrines and finished land. The coast shrines and `warden-coast` need checking either way. The user approved this on 2026-11-02.
+
+**Done 2026-11-02 (`tools/bake-world/fen.mjs`, `tests/f0Diff.test.js`):**
+- The fen is a stage after hydrology, so macro height and every river and lake outside its mask cannot move. Biome, surface, hydro, lake and height data are byte-identical east of x = −1024 and north of z = 1408. Wind changes only west of x = −1104.
+- **Mire dominant 7.46 km², short of the 8–10 target.** More needs the meadow's scarp. Inside that, fen ground and shallows are 6.97 km², 43.8 % water: 57 % of it under 1 m, 37 % at 1–3 m, 3 % at 3–6 m. No mere passes 12 m.
+- Water is set, not found: tidal marsh at the sea, then basins at 1.4 m and 3.6 m held by low banks. Rivers run on as channels. Every mire site has its own island, and all 10 sites west of x = −1024 stay dry and can be walked to wading under 1 m.
+- `warden-coast` and both coast shrines are outside the mask. **Not placed yet:** the camp, the Warden's channels and the drowned sites. Those go in with their features.
+- The ground is bare and the water is the plain lake look until F1 and F2. Frame cost over the new water is **not measured:** other programs held the GPU at 100 % during this bake.
 
 *Optional:* the sawtooth scarp at (2420, 1354) needs a re-bake too. Do it in the same bake only if the diff stays limited to that area.
 

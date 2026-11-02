@@ -691,3 +691,10 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **A clip owns the body and feet while it plays, eases in and out, and doesn't loop unless asked.** During a clip the arms push the mantle in three dimensions, not flat.
 - **Limits come from real clips and the walking robe, not from what makes a clip pass.** The nervous walk failed honestly until the foot measure itself was shown to be wrong; four seeds were tried first.
 
+
+## 2026-11-02 — The fen grows over the shallows
+
+- **The coast moved west instead of the scarp moving down, as the user approved.** Meadow, frost, the coast shrines and `warden-coast` keep their places. The cost is 7.46 km² of mire, under the 8–10 target; closing the gap means cutting finished land.
+- **The fen runs after hydrology and sets its water.** Hollows on sloping ground drain, and a first version inside macro height moved river heights east of the fen by a few centimetres. A later stage cannot do that.
+- **Basins have one table each, held by continuous banks.** Two water levels can't meet without land between them. The banks are also the dry ways across the fen.
+- **The outer marsh's water is the sea itself.** It has no `lake_level` of its own; if Tide needs one, F1 adds it.

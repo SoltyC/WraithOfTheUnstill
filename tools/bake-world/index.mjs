@@ -12,6 +12,7 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { carveFen } from './fen.mjs';
 import { macroHeight, coastDistance, regions, HALF, WORLD_SIZE } from './geography.mjs';
 import { hydrology } from './hydrology.mjs';
 import { biomeWeights, material, wind, BIOMES, MATERIALS } from './climate.mjs';
@@ -103,6 +104,9 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
     },
   });
   log('hydrology', Date.now() - t0, 'ms');
+  // 2a. The fen (fen.mjs): the coast walks west, the lowland settles to its water tables; only inside its mask.
+  const fen = carveFen(h4, hy, n4, c4, HALF, seed);
+  log('fen', fen.toFixed(2), 'km² of water tables', Date.now() - t0, 'ms');
 
   // 2b. The frost chapter's layout: levelled pads for its sites and the Shapers' Run, carved after
   // hydrology so the chute is a route, not a river (story.mjs).

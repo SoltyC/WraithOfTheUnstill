@@ -7,26 +7,28 @@ import crypto from 'node:crypto';
 
 const dir = 'data/world/';
 const base = JSON.parse(fs.readFileSync('tests/fixtures/d0-baseline.json', 'utf8'));
+const band = JSON.parse(fs.readFileSync('tests/fixtures/f0-baseline.json', 'utf8'));
 const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 const rd = (f) => fs.readFileSync(dir + f);
-const westCols = (f, rows, cols, ch, west) => {
-  const a = rd(f), parts = [];
-  for (let j = 0; j < rows; j++) parts.push(a.subarray(j * cols * ch, (j * cols + west) * ch));
+// From x = -1024: the fen (F0) took everything west of that, and tests/f0Diff.test.js holds it to its own mask.
+const bandCols = (f, rows, cols, ch, west) => {
+  const a = rd(f), parts = [], from = cols * 3 / 8;
+  for (let j = 0; j < rows; j++) parts.push(a.subarray((j * cols + from) * ch, (j * cols + west) * ch));
   return sha(Buffer.concat(parts));
 };
 
 describe('D0 leaves the frost, the meadow and Hearn alone', () => {
-  it('biome weights west of x = 1000 are byte-identical (frost, meadow, all six channels)', () => {
-    expect(westCols('biome_a.rgba8', 1024, 1024, 4, 637)).toBe(base.biomeAWest);
-    expect(westCols('biome_b.rgba8', 1024, 1024, 4, 637)).toBe(base.biomeBWest);
+  it('biome weights from x = -1024 to 1000 are byte-identical (frost, meadow, all six channels)', () => {
+    expect(bandCols('biome_a.rgba8', 1024, 1024, 4, 637)).toBe(band.d0BiomeA);
+    expect(bandCols('biome_b.rgba8', 1024, 1024, 4, 637)).toBe(band.d0BiomeB);
   });
-  it('the surface map west of x = 1000 is unchanged', () => {
-    expect(westCols('surface.rgba8', 2048, 2048, 4, 1274)).toBe(base.surfaceWest);
+  it('the surface map from x = -1024 to 1000 is unchanged', () => {
+    expect(bandCols('surface.rgba8', 2048, 2048, 4, 1274)).toBe(band.d0Surface);
   });
-  it('the height tiles west of x = 512 (Hearn, the hill, the stair) are unchanged', () => {
+  it('the height tiles from x = -1024 to 512 (Hearn, the hill, the stair) are unchanged', () => {
     const parts = [];
-    for (let tj = 0; tj < 16; tj++) for (let ti = 0; ti < 9; ti++) parts.push(rd(`height/${ti}_${tj}.u16`));
-    expect(sha(Buffer.concat(parts))).toBe(base.heightTilesWest);
+    for (let tj = 0; tj < 16; tj++) for (let ti = 6; ti < 9; ti++) parts.push(rd(`height/${ti}_${tj}.u16`));
+    expect(sha(Buffer.concat(parts))).toBe(band.d0Height);
   });
   it('the village mask, the village layout and the hill stair are unchanged', () => {
     expect(sha(rd('village_mask.rgba8'))).toBe(base.villageMask);

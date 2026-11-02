@@ -38,11 +38,28 @@ const w2 = new Float64Array(2);
  * Two warped shorelines (west x≈-2900, south z≈-2900) joined by a smooth minimum; extra small
  * warps cut bays and headlands.
  */
-export function coastDistance(x, z, seed) {
+export function coastDistance(x, z, seed) { return rawCoast(x, z, seed) + fenReach(x, z, seed); }
+
+function rawCoast(x, z, seed) {
   warp(x, z, seed + 101, 700, 2600, w2);
   const wx = w2[0] + 70 * gfbm(x / 170, z / 170, 3, seed + 103);
   const wz = w2[1] + 70 * gfbm(x / 170 + 4.4, z / 170, 3, seed + 104);
   return smin(wx + 2900, wz + 2900, 1400);
+}
+
+/**
+ * How far (x, z) is in the fen of Phase 10, 0..1: exactly 0 east of x = -1030 and clear of the two coast shrines. The bake's
+ * macro height and hydrology never see it (fen.mjs comes after them), so nothing outside it can move.
+ */
+export function fenMask(x, z, seed) {
+  if (x >= -1030 || z >= 1400 || z <= -2680) return 0;
+  const n = gfbm(x / 520, z / 520, 3, seed + 600), m = n < -1 ? -1 : n > 1 ? 1 : n;
+  return smooth(-1030, -1500, x + 40 + 40 * m) * smooth(-3880, -3620, x + 170 * m) * smooth(-2680, -2200, z - 80 - 80 * m) * smooth(1400, 950, z + 90 + 90 * m);
+}
+/** The fen walks the coast west over the shallows (m). */
+function fenReach(x, z, seed) {
+  const f = fenMask(x, z, seed);
+  return f > 0 ? f * (1080 + 200 * gfbm(x / 420, z / 420, 3, seed + 105)) : 0;
 }
 
 /** Region weights (smooth, roughly partition of unity) used for elevation and biomes. */
@@ -109,7 +126,7 @@ const reg = { north: 0, west: 0, east: 0, volcano: 0, centre: 0 };
  */
 export function macroHeight(x, z, seed) {
   regions(x, z, seed, reg);
-  const coast = coastDistance(x, z, seed);
+  const coast = rawCoast(x, z, seed);
 
   // Regional base levels.
   const hCentre = 250 + 80 * geroded(x / 1500, z / 1500, 6, seed + 11, 0.9);

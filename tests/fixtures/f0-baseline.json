@@ -1,0 +1,19 @@
+{
+  "note": "SHA-256 of the bake before F0 (b3e9d40), for what the fen must not touch: East is x >= -1024, North is z >= 1408 (height tiles z >= 1536), d0* is the band from x = -1024 to 1000 for tests/d0Diff.test.js.",
+  "biomeAEast": "74c8ed06293b38da0c613f029ab225ad84a6046ec724caa6f4b63f8e6a3fe26d",
+  "biomeANorth": "a6bc9b44afffe955d26e2314d09625dbc0a52fa645b6daf720777c269e50fcaa",
+  "biomeBEast": "7ae25330adcd3aa5ff63522bd2862146f8b0fae4ddd593facf5049c0f262b996",
+  "biomeBNorth": "24ac37b4aafe3bfde7a26bcd09e23c12590bfb471aab14e406e93443f87f009a",
+  "surfaceEast": "7a0c01b1a7413407cd1f18f22facb30da73cfb15000569c9baa1668f6140b5c1",
+  "surfaceNorth": "1af5de13477dfb7f098d17baa7f7a759f3009a5464f0fcd27359c290f1752250",
+  "hydroEast": "85b4f999fb54e4bef70956ec47b231f3257524ce5c567891218667da0b51551e",
+  "hydroNorth": "7b126bd840f089d9a6e393c5c4bdaa9f21f744d8c73891f0aa8bfc82a97c6c52",
+  "lakeLevelEast": "50abe59d81a8bc7587d85b7b92eaa06651135199f47c2c1936a29ae0c1767c8a",
+  "lakeLevelNorth": "5cc1bc003540308b43e86d6b3bb7014e158bcf3b68917d9b6e31635ae3c601a6",
+  "heightEast": "657202ac762894175623037fd325c6e22b4c975752d2a37d3db190518f018896",
+  "heightNorth": "5e59ace41de38fb0fd8cd5d6fbc8d53573fd9a2259b1dcae888fa352cd44116d",
+  "d0BiomeA": "ba531fced5a189da5f99c46f8bd874b82558379fcdf991cb7734bfe2fa39046e",
+  "d0BiomeB": "893dbfe81d77c15eac14521c8c3a35e85aee2610874a844d90f4a238c3da5bb9",
+  "d0Surface": "0899dba32b9d7728dff3075168798e60b95e26c599f6151f77011c0e1066c91f",
+  "d0Height": "63cdec2c8579a6b962ef9fc0835fe2dad811e0be16ce16f92a92669dac431ea2"
+}

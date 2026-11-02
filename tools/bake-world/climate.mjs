@@ -1,7 +1,7 @@
 // Climate-derived layers: soft biome weights, base surface material, and wind climatology.
 // Deterministic (no transcendental functions).
 
-import { regions, coastDistance, smooth, VOLCANO_X, VOLCANO_Z } from './geography.mjs';
+import { regions, coastDistance, fenMask, smooth, VOLCANO_X, VOLCANO_Z } from './geography.mjs';
 import { gfbm } from '../../src/terrain/gnoise.js';
 
 /** Biome channel order used everywhere (bake, runtime, shaders). */
@@ -23,10 +23,11 @@ export function biomeWeights(x, z, h, w, seed, out) {
   const frost = Math.max(reg.north, smooth(780, 1100, h + 120 * gfbm(x / 500, z / 500, 3, seed + 201)));
   const ember = reg.ember;
   const dunes = reg.eastB * (1 - ember);
-  const mire = reg.west * (0.6 + 0.4 * w) * smooth(60, 25, h);
-  const shore = smooth(260 + 120 * gfbm(x / 700, z / 700, 3, seed + 202), 0, coast) * smooth(-30, 2, h);
+  const fen = fenMask(x, z, seed);
+  const mire = (reg.west + (1 - reg.west) * fen) * (0.6 + 0.4 * w) * smooth(60, 25, h);
+  const shore = smooth(260 + 120 * gfbm(x / 700, z / 700, 3, seed + 202), 0, coast) * smooth(-30, 2, h) * (1 - fen);
   let meadow = Math.max(0, reg.centre + reg.west * (1 - mire) * 0.7);
-  const raw = [frost * (1 - shore), meadow * (1 - frost) * (1 - shore), mire * (1 - frost) * (1 - shore), dunes * (1 - frost) * (1 - shore), ember * (1 - frost * 0.6) * (1 - shore), shore + (h < 0 ? 1 : 0)];
+  const raw = [frost * (1 - shore), meadow * (1 - frost) * (1 - shore), mire * (1 - frost) * (1 - shore), dunes * (1 - frost) * (1 - shore), ember * (1 - frost * 0.6) * (1 - shore), shore + (h < 0 ? 1 - fen : 0)];
   let s = 0;
   for (let k = 0; k < 6; k++) s += raw[k];
   if (s <= 1e-6) { out.fill(0); out[1] = 1; return; }
