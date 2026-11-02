@@ -2,9 +2,19 @@
 
 Research 2026-11-02, then installed and tested the same day. Installed tool: **ACE-Step 1.5** at `C:\wraith-tools\ACE-Step-1.5` (commit `ca1e85f`, MIT). The first version of this page came from third-party guides. Everything below was checked against the project's own docs or run on this machine, and the corrections are listed at the end.
 
+## Now on trial: Stable Audio 3.0 Medium
+
+Installed 2026-11-02 at `C:\wraith-tools\stable-audio-3`, from Stability's own repository. The test clips are **not generated yet:** the weights are gated (401 without a login), so the user has to accept the terms. Nothing is built on it until the user has heard two samples.
+
+- **Windows:** the repository supports NVIDIA only on Linux, so PyTorch 2.7.1 CUDA 12.6 was installed by hand. It sees the 3060. Flash Attention has no Windows build; the code falls back to its own SDPA path, which may be slower.
+- **Sample:** after the login, `tools/audio/stable/sample.sh` writes 60 s of `fen-day` and `morrow-fire` to `C:\wraith-tools\sa3-out`.
+- **Download:** 8.6 GB of model and 1.1 GB of text encoder.
+- **Licence, if it's kept:** Stability AI Community License. Commercial use is free under US$1M annual revenue, across the user and affiliates, whatever the source of that revenue. It needs registration with Stability, a licence copy and notice file with the game, and "Powered by Stability AI" somewhere such as the credits. Outputs are the user's, and can't be used to train other generative models. The Gemma text encoder has its own terms.
+- **Training data:** Stability says all of it is "fully licensed", without naming sources.
+
 ## Verdict: rejected by ear
 
-**The user listened to the test clips on 2026-11-02 and said the audio is terrible. No cue in the game comes from ACE-Step.** It stays installed only until the user decides whether to remove it (about 24 GB). The fast runs and licence below don't matter if the music isn't good enough, and the page's earlier recommendation of it for beds is withdrawn. The notes are kept as a record of what was tried.
+**The user listened to the test clips on 2026-11-02 and said the audio is terrible. No cue in the game comes from ACE-Step.** The user had it deleted the same day, along with `tools/audio/ace`. The fast runs and licence below don't matter if the music isn't good enough, and the page's earlier recommendation of it for beds is withdrawn. The notes are kept as a record of what was tried.
 
 ## What was chosen, and why (superseded)
 

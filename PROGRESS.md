@@ -778,3 +778,5 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 - Phase 10 F0: the fen is baked over the west shallows (`tools/bake-world/fen.mjs`). Mire dominant 7.46 km² (target 8–10), fen ground 6.97 km² at 43.8 % water, nothing outside its mask moved (`tests/f0Diff.test.js`). Map and views in `screenshots/phase-10-fen/`. Next: F1 fen water, with frame cost measured on an idle GPU.
 
 - Phase 10: the user accepted the four motion clips (`knead1`, `rock`, `wheel`, `walk`) from their films. The user rejected ACE-Step's audio by ear, so no cue comes from it (`docs/phase-10/local-music-generation.md`); the music source is open.
+
+- ACE-Step deleted at the user's request. Stable Audio 3.0 Medium installed on the 3060; its two samples wait on the user accepting the licence (`docs/phase-10/local-music-generation.md`).
