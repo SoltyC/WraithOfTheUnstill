@@ -9,6 +9,7 @@ import {SANDSTORM_VOLUME_WGSL} from './sandstormVolume.wgsl.js';
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
 import { WEATHER_FOG_WGSL } from './fog.wgsl.js';
 import { UNDERWATER_WGSL } from '../water.wgsl.js';
+import { BEAM_WGSL } from '../../world/ebbhold.js';
 
 export const aoCS = /* wgsl */ `
 ${POST_PARAMS_WGSL}
@@ -79,6 +80,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
 export const composeCS = /* wgsl */ `
 ${POST_PARAMS_WGSL}
 ${UNDERWATER_WGSL}
+${BEAM_WGSL}
 @group(0) @binding(0) var<storage, read> P: PostParams;
 @group(0) @binding(1) var sceneTex: texture_2d<f32>;
 @group(0) @binding(2) var depthTex: texture_depth_2d;
@@ -223,8 +225,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let skyThin = select(1.0, 1.0 - 0.9 * P.pad[0].w, d <= 0.0);
     let fogp = vec4f(P.fog.x * skyThin, P.fog.y, P.fog.z, 0.0);
     let T = exp(-fogOpticalDepth(cam, dir, dist, fogp));
-    let keyC = atmoLight[0].xyz;
-    let skyUp = atmoLight[1].xyz;
+    // Inside Ebbhold (ambCol.w): the haze is lit by the sea-light down the roof's slits (the shafts) and the city's own dim glow.
+    let inHall = P.ambCol.w > 0.5;
+    let keyC = select(atmoLight[0].xyz, vec3f(0.0), inHall);   // inside, the sea-light's beams are marched below instead of the sun
+    let skyUp = select(atmoLight[1].xyz, vec3f(0.007, 0.013, 0.013) / max(exposure, 1e-6), inHall);
     let cosT = dot(dir, P.sun.xyz);
     var ratio = 1.0;
     if (P.fog.w > 0.5) { ratio = textureSampleLevel(shaftTex, shaftSampler, uv, 0.0).r; }
@@ -232,6 +236,18 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let ins = (keyC * phase * ratio * 0.9 * skyThin + skyUp * 0.95 * (1.0 - 0.5 * P.pad[0].w)) * (1.0 - T); // a storm's air is dark
     dbgT = T;
     c = vec4f(c.rgb * T + ins * exposure, c.a);
+  }
+  // Ebbhold's sea-light in the haze: the fixed beams down the roof's slits (world/ebbhold.js BEAM_WGSL), marched along the view
+  // ray (20 jittered samples over its first 320 m; TAA integrates the jitter), dimmed by the haze between them and the eye.
+  if (!under && P.ambCol.w > 0.5) {
+    let len = min(dist, 320.0);
+    let jb = fract(52.9829189 * fract(dot(vec2f(p) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));
+    var acc = 0.0;
+    for (var k = 0; k < 20; k++) {
+      let s = (f32(k) + jb) * len / 20.0;
+      acc += beamAt(cam + dir * s - EBB_O) * exp(-P.fog.x * s);
+    }
+    c = vec4f(c.rgb + vec3f(0.45, 0.85, 0.8) * acc * (len / 20.0) * 0.0045, c.a);
   }
   // Forest haze (PLAN.md M4b): a thin, low medium under the canopy (pad[3] = density at the base,
   // height falloff, base level, shafts on), lit by the sun through the crowns (the quarter-res

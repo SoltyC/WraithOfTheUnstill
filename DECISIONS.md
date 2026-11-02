@@ -709,3 +709,6 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Underwater particles are opaque dithered specks that write depth,** not additive sprites. Compose fogs by the depth in each pixel, so a sprite would be fogged at the distance of whatever lies behind it.
 - **Ebbhold lives beyond the world's west edge, 300 m down,** and every terrain query hands over to its rooms while the Wraith is inside. Under the Sounding itself, the pit's lake and the clipmap's terrain would answer the city's water and ground queries.
 - **The city's lamps are world lights** (a `held` kind with no flicker), so one lighting model lights the stone and the Wraith; display-referred, so the dark doesn't depend on exposure.
+- **Ebbhold is one colossal hall** (user, 2026-11-02, after the first grey box of rooms): huge first, the people's rooms as alcoves off its galleries.
+- **The hall's beams are its own fixed sea-light,** not the sun. They are computed analytically (traced up to the roof's slits, blocked by the slab levels), so they look the same at any hour.
+- **The sealed city sits 400 m above sea level, with the terrain off while inside.** Below sea level the atmosphere model has no sunlight, and the terrain shadowed the roof.

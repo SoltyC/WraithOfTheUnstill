@@ -173,6 +173,7 @@ export async function createWorld(g) {
   const ebbMod = await import('../render/ebbhold.js');
   const ebbholdView = ebbMod.createEbbholdView(scene, atmosphere, content.clipmap);
   shadows.addCaster(ebbholdView.mesh, ebbholdView.makeShadowMaterial, 2);
+  bindShadows(ebbholdView.material, shadows);
   water.addInterior(ebbMod.ebbholdWaterQuads());
   ebbholdView.freeze();
   // Under the water (Phase 10 U1): marine snow and the robe's bubbles.

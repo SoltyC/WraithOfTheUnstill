@@ -66,11 +66,12 @@ The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as A
 
 Play: open the game with `?spot=u1-sounding`, swim west, look down and move forward to dive. Space strokes up, Ctrl strokes down.
 
-## Ebbhold, grey box (Phase 10 U3–U4): walk the rooms
+## Ebbhold, the Tide Hall (Phase 10 U3–U4): one colossal hall
 
 | File | What it shows |
 |---|---|
-| [ebbhold-grey-flythrough.mp4](city/ebbhold-grey-flythrough.mp4) | **Start here.** The undercroft, the intake, the gate, the sweeper's stair, the upper hall, the wheel room, the Tide Hall and its well, the sea-doors |
-| [ebbhold-grey-sheet.png](city/ebbhold-grey-sheet.png) | Nine frames from it |
+| [ebbhold-hall-flythrough.mp4](city/ebbhold-hall-flythrough.mp4) | **Start here.** The undercroft, the intake, the gate, down the statue-lined causeway, the platform, over the bridge, up to the capitals and the roof, into the well, the sea-doors |
+| [ebbhold-hall-views.png](city/ebbhold-hall-views.png) | Four views with the sea-light's beams |
+| [ebbhold-hall-sheet.png](city/ebbhold-hall-sheet.png) | Nine frames from the flythrough |
 
-Walk it: `?ebbhold=undercroft` (also `gate`, `tideHall`, `gallery`). The bronze doors at the far end of the sea-door hall lead back out to the Sounding.
+Walk it: `?ebbhold=hall` (also `undercroft`, `gate`, `platform`, `gallery`, `well`). The bronze sea-doors at the far end lead back out to the Sounding.

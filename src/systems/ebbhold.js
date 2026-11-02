@@ -4,23 +4,17 @@
 // water (each room's level). The sky goes (the interior flag: ambient, and post/compose's water) and the city's lamps come on. The
 // sea-doors at its far end are the way out: to the Sounding's rim. Runs before the player (the floors know this frame's feet).
 
-import { createEbbholdSolids, EBB_ORIGIN } from '../world/ebbhold.js';
+import { createEbbholdSolids, EBB_ORIGIN, HALL } from '../world/ebbhold.js';
 import { env, invalidateEnvironment } from '../render/environment.js';
 import { SOUNDING } from '../world/sounding.js';
 
-/** Where the Wraith arrives (local x, y, z, facing yaw). */
-export const EBB_SPAWNS = {
-  undercroft: [20, 0, 18, 1.5708],
-  gate: [82, 6, 12, 0],
-  tideHall: [136, 18, 62, 1.5708],
-  gallery: [118, 8, 11, 1.5708],
-};
 
 /** @param {any} g  shared boot context */
 export function addEbbholdSystem(g) {
   const { loop, controller, arm, ground } = g;
-  const S = createEbbholdSolids();
   const view = g.ebbholdView;
+  const S = createEbbholdSolids(view ? view.city : undefined);
+  const EBB_SPAWNS = S.city.spawns, EXIT = S.city.exit;
   // The controller's solids while inside: the floors come from the ground (it asks the rooms), so these only push.
   const solids = {
     qx: 0.5, qz: 0.5, qh: 0.5, qf: 0.5, h: 0.5,
@@ -40,6 +34,10 @@ export function addEbbholdSystem(g) {
         controller.solids = solids; arm.occluder = occluder;
         if (g.wraithGround) g.wraithGround.solids = null;
         env.interior = 1; invalidateEnvironment();
+        // The terrain and the far mountains are never seen from in here, and the terrain's shadow would keep the sun from the
+        // roof's slits: both off while inside (the clipmap's shadow meshes are its children).
+        saved.hidden = [g.content && g.content.clipmap && g.content.clipmap.mesh, g.ring].filter(Boolean).map((m) => [m, m.isEnabled()]);
+        for (const [m] of saved.hidden) m.setEnabled(false);
         city.active = true;
       }
       const x = sp[0] + EBB_ORIGIN.x, y = sp[1] + EBB_ORIGIN.y, z = sp[2] + EBB_ORIGIN.z;
@@ -59,6 +57,7 @@ export function addEbbholdSystem(g) {
       controller.solids = saved.solids; arm.occluder = saved.occluder;
       if (g.wraithGround) g.wraithGround.solids = saved.wgSolids;
       env.interior = 0; invalidateEnvironment();
+      for (const [m, on] of saved.hidden) m.setEnabled(on);
       city.active = false;
       g.requestTeleport(SOUNDING.x + SOUNDING.r + 10, SOUNDING.z);
       if (g.post) g.post.post.resetHistory = true;
@@ -67,16 +66,26 @@ export function addEbbholdSystem(g) {
     },
   };
   g.ebbhold = city;
-  // The interior flag for post/compose (no sky over the water inside).
-  if (g.post) g.post.post.onParams((P) => { P[75] = city.active ? 1 : 0; });
+  // Inside: the interior flag for post/compose (no sky over the water; the haze's light is the sea's), and a haze filling the hall
+  // (the weather fog's slots, after the weather wrote them): thick enough to lose the far end, its shafts marched through the shadows
+  // (the roof's slits make beams of the sun). Valley fog and forest haze off.
+  if (g.post) g.post.post.onParams((P) => {
+    P[75] = city.active ? 1 : 0;
+    if (!city.active) return;
+    P[56] = 0.0055; P[57] = 1 / 260; P[58] = EBB_ORIGIN.y + HALL.water; P[59] = 1;
+    P[60] = 0; P[61] = 0; P[106] = 0; P[107] = 0; P[108] = 0; P[116] = 0;
+  });
   loop.add({ name: 'ebbhold', update: () => {
     // The lamps join the world lights once that system exists (it is added after this one).
     if (!lampsAdded && g.worldLights && view) { for (const l of view.lamps) g.worldLights.add(l); lampsAdded = true; }
     if (!city.active) return;
     S.ref = controller.pos.y;
+    // A fall out of every space (a gap in the stone): back onto the causeway rather than falling for ever.
+    if (controller.pos.y < EBB_ORIGIN.y + HALL.floor - 15) city.enter('hall');
     // Through the sea-doors (the hall's far wall, its bronze leaves): out.
     const lx = controller.pos.x - EBB_ORIGIN.x, lz = controller.pos.z - EBB_ORIGIN.z;
-    if (lx > 230.5 && lz > 45 && lz < 75) city.exit();
+    const ly = controller.pos.y - EBB_ORIGIN.y;
+    if (lx > EXIT.x0 && lx < EXIT.x1 && lz > EXIT.z0 && lz < EXIT.z1 && ly > EXIT.y0 && ly < EXIT.y1) city.exit();
   } });
   return city;
 }

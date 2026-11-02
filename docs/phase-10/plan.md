@@ -66,22 +66,27 @@ Nothing below the surface.
 - A **per-room water level** (the shader, the CPU's `levelAt`, swim or walk at the line). Tide floods and drains rooms once lent, which is the Warden's herding at city scale.
 - Air pockets for fights; **no real combat when fully submerged in the first pass.** Under water the player hides, flees and solves.
 
-**U3 + U4 grey built 2026-11-02, for the user to walk (`world/ebbhold.js`, `render/ebbhold.js`, `systems/ebbhold.js`):**
-- **Where:** a sealed space of its own at (−4700, −300, −1400), beyond the world's west edge and under anything, as planned for the whirlpool's cut. Nothing there asks the terrain: while the Wraith is inside, the ground (`PatchGround.interior`), the controller's solids, the camera's probe (stay in the rooms' air) and the water (`water.interior`) all ask the rooms.
-- **The layout:** 12 spaces from one data table (rooms, doors, features, lamps); `tests/ebbhold.test.js` checks that every door is in a shared wall and fits both rooms, that every room can be reached, and checks the floors, walls, ceilings, water and camera.
-  - The undercroft: black sand, the pool, the shrine.
-  - The intake tunnel, rising 6 m into the lower gate (columns).
-  - The sweeper's stair: one grand 12 m flight to a landing.
-  - The bakehouse (the kneader); the nursery, flooded to the waist (the cradle); the flooded gallery, a colonnade wholly under water, joined to the Tide Hall by a low arch you swim through.
-  - The upper hall; the wheel room (Liese's wheel).
-  - The Tide Hall, 60 × 60 × 36 m: a balcony and a stair down; a metre of water over its floor; the register; the great well, 40 m deep, with a rim, flooded and lit cold from below.
-  - The sea-door hall: the bronze doors are the way out, back to the Sounding's rim.
-- **Light:** no sun (the ceilings cast into the shadow maps) and almost no sky (`env.interior` scales the ambient; post/compose's interior flag gives the rooms' water no sky, shafts or caustics). The lamps are world lights of a new `held` kind that never flicker, so they light the Wraith as they light the stone. A cold glow rises from the well.
-- **The look is grey box:** stone in courses, black sand, pale blocks for the people's places, bronze for the doors. Water is dark and mirrors only what SSR finds (the lamps, the walls). Ripples run in the rooms (the simulation treats an interior as all water; walls don't stop waves yet).
-- **Checked by walking (bot):** gate → stair → upper hall; Tide Hall balcony → floor → stopped by the well's rim; undercroft → intake → gate; out through the sea-doors to the Sounding. 0 GPU errors, 0 late pipelines.
-- **Cost:** 7.9 ms mean in the Tide Hall, 7.4 under water in the gallery (High; 86 draws, 3,900 triangles).
-- **Review:** `review/city/ebbhold-grey-flythrough.mp4` (30 s). Walk it at `?ebbhold=undercroft` (or `gate`, `tideHall`, `gallery`).
-- **Not yet:** the whirlpool's cut (U2); the outside of the city seen from the descent; doors that open, close and flood; drained or flooded rooms as state (U4 tracked state); the people (U5–U6). While inside, actors outdoors also see the city's floors; nothing outdoors runs near enough to matter yet. Weather is not shut out: rain or snow would fall indoors.
+**U3 + U4 rebuilt 2026-11-02 at the user's direction** ("model the interior off of LOTR erebor palace, we want it to be huge instead of feeling like some interconnected boxes"; references: the film's dwarf-halls). The first grey box, 12 rooms joined by doors, is replaced by **one colossal hall**. The references are inspiration only; the motifs are the Shapers' own: tide chevrons, wave-stepped frames, veiled figures with staves.
+- **The Tide Hall** (`world/ebbhold.js buildCity`): 260 m long, 90 m wide, 190 m from its drowned floor to the roof.
+  - **The chasm:** water 30 m deep, and it's the great well, where the Listener is stranded.
+  - **The causeway** down the middle, lined with veiled Shaper statues 14 m tall, leads to the register's platform and on to the sea-door landing. The sea-doors are 56 m high in bronze, between two colossi 52 m tall.
+  - **Galleries:** three tiers on each long wall (0, 24, 48 m), joined by 80 m flights and by two bridges across the void at 24 m.
+  - **Pillars:** eight, 9 m across, rising out of the abyss to stepped capitals under the roof.
+  - **Off the galleries:** the people's rooms (bakehouse, nursery, wheel room, sweepers', archive).
+  - **Below:** under the west gate, the intake stair climbs from the undercroft.
+  - **A way back up** from the water, by the landing's stair.
+- **The kit and material** (`render/ebbhold.js`, `shaders/ebbhold.wgsl.js`): chamfered pillars with bands and three-tier capitals; pilasters up the walls; balustrades with posts and balusters; deep fascias under every walkway; braziers.
+  - **Wall relief:** panels 8 × 12 m in stepped frames, fluted below and crossed by tide chevrons above, with gold inlay.
+  - **Floors:** polished flagstones that SSR reflects.
+  - **Sea-windows:** they glow behind geometric leading.
+- **The sea-light:** the hall's own light, not the sun's. Fixed beams fall through rows of short openings in the roof slits (`BEAM_WGSL`). On the stone they land as sharp pools (traced back up to the slits, blocked by the slabs above). In the haze, compose marches them (20 samples over 320 m). An interior haze fills the hall (the weather fog's slots while inside), with the lamps and a cold fill.
+  - **Why not the sun:** at most hours the real sun's beams land high on one wall, and at night there are none.
+  - **City height:** the city now sits 400 m above sea level. Below it, the atmosphere put the camera inside the planet and there was no sunlight.
+  - **Terrain:** the terrain and the far mountains are switched off while inside. They are never seen from in here, and the terrain's shadow covered the roof.
+- **Checked:** tests (`tests/ebbhold.test.js`) cover scale, spawn floors, the flights' clear headroom, platform and bridges to the galleries, the intake, the void, waters, the camera and the lamp budget. Walked (bot): gate → causeway; platform → north gallery; the walk → g1 flight; undercroft → intake → hall; out through the sea-doors. The intake had a gap at its top that fell to nowhere; it was closed, and any fall out of the city's spaces now returns the Wraith to the causeway.
+- **Cost:** 8.05 ms mean on the causeway (High; 75 draws, 68,000 triangles). 0 GPU errors, 0 late pipelines.
+- **Review:** `review/city/ebbhold-hall-flythrough.mp4` (36 s), `ebbhold-hall-views.png`. Walk it at `?ebbhold=hall` (also `undercroft`, `gate`, `platform`, `gallery`, `well`).
+- **Not yet:** the people (U5–U6); doors and rooms as tracked state; the whirlpool's cut (U2); weather is not shut out of the city. Beams pass through pillars and statues, since only the slabs block them. The statues are faceted blocks, not sculpted, and there's no carved detail beyond the shader relief.
 
 **Checkpoint: the user walks the rooms.**
 
