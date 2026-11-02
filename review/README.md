@@ -30,6 +30,15 @@ Tests of the tool, **rejected by the user on 2026-11-02**. None of this goes in 
 | [08 stair song, draft C](audio/08-stair-song-draft-c.mp3) | Same words, next seed |
 | [09 test tune as orchestra](audio/09-test-tune-as-orchestra.mp3) | Clip 00 reworked. Does the tune survive? **Start here** |
 
+## Audio: Stable Audio 3.0 Medium samples
+
+The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as ACE-Step's 01 and 03. 60 s each, 224 kbps MP3; the WAVs are in `C:\wraith-tools\sa3-out`. Nothing is built on this until the user judges them.
+
+| File | Prompt |
+|---|---|
+| [Fen day](audio-stable/fen-day.mp3) | Dark ambient, almost silent, low drone, distant plucked notes, long gaps, marsh at dawn |
+| [Morrow's fire](audio-stable/morrow-fire.mp3) | Solo lyre, simple kind folk melody, warm, intimate, slow |
+
 ## The fen
 
 - [Map](fen/fen-map.png): the white line is the old coast, yellow dots are shrines and red dots are Warden sites.
