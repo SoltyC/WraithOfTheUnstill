@@ -43,7 +43,16 @@ Nothing below the surface.
 - **Cost:** 7.95 ms mean under water against 7.6 at the surface in the same spot (High, 300–400 frames; Minecraft open). 0 GPU errors, 0 late pipelines.
 - **The clip:** `review/dive/dive-sounding.mp4` (16 s, 10:00): float, dive, look round, look up at the window, rise, surface.
 - **Play it:** `?spot=u1-sounding` (the rim, wading, facing the pit).
-- **Not yet in U1:** drifting particles under water, caustics on the bed, and the robe's real cloth tuning in water. The bed is 105 m down and unseen, so the pit is a blue void with shafts until U2 dresses it.
+- **Second pass (user: "make it feel as realistic and graphically appealing as possible"):**
+  - **Marine snow** (`render/underwaterFx.js`): 3,000 specks in a 22 m box round the camera on slow loops and a faint current. They're lit by the same focused beams as the shafts, glitter between the eye and the sun, and dim between beams.
+  - **Bubbles:** going under, the robe lets out the air caught in it: 64 bubbles, then a trickle that dies over a few seconds, plus a few shaken loose by fast strokes. They rise at the speed of their size, wobble, and go at the surface, drawn with a bright rim and a clear middle. Specks and bubbles are small opaque dithered quads that write depth, so compose fogs each at its own distance; additive specks were fogged at the distance of the water behind them and vanished.
+  - **Caustics** on everything under the water (`post/compose`): the walls, the shelf and the Wraith, from the same moving net of light as the shafts. The Wraith's shadow falls on the wall.
+  - **The robe** sways on slow eddies under the water and lifts a little.
+  - **The camera** follows the dive sooner (`diveUnder` 0.3, the clamp eases at 6/s).
+  - **The plunge's froth** is three octaves of finer noise. At 24 cm cells it read as a white blot with holes from close above.
+  - **Cost:** 8.0 ms mean under water (was 7.95 before the particles and caustics; 7.6 at the surface). 0 GPU errors, 0 late pipelines.
+  - **Clip:** `review/dive/dive-sounding.mp4` re-filmed at 60 fps; stills in `review/dive/underwater-stills.png` (the burst, the wall with caustics, the shelf from below, open water).
+- **Still bare:** the bed is 105 m down and unseen, and the walls are plain terrain. U2 dresses the Sounding (shaft wall, kelp).
 
 **Checkpoint: the user dives** (go/no-go on the city).
 

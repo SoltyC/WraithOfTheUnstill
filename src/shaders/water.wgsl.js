@@ -115,7 +115,7 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
       // A splash: a short packet of rings.
       let env = exp(-x * x / width) * decay;
       g += rn * (env * cos(x * 16.0) * 1.1 * fade * crestK);
-      foam += env * (1.0 - smoothstep(0.0, 0.6, age)) * smoothstep(0.3, 0.0, x * x);
+      foam += env * (1.0 - smoothstep(0.0, 0.6, age)) * smoothstep(0.3, 0.0, x * x) * (0.55 + 0.45 * wNoised(p * 26.0 + R.z * 9.0).x);
       continue;
     }
     let ang = bin * 0.09817477; let d = vec2f(sin(ang), cos(ang));   // heading (x = sin, z = cos)
@@ -130,8 +130,9 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
       let q = p * 7.0 + vec2f(R.z * 13.1, R.z * 7.3);
       g += wNoised(q).yz * (0.05 * lane * fade);
       // Two octaves, the second turned and offset: one value-noise octave showed its square cells up close.
-      let fn2 = wNoised(q * 0.6).x * 0.6 + wNoised(vec2f(q.y, -q.x) * 1.9 + 3.1).x * 0.4;
-      foam += lane * 0.42 * smoothstep(0.25, 0.8, fn2 * 0.5 + 0.5);
+      // (Fine: froth is many small bubbles; 24 cm cells read as blots with holes up close.)
+      let fn2 = wNoised(q * 1.4).x * 0.5 + wNoised(vec2f(q.y, -q.x) * 3.3 + 3.1).x * 0.3 + wNoised(q * 7.0 + 1.7).x * 0.2;
+      foam += lane * 0.36 * smoothstep(0.2, 0.85, fn2 * 0.5 + 0.5);
     }
   }
   if (simOn) {

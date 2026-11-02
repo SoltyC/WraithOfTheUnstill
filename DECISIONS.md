@@ -706,3 +706,4 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The underwater view is a per-pixel test in compose, not a camera state.** A pixel whose ray starts under the surface is under water, so the camera can sit in the surface with a real waterline and never pops between two looks.
 - **The Sounding is carved now, bare,** because U1 needs deep water and nothing else in the world has it (the sea is not drawn as water; the one deep lake is frozen). U2 shapes it.
 - **Swimming has no footfalls.**
+- **Underwater particles are opaque dithered specks that write depth,** not additive sprites. Compose fogs by the depth in each pixel, so a sprite would be fogged at the distance of whatever lies behind it.

@@ -205,7 +205,7 @@ export class SpringArmCamera {
     // Water (render/water.js): the camera stays above the surface (a swimmer's eye is at it) — unless
     // the Wraith dives, when it follows it through the surface (post/compose splits the frame there).
     const wa = this.water;
-    this._under += ((this.under ? 1 : 0) - this._under) * Math.min(1, dt * 2.5);
+    this._under += ((this.under ? 1 : 0) - this._under) * Math.min(1, dt * 6);
     if (wa !== null) { wa.qx = x; wa.qz = z; wa.levelQ(); const wl = wa.lv; if (wl === wl && y < wl + 0.35) y = wl + 0.35 + (y - wl - 0.35) * this._under; }
     this._apply(x, y, z);
   }

@@ -288,6 +288,14 @@ export async function addEnvironmentSystems(g) {
     // The oasis's well is choked while the erg is stilled: its pool fills once the Dunes are restored.
     if (wa.setOasis(ws.restoration.dunes === 'restored')) engine.snapshotRenderingReset();
     // The planar reflection's plane and camera, before the water uploads its level.
+    const uf = g.underwaterFx;
+    if (uf) {
+      const under = camWater.lv > -1e3 && camera.position.y < camWater.lv + 0.05;
+      uf.time = clock.simTime; uf.level = under ? camWater.lv : -1e4; uf.tannin = camWater.mire;
+      uf.px = controller.pos.x; uf.py = controller.pos.y; uf.pz = controller.pos.z;
+      uf.vx = controller.vel.x; uf.vy = controller.vel.y; uf.vz = controller.vel.z; uf.under = controller.submerged;
+      uf.update();
+    }
     const wr = g.waterReflect;
     if (wr) { wr.px = controller.pos.x; wr.pz = controller.pos.z; wr.time = clock.simTime; wr.update(); }
     wa.update();

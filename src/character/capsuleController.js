@@ -42,7 +42,7 @@ export const controllerTuning = {
   // swimming forward), Jump strokes up, Dodge strokes down; once under, the body drifts up slowly.
   diveSpeed: 2.6, diveAccel: 4, diveAim: 0.22, diveRise: 0.25, diveDrag: 1.4,
   /** Deeper than this under the float depth (m): submerged (the camera may follow it down). */
-  diveUnder: 0.5,
+  diveUnder: 0.3,
 };
 
 export class CapsuleController {

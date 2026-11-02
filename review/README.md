@@ -61,6 +61,7 @@ The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as A
 | File | What it shows |
 |---|---|
 | [dive-sounding.mp4](dive/dive-sounding.mp4) | **Start here.** Float, dive through the surface, look round, look up at Snell's window, rise and surface |
-| [dive-stills.png](dive/dive-stills.png) | Diving, deep and level, looking up, rising |
+| [underwater-stills.png](dive/underwater-stills.png) | The robe's bubbles going under, caustics on the wall, the shelf from below, open water with shafts |
+| [dive-stills.png](dive/dive-stills.png) | The first pass, for comparison |
 
 Play: open the game with `?spot=u1-sounding`, swim west, look down and move forward to dive. Space strokes up, Ctrl strokes down.

@@ -173,6 +173,18 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let sig = mix(UW_SIG_CLEAR, UW_SIG_TANNIN, tan);
     let E = (atmoLight[0].xyz * max(P.sun.y, 0.0) * 0.318 + atmoLight[1].xyz) * exp(-sig * max(uwL - cam.y, 0.0));
     let alb = mix(UW_ALB_CLEAR, UW_ALB_TANNIN, tan);
+    // Caustics: on everything under the water (the bed, the walls, the Wraith) the sun arrives
+    // focused into the same moving net of light the shafts come from.
+    if (d > 0.0 && P.sun.y > 0.04) {
+      let q = cam + dir * dist;
+      let upq = uwL - q.y;
+      if (upq > 0.0) {
+        let rs0 = refract(-P.sun.xyz, vec3f(0.0, 1.0, 0.0), 0.7502);
+        let al = upq / max(-rs0.y, 0.2);
+        let f = uwFocus(q.xz - rs0.xz * al, P.pad[4].w) + 0.5 * uwFocus(q.xz * 1.7 - rs0.xz * al * 1.7 + 3.0, P.pad[4].w * 1.3);
+        c = vec4f(c.rgb * (1.0 + f * 3.5 * exp(-sig.g * al) * smoothstep(0.04, 0.25, P.sun.y)), c.a);
+      }
+    }
     let T = exp(-sig * min(dist, 400.0));
     c = vec4f(c.rgb * T + alb * E * (1.0 - T) * exposure, c.a);
     // Light shafts: the sun bent down through the surface, focused into beams by its ripples. Ten

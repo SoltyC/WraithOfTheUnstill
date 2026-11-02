@@ -196,6 +196,13 @@ export class Wraith {
     }
     // In the water the robe nearly floats (buoyant, heavy with water: little gravity, a slow drift up).
     this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim - 0.12 * this.under); this.cloth.windY += 0.6 * this.swim - 0.3 * this.under;
+    // Under the water the robe sways on slow eddies and lifts a little (the air still in its folds).
+    if (this.under > 0.001) {
+      const u = this.under * 0.9, tt = this.time;
+      this.cloth.windX += u * (Math.sin(tt * 0.43) + 0.5 * Math.sin(tt * 1.13 + 1.7));
+      this.cloth.windZ += u * (Math.cos(tt * 0.37 + 0.6) + 0.5 * Math.sin(tt * 0.91 + 2.9));
+      this.cloth.windY += u * (0.5 + 0.35 * Math.sin(tt * 0.71));
+    }
     // Gliding: the robe roars back (drag toward the surf value and a bit more); restored after.
     if (this.glide > 0.001) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf + GLIDE_AIR_DRAG * this.glide * (1 - this.swim); this._gliding = true; }
     else if (this._gliding) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this._gliding = false; }

@@ -786,3 +786,4 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 - Phase 10 F1: the fen's water is black (tannin optics by mire weight). Dawn stills and a wake are in `screenshots/phase-10-water/fen-dawn-*.png`.
 - Phase 10 F1 is built: the ripple simulation, the reflection of trees, black water, litter, bog gas, dawn mist and Low's wake. The dawn wake clip is in `review/fen-water/`. Waiting on the user's go/no-go.
 - Phase 10 U1, the dive: a bare Sounding pit, 3D swimming by aim, the camera through the surface, the underwater view (fog, shafts, Snell's window) and the robe in water. Clip in `review/dive/`; play at `?spot=u1-sounding`. Waiting on the user's dive.
+- Phase 10 U1, second pass: marine snow, the robe's bubbles, caustics under the water, the robe swaying, a faster camera hand-off and finer froth. The clip is re-filmed in `review/dive/`.
