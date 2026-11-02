@@ -295,12 +295,14 @@ export function startBot(w, qs) {
   }
 
   /** Play a clip through the Wraith's body where it stands (name null: stop). */
-  async function perform({ name = null, loop = true, t = 0 }) {
+  async function perform({ name = null, loop = false, t = 0, wait = false }) {
     const wr = g.wraithView.wraith, c = g.controller;
     if (!name) { wr.performance = null; c.hold = false; return { stopped: true }; }
     const p = new Performance(await (await fetch(`/motion/${name}.bin`)).arrayBuffer());
     p.x = c.pos.x; p.y = c.pos.y; p.z = c.pos.z; p.yaw = c.yaw; p.loop = loop; p.t = t;
-    c.hold = true; wr.performance = p;
+    c.hold = true;
+    // wait: the caller starts it, at the first frame it controls.
+    if (wait) w.__pending = p; else wr.performance = p;
     return { frames: p.n };
   }
 

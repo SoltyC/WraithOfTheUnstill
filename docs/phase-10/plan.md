@@ -372,6 +372,7 @@ These are proposed numbers, to be replaced by measurements in F1 and F6.
 7. **Ebbhold has 8–12 real rooms** that look vast.
 8. **Open order and locks** as in `cross-biome.md`.
 
+**Decided 2026-11-02:** generated movement is allowed (BRIEF §8 amended), through the gate in `motion-gate.md`.
+
 **Still open:**
-9. **Generated movement for cutscenes and the Drowned's loops** (no filming; the user declined it): BRIEF §8 says characters are procedural only. Allow this change (recommended), using Kimodo locally.
-10. **The city's name:** a six-year-old in the meadow is called Ebb. Rename the city, or make it a deliberate link.
+9. **The city's name:** a six-year-old in the meadow is called Ebb. Rename the city, or make it a deliberate link.

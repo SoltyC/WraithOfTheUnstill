@@ -1,0 +1,61 @@
+{
+  "note": "Every clip in this folder. tests/motionGate.test.js fails on a clip that is not listed, has changed since it was judged, or does not pass tools/motion/clipGate.mjs. A clip with cues is played by the game and needs eye, a film of it on the robe that was watched and accepted.",
+  "clips": {
+    "knead1": {
+      "prompt": "A person stands at a table kneading bread dough, pushing down with both hands and folding it, leaning their weight forward and back.",
+      "seed": 1,
+      "steps": 100,
+      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+      "repairs": [
+        "fit"
+      ],
+      "gate": {},
+      "cues": [],
+      "eye": null,
+      "sha256": "ed5e09d0c37c79f77c7665190be6f12def12b5b4683a807334a7113475733878",
+      "eyeNotes": "Close view 2026-11-02: movement good; collar beak and upper arm through the mantle. Not accepted. The user's approval was on the film before the rig fit."
+    },
+    "rock": {
+      "prompt": "A person rocks a baby in their arms.",
+      "seed": 3,
+      "steps": 100,
+      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+      "repairs": [
+        "fit"
+      ],
+      "gate": {},
+      "cues": [],
+      "eye": null,
+      "sha256": "70ca860bb49c078e360f5def896971da0adde3868c74c556e4907bad49d798c1"
+    },
+    "walk": {
+      "prompt": "A person walks nervously, looking around.",
+      "seed": 3,
+      "steps": 100,
+      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+      "repairs": [
+        "fit",
+        "feet"
+      ],
+      "gate": {
+        "travels": true
+      },
+      "cues": [],
+      "eye": null,
+      "sha256": "14d0abb73266da0f69763af514f21f2d81e6f067cf739163586d1422ebfbb6c0"
+    },
+    "wheel": {
+      "prompt": "A person hauls on a heavy wheel with both arms, pulling hard hand over hand, leaning back with their whole body weight.",
+      "seed": 2,
+      "steps": 100,
+      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+      "repairs": [
+        "fit"
+      ],
+      "gate": {},
+      "cues": [],
+      "eye": null,
+      "sha256": "8863669e60902a15923482c2b46c1a9e092e21c4ef22a9ef58706441656f14a8"
+    }
+  }
+}

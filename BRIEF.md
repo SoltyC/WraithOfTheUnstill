@@ -316,6 +316,8 @@ Cliffs, sea stacks, tide pools, wet-sand beaches, and an open ocean that is stil
 
 There are no rigged humans and no faces anywhere in the game. Every figure is robed, wrapped, veiled, or made of material. This is a constraint and also the art direction.
 
+**Amended 2026-11-02 (user):** generated movement from Kimodo may drive these same bodies in cutscenes and the Drowned's loops, through the quality gate in `docs/phase-10/motion-gate.md`. Bodies, cloth and meshes stay procedural, and play stays procedural.
+
 ### 8.1 The Wraith (player)
 
 Seen from behind at mid-distance almost all the time, so spend the budget on silhouette, cloth, and shading.

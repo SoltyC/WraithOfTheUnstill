@@ -123,7 +123,7 @@ The user doesn't want to record video, so motion comes from text, generated on t
 
 **On the robe:** the pose reads, but `garments.js` was built for the gait. With the arms held forward, the mantle bunches into a flat wedge across the chest, and the open cuff shows no hand. This needs fixing before the spike passes.
 
-**Not tested:** the Q8 text encoder, Vulkan, other seeds, the newer v1.2 models, looping.
+**Not tested:** the Q8 text encoder, Vulkan, the newer v1.2 models. Seeds and looping are now covered in `motion-gate.md`, which supersedes the robe notes above.
 
 ---
 

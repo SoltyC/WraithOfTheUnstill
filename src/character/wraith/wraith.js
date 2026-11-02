@@ -15,6 +15,7 @@ const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
 /** Air drag on the cloth (1/s): walking, and the extra while surfing (the robe streams back). */
 const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3, GLIDE_AIR_DRAG = 1.6, GLIDE_WIND = 9, FLOW_WIND = 0.22, FLOW_BACK = 3.2;
 const ARM = 0.58, UPPER = 0.3;
+const ARM_COLLIDERS = (1 << COLLIDER.UPPER_L) | (1 << COLLIDER.FORE_L) | (1 << COLLIDER.UPPER_R) | (1 << COLLIDER.FORE_R);
 /** Head centre in the body frame (body.js). */
 const HEAD_Y = 0.74, HEAD_Z = 0.02;
 /** Mantle hem height in the body frame: the robe beneath it is in its shade. */
@@ -90,6 +91,7 @@ export class Wraith {
     for (const l of [COLLIDER.UPPER_L, COLLIDER.FORE_L, COLLIDER.UPPER_R, COLLIDER.FORE_R]) {
       this.cloth.flatMask |= 1 << l; this.cloth.colK[l] = 0.5;
     }
+    this._flat = this.cloth.flatMask;
     /** Packed vertex data: (pos.xyz, garment + 0.98·occlusion), (normal.xyz, thinness) per particle. */
     this.packed = new Float32Array(this.cloth.n * 8);
     /** Most cloth substeps one update may take (the player 4; background figures fewer, so a slow frame
@@ -164,7 +166,12 @@ export class Wraith {
     b.collapse = this.collapse;
     b.update(g);
     // An authored performance takes the body from the gait (character/performance.js).
-    if (this.performance !== null) { this.performance.step(this.dt); this.performance.apply(b, g); g.solveKnees(); }
+    if (this.performance !== null) {
+      this.performance.step(this.dt); this.performance.apply(b, g); g.solveKnees();
+      if (this.performance.done) this.performance = null;
+    }
+    // A held pose can raise the arms into the mantle, which then has to ride over them: pushed flat, it folds out into a shelf.
+    this.cloth.flatMask = this.performance !== null ? this._flat & ~ARM_COLLIDERS : this._flat;
     this._colliders();
     // Wind: the field's direction and strength here (systems/wraith.js samples it, gusts included);
     // a little flutter of its own.

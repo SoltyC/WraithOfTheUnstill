@@ -679,3 +679,13 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **User:** no filming. Kimodo generates movement locally (`kimodo.cpp`, in `C:\wraith-tools\kimodo`, outside the repo). The user approved trying it, which allows generated clips for cutscene tests; BRIEF §8 itself is not yet amended.
 - **A clip plays on a curve through the procedural body,** so the live cloth rides on it unchanged (`src/character/performance.js`).
 - **Generated bodies, authored hands:** text is strong for mood, posture and walking, and weak for exact work with objects.
+
+## 2026-11-02 — Generated movement approved, through a gate
+
+- **User:** Kimodo "looks great", and must be quality gated. BRIEF §8 is amended for cutscenes and the Drowned's loops; play stays procedural.
+- **Three stages:** numbers on the game's own clip (`tools/motion/clipGate.mjs`), the real robe in Chrome (`tools/bot/perform-gate.mjs`), then the eye. See `docs/phase-10/motion-gate.md`.
+- **In the test suite:** `tests/motionGate.test.js` fails on an unlisted, changed or failing clip, and plants every fault the gate claims to catch.
+- **The gate reads the converted clip, not the model's output,** because repairs and conversion add faults of their own. It caught both.
+- **A clip owns the body and feet while it plays, eases in and out, and doesn't loop unless asked.** During a clip the arms push the mantle in three dimensions, not flat.
+- **Limits come from real clips and the walking robe, not from what makes a clip pass.** The nervous walk failed honestly until the foot measure itself was shown to be wrong; four seeds were tried first.
+

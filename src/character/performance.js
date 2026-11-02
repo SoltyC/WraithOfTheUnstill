@@ -17,20 +17,30 @@ export class Performance {
     this.n = v[0]; this.d = v.subarray(1);
     this.s = new Float64Array(CLIP_FIELDS);
     this.t = 0.5 - 0.5;
-    this.loop = true;
+    this.loop = false;
     /** Where the clip stands: the ground point (x, y, z), its facing (rad) and its scale (the Veiled's sizes). */
     this.x = 0.5; this.y = 0.5; this.z = 0.5; this.yaw = 0.5 - 0.5; this.scale = 1.5 - 0.5;
     this._sy = 0.5 - 0.5; this._cy = 1.5 - 0.5;
     this._foot = new Float64Array(6);
+    /** Seconds to ease in from the pose the body is in, and to ease out when leave() is called. */
+    this.fade = 0.9; this.done = false;
+    this._in = 0.5 - 0.5; this._out = -1.5 + 0.5; this._outOver = 0.5 + 0.1;
+    this._from = new Float64Array(CLIP_FIELDS - 6);
   }
+
+  /** Ease back to the gait; `done` when the body is its own again. */
+  leave(fade = this.fade) { if (this._out < 0) { this._out = 0.5 - 0.5; this._outOver = fade; } }
 
   /** Advance by dt and sample every field for this frame. */
   step(dt) {
-    const n = this.n, L = (n - 1) / FPS;
+    const n = this.n, L = (n - 1) / FPS, P = n - 1;
+    this._in += dt;
+    if (this._out >= 0) { this._out += dt; if (this._out >= this._outOver) this.done = true; }
     this.t += dt;
     if (this.t > L) this.t = this.loop ? this.t % L : L;
     const q = this.t * FPS, i = Math.min(n - 2, Math.floor(q)), u = q - i;
-    const i0 = this.loop ? (i - 1 + n) % n : Math.max(0, i - 1), i3 = this.loop ? (i + 2) % n : Math.min(n - 1, i + 2);
+    // A loop's last frame is its first (tools/motion/clipRepair.mjs), so the curve runs round the period, past the join.
+    const i0 = this.loop ? (i - 1 + P) % P : Math.max(0, i - 1), i3 = this.loop ? (i + 2) % P : Math.min(n - 1, i + 2);
     const d = this.d, s = this.s, C = CLIP_FIELDS;
     for (let k = 0; k < C; k++) s[k] = cr(d[i0 * C + k], d[i * C + k], d[(i + 1) * C + k], d[i3 * C + k], u);
     this._sy = Math.sin(this.yaw); this._cy = Math.cos(this.yaw);
@@ -54,20 +64,50 @@ export class Performance {
     o[at] = this.x + x * this._cy + z * this._sy; o[at + 1] = this.y + s[k + 1] * this.scale; o[at + 2] = this.z - x * this._sy + z * this._cy;
   }
 
+  /** How far the clip has the body, 0..1. */
+  _weight() {
+    const a = Math.min(1, this.fade > 0 ? this._in / this.fade : 1), b = this._out < 0 ? 1 : Math.max(0, 1 - this._out / this._outOver);
+    const w = Math.min(a, b);
+    return w * w * (3 - 2 * w);
+  }
+
   /** Pose the body (after Body.update) and put the feet on the gait. */
   apply(body, gait) {
-    this._dir(R, body.r); this._dir(U, body.u); this._dir(F, body.f); this._norm3(body.r, body.u, body.f);
-    this._dir(HR, body.hr); this._dir(HU, body.hu); this._dir(HF, body.hf); this._norm3(body.hr, body.hu, body.hf);
-    this._pos(PELVIS, this.s, 0);
-    body.px = this.s[0]; body.py = this.s[1]; body.pz = this.s[2];
-    gait.px = body.px; gait.py = body.py; gait.pz = body.pz;
+    const w = this._weight(), from = this._from;
+    if (w < 1) {
+      for (let i = 0; i < 3; i++) { from[i] = body.r[i]; from[3 + i] = body.u[i]; from[6 + i] = body.f[i]; from[9 + i] = body.hr[i]; from[12 + i] = body.hu[i]; from[15 + i] = body.hf[i]; }
+      for (let i = 0; i < 6; i++) { from[18 + i] = body.sh[i]; from[24 + i] = body.el[i]; from[30 + i] = body.ha[i]; }
+      from[36] = body.px; from[37] = body.py; from[38] = body.pz;
+    }
+    this._dir(R, body.r); this._dir(U, body.u); this._dir(F, body.f);
+    this._dir(HR, body.hr); this._dir(HU, body.hu); this._dir(HF, body.hf);
+    this._pos(PELVIS, this._foot, 0);
+    body.px = this._foot[0]; body.py = this._foot[1]; body.pz = this._foot[2];
     this._pos(SH, body.sh, 0); this._pos(SH + 3, body.sh, 3);
     this._pos(EL, body.el, 0); this._pos(EL + 3, body.el, 3);
     this._pos(HA, body.ha, 0); this._pos(HA + 3, body.ha, 3);
+    if (w < 1) {
+      for (let i = 0; i < 3; i++) {
+        body.r[i] = from[i] + (body.r[i] - from[i]) * w; body.u[i] = from[3 + i] + (body.u[i] - from[3 + i]) * w; body.f[i] = from[6 + i] + (body.f[i] - from[6 + i]) * w;
+        body.hr[i] = from[9 + i] + (body.hr[i] - from[9 + i]) * w; body.hu[i] = from[12 + i] + (body.hu[i] - from[12 + i]) * w; body.hf[i] = from[15 + i] + (body.hf[i] - from[15 + i]) * w;
+      }
+      for (let i = 0; i < 6; i++) {
+        body.sh[i] = from[18 + i] + (body.sh[i] - from[18 + i]) * w; body.el[i] = from[24 + i] + (body.el[i] - from[24 + i]) * w; body.ha[i] = from[30 + i] + (body.ha[i] - from[30 + i]) * w;
+      }
+      body.px = from[36] + (body.px - from[36]) * w; body.py = from[37] + (body.py - from[37]) * w; body.pz = from[38] + (body.pz - from[38]) * w;
+    }
+    this._norm3(body.r, body.u, body.f); this._norm3(body.hr, body.hu, body.hf);
+    gait.px = body.px; gait.py = body.py; gait.pz = body.pz;
     body.toWorld(0, 0.42, 0); body.chest[0] = body.out[0]; body.chest[1] = body.out[1]; body.chest[2] = body.out[2];
     const u = body.u, sy = body.sh; body.head[0] = (sy[0] + sy[3]) * 0.5 + u[0] * 0.26; body.head[1] = (sy[1] + sy[4]) * 0.5 + u[1] * 0.26; body.head[2] = (sy[2] + sy[5]) * 0.5 + u[2] * 0.26;
     const fo = this._foot;
     this._pos(FEET, fo, 0); this._pos(FEET + 3, fo, 3);
-    for (let f = 0; f < 2; f++) { gait.fx[f] = fo[f * 3]; gait.fy[f] = fo[f * 3 + 1]; gait.fz[f] = fo[f * 3 + 2]; }
+    // The clip has the feet: the gait's stepping would otherwise lift them through a false stride and fire footfalls.
+    const fl = Math.sqrt(body.f[0] * body.f[0] + body.f[2] * body.f[2]) || 1;
+    for (let f = 0; f < 2; f++) {
+      gait.fx[f] += (fo[f * 3] - gait.fx[f]) * w; gait.fy[f] += (fo[f * 3 + 1] - gait.fy[f]) * w; gait.fz[f] += (fo[f * 3 + 2] - gait.fz[f]) * w;
+      gait.state[f] = 0; gait.t[f] = 0; gait.dirX[f] = body.f[0] / fl; gait.dirZ[f] = body.f[2] / fl;
+    }
+    gait.evCount = 0;
   }
 }
