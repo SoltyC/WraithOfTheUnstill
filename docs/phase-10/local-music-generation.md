@@ -1,47 +1,85 @@
-# Generating the music locally on an RTX 3060 (12 GB) (research, 2026-11-02)
+# Generating the music locally on an RTX 3060 (12 GB)
 
-The user sources the music (`music-cues.md`). This is what could be run on their own machine instead of a web service. It comes from three web searches of third-party guides and mirror sites, which **disagree on VRAM**. Check the official README before downloading anything.
+Research 2026-11-02, then installed and tested the same day. Installed tool: **ACE-Step 1.5** at `C:\wraith-tools\ACE-Step-1.5` (commit `ca1e85f`, MIT). The first version of this page came from third-party guides. Everything below was checked against the project's own docs or run on this machine, and the corrections are listed at the end.
 
-## Recommendation: ACE-Step 1.5
+## Decision: ACE-Step 1.5, for beds and textures
 
-The best fit for a 12 GB card. It's the newest, it's MIT-licensed (safe for a game), and it's the lightest on VRAM.
+Of the models licensed for use in a game, it has the best mix for this score: instrumental mode, reference and cover modes, repaint, LoRA training, and fast local runs.
 
-- **VRAM:** the 2B model is reported at about 4.7 GB for the weights and should run comfortably on 12 GB. The 4B "XL" model needs at least 12 GB with offload and quantization, or at least 20 GB without. It would fit, but only just.
-- **Speed:** one source claims a full song in about 20 s on a modern GPU. Unverified, and a 3060 isn't a top card, so expect slower.
-- **Instrumental:** no source describes an instrumental-only mode. Try empty lyrics or `[Instrumental]`, and put "no vocals" in the style tags.
-- **Control:** a style prompt plus lyrics. It probably has no true "exclude" field, so fold the avoid-styles into the style prompt as "no drums, no vocals".
-- **Setup:** a ComfyUI workflow template exists, or run the project's own app.
-
-## Alternatives
-
-| Model | VRAM | Fit |
+| Model | Licence | Fit for this game |
 |---|---|---|
-| **YuE** | The project says 8 GB with quantized builds; other guides say 16–24 GB | Full songs with lyrics. Likely slow and awkward on a 3060 |
-| **MusicGen** (Meta) | About 16 GB for the large model; the small model is lighter | Weights are CC-BY-NC (non-commercial), so a poor choice for a game |
-| **Stable Audio Open 1.5** | One guide lists 12 GB | Short clips of about 47 s at 44.1 kHz. Good for stings like `tear.wav`, not the full cutscene. Community license, so check the terms |
-| **Magenta RealTime 2** | Not found | Built for live, real-time music, not composed pieces |
+| **ACE-Step 1.5** | MIT | **Installed.** Runs on this card |
+| YuE2 (Sept 2026) | Weights CC BY-NC | Ruled out: non-commercial |
+| MusicGen | Weights CC BY-NC | Ruled out: non-commercial |
+| HeartMuLa | Apache 2.0 | Usable, but built for lyrics and tags, with community reports of dependency conflicts and about 1× real time |
+| Stable Audio 3.0 | Stability Community | The one to try next. Open weights up to Medium, company states it was trained on licensed data. Gated: the user has to accept terms on Hugging Face. Check the licence text before use; guides mention a US$1M revenue limit that Stability's post doesn't |
+| Magenta RealTime 2 | Not checked | Built for live play, not composed cues |
 
-## Plan
+## What was measured here
 
-1. Install ACE-Step 1.5 and start with the 2B model.
-2. Generate each cue separately (the five cutscene cues in `release-cinematic.md` timing). Local models are no better than web services at keeping to timestamps or producing true silence.
-3. Generate `release-gold` first (the stair song in full). Use it as the reference for the other cues if the tool supports audio reference or cover mode.
-4. Cut and pad to length in an editor. Put the 48 kHz WAVs in `assets/audio/music/` and run `tools/audio/encode-music.sh`.
+Minecraft was running throughout. Close it when generating: it costs memory, and the runs below were on the edge.
 
-## Caveats
+| Test | Result |
+|---|---|
+| 2B turbo, 8 steps, 40 s of music | 3–4 s, 6.4 GB peak |
+| 2B turbo, three 36 s takes with lyrics | 9.5 s, 6.4 GB |
+| 2B turbo, cover of a 36 s source | 4–7 s, 7.1 GB |
+| 2B sft, 50 steps, 40 s of music | 12 s, 6.6 GB |
+| 2B sft, cover of a 36 s source | 19 s, 6.9 GB |
 
-- Figures come from third-party guides and may be out of date. The official GitHub README is the source for VRAM and install steps.
-- No independent quality comparisons were found. Claims that ACE-Step beats Suno came from promotional posts.
-- Not checked: whether `tools/` already has a local-generation setup to build on.
+**XL (4B) is not usable here.** Below 20 GB it needs CPU offload, and offload crashes this install (below). The partial download was deleted.
+
+**Sparse music is possible.** The fen-day test moves from about −19 to −43 dB within the clip (LRA 16.8 LU, against 7.1 for the lyre), so it does leave gaps. True silence still has to be cut in an editor, and clips fade out early: the lyre test was silent for its last 6 s, so **every loop needs cutting and crossfading by hand**.
+
+## The melody does not reliably survive
+
+`music-cues.md` grows the whole chapter from the stair song, so this is the main limit. Cover mode was measured by chroma correlation with a plain plucked test tune, taking the best match over transpositions and small time shifts. 1.0 is identical.
+
+| Output | Match |
+|---|---|
+| No source at all (control) | 0.28 |
+| Lyre, cover 1.0 / 0.8 | 0.36 / 0.39 |
+| Flute, cover 1.0 | 0.36 |
+| Orchestra, cover 1.0 | 0.53 |
+| sft model, lyre, cover 1.0 | 0.17 |
+
+Different instruments lower this measure, so it can't prove a tune was lost, but only the orchestra clearly beats the control. **Nobody has listened to these yet.** Plan on this until ears say otherwise:
+
+1. **Write the stair song as notes** and approve it first. `sefa`, `sefa-lets-go`, `held-years`, `your-record`, `robes` and `morrow-fire` depend on those exact notes, so they are played from the notes on sampled or synthesised instruments, or by a person.
+2. **Use ACE-Step for what has no fixed tune:** `fen-*`, `ebbhold-*`, `listener-hunt`, `no-way-up`, `night-camp`, and swells and textures under the rest.
+3. **Try cover for the big cues** (`release-gold`, `release-climb`) and keep a take only if the tune is audibly there.
+
+## Using it
+
+- **Studio:** run `C:\wraith-tools\ace-ui.bat`, then open http://localhost:7860. It takes under a minute to start.
+- **Batches:** `tools/audio/ace/run.sh <cues.json> [name]` writes 48 kHz WAVs to `C:\wraith-tools\ace-out\<name>`. The format is at the top of `tools/audio/ace/cue.py`. Use **one model per run**: switching models in one run crashed it.
+- **Finish:** cut and loop in an editor, put the WAVs in `assets/audio/music/`, and run `tools/audio/encode-music.sh`.
+- **Test takes:** `C:\wraith-tools\ace-out\listen`.
+- **Disk:** about 24 GB on C:.
+
+## Known problems on this machine
+
+- **CPU offload crashes** (access violation moving the VAE to the CPU) when a source is encoded, so `cue.py` keeps everything on the GPU.
+- **ACE-Step's 30 s encode chunk runs the card out of memory.** `cue.py` uses 12 s without changing the install.
+- **The language model is off** in `ace-ui.bat`: it failed to load with the paging file too small, with Minecraft open. Without it, write captions by hand, using the prompt notes in `music-cues.md`.
+
+## Before any of this ships
+
+- **Training data:** the README doesn't say what the model was trained on. It warns of unintentional copyright similarity and asks users to check originality and disclose AI use. Stable Audio 3.0 is the alternative if that matters.
+- Any cue used goes in `ASSETS.md` with its tool, settings and seed.
+
+## Corrections to the first version
+
+- **Instrumental mode exists:** `instrumental=True` or the `[Instrumental]` lyric.
+- **Reference and cover modes exist,** but cover doesn't keep a tune reliably (above).
+- **Newer than the first search:** YuE2 and Stable Audio 3.0, listed above.
+- **Speed:** turbo is 10 times faster than real time here, much better than the guides suggested. Quality has not been judged.
 
 ## Sources
 
-- [Deploy Open-Source AI Music Generation on GPU Cloud (2026), Spheron](https://www.spheron.network/blog/deploy-open-source-ai-music-generation-gpu-cloud-2026/)
-- [ACE-Step 1.5 README mirror](https://gh.r-mj.com/ace-step/ACE-Step-1.5)
-- [ACE-Step 1.5 project page](https://ace-step.github.io/ace-step-v1.5.github.io)
-- [ACE-Step Music Generation, Clore.ai](https://docs.clore.ai/guides/music-generation/ace-step)
-- [ACE-Step 1.5: The Complete 2026 Guide, DEV Community](https://dev.to/czmilo/ace-step-15-the-complete-2026-guide-to-open-source-ai-music-generation-522e)
-- [Best Open-Source AI Music Models (2026), Boppy AI](https://boppy.me/blog/best-open-source-ai-music-models)
-- [The Best Open Source AI Music Models in 2026, SongCreator](https://songcreator.pro/blog/best-open-source-ai-music-models)
-- [Stable Audio Studio brings local AI sound generation, Startup Fortune](https://startupfortune.com/stable-audio-studio-brings-local-ai-sound-generation-into-focus/)
-- [Magenta RealTime 2 discussion](https://hackernews-dynamic.seasondane.workers.dev/news/48402613)
+- [ACE-Step 1.5 repository](https://github.com/ace-step/ACE-Step-1.5): README, `docs/en/GPU_COMPATIBILITY.md`, `INFERENCE.md`, `Tutorial.md`
+- [HeartLib](https://github.com/HeartMuLa/HeartLib)
+- [YuE2 on ComfyUI Wiki](https://comfyui-wiki.com/en/models/yue2)
+- [Stable Audio 3, Stability AI](https://stability.ai/news-updates/meet-stable-audio-3-the-model-family-built-for-artistic-experimentation-with-open-weight-models)
+- [Stable Audio 3.0, The Decoder](https://the-decoder.com/stability-ai-launches-stable-audio-3-0-with-up-to-six-minute-tracks-and-open-weights/)
+- [Best Open-Source AI Music Models, Boppy AI](https://boppy.me/blog/best-open-source-ai-music-models)
