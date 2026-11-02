@@ -21,6 +21,8 @@ export const HALL = { L: 260, HW: 45, walk: 0, g1: 24, g2: 48, roof: 110, floor:
  *  light, not the sun's — the beams always fall the same way (shaders/ebbhold.wgsl.js on the stone, post/compose in the haze). */
 export const SLITS = Array.from({ length: 6 }, (_, k) => [25 + k * 42 - 1.5, 25 + k * 42 + 1.5, -24, 24]);
 export const BEAM_DIR = (() => { const v = [0.32, -1, 0.22], l = Math.hypot(...v); return v.map((c) => c / l); })();
+/** The great pillars: two rows (local x, ±z), square 9 m across the flats. */
+export const PILLARS = { x: [40, 80, 180, 220], z: 23, s: 9 };
 /** WGSL: slitMask(local xz on the roof) → 0..1 (soft-edged), beamAt(local point) → how much of the sea-light reaches it. */
 export const BEAM_WGSL = /* wgsl */ `
 const EBB_O: vec3f = vec3f(${-4700}.0, ${400}.0, ${-1400}.0);
@@ -59,7 +61,17 @@ fn beamAt(p: vec3f) -> f32 {
   }
   let t = (EBB_ROOF - p.y) / (-EBB_BEAM.y);
   let r = p - EBB_BEAM * t;
-  return slitMask(r.xz);
+  let m = slitMask(r.xz);
+  if (m <= 0.0) { return 0.0; }
+  // The great pillars stand in the light's way: the beam's line up to the roof passing through one (in plan) keeps it off.
+  let a = p.xz; let ab = r.xz - a; let il = 1.0 / max(dot(ab, ab), 1e-4);
+  var px = array<f32, 4>(${PILLARS.x.join('.0, ')}.0);
+  for (var i = 0; i < 8; i++) {
+    let c = vec2f(px[i & 3], select(-${PILLARS.z}.0, ${PILLARS.z}.0, i > 3));
+    let q = a + ab * clamp(dot(c - a, ab) * il, 0.0, 1.0) - c;
+    if (dot(q, q) < ${((PILLARS.s / 2 - 0.1) ** 2).toFixed(2)}) { return 0.0; }
+  }
+  return m;
 }
 `;
 
@@ -135,12 +147,24 @@ export function buildCity() {
   }
 
   // ── Pillars: two rows out of the abyss to the roof ──────────────────────────────────────────────────────────────────────
-  const PX = [40, 80, 180, 220], PZ = 23, PS = 9;
+  const PX = PILLARS.x, PZ = PILLARS.z, PS = PILLARS.s;
   for (const x of PX) for (const s of [1, -1]) {
     B(x - PS / 2, x + PS / 2, H.floor, H.roof, s * PZ - PS / 2, s * PZ + PS / 2, 'column');
     decor.push({ type: 'pillar', x, z: s * PZ, s: PS, y0: H.floor, y1: H.roof });
   }
   for (let x = 20; x < L; x += 40) for (const s of [1, -1]) decor.push({ type: 'pilaster', x, z: s * HW, s: 5, y0: H.floor, y1: H.roof });
+  // Colonnades: a column behind each gallery's rail every 20 m, tier on tier (out of the abyss under the walk gallery, up to the
+  // roof over the top one), so the galleries read as arcades in the wall rather than shelves. None where the platform and the
+  // bridges join the galleries.
+  const CS = 2.4, CZ = HW - GD + 0.4 + CS / 2;
+  const tiers = [[H.floor, H.walk - 5.4, []], [H.walk, H.g1 - 5.4, [[plat.x0 - 3, plat.x1 + 3]]], [H.g1, H.g2 - 5.4, BRIDGES.map((b) => [b - 3, b + 11])], [H.g2, H.roof, []]];
+  for (const [y0, y1, skip] of tiers) for (let x = 10; x < L; x += 20) {
+    if (skip.some(([a, b]) => x > a && x < b)) continue;
+    for (const s of [1, -1]) {
+      B(x - CS / 2, x + CS / 2, y0, y1, s * CZ - CS / 2, s * CZ + CS / 2, 'column');
+      decor.push({ type: 'column', x, z: s * CZ, s: CS, y0, y1 });
+    }
+  }
 
   // ── Statues: veiled Shapers with staves, along the causeway; two colossi at the sea-doors ─────────────────────────────────
   const addStatue = (x, z, y, hgt, s, plinth) => {

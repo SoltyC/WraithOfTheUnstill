@@ -1,21 +1,25 @@
-// Ebbhold (render/ebbhold.js): Shaper stone, dark and green, carved in relief — tall panels in stepped frames, fluted in their
-// lower two thirds and crossed by tide chevrons above, with gold run into the frames and chevrons; the pillars fluted on every
-// facet; polished flagstones that hold reflections (they mark the post chain's SSR); bronze-gold balustrades and trims; the veiled
-// statues in a smoother, darker stone; the sea-windows glowing cold behind geometric leading; braziers that never flicker.
-// Light: the sun through the roof's slits as a cold sea-light (shadowed: the roof casts), the lamps (world lights, `held`: they light
-// the Wraith the same way) and a faint fill. The haze and its shafts are post/compose's (systems/ebbhold.js sets them inside).
+// Ebbhold (render/ebbhold.js): Shaper stone — a dark green marble, veined pale, its grain from the scans (stone-pale, stone-dressed,
+// flagstone; retinted) — carved in relief: tall panels in stepped frames, fluted below and crossed by tide chevrons above, gold run
+// into the frames; the pillars in drums with incised gold lines; lozenge-carved parapets; coffered ceilings; polished flagstones
+// that hold reflections (they mark the post chain's SSR). Bronze-gold trims and braziers from the iron scan, green patina in their
+// hollows; the sea-doors in raised bronze waves. The veiled statues in a paler, softer stone, darkened in their folds and the hood
+// (the mesh's cavity). The sea-windows glow cold behind leading; the braziers' flames are still teardrops of light.
+// Every relief is filtered by its footprint on screen (it fades to its mean before it can alias); the scans are mipmapped.
+// Light: the sea-light down the roof's slits (BEAM_WGSL: slabs and pillars keep it off), the lamps (world lights, `held`; diffuse,
+// and a glossy glint off polished stone and bronze), a faint fill from the haze. The haze and its shafts are post/compose's.
 
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { BEAM_WGSL } from '../world/ebbhold.js';
 
-export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11 };
+export const EBB_KIND = { wall: 0, sand: 1, prop: 2, bronze: 3, flame: 4, pillar: 5, floor: 6, statue: 7, window: 8, trim: 9, ceiling: 10, shadow: 11, parapet: 12, door: 13 };
 
 export const ebbVertexWGSL = /* wgsl */ `
 attribute position: vec3f;
 attribute normal: vec3f;
-attribute info: vec4f;               // x = kind (EBB_KIND), y = per-piece seed
+attribute info: vec4f;               // x = kind (EBB_KIND), y = per-piece seed, z = cavity (a flame: its height 0..1)
 uniform viewProjection: mat4x4f;
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -32,7 +36,8 @@ fn main(input: VertexInputs) -> FragmentInputs {
 export const ebbFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 ${SPELL_LIGHT_DECL}
-uniform ebbParams: vec4f;            // y = fill (display-referred), z = sea-light strength
+${MATERIALS_DECL}
+uniform ebbParams: vec4f;            // y = fill (display-referred), z = sea-light strength, w > 0.5: debug (sun visibility)
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
 varying vInfo: vec4f;
@@ -40,118 +45,223 @@ ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${SPELL_LIGHT_WGSL}
+${MATERIALS_WGSL}
 ${BEAM_WGSL}
 fn eHash(p: vec3f) -> f32 { return fract(sin(dot(p, vec3f(127.1, 311.7, 74.7))) * 43758.5453); }
-fn band(x: f32, w: f32) -> f32 { return 1.0 - smoothstep(0.0, w, abs(x)); }
+fn eNoise(p: vec3f) -> f32 {
+  let i = floor(p); let f = p - i; let u = f * f * (3.0 - 2.0 * f);
+  let a = mix(mix(eHash(i), eHash(i + vec3f(1.0, 0.0, 0.0)), u.x), mix(eHash(i + vec3f(0.0, 1.0, 0.0)), eHash(i + vec3f(1.0, 1.0, 0.0)), u.x), u.y);
+  let b = mix(mix(eHash(i + vec3f(0.0, 0.0, 1.0)), eHash(i + vec3f(1.0, 0.0, 1.0)), u.x), mix(eHash(i + vec3f(0.0, 1.0, 1.0)), eHash(i + vec3f(1.0, 1.0, 1.0)), u.x), u.y);
+  return mix(a, b, u.z);
+}
+fn eFbm(p: vec3f) -> f32 { return eNoise(p) * 0.55 + eNoise(p * 2.03 + 7.1) * 0.3 + eNoise(p * 4.1 + 3.3) * 0.15; }
+// A line of width w (in x's units) filtered by the footprint fw: energy kept, contrast lost as it shrinks below a pixel.
+fn band(x: f32, w: f32, fw: f32) -> f32 { let ww = max(w, fw); return (1.0 - smoothstep(0.0, ww, abs(x))) * (w / ww); }
+// A step at e filtered by the footprint.
+fn ast(e: f32, x: f32, fw: f32) -> f32 { return smoothstep(e - fw, e + fw, x); }
 
-// Wall relief: height (0 deep … 1 proud) and gold at (u along the wall, v up). Panels 8 × 12 m in stepped frames; fluted below,
-// tide chevrons above; gold in the frame's inner line and along the chevrons.
-fn wallRelief(uv: vec2f) -> vec2f {
+// Wall relief → (height 0 deep … 1 proud, gold). Panels 8 × 12 m in stepped frames; fluted in their lower part, tide chevrons above.
+fn wallRelief(uv: vec2f, fw: f32) -> vec2f {
   let PW = 8.0; let PH = 12.0;
   let p = vec2f(uv.x - PW * floor(uv.x / PW), uv.y - PH * floor(uv.y / PH));
   let e = min(min(p.x, PW - p.x), min(p.y, PH - p.y));
-  var h = 0.85; var gold = 0.0;
-  if (e < 0.18) { h = 0.0; }
-  else if (e < 0.9) { h = 1.0; }
-  else if (e < 1.3) { h = 0.55; gold = band(e - 1.1, 0.05); }
-  else {
-    let fv = (p.y - 1.3) / (PH - 2.6);
-    if (fv < 0.62) {
-      let f = abs(fract((p.x - 1.3) / 0.6) - 0.5) * 2.0;
-      h = 0.62 + 0.25 * smoothstep(0.15, 0.6, f);
-    } else {
-      let c = abs(p.x - PW * 0.5) * 0.7 + p.y;
-      let f = fract(c / 1.1);
-      h = 0.6 + 0.3 * smoothstep(0.1, 0.35, f) * (1.0 - smoothstep(0.65, 0.9, f));
-      gold = band(f - 0.05, 0.03) * step(0.5, fract(c / 2.2));
-    }
-  }
+  let w = max(fw, 0.02);
+  let fine = 1.0 - smoothstep(0.06, 0.3, fw);           // the small carving fades out with distance
+  let fv = (p.y - 1.3) / (PH - 2.6);
+  let fl = abs(fract((p.x - 1.3) / 0.6) - 0.5) * 2.0;
+  let flutes = 0.62 + 0.25 * smoothstep(0.15, 0.6, fl);
+  let c = abs(p.x - PW * 0.5) * 0.7 + p.y;
+  let cf = fract(c / 1.1);
+  let chev = 0.6 + 0.3 * smoothstep(0.1, 0.35, cf) * (1.0 - smoothstep(0.65, 0.9, cf));
+  let inner = mix(0.74, mix(flutes, chev, ast(0.62, fv, w / (PH - 2.6))), fine);
+  var h = mix(0.0, 1.0, ast(0.18, e, w));
+  h = mix(h, 0.55, ast(0.9, e, w));
+  h = mix(h, inner, ast(1.3, e, w));
+  var gold = band(e - 1.1, 0.05, fw) * ast(0.9, e, w) * (1.0 - ast(1.3, e, w));
+  gold += band(cf - 0.05, 0.03, fw / 1.1) * step(0.5, fract(c / 2.2)) * ast(0.62, fv, w / (PH - 2.6)) * ast(1.3, e, w) * fine;
   return vec2f(h, gold);
 }
-// Pillar and pilaster facets: deep flutes round the shaft (0.9 m), a ring every 3 m.
-fn pillarRelief(uv: vec2f) -> vec2f {
-  let f = abs(fract(uv.x / 0.9) - 0.5) * 2.0;
-  var h = 0.55 + 0.4 * smoothstep(0.1, 0.7, f);
-  let ring = band(fract(uv.y / 3.0) - 0.5, 0.06);
-  h = mix(h, 1.0, ring);
-  return vec2f(h, ring * 0.6);
+// Pillars and columns (their facets meet at angles: only what runs round them): drums of 3 m with fine joints, a pair of incised
+// gold lines every 12 m.
+fn pillarRelief(uv: vec2f, fw: f32) -> vec2f {
+  let y = uv.y;
+  let joint = band(fract(y / 3.0 + 0.5) - 0.5, 0.02 / 3.0, fw / 3.0);
+  let g = band(fract(y / 12.0 + 0.5) - 0.5 - 0.02, 0.006, fw / 12.0) + band(fract(y / 12.0 + 0.5) - 0.5 + 0.02, 0.006, fw / 12.0);
+  return vec2f(1.0 - 0.6 * joint - 0.5 * g, g);
 }
-// Flagstones, 3 m, joints with a dark gold line.
-fn floorRelief(uv: vec2f) -> vec2f {
+// Flagstones 3 m, their joints with a gold line; every third course a band of small lozenges.
+fn floorRelief(uv: vec2f, fw: f32) -> vec2f {
   let p = fract(uv / 3.0);
   let e = min(min(p.x, 1.0 - p.x), min(p.y, 1.0 - p.y)) * 3.0;
-  return vec2f(select(1.0, 0.2, e < 0.05), band(e - 0.07, 0.025));
+  let j = 1.0 - ast(0.05, e, fw);
+  let gold = band(e - 0.09, 0.025, fw);
+  return vec2f(1.0 - 0.8 * j, gold);
 }
-fn relief(kind: i32, uv: vec2f) -> vec2f {
-  if (kind == 0 || kind == 10) { return wallRelief(uv); }
-  if (kind == 5) { return pillarRelief(uv); }
-  if (kind == 6) { return floorRelief(uv); }
-  if (kind == 7) { let f = abs(fract(uv.x / 1.4) - 0.5) * 2.0; return vec2f(0.7 + 0.3 * smoothstep(0.0, 0.8, f), 0.0); }
+// Parapets: a carved lozenge lattice between plain courses.
+fn parapetRelief(uv: vec2f, fw: f32) -> vec2f {
+  let q = vec2f(uv.x / 0.7, uv.y / 0.35);
+  let d = abs(fract(q.x) - 0.5) + abs(fract(q.y) - 0.5);
+  let fine = 1.0 - smoothstep(0.04, 0.2, fw);
+  let h = mix(0.75, 0.5 + 0.5 * smoothstep(0.32, 0.4, d), fine);
+  return vec2f(h, band(d - 0.45, 0.03, fw / 0.5) * fine * 0.8);
+}
+// The ceiling: coffers 7 m, two steps deep, a gold rosette lozenge in each.
+fn ceilRelief(uv: vec2f, fw: f32) -> vec2f {
+  let p = fract(uv / 7.0) * 7.0;
+  let e = min(min(p.x, 7.0 - p.x), min(p.y, 7.0 - p.y));
+  let w = max(fw, 0.03);
+  var h = mix(1.0, 0.6, ast(0.6, e, w));
+  h = mix(h, 0.25, ast(1.2, e, w));
+  let r = abs(p.x - 3.5) + abs(p.y - 3.5);
+  return vec2f(h, band(r - 1.0, 0.06, fw) * ast(1.2, e, w));
+}
+// The sea-doors: raised bronze waves in tiers, a gold edge on each crest.
+fn doorRelief(uv: vec2f, fw: f32) -> vec2f {
+  let q = vec2f(uv.x / 3.5, uv.y / 2.8);
+  let row = floor(q.y);
+  let x = fract(q.x + row * 0.5) - 0.5;
+  let crest = fract(q.y) - (0.55 - 0.45 * x * x * 4.0);
+  let h = 0.45 + 0.55 * smoothstep(-0.25, 0.0, crest) * (1.0 - smoothstep(0.0, 0.08, crest));
+  return vec2f(h, band(crest + 0.02, 0.02, fw / 2.8));
+}
+fn relief(kind: i32, uv: vec2f, fw: f32) -> vec2f {
+  if (kind == 0) { return wallRelief(uv, fw); }
+  if (kind == 10) { return ceilRelief(uv, fw); }
+  if (kind == 5) { return pillarRelief(uv, fw); }
+  if (kind == 6) { return floorRelief(uv, fw); }
+  if (kind == 12) { return parapetRelief(uv, fw); }
+  if (kind == 13) { return doorRelief(uv, fw); }
   return vec2f(1.0, 0.0);
+}
+// Marble veins (0..1): thin pale lines on a warped field, in drifts (not everywhere).
+fn veins(p: vec3f, fw: f32) -> f32 {
+  let q = p * 0.09;
+  let n = eFbm(q * 1.6);
+  let v = abs(sin((q.x * 1.3 + q.y * 0.8 - q.z * 0.9) * 2.6 + n * 6.5));
+  let drift = smoothstep(0.38, 0.62, eNoise(q * 0.7 + 4.0));
+  let w = 0.035 + fw * 0.6;
+  return (1.0 - smoothstep(0.0, w, v)) * (0.035 / w) * (0.35 + 0.65 * drift);
 }
 fn ggxD(nh: f32, a: f32) -> f32 { let a2 = a * a; let d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let wp = fragmentInputs.vWorldPos;
+  let lp = wp - EBB_O;
   let Ng = normalize(fragmentInputs.vNormal);
   let kind = i32(fragmentInputs.vInfo.x + 0.5);
+  let cav = fragmentInputs.vInfo.z;
   let ex = uniforms.fogParams.z * atmoExposure();
   let camPos = uniforms.cameraPosition;
   let an = abs(Ng);
-  var uv = vec2f(wp.x, wp.z); var T = vec3f(1.0, 0.0, 0.0); var Bv = vec3f(0.0, 0.0, 1.0);
+  var uv = vec2f(lp.x, lp.z); var T = vec3f(1.0, 0.0, 0.0); var Bv = vec3f(0.0, 0.0, 1.0);
   if (an.y < 0.5) {
     let side = normalize(vec3f(Ng.z, 0.0, -Ng.x));
-    uv = vec2f(dot(wp, side), wp.y); T = side; Bv = vec3f(0.0, 1.0, 0.0);
+    uv = vec2f(dot(lp, side), lp.y); T = side; Bv = vec3f(0.0, 1.0, 0.0);
   }
-  // Shadows first (they take screen derivatives: before any branch).
+  // Everything that takes screen derivatives first (before any branch): the footprint, the shadows, the scans.
+  let dpx = dpdx(lp); let dpy = dpdy(lp);
+  let fw = max(length(dpx), length(dpy));
   let vis = shadowVisibility(wp, Ng, camPos, fragmentInputs.position.xy);
-  if (uniforms.ebbParams.w > 0.5) { fragmentOutputs.color = vec4f(vec3f(vis, max(dot(Ng, uniforms.keyDir), 0.0), 0.0) * 0.5, 0.0); return fragmentOutputs; }   // debug: sun visibility (r), facing (g)
+  if (uniforms.ebbParams.w > 0.5) { fragmentOutputs.color = vec4f(vec3f(vis, max(dot(Ng, uniforms.keyDir), 0.0), 0.0) * 0.5, 0.0); return fragmentOutputs; }
+  var layer = MAT_STONE_PALE; var tile = 0.22;
+  if (kind == 7 || kind == 2) { layer = MAT_STONE_DRESSED; tile = 0.35; }
+  if (kind == 6) { layer = MAT_STONE_PALE; tile = 0.3; }
+  if (kind == 1) { layer = MAT_SAND_FINE; tile = 0.5; }
+  if (kind == 3 || kind == 9 || kind == 13) { layer = MAT_IRON; tile = 0.45; }
+  let ms = matBiplanarG(layer, lp, Ng, tile, dpx, dpy);
   if (kind == 4) {
-    fragmentOutputs.color = vec4f(displayTransform(vec3f(6.0, 3.4, 1.3) * 0.6 / max(ex, 1e-6), ex), 0.0);
+    // A still flame: white-gold at its root and core, deepening to orange at the tip and the rim.
+    let t = cav;
+    let V0 = normalize(camPos - wp);
+    let rim = 1.0 - abs(dot(Ng, V0));
+    let core = mix(vec3f(1.0, 0.86, 0.6), vec3f(1.0, 0.5, 0.16), smoothstep(0.1, 0.9, t));
+    let col = mix(core * 1.3, vec3f(0.9, 0.3, 0.07), smoothstep(0.3, 0.95, rim)) * (1.0 - 0.4 * t);
+    fragmentOutputs.color = vec4f(displayTransform(col * 4.2 / max(ex, 1e-6), ex), 0.0);
     return fragmentOutputs;
   }
   if (kind == 8) {
-    let lat = band(fract((uv.x + uv.y) / 1.6) - 0.5, 0.04) + band(fract((uv.x - uv.y) / 1.6) - 0.5, 0.04) + band(fract(uv.y / 4.0) - 0.5, 0.02);
-    let glow = vec3f(0.22, 0.62, 0.58) * (0.75 + 0.25 * eHash(floor(vec3f(uv / 1.6, 1.0)))) * (1.0 - 0.85 * clamp(lat, 0.0, 1.0));
-    fragmentOutputs.color = vec4f(displayTransform(glow * 0.55 / max(ex, 1e-6), ex), 0.0);
+    let lat = band(fract((uv.x + uv.y) / 1.6) - 0.5, 0.04, fw / 1.6) + band(fract((uv.x - uv.y) / 1.6) - 0.5, 0.04, fw / 1.6) + band(fract(uv.y / 4.0) - 0.5, 0.02, fw / 4.0);
+    let cell = eHash(floor(vec3f((uv.x + uv.y) / 1.6, (uv.x - uv.y) / 1.6, 1.0)));
+    let glow = mix(vec3f(0.2, 0.58, 0.56), vec3f(0.3, 0.7, 0.62), cell) * (0.7 + 0.3 * smoothstep(60.0, 100.0, lp.y)) * (1.0 - 0.9 * clamp(lat, 0.0, 1.0));
+    fragmentOutputs.color = vec4f(displayTransform(glow * 0.6 / max(ex, 1e-6), ex), 0.0);
     return fragmentOutputs;
   }
   if (kind == 11) { fragmentOutputs.color = vec4f(0.0); return fragmentOutputs; }
-  let e = 0.04;
-  let r0 = relief(kind, uv);
-  let ru = relief(kind, uv + vec2f(e, 0.0)).x; let rv = relief(kind, uv + vec2f(0.0, e)).x;
-  let depthScale = select(0.06, 0.03, kind == 6);
+  // Relief: its normal from a filtered finite difference (the step grows with the footprint).
+  let e = max(0.03, fw * 0.75);
+  let r0 = relief(kind, uv, fw);
+  let ru = relief(kind, uv + vec2f(e, 0.0), fw).x; let rv = relief(kind, uv + vec2f(0.0, e), fw).x;
+  let depthScale = select(select(0.05, 0.025, kind == 6), 0.035, kind == 12);
   let dh = vec2f(ru - r0.x, rv - r0.x) / e * depthScale;
-  let N = normalize(Ng - T * dh.x - Bv * dh.y);
-  let ao = 0.5 + 0.5 * r0.x;
+  // The scan's normal detail, then the carving's on top.
+  var N = normalize(ms.N - T * dh.x - Bv * dh.y);
+  if (dot(N, Ng) < 0.05) { N = Ng; }
   let gold = r0.y;
-  let tone = 0.85 + 0.3 * eHash(floor(wp / 2.0) + fragmentInputs.vInfo.y);
-  var albedo = vec3f(0.11, 0.14, 0.13) * tone;
-  var rough = 0.55; var metal = 0.0; var refl = 0.0;
-  if (kind == 1) { albedo = vec3f(0.06, 0.058, 0.062) * (0.8 + 0.4 * eHash(floor(wp * 9.0))); rough = 0.9; }
-  if (kind == 2) { albedo = vec3f(0.42, 0.42, 0.38); rough = 0.6; }
-  if (kind == 3) { albedo = vec3f(0.30, 0.20, 0.09); metal = 1.0; rough = 0.42; }
-  if (kind == 5) { albedo = vec3f(0.10, 0.13, 0.12) * tone; rough = 0.45; }
-  if (kind == 6) { albedo = vec3f(0.07, 0.09, 0.085) * (0.8 + 0.35 * eHash(floor(vec3f(wp.x / 3.0, 0.0, wp.z / 3.0)))); rough = 0.18; refl = 0.22; }
-  if (kind == 7) { albedo = vec3f(0.085, 0.10, 0.095); rough = 0.35; }
-  if (kind == 9) { albedo = vec3f(0.2, 0.14, 0.065); metal = 0.85; rough = 0.34; }
-  if (kind == 10) { albedo *= 0.8; }
-  albedo = mix(albedo, vec3f(0.85, 0.62, 0.25), gold); metal = max(metal, gold); rough = mix(rough, 0.3, gold);
+  var ao = (0.45 + 0.55 * r0.x) * mix(1.0, ms.ao, 0.6) * (1.0 - 0.85 * cav);
+  let seed = fragmentInputs.vInfo.y;
+  let vary = 0.88 + 0.24 * eHash(floor(lp / 3.0) + seed * 17.0);
+  let vn = veins(lp + seed * 31.0, fw);
+  // Grime run down the stone from every ledge, a dark wet band over the drowned floor.
+  let streak = eNoise(vec3f((lp.x + lp.z) * 0.8, lp.y * 0.05, seed * 9.0));
+  let grime = mix(1.0, 0.72 + 0.28 * streak, step(an.y, 0.5));
+  let wet = 1.0 - smoothstep(-50.0, -44.0, lp.y);
+  var albedo = vec3f(0.08); var rough = 0.5; var metal = 0.0; var refl = 0.0;
+  if (kind == 0 || kind == 10 || kind == 12) {
+    albedo = mix(vec3f(0.075, 0.098, 0.088), matRetint(ms, layer, vec3f(0.075, 0.098, 0.088), 0.12), 0.7) * vary;
+    albedo = mix(albedo, vec3f(0.24, 0.29, 0.26), vn * 0.55);
+    rough = clamp(ms.rough * 0.7 + 0.18, 0.25, 0.8);
+    if (kind == 10) { albedo *= 0.75; }
+  } else if (kind == 5) {
+    albedo = mix(vec3f(0.05, 0.07, 0.062), matRetint(ms, layer, vec3f(0.05, 0.07, 0.062), 0.1), 0.55) * vary;
+    albedo = mix(albedo, vec3f(0.26, 0.3, 0.27), vn * 0.75);
+    rough = 0.2 + ms.rough * 0.15;
+  } else if (kind == 6) {
+    albedo = matRetint(ms, layer, vec3f(0.05, 0.062, 0.058), 0.1) * (0.82 + 0.36 * eHash(floor(vec3f(lp.x / 3.0, 0.0, lp.z / 3.0))));
+    albedo = mix(albedo, vec3f(0.22, 0.26, 0.24), vn * 0.6);
+    rough = 0.1 + ms.rough * 0.18; refl = 0.3;
+  } else if (kind == 7) {
+    albedo = matRetint(ms, layer, vec3f(0.17, 0.19, 0.18), 0.15);
+    albedo = mix(albedo, vec3f(0.2, 0.23, 0.21), vn * 0.25);
+    rough = 0.42 + ms.rough * 0.2;
+  } else if (kind == 1) {
+    albedo = matRetint(ms, layer, vec3f(0.06, 0.058, 0.062), 0.3); rough = 0.9;
+  } else if (kind == 2) {
+    albedo = matRetint(ms, layer, vec3f(0.36, 0.36, 0.33), 0.3); rough = 0.6;
+  } else {
+    // Bronze (3, 9, 13): the iron scan's pitting as its wear, verdigris settling in the hollows and the low places.
+    let worn = clamp(ms.h * 1.4 - 0.2, 0.0, 1.0);
+    let bronze = select(vec3f(0.8, 0.6, 0.3), vec3f(0.66, 0.46, 0.22), kind == 3);
+    let pat = clamp((1.0 - worn) * 0.8 + (1.0 - r0.x) * 0.9 - 0.35, 0.0, 1.0) * (0.6 + 0.4 * eNoise(lp * 0.7));
+    albedo = mix(bronze * (0.7 + 0.3 * worn), vec3f(0.07, 0.17, 0.14), pat);
+    metal = 1.0 - pat; rough = mix(0.28 + ms.rough * 0.2, 0.75, pat);
+  }
+  albedo *= grime * mix(1.0, 0.6, wet);
+  rough = mix(rough, 0.12, wet * 0.8);
+  albedo = mix(albedo, vec3f(0.85, 0.62, 0.25), gold); metal = max(metal, gold); rough = mix(rough, 0.28, gold);
   // The sea-light: the hall's own, down the roof's slits at a fixed slant (not the sun): sharp pools where it lands.
   let L = -EBB_BEAM;
-  let lit = beamAt(wp - EBB_O + Ng * 0.05) * uniforms.ebbParams.z;
+  let lit = beamAt(lp + Ng * 0.05) * uniforms.ebbParams.z;
   let key = vec3f(0.45, 0.85, 0.8) * lit / max(ex, 1e-6);
   let V = normalize(camPos - wp);
   let nl = max(dot(N, L), 0.0);
   let Hh = normalize(L + V);
   let F0 = mix(vec3f(0.04), albedo, metal);
+  let nv = max(dot(N, V), 0.0);
   let Fs = F0 + (1.0 - F0) * pow(1.0 - max(dot(Hh, V), 0.0), 5.0);
-  let spec = key * ggxD(max(dot(N, Hh), 0.0), rough * rough) * Fs * nl * 0.25;
+  let Fv = F0 + (max(vec3f(1.0 - rough), F0) - F0) * pow(1.0 - nv, 5.0);
+  let a = max(rough * rough, 0.02);
+  let spec = key * ggxD(max(dot(N, Hh), 0.0), a) * Fs * nl * 0.25;
   let diff = albedo * (1.0 - metal) * key * nl;
-  let lampD = spellLit(wp, N, mix(albedo, albedo * 0.5 + vec3f(0.08, 0.055, 0.025), metal), 0.2, ex);
-  let fill = vec3f(0.5, 0.78, 0.8) * uniforms.ebbParams.y * (0.75 + 0.25 * N.y) * ao;
-  let col = (diff + spec) * ao + lampD * ao + mix(albedo, F0, metal) * fill / max(ex, 1e-6);
-  let fres = refl * (0.15 + 0.85 * pow(1.0 - max(dot(N, V), 0.0), 4.0)) * select(0.0, 1.0, Ng.y > 0.5);
+  // The lamps: diffuse, and a glint off whatever is polished (the world-light grid gathered round the reflected ray).
+  let lampD = spellLit(wp, N, albedo * (1.0 - metal), 0.2, ex);
+  let R = reflect(-V, N);
+  let lampS = gridAcc(wp + N * 0.05, R, mix(-0.92, -0.4, rough)) * Fv * (1.0 - rough) * 2.2 * 0.55 / max(ex, 1e-6);
+  // Fill: the haze's light, more from above; mirrored in polished stone and bronze.
+  let fillC = vec3f(0.5, 0.78, 0.8) * uniforms.ebbParams.y;
+  let fill = fillC * (0.7 + 0.3 * N.y) * ao * albedo * (1.0 - metal);
+  let envS = mix(fillC, vec3f(0.95, 0.72, 0.42) * uniforms.ebbParams.y, metal * 0.7) * Fv * (0.6 + 0.8 * max(R.y, 0.0)) * (1.0 - rough * 0.7) * ao * (1.5 + 1.2 * metal);
+  let col = (diff + spec) * mix(1.0, ao, 0.5) + lampD * ao + lampS * ao + (fill + envS) / max(ex, 1e-6);
+  let fres = refl * (0.15 + 0.85 * pow(1.0 - nv, 4.0)) * select(0.0, 1.0, Ng.y > 0.5);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), fres);
 }
 `;

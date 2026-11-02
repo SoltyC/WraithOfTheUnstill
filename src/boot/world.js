@@ -171,7 +171,7 @@ export async function createWorld(g) {
   water.freeze();
   // Ebbhold (Phase 10 U3–U4): the sealed city's grey box, its rooms' water on the lakes' materials, its ceilings in the shadow maps.
   const ebbMod = await import('../render/ebbhold.js');
-  const ebbholdView = ebbMod.createEbbholdView(scene, atmosphere, content.clipmap);
+  const ebbholdView = ebbMod.createEbbholdView(scene, atmosphere, content.clipmap, matLib);
   shadows.addCaster(ebbholdView.mesh, ebbholdView.makeShadowMaterial, 2);
   bindShadows(ebbholdView.material, shadows);
   water.addInterior(ebbMod.ebbholdWaterQuads());

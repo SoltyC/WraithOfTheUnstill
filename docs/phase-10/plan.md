@@ -85,8 +85,14 @@ Nothing below the surface.
   - **Terrain:** the terrain and the far mountains are switched off while inside. They are never seen from in here, and the terrain's shadow covered the roof.
 - **Checked:** tests (`tests/ebbhold.test.js`) cover scale, spawn floors, the flights' clear headroom, platform and bridges to the galleries, the intake, the void, waters, the camera and the lamp budget. Walked (bot): gate → causeway; platform → north gallery; the walk → g1 flight; undercroft → intake → hall; out through the sea-doors. The intake had a gap at its top that fell to nowhere; it was closed, and any fall out of the city's spaces now returns the Wraith to the causeway.
 - **Cost:** 8.05 ms mean on the causeway (High; 75 draws, 68,000 triangles). 0 GPU errors, 0 late pipelines.
+- **Art pass, 2026-11-03** (user: "the pillars aren't enclosed, the texture is glitched… everything looks a little crude… we need a higher level of graphics inside this place").
+  - **Hollow pillars and glitches:** every face was wound inside-out. Babylon culled the outsides, so pillars showed their insides and hidden faces z-fought through floors and rails. Faces are now emitted clockwise.
+  - **Geometry:** the statues are sculpted surfaces of revolution: robe folds, folded sleeves, the hood's dark opening, a staff with a bronze crescent. The pillars have stepped feet, banded drums and two-tier capitals with an abacus under the roof's ribs. Colonnades stand behind every gallery, tier on tier. There are cornices, stepped portals at the gate and sea-doors, hooded triple-lancet windows, and solid lozenge-carved parapets with bronze copings. Bronze braziers hold still teardrop flames.
+  - **Stone:** scanned stone (stone-pale, stone-dressed) retinted to a dark green marble with pale veins in drifts, grime runs, and a wet band over the water. Bronze comes from the iron scan, with verdigris in its hollows. The sea-doors are raised bronze waves, and the ceiling is coffered. Every relief is filtered by its screen footprint. The lamps glint off polished stone and bronze.
+  - **Light:** the great pillars now block the sea-light (on the stone and in the haze).
+  - **Cost:** 9.63 ms mean on the causeway (High, 0.8 scale; 75 draws, 222,000 triangles). 0 GPU errors, 0 late pipelines.
 - **Review:** `review/city/ebbhold-hall-flythrough.mp4` (36 s), `ebbhold-hall-views.png`. Walk it at `?ebbhold=hall` (also `undercroft`, `gate`, `platform`, `gallery`, `well`).
-- **Not yet:** the people (U5–U6); doors and rooms as tracked state; the whirlpool's cut (U2); weather is not shut out of the city. Beams pass through pillars and statues, since only the slabs block them. The statues are faceted blocks, not sculpted, and there's no carved detail beyond the shader relief.
+- **Not yet:** the people (U5–U6); doors and rooms as tracked state; the whirlpool's cut (U2); weather is not shut out of the city. Beams still pass through the statues and colonnades.
 
 **Checkpoint: the user walks the rooms.**
 
