@@ -15,6 +15,10 @@ const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
 /** Air drag on the cloth (1/s): walking, and the extra while surfing (the robe streams back). */
 const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3, GLIDE_AIR_DRAG = 1.6, GLIDE_WIND = 9, FLOW_WIND = 0.22, FLOW_BACK = 3.2;
 const ARM = 0.58, UPPER = 0.3;
+/** During a performance the arms hold the mantle clear of the sleeves (radius 0.082 to 0.098) on these; they do not run in play. */
+const OVER_UPPER = 0.105, OVER_FORE = 0.115;
+/** The cowl drape's reach in front of the chest, and how far a nod takes it in and down at full tuck. */
+const DRAPE_FRONT = 0.245, TUCK_IN = 0.5, TUCK_DROP = 0.05;
 const ARM_COLLIDERS = (1 << COLLIDER.UPPER_L) | (1 << COLLIDER.FORE_L) | (1 << COLLIDER.UPPER_R) | (1 << COLLIDER.FORE_R);
 /** Head centre in the body frame (body.js). */
 const HEAD_Y = 0.74, HEAD_Z = 0.02;
@@ -309,6 +313,15 @@ export class Wraith {
     }
     // Head.
     this._cap(b.head[0], b.head[1], b.head[2], b.head[0], b.head[1] + 0.05, b.head[2], 0.14);
+    // The sleeve's own capsule is thinner than the sleeve, so the mantle would ride on the arm with the sleeve through it.
+    if (this.performance !== null) {
+      const w = this.performance.weight;
+      for (let s = 0; s < 2; s++) {
+        const o = s * 3;
+        this._cap(b.sh[o], b.sh[o + 1], b.sh[o + 2], b.el[o], b.el[o + 1], b.el[o + 2], 0.06 + (OVER_UPPER - 0.06) * w);
+        this._cap(b.el[o], b.el[o + 1], b.el[o + 2], b.ha[o], b.ha[o + 1], b.ha[o + 2], 0.055 + (OVER_FORE - 0.055) * w);
+      }
+    }
     this.cloth.colN = this._k;
   }
 
@@ -346,9 +359,11 @@ export class Wraith {
     }
     if (g.frame === 'head') {
       // Head frame, easing to the body frame where blend > 0 (the cowl's shoulder drape).
-      const bl = g.blend;
+      const bl = g.blend, tuck = this.performance !== null ? this.performance.tuck : 0;
       for (let k = 0; k < n; k++) {
-        const lx = g.lx[k], ly = g.ly[k], lz = g.lz[k], w = bl ? bl[k] : 0;
+        const lx = g.lx[k], w = bl ? bl[k] : 0;
+        // A nod pulls the rows above the drape in; its fixed front edge follows, or it stands out from the chest as a flange.
+        const front = tuck * w * Math.max(0, g.lz[k]) / DRAPE_FRONT, ly = g.ly[k] - TUCK_DROP * front, lz = g.lz[k] * (1 - TUCK_IN * front);
         b.toHead(lx, ly, lz);
         if (w <= 0) { this._put(all, g.start + k, out[0], out[1], out[2]); continue; }
         const hx = out[0], hy = out[1], hz = out[2];

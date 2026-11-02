@@ -11,12 +11,13 @@ import { Cloth } from './cloth.js';
 export const GARMENT = { ROBE: 0, MANTLE: 1, SLEEVE_L: 2, SLEEVE_R: 3, COWL: 4, HAND_L: 5, HAND_R: 6, FOOT_L: 7, FOOT_R: 8, BELT: 9, SASH: 10 };
 
 // Collider indices (wraith.js _colliders order) and which garments see them.
-export const COLLIDER = { TORSO: 0, SHOULDERS: 1, THIGH_L: 2, SHIN_L: 3, THIGH_R: 4, SHIN_R: 5, UPPER_L: 6, FORE_L: 7, UPPER_R: 8, FORE_R: 9, HEAD: 10 };
+export const COLLIDER = { TORSO: 0, SHOULDERS: 1, THIGH_L: 2, SHIN_L: 3, THIGH_R: 4, SHIN_R: 5, UPPER_L: 6, FORE_L: 7, UPPER_R: 8, FORE_R: 9, HEAD: 10, OVER_UPPER_L: 11, OVER_FORE_L: 12, OVER_UPPER_R: 13, OVER_FORE_R: 14 };
 const bits = (...ks) => ks.reduce((m, k) => m | (1 << k), 0);
 const LEGS = [COLLIDER.THIGH_L, COLLIDER.SHIN_L, COLLIDER.THIGH_R, COLLIDER.SHIN_R];
 const MASK = {
   [GARMENT.ROBE]: bits(COLLIDER.TORSO, ...LEGS),
-  [GARMENT.MANTLE]: bits(COLLIDER.TORSO, COLLIDER.SHOULDERS, COLLIDER.UPPER_L, COLLIDER.UPPER_R, COLLIDER.FORE_L, COLLIDER.FORE_R),
+  [GARMENT.MANTLE]: bits(COLLIDER.TORSO, COLLIDER.SHOULDERS, COLLIDER.UPPER_L, COLLIDER.UPPER_R, COLLIDER.FORE_L, COLLIDER.FORE_R,
+    COLLIDER.OVER_UPPER_L, COLLIDER.OVER_FORE_L, COLLIDER.OVER_UPPER_R, COLLIDER.OVER_FORE_R),
   [GARMENT.SLEEVE_L]: bits(COLLIDER.UPPER_L, COLLIDER.FORE_L),
   [GARMENT.SLEEVE_R]: bits(COLLIDER.UPPER_R, COLLIDER.FORE_R),
   [GARMENT.SASH]: bits(...LEGS),
@@ -47,7 +48,7 @@ function vnoise(x) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f)
  * @param {import('./body.js').Body} body
  */
 export function buildGarments(body) {
-  const cloth = new Cloth(3200, 16000, 12);
+  const cloth = new Cloth(3200, 16000, 15);
   /** @type {Garment[]} */
   const garments = [];
 

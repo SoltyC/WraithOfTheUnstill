@@ -7,6 +7,9 @@ export const CLIP_FIELDS = 45;
 const FPS = 30;
 const PELVIS = 0, R = 3, U = 6, F = 9, HR = 12, HU = 15, HF = 18, SH = 21, EL = 27, HA = 33, FEET = 39;
 
+/** Radians. The hood follows the head and its drape is fixed to the chest, so past this nod the drape folds into a flange: a nod eases in over the knee and stops at the limit. */
+const NOD_REST = 0.15, NOD_KNEE = 0.35, NOD_MAX = 0.6;
+
 /** Catmull-Rom at u (0..1) between b and c. */
 const cr = (a, b, c, d, u) => b + 0.5 * u * (c - a + u * (2 * a - 5 * b + 4 * c - d + u * (3 * (b - c) + d - a)));
 
@@ -26,6 +29,8 @@ export class Performance {
     this.fade = 0.9; this.done = false;
     this._in = 0.5 - 0.5; this._out = -1.5 + 0.5; this._outOver = 0.5 + 0.1;
     this._from = new Float64Array(CLIP_FIELDS - 6);
+    /** How far the clip has the body this frame, 0..1, and how far down its nod is, 0..1 (the cowl's drape tucks in with it). */
+    this.weight = 0.5 - 0.5; this.tuck = 0.5 - 0.5;
   }
 
   /** Ease back to the gait; `done` when the body is its own again. */
@@ -64,6 +69,16 @@ export class Performance {
     o[at] = this.x + x * this._cy + z * this._sy; o[at + 1] = this.y + s[k + 1] * this.scale; o[at + 2] = this.z - x * this._sy + z * this._cy;
   }
 
+  /** Ease a clip's nod to what the hood can follow. */
+  _neck(body) {
+    const f = body.f, u = body.u, hf = body.hf, hu = body.hu;
+    const nod = Math.atan2(-(hf[0] * u[0] + hf[1] * u[1] + hf[2] * u[2]), hf[0] * f[0] + hf[1] * f[1] + hf[2] * f[2]);
+    this.tuck = this.weight * Math.max(0, Math.min(1, (nod - NOD_REST) / (NOD_MAX - NOD_REST)));
+    if (nod <= NOD_KNEE) return;
+    const over = nod - NOD_KNEE, span = NOD_MAX - NOD_KNEE, back = over - span * (1 - Math.exp(-over / span)), c = Math.cos(back), s = Math.sin(back);
+    for (let i = 0; i < 3; i++) { const a = hf[i], b = hu[i]; hf[i] = a * c + b * s; hu[i] = b * c - a * s; }
+  }
+
   /** How far the clip has the body, 0..1. */
   _weight() {
     const a = Math.min(1, this.fade > 0 ? this._in / this.fade : 1), b = this._out < 0 ? 1 : Math.max(0, 1 - this._out / this._outOver);
@@ -73,7 +88,7 @@ export class Performance {
 
   /** Pose the body (after Body.update) and put the feet on the gait. */
   apply(body, gait) {
-    const w = this._weight(), from = this._from;
+    const w = this.weight = this._weight(), from = this._from;
     if (w < 1) {
       for (let i = 0; i < 3; i++) { from[i] = body.r[i]; from[3 + i] = body.u[i]; from[6 + i] = body.f[i]; from[9 + i] = body.hr[i]; from[12 + i] = body.hu[i]; from[15 + i] = body.hf[i]; }
       for (let i = 0; i < 6; i++) { from[18 + i] = body.sh[i]; from[24 + i] = body.el[i]; from[30 + i] = body.ha[i]; }
@@ -81,6 +96,7 @@ export class Performance {
     }
     this._dir(R, body.r); this._dir(U, body.u); this._dir(F, body.f);
     this._dir(HR, body.hr); this._dir(HU, body.hu); this._dir(HF, body.hf);
+    this._norm3(body.r, body.u, body.f); this._neck(body);
     this._pos(PELVIS, this._foot, 0);
     body.px = this._foot[0]; body.py = this._foot[1]; body.pz = this._foot[2];
     this._pos(SH, body.sh, 0); this._pos(SH + 3, body.sh, 3);

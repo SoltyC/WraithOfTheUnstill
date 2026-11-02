@@ -773,4 +773,4 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 
 - Phase 10 (Mirefen and Tide) planned, not started: `docs/phase-10/plan.md` and `storylines.md`, `release-cinematic.md`, `voice-script.md`, `music-cues.md` (Ebbhold, the city under the water, is the main part).
 
-- Phase 10 F0: generated movement approved with a quality gate (`docs/phase-10/motion-gate.md`): numbers, robe, eye. Four clips in `data/motion` pass the first two stages; none has been accepted by eye. Meadow frame 21.2 ms; laptop benchmark and the bake still to come.
+- Phase 10 F0: generated movement approved with a quality gate (`docs/phase-10/motion-gate.md`): numbers, robe, eye. Four clips in `data/motion` pass the first two stages, and the collar flange and sleeve-through-mantle faults are fixed; all four are filmed in `screenshots/kimodo/` and wait for the user's eye. Meadow frame 21.2 ms; laptop benchmark and the bake still to come.

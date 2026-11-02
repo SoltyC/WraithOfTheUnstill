@@ -6,6 +6,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { gateClip, readClip, FIELDS, FPS } from '../tools/motion/clipGate.mjs';
 import { lockFeet, closeLoop } from '../tools/motion/clipRepair.mjs';
 import { Performance, CLIP_FIELDS } from '../src/character/performance.js';
+import { Wraith } from '../src/character/wraith/wraith.js';
+import { COLLIDER } from '../src/character/wraith/garments.js';
 
 const dir = 'data/motion/';
 const manifest = JSON.parse(readFileSync(dir + 'manifest.json', 'utf8'));
@@ -118,6 +120,24 @@ describe('playing through the body', () => {
     const c = blank(); p.apply(c, gait());
     expect(c.sh[1]).toBeCloseTo(1.3, 6);
   });
+  it('eases a nod to what the hood can follow, and keeps the head square', () => {
+    const down = 1.2, c = Math.cos(down), s = Math.sin(down);
+    const v = plant((x, t, o) => { x[o + 15] = 0; x[o + 16] = c; x[o + 17] = s; x[o + 18] = 0; x[o + 19] = -s; x[o + 20] = c; });
+    const p = new Performance(v.buffer.slice(0)), b = blank(); p.x = 0; p.y = 0; p.z = 0; p.yaw = 0;
+    p.step(2); p.apply(b, gait());
+    const nod = Math.atan2(-b.hf[1], b.hf[2]);
+    expect(nod).toBeGreaterThan(0.45);
+    expect(nod).toBeLessThanOrEqual(0.6);
+    expect(Math.abs(b.hf[0] * b.hu[0] + b.hf[1] * b.hu[1] + b.hf[2] * b.hu[2])).toBeLessThan(1e-6);
+    expect(p.tuck).toBeGreaterThan(0.5);
+  });
+  it('leaves a nod the hood can follow as it is', () => {
+    const p = play(), b = blank(); p.step(0.05); p.weight = 1; p.tuck = 0;
+    const down = 0.2, c = Math.cos(down), s = Math.sin(down);
+    b.hf[1] = -s; b.hf[2] = c; b.hu[1] = c; b.hu[2] = s;
+    p._neck(b);
+    expect(Math.atan2(-b.hf[1], b.hf[2])).toBeCloseTo(0.2, 9);
+  });
   it('allocates nothing per frame', () => {
     const p = play(), b = blank(), g = gait();
     p.loop = true;
@@ -157,4 +177,26 @@ describe('repairs', () => {
     expect(worst).toBeLessThan(0.00015);      // m per step²: the curve's tangent is continuous across the join
   });
   it('a clip does not loop unless it is asked to', () => expect(new Performance(base.buffer.slice(0)).loop).toBe(false));
+});
+
+describe('the robe in a clip', () => {
+  const figure = () => { const ground = { qx: 0, qz: 0, h: 0, sample() {} }, w = new Wraith(ground); w.dt = 1 / 60; w.update(); return w; };
+  const clip = () => { const p = new Performance(base.buffer.slice(0)); p.x = 0; p.y = 0; p.z = 0; p.yaw = 0; p.step(0); return p; };
+  const pose = (w) => Array.from(w.cloth.p.subarray(0, w.cloth.n * 3));
+  it('pays for the mantle-over-sleeve colliders only during a clip', () => {
+    const w = figure();
+    expect(w.cloth.colN).toBe(COLLIDER.OVER_UPPER_L);
+    w.performance = clip(); w.update();
+    expect(w.cloth.colN).toBe(COLLIDER.OVER_FORE_R + 1);
+    w.performance = null; w.update();
+    expect(w.cloth.colN).toBe(COLLIDER.OVER_UPPER_L);
+  });
+  it('holds every collider it asks for, and no bad numbers follow', () => {
+    const w = figure();
+    expect(w.cloth.col.length / 7).toBeGreaterThanOrEqual(COLLIDER.OVER_FORE_R + 1);
+    w.performance = clip();
+    for (let i = 0; i < 120; i++) w.update();
+    expect(w.performance.weight).toBeGreaterThan(0.9);
+    expect(pose(w).every(Number.isFinite)).toBe(true);
+  });
 });

@@ -65,11 +65,23 @@ Six of the 13 pass as they are or after repair, and `hanne` is a sitter that nee
 
 In the game: `knead1`, `rock`, `wheel`, `walk`. All four pass stage two. `cradle` was removed.
 
-## Stage three so far: none accepted
+## Stage three so far: Claude's look done, the user's still to come
 
-- **`knead1`, seen close (`screenshots/kimodo/gate-knead1.mp4`):** the movement and weight are good and the shelf is gone. **Not accepted yet:** a small beak at the collar, and the upper arm shows through the mantle, in a front three-quarter view in hard sun. The user's "looks great" was on the older film, before `fit`.
-- **`walk` (`gate-walk.mp4`):** reads as a slow, hunched walk, but grass and shade hide too much. Needs a clear shot.
-- **`rock`, `wheel`:** not yet judged.
+Clips stay unaccepted in `manifest.json` until the user has watched them. Films are all in `screenshots/kimodo/`.
+
+- **`knead1` (`gate-knead1.mp4`):** reads as standing and kneading, with good weight. Collar and sleeves are clean from four sides.
+- **`rock` (`gate-rock.mp4`):** reads as cradling something.
+- **`wheel` (`gate-wheel.mp4`):** clean, but the hands read less clearly.
+- **`walk` (`gate-walk.mp4`):** reads as a slow, hunched walk. Grass and shade hide the feet, so it still needs a clear shot. Its fastest cloth rose to 23 cm a frame (walking yardstick 25 to 42), which is still in range.
+
+Two robe faults were found on the first close look, and neither was in stage two's numbers:
+
+- **A flange at the collar:** the clips look down up to 57°. The cowl's rows above the drape follow the head and its last row is fixed to the chest, so the rows collapse in and the last one stands out as a thin spike. `performance.js` now eases a nod from 20° to a limit of 34°, and the drape's front tucks in as the head goes down.
+- **The sleeve through the mantle:** the arm's capsule (6 cm) is thinner than the sleeve (8 to 10 cm), so the mantle rode on the arm with the sleeve through it. During a clip four more capsules, sleeve-sized and eased in by the clip's weight, hold the mantle clear.
+
+Normal play does not pay for or change with either: the cloth over 600 frames of play is byte-identical to the code before them, with 11 colliders.
+
+Seen and left alone: the fur rim of the hood catches a low sun (the same in play, and the art is not to be restyled), the wide dark cuffs hide the hands in close work, and the Wraith's staff stays on its back through a clip.
 
 ## Known gaps
 
@@ -78,4 +90,5 @@ In the game: `knead1`, `rock`, `wheel`, `walk`. All four pass stage two. `cradle
 - A clip's ground is flat at its start height; slopes are not handled.
 - Only the Wraith's body has been tested. The Veiled, who will carry most of these clips, have not.
 - The hand IK for exact work (dough, wheel, broom) is still not built.
+- Stage two has no measure for cloth passing through cloth: both faults above passed its numbers. Only the eye caught them.
 - Run speed in the yardstick may not be a true sprint: walk and run often measure alike.
