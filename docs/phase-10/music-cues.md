@@ -1,6 +1,6 @@
 # Music cues: The Lung (2026-11-01)
 
-The user sources the music. Delivered like the rest of the score: **48 kHz WAV masters in `assets/audio/music/`** under the file names below; `tools/audio/encode-music.sh` makes the game's copies.
+The user sources the music, **with Suno** (decided 2026-11-02, after ACE-Step and Stable Audio 3.0 were both rejected by ear). Delivered like the rest of the score: **48 kHz WAV masters in `assets/audio/music/`** under the file names below; `tools/audio/encode-music.sh` makes the game's copies.
 
 ## The one idea
 

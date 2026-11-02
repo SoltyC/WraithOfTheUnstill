@@ -4,7 +4,8 @@
 // absorb pass (multiply) and the surface pass (add, depth write, the SSR water mark). The Wraith's
 // ripples live in a small storage buffer shared with the post chain's SSR (post.waterRipples).
 // CPU side: levelAt(x, z) for wading and swimming. Owner fields per frame: time, the Wraith's
-// position and speed.
+// position and speed. On Medium and up a ripple simulation (shaders/waterSim.wgsl.js) carries the
+// rings and the wake: two compute steps a frame over a window that follows the Wraith.
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
@@ -13,6 +14,9 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData.js';
 import { Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { Constants } from '@babylonjs/core/Engines/constants.js';
+import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
+import { ComputeShader } from '@babylonjs/core/Compute/computeShader.js';
+import { waterSimStepWGSL, WSIM_N, WSIM_DX, WSIM_SPLATS, WSIM_HEAD } from '../shaders/waterSim.wgsl.js';
 import { ENV_UNIFORMS } from '../shaders/common.wgsl.js';
 import { ATMO_MATERIAL_TEXTURES, ATMO_MATERIAL_BUFFERS } from '../shaders/atmoMaterial.wgsl.js';
 import { SHADOW_TEXTURES } from '../shaders/shadows.wgsl.js';
@@ -40,8 +44,9 @@ export const RIVER_R = 4;
  * @param {any} ripples  StorageBuffer of WATER_RIPPLES vec4s (post.waterRipples)
  * @param {string} base  world data URL
  * @param {any} ground  CPU ground (qx, qz → sample() → h): river surfaces near the Wraith
+ * @param {any[]} sim    the ripple simulation's two state buffers (post.waterSim)
  */
-export async function createWater(scene, clipmap, atmo, wind, streamer, ripples, base, ground) {
+export async function createWater(scene, clipmap, atmo, wind, streamer, ripples, base, ground, sim) {
   const S = ShaderStore.ShadersStoreWGSL;
   S.waterVertexShader = waterVertexWGSL; S.waterAbsorbFragmentShader = waterAbsorbFragmentWGSL; S.waterSurfaceFragmentShader = waterSurfaceFragmentWGSL;
   const [hy, llb] = await Promise.all([
@@ -249,13 +254,13 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       attributes: ['position', 'flow'],
       uniforms: ['viewProjection', 'levels', 'waterParams', ...ENV_UNIFORMS],
       samplers: [...ATMO_MATERIAL_TEXTURES, ...(absorb ? [] : SHADOW_TEXTURES)],
-      storageBuffers: ['levelData', 'waterRipples', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
+      storageBuffers: ['levelData', 'waterRipples', 'waterSim', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
       shaderLanguage: ShaderLanguage.WGSL,
       needAlphaBlending: true,
     });
     bindEnvironment(mat); bindAtmosphere(mat, atmo);
     mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
-    mat.setStorageBuffer('waterRipples', ripples);
+    mat.setStorageBuffer('waterRipples', ripples); mat.setStorageBuffer('waterSim', sim[0]);
     mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('waterParams', params);
     mat.backFaceCulling = false;
     // Absorb: dst × transmittance (alpha kept). Surface: dst + light, alpha replaced (the SSR mark).
@@ -272,8 +277,8 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   if (oasisMeshes.length) { oasisMeshes[0].material = absorb.mat; oasisMeshes[1].material = surface.mat; }
   const dry = (o) => oasisT[o] === 1 && !oasisFull;
 
-  // Ripples: a ring of slots (x, z, start time, strength).
-  const rip = new Float32Array(WATER_RIPPLES * 4);
+  // Ripples: a ring of slots (x, z, start time, strength), then the simulation's window.
+  const rip = new Float32Array((WATER_RIPPLES + 1) * 4), INFO = WATER_RIPPLES * 4;
   let head = 0, lastEmit = -1e9, wasIn = false, dirty = true, lastPhase = 0, lastX = 0, lastZ = 0;
   /** A trail point (heading dx, dz; strength s ≤ 4) or, with dx = dz = 0, a splash. */
   function emit(x, z, t, s, dx, dz) {
@@ -281,8 +286,48 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     let bin = 64;
     if (dx * dx + dz * dz > 1e-6) bin = ((Math.round(Math.atan2(dx, dz) / (Math.PI / 32)) % 64) + 64) % 64;
     rip[o] = x; rip[o + 1] = z; rip[o + 2] = t; rip[o + 3] = 8 * bin + Math.min(3.9, Math.max(0.01, s)); dirty = true;
+    // The same event in the simulation: a splash is a dip that rings out; a trail point adds
+    // nothing (the body source draws the wake as it moves).
+    if (bin === 64) splat(x, z, 0.3 + 0.12 * s, 0.022 * s);
   }
 
+  // The ripple simulation. Job: header (shaders/waterSim.wgsl.js) then splats.
+  const job = new Float32Array((WSIM_HEAD + WSIM_SPLATS) * 4);
+  const jobBuf = new StorageBuffer(scene.getEngine(), job.byteLength, undefined, 'water-sim-job');
+  const engine = scene.getEngine();
+  const steps = [true, false].map((first) => {
+    const map = { job: { group: 0, binding: 0 }, [first ? 'cur' : 'prev']: { group: 0, binding: 1 }, [first ? 'prev' : 'cur']: { group: 0, binding: 2 },
+      levelData: { group: 0, binding: 3 }, cp: { group: 0, binding: 4 }, waterTex: { group: 0, binding: 5 } };
+    const cs = new ComputeShader(first ? 'waterSimAB' : 'waterSimBA', engine, { computeSource: waterSimStepWGSL(first) }, { bindingsMapping: map });
+    cs.setStorageBuffer('job', jobBuf);
+    cs.setStorageBuffer('cur', first ? sim[0] : sim[1]); cs.setStorageBuffer('prev', first ? sim[1] : sim[0]);
+    cs.setStorageBuffer('levelData', clipmap.levelData); cs.setStorageBuffer('cp', clipmap.params);
+    cs.setTexture('waterTex', atmo.waterTex, false);
+    return cs;
+  });
+  /** Wave speed (m/s): ripples of a metre or two on still water. */
+  const WAVE_C = 1.25;
+  let nSplat = 0, simOx = 0, simOz = 0, simPox = 1e7, simPoz = 1e7, simT = -1, bodyX = 0, bodyZ = 0, simWarm = 0;
+  function splat(x, z, r, d) {
+    if (nSplat >= WSIM_SPLATS) return;
+    const o = (WSIM_HEAD + nSplat++) * 4; job[o] = x; job[o + 1] = z; job[o + 2] = r; job[o + 3] = d;
+  }
+  /** Two steps over this frame's dt; false if a pipeline is not ready yet. */
+  function simStep(px, pz, t, rate) {
+    const dt = simT < 0 ? 1 / 60 : Math.min(1 / 30, Math.max(0, t - simT)); simT = t;
+    const h = dt * 0.5;
+    simOx = Math.floor(px / WSIM_DX) - WSIM_N / 2; simOz = Math.floor(pz / WSIM_DX) - WSIM_N / 2;
+    job[0] = simOx; job[1] = simOz; job[2] = simPox; job[3] = simPoz;
+    const cr = WAVE_C * h / WSIM_DX;
+    job[4] = cr * cr; job[5] = Math.exp(-h * 0.55); job[6] = h; job[7] = nSplat;
+    job[8] = bodyX; job[9] = bodyZ; job[10] = px; job[11] = pz;
+    job[12] = 0.38; job[13] = h > 0 ? rate : 0;
+    jobBuf.update(job);
+    if (!steps[0].dispatch(WSIM_N / 8, WSIM_N / 8, 1)) return false;
+    if (!steps[1].dispatch(WSIM_N / 8, WSIM_N / 8, 1)) return false;
+    simPox = simOx; simPoz = simOz; bodyX = px; bodyZ = pz; nSplat = 0;
+    return true;
+  }
   const water = {
     meshes: [absorb.mesh, surface.mesh, ...oasisMeshes], materials: [absorb.mat, surface.mat], quads: idx.length / 6, riverQuads,
     /** The oasis pool full (the erg restored) or choked and dry; true when that changed what is drawn. */
@@ -328,6 +373,10 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     },
     /** A ripple now (or at a past time t): the scripted walks of photo spots lay their wake with it. */
     ripple(x, z, t, s, dx = 0, dz = 0) { emit(x, z, t, s, dx, dz); },
+    /** A dip in the simulated water (spells, Shaped, the Warden): radius r (m), depth d (m). */
+    splash(x, z, r, d) { splat(x, z, r, d); },
+    /** The ripple simulation runs (graphics preset; owner). */
+    simOn: true,
     /** Owner fields: time (s); the Wraith's position, horizontal speed (m/s). */
     time: 0.5, px: 0.5, py: 0.5, pz: 0.5, speed: 0.5 - 0.5,
     /** Swimming (owner): the stroke phase 0..1 — each stroke's sweep throws a ring and a little foam. */
@@ -357,6 +406,16 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
         }
       }
       wasIn = this.inWater;
+      // The simulation: the body sinks the water it moves through (moving, not standing), deeper
+      // in deeper water. Warmed once at load whatever the preset (no late pipelines).
+      const want = this.simOn || simWarm < 2;
+      let on = 0;
+      if (want) {
+        const rate = this.inWater ? Math.min(1, 0.35 + this.depth * 0.6) * 0.055 * Math.min(this.speed, 9) : 0;
+        if (!this.inWater) { bodyX = this.px; bodyZ = this.pz; }
+        if (simStep(this.px, this.pz, this.time, rate)) { simWarm++; on = this.simOn ? 1 : 0; }
+      } else { simPox = 1e7; simPoz = 1e7; simT = -1; nSplat = 0; }
+      if (rip[INFO] !== simOx || rip[INFO + 1] !== simOz || rip[INFO + 2] !== on) { rip[INFO] = simOx; rip[INFO + 1] = simOz; rip[INFO + 2] = on; dirty = true; }
       if (dirty) { ripples.update(rip); dirty = false; }
     },
     freeze() { for (const m of water.materials) { m.freeze(); fastFrozenIsReady(m); } },

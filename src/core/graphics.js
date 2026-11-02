@@ -5,6 +5,7 @@
 //
 // Two kinds of setting:
 //   • live — render scale and its floor, the dynamic-resolution target, post effects, particles,
+//     the water's ripple simulation,
 //     rocks: applied the moment they change (apply());
 //   • boot — shadow map size, grass rings, tree counts and distance: read once while the world is
 //     built (`boot`), so they take effect on the next start (Settings says so and offers it).
@@ -20,25 +21,25 @@ export const PRESETS = {
     renderScale: 0.5, minScale: 0.45, targetMs: 15.5,
     shadows: 'low', grass: 'low', trees: 'low',
     ao: false, ssr: false, bloom: false, shafts: false, clouds: true, heat: false, mirage: false, sharpen: false,
-    particles: false, rocks: true,
+    particles: false, rocks: true, waterSim: false,
   },
   medium: {
     renderScale: 0.67, minScale: 0.55, targetMs: 15.5,
     shadows: 'medium', grass: 'medium', trees: 'medium',
     ao: true, ssr: false, bloom: true, shafts: false, clouds: true, heat: true, mirage: false, sharpen: false,
-    particles: true, rocks: true,
+    particles: true, rocks: true, waterSim: true,
   },
   high: {
     renderScale: 0.8, minScale: 0.6, targetMs: 15,
     shadows: 'high', grass: 'high', trees: 'high',
     ao: true, ssr: true, bloom: true, shafts: true, clouds: true, heat: true, mirage: true, sharpen: true,
-    particles: true, rocks: true,
+    particles: true, rocks: true, waterSim: true,
   },
   ultra: {
     renderScale: 1, minScale: 0.7, targetMs: 15,
     shadows: 'high', grass: 'high', trees: 'high',
     ao: true, ssr: true, bloom: true, shafts: true, clouds: true, heat: true, mirage: true, sharpen: true,
-    particles: true, rocks: true,
+    particles: true, rocks: true, waterSim: true,
   },
 };
 export const PRESET_NAMES = ['low', 'medium', 'high', 'ultra'];
@@ -139,6 +140,6 @@ export function apply() {
   if (T) {
     T('postAo', graphics.ao); T('postSsr', graphics.ssr); T('postBloom', graphics.bloom); T('postShafts', graphics.shafts);
     T('postClouds', graphics.clouds); T('postHeat', graphics.heat); T('postMirage', graphics.mirage); T('postSharpen', graphics.sharpen);
-    T('crestDust', graphics.particles); T('spindrift', graphics.particles);
+    T('crestDust', graphics.particles); T('spindrift', graphics.particles); T('waterSim', graphics.waterSim);
   }
 }

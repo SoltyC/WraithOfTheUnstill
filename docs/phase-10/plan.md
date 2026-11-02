@@ -163,6 +163,16 @@ The biggest technical risk. Nothing else is worth building if this frame fails.
 - **Low lever:** no simulation (the existing analytic ripples plus an analytic V-wake) and sky-only reflection. The Warden's bow wave must still read there.
 - **Budget:** 1.5 ms on the 3060 with all of it, under 0.5 ms on Low.
 
+**Ripple simulation done 2026-11-02 (`shaders/waterSim.wgsl.js`, `render/water.js`):**
+- A wave equation over 512² cells of 0.2 m (±51 m) that follows the Wraith. Storage wraps, so moving the window copies nothing. Two steps a frame; waves at 1.25 m/s.
+- Land and the last few centimetres hold the surface still, so waves stop at banks. Very shallow water and the window's edge damp them. The mirror returns in about 10 s.
+- Written by the body moving through water and by splashes. `water.splash(x, z, r, depth)` is the hook for spells, Shaped and the Warden.
+- The lake, wadi and SSR shaders all read it. With it on, the analytic rings and crests are off; the churn and foam behind the body stay.
+- **Low:** off (`waterSim` in the presets), so the analytic wake is used. The pipelines warm at load on every preset.
+- **Cost:** about 0.2 ms a frame (11.75 against 11.57 ms mean, 300 frames, two runs each) on the 3060 at 2560×1440, scale 0.8. Minecraft was open, so this is not an idle-GPU number. 0 GPU errors, 0 late pipelines.
+- Stills: `screenshots/phase-10-water/` (`ab-compare.png`: off above, on below, 1.5 s after a short wade).
+- **Still to do in F1:** reflection (the planar pass), black water, the Low V-wake, and the wake clip for the checkpoint.
+
 **Go/no-go checkpoint:** a still of the mirror at dawn and a clip of a wake crossing it, before F2. **The fallback,** if planar reflection misses budget, is to frame the signature shot so SSR holds and keep trees on screen; cheaper, but a smaller frame.
 
 ### F2 — Mud (1–2 sessions)

@@ -18,16 +18,20 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
+import { WSIM_SAMPLE_WGSL } from './waterSim.wgsl.js';
 
-/** Ripple slots (render/water.js writes them; the SSR pass reads the same buffer). */
+/** Ripple slots (render/water.js writes them; the SSR pass reads the same buffer). One more vec4
+ *  follows them: the ripple simulation's window (shaders/waterSim.wgsl.js). */
 export const WATER_RIPPLES = 64;
 
 /**
  * Slope of the water surface at p (dh/dx, dh/dz) and foam, from the wind (direction × speed
- * factor) and the ripples. Needs `waterRipples: array<vec4f>` (x, z, start time, strength) and a
- * value noise `wNoised(p) -> vec3f` (value, d/dx, d/dy) declared by the host.
+ * factor) and the ripples. Needs `waterRipples: array<vec4f>` (x, z, start time, strength),
+ * `waterSim: array<vec4f>` (the simulation's current state) and a value noise
+ * `wNoised(p) -> vec3f` (value, d/dx, d/dy) declared by the host.
  */
 export const WATER_WAVES_WGSL = /* wgsl */ `
+${WSIM_SAMPLE_WGSL(WATER_RIPPLES)}
 fn waterHash(i: f32) -> f32 { return fract(sin(i * 91.7 + 3.1) * 43758.5453); }
 // fp: the pixel's footprint on the water (m). A wave train shorter than the footprint fades out
 // and its slope becomes roughness (w: the slope variance it took with it) — no aliasing stripes.
@@ -64,8 +68,12 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
   // and the crests of a dense trail add up to the two arms of a V wake; straight behind, the water
   // it pushed aside churns (fine broken slopes, foam), settling over a couple of seconds. A
   // splash (going in, a stroke breaking the surface) is the only ring.
+  // With the simulation running (High, Medium) it carries the rings and the V: the analytic
+  // crests stay off and only the churn and foam below are drawn here.
   var foam = 0.0;
+  let simOn = waterRipples[${WATER_RIPPLES}u].z > 0.5;
   let fade = 1.0 - smoothstep(0.05, 0.25, fp);
+  let crestK = select(1.0, 0.0, simOn);
   for (var i = 0u; i < ${WATER_RIPPLES}u; i++) {
     let R = waterRipples[i];
     if (R.w <= 0.0) { continue; }
@@ -82,7 +90,7 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
     if (bin > 63.5) {
       // A splash: a short packet of rings.
       let env = exp(-x * x / width) * decay;
-      g += rn * (env * cos(x * 16.0) * 1.1 * fade);
+      g += rn * (env * cos(x * 16.0) * 1.1 * fade * crestK);
       foam += env * (1.0 - smoothstep(0.0, 0.6, age)) * smoothstep(0.3, 0.0, x * x);
       continue;
     }
@@ -91,7 +99,7 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
     // A crest only to the sides and behind (|across| over the distance), none ahead.
     let side = smoothstep(0.0, 0.8, across / max(dist, 0.05)) * smoothstep(0.25, -0.15, along / max(dist, 0.05));
     let h = exp(-x * x / width);
-    g += rn * (-2.0 * x / width * h * 0.08 * decay * side * fade);
+    g += rn * (-2.0 * x / width * h * 0.08 * decay * side * fade * crestK);
     // The churned lane straight behind: broken fine slopes and foam, widening and calming.
     let lane = exp(-across * across / (0.06 + 0.05 * age)) * smoothstep(0.1, -0.3, along) * exp(-age * 1.4) * s;
     if (lane > 1e-3) {
@@ -99,6 +107,13 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
       g += wNoised(q).yz * (0.05 * lane * fade);
       foam += lane * 0.55 * smoothstep(0.2, 0.75, wNoised(q * 0.6).x * 0.5 + 0.5);
     }
+  }
+  if (simOn) {
+    // The simulated ripples; finer than the pixel, their slope becomes roughness.
+    let S = waterSimSample(p);
+    let ks = 1.0 - smoothstep(0.3, 1.1, fp);
+    g += S.xy * ks;
+    lost += dot(S.xy, S.xy) * (1.0 - ks * ks) * 0.5;
   }
   return vec4f(g, foam, lost);
 }
@@ -191,6 +206,7 @@ uniform levels: array<vec4f,16>;
 uniform waterParams: vec4f;          // x = time (s), y = caustics strength, z, w = −
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> waterRipples: array<vec4f>;
+var<storage, read> waterSim: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vFlow: vec4f;
 ${COMMON_WGSL}

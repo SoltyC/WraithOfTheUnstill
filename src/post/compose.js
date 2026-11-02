@@ -7,6 +7,7 @@ import { aoCS, composeCS } from '../shaders/post/ao.wgsl.js';
 import { ssrCS } from '../shaders/post/ssr.wgsl.js';
 import { StorageBuffer } from '@babylonjs/core/Buffers/storageBuffer.js';
 import { WATER_RIPPLES } from '../shaders/water.wgsl.js';
+import { WSIM_N } from '../shaders/waterSim.wgsl.js';
 
 /**
  * @param {ReturnType<typeof import('./post.js').createPost>} post
@@ -19,14 +20,17 @@ export function createCompose(post, scene, camera, atmo, fog) {
   const engine = scene.getEngine();
   let aoTex, ssrTex, out, csAo, csSsr, csCompose;
   // The Wraith's ripples on water (render/water.js writes them): the SSR bends water reflections by them too.
-  post.waterRipples = new StorageBuffer(engine, WATER_RIPPLES * 16, undefined, 'water-ripples');
-  post.waterRipples.update(new Float32Array(WATER_RIPPLES * 4));
+  // One more slot after them: the ripple simulation's window (render/water.js; off until it runs).
+  post.waterRipples = new StorageBuffer(engine, (WATER_RIPPLES + 1) * 16, undefined, 'water-ripples');
+  post.waterRipples.update(new Float32Array((WATER_RIPPLES + 1) * 4));
+  // The ripple simulation's two states (shaders/waterSim.wgsl.js); A is the one the shaders read.
+  post.waterSim = [0, 1].map((k) => new StorageBuffer(engine, WSIM_N * WSIM_N * 16, undefined, 'water-sim-' + 'ab'[k]));
   const build = (W, H) => {
     if (aoTex) { aoTex.dispose(); ssrTex.dispose(); out.dispose(); }
     aoTex = storageTexture(scene, Math.ceil(W / 2), Math.ceil(H / 2), 'ssao', Constants.TEXTURE_NEAREST_SAMPLINGMODE);
     ssrTex = storageTexture(scene, Math.ceil(W / 2), Math.ceil(H / 2), 'ssr');
     csSsr = computePass(engine, 'ssr', ssrCS, [['P', 'buffer', post.paramsBuf], ['sceneTex', 'tex', post.sceneRT], ['depthTex', 'tex', post.depthTex], ['outSsr', 'storageTex', ssrTex],
-      ['waterRipples', 'buffer', post.waterRipples], ['cloudSampler', 'sampler'], ['cloudTex', 'stex', fog.cloudTex], ['atmoLight', 'buffer', atmo.atmoLight]]);
+      ['waterRipples', 'buffer', post.waterRipples], ['cloudSampler', 'sampler'], ['cloudTex', 'stex', fog.cloudTex], ['atmoLight', 'buffer', atmo.atmoLight], ['waterSim', 'buffer', post.waterSim[0]]]);
     out = storageTexture(scene, W, H, 'composed', Constants.TEXTURE_NEAREST_SAMPLINGMODE);
     csAo = computePass(engine, 'ssao', aoCS, [['P', 'buffer', post.paramsBuf], ['depthTex', 'tex', post.depthTex], ['outAo', 'storageTex', aoTex]]);
     csCompose = computePass(engine, 'compose', composeCS, [['P', 'buffer', post.paramsBuf], ['sceneTex', 'tex', post.sceneRT],

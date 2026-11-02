@@ -134,7 +134,7 @@ export function wadiWaterMask(u, a, hw, fade, seed, flow) {
   return (1 - smooth(core * 0.75, core, ax)) * gaps * (1 + (bars - 1) * 0.85) * fade;
 }
 
-export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis, ripples = null, ground = null) {
+export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis, ripples = null, ground = null, waterSim = null) {
   ShaderStore.ShadersStoreWGSL.wadiVertexShader = wadiVertexWGSL;
   ShaderStore.ShadersStoreWGSL.wadiFragmentShader = wadiFragmentWGSL;
   const { pos, attr, idx } = wadiRibbons(wadis || []);
@@ -149,7 +149,7 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
     attributes: ['position', 'wadi'],
     uniforms: ['viewProjection', 'levels', 'wadiParams', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
-    storageBuffers: ['levelData', 'biomeA', 'windMap', 'waterRipples', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
+    storageBuffers: ['levelData', 'biomeA', 'windMap', 'waterRipples', 'waterSim', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
     needAlphaBlending: true,
   });
@@ -160,6 +160,7 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
   mat.setStorageBuffer('windMap', clipmap.buffers.wind);
   mat.setVector4('wadiParams', params);
   if (ripples) mat.setStorageBuffer('waterRipples', ripples);
+  if (waterSim) mat.setStorageBuffer('waterSim', waterSim);
   mat.alphaMode = Constants.ALPHA_PREMULTIPLIED_PORTERDUFF;
   mat.disableDepthWrite = true;
   mat.backFaceCulling = false;

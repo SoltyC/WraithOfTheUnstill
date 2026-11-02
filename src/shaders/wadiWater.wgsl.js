@@ -42,6 +42,7 @@ export const wadiFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform wadiParams: vec4f;
 var<storage, read> waterRipples: array<vec4f>;
+var<storage, read> waterSim: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vWadi: vec4f;
 varying vSeed: f32;

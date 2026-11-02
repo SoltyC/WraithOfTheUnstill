@@ -698,3 +698,6 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **The fen runs after hydrology and sets its water.** Hollows on sloping ground drain, and a first version inside macro height moved river heights east of the fen by a few centimetres. A later stage cannot do that.
 - **Basins have one table each, held by continuous banks.** Two water levels can't meet without land between them. The banks are also the dry ways across the fen.
 - **The outer marsh's water is the sea itself.** It has no `lake_level` of its own; if Tide needs one, F1 adds it.
+
+- **Music comes from Suno (user, 2026-11-02).** Both local generators (ACE-Step 1.5, Stable Audio 3.0 Medium) were rejected by ear and deleted. Cues stay as specified in `docs/phase-10/music-cues.md`.
+- **F1's ripples are simulated, not analytic, on Medium and up.** A wave equation reflects off banks and settles back to a mirror, which the analytic rings can't do. Low keeps the analytic wake; nothing else changes there.

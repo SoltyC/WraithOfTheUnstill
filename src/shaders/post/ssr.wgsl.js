@@ -22,6 +22,7 @@ ${POST_PARAMS_WGSL}
 @group(0) @binding(5) var cloudSampler: sampler;
 @group(0) @binding(6) var cloudTex: texture_2d<f32>;
 @group(0) @binding(7) var<storage, read> atmoLight: array<vec4f, 13>;
+@group(0) @binding(8) var<storage, read> waterSim: array<vec4f>;
 fn wHash(p: vec2f) -> f32 { var q = fract(p * vec2f(0.1031, 0.1030)); q += dot(q, q.yx + 33.33); return fract((q.x + q.y) * q.x); }
 fn wNoised(p: vec2f) -> vec3f {
   let i = floor(p); let f = p - i;

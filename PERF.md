@@ -568,3 +568,14 @@ Six frozen views, old build against new: no visible difference, 31 to 43 dB, the
 
 Meadow, GPU median over 240 frames after this change (ms, Low / Medium / High / Ultra): 7.84 / 10.96 / 15.99 / 19.03. That is 3–6% above 1 November's. No old build was run alongside, so whether this is the machine's state, as it was before, is not settled.
 
+
+## 2 November — Phase 10 F1, the ripple simulation
+
+Two compute steps of 512² cells a frame. Fen water at (−2596, −289), the bot wading and standing, 2560×1440 at scale 0.8 on High, 300 frames per run. **Minecraft was open,** so the GPU was not idle.
+
+| | mean ms | p50 | p95 |
+|---|---|---|---|
+| Simulation on | 11.76, 11.74 | 11.5, 11.6 | 14.2, 14.3 |
+| Simulation off | 11.55, 11.58 | 11.4, 11.4 | 14.2, 14.1 |
+
+About 0.2 ms, inside F1's 1.5 ms water budget. 0 GPU errors, 0 late pipelines.

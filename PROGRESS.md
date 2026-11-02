@@ -780,3 +780,5 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 - Phase 10: the user accepted the four motion clips (`knead1`, `rock`, `wheel`, `walk`) from their films. The user rejected ACE-Step's audio by ear, so no cue comes from it (`docs/phase-10/local-music-generation.md`); the music source is open.
 
 - ACE-Step deleted at the user's request. Stable Audio 3.0 Medium installed on the 3060; its two samples wait on the user accepting the licence (`docs/phase-10/local-music-generation.md`).
+
+- Phase 10 F1: the ripple simulation runs on Medium and up (`shaders/waterSim.wgsl.js`). Wakes spread, stop at banks and settle back to a mirror; it costs about 0.2 ms. Music: the user will use Suno; Stable Audio was rejected and deleted. Next in F1: the reflection pass, then black water.

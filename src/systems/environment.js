@@ -465,6 +465,7 @@ export async function addEnvironmentSystems(g) {
   reg({ key: 'terrain', label: 'terrain', group: 'System', on: true, onChange: meshToggle(content.terrain) });
   reg({ key: 'ring', label: 'mountain ring', group: 'System', on: true, onChange: meshToggle(ring) });
   reg({ key: 'desertAir', label: 'desert aerosol', group: 'System', on: true, onChange: (on) => { atmosphere.desert.on=on;post.post.resetHistory=true; } });
+  reg({ key: 'waterSim', label: 'water ripple simulation', group: 'System', on: true, onChange: (on) => { if (g.water) g.water.simOn = on; } });
   reg({ key: 'crestDust', label: 'dune crest grains', group: 'System', on: true, onChange: (on) => { g.sandDust.crests=on; } });
   reg({ key: 'sandDust', label: 'sand dust', group: 'System', on: true, onChange: meshToggle(g.sandDust.mesh) });
   reg({ key: 'canyon', label: 'canyon walls (D7b kit)', group: 'System', on: true, onChange: (on) => { g.canyon.on = on; } });
