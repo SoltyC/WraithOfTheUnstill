@@ -82,11 +82,13 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
     if (age < 0.0 || age > 4.0) { continue; }
     let r = p - R.xy; let dist = length(r);
     let bin = floor(R.w / 8.0); let s = R.w - bin * 8.0;
-    let crestR = 0.18 + 0.62 * age;                       // the crest's distance from the point
+    // The crest's distance from the point: it runs out at ripple speed (1.1 m/s), so behind a
+    // wading body (3 m/s) the crests of the trail line up into arms at about the Kelvin angle.
+    let crestR = 0.18 + 1.1 * age;
     if (dist > crestR + 1.2) { continue; }
     let x = dist - crestR;
-    let width = 0.05 + 0.09 * age;
-    let decay = exp(-age * 0.9) * s;
+    let width = 0.05 + 0.07 * age;
+    let decay = exp(-age * 0.6) * s;
     let rn = r / max(dist, 0.03);
     if (bin > 63.5) {
       // A splash: a short packet of rings.
@@ -100,7 +102,7 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
     // A crest only to the sides and behind (|across| over the distance), none ahead.
     let side = smoothstep(0.0, 0.8, across / max(dist, 0.05)) * smoothstep(0.25, -0.15, along / max(dist, 0.05));
     let h = exp(-x * x / width);
-    g += rn * (-2.0 * x / width * h * 0.08 * decay * side * fade * crestK);
+    g += rn * (-2.0 * x / width * h * 0.05 * decay * side * fade * crestK);
     // The churned lane straight behind: broken fine slopes and foam, widening and calming.
     let lane = exp(-across * across / (0.06 + 0.05 * age)) * smoothstep(0.1, -0.3, along) * exp(-age * 1.4) * s;
     if (lane > 1e-3) {
@@ -277,6 +279,49 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 export const waterSurfaceFragmentWGSL = /* wgsl */ `
 ${HEADER(false)}
 ${WEATHER_FOG_WGSL}
+fn wHash3(c: vec2f) -> vec3f { return fract(sin(vec3f(dot(c, vec2f(127.1, 311.7)), dot(c, vec2f(269.5, 183.3)), dot(c, vec2f(419.2, 371.9)))) * 43758.5453); }
+// Bog gas (the mire): now and then a bubble rises, swells the surface into a bead and pops into a
+// small ring. Stateless: cells of 3 m, a third of them with a vent on its own slow period.
+// Out: slope xy, bead (0..1).
+fn bogBubbles(p: vec2f, t: f32, fp: f32) -> vec3f {
+  let C = 3.0;
+  let ci = floor(p / C);
+  let h = wHash3(ci + 31.7);
+  if (h.y > 0.33 || fp > 0.12) { return vec3f(0.0); }
+  let o = (ci + 0.25 + 0.5 * h.xz) * C;
+  let r = p - o; let d = length(r);
+  let ph = fract(t / (5.0 + 7.0 * h.z) + h.x);
+  var g = vec2f(0.0); var bead = 0.0;
+  if (ph > 0.94) { let u = (ph - 0.94) / 0.06; bead = exp(-d * d / 0.0016) * u; g = -r / 0.0016 * 0.02 * bead; }
+  else if (ph < 0.25) {
+    let u = ph / 0.25; let x = d - u * 0.45;
+    let env = exp(-x * x / 0.0009) * (1.0 - u) * (1.0 - u);
+    g = r / max(d, 0.01) * env * cos(x * 70.0) * 0.18;
+  }
+  return vec3f(g * (1.0 - smoothstep(0.03, 0.12, fp)), bead);
+}
+// Floating litter (the mire): leaves and needles gathered into calm patches, drifting slowly
+// downwind and nudged by the ripples. Out: albedo, cover (averaged into a tint past the footprint).
+fn bogLitter(p0: vec2f, t: f32, fp: f32, drift: vec2f) -> vec4f {
+  let p = p0 - drift * t * 0.015;
+  let clump = smoothstep(0.35, 0.75, noised(p * 0.045).x * 0.5 + 0.5 + noised(p * 0.15 + 3.0).x * 0.25);
+  if (clump <= 0.0) { return vec4f(0.0); }
+  let C = 0.42;
+  let ci = floor(p / C);
+  let h = wHash3(ci);
+  let dens = clump * 0.85;
+  let col = mix(vec3f(0.075, 0.05, 0.028), vec3f(0.17, 0.125, 0.05), h.z) * mix(0.7, 1.15, h.y);
+  let far = dens * 0.09;
+  if (fp > 0.06) { return vec4f(col, far); }
+  if (h.x > dens) { return vec4f(col, far * smoothstep(0.02, 0.06, fp)); }
+  let c = (ci + 0.3 + 0.4 * h.yz) * C;
+  let a = h.y * 6.2831853; let ca = cos(a); let sa = sin(a);
+  let q = p - c; let lq = vec2f(q.x * ca - q.y * sa, q.x * sa + q.y * ca);
+  let len = 0.05 + 0.08 * h.z; let wid = len * mix(0.22, 0.5, h.x / max(dens, 0.01));
+  let e = (lq.x * lq.x) / (len * len) + (lq.y * lq.y) / (wid * wid);
+  let cov = smoothstep(1.0, 0.6, e);
+  return vec4f(col, mix(cov, far, smoothstep(0.02, 0.06, fp)));
+}
 fn ggxD(nh: f32, a: f32) -> f32 { let a2 = a * a; let d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -293,9 +338,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Rain: rings on the surface, and a pitted, busier water that mirrors less sharply.
     sl = vec4f(sl.xy + rainRipples(wp.xz, t, fp), sl.z, sl.w + 0.0009 * uniforms.wetParams.z);
   }
+  let mire = wMire(wp.xz);
+  var bead = 0.0;
+  if (mire > 0.05) { let bb = bogBubbles(wp.xz, t, fp) * mire; sl = vec4f(sl.xy + bb.xy, sl.zw); bead = bb.z; }
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
-  let mire = wMire(wp.xz);
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   let shore = smoothstep(0.0, 0.25, depth);   // a believable fade-out width over a gentle bank
   let nv = max(dot(N, V), 0.0);
@@ -373,10 +420,30 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let foamCol = vec3f(0.8) * (key * max(L.y, 0.1) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w);
   var col = body * (1.0 - F) + sky * F + spec;
   col = mix(col, foamCol, foam * 0.8);
+  // The mire's surface: litter afloat (nudged by the ripples), the bubbles' wet beads.
+  var litter = 0.0;
+  if (mire > 0.05 && depth > 0.05) {
+    let lt = bogLitter(wp.xz + sl.xy * 0.25, t, fp, wf.xy * wf.z);
+    litter = lt.a * mire * shore;
+    let Nl = normalize(vec3f(-sl.x * 0.4, 1.0, -sl.y * 0.4));
+    let litCol = lt.rgb * (key * max(dot(Nl, L), 0.0) * vis / PI + shIrradiance(Nl) * uniforms.envMisc.w * (1.0 - 0.6 * canopy));
+    col = mix(col, litCol, litter);
+    col += key * vis * bead * 0.35 * (1.0 - litter);
+  }
+  // Mist on the still water at dawn, dusk and night (the mire): a thin, drifting veil over the
+  // surface, thickest where the air is still, lit from the sun's side.
+  if (mire > 0.05) {
+    let low = smoothstep(0.45, 0.06, L.y);
+    let calm = 1.0 - smoothstep(0.3, 1.4, wf.z);
+    let wisps = 0.45 + 0.55 * smoothstep(-0.3, 0.6, noised(wp.xz * 0.018 - wf.xy * t * 0.04).x + 0.5 * noised(wp.xz * 0.07 + t * 0.02).x);
+    let mk = min(1.0 - exp(-0.006 * mire * low * calm * wisps * dist), 0.55);
+    let mistCol = key * mix(hgPhase(dot(-V, L), 0.6), 0.0795775, 0.5) * 1.6 + atmoSkyUp() * 0.95;
+    col = mix(col, mistCol, mk);
+  }
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
   // Negative alpha: water (post/ssr bends its ray by these waves); magnitude = reflectance, plus 1
   // where the planar reflection holds a tree (SSR then adds no far fallback over it).
-  let mask = max(F * (1.0 - foam), 0.035);
+  let mask = max(F * (1.0 - foam) * (1.0 - litter), 0.035);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), -mask - select(0.0, 1.0, planar > 0.5));
 }
 `;

@@ -403,8 +403,9 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
         // Deeper in the water, a bigger wake (wading shins push less than a swimming body).
         const body = Math.min(1, 0.35 + this.depth * 0.6);
         if (!wasIn) { emit(this.px, this.pz, t, 1.6, 0, 0); lastEmit = t; lastX = this.px; lastZ = this.pz; }
-        else if (moved > 0.14 && moved < 3) {
-          // The trail: a point every 14 cm along the path (the wake's crests and the churned lane).
+        else if (moved > (this.simOn ? 0.14 : 0.32) && moved < 3) {
+          // The trail: a point every 14 cm along the path (the churned lane; with the simulation off,
+          // every 32 cm, so the slots hold 20 m of path and the crests open into the V's arms).
           emit(this.px, this.pz, t, body * Math.min(1.6, 0.4 + 0.45 * sp), dx, dz); lastEmit = t; lastX = this.px; lastZ = this.pz;
         } else if (moved >= 3) { lastX = this.px; lastZ = this.pz; }
         else if (sp < 0.2 && t - lastEmit > 1.8) { emit(this.px, this.pz, t, 0.18, 0, 0); lastEmit = t; } // standing: a slow pulse

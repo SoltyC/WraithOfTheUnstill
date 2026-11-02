@@ -182,7 +182,17 @@ The biggest technical risk. Nothing else is worth building if this frame fails.
 
 **Black water done 2026-11-02 (`shaders/water.wgsl.js` T_SIGMA, T_BODY):** tannin optics blended in by the mire's biome weight. Blue goes first, then green, so shallows are tea-brown and anything past a metre or so is near black. The body sends back almost nothing, and caustics fade to a fifth. Lakes elsewhere are unchanged (mire weight 0). A first try at (0.6, 1.5, 3.3)/m read red-pink over the bare ground; (1.0, 1.45, 2.6) reads brown. Dawn shots: `screenshots/phase-10-water/fen-dawn-*.png` (the still mirror with the mountains in it, the wake, looking down into it).
 
-- **Still to do in F1:** floating litter, sparse bubbles and mist at the surface; the Low V-wake; the wake clip for the checkpoint. The fen has no trees yet (F6), so the trees-in-the-mirror half of the signature frame can only be judged at a lake until then.
+
+**The surface and the clip, 2026-11-02 (`shaders/water.wgsl.js`):**
+- **Litter:** leaves and needles in calm patches, drifting slowly downwind and nudged by the ripples. Past the pixel's footprint they average into a faint brown tint, so they don't shimmer at range. They take away the reflection where they float.
+- **Bog gas:** a third of 3 m cells have a vent on its own 5–12 s period. A bead swells, then pops into a small ring.
+- **Mist:** a thin drifting veil on the water when the sun is low (dawn, dusk, night) and the air still, at most 55 %, lit from the sun's side. It stops at the water's edge, which reads as mist lying on the water; check it from the banks once F5's fog exists.
+- **Low's wake:** a wake tied to the body vanished the moment the Wraith stopped, so it was dropped. Instead the trail's crests run out at ripple speed (1.1 m/s), and on Low the trail points are 32 cm apart, holding 20 m of path. The arms open to about the Kelvin angle and stay after the body stops.
+- **The clip:** `review/fen-water/fen-wake-dawn.mp4` (High, 12 s at 60 fps) and `fen-wake-dawn-low.mp4` (Low's wake, 10 s at 30 fps). Dawn, 06:24, in the fen at (−2596, −289). The Wraith stands in the mirror, wades out, stops, and the water settles.
+- **Frame:** the fen view with everything on runs at 10.3 ms mean on High (400 frames twice, Minecraft open). 0 GPU errors, 0 late pipelines.
+- **Not in F1:** the trees in the fen's mirror (F6), and the Warden's bow wave on Low; it can lay its trail through `water.ripple`.
+
+**Go/no-go: waiting on the user** (the clip and the stills above).
 
 **Go/no-go checkpoint:** a still of the mirror at dawn and a clip of a wake crossing it, before F2. **The fallback,** if planar reflection misses budget, is to frame the signature shot so SSR holds and keep trees on screen; cheaper, but a smaller frame.
 

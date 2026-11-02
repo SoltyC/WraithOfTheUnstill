@@ -44,3 +44,14 @@ The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as A
 - [Map](fen/fen-map.png): the white line is the old coast, yellow dots are shrines and red dots are Warden sites.
 - [Aerial](fen/fen-air.png), [channels](fen/fen-channel.png), [lake at eye level](fen/fen-bank.png), [bank](fen/fen-water.png), [outer marsh](fen/fen-coast.png).
 - The ground is bare and the water is the plain lake look until the fen water and plant stages.
+
+## Fen water (Phase 10 F1): the go/no-go
+
+| File | What it shows |
+|---|---|
+| [fen-wake-dawn.mp4](fen-water/fen-wake-dawn.mp4) | **Start here.** High: the dawn mirror, a wake splitting it, the water settling back |
+| [fen-wake-dawn-low.mp4](fen-water/fen-wake-dawn-low.mp4) | The same on Low's analytic wake |
+| [fen2-still.png](fen-water/fen2-still.png) | The still mirror at dawn, with litter afloat |
+| [fen2-surface.png](fen-water/fen2-surface.png) | Looking down into the black water |
+| [cmp-down.png](fen-water/cmp-down.png) | A meadow lake: the new reflection of trees above the screen (top) against before (bottom) |
+| [cmp-level.png](fen-water/cmp-level.png) | The same lake, level: new (top), before (bottom) |
