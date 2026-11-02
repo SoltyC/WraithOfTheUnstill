@@ -6,7 +6,8 @@ export function addWraithSystem(g) {
   const { loop, game, wraithView, controller, arm, clock, params, weather, restoration, warden, knockCtl, frost, surfWake, toggles, streamer, ground, footprints, sfx, SFX, capture } = g;
   loop.add({ name: 'wraith', update: () => {
     const w = wraithView.wraith, p = controller.pos;
-    w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z; w.vy = controller.glide.active ? controller.vel.y : 0;
+    w.bx = p.x; w.by = p.y; w.bz = p.z; w.vx = controller.vel.x; w.vz = controller.vel.z; w.vy = controller.glide.active || controller.submerged ? controller.vel.y : 0;
+    w.swimPitch = controller.swimPitch; w.submerged = controller.submerged;   // the dive (Phase 10 U1)
     w.yaw = controller.yaw; w.grounded = controller.grounded; w.dt = clock.dt; w.time = clock.simTime;
     // The cloth feels the wind field where the Wraith stands: its direction and the gusts.
     const wf = g.wind;
@@ -85,7 +86,9 @@ export function addWraithSystem(g) {
     const gt = wraithView.wraith.gait, ev = gt.ev;
     // (Riding the Long Walker the feet are on its back, not in the sand below.)
     footprints.enabled = toggles.on.footprints !== false && !(controller.deck !== null && controller.deck.riding);
-    for (let e = 0; e < gt.evCount; e++) {
+    // Swimming has no footfalls: no step, no print on the bed below, no spray thrown in the water.
+    const n = controller.swimming ? 0 : gt.evCount;
+    for (let e = 0; e < n; e++) {
       const o = e * 7;
       sfx.x = ev[o]; sfx.y = ev[o + 1]; sfx.z = ev[o + 2]; sfx.gain = 0.35 + 0.08 * Math.min(ev[o + 6], 6); sfx.play(SFX.STEP);
       footprints.ex = ev[o]; footprints.ez = ev[o + 2]; footprints.edx = ev[o + 3]; footprints.edz = ev[o + 4];

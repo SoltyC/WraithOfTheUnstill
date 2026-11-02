@@ -703,3 +703,6 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **F1's ripples are simulated, not analytic, on Medium and up.** A wave equation reflects off banks and settles back to a mirror, which the analytic rings can't do. Low keeps the analytic wake; nothing else changes there.
 - **The planar reflection draws trees only.** Off-screen trees are what SSR loses, and they are the signature frame. The far shore stays SSR's, and the sky the water's own. The reflected path is hazed in the water shader with the post chain's fog values, because the post chain hazes only the path to the water.
 - **Low's wake comes from the trail, not from the body.** An analytic V attached to the moving body disappears when it stops; wakes must outlive the body. The trail crests now spread at ripple speed, and on Low the points are spaced wider so 64 slots hold 20 m of path.
+- **The underwater view is a per-pixel test in compose, not a camera state.** A pixel whose ray starts under the surface is under water, so the camera can sit in the surface with a real waterline and never pops between two looks.
+- **The Sounding is carved now, bare,** because U1 needs deep water and nothing else in the world has it (the sea is not drawn as water; the one deep lake is frozen). U2 shapes it.
+- **Swimming has no footfalls.**

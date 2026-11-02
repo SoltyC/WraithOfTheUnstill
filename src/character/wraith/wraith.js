@@ -13,6 +13,8 @@ const SUB = 1 / 120;
 const TURN_RATE = 9;
 const SETTLE_STEPS = 120, SETTLE_PER_FRAME = 24;
 /** Air drag on the cloth (1/s): walking, and the extra while surfing (the robe streams back). */
+/** Under the water (Phase 10 U1): the robe's drag against the water it moves through. */
+const WATER_DRAG = 2.6;
 const AIR_DRAG = 0.2, SURF_AIR_DRAG = 1.3, GLIDE_AIR_DRAG = 1.6, GLIDE_WIND = 9, FLOW_WIND = 0.22, FLOW_BACK = 3.2;
 const ARM = 0.58, UPPER = 0.3;
 /** During a performance the arms hold the mantle clear of the sleeves (radius 0.082 to 0.098) on these; they do not run in play. */
@@ -58,6 +60,8 @@ export class Wraith {
     /** Swimming (input: true while the controller swims); eased into the pose; the stroke phase
      *  (0..1, advanced by the swim speed; read by the owner for stroke splashes). */
     this.swimming = false; this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
+    /** Under the water (input) and the dive's pitch (input, rad, + nose down); `under` eases it. */
+    this.submerged = false; this.swimPitch = 0.5 - 0.5; this.under = 0.5 - 0.5; this._watered = false;
     /** Bending gesture target 0..1 (input); eased into the body's arm. */
     this.cast = 0.5 - 0.5;
     /** Attack pose (inputs from game/weapons): torso twist and extra lean (rad), the hands' reach weights (L, R) and targets
@@ -158,6 +162,8 @@ export class Wraith {
     this.swim += ((this.swimming ? 1 : 0) - this.swim) * (1 - Math.exp(-this.dt * 4));
     const sp = Math.sqrt(this.vx * this.vx + this.vz * this.vz);
     if (this.swim > 0.02) this.swimPhase = (this.swimPhase + this.dt * (0.45 + 0.22 * sp)) % 1;
+    this.under += ((this.submerged ? 1 : 0) - this.under) * (1 - Math.exp(-this.dt * 3));
+    this.body.swimPitch = this.swimPitch;
     this._syncInputs();
     const g = this.gait, b = this.body;
     g.dt = this.dt; g.evCount = 0; g.collapse = this.collapse;
@@ -181,7 +187,7 @@ export class Wraith {
     // a little flutter of its own.
     const gust = 0.9 + 0.1 * Math.sin(this.time * 2.3) * Math.sin(this.time * 0.97 + 1.3);
     // Flow (0..3) lets the hem and sleeves stream: more of the wind, and a push back along the travel.
-    const ws = this.windStrength * 4.5 * gust * (1 + FLOW_WIND * this.flow);
+    const ws = this.windStrength * 4.5 * gust * (1 + FLOW_WIND * this.flow) * (1 - this.under); // no wind under the water
     this.cloth.frameVX = this.vx; this.cloth.frameVY = this.vy; this.cloth.frameVZ = this.vz;
     this.cloth.windX = this.windX * ws + this.pushX; this.cloth.windZ = this.windZ * ws + this.pushZ; this.cloth.windY = 0.4 * ws * 0.2;
     if (this.flow > 0.02) {
@@ -189,10 +195,13 @@ export class Wraith {
       this.cloth.windX -= this.vx * k; this.cloth.windZ -= this.vz * k;
     }
     // In the water the robe nearly floats (buoyant, heavy with water: little gravity, a slow drift up).
-    this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim); this.cloth.windY += 0.6 * this.swim;
+    this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim - 0.12 * this.under); this.cloth.windY += 0.6 * this.swim - 0.3 * this.under;
     // Gliding: the robe roars back (drag toward the surf value and a bit more); restored after.
     if (this.glide > 0.001) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf + GLIDE_AIR_DRAG * this.glide * (1 - this.swim); this._gliding = true; }
     else if (this._gliding) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this._gliding = false; }
+    // Under the water the robe drags against it: it trails the dive and spreads, slow to settle.
+    if (this.under > 0.001) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf + WATER_DRAG * this.under; this._watered = true; }
+    else if (this._watered) { this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this._watered = false; }
     this._spread = this.glide * (1 - this.swim);
     if (this._spread > 0) {
       // The rush of air: a push back along the flight line (the heading when slow), a little

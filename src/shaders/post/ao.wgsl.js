@@ -8,6 +8,7 @@
 import {SANDSTORM_VOLUME_WGSL} from './sandstormVolume.wgsl.js';
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
 import { WEATHER_FOG_WGSL } from './fog.wgsl.js';
+import { UNDERWATER_WGSL } from '../water.wgsl.js';
 
 export const aoCS = /* wgsl */ `
 ${POST_PARAMS_WGSL}
@@ -77,6 +78,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
  *  absolute, so they take the exposure here. */
 export const composeCS = /* wgsl */ `
 ${POST_PARAMS_WGSL}
+${UNDERWATER_WGSL}
 @group(0) @binding(0) var<storage, read> P: PostParams;
 @group(0) @binding(1) var sceneTex: texture_2d<f32>;
 @group(0) @binding(2) var depthTex: texture_depth_2d;
@@ -160,13 +162,48 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     dbgSsr = r.a;
     c = vec4f(c.rgb * (1.0 - r.a) + r.rgb, c.a);
   }
+  // Under the water (Phase 10 U1; render/water.js's level at the camera in taa.w, the mire's
+  // tannin share there in bloom.w): a pixel whose ray starts under the surface is seen through
+  // water — light lost on the way, the body's own glow gained — and none of the air's fogs. A
+  // camera on the surface splits the frame at the waterline.
+  let uwL = P.taa.w;
+  let under = uwL > -1e3 && cam.y + dir.y * 0.12 < uwL;
+  if (under) {
+    let tan = P.bloom.w;
+    let sig = mix(UW_SIG_CLEAR, UW_SIG_TANNIN, tan);
+    let E = (atmoLight[0].xyz * max(P.sun.y, 0.0) * 0.318 + atmoLight[1].xyz) * exp(-sig * max(uwL - cam.y, 0.0));
+    let alb = mix(UW_ALB_CLEAR, UW_ALB_TANNIN, tan);
+    let T = exp(-sig * min(dist, 400.0));
+    c = vec4f(c.rgb * T + alb * E * (1.0 - T) * exposure, c.a);
+    // Light shafts: the sun bent down through the surface, focused into beams by its ripples. Ten
+    // jittered samples along the first 45 m of the view ray, each lit from where its beam left the
+    // surface, dimmed along the beam and on to the eye (TAA integrates the jitter).
+    let Ls = P.sun.xyz;
+    if (Ls.y > 0.04) {
+      let rs = refract(-Ls, vec3f(0.0, 1.0, 0.0), 0.7502);
+      let len = min(dist, 45.0);
+      let jit = fract(52.9829189 * fract(dot(vec2f(p) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));
+      let tw = P.pad[4].w;
+      var acc = vec3f(0.0);
+      for (var k = 0; k < 10; k++) {
+        let s = (f32(k) + jit) * 0.1 * len;
+        let q = cam + dir * s;
+        let up = uwL - q.y;
+        if (up < 0.0) { continue; }
+        let along = up / max(-rs.y, 0.2);
+        let beam = uwFocus(q.xz - rs.xz * along, tw);
+        acc += beam * exp(-sig * (along + s));
+      }
+      c = vec4f(c.rgb + acc * atmoLight[0].xyz * (0.05 * len * 0.1) * exposure * smoothstep(0.04, 0.2, Ls.y), c.a);
+    }
+  }
   // Clouds over the sky.
-  if (d <= 0.0 && P.fog2.y > 0.02) {
+  if (!under && d <= 0.0 && P.fog2.y > 0.02) {
     let cl = textureSampleLevel(cloudTex, cloudSampler, uv, 0.0);
     c = vec4f(c.rgb * cl.a + cl.rgb * exposure, c.a);
   }
   // Weather fog (snow haze, falling snow, blizzard), lit by the sky and the shafted sun.
-  if (P.fog.x > 1e-7) {
+  if (!under && P.fog.x > 1e-7) {
     // Under a rain or storm deck (pad[0].w, gloom) the fog is a low haze of the lower air: the sky
     // above keeps its clouds (a storm's deck has bases and cores, not a grey wall).
     let skyThin = select(1.0, 1.0 - 0.9 * P.pad[0].w, d <= 0.0);
@@ -186,7 +223,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   // height falloff, base level, shafts on), lit by the sun through the crowns (the quarter-res
   // ratio: beams where the leaves let light through) and faintly by the sky — strongly forward
   // scattering, so looking toward a low sun through the trees shows the shafts.
-  if (P.pad[3].x > 1e-6) {
+  if (!under && P.pad[3].x > 1e-6) {
     let hazep = vec4f(P.pad[3].x, P.pad[3].y, P.pad[3].z, 0.0);
     // The haze lives under the crowns: along the ray, weight it by the canopy it actually passes
     // through (four samples), relative to the canopy at the camera that set its density — looking
@@ -206,7 +243,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   // Valley fog (stilled air): the cold pools in the low ground as a flat-topped layer with a soft,
   // gently undulating top (pad[1] = density inside, top level, top softness, weight). Optical
   // depth in closed form for density D·clamp((top − y)/soft, 0, 1) along the ray.
-  if (P.pad[1].x > 1e-7) {
+  if (!under && P.pad[1].x > 1e-7) {
     let D = P.pad[1].x; let soft = P.pad[1].z;
     // The top undulates a few metres (sampled where the ray meets the level, or at its end).
     let tc = select(dist, clamp((P.pad[1].y - cam.y) / dir.y, 0.0, dist), abs(dir.y) > 1e-4);
@@ -230,7 +267,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let ins = (keyC * phase * 0.85 + skyUp * 1.05) * (1.0 - Tv);
     c = vec4f(c.rgb * Tv + ins * exposure, c.a);
   }
-  if(P.desert[0].w>0.0&&P.desert[3].y>0.0){
+  if(!under&&P.desert[0].w>0.0&&P.desert[3].y>0.0){
     let quarter=(sz+3)/4;let base=clamp((p-2)/4,vec2i(0),quarter-1);
     var acc=0.0;var weight=0.0;
     for(var j=0;j<2;j++){for(var i=0;i<2;i++){

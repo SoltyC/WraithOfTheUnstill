@@ -20,6 +20,27 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WSIM_SAMPLE_WGSL } from './waterSim.wgsl.js';
 import { WEATHER_FOG_WGSL } from './post/fog.wgsl.js';
+import { SOUNDING } from '../world/sounding.js';
+
+/** Under the water (Phase 10 U1; post/compose applies the same): extinction (1/m) and what the
+ *  body scatters back per unit of light, for clear water and the mire's tannin. */
+export const UNDERWATER_WGSL = /* wgsl */ `
+const UW_SIG_CLEAR: vec3f = vec3f(0.30, 0.07, 0.05);
+const UW_SIG_TANNIN: vec3f = vec3f(1.0, 1.45, 2.6);
+const UW_ALB_CLEAR: vec3f = vec3f(0.05, 0.13, 0.15);
+const UW_ALB_TANNIN: vec3f = vec3f(0.035, 0.022, 0.008);
+fn uwHash(p: vec2f) -> f32 { var q = fract(p * vec2f(0.1031, 0.1030)); q += dot(q, q.yx + 33.33); return fract((q.x + q.y) * q.x); }
+fn uwNoise(p: vec2f) -> f32 {
+  let i = floor(p); let f = p - i; let u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(uwHash(i), uwHash(i + vec2f(1.0, 0.0)), u.x), mix(uwHash(i + vec2f(0.0, 1.0)), uwHash(i + vec2f(1.0, 1.0)), u.x), u.y) * 2.0 - 1.0;
+}
+/** Where the rippled surface focuses the sun (0..1): two drifting ridged layers, sharpened. */
+fn uwFocus(s: vec2f, t: f32) -> f32 {
+  let a = 1.0 - abs(uwNoise(s * 0.42 + vec2f(t * 0.07, t * 0.04)));
+  let b = 1.0 - abs(uwNoise(s * 0.61 - vec2f(t * 0.05, -t * 0.06) + 7.3));
+  return pow(a * b, 5.0);
+}
+`;
 
 /** Ripple slots (render/water.js writes them; the SSR pass reads the same buffer). One more vec4
  *  follows them: the ripple simulation's window (shaders/waterSim.wgsl.js). */
@@ -108,7 +129,9 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
     if (lane > 1e-3) {
       let q = p * 7.0 + vec2f(R.z * 13.1, R.z * 7.3);
       g += wNoised(q).yz * (0.05 * lane * fade);
-      foam += lane * 0.55 * smoothstep(0.2, 0.75, wNoised(q * 0.6).x * 0.5 + 0.5);
+      // Two octaves, the second turned and offset: one value-noise octave showed its square cells up close.
+      let fn2 = wNoised(q * 0.6).x * 0.6 + wNoised(vec2f(q.y, -q.x) * 1.9 + 3.1).x * 0.4;
+      foam += lane * 0.42 * smoothstep(0.25, 0.8, fn2 * 0.5 + 0.5);
     }
   }
   if (simOn) {
@@ -209,8 +232,11 @@ var<storage, read> biomeA: array<u32>;
 fn wMire(p: vec2f) -> f32 {
   let i = clamp(i32((p.x + 4096.0) / 8.0), 0, 1023); let j = clamp(i32((4096.0 - p.y) / 8.0), 0, 1023);
   let a = unpack4x8unorm(biomeA[j * 1024 + i]);
-  return smoothstep(0.25, 0.6, a.z / max(a.x + a.y + a.z + a.w, 0.05));
+  // The Sounding is sea water, clear and deep (the descent goes green, then blue).
+  let s = length(p - vec2f(${SOUNDING.x}.0, ${SOUNDING.z}.0));
+  return smoothstep(0.25, 0.6, a.z / max(a.x + a.y + a.z + a.w, 0.05)) * smoothstep(${SOUNDING.r - 20}.0, ${SOUNDING.r + 80}.0, s);
 }
+${UNDERWATER_WGSL}
 fn wPath(depth: f32, V: vec3f) -> f32 { return min(depth / max(abs(V.y), 0.1), 60.0); }
 `;
 
@@ -258,6 +284,8 @@ ${HEADER(true)}
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let wp = fragmentInputs.vWorldPos;
   let V = normalize(uniforms.cameraPosition - wp);
+  // Seen from below (U1): the surface pass draws all of it; nothing of what lies past it is kept.
+  if (uniforms.cameraPosition.y < wp.y) { fragmentOutputs.color = vec4f(0.0); return fragmentOutputs; }
   let depth = max(wp.y - wGround(wp.x, wp.z), 0.0);
   let mire = wMire(wp.xz);
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
@@ -338,7 +366,28 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // Rain: rings on the surface, and a pitted, busier water that mirrors less sharply.
     sl = vec4f(sl.xy + rainRipples(wp.xz, t, fp), sl.z, sl.w + 0.0009 * uniforms.wetParams.z);
   }
+  // Screen derivatives of the slope (specular AA, below) before any branch: they need uniform flow.
+  let dsx = dpdx(sl.xy); let dsy = dpdy(sl.xy);
   let mire = wMire(wp.xz);
+  if (camPos.y < wp.y) {
+    // The surface from below: Snell's window (the sky and the sun bent in through a cone of about
+    // 49° round the vertical) and, outside it, the water itself mirrored by total internal reflection.
+    let L0 = uniforms.keyDir; let key0 = atmoKeyColor();
+    let ex0 = uniforms.fogParams.z * atmoExposure();
+    let Nb = normalize(vec3f(sl.x, -1.0, sl.y));
+    let E = key0 * max(L0.y, 0.0) * 0.318 + atmoSkyUp();
+    let body = mix(UW_ALB_CLEAR, UW_ALB_TANNIN, mire) * E;
+    let rr = refract(-V, Nb, 1.333);
+    var colB = body;
+    if (dot(rr, rr) > 1e-4) {
+      let Fr = 0.02 + 0.98 * pow(1.0 - max(dot(normalize(rr), -Nb), 0.0), 5.0);
+      let R = normalize(rr);
+      let sun = key0 * pow(max(dot(R, L0), 0.0), 900.0) * 40.0;
+      colB = mix(atmoSky(R) + sun, body, Fr);
+    }
+    fragmentOutputs.color = vec4f(displayTransform(colB, ex0), 0.0);
+    return fragmentOutputs;
+  }
   var bead = 0.0;
   if (mire > 0.05) { let bb = bogBubbles(wp.xz, t, fp) * mire; sl = vec4f(sl.xy + bb.xy, sl.zw); bead = bb.z; }
   var N = normalize(vec3f(-sl.x, 1.0, -sl.y));
@@ -356,7 +405,6 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Specular AA (adapted from web-ocean (Noniv, MIT) ocean.js: dpdx/dpdy of the slope widen the lobe):
   // slope change across the pixel (box-filter variance /12, as GGX alpha² = 2·var) plus the sheen
   // the unresolved ripples add with range. Gated on the footprint so close-up glints stay sharp.
-  let dsx = dpdx(sl.xy); let dsy = dpdy(sl.xy);
   let aa = (dot(dsx, dsx) + dot(dsy, dsy)) * (1.0 / 6.0) * smoothstep(0.008, 0.05, fp);
   let sheen = 0.007 * smoothstep(30.0, 400.0, dist);
   let rough = sqrt(r0 * r0 + sl.w * 2.0 + min(aa, 0.08) + sheen);

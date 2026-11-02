@@ -33,6 +33,8 @@ export class Body {
     this.surf = 0.5 - 0.5; this.surfLean = 0.5 - 0.5;
     /** Swimming 0..1 and the breaststroke phase 0..1 (inputs). */
     this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
+    /** The dive's pitch (rad, + nose down): the swimming body lies along its path. */
+    this.swimPitch = 0.5 - 0.5;
     /** Gliding 0..1 and the bank (rad, + = banking right; ±0.6) (inputs); gBank is the eased roll. */
     this.glide = 0.5 - 0.5; this.glideBank = 0.5 - 0.5; this.gBank = 0.5 - 0.5;
     /** Bending gesture 0..1 (input): the right arm reaches out toward the verb. */
@@ -113,7 +115,7 @@ export class Body {
     const sw = this.swim;
     const gl = this.glide * (1 - sw); // glide pose weight (swimming wins)
     // Swimming: the body lies forward in the water (~60°), rising and settling with each stroke.
-    const swimLean = 1.05 + 0.08 * Math.sin(Math.PI * 2 * this.swimPhase);
+    const swimLean = Math.max(0.15, Math.min(2.4, 1.05 + 0.08 * Math.sin(Math.PI * 2 * this.swimPhase) + this.swimPitch));
     this.lean += ((0.05 + this.hunch + breathe + 0.035 * Math.min(g.speed, 6) + 0.12 * sb + 0.75 * this.collapse) * (1 - sw - gl) + swimLean * sw + GLIDE_LEAN * gl - this.lean) * k;
     const walkBank = Math.max(-0.25, Math.min(0.25, -yawRate * g.speed * 0.03));
     // Surfing: the whole figure leans into the carve (roll toward the inside of the turn).

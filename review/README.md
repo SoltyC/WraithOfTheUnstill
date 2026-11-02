@@ -55,3 +55,12 @@ The trial (`docs/phase-10/local-music-generation.md`): the same two prompts as A
 | [fen2-surface.png](fen-water/fen2-surface.png) | Looking down into the black water |
 | [cmp-down.png](fen-water/cmp-down.png) | A meadow lake: the new reflection of trees above the screen (top) against before (bottom) |
 | [cmp-level.png](fen-water/cmp-level.png) | The same lake, level: new (top), before (bottom) |
+
+## The dive (Phase 10 U1): play it, then go/no-go
+
+| File | What it shows |
+|---|---|
+| [dive-sounding.mp4](dive/dive-sounding.mp4) | **Start here.** Float, dive through the surface, look round, look up at Snell's window, rise and surface |
+| [dive-stills.png](dive/dive-stills.png) | Diving, deep and level, looking up, rising |
+
+Play: open the game with `?spot=u1-sounding`, swim west, look down and move forward to dive. Space strokes up, Ctrl strokes down.

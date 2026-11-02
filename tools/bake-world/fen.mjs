@@ -5,10 +5,14 @@ import { coastDistance, fenMask, smooth } from './geography.mjs';
 import { blur } from './hydrology.mjs';
 import { gfbm } from '../../src/terrain/gnoise.js';
 import { PINNED } from './pinned.mjs';
+import { SOUNDING } from '../../src/world/sounding.js';
 
 /** The sea's marsh at table 0 (its water is the sea), then two basins. Coast distance of each bank and the table behind it (m). */
 export const FEN_BANKS = [[620, 1.4], [1900, 3.6]];
 const BANK_CORE = 45, BANK_FOOT = 170;
+/** The Sounding (src/world/sounding.js): wholly in the first basin, 600 m from the nearest site. Bare for now: a shelf at the rim,
+ *  steep walls (~65°) and a floor near the height encoding's floor (−128 m). U2 gives it its shaft wall; Ebbhold lies under it. */
+export { SOUNDING };
 const SITES = PINNED.filter(([id]) => id === 'warden-mire' || id.startsWith('shrine-mire-')).map(([id, , , x, z]) => [x, z, id === 'warden-mire' ? 210 : 120]);
 
 /** Hollows and hummocks round a table (m); about half lies under it. */
@@ -47,6 +51,16 @@ export function carveFen(h, hy, n, cell, half, seed) {
       if (d < s[2] * 2) { const top = level + 2.4; if (g < top) g += (top - g) * smooth(s[2] * 2, s[2] * 0.8, d); }
     }
     h[c] += (g - h[c]) * low;
+    // The Sounding: a shelf just under the water round the rim, then the walls down to the floor.
+    {
+      const S = SOUNDING, d = Math.sqrt((x - S.x) * (x - S.x) + (z - S.z) * (z - S.z));
+      if (d < S.r + S.shelf) {
+        const shelf = level - 0.7 + 0.3 * gfbm(x / 40, z / 40, 2, seed + 606);
+        const pit = S.floor + 6 * gfbm(x / 90, z / 90, 3, seed + 607) + (shelf - S.floor) * smooth(S.r - S.wall, S.r, d);
+        const want = Math.min(h[c], d < S.r ? pit : shelf);
+        h[c] += (want - h[c]) * smooth(S.r + S.shelf, S.r + S.shelf * 0.6, d);
+      }
+    }
     // Where a basin meets the open sea, a shore holds it.
     if (level > 0 && low < 0.6) h[c] += (Math.max(h[c], level + 0.4) - h[c]) * smooth(0.1, 0.35, low);
     const wetTo = level > 0 ? level : 0;

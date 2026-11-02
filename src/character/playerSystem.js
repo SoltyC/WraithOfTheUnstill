@@ -86,10 +86,11 @@ export function createPlayerSystem(ctx) {
         controller.wishX = mx;
         controller.wishZ = mz;
         controller.wishUp = d[Action.Jump] - d[Action.Dodge];
-        controller.cameraYaw = arm.yaw;
+        controller.cameraYaw = arm.yaw; controller.cameraPitch = arm.pitch;
         if (input.pressed[Action.Jump]) controller.jumpRequested = true;
         const wa = controller.water;
         if (wa) { wa.qx = controller.pos.x; wa.qz = controller.pos.z; wa.levelQ(); controller.waterLevel = wa.lv; controller.currentX = wa.fx; controller.currentZ = wa.fz; }
+        arm.under = controller.submerged;
         controller.dt = dt;
         controller.update();
         // Camera: follows the carve's heading, banks into the lean, widens with the rush.

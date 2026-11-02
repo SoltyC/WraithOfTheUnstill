@@ -785,3 +785,4 @@ Start **Phase 3 — The Wraith** (BRIEF §17, §8.1). Carry these rules forward:
 - Phase 10 F1: the planar reflection of trees (High and Ultra) works at a meadow lake, including trees off screen. It costs about 1.07 ms against a 1.0 ms budget. Next in F1: black water, then the dawn still and wake clip for the go/no-go.
 - Phase 10 F1: the fen's water is black (tannin optics by mire weight). Dawn stills and a wake are in `screenshots/phase-10-water/fen-dawn-*.png`.
 - Phase 10 F1 is built: the ripple simulation, the reflection of trees, black water, litter, bog gas, dawn mist and Low's wake. The dawn wake clip is in `review/fen-water/`. Waiting on the user's go/no-go.
+- Phase 10 U1, the dive: a bare Sounding pit, 3D swimming by aim, the camera through the surface, the underwater view (fog, shafts, Snell's window) and the robe in water. Clip in `review/dive/`; play at `?spot=u1-sounding`. Waiting on the user's dive.

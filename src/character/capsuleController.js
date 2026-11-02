@@ -38,6 +38,11 @@ export const controllerTuning = {
   swimAccel: 5, swimDecel: 1.6, // m/s²: strokes build speed slowly, the glide carries it
   surge: 1.6,           // m/s added along the facing by a jump (a strong stroke)
   buoyancy: 18, waterDrag: 6,   // the float spring (1/s²) and its damping (1/s)
+  // Under the water (Phase 10 U1): the dive follows the aim (looking down past diveAim while
+  // swimming forward), Jump strokes up, Dodge strokes down; once under, the body drifts up slowly.
+  diveSpeed: 2.6, diveAccel: 4, diveAim: 0.22, diveRise: 0.25, diveDrag: 1.4,
+  /** Deeper than this under the float depth (m): submerged (the camera may follow it down). */
+  diveUnder: 0.5,
 };
 
 export class CapsuleController {
@@ -62,6 +67,10 @@ export class CapsuleController {
     this.wishZ = 0; // camera-relative forward [-1, 1]
     this.wishUp = 0;
     this.cameraYaw = 0;
+    /** Camera pitch (rad, positive looking down; owner): the dive follows it. */
+    this.cameraPitch = 0;
+    /** Under the water (deeper than diveUnder below the float depth); the body's pitch in the dive (rad, + nose down). */
+    this.submerged = false; this.swimPitch = 0.5 - 0.5;
     /** Walking speed scale (an attack's committed footing, game/weapons) and a hold on the facing (the swing's heading). */
     this.walkMul = 1; this.faceLock = false;
     this.jumpRequested = false;
@@ -157,6 +166,7 @@ export class CapsuleController {
       if (!this.swimming && wlv - bed > T.swimEnter && p.y < wlv - T.floatDepth + 0.05) { this.swimming = true; this.grounded = false; this.surf.want = false; }
       else if (this.swimming && wlv - bed < T.swimExit) this.swimming = false;
     } else this.swimming = false;
+    if (!this.swimming) { this.submerged = false; this.swimPitch = 0; }
     if (this.swimming) { this._wx = wx; this._wz = wz; this._wl = wl; this._swim(); return; }
 
     // Bend-step dodge: a short momentum-carrying slide along the wish (or backward).
@@ -264,20 +274,47 @@ export class CapsuleController {
    *  spring at the surface, the bed and the solids below. */
   _swim() {
     const T = controllerTuning, h = T.substep, p = this.pos, v = this.vel, wx = this._wx, wz = this._wz, wl = this._wl;
-    const tx = wx * T.swimSpeed + this.currentX, tz = wz * T.swimSpeed + this.currentZ;
+    // Diving down the aim trades forward speed for depth (the stroke's speed is the same).
+    const dive = this.wishZ > 0.2 ? Math.max(0, Math.min(1.3, (this.cameraPitch - T.diveAim) * 1.4)) : 0;
+    const hk = Math.cos(dive);
+    const tx = wx * T.swimSpeed * hk + this.currentX, tz = wz * T.swimSpeed * hk + this.currentZ;
     const rate = wl > 0.01 ? T.swimAccel : T.swimDecel;
     let dx = tx - v.x, dz = tz - v.z;
     const dl = Math.sqrt(dx * dx + dz * dz), maxDv = rate * h;
     if (dl > maxDv) { dx *= maxDv / dl; dz *= maxDv / dl; }
     v.x += dx; v.z += dz;
-    if (this.jumpRequested) { v.x += Math.sin(this.yaw) * T.surge; v.z += Math.cos(this.yaw) * T.surge; }
+    if (this.jumpRequested && !this.submerged) { v.x += Math.sin(this.yaw) * T.surge; v.z += Math.cos(this.yaw) * T.surge; }
     this.jumpRequested = false; this.dodgeRequested = false;
     // Float: a damped spring to the swimming depth (a fall into deep water plunges, then rises).
     const target = this.waterLevel - T.floatDepth;
-    v.y += ((target - p.y) * T.buoyancy - v.y * T.waterDrag) * h;
+    // The dive: looking down while stroking forward takes the body down the aim; Jump and Dodge
+    // stroke straight up and down. Near the surface, the float spring holds it unless it dives.
+    let wy = -Math.sin(dive) * (this.wishZ > 0.2 ? this.wishZ : 0) + this.wishUp;
+    if (wy > 1) wy = 1; else if (wy < -1) wy = -1;
+    const below = target - p.y;
+    if (wy < -0.05 || below > T.diveUnder * 0.5) {
+      // Under: steer the vertical speed toward the wish; with none, drift up (the body's buoyancy).
+      const ty = wy !== 0 ? wy * T.diveSpeed : T.diveRise;
+      const r = (wy !== 0 ? T.diveAccel : T.diveDrag) * h;
+      v.y += Math.max(-r, Math.min(r, ty - v.y));
+      // Rising back to the float depth: hand over to the spring without a bob.
+      if (below < 0.15 && v.y > 0) v.y = Math.min(v.y, below * 4 + 0.1);
+    } else v.y += ((target - p.y) * T.buoyancy - v.y * T.waterDrag) * h;
+    this.submerged = below > T.diveUnder;
+    // The body's pitch follows its path (nose down diving, up rising; level at the surface).
+    const sp = Math.sqrt(v.x * v.x + v.z * v.z), pt = below > 0.2 ? Math.atan2(-v.y, Math.max(sp, 0.6)) : 0;
+    this.swimPitch += (pt - this.swimPitch) * Math.min(1, h * 4);
+    const ox = p.x, oz = p.z;
     p.x += v.x * h; p.y += v.y * h; p.z += v.z * h;
     if (this.solids !== null) this.solids.push(p, v);
     const g = this.ground; g.qx = p.x; g.qz = p.z; g.sample();
+    // A wall (ground well above the body: the Sounding's sides): slide along it, never up it.
+    if (g.h > p.y + 0.6) {
+      g.qx = p.x; g.qz = oz; g.sample();
+      if (g.h <= p.y + 0.6) { p.z = oz; v.z = 0; }
+      else { g.qx = ox; g.qz = p.z; g.sample(); if (g.h <= p.y + 0.6) { p.x = ox; v.x = 0; } else { p.x = ox; p.z = oz; v.x = 0; v.z = 0; } }
+      g.qx = p.x; g.qz = p.z; g.sample();
+    }
     if (p.y < g.h) { p.y = g.h; if (v.y < 0) v.y = 0; }
     this.grounded = false;
     this._face();

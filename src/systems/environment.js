@@ -262,9 +262,26 @@ export async function addEnvironmentSystems(g) {
   // Upload post/SSR inputs after the shared wind and weather have reached this frame.
   // Otherwise water materials see current wind while SSR reflects the previous frame.
   loop.add(post);
+  // The water at the camera (Phase 10 U1, post/compose's underwater view): its level (−1e4: none)
+  // and its tannin (the mire's share; the Sounding is clear). Read by the next frame's post params.
+  const camWater = { lv: -1e4, mire: 0, under: false };
+  post.post.onParams((P) => { P[47] = camWater.lv; P[55] = camWater.mire; });
+  const { SOUNDING } = await import('../world/sounding.js');
   // Water: its clock and the Wraith wading (ripples, the splash going in).
   loop.add({ name: 'water', update: () => {
     const wa = g.water; if (!wa) return;
+    {
+      const c = camera.position; wa.qx = c.x; wa.qz = c.z; wa.levelQ();
+      camWater.lv = wa.lv === wa.lv ? wa.lv : -1e4;
+      // Crossing the surface: the frame before is another world (TAA would smear the surface's
+      // rows from above into the water below).
+      const under = c.y < camWater.lv;
+      if (under !== camWater.under) { camWater.under = under; post.post.resetHistory = true; }
+      streamer.mqx = c.x; streamer.mqz = c.z; streamer.sampleBiome();
+      const s = (streamer.bw2 - 0.25) / 0.35, k = s < 0 ? 0 : s > 1 ? 1 : s * s * (3 - 2 * s);
+      const dx = c.x - SOUNDING.x, dz = c.z - SOUNDING.z, d = (Math.sqrt(dx * dx + dz * dz) - SOUNDING.r + 20) / 100;
+      camWater.mire = k * (d < 0 ? 0 : d > 1 ? 1 : d * d * (3 - 2 * d));
+    }
     wa.time = clock.simTime; wa.px = controller.pos.x; wa.py = controller.pos.y; wa.pz = controller.pos.z;
     wa.speed = Math.sqrt(controller.vel.x * controller.vel.x + controller.vel.z * controller.vel.z);
     wa.swimming = controller.swimming; wa.strokePhase = g.wraithView.wraith.swimPhase;

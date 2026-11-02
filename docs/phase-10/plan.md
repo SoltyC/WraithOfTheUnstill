@@ -33,6 +33,20 @@ Nothing below the surface.
 - The underwater view: depth fog and colour falloff, caustics, light shafts from above, drifting particles, the surface as a bright ceiling from below.
 - **Checkpoint: the user dives.** If swimming down isn't a joy alone, the city does not get built.
 
+**U1 built 2026-11-02, for the user to dive:**
+- **The test pit:** the Sounding is carved bare in the bake (`src/world/sounding.js`, `tools/bake-world/fen.mjs`). It's 250 m in radius at (−2800, −1400) in the coastal basin, 600 m from the nearest site. A shelf sits 0.6 m under the rim, walls fall at about 65° to a floor near −105 m, and the water is 1.41 m.
+- **The swim:** looking down past 0.22 rad while stroking forward dives along the aim, trading forward speed for depth. Space strokes up and Ctrl down. Once under, the body drifts up at 0.25 m/s; near the surface the float spring takes over without a bob. Walls block the swimmer; they no longer lift it up their face. The body pitches along its path (`swimPitch`). Footfalls stop while swimming: they were stamping prints on the floor below and throwing spray into the water.
+- **The robe under water:** no wind, almost no gravity, and strong drag (`WATER_DRAG`), so it trails the dive and spreads.
+- **The camera** follows the Wraith under. The above-water clamp eases off and back on, so it never jumps. TAA history resets when it crosses the plane; without that, the surface seen from above smeared into the water as stepped bands.
+- **The underwater view** (`post/compose`, `UNDERWATER_WGSL`): light lost along each ray, the body's own glow, and none of the air's fogs. A pixel counts as under water if its ray starts under the surface, so a camera at the surface splits the frame at the waterline. Light shafts come from the bent sun, focused by the ripples (10 jittered samples over 45 m). From below, the surface shows Snell's window, with the sky and sun bent in, and total internal reflection outside it. The Sounding is clear sea water (blue-green); fen water stays tannin.
+- **The surface:** a body more than about 1.3 m down lays no trail or foam and stops moving the simulated surface. A dive leaves a short froth; the foam has a second noise octave because one showed square cells up close.
+- **Cost:** 7.95 ms mean under water against 7.6 at the surface in the same spot (High, 300–400 frames; Minecraft open). 0 GPU errors, 0 late pipelines.
+- **The clip:** `review/dive/dive-sounding.mp4` (16 s, 10:00): float, dive, look round, look up at the window, rise, surface.
+- **Play it:** `?spot=u1-sounding` (the rim, wading, facing the pit).
+- **Not yet in U1:** drifting particles under water, caustics on the bed, and the robe's real cloth tuning in water. The bed is 105 m down and unseen, so the pit is a blue void with shafts until U2 dresses it.
+
+**Checkpoint: the user dives** (go/no-go on the city).
+
 **U2 — The Lung and the descent (2 sessions).** Air shown on the body only: cowl light, bubbles, the robe's life. The Sounding carved in the bake with a shaft wall from the canyon kit. Kelp that reacts to the body. The tear, the failed ascent (a wake-up, never a death), the bubble column and whirlpool.
 
 **U3 — The undercroft (1 session).** **The whirlpool hides a cut:** the screen is all bubbles, so the Wraith can be moved to another place at no cost. Interiors therefore live in their own sealed space outside the terrain, not under it. It avoids holes in the heightfield and keeps Phase 13's SDF work out of this phase. The cave is a hand-shaped mesh kit, and Phase 13 can replace it.
@@ -192,7 +206,7 @@ The biggest technical risk. Nothing else is worth building if this frame fails.
 - **Frame:** the fen view with everything on runs at 10.3 ms mean on High (400 frames twice, Minecraft open). 0 GPU errors, 0 late pipelines.
 - **Not in F1:** the trees in the fen's mirror (F6), and the Warden's bow wave on Low; it can lay its trail through `water.ripple`.
 
-**Go/no-go: waiting on the user** (the clip and the stills above).
+**Go: the user approved F1 on 2026-11-02** ("It's looking good, continue") from the dawn clip and stills.
 
 **Go/no-go checkpoint:** a still of the mirror at dawn and a clip of a wake crossing it, before F2. **The fallback,** if planar reflection misses budget, is to frame the signature shot so SSR holds and keep trees on screen; cheaper, but a smaller frame.
 
