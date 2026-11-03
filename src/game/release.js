@@ -88,7 +88,7 @@ export function releaseShots(o = {}) {
   shots.push({ dur: 8, ease: 0.8, wraith: false, blur: 0.3, leave: true, hour: 17.6, morrow: M,
     keys: [{ t: 0, p: J(6.4, 0.7, 1.7), at: J(-8, -0.9, 0.7), fov: 0.62 }, { t: 1, p: J(5.4, 0.6, 1.6), at: J(-8, -0.8, 0.7), fov: 0.6 }] });
   shots.push({ dur: 7, ease: 0.6, wraith: false, blur: 0.3, dof: 0.6, morrow: { ...M, cut: [0.5, 0.9] },
-    keys: [{ t: 0, p: J(1.3, 2.3, 1.05), at: J(1.95, 0.1, 0.62), fov: 0.5 }, { t: 1, p: J(1.45, 2.05, 1.0), at: J(1.95, 0.08, 0.6), fov: 0.47 }] });
+    keys: [{ t: 0, p: J(1.6, 3.4, 0.95), at: J(2.05, 0, 0.8), fov: 0.5 }, { t: 1, p: J(1.75, 3.0, 0.92), at: J(2.05, 0, 0.78), fov: 0.47 }] });
   shots.push(card(8, 'Hard cut: the Wraith comes down through the kelp, seen from below by the held people. Heads turn. Hands reach.'));
   // 12. The player's own record: each person named, from their own eyes, the dark robe bending down. "Don't."
   const rec = (o.record || []).filter((r) => r.kind === 'named');

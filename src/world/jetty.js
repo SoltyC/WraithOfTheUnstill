@@ -75,9 +75,30 @@ export function soundingSites() {
 /** The Lung (storylines.md): a diver's breathing bladder of brass and oiled hide — a squat brass bottle, a hide bag lashed to it
  *  with straps, a short hose and mouthpiece; held in both hands (systems/npcs.js puts it between them). Built round its middle. */
 export function lungProp(b) {
-  b.drum(0, 0, -0.11, 0.11, 0.1, 0.085, 12, MAT.METAL, 1, { solid: false, lie: 1, yaw: 0 });              // the brass bottle, lying across
-  b.drum(0, 0.05, -0.09, 0.07, 0.12, 0.1, 10, MAT.CANVAS, 2, { solid: false, lie: 1, yaw: 0.0 });          // the hide bag over it
-  for (const x of [-0.07, 0.07]) b.drum(x, 0, -0.125, 0.125, 0.125, 0.125, 12, MAT.IRON, 3, { solid: false, lie: 1, yaw: Math.PI / 2 }); // straps
-  stick(b, [0.1, 0.02, 0], [0.2, 0.08, 0.06], 0.018, 0.016, 5, MAT.CANVAS, 4);                          // the hose
-  b.drum(0.2, 0.06, 0.08, 0.11, 0.024, 0.02, 8, MAT.METAL, 5, { solid: false });                          // the mouthpiece
+  // A piece of it lying along z (across her lap): centred at (x, y, zc), len long, radius r0 at the −z end to r1 at the +z end.
+  // (A lying drum rests at y0 with its axis at y0 + r0, its length y1 − y0: so y0 = y − r0.)
+  const seg = (x, y, zc, len, r0, r1, n, mat, seed) =>
+    b.drum(x, zc, y - r0, y - r0 + len, r0, r1, n, mat, seed, { solid: false, lie: 1, yaw: 0 });
+  // The bottle: brass, its ends domed, a band at each shoulder, a short neck and the valve's wheel at the far end.
+  seg(0, 0, 0, 0.24, 0.075, 0.075, 16, MAT.METAL, 1);
+  seg(0, 0, 0.14, 0.04, 0.075, 0.05, 16, MAT.METAL, 1);
+  seg(0, 0, 0.17, 0.02, 0.05, 0.022, 12, MAT.METAL, 1);
+  seg(0, 0, 0.19, 0.03, 0.02, 0.02, 10, MAT.METAL, 1);
+  seg(0, 0, 0.205, 0.008, 0.042, 0.042, 12, MAT.IRON, 2);
+  seg(0, 0, -0.14, 0.04, 0.05, 0.075, 16, MAT.METAL, 1);
+  seg(0, 0, -0.165, 0.012, 0.03, 0.05, 12, MAT.METAL, 1);
+  for (const z of [-0.105, 0.105]) seg(0, 0, z, 0.014, 0.079, 0.079, 16, MAT.METAL, 3);
+  // The bladder: oiled hide, slack and lumpy, lying along the top of the bottle; tied off at the valve end.
+  seg(0.008, 0.095, -0.04, 0.16, 0.05, 0.072, 12, MAT.CANVAS, 4);
+  seg(-0.01, 0.1, 0.05, 0.12, 0.068, 0.055, 12, MAT.CANVAS, 5);
+  seg(0.0, 0.088, 0.12, 0.05, 0.05, 0.022, 10, MAT.CANVAS, 6);
+  // Two straps round bottle and bladder both.
+  for (const z of [-0.06, 0.07]) {
+    const pts = [[0.08, -0.01], [0.082, 0.07], [0.055, 0.15], [0, 0.18], [-0.055, 0.15], [-0.082, 0.07], [-0.08, -0.01], [-0.05, -0.065], [0, -0.08], [0.05, -0.065], [0.08, -0.01]];
+    for (let k = 0; k + 1 < pts.length; k++) stick(b, [pts[k][0], pts[k][1], z], [pts[k + 1][0], pts[k + 1][1], z], 0.007, 0.007, 4, MAT.IRON, 7);
+  }
+  // The hose: out of the bladder's tied end, a loop down and back, to the mouthpiece.
+  const hose = [[0, 0.09, 0.145], [0.02, 0.1, 0.19], [0.05, 0.07, 0.23], [0.075, 0.02, 0.235], [0.085, -0.03, 0.2], [0.09, -0.05, 0.15]];
+  for (let k = 0; k + 1 < hose.length; k++) stick(b, hose[k], hose[k + 1], 0.012, 0.012, 6, MAT.CANVAS, 8);
+  b.drum(0.09, 0.15, -0.075, -0.035, 0.016, 0.022, 10, MAT.METAL, 9, { solid: false });
 }
