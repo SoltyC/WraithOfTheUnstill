@@ -194,7 +194,9 @@ export function createPost(scene, camera) {
       const pm = camera.getProjectionMatrix(true);
       camera.getViewMatrix(true).multiplyToRef(pm, vp);
       vp.invertToRef(invVP);
-      const a = invVP.m, b = (havePrev ? prevVP : vp).m;
+      // (On a reset — a cut — there is no previous view to move from: last frame's camera was somewhere else, and the motion
+      // blur would smear the whole first frame of the shot.)
+      const a = invVP.m, b = (havePrev && !post.resetHistory ? prevVP : vp).m;
       const v = vp.m;
       for (let i = 0; i < 16; i++) { P[i] = a[i]; P[16 + i] = b[i]; P[88 + i] = v[i]; }
       prevVP.copyFrom(vp); havePrev = true;

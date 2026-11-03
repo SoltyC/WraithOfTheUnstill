@@ -35,9 +35,9 @@ export function addMorrowSystem(g) {
       if (Math.hypot(p[0] - st.x, p[2] - st.z) > 2) api.put(n, p[0], p[2]);
       st.x = p[0]; st.z = p[2]; st.yaw = yaw ?? Math.atan2(-1, 0);
       // The Lung held up and out before her, clear of her mantle, cradled on her left hand (systems/npcs.js 'lap': its middle
-      // over that hand, a little right and up, on the forearm: LAP); the knife in her right. Each stroke: poised high over the near end, one quick
+      // over that hand, a little right and up, on the forearm: LAP); the knife in her right. Each stroke: poised over the Lung's middle, one quick
       // slash out along the seam, away from her (so the blade ends, and is held pressed, at the far end, clear of her hood), then
-      // lifted high and carried back. cut 0..1 runs STROKES of them.
+      // lifted just clear and carried back — kept out in front of her face the whole time. cut 0..1 runs STROKES of them.
       const sy = Math.sin(st.yaw), cy = Math.cos(st.yaw), rx = cy, rz = -sy;
       const lapY = p[1] + 0.66, out = 0.74;
       const lx = st.x + sy * out - rx * 0.05, lz = st.z + cy * out - rz * 0.05;
@@ -46,7 +46,7 @@ export function addMorrowSystem(g) {
       let along, lift;
       if (ph < 0.16) { const e = ph / 0.16, s = e * e * (3 - 2 * e); along = SEAM[1] - 0.02 + (SEAM[0] - SEAM[1] + 0.02) * s; lift = -0.004; } // the slash
       else if (ph < 0.42) { along = SEAM[0]; lift = -0.004; }                                                            // pressed
-      else { const e = (ph - 0.42) / 0.58, s = e * e * (3 - 2 * e); along = SEAM[0] - (SEAM[0] + 0.02 - SEAM[1]) * s; lift = 0.22 * Math.sin(Math.min(1, e * 1.25) * Math.PI) ** 0.7; } // back, high
+      else { const e = (ph - 0.42) / 0.58, s = e * e * (3 - 2 * e); along = SEAM[0] - (SEAM[0] + 0.02 - SEAM[1]) * s; lift = 0.08 * Math.sin(Math.min(1, e * 1.25) * Math.PI) ** 0.7; } // back, just clear (higher, it swung up past her face)
       // The gash (world/jetty.js): shut until the stroke that opens it (the first at OPEN), opened behind the blade on its slash;
       // then, the knife held pressed, the bladder slumps as the air goes out; slumped after.
       const first = Math.floor(cut * STROKES) === Math.round(OPEN * STROKES);

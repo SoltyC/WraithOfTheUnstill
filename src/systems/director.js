@@ -296,6 +296,21 @@ export function addDirectorSystem(g) {
   } };
   const S = loop.systems, k = S.findIndex((q) => q.name === 'atmosphere');
   S.splice(k < 0 ? S.length : k, 0, sys);
+  // Before the Wraith is simulated and drawn: where a shot's path puts it this frame (the director runs after the Wraith, so on a
+  // cut its first frame showed it still in the last shot's place — an empty room, then a figure from nowhere).
+  const atPre = { i: 0, u: 0, cut: false };
+  const pre = { name: 'directorPath', update: () => {
+    if (!d.active) return;
+    const tn = manual ? t : t + clock.dt;
+    if (tn >= len) return;
+    shotAt(shots, tn, 0, atPre);
+    const sh = shots[atPre.i];
+    if (!sh.wraith || !sh.wraith.path) return;
+    const P = sh.wraith.path, n = P.length - 1, q = Math.min(n - 1e-6, atPre.u * n), k = Math.floor(q), f = q - k, A = P[k], B = P[Math.min(n, k + 1)];
+    controller.pos.x = A[0] + (B[0] - A[0]) * f; controller.pos.y = A[1] + (B[1] - A[1]) * f; controller.pos.z = A[2] + (B[2] - A[2]) * f;
+  } };
+  const kp = S.findIndex((q) => q.name === 'player');
+  S.splice(kp < 0 ? 0 : kp, 0, pre);
   return d;
 }
 

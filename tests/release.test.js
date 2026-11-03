@@ -29,4 +29,11 @@ describe('the release, rough cut', () => {
     const { shots } = releaseShots({ record: [rec('orla', 'held')] });
     expect(shots.filter((s) => s.record && s.wraith && s.wraith.path).length).toBe(1);
   });
+  it('replays only the walk up to them, not from wherever the Wraith was before a jump', () => {
+    const r = { id: 'hanne', kind: 'named', at: [39, 0, 54.85], path: [[-80, 0, 0, 0], [-79, 0, 0, 0], [36, 0, 52, 0], [37, 0, 53, 0], [38, 0, 53.6, 0]] };
+    const { shots } = releaseShots({ record: [r] });
+    const P = shots.find((s) => s.record).wraith.path;
+    expect(P.length).toBe(3);
+    for (let k = 1; k < P.length; k++) expect(Math.hypot(P[k][0] - P[k - 1][0], P[k][2] - P[k - 1][2])).toBeLessThan(3);
+  });
 });

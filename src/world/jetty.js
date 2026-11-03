@@ -94,7 +94,7 @@ const prop = (id, build, show) => ({ id: `prop-morrow-${id}`, npc: 'morrow', kin
 /** The gash in this many pieces along the seam (a from SEAM[0] to SEAM[1], the Lung's own frame); the bladder slumps in SLUMP
  *  stages (the first whole). The cut's progress o: 0..GASH as the blade opens it, then GASH..GASH + SLUMP − 1 as it slumps. */
 export const GASH = 6, SLUMP = 4;
-export const SEAM = [0.06, -0.12];
+export const SEAM = [0.1, -0.03];   // (the outer half: worked near its near end, the knife came up beside her face)
 export const slumpOf = (o) => (o < GASH + 1 ? 0 : Math.min(SLUMP - 1, Math.floor(o - GASH)));
 
 /** The bladder's pieces: centre u, y, a, length, radius at the near end, at the far end; each stage of its slump scales the
@@ -155,7 +155,7 @@ function gash(b, s, k0, k1) {
 }
 
 /** Where the knife's point is from her fist: ahead along her facing, below (m). */
-export const KNIFE = [0.055, 0.29];
+export const KNIFE = [0.055, 0.23];   // (longer, the fist rode up level with her face)
 
 /** Morrow's knife, in her fist (the origin), its blade down and forward into the seam (the point KNIFE out and below). A prop is placed but never turned, so it
  *  is built for her facing on the jetty (−x: out along it); the blade's flat lies along x, the seam's line. */

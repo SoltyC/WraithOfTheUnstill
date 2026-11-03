@@ -109,12 +109,18 @@ export function releaseShots(o = {}) {
     if (!d || !r.path.length) continue;
     // From their eyes: in front of the head, so the camera is clear of their own hood (the lens is wide). A name is said at arm's length,
     // so the Wraith is held off to NEAR in the replay — closer, its robe is the whole frame — and the eye looks up at its head.
-    const NEAR = 2.0, end = r.path[r.path.length - 1];
+    // Only the walk up to them: from the last jump in the record (a door, a teleport — samples metres apart), or the Wraith spends
+    // the first of the shot somewhere out of sight and appears from nowhere when the path crosses the jump.
+    let from = 0;
+    for (let k = 1; k < r.path.length; k++) { const A = r.path[k - 1], B = r.path[k]; if (Math.hypot(B[0] - A[0], B[1] - A[1], B[2] - A[2]) > 3) from = k; }
+    const walk = r.path.slice(from);
+    if (walk.length < 2) walk.push(walk[0]);   // (a path needs two ends)
+    const NEAR = 2.0, end = walk[walk.length - 1];
     let ex = end[0] - r.at[0], ez = end[2] - r.at[2], el = Math.hypot(ex, ez);
     if (el < 0.05) { ex = Math.sin(end[3]) * -1; ez = Math.cos(end[3]) * -1; el = 1; }   // on top of them: back along its facing
     const ux = ex / el, uz = ez / el;
     const eye = [r.at[0] + ux * 0.55, r.at[1] + 1.45, r.at[2] + uz * 0.55];
-    const path = r.path.map(([x, y, z, yaw]) => {
+    const path = walk.map(([x, y, z, yaw]) => {
       const dx = x - r.at[0], dz = z - r.at[2], dl = Math.hypot(dx, dz);
       if (dl >= NEAR) return [...W(x, y, z), yaw];
       const ox = dl > 0.05 ? dx / dl : ux, oz = dl > 0.05 ? dz / dl : uz;

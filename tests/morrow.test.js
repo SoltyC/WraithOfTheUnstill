@@ -27,10 +27,18 @@ describe('Morrow and the knife', () => {
       expect(props.some((p) => p.id.includes('gash') && p.show(o))).toBe(o > 0);
     }
   });
-  it('raises the knife well clear of the Lung on the way back, and presses it to the seam on the slash', () => {
+  it('lifts the knife clear of the Lung on the way back, and presses it to the seam on the slash', () => {
     const { m, npc } = boot();
     m.show(true, undefined, null, 0.81); const slash = npc.view.wraith.performance.handT[4];
     m.show(true, undefined, null, 0.92); const back = npc.view.wraith.performance.handT[4];
-    expect(back - slash).toBeGreaterThan(0.15);   // (both on the slumped bladder: a later stroke)
+    expect(back - slash).toBeGreaterThan(0.05);   // (both on the slumped bladder: a later stroke)
+  });
+  it('keeps the knife out in front of her face through every stroke', () => {
+    const { m, npc } = boot();
+    for (let c = 0.1; c < 1; c += 0.005) {
+      m.show(true, undefined, null, c);
+      const T = npc.view.wraith.performance.handT, f = -(T[3] - npc.x);   // ahead of her (she faces -x)
+      expect(f).toBeGreaterThan(0.38);
+    }
   });
 });
