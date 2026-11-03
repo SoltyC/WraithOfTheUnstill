@@ -5,6 +5,7 @@
 // LUT atmosphere; since Phase 6 tonemapping lives in the post chain.
 
 import { GRID_N, GRID_CELL, MAX_PER_CELL, LIGHTS_VEC4 } from '../render/lightGrid.js';
+import { SOUNDING } from '../world/sounding.js';
 
 /** Uniforms every lit material declares (names must match render/environment.js). */
 export const ENV_UNIFORMS = ['keyDir', 'keyColor', 'skyZenith', 'skyHorizon', 'groundBounce', 'sunDir', 'sunHalo', 'fogParams', 'cameraPosition', 'envMisc', 'screenInfo', 'artParams', 'wetParams'];
@@ -97,6 +98,17 @@ fn applyFog(col: vec3f, worldPos: vec3f, camPos: vec3f, sunDir: vec3f, zenith: v
 fn displayTransform(hdr: vec3f, exposure: f32) -> vec3f {
   let x = hdr * exposure;
   return clamp(select(x, vec3f(0.0), x != x), vec3f(0.0), vec3f(30000.0));
+}
+
+// The Sounding's deep water (Phase 10 U2): the share of the sun's and the sky's light that reaches a point under it, the sun
+// along its bent path and the sky straight down, at half the view's loss (post/ao's compose) so the descent still reads. 1 outside
+// the pit or above its water. The kelp, the terrain and the cloth (the Wraith, the robed) all take it; their own glows do not.
+fn soundingDown(wp: vec3f, L: vec3f) -> vec3f {
+  let d = length(wp.xz - vec2f(${SOUNDING.x}.0, ${SOUNDING.z}.0));
+  if (d > ${SOUNDING.r + 40}.0 || wp.y > 0.6) { return vec3f(1.0); }
+  let dep = max(1.41 - wp.y, 0.0);
+  let rs = refract(-L, vec3f(0.0, 1.0, 0.0), 0.7502);
+  return exp(-vec3f(0.30, 0.07, 0.05) * 0.5 * (0.5 * dep + 0.5 * dep / max(-rs.y, 0.2)));
 }
 
 // Interleaved gradient noise for dithering away 8-bit banding in the gradients.

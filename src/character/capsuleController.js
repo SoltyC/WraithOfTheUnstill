@@ -96,6 +96,9 @@ export class CapsuleController {
     this.waterLevel = NaN; this.swimming = false;
     /** The current where the capsule swims (m/s, owner): a river carries the swimmer along. */
     this.currentX = 0.5 - 0.5; this.currentZ = 0.5 - 0.5;
+    /** Under the water (owner; the Lung, game/lung.js): a pull across (m/s: the whirlpool's turn), a vertical current (m/s: the whirlpool's pull, an upwelling), the strokes'
+     *  strength (0..1: a spent Lung weakens them) and the body's drift with no stroke (m/s: + rises, − sinks). */
+    this.currentY = 0.5 - 0.5; this.pullX = 0.5 - 0.5; this.pullZ = 0.5 - 0.5; this.strokeMul = 1; this.rise = controllerTuning.diveRise;
     /** Water level query (render/water.js), set by the owner; the player system reads it. */
     this.water = null;
     /** On a skim (F3): riding the water's surface (systems read it: the noise, the wake). */
@@ -288,7 +291,7 @@ export class CapsuleController {
     // Diving down the aim trades forward speed for depth (the stroke's speed is the same).
     const dive = this.wishZ > 0.2 ? Math.max(0, Math.min(1.3, (this.cameraPitch - T.diveAim) * 1.4)) : 0;
     const hk = Math.cos(dive);
-    const tx = wx * T.swimSpeed * hk + this.currentX, tz = wz * T.swimSpeed * hk + this.currentZ;
+    const tx = wx * T.swimSpeed * hk + this.currentX + this.pullX, tz = wz * T.swimSpeed * hk + this.currentZ + this.pullZ;
     const rate = wl > 0.01 ? T.swimAccel : T.swimDecel;
     let dx = tx - v.x, dz = tz - v.z;
     const dl = Math.sqrt(dx * dx + dz * dz), maxDv = rate * h;
@@ -305,11 +308,14 @@ export class CapsuleController {
     const below = target - p.y;
     if (wy < -0.05 || below > T.diveUnder * 0.5) {
       // Under: steer the vertical speed toward the wish; with none, drift up (the body's buoyancy).
-      const ty = wy !== 0 ? wy * T.diveSpeed : T.diveRise;
+      const ty = (wy !== 0 ? wy * T.diveSpeed * (wy > 0 ? this.strokeMul : 1) : this.rise) + this.currentY;
       const r = (wy !== 0 ? T.diveAccel : T.diveDrag) * h;
       v.y += Math.max(-r, Math.min(r, ty - v.y));
       // Rising back to the float depth: hand over to the spring without a bob.
       if (below < 0.15 && v.y > 0) v.y = Math.min(v.y, below * 4 + 0.1);
+    } else if (this.currentY < -0.05) {
+      // A pull down at the surface (the whirlpool) takes the body under.
+      v.y += Math.max(-T.diveAccel * h, this.currentY - v.y);
     } else v.y += ((target - p.y) * T.buoyancy - v.y * T.waterDrag) * h;
     this.submerged = below > T.diveUnder;
     // The body's pitch follows its path (nose down diving, up rising; level at the surface).

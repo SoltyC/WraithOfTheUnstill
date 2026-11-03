@@ -271,7 +271,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let cavity = mix(1.0, 0.86 + 0.14 * clamp(creaseH * 0.5 + 0.5, 0.0, 1.0), cf1 * ck);
 
   let L = uniforms.keyDir;
-  let key = atmoKeyColor();
+  let uwd = soundingDown(wp, L);   // deep in the Sounding the sun and sky are dimmed by the water above (U2)
+  let key = atmoKeyColor() * uwd;
   let nl = dot(N, L);
   let nv = max(dot(N, V), 1e-3);
   let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
@@ -279,7 +280,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Diffuse: wrapped (fabric scatters past the terminator).
   let diff = clamp((nl + 0.35) / 1.35, 0.0, 1.0);
   let canopy = canopyAt(wp.xz);
-  let sky = shIrradiance(N) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, N);
+  let sky = (shIrradiance(N) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, N)) * uwd;
   var col = albedo * (key * diff * vis * mix(0.55, 1.0, occ) / PI + sky * ao * ambientK * cavity);
   // Sheen: fuzz at grazing view (Charlie), the fabric's defining highlight.
   let H = normalize(L + V);
@@ -435,7 +436,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let V = normalize(camPos - wp);
   let T = normalize(fragmentInputs.vNormal);          // along the strand
   let L = uniforms.keyDir;
-  let key = atmoKeyColor();
+  let uwd = soundingDown(wp, L);
+  let key = atmoKeyColor() * uwd;
   // Dark roots, grey frost-tipped ends (a wolf-grey ruff), varying per strand.
   var albedo = mix(vec3f(0.07, 0.066, 0.062), vec3f(0.17, 0.162, 0.15), smoothstep(0.25, 1.0, h / sl));
   albedo *= 0.85 + 0.3 * r2;
@@ -447,7 +449,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let th = dot(T, Hh);
   let spec = pow(sqrt(max(1.0 - th * th, 0.0)), 60.0) * 0.05 + pow(sqrt(max(1.0 - th * th, 0.0)), 12.0) * albedo.x * 0.5;
   var col = albedo * key * diff * vis * selfShadow / PI + key * spec * vis * selfShadow
-          + albedo * (shIrradiance(T) * uniforms.envMisc.w * canopySky(canopyAt(wp.xz)) + canopyFill(canopyAt(wp.xz), T)) * selfShadow;
+          + albedo * (shIrradiance(T) * uniforms.envMisc.w * canopySky(canopyAt(wp.xz)) + canopyFill(canopyAt(wp.xz), T)) * selfShadow * uwd;
   // Fire, lamp and spell light on the fur too (a strand scatters all round: fully wrapped), as on the cloth it grows from —
   // without it the ruffs went black by firelight and indoors.
   let fex = uniforms.fogParams.z * atmoExposure();

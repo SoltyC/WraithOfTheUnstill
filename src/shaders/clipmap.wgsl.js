@@ -14,6 +14,8 @@ import { DUNE_CREST_CODEC_WGSL, DUNE_CREST_NORMAL_WGSL } from './duneCrest.wgsl.
 
 import { ENV_DECL, COMMON_WGSL, LIGHT_SLOTS, GRID_LIGHT_DECL, GRID_LIGHT_WGSL } from './common.wgsl.js';
 import { OASIS_POOL } from '../world/oasis.js';
+import { SOUNDING } from '../world/sounding.js';
+import { COLUMN } from '../world/kelp.js';
 import { TRANSFORM } from '../terrain/state/layout.js';
 import { MAX_PER_CELL } from '../render/lightGrid.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
@@ -631,6 +633,26 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     } }
     let crack = (1.0 - smoothstep(0.02, 0.07, d2 - d1)) * (1.0 - smoothstep(0.3, 1.2, fp));
     col = mix(col, col * vec3f(0.78, 0.7, 0.62) * (1.0 - 0.6 * crack) * (0.92 + 0.12 * fract(sin(dot(qi, vec2f(12.9, 78.2))) * 4375.5)), mudK);
+  }
+  // The Sounding (Phase 10 U2): deep in its water the sun and the sky arrive dimmed by the water above (the kelp's loss,
+  // shaders/kelp.wgsl.js; half the view's, so the descent can still be seen), and the floor is lit by the intake's glow.
+  let sdk = length(wp.xz - vec2f(${SOUNDING.x}.0, ${SOUNDING.z}.0));
+  if (sdk < ${SOUNDING.r + 40}.0 && wp.y < 0.6) {
+    let down = soundingDown(wp, L);
+    let exs = uniforms.fogParams.z * atmoExposure();
+    col = col * down + albedo * gridAcc(wp, N, 0.3) * 0.55 / max(exs, 1e-6) * (1.0 - down.g);
+    // The intake (world/kelp.js COLUMN): a round grate in the floor, the city's light coming up through it between its bars.
+    let ic = wp.xz - vec2f(${COLUMN.x}.0, ${COLUMN.z}.0); let ir = length(ic);
+    if (ir < ${COLUMN.r * 1.6}) {
+      let ia = atan2(ic.y, ic.x);
+      let bars = smoothstep(0.55, 0.7, abs(fract(ia * ${(18 / (2 * Math.PI)).toFixed(5)}) - 0.5) * 2.0);
+      let rings = smoothstep(0.6, 0.8, abs(fract(ir / 1.25) - 0.5) * 2.0);
+      let rim = smoothstep(${(COLUMN.r * 1.2).toFixed(2)}, ${(COLUMN.r * 1.05).toFixed(2)}, ir);
+      let open = rim * (1.0 - max(bars, rings)) * smoothstep(0.2, 0.9, ir);
+      let bronze = rim * (1.0 - open) * vec3f(0.09, 0.07, 0.04) * (1.0 + gridAcc(wp, N, 0.2) * 0.05);
+      col = mix(col, bronze / max(exs, 1e-6) * 0.6, rim * (1.0 - open) * 0.7)
+          + vec3f(0.42, 0.85, 1.0) * open * (1.4 - 0.08 * ir) * 0.9 / max(exs, 1e-6);
+    }
   }
   // Aerial perspective.
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);

@@ -38,16 +38,17 @@ export function createUnderwaterFx(scene, atmo) {
   const bub = new Float32Array(UW_BUBBLES * 8);
   const bubBuf = new StorageBuffer(engine, bub.byteLength, undefined, 'underwater-bubbles');
   bubBuf.update(bub);
-  const params = new Vector4(0, -1e4, 0, 0);
+  const params = new Vector4(0, -1e4, 0, 0), column = new Vector4(0, -100, 0, -56), column2 = new Vector4(0, 0, 6, 0);
   const mat = new ShaderMaterial('underwaterFx', scene, { vertex: 'uwFx', fragment: 'uwFx' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'uwParams', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'uwParams', 'uwColumn', 'uwColumn2', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES],
     storageBuffers: ['bubbles', ...ATMO_MATERIAL_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
   mat.setVector4('uwParams', params); mat.setStorageBuffer('bubbles', bubBuf);
+  mat.setVector4('uwColumn', column); mat.setVector4('uwColumn2', column2);
   mat.backFaceCulling = false;
   mesh.material = mat;
 
@@ -64,6 +65,13 @@ export function createUnderwaterFx(scene, atmo) {
     /** Owner fields: time (s); water level at the camera (−1e4: none); tannin 0..1; the Wraith. */
     time: 0.5, level: -1e4 + 0.5, tannin: 0.5 - 0.5,
     px: 0.5, py: 0.5, pz: 0.5, vx: 0.5, vy: 0.5, vz: 0.5, under: false,
+    /** The intake's column (Phase 10 U2): shown, its axis, vent and top heights, radius, and the whirlpool's spin 0..1. */
+    column(shown, x, z, vent, top, r, spin) { column.x = x; column.y = vent; column.z = z; column.w = top; column2.x = shown ? 1 : 0; column2.y = spin; column2.z = r; },
+    /** Bubbles let go at a point (the Lung's breath and its tear, the cut's flood): n of them, radius r0..r1 (m), spread (m). */
+    emit(x, y, z, n, r0, r1, spread) {
+      const t = this.time;
+      for (let k = 0; k < n; k++) bubble(x + (rnd() - 0.5) * spread, y + (rnd() - 0.5) * spread, z + (rnd() - 0.5) * spread, t + rnd() * 0.05, r0 + (r1 - r0) * rnd() * rnd());
+    },
     update() {
       const t = this.time, dt = Math.min(0.1, Math.max(0, t - lastT)); lastT = t;
       const camUnder = this.level > -1e3;

@@ -135,6 +135,7 @@ async function boot() {
   (await import('./systems/sefa.js')).addSefaSystem(g); // the child who follows the Wraith (the cutscenes' Sefa for now)
   (await import('./systems/morrow.js')).addMorrowSystem(g); // the diver on the jetty (the cutscenes' Morrow for now)
   (await import('./systems/listener.js')).addListenerSystem(g); // the Warden in the great well, listening (F9 part 1)
+  (await import('./systems/lung.js')).addLungSystem(g); // the Lung and the descent: air, the kelp's tear, the column (U2)
   (await import('./systems/echoTrials.js')).addEchoTrialSystem(g);
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);

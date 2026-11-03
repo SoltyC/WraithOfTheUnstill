@@ -174,8 +174,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let tan = P.bloom.w;
     let sig = mix(UW_SIG_CLEAR, UW_SIG_TANNIN, tan);
     // A sealed interior (ambCol.w = 1: Ebbhold) has no sky over its water: only a faint cold glow, no shafts, no caustics.
+    // (The light reaching the camera's depth falls at half the view's rate: the descent must still read; kelp and floor match.)
     let inside = P.ambCol.w > 0.5;
-    let E = select((atmoLight[0].xyz * max(P.sun.y, 0.0) * 0.318 + atmoLight[1].xyz) * exp(-sig * max(uwL - cam.y, 0.0)), vec3f(0.035, 0.06, 0.065) / max(exposure, 1e-6), inside);
+    let E = select((atmoLight[0].xyz * max(P.sun.y, 0.0) * 0.318 + atmoLight[1].xyz) * exp(-sig * 0.5 * max(uwL - cam.y, 0.0)), vec3f(0.035, 0.06, 0.065) / max(exposure, 1e-6), inside);
     let alb = mix(UW_ALB_CLEAR, UW_ALB_TANNIN, tan);
     // Caustics: on everything under the water (the bed, the walls, the Wraith) the sun arrives
     // focused into the same moving net of light the shafts come from.

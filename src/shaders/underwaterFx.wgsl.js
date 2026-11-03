@@ -13,8 +13,10 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { UNDERWATER_WGSL } from './water.wgsl.js';
 
 export const UW_SNOW = 3000;
-export const UW_BUBBLES = 256;
-export const UW_COUNT = UW_SNOW + UW_BUBBLES;
+export const UW_BUBBLES = 640;
+/** The intake's column (Phase 10 U2, world/kelp.js COLUMN): bubbles rising from the vent on hashed loops, no CPU state. */
+export const UW_COLUMN = 2400;
+export const UW_COUNT = UW_SNOW + UW_BUBBLES + UW_COLUMN;
 const BOX = 22; // m: the snow box's edge
 
 export const uwFxVertexWGSL = /* wgsl */ `
@@ -23,6 +25,8 @@ uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform keyDir: vec3f;
 uniform uwParams: vec4f;             // x = time (s), y = water level at the camera (−1e4: none), z = on, w = tannin
+uniform uwColumn: vec4f;             // the column: axis x, z, the vent's height, the height it frays out at
+uniform uwColumn2: vec4f;            // x = shown, y = spin (0..1: the whirlpool), z = radius, w = —
 var<storage, read> bubbles: array<vec4f>;   // per bubble: (x, y, z, birth time), (radius m, drift x, drift z, −)
 varying vUv: vec2f;
 varying vKind: f32;
@@ -46,6 +50,25 @@ fn main(input: VertexInputs) -> FragmentInputs {
     wp = cam + rel - ${BOX}.0 * floor(rel / ${BOX}.0 + 0.5);
     size = 0.004 + 0.014 * h4 * h4;
     kind = 0.0;
+  } else if (id >= ${UW_SNOW + UW_BUBBLES}u) {
+    // The column: air breathed out of the city's intake, rising fast in a plume that widens as it goes, turning round its axis
+    // (faster and drawn in when it is a whirlpool), the bubbles growing as the pressure falls and fraying out at its top.
+    let k = id - ${UW_SNOW + UW_BUBBLES}u;
+    let C = uniforms.uwColumn; let C2 = uniforms.uwColumn2;
+    if (C2.x > 0.5) {
+      let h1 = uh(k * 7u + 11u); let h2 = uh(k * 7u + 12u); let h3 = uh(k * 7u + 13u); let h4 = uh(k * 7u + 14u);
+      let span = C.w - C.y;
+      let speed = 0.9 + 1.6 * h2 + 1.2 * C2.y;
+      let f = fract(t * speed / span + h1);
+      let y = C.y + f * span;
+      let spin = C2.y;
+      let r = C2.z * (0.12 + 0.88 * sqrt(h3)) * (0.35 + 0.65 * f) * (1.0 - 0.45 * spin * (1.0 - f));
+      let ang = h4 * 6.2832 + t * (0.15 + 1.6 * spin) * (1.0 + 2.0 / (r + 0.5)) + f * 3.0 * spin;
+      let wob = vec2f(sin(t * 3.1 + f32(k)), cos(t * 2.7 + f32(k) * 1.3)) * 0.12;
+      wp = vec3f(C.x + cos(ang) * r + wob.x, y, C.z + sin(ang) * r + wob.y);
+      size = (0.004 + 0.016 * h2 * h2) * (1.0 + 0.8 * f) * (1.0 - smoothstep(0.85, 1.0, f));
+      kind = 2.0;
+    }
   } else {
     // Bubbles: risen from where they were shaken out, at the speed of their size, wobbling.
     let b = id - ${UW_SNOW}u;
@@ -62,11 +85,12 @@ fn main(input: VertexInputs) -> FragmentInputs {
   }
   // Only under the water, and only while the camera is: elsewhere a degenerate quad.
   let dist = length(wp - cam);
-  let alive = uniforms.uwParams.z > 0.5 && size > 0.0 && wp.y < lvl - 0.02 && dist > 0.15 && dist < ${BOX * 0.5}.0 + 4.0;
+  let reach = select(${BOX * 0.5}.0 + 4.0, 70.0, kind > 1.5);
+  let alive = uniforms.uwParams.z > 0.5 && size > 0.0 && wp.y < lvl - 0.02 && dist > 0.15 && dist < reach;
   var outp = vec4f(0.0, 0.0, -1.0, 1.0);
   if (alive) {
     // Never smaller than about a pixel and a half on screen.
-    let s = max(size, dist * 0.0011 * (1.0 + kind));
+    let s = max(size, dist * 0.0011 * (1.0 + min(kind, 1.0)));
     let fwd = (wp - cam) / dist;
     let right = normalize(cross(vec3f(0.0, 1.0, 0.0), fwd) + vec3f(1e-5, 0.0, 0.0));
     let up = cross(fwd, right);
@@ -83,6 +107,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
 export const uwFxFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform uwParams: vec4f;
+uniform uwColumn: vec4f;
 varying vUv: vec2f;
 varying vKind: f32;
 varying vWorldPos: vec3f;
@@ -113,6 +138,14 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   if (fragmentInputs.vKind < 0.5) {
     col = E * 0.55 + sunHere * beam * 2.2 * fwd;
     a = (1.0 - r2) * 0.85;
+  } else if (fragmentInputs.vKind > 1.5) {
+    // The column's bubbles: lit from below by the glow at the vent (the city's lamps through its intake), cold and bright near
+    // it and fading up the plume; the sun's light too where it still reaches.
+    let rim = smoothstep(0.4, 0.95, r2) * (1.0 - smoothstep(0.95, 1.0, r2));
+    let up = max(wp.y - uniforms.uwColumn.y, 0.0);
+    let glow = vec3f(0.45, 0.85, 1.0) * (2.2 * exp(-up * 0.07) + 0.25) / max(uniforms.fogParams.z * atmoExposure(), 1e-6) * 0.35;
+    col = (glow + E * 1.2 + sunHere * (0.4 + beam)) * (0.3 + rim * 1.5);
+    a = 0.3 + 0.7 * rim;
   } else {
     // A bubble: almost all of its light at the rim (the sky and the sun mirrored in its skin).
     let rim = smoothstep(0.45, 0.95, r2) * (1.0 - smoothstep(0.95, 1.0, r2));

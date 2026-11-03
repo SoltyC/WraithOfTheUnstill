@@ -357,6 +357,8 @@ fn main() {
   // to a sunny day's brightness (−0.5 stop under a closed deck).
   var wanted = clamp(0.42 / adapt, 0.22, 7.5) * comp * (1.0 - 0.3 * deckCover()) * (1.0 - 0.3 * P.storm.x);
   if(P.storm.w>0.0){wanted*=1.0-.3*clamp(P.storm.w,0.0,1.0);}
+  // Deep under the Sounding the eye opens much further than on land (the meter's limits are for daylight).
+  wanted *= max(P.village.w, 1.0);
   let prev = outLight[3].w;
   let k = select(1.0 - exp(-P.misc.z / 1.2), 1.0, prev <= 0.0 || P.misc.w > 0.5);
   outLight[3] = vec4f(skyRadiance(normalize(hz), r), mix(prev, wanted, k));

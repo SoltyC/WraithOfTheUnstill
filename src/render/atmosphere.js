@@ -109,6 +109,8 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,
     /** Thunderstorm 0..1 (darker sky and exposure) and the lightning key illuminance (added to the key). */
     storm: 0.5 - 0.5, flash: 0.5 - 0.5,
+    /** Deep water (owner: systems/lung.js): exposure × this (≥ 1) — the eye opens in the dark of the Sounding. */
+    eyeOpen: 1,
     /** Closed share of the cloud deck (0..1), derived from cover each frame. */
     deck: 0.5 - 0.5,
     /** Snap exposure every frame (frozen-clock captures: converge, never ease). */
@@ -143,7 +145,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
       p[24] = mo.x; p[25] = mo.y; p[26] = mo.z; p[27] = MOON_ILLUMINANCE * dim*(1-.9*this.sandStorm);
       desert.update();const dust=desert.quantized+Math.round(this.sandStorm*3.2*8)/8;
       p[40] = this.storm; p[41] = this.flash; p[42] = dust; p[43] = this.sandStorm;
-      p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = 0;
+      p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = this.eyeOpen;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;
       p[28] = haze; p[29] = NIGHT_FLOOR * env.night; p[30] = clock.realDt; p[31] = this.snapExposure || this.alwaysSnap ? 1 : 0;

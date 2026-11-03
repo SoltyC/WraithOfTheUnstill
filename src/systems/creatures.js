@@ -192,7 +192,7 @@ export function addCreatureSystems(g) {
     const gutter = w > 0.6 ? 1 - 0.25 / (1 + 0.5 * g.inventory.threads) * (1 - Math.sin(clock.simTime * 17) * Math.sin(clock.simTime * 7.3)) : 1;
     const deathFade = dying > 0 ? Math.max(0, 1 - dying / 1.2) : 1;
     const reform = dying > combatTuning.deathTime ? Math.min(1, (dying - combatTuning.deathTime) / combatTuning.reformTime) : 0;
-    wraithView.cowlLight = (1 - 0.65 * w) * gutter * Math.max(deathFade, reform);
+    wraithView.cowlLight = (1 - 0.65 * w) * gutter * Math.max(deathFade, reform) * (g.lung ? g.lung.light : 1);   // the Lung's air (game/lung.js)
     wraithView.handLight = (0.12 + 0.75 * combat.focus / combatTuning.focus + 1.2 * castFlash.v + 0.07 * g.flow.show) * Math.max(deathFade, reform);   // Flow brightens the hands a little
     wraithView.frost = Math.min(1, w * 1.15); wraithView.rime = g.buffs.sheen * (1 / 0.45);   // a Rime tonic frosts the wool all over, never dimming the cowl
     wraithView.wraith.collapse = dying > 0 ? (dying < combatTuning.deathTime ? Math.min(1, dying / 0.9) : 1 - reform) : 0;

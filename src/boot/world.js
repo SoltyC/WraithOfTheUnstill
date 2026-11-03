@@ -190,6 +190,9 @@ export async function createWorld(g) {
   // Under the water (Phase 10 U1): marine snow and the robe's bubbles.
   const underwaterFx = (await import('../render/underwaterFx.js')).createUnderwaterFx(scene, atmosphere);
   underwaterFx.freeze();
+  // The Sounding's kelp forest (Phase 10 U2): drawn round the camera while it is under the pit's water.
+  const kelp = (await import('../render/kelp.js')).createKelp(scene, atmosphere, content.clipmap, ground);
+  kelp.freeze();
   trees.setWater((x, z) => (water.wetAt(x, z) ? 1e9 : NaN)); // no trees in lakes, rivers or on their banks
   post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k];for(let k=36;k<b.length;k++)P[144+k-36]=b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
@@ -228,5 +231,5 @@ export async function createWorld(g) {
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
   const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground, post.post.waterSim[0]);
   water.extra = wadiWater;   // wading in the braids when they run
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, tideFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, ebbholdView, crowd, wave, drift: robes });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, tideFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, kelp, ebbholdView, crowd, wave, drift: robes });
 }

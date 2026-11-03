@@ -58,6 +58,46 @@ Nothing below the surface.
 
 **U2 — The Lung and the descent (2 sessions).** Air shown on the body only: cowl light, bubbles, the robe's life. The Sounding carved in the bake with a shaft wall from the canyon kit. Kelp that reacts to the body. The tear, the failed ascent (a wake-up, never a death), the bubble column and whirlpool.
 
+**U2 built 2026-11-04** (design review: `u2-design.md`; bot: `tools/bot/lung-descent.mjs`, every check on real input):
+- **The air** (`game/lung.js`): it drains only under the water.
+  - **No Lung:** 14 s.
+  - **The Lung:** 160 s, enough to go down 105 m and back.
+  - **Torn:** about 14 s.
+  - **The ledge's thread:** 30 s.
+  - **On the body, never a bar:** the cowl light follows the air; the chest lets out a breath of bubbles every few seconds; below a third of the air the robe's eddies and lift die, the body sinks and the stroke up weakens.
+- **The Lung is put on** at Morrow's pile of brass on the jetty's end (E). This stands in until F10 gives Morrow the scene.
+- **The kelp forest** (`world/kelp.js`, `render/kelp.js`, `shaders/kelp.wgsl.js`):
+  - **Placement:** about 3,500 stipes on the pit's floor and the foot of its walls, 22–36 m tall, from a cell hash. There are glades between stands, it's denser at the walls, and a bare apron is left round the intake.
+  - **Drawing:** the 720 nearest are drawn round the camera, placed on the CPU when it crosses a cell. Each stipe has 46 curved, ruffled blades in their own directions, buoyant and fluttering, and the tops stream in the canopy.
+  - **Motion:** stipes sway on the current with a wave running up them, and part round the body.
+  - **Light:** the blades glow gold where the light comes through them.
+- **The tear:** the first pass through the kelp with the Lung on tears it. A body below the canopy's middle tears it anyway, because it passed through. A frond snags in towards the chest, a hiss sounds, and a stream of silver bubbles pours from the chest. Saved as `ebb:torn`.
+- **Put out, never dead:** the screen goes dark, and the Wraith wakes on a ledge among the kelp roots 30 m from the column, facing it. The game's own deferred teleport holds the body until the ground there is resident. Without the Lung it wakes afloat at the surface instead.
+- **The column** (the city's old intake, in the pit's middle):
+  - **The grate:** a round bronze grate in the floor, with the city's light coming up between its bars (terrain shader), plus two strong world lights.
+  - **The bubbles:** 2,400 hashed bubbles rising in a widening plume (`shaders/underwaterFx.wgsl.js`, no CPU state).
+  - **Before the tear** it's an upwelling that lifts the body away.
+  - **After the tear:** it refills the Lung in 2 s, then turns and pulls down (`whirlFlow`). A stroke up holds against it at first. It wins after 12 s, or at the vent once it has spun up. Bubbles flood the view, it goes white, and the Wraith wakes in the undercroft (`ebb:through`). The column can take the Wraith again later.
+- **Deep water's light:** one shared `soundingDown()` (`shaders/common.wgsl.js`) dims the sun and the sky by the water above, at half the view's loss, so the descent still reads. The terrain, the kelp and every robe take it; glows don't. Compose's in-water light matches. The eye opens up to 2 stops with depth (`atmosphere.eyeOpen`). Before this, the floor at −100 m was lit as at the surface, and the kelp was black against it.
+- **Measured** (bot, real input):
+  - the tear 31 s after the dive, at −84 m;
+  - stroking up while torn from −70 m reaches −48 m before the air goes;
+  - the ledge to the column takes 11 s;
+  - the column takes the Wraith after 8–11 s of holding against it;
+  - 0 GPU errors, 0 late pipelines;
+  - in the canopy, 9.35 ms mean, p95 11 ms, at High and 0.8 render scale, with Minecraft open (8.0 ms in U1's open water).
+- **Tests:** `tests/lung.test.js` (12).
+- **Review:** `review/descent/u2-descent.mp4` (the bot's whole run, 90 s, live) and `u2-descent-sheet.jpg`; stills in `screenshots/phase-10-u2-views/`. The film has no veil, because the dark and the white are DOM. Play it: playtest page, "The descent" and "The ledge and the column".
+- **Not yet:**
+  - the Sounding's shaft wall from the canyon kit;
+  - Ebbhold's towers seen far below;
+  - the Lung as a prop on the chest (props have no rotation yet);
+  - its own sounds (the hiss uses SWISH);
+  - the whirl's spin on the camera;
+  - Morrow fitting it (F10);
+  - the Wraith's staff, still carried under the water;
+  - the feel, which is **the user's checkpoint: the tear and the whirlpool.**
+
 **U3 — The undercroft (1 session).** **The whirlpool hides a cut:** the screen is all bubbles, so the Wraith can be moved to another place at no cost. Interiors therefore live in their own sealed space outside the terrain, not under it. It avoids holes in the heightfield and keeps Phase 13's SDF work out of this phase. The cave is a hand-shaped mesh kit, and Phase 13 can replace it.
 
 **U4 — Ebbhold (4–5 sessions).** A kit of halls, stairs and sea-doors in Shaper stone, drowned and dry versions.

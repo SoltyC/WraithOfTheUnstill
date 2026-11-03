@@ -62,6 +62,8 @@ export class Wraith {
     this.swimming = false; this.swim = 0.5 - 0.5; this.swimPhase = 0.5 - 0.5;
     /** Under the water (input) and the dive's pitch (input, rad, + nose down); `under` eases it. */
     this.submerged = false; this.swimPitch = 0.5 - 0.5; this.under = 0.5 - 0.5; this._watered = false;
+    /** The robe's life under the water (input, 0..1: the Lung's air, game/lung.js): 1 floats and billows, 0 hangs still. */
+    this.life = 1;
     /** Bending gesture target 0..1 (input); eased into the body's arm. */
     this.cast = 0.5 - 0.5;
     /** Attack pose (inputs from game/weapons): torso twist and extra lean (rad), the hands' reach weights (L, R) and targets
@@ -195,10 +197,12 @@ export class Wraith {
       this.cloth.windX -= this.vx * k; this.cloth.windZ -= this.vz * k;
     }
     // In the water the robe nearly floats (buoyant, heavy with water: little gravity, a slow drift up).
-    this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim - 0.12 * this.under); this.cloth.windY += 0.6 * this.swim - 0.3 * this.under;
+    // (Its life, the Lung's air (game/lung.js): spent, the eddies and the lift die and the cloth hangs, heavier.)
+    const life = this.life;
+    this.cloth.gravity = 9.81 * (1 - 0.85 * this.swim - 0.12 * this.under * life + 0.25 * this.under * (1 - life)); this.cloth.windY += 0.6 * this.swim - 0.3 * this.under;
     // Under the water the robe sways on slow eddies and lifts a little (the air still in its folds).
-    if (this.under > 0.001) {
-      const u = this.under * 0.9, tt = this.time;
+    if (this.under > 0.001 && life > 0.001) {
+      const u = this.under * 0.9 * life, tt = this.time;
       this.cloth.windX += u * (Math.sin(tt * 0.43) + 0.5 * Math.sin(tt * 1.13 + 1.7));
       this.cloth.windZ += u * (Math.cos(tt * 0.37 + 0.6) + 0.5 * Math.sin(tt * 0.91 + 2.9));
       this.cloth.windY += u * (0.5 + 0.35 * Math.sin(tt * 0.71));
