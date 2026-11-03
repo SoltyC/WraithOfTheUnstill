@@ -257,6 +257,7 @@ export function addBendingSystem(g) {
       tide.aimX = Math.sin(arm.yaw); tide.aimZ = Math.cos(arm.yaw);
       tide.tx = aim.x; tide.ty = aim.y; tide.tz = aim.z; tide.dt = dt; tide.time = clock.simTime;
       tide.update();
+      const tf = g.tideFx; if (tf) { tf.tide.set(tide.fx); tf.tideT.x = clock.simTime; tf.update(); }
     }
     ribbon.time = clock.simTime;
     ribbon.update();

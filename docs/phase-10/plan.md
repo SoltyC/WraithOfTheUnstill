@@ -421,8 +421,11 @@ skim, fast enough, lands into it (not verified in Chrome yet). The playtest page
   one there is dried until it crumbles. Let go: the mass is thrown as a Surge up to 1.8× stronger and wider.
 - **Undertow** (heavy): a whirlpool for 3.2 s that drags Shaped in and round, wears at those in it, and leaves a 0.28 m basin.
 - Focus: Surge 10, Draw 12/s while gathering, Undertow 26. Tests: `tests/tide.test.js`. Chrome: all three on the Sounding, 0 GPU errors.
-- **Not yet:** their water is not drawn (no wave body, no hanging mass, no whirlpool; only ripples on open water and the wet ground):
-  a water-FX renderer is the next job; drying (wetness down) needs a brush program; the reaction table's Tide column, the
+- **Their water** (`render/tideFx.js`, `shaders/tideFx.wgsl.js`: stateless GPU particles like the Gale's, 1,100 quads): the
+  Surge's spray thrown over its curling front and the foam it lays behind; the Draw's mass turning in the air, fed by streams rising
+  from the ground; the Undertow's foam spiralling in and down, spray at its rim. Chrome: visible on the Sounding, 0 GPU errors, no
+  late pipelines. Weak: particles, not a body of water (the Surge has no wall of water, the Draw no surface); faint at 10 m+.
+- **Not yet:** drying (wetness down) needs a brush program; the reaction table's Tide column, the
   combinations (Surge + Crystallize ramp, Ridge dams); sounds of their own.
 
 ### F5 — Fog and weather (1–2 sessions)

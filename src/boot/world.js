@@ -98,6 +98,7 @@ export async function createWorld(g) {
   const fire = (await import('../render/fire.js')).createFire(scene, atmosphere);
   // The Gale's wind made visible (Phase 8 M6): gust lines, vortex debris, updraft columns.
   const galeFx = (await import('../render/galeFx.js')).createGaleFx(scene, atmosphere);
+  const tideFx = (await import('../render/tideFx.js')).createTideFx(scene, atmosphere);   // Tide's water (Phase 10 F4)
   // The Chanters' pollen curtains (Phase 8 M8): gold motes and haze hanging in the dead air.
   const pollenFx = (await import('../render/pollenFx.js')).createPollenFx(scene, atmosphere);
   // Rock outcrops with accumulation (frost): cast and receive shadows; scanned rock surfaces.
@@ -227,5 +228,5 @@ export async function createWorld(g) {
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
   const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground, post.post.waterSim[0]);
   water.extra = wadiWater;   // wading in the braids when they run
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, ebbholdView, crowd, wave, drift: robes });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, tideFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, ebbholdView, crowd, wave, drift: robes });
 }

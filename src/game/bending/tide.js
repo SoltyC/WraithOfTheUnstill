@@ -49,6 +49,8 @@ export const undertowTuning = {
 };
 
 const SURGES = 3;
+/** Floats in `fx` (the renderer's block, shaders/tideFx.wgsl.js): 10 vec4. */
+export const TIDE_FX_VEC4 = 10;
 
 /**
  * @param {{ ts: any, ground: { qx: number, qz: number, h: number, sample: () => void }, lights: Float32Array, water?: () => any }} ctx
@@ -63,6 +65,7 @@ export function createTideBending(ctx) {
   const dr = { x: 0, z: 0, y: 0, m: 0, t: 0, stamp: 0, held: false };
   const un = { on: false, x: 0, z: 0, y: 0, age: 0, rip: 0 };
   let serial = 0;
+  const fx = new Float32Array(TIDE_FX_VEC4 * 4);
   const ground1 = (x, z) => { ground.qx = x; ground.qz = z; ground.sample(); return ground.h; };
   /** Open water at (x, z)? (Ripples there instead of nothing.) */
   const onWater = (x, z) => {
@@ -87,7 +90,7 @@ export function createTideBending(ctx) {
   };
 
   const self = {
-    lights,
+    lights, fx,
     /** Inputs (fields): caster, aim direction (unit, horizontal), aim target on the ground, dt, time; requests for one frame. */
     x: 0.5, y: 0.5, z: 0.5, aimX: 0.5, aimZ: 0.5, tx: 0.5, ty: 0.5, tz: 0.5, dt: 0.5, time: 0.5,
     castSurge: false, castUndertow: false, drawHeld: false,
@@ -114,6 +117,7 @@ export function createTideBending(ctx) {
       for (let k = 0; k < SURGES; k++) stepSurge(k, dt);
       stepUndertow(dt);
       if (dr.m > 0) this.gesture = Math.max(this.gesture, 0.4 + 0.5 * dr.m);
+      writeFx();
     },
   };
 
@@ -193,6 +197,26 @@ export function createTideBending(ctx) {
     if (un.age - un.rip >= T.rippleEvery && onWater(un.x, un.z)) { un.rip = un.age; water.ripple(un.x, un.z, self.time, 1.5 * e, 0, 0); }
     if (T.noise * e > self.noiseLevel) { self.noiseLevel = T.noise * e; self.noiseX = un.x; self.noiseZ = un.z; }
     light(un.x, un.y + 0.8, un.z, T.lightRadius, T.lightIntensity * e);
+  }
+
+  /** The renderer's block (TIDE_FX_VEC4 vec4), see shaders/tideFx.wgsl.js:
+   *  [0..2] surge k: front x, ground y, front z, strength · [3..5] surge k: dir x, dir z, half width, distance travelled
+   *  [6] draw: x, the mass's centre y, z, mass 0..1 · [7] draw: source ground y, radius, -, -
+   *  [8] undertow: x, ground y, z, strength · [9] undertow: radius, age, -, - */
+  function writeFx() {
+    const T = surgeTuning;
+    for (let k = 0; k < SURGES; k++) {
+      const o = k * 4, o2 = (3 + k) * 4;
+      if (!su.active[k]) { fx[o + 3] = 0; continue; }
+      const sc = su.sc[k], range = T.range * Math.sqrt(sc), t = su.t[k], travel = range / T.speed, d = Math.min(range, t * T.speed);
+      const ease = Math.min(1, t / T.easeIn) * Math.min(1, Math.max(0, (travel + T.easeOut - t) / T.easeOut));
+      fx[o] = self.surgeFX[k]; fx[o + 1] = ground1(self.surgeFX[k], self.surgeFZ[k]); fx[o + 2] = self.surgeFZ[k]; fx[o + 3] = ease * Math.min(1.4, sc);
+      fx[o2] = su.dx[k]; fx[o2 + 1] = su.dz[k]; fx[o2 + 2] = self.surgeHW[k]; fx[o2 + 3] = d;
+    }
+    fx[24] = dr.x; fx[25] = dr.y + 1.4 + 0.5 * dr.m; fx[26] = dr.z; fx[27] = dr.m;
+    fx[28] = dr.y; fx[29] = drawTuning.radius; fx[30] = 0; fx[31] = 0;
+    fx[32] = un.x; fx[33] = un.y; fx[34] = un.z; fx[35] = un.on ? envelope(un.age) : 0;
+    fx[36] = undertowTuning.radius; fx[37] = un.age; fx[38] = 0; fx[39] = 0;
   }
 
   return self;
