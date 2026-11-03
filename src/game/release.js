@@ -3,7 +3,7 @@
 // wave, Morrow and the jetty, the kelp, the robes on the water) is a caption card over its shot, so the timing and the order
 // can be judged now. Shot numbers are the document's. Pure: builds the director's shot list (tests/release.test.js).
 
-import { EBB_ORIGIN as O } from '../world/ebbhold.js';
+import { EBB_ORIGIN as O, HALL } from '../world/ebbhold.js';
 import { PEOPLE } from './drowned.js';
 import { hallAlive, bakehouseBehind, hallFleeing } from './crowds.js';
 import { faceOffset } from './wave.js';
@@ -13,6 +13,7 @@ import { jettyPoint, JETTY } from '../world/jetty.js';
 const LV = 1.41;
 
 const W = (x, y, z) => [x + O.x, y + O.y, z + O.z];
+const H_WATER = HALL.water;   // the drowned floor of the hall: the great well
 const key = (t, p, at, fov = 0.7) => ({ t, p: W(...p), at: W(...at), fov });
 const still = (p, at, fov) => [key(0, p, at, fov), key(1, p, at, fov)];
 const card = (dur, text, dim = 0.95, extra = {}) => ({ dur, ease: 0, slug: { text, dim }, wraith: false, keys: still([130, 2, 0], [131, 2, 0]), ...extra });
@@ -93,7 +94,11 @@ export function releaseShots(o = {}) {
     keys: [{ t: 0, p: J(1.6, -1.95, 1.15), at: J(1.68, 0, 1.17), fov: 0.39 }, { t: 1, p: J(1.5, -1.8, 1.15), at: J(1.68, 0, 1.15), fov: 0.37 }] });
   shots.push({ dur: 5, ease: 0.6, wraith: false, blur: 0.3, dof: 0.6, morrow: { ...M, cut: [0.78, 1.0] },
     keys: [{ t: 0, p: J(1.6, 3.4, 0.95), at: J(2.05, 0, 0.8), fov: 0.5 }, { t: 1, p: J(1.75, 3.0, 0.92), at: J(2.05, 0, 0.78), fov: 0.47 }] });
-  shots.push(card(8, 'Hard cut: the Wraith comes down through the kelp, seen from below by the held people. Heads turn. Hands reach.'));
+  // 11. Hard cut, back in the city: the Wraith comes down a shaft of the sea-light, seen from below, from among the held people
+  //     on the causeway (their view: the first thing to move in all that time).
+  push({ dur: 8, ease: 0.5, freeze: true, enter: 'hall', grade: 'held', light: { fill: 0.75, beam: 1.5 }, crowd: hall,
+    wraith: { path: [[...W(105, 30, 2), 0.4], [...W(103.5, 17, 0.5), 0.5], [...W(102, 7, -1.5), 0.6]] },
+    keys: [key(0, [97, 1.3, -7], [104.8, 26, 1.8], 0.62), key(1, [97.2, 1.3, -6.9], [102.2, 8.2, -1.3], 0.5)] });
   // 12. The player's own record: each person named, from their own eyes, the dark robe bending down. "Don't."
   const rec = (o.record || []).filter((r) => r.kind === 'named');
   const list = (rec.length ? rec : (o.record || [])).slice(0, 12);
@@ -116,14 +121,22 @@ export function releaseShots(o = {}) {
       return [...W(r.at[0] + ox * NEAR, y, r.at[2] + oz * NEAR), yaw];
     });
     const last = path[path.length - 1], head = [last[0] - O.x, last[1] - O.y + 1.6, last[2] - O.z];
-    push({ dur: list.length > 6 ? 1.6 : 2.4, ease: 0, grade: 'held', dof: 0, wraith: { path }, keys: still(eye, head, 0.95),
+    // Lit so the robe reads: the room's fill lifted, and a cold key between them, over the Wraith's head (it bends down out of it).
+    const mid = [(eye[0] + head[0]) / 2, head[1] + 0.9, (eye[2] + head[2]) / 2];
+    push({ dur: list.length > 6 ? 1.6 : 2.4, ease: 0, grade: 'held', dof: 0, record: r.id, wraith: { path }, keys: still(eye, head, 0.95),
+      light: { fill: 1.9, beam: 1 }, key: { at: mid, r: 7, c: [0.62, 0.8, 1], i: 6 },
       subs: [{ t: 0, d: 0.7, text: d.name + ', ' + (TASK[d.task] || '') }, { t: 0.7, d: 3, who: d.name, text: r.kind === 'named' ? 'Don’t.' : '…' }] });
   }
   if (shots[back]) shots[back].enter = 'hall';   // back into the city for the record
   if (rec.length > 12) shots.push(card(Math.min(6, 0.3 * (rec.length - 12)), rec.slice(12).map((r) => (PEOPLE.find((q) => q.id === r.id) || {}).name).join('   '), 0.85));
   // 13–15. Now: the Listener lets go. Sefa's wave; the first breath; black before anyone is hurt; silence.
   // (Sefa placed and posed under the card, unfrozen, so the frozen shot after it has her as she was.)
-  shots.push(card(5, 'Back to now. The player’s hand on the Undertow. The Listener turns its head to the Wraith and, for the first time, is not listening for anything. It lets go.', 0.85, { sefa: sefaHeld }));
+  // 13. Back to now: the Wraith on the register's platform, over the well where the Listener holds the strand, seen low from in
+  //     front against the roof's light. The hold lets go: the sea-light swells down the shafts and the colour returns. (The
+  //     Listener itself, when it is built, turns its head here.)
+  push({ dur: 5, ease: 0.6, freeze: true, grade: ['held', 'present'], light: [{ fill: 0.7, beam: 0.6 }, { fill: 1.8, beam: 2.6 }], sefa: sefaHeld,
+    wraith: { path: [[...W(124, 0, 8), Math.PI / 2], [...W(124, 0, 8), Math.PI / 2]] },
+    keys: [key(0, [128.3, 0.75, 9.7], [123.6, 2.15, 7.5], 0.62), key(1, [128.1, 0.7, 9.6], [123.6, 2.4, 7.5], 0.58)] });
   // 14. Sefa's frozen wave; then time again: the drops fall, the water moves. Cut to black before anyone is hurt.
   const wide14 = [key(0, [SEFA_X - 13.5, sy(SEFA_X - 13.5) + 0.7, SZ - 1.6], [SEFA_X + 0.5, sy(SEFA_X) + 2.6, SZ + 0.2], 0.42), key(1, [SEFA_X - 13.2, sy(SEFA_X - 13.2) + 0.68, SZ - 1.6], [SEFA_X + 0.5, sy(SEFA_X) + 2.7, SZ + 0.2], 0.41)];   // (outside the lip: under it the frame is all water)
   push({ dur: 4, ease: 0.5, freeze: true, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: held, keys: wide14 });

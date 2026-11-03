@@ -127,7 +127,7 @@ function crownR(a, s) {
 const M = ([u, y, a]) => [-a, y, u];
 /** A piece of the Lung centred at (a, y, u), len long, radius r0 at its near end (−a) to r1 at its far end (+a). (A lying drum
  *  rests at y0 with its axis at y0 + r0, its length y1 − y0; along +x at yaw π/2 — so the far end is drawn first, radii swapped.) */
-const seg = (b, u, y, a, len, r0, r1, n, mat, seed) => b.drum(-a, u, y - r1, y - r1 + len, r1, r0, n, mat, seed, { solid: false, lie: 1, yaw: Math.PI / 2 });
+const seg = (b, u, y, a, len, r0, r1, n, mat, seed) => b.drum(-a, u, y - r1, y - r1 + len, r1, r0, Math.max(n, 24), mat, seed, { solid: false, lie: 1, yaw: Math.PI / 2, smooth: true });
 
 /** The bladder at stage s: oiled hide lying along the top of the bottle, tied off at the valve end; whole, it shows the seam
  *  where it tore once and was mended (a thin dark line). */

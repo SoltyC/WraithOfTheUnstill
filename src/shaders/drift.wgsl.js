@@ -94,16 +94,18 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     N = normalize(N - vec3f(gw.x, 0.0, gw.y) * 0.1 * near);
   }
   // Wet wool: the Wraith's charcoal for most, the city's dyes deepened by the water for some.
-  var dye = vec3f(0.035, 0.034, 0.038);
+  var dye = vec3f(0.055, 0.053, 0.06);
   let d = i32(r.x + 0.5);
-  if (d == 1) { dye = vec3f(0.09, 0.045, 0.03); }      // madder, gone to rust
-  else if (d == 2) { dye = vec3f(0.04, 0.06, 0.045); } // kelp
-  else if (d == 3) { dye = vec3f(0.07, 0.065, 0.058); } // bone, greyed and soaked
-  else if (d == 4) { dye = vec3f(0.04, 0.05, 0.07); }  // slate
+  if (d == 1) { dye = vec3f(0.13, 0.065, 0.042); }      // madder, gone to rust
+  else if (d == 2) { dye = vec3f(0.06, 0.085, 0.064); } // kelp
+  else if (d == 3) { dye = vec3f(0.12, 0.11, 0.097); } // bone, greyed and soaked
+  else if (d == 4) { dye = vec3f(0.06, 0.074, 0.1); }  // slate
   let weave = 0.85 + 0.3 * rNoise(wp * 38.0) * rNoise(wp * 9.0 + 3.0);
   // Where it lies under the surface the water darkens and greens it.
   let wet = smoothstep(0.02, -0.04, r.w);
-  var albedo = dye * weave * mix(1.0, 0.55, wet);
+  // Where it rides above the surface (an air pocket, a crumpled ridge) the wool is drying, a shade paler.
+  let dry = smoothstep(0.02, 0.1, r.w);
+  var albedo = dye * weave * mix(1.0, 0.55, wet) * (1.0 + 0.45 * dry);
   albedo = mix(albedo, albedo * vec3f(0.7, 0.95, 0.9), wet);
   let L = uniforms.keyDir;
   let vis = shadowVisibilityFast(wp, cam);
@@ -112,9 +114,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var col = albedo * (key * nl * vis / PI + shIrradiance(N) * uniforms.envMisc.w);
   // The sheen of soaked cloth: the sky and the low sun along its ridges.
   let NV = max(dot(N, V), 0.0); let F = 0.04 + 0.96 * pow(1.0 - NV, 5.0);
-  col += shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * F * 0.35;
+  // (Soaked through, it is near a mirror where it lies flat: the dawn sky along every fold reads its shape.)
+  col += shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * F * mix(0.75, 0.35, dry);
   let H = normalize(L + V);
-  col += key * vis * pow(max(dot(N, H), 0.0), 60.0) * 0.12 * step(0.0, dot(N, L));
+  col += key * vis * (pow(max(dot(N, H), 0.0), 60.0) * 0.22 + pow(max(dot(N, H), 0.0), 12.0) * 0.03) * step(0.0, dot(N, L));
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(cam - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(lit, uniforms.fogParams.z * atmoExposure()), 0.0);
 }

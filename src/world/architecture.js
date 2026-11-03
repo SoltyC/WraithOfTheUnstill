@@ -189,8 +189,9 @@ export class Builder {
     this.quad(c[3], c[0], c[4], c[7], mat, seed, dc);
     this.quad(c[1], c[2], c[6], c[5], mat, seed, dc);
   }
-  /** Drum (column, altar, bell): n sides, radius r0 at y0 to r1 at y1; capped. */
-  drum(x, z, y0, y1, r0, r1, n, mat, seed, { carve = 0, solid = true, lie = 0, yaw = 0, broken = 0 } = {}) {
+  /** Drum (column, altar, bell): n sides, radius r0 at y0 to r1 at y1; capped. smooth: its sides shaded round (true normals
+   *  at each vertex) rather than faceted — for turned metal and stuffed hide, not cut stone. */
+  drum(x, z, y0, y1, r0, r1, n, mat, seed, { carve = 0, solid = true, lie = 0, yaw = 0, broken = 0, smooth = false } = {}) {
     if ((mat === MAT.STONE || mat === MAT.GLYPH) && !lie) {
       columnDrums(this, x, z, y0, y1, r0, r1, Math.max(n, Math.min(28, Math.round(Math.max(r0, r1) * 22))), mat, seed, { broken, carve, solid });
       return;
@@ -209,7 +210,24 @@ export class Builder {
       return out;
     };
     const lo = pts(y0, r0), hi = pts(y1, r1);
-    for (let k = 0; k < n; k++) this.quad(lo[k], lo[k + 1], hi[k + 1], hi[k], mat, seed, carve);
+    for (let k = 0; k < n; k++) {
+      const v0 = this.nrm.length;
+      this.quad(lo[k], lo[k + 1], hi[k + 1], hi[k], mat, seed, carve);
+      if (!smooth) continue;
+      // Each corner's own normal: out from the axis at its angle, tipped by the taper (r0 → r1 over the length).
+      const L = y1 - y0, slope = (r0 - r1) / Math.hypot(L, r0 - r1), radial = Math.sqrt(1 - slope * slope);
+      // (On the side the face's own normal is: a lying drum's faces wind the other way, and the shading reads that side.)
+      const fx = this.nrm[v0], fy = this.nrm[v0 + 1], fz = this.nrm[v0 + 2];
+      let side = 0;
+      for (let j = 0; j < 4; j++) {
+        const a = ((k + (j === 1 || j === 2 ? 1 : 0)) / n) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+        let nx, ny, nz;
+        if (!lie) { nx = ca * radial; ny = slope; nz = sa * radial; }
+        else { nx = Math.cos(yaw) * ca * radial + Math.sin(yaw) * slope; ny = sa * radial; nz = -Math.sin(yaw) * ca * radial + Math.cos(yaw) * slope; }
+        if (j === 0) side = nx * fx + ny * fy + nz * fz < 0 ? -1 : 1;
+        this.nrm[v0 + j * 3] = nx * side; this.nrm[v0 + j * 3 + 1] = ny * side; this.nrm[v0 + j * 3 + 2] = nz * side;
+      }
+    }
     const cTop = lie ? [x + Math.sin(yaw) * (y1 - y0) / 2, y0 + r0, z + Math.cos(yaw) * (y1 - y0) / 2] : [x, y1, z];
     const cBot = lie ? [x - Math.sin(yaw) * (y1 - y0) / 2, y0 + r0, z - Math.cos(yaw) * (y1 - y0) / 2] : [x, y0, z];
     for (let k = 0; k < n; k++) { this.tri(hi[k], cTop, hi[k + 1], mat, seed); this.tri(lo[k + 1], cBot, lo[k], mat, seed); }

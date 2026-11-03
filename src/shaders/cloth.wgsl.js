@@ -30,6 +30,14 @@ fn garmentScale(g: i32) -> vec2f {
 fn h21(p: vec2f) -> f32 { return hash12(p); }
 fn vn1(x: f32) -> f32 { let i = floor(x); let f = x - i; let u = f * f * (3.0 - 2.0 * f); return mix(h21(vec2f(i, 7.1)), h21(vec2f(i + 1.0, 7.1)), u); }
 fn vn2(p: vec2f) -> f32 { return noised(p).x * 0.5 + 0.5; }
+/** A garment's folds at m (metres on it; cs its own offset): 0 on the crowns, down to -1 along a crease. */
+fn foldH(m: vec2f, cs: vec2f) -> f32 {
+  let x = m.x * 12.0 + 1.8 * vn2(m * vec2f(1.6, 0.8) + cs) + 0.4 * vn2(m * vec2f(5.0, 2.0) + cs.yx);
+  let n = vn1(x + cs.x * 5.0);
+  let crease = 1.0 - smoothstep(0.0, 0.22, abs(n - 0.5));
+  let along = smoothstep(0.3, 0.7, vn2(vec2f(x * 0.45 + cs.y, m.y * 1.3)));   // each fold comes and goes down its length (smooth: no seams)
+  return -crease * along;
+}
 `;
 
 export const clothVertexWGSL = /* wgsl */ `
@@ -142,6 +150,42 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let slub = vn2(m * vec2f(35.0, 9.0));
   albedo *= 0.9 + 0.2 * slub;
 
+  // Mid-scale cloth (what reads from one to ten metres, between the weave and the wear): the
+  // drape's creases running down the fall of the cloth (a few cm across, tens long), finer
+  // wrinkles across them, both as normal relief, their valleys shaded (cavity) and their crowns
+  // rubbed paler; hand-spun weft banding; seams with their stitches. Faded as they near the pixel.
+  let cl = g <= 4;
+  let ck = select(0.45, 1.0, cl) * select(1.0, 0.0, g == 9);
+  let cs = vec2f(f32(g) * 3.7, f32(g) * 1.3);
+  // Folds: long creases down the fall of the cloth (along v), wandering a little across, each fading in and out along its
+  // length; the relief is 0 on the broad crowns and -1 down a crease (a narrow valley). Slope by finite differences.
+  let cf1 = 1.0 - smoothstep(0.35, 0.9, fwidth(m.x * 12.0));
+  let cf2 = 1.0 - smoothstep(0.3, 0.8, max(fwidth(m.x * 40.0), fwidth(m.y * 40.0)));
+  let fe = 0.004;
+  let f0 = foldH(m, cs); let fu = foldH(m + vec2f(fe, 0.0), cs); let fv = foldH(m + vec2f(0.0, fe), cs);
+  // Finer wrinkles: the cloth's own irregularity, small and soft.
+  let c2 = noised(m * vec2f(40.0, 22.0) + cs * 2.1);
+  let creaseH = (f0 * cf1 + 0.25 * c2.x * cf2) * ck;
+  // Slope (metres of relief per metre along u, v): folds ~1.2 cm deep, wrinkles 0.2 cm.
+  let creaseD = (vec2f(fu - f0, fv - f0) / fe * 0.012 * cf1 + c2.yz * vec2f(40.0, 22.0) * 0.002 * cf2) * ck;
+  albedo *= 1.0 + creaseH * 0.05;                              // the creases a little shaded
+  let weft = vn1(m.y * 38.0 + f32(g) * 11.0);
+  albedo *= 0.95 + 0.1 * weft * ck;
+  // Seams: the robe's two side seams and the sleeves' underarm, a pucker with a running stitch
+  // in a paler thread beside it.
+  var seamN = 0.0;
+  let sf = 1.0 - smoothstep(0.25, 0.7, fwidth(m.y * 90.0));     // (derivatives in uniform control flow)
+  if (g == 0 || g == 2 || g == 3) {
+    // (uv.x runs round the garment: the robe's seams at a quarter and three quarters, the sleeve's at 0.)
+    let su = select(min(abs(fract(uv.x + 0.25) - 0.5), abs(fract(uv.x - 0.25) - 0.5)), 0.5 - abs(fract(uv.x) - 0.5), g != 0);
+    let sd = su * sc.x;                                          // metres from the seam
+    let line = 1.0 - smoothstep(0.0015, 0.005, sd);
+    albedo *= 1.0 - 0.35 * line * cf1;
+    let st = step(0.45, fract(m.y * 90.0)) * (1.0 - smoothstep(0.001, 0.0025, abs(sd - 0.007)));
+    albedo = mix(albedo, albedo * 1.9 + vec3f(0.03), st * sf * 0.8);
+    seamN = line * cf1;
+  }
+
   // Weave: a fine twill (diagonal ridges at ~4 mm) as a micro-normal and thread shading, faded
   // out as it approaches the pixel size (no moiré at a distance).
   let tw = (m.x + m.y) * 240.0;
@@ -222,6 +266,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let Tv = normalize(dpdy(wp) * dpdx(uv.x) - dpdx(wp) * dpdy(uv.x) + vec3f(1e-6)); // along the threads (v)
   let Tu = normalize(cross(N, Tv));
   N = normalize(N + (Tu * ridge * 0.07 + Tv * cross2 * 0.05) * wf);
+  // The creases and wrinkles (slope in metres per metre along u, v) and the seam's pucker.
+  N = normalize(N - Tu * creaseD.x - Tv * creaseD.y + Tv * seamN * 0.15);
+  let cavity = mix(1.0, 0.86 + 0.14 * clamp(creaseH * 0.5 + 0.5, 0.0, 1.0), cf1 * ck);
 
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
@@ -233,7 +280,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let diff = clamp((nl + 0.35) / 1.35, 0.0, 1.0);
   let canopy = canopyAt(wp.xz);
   let sky = shIrradiance(N) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, N);
-  var col = albedo * (key * diff * vis * mix(0.55, 1.0, occ) / PI + sky * ao * ambientK);
+  var col = albedo * (key * diff * vis * mix(0.55, 1.0, occ) / PI + sky * ao * ambientK * cavity);
   // Sheen: fuzz at grazing view (Charlie), the fabric's defining highlight.
   let H = normalize(L + V);
   let sheen = charlieD(max(dot(N, H), 0.0), 0.5) / (4.0 * (max(nl, 0.0) + nv - max(nl, 0.0) * nv) + 1e-3);

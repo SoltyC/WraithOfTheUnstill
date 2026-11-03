@@ -14,7 +14,7 @@ describe('the release, rough cut', () => {
   });
   it('replays each name said from the named person\'s eyes, the Wraith moving along its record', () => {
     const { shots } = releaseShots({ record: [rec('hanne'), rec('teodor')] });
-    const replays = shots.filter((s) => s.wraith && s.wraith.path);
+    const replays = shots.filter((s) => s.record && s.wraith && s.wraith.path);
     expect(replays.length).toBe(2);
     expect(replays[0].subs.some((q) => q.text === 'Don’t.')).toBe(true);
     expect(shots.some((s) => s.slug && /No names/.test(s.slug.text))).toBe(false);
@@ -22,11 +22,11 @@ describe('the release, rough cut', () => {
   it('shows twelve in full and the rest as a run of names', () => {
     const ids = ['hanne', 'ysolde', 'teodor', 'ise', 'liese', 'brannoc', 'oda', 'pell', 'wyn', 'corran', 'maudry', 'aldo', 'fenna', 'hesk'];
     const { shots } = releaseShots({ record: ids.map((i) => rec(i)) });
-    expect(shots.filter((s) => s.wraith && s.wraith.path).length).toBe(12);
+    expect(shots.filter((s) => s.record && s.wraith && s.wraith.path).length).toBe(12);
     expect(shots.some((s) => s.slug && /Fenna/.test(s.slug.text))).toBe(true);
   });
   it('uses the held hands when nobody was named', () => {
     const { shots } = releaseShots({ record: [rec('orla', 'held')] });
-    expect(shots.filter((s) => s.wraith && s.wraith.path).length).toBe(1);
+    expect(shots.filter((s) => s.record && s.wraith && s.wraith.path).length).toBe(1);
   });
 });
