@@ -181,6 +181,8 @@ export async function createWorld(g) {
   bindShadows(crowd.material, shadows);
   crowd.freeze();
   crowd.bake(import.meta.env.BASE_URL);
+  // The wave through the sea-doors (Phase 10 U7): drawn only in the release's shots.
+  const wave = (await import('../render/wave.js')).createWave(scene, atmosphere, content.clipmap, ebbholdView.params);
   // Under the water (Phase 10 U1): marine snow and the robe's bubbles.
   const underwaterFx = (await import('../render/underwaterFx.js')).createUnderwaterFx(scene, atmosphere);
   underwaterFx.freeze();
@@ -222,5 +224,5 @@ export async function createWorld(g) {
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
   const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground, post.post.waterSim[0]);
   water.extra = wadiWater;   // wading in the braids when they run
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, ebbholdView, crowd });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, wraithView, wraithGround, terrainState, matLib, fire, galeFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, ebbholdView, crowd, wave });
 }

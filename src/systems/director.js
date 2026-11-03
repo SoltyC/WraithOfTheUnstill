@@ -10,13 +10,17 @@
 // A shot may also set: grade ('past' | 'held' | 'present', or [from, to] across the shot), light ({ fill, beam } on Ebbhold's
 // light, or [from, to]), freeze (the crowd and the Drowned held still: time stopped), shake (m), slug (a rough cut's caption
 // card: { text, dim }), subs ([{ t, d, who, text }] subtitles), wraith (false: the Wraith not in the shot; or { path: [[x, y, z,
-// yaw], ...] } moved along it), and onCut(g) for anything else.
+// yaw], ...] } moved along it), sefa ({ path: [[x, y, z], ...] local, run along it over the shot, or one point; yaw; reach:
+// [x, y, z] her hand raised to it}), wave ({ front: x or [from, to] local, t: s or [from, to] — the wave's own time: a constant
+// holds it }), key ({ at: [x, y, z] local, r, c: [r, g, b], i } a light for the shot), look ({ id: one of the Drowned, y: height on them, w: 0..1 } the camera turned to follow them), and onCut(g)
+// for anything else.
 
 import { shotAt, evalShot, totalLength } from '../game/director.js';
 import { hallAlive, bakehouseBehind } from '../game/crowds.js';
 import { CUTSCENES, build } from '../game/cutscenes.js';
 import { GRADES, mixGrades } from '../post/grades.js';
 import { releaseShots } from '../game/release.js';
+import { EBB_ORIGIN } from '../world/ebbhold.js';
 
 /** The farthest a blend carries the camera (m); beyond it a blend becomes a cut. */
 const BLEND_MAX = 25;
@@ -80,6 +84,27 @@ export function addDirectorSystem(g) {
   }
   function setFrozen(on) {
     for (const p of g.drowned ? g.drowned.people : []) if (p.npc) p.npc.frozen = on;
+    if (g.sefa) g.sefa.freeze(on);
+  }
+  const lerp2 = (v, u) => (Array.isArray(v) ? v[0] + (v[1] - v[0]) * u : v);
+  /** Sefa through the shot: along her path (running when it moves), or standing; her hand raised. */
+  function sefaFor(sh, u, cut) {
+    const S = g.sefa;
+    if (!S) return;
+    const q = sh.sefa;
+    if (!q) { if (cut && !sh.freeze) S.show(false); return; }   // (held in time, she stays where she was, out of shot)
+    if (cut) S.show(true);
+    if (sh.freeze && !cut) return;
+    const P = q.path, n = P.length - 1;
+    let x = P[0][0], y = P[0][1], z = P[0][2], vx = 0, vz = 0, yaw = q.yaw ?? 0;
+    if (n > 0) {
+      const qq = Math.min(n - 1e-6, u * n), k = Math.floor(qq), f = qq - k, A = P[k], B = P[k + 1];
+      x = A[0] + (B[0] - A[0]) * f; y = A[1] + (B[1] - A[1]) * f; z = A[2] + (B[2] - A[2]) * f;
+      vx = (B[0] - A[0]) * n / sh.dur; vz = (B[2] - A[2]) * n / sh.dur;
+      if (q.yaw === undefined) yaw = Math.atan2(vx, vz);
+    }
+    S.set(x, y, z, yaw, vx, vz);
+    S.reachTo(q.reach || null);
   }
   /** The game camera's pose now → cur (position, a look-at 10 m ahead, fov). */
   function camNow() {
@@ -130,6 +155,8 @@ export function addDirectorSystem(g) {
       post.post.grade.set(gradeSaved); post.post.gradeDirty = true;
       if (g.ebbholdView) { g.ebbholdView.params.y = base.fill; g.ebbholdView.params.z = base.beam; }
       setFrozen(false); frozenAt = -1;
+      if (g.sefa) g.sefa.show(false);
+      if (g.wave) g.wave.set(0, 0, false);
       if (!wraithShown && g.game) { g.game.setPlayerVisible(true); wraithShown = true; }
       overlayFor({}, 0, 0);
       // Out: blended (the last shot's camera, as it was last placed, is held as the difference to the player's, dying away), or a cut.
@@ -197,7 +224,10 @@ export function addDirectorSystem(g) {
       const want = sh.wraith !== false;
       if (want !== wraithShown && g.game) { g.game.setPlayerVisible(want); wraithShown = want; }
       sh.onCut?.(g);
+      sefaFor(sh, at.u, true);
     }
+    sefaFor(sh, at.u, false);
+    if (g.wave) { if (sh.wave) g.wave.set(lerp2(sh.wave.front, at.u), lerp2(sh.wave.t ?? 0, at.u), true); else g.wave.set(0, 0, false); }
     lookFor(sh, at.u);
     overlayFor(sh, at.u, at.u * sh.dur);
     // The Wraith moved along a path through the shot (a replay of its own record).
@@ -207,15 +237,39 @@ export function addDirectorSystem(g) {
       let dy = B[3] - A[3]; dy -= Math.round(dy / (2 * Math.PI)) * 2 * Math.PI; controller.yaw = A[3] + dy * f;
     }
     evalShot(sh, at.u, t, cam);
+    // The camera turned to follow one of the Drowned (a pan: where it stands stays the shot's).
+    if (sh.look && g.drowned) {
+      const P = g.drowned.people, w = sh.look.w ?? 1, O = EBB_ORIGIN;
+      let p = null;
+      for (let k = 0; k < P.length; k++) if (P[k].d.id === sh.look.id) p = P[k];
+      if (p) {
+        cam[3] += (p.x + O.x - cam[3]) * w; cam[4] += (p.y + O.y + (sh.look.y ?? 1.2) - cam[4]) * w; cam[5] += (p.z + O.z - cam[5]) * w;
+        // Placed off them, too (the camera goes with them).
+        const F = sh.look.from;
+        if (F) { cam[0] = p.x + O.x + F[0]; cam[1] = p.y + O.y + F[1]; cam[2] = p.z + O.z + F[2]; cam[7] = Math.hypot(cam[3] - cam[0], cam[4] - cam[1], cam[5] - cam[2]); }
+      }
+    }
     if (at.i === 0 && blendIn > 0 && t < blendIn) {
       const w = 1 - smoother(t / blendIn);
       for (let k = 0; k < 7; k++) cam[k] += off[k] * w;
     }
     if (sh.shake) {
-      const a = sh.shake * (1 - at.u * 0.5), tt = t * 23;
+      // (From shakeAt on, if given: a shudder partway through.)
+      const on = sh.shakeAt === undefined ? 1 : Math.min(1, Math.max(0, (at.u - sh.shakeAt) / 0.06));
+      const a = sh.shake * (1 - at.u * 0.5) * on, tt = t * 23;
       cam[0] += a * Math.sin(tt * 1.3); cam[1] += a * Math.sin(tt * 1.7 + 1); cam[3] += a * 2 * Math.sin(tt * 1.1 + 2); cam[4] += a * 2 * Math.sin(tt * 0.9 + 3);
     }
     place(cam);
+    // A key light for the shot (the fourth spell slot: the verbs clear theirs each frame, before this): { at: local, r, c, i }.
+    if (sh.key) {
+      const L = g.content.clipmap.spellLights, K = sh.key;
+      // (on: one of the Drowned, or 'sefa': the light goes with them, at an offset)
+      let bx = EBB_ORIGIN.x, by = EBB_ORIGIN.y, bz = EBB_ORIGIN.z;
+      if (K.on === 'sefa' && g.sefa) { bx += g.sefa.st.x; by += g.sefa.st.y; bz += g.sefa.st.z; }
+      else if (K.on && g.drowned) { const P = g.drowned.people; for (let k = 0; k < P.length; k++) if (P[k].d.id === K.on) { bx += P[k].x; by += P[k].y; bz += P[k].z; } }
+      L[24] = K.at[0] + bx; L[25] = K.at[1] + by; L[26] = K.at[2] + bz; L[27] = K.r ?? 12;
+      L[28] = K.c ? K.c[0] : 1; L[29] = K.c ? K.c[1] : 0.75; L[30] = K.c ? K.c[2] : 0.5; L[31] = K.i ?? 8;
+    }
     const taa = post.taa;
     taa.dofOn = (sh.dof ?? 0) > 0; taa.focus = cam[7]; taa.focusRange = sh.dof || 1; taa.farBlur = 1; taa.maxBlur = sh.maxBlur ?? 9;
     taa.blur = sh.blur ?? 0.5;

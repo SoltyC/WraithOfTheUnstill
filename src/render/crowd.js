@@ -25,6 +25,7 @@ export const CROWD_MAX = 48;
 export const CROWD_MOTIONS = [
   { name: 'stand' },
   { name: 'walk', walk: 1.05 },
+  { name: 'run', walk: 3.6 },
   { name: 'knead', clip: 'knead1', hands: [-0.05, 1.1, 0.58, -0.05, 1.1, 0.58], spread: 0.1 },
   { name: 'rock', clip: 'rock' },
   { name: 'haul', clip: 'wheel', hands: [0, 1.06, 0.42, 0, 1.06, 0.68] },
@@ -98,7 +99,7 @@ export function createCrowd(scene, atmo, clipmap) {
       for (let k = 0; k < m; k++) {
         const f = list[k], o = k * 12, dye = f.dye || [1.4, 1.4, 1.35];
         figs[o] = f.x; figs[o + 1] = f.y; figs[o + 2] = f.z; figs[o + 3] = f.yaw || 0;
-        figs[o + 4] = f.scale || 1; figs[o + 5] = byName[f.motion] ?? 0; figs[o + 6] = f.t || 0; figs[o + 7] = f.motion === 'walk' ? (f.walk || 20) : 0;
+        figs[o + 4] = f.scale || 1; figs[o + 5] = byName[f.motion] ?? 0; figs[o + 6] = f.t || 0; figs[o + 7] = f.motion === 'walk' || f.motion === 'run' ? (f.walk || 20) : 0;
         figs[o + 8] = dye[0]; figs[o + 9] = dye[1]; figs[o + 10] = dye[2]; figs[o + 11] = crowd.shown ? 1 : 0;
       }
       figBuf.update(figs);

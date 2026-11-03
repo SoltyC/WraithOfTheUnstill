@@ -21,6 +21,42 @@ function half(v) {
 const flat = { qx: 0, qz: 0, h: 0, sample() { this.h = 0; } };
 
 /** One clip: { name, clip (motion file) | null, walk (m/s) }. */
+/** One frame's particles (relative to the root, bz back) → out at frame k. */
+function pack(p, out, k, n, bz) {
+  for (let j = 0; j < n; j++) {
+    const a = j * 8, o = (k * n + j) * 4;
+    out[o] = half(p[a]) | (half(p[a + 1]) << 16);
+    out[o + 1] = half(p[a + 2] - bz) | (half(p[a + 3]) << 16);
+    out[o + 2] = half(p[a + 4]) | (half(p[a + 5]) << 16);
+    out[o + 3] = half(p[a + 6]) | (half(p[a + 7]) << 16);
+  }
+}
+
+/** Walking or running in place: the loop is a whole number of the gait's own strides (from one left footfall to the third after
+ *  it), so it closes without a hitch at any speed. */
+function bakeStride(w, spec) {
+  const n = w.cloth.n, v = spec.walk, MAXT = WARM + 8, rec = [], at = [];
+  let bz = 0, was = 0, falls = [];
+  for (let i = 0; i <= MAXT * SIM; i++) {
+    const t = i / SIM;
+    bz += v / SIM;
+    w.bx = 0; w.by = 0; w.bz = bz; w.vx = 0; w.vz = v; w.yaw = 0; w.grounded = true; w.dt = 1 / SIM; w.time = t;
+    w.update();
+    const st = w.gait.state[0];
+    if (t >= WARM && was === 1 && st === 0) falls.push(t);
+    was = st;
+    if (t >= WARM) { const f = new Float32Array(w.packed.length); f.set(w.packed); rec.push(f); at.push(bz); }
+    if (falls.length >= 4) break;
+  }
+  const t0 = falls[0], period = falls[3] - falls[0], frames = Math.round(period * FPS);
+  const out = new Uint32Array(frames * n * 4);
+  for (let k = 0; k < frames; k++) {
+    const q = (t0 - WARM + k * period / frames) * SIM, i = Math.min(rec.length - 1, Math.round(q));
+    pack(rec[i], out, k, n, at[i]);
+  }
+  return { name: spec.name, frames, period, speed: v, n, data: out };
+}
+
 async function bakeOne(base, spec) {
   const w = new Wraith(flat);
   w.maxSteps = 4; w.windStrength = 0.12;
@@ -32,26 +68,18 @@ async function bakeOne(base, spec) {
     if (spec.hands) { const T = P.handT; T.set(spec.hands); P.handW = 0.9; P.handSpread = spec.spread || 0; }
     w.performance = P;
     period = P.length - Math.min(1.2, P.length * 0.4);
-  } else period = spec.walk ? 1.0 / spec.walk * 2.4 * 3 : 9.2;   // three strides of 2.4 m, or two breaths
+  } else if (spec.walk) return bakeStride(w, spec);
+  else period = 9.2;   // standing: two breaths
   const frames = Math.round(period * FPS), n = w.cloth.n;
   const out = new Uint32Array(frames * n * 4);
-  let bx = 0;
   const steps = Math.round((WARM + period) * SIM);
   let k = 0;
   for (let i = 0; i <= steps && k < frames; i++) {
     const t = i / SIM;
-    if (spec.walk) bx += spec.walk / SIM;
-    w.bx = 0; w.by = 0; w.bz = bx; w.vx = 0; w.vz = spec.walk || 0; w.yaw = 0; w.grounded = true; w.dt = 1 / SIM; w.time = t;
+    w.bx = 0; w.by = 0; w.bz = 0; w.vx = 0; w.vz = 0; w.yaw = 0; w.grounded = true; w.dt = 1 / SIM; w.time = t;
     w.update();
     if (t + 1e-6 < WARM || (t - WARM) * FPS + 1e-6 < k) continue;
-    const p = w.packed;
-    for (let j = 0; j < n; j++) {
-      const a = j * 8, o = (k * n + j) * 4;
-      out[o] = half(p[a]) | (half(p[a + 1]) << 16);
-      out[o + 1] = half(p[a + 2] - bx) | (half(p[a + 3]) << 16);
-      out[o + 2] = half(p[a + 4]) | (half(p[a + 5]) << 16);
-      out[o + 3] = half(p[a + 6]) | (half(p[a + 7]) << 16);
-    }
+    pack(w.packed, out, k, n, 0);
     k++;
   }
   return { name: spec.name, frames, period, speed: spec.walk || 0, n, data: out };

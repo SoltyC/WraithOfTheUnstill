@@ -199,6 +199,18 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - the frozen-crowd dolly (8) passes through a figure;
   - Teodor's close-up shows a blotchy, clipping hood;
   - Hanne's lean is stiff.
+- **Second cut, 2026-11-03** (`review/release/release-cut2.mp4`): shots 1–8 and 14 are now real footage, with no captions:
+  - **Opening:** a high view down the hall, warming from the present to the past. It stands in for the well until the Listener exists.
+  - **Teodor and Ise:** reframed. The camera follows Ise on her stair, with a light that goes with her.
+  - **Sefa** (`systems/sefa.js`): a pale child robe the director runs up the long stair and poses. Her raised hand is `character/reach.js`, two-bone IK with no clip.
+  - **The wave** (`render/wave.js`, `game/wave.js`, `shaders/wave.wgsl.js`):
+    - a breaking-wave sheet wall to wall, its lip curling over a barrel and varied across the hall;
+    - spray off the lip and mist at the toe, all held when time stops;
+    - its shape is exact in JS and WGSL (integer hash), so Sefa's hand sits 15 cm from the water;
+    - glints from the shot's lights.
+  - **Crowd:** a `run` motion, with walk and run loops baked on whole gait strides so they close cleanly; `hallFleeing` runners frozen mid-stride, with a clear lane for the camera.
+  - **Director:** `sefa`, `wave`, `look` (follow a person), `key` (a light per shot, the fourth spell slot) and `shakeAt`.
+  - **Still cards:** the Listener lets go (13), Morrow and the jetty (10), the kelp (11), the robes (16–17). The Listener's rise (old 7) is cut until F9; "Everything stops" is shown on the frozen wave instead.
 - **Decision:** the order stands. Don't polish the card version. Build the captioned pieces as real footage, one at a time, each reviewed alone before it goes into the cut (release-cinematic.md's "Sefa alone" checkpoint). Start with Sefa, the wave and the freeze, because shots 4–8 hang on them. Fix the broken real shots (well, Ise, the dolly through a figure, Teodor's hood) in the same pass, then re-cut.
 
 **Cut scope here last.** This is the reason for the chapter.

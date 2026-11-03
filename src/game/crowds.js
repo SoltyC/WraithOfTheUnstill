@@ -38,3 +38,24 @@ export function bakehouseBehind(seed = 3) {
   fig(39, 59.7, -Math.PI / 2, 'walk', { walk: 14, t: 4 });
   return out;
 }
+
+/** The hall when the sea-doors break: people running west down the causeway and the walk galleries, away from the water (the
+ *  middle of the causeway left clear: a camera's lane through them when time stops). x0..x1: where along the hall. */
+export function hallFleeing(seed = 11, x0 = 20, x1 = 200, max = 48) {
+  const r = rng(seed), out = [];
+  const W = -Math.PI / 2;
+  const fig = (x, y, z, motion, extra = {}) => out.length < max && out.push({ x: x + O.x, y: y + O.y, z: z + O.z, yaw: W, motion, scale: SCALES[Math.floor(r() * SCALES.length)], t: r() * 9, dye: DYES[Math.floor(r() * DYES.length)], ...extra });
+  // The causeway: most of them, either side of the lane, a few close together (families, crews).
+  for (let k = 0; k < 30; k++) {
+    const side = k % 2 ? 1 : -1, w = 26 + r() * 16, mid = x0 + w / 2 + r() * Math.max(0, x1 - x0 - w);
+    fig(mid, HALL.walk, side * (1.4 + r() * 3.6), 'run', { walk: w });
+  }
+  // The walk galleries.
+  for (let k = 0; k < 12; k++) {
+    const side = k % 2 ? 1 : -1, w = 30, mid = x0 + w / 2 + r() * Math.max(0, x1 - x0 - w);
+    fig(mid, HALL.walk, side * (HALL.HW - 6.5 - r() * 3), 'run', { walk: w });
+  }
+  // A few on the first gallery, and the last who have only just turned to run.
+  for (let k = 0; k < 6; k++) { const side = k % 2 ? 1 : -1; fig(x0 + r() * (x1 - x0), HALL.g1, side * (HALL.HW - 7), 'run', { walk: 30 }); }
+  return out;
+}
