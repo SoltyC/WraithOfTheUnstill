@@ -233,7 +233,8 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - **Old bug fixed:** the sealed city's mesh and rooms' water were drawn from outside: a dark block about 280 m tall in the western sky, seen from the Sounding and the meadow. Now drawn only while the Wraith is inside (after the first frames, so the pipelines are built at load).
   - **Shot 14:** reframed outside the lip; under it the frame was all water. Sefa is placed under the card before it, so the frozen shot has her.
   - **The jetty's planks** are kept free of the frost's snow (`NO_SNOW`).
-  - **Still weak:** the Lung is a crude block close up; Morrow stands (no sitting pose without a clip through the gate); the kelp (11) and the Listener (13) are still cards.
+  - **Fifth cut:** the Lung rebuilt and 10b a profile; the floating robes soaked and low; the record shots held at 2 m.
+  - **Still weak:** Morrow stands (no sitting pose without a clip through the gate); the kelp (11) and the Listener (13) are still cards; perf not yet measured on the laptop's Low preset.
 - **Decision:** the order stands. Don't polish the card version. Build the captioned pieces as real footage, one at a time, each reviewed alone before it goes into the cut (release-cinematic.md's "Sefa alone" checkpoint). Start with Sefa, the wave and the freeze, because shots 4–8 hang on them. Fix the broken real shots (well, Ise, the dolly through a figure, Teodor's hood) in the same pass, then re-cut.
 
 **Cut scope here last.** This is the reason for the chapter.
