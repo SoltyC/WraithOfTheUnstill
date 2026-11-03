@@ -77,5 +77,17 @@ dlg.querySelector('.close').addEventListener('click', closeT);
 dlg.addEventListener('click', (e) => { if (e.target === dlg) closeT(); });
 dlg.addEventListener('cancel', () => { tv.pause(); if (on) music.play().catch(() => {}); });
 
+// Until the game is live (play.solcrisp.org), its buttons say so and take you to the trailer instead (PLAY_LIVE).
+const PLAY_LIVE = false;
+if (!PLAY_LIVE) {
+  document.querySelectorAll('a[href^="https://play.solcrisp.org"]').forEach((a) => {
+    a.removeAttribute('href'); a.setAttribute('role', 'button'); a.tabIndex = 0; a.dataset.trailer = '';
+    a.addEventListener('click', () => { if (on) music.pause(); dlg.showModal(); tv.play().catch(() => {}); });
+    if (a.classList.contains('bar-play')) a.textContent = 'Coming soon';
+    else a.textContent = 'Playable soon · watch the trailer';
+  });
+  const note = document.querySelector('.play-text p');
+  if (note) note.textContent = 'Free, in your browser, no download — opening soon. Best on a desktop or laptop with a recent Chrome or Edge.';
+}
 // The game needs WebGPU: say so beside the button if this browser can't.
 if (!('gpu' in navigator)) document.querySelector('.gpu-note').hidden = false;
