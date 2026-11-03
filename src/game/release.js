@@ -98,11 +98,21 @@ export function releaseShots(o = {}) {
   for (const r of list) {
     const d = PEOPLE.find((q) => q.id === r.id);
     if (!d || !r.path.length) continue;
-    // From their eyes: a little in front of the head, so the camera is clear of their own hood.
-    const end = r.path[r.path.length - 1], ex = end[0] - r.at[0], ez = end[2] - r.at[2], el = Math.hypot(ex, ez) || 1;
-    const eye = [r.at[0] + ex / el * 0.35, r.at[1] + 1.45, r.at[2] + ez / el * 0.35];
-    const path = r.path.map(([x, y, z, yaw]) => [...W(x, y, z), yaw]);
-    push({ dur: list.length > 6 ? 1.6 : 2.4, ease: 0, grade: 'held', dof: 0, wraith: { path }, keys: still(eye, [end[0], end[1] + 1.3, end[2]], 0.7),
+    // From their eyes: in front of the head, so the camera is clear of their own hood (the lens is wide). A name is said at arm's length,
+    // so the Wraith is held off to NEAR in the replay — closer, its robe is the whole frame — and the eye looks up at its head.
+    const NEAR = 2.0, end = r.path[r.path.length - 1];
+    let ex = end[0] - r.at[0], ez = end[2] - r.at[2], el = Math.hypot(ex, ez);
+    if (el < 0.05) { ex = Math.sin(end[3]) * -1; ez = Math.cos(end[3]) * -1; el = 1; }   // on top of them: back along its facing
+    const ux = ex / el, uz = ez / el;
+    const eye = [r.at[0] + ux * 0.55, r.at[1] + 1.45, r.at[2] + uz * 0.55];
+    const path = r.path.map(([x, y, z, yaw]) => {
+      const dx = x - r.at[0], dz = z - r.at[2], dl = Math.hypot(dx, dz);
+      if (dl >= NEAR) return [...W(x, y, z), yaw];
+      const ox = dl > 0.05 ? dx / dl : ux, oz = dl > 0.05 ? dz / dl : uz;
+      return [...W(r.at[0] + ox * NEAR, y, r.at[2] + oz * NEAR), yaw];
+    });
+    const last = path[path.length - 1], head = [last[0] - O.x, last[1] - O.y + 1.6, last[2] - O.z];
+    push({ dur: list.length > 6 ? 1.6 : 2.4, ease: 0, grade: 'held', dof: 0, wraith: { path }, keys: still(eye, head, 0.95),
       subs: [{ t: 0, d: 0.7, text: d.name + ', ' + (TASK[d.task] || '') }, { t: 0.7, d: 3, who: d.name, text: r.kind === 'named' ? 'Don’t.' : '…' }] });
   }
   if (shots[back]) shots[back].enter = 'hall';   // back into the city for the record
