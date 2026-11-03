@@ -8,6 +8,11 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canvas = document.querySelector('.stage'), ctx = canvas.getContext('2d', { alpha: false });
 const chapters = [...document.querySelectorAll('.ch')].map((el, i) => ({ el, i, seq: el.dataset.seq, n: +el.dataset.n, name: el.dataset.name, frames: new Array(+el.dataset.n), top: 0, h: 1 }));
 const params = new URLSearchParams(location.search);
+// Sharp frames for big screens (1600 × 900), light ones for phones and data saver (960 × 540).
+const big = Math.max(screen.width, screen.height) * Math.min(devicePixelRatio || 1, 2) > 1300 && !(navigator.connection && navigator.connection.saveData);
+const BASE = params.get('sd') ? '/seq/' : big ? '/seq-hd/' : '/seq/';
+// Touch scrolling already glides (momentum): drive the film straight from it. A mouse wheel steps, so it is eased.
+const coarse = matchMedia('(pointer: coarse)').matches;
 
 // ---- Frames: a load queue in priority order.
 let loaded = 0; const total = chapters.reduce((a, c) => a + c.n, 0);
@@ -21,27 +26,40 @@ function pump() {
     const img = new Image(); img.decoding = 'async';
     img.onload = () => { c.frames[k] = img; inflight--; loaded++; bar.style.width = (100 * loaded / total) + '%'; if (loaded === total) bar.style.opacity = '0'; pump(); };
     img.onerror = () => { inflight--; pump(); };
-    img.src = `/seq/${c.seq}/${String(k + 1).padStart(3, '0')}.webp`;
+    img.src = `${BASE}${c.seq}/${String(k + 1).padStart(3, '0')}.webp`;
   }
 }
 /** Queue a chapter's frames: every 8th first (a coarse pass that makes scrubbing work at once), then the rest. */
 function queueChapter(c) { for (let k = 0; k < c.n; k += 8) want(c, k); for (let k = 0; k < c.n; k++) want(c, k); }
 for (const c of chapters) queueChapter(c);
 pump();
-function frame(c, k) {
-  k = Math.max(0, Math.min(c.n - 1, Math.round(k)));
-  for (let d = 0; d < c.n; d++) { if (c.frames[k - d]) return c.frames[k - d]; if (c.frames[k + d]) return c.frames[k + d]; }
-  return null;
+/** The loaded frames either side of position f (fractional): a at or before it, b at or after it, and how far between. */
+const pair = { a: null, b: null, t: 0 };
+function frames(c, f) {
+  f = Math.max(0, Math.min(c.n - 1, f));
+  let ia = Math.floor(f), ib = Math.ceil(f);
+  while (ia >= 0 && !c.frames[ia]) ia--;
+  while (ib < c.n && !c.frames[ib]) ib++;
+  pair.a = ia >= 0 ? c.frames[ia] : null; pair.b = ib < c.n ? c.frames[ib] : null;
+  if (!pair.a) { pair.a = pair.b; pair.t = 0; } else if (!pair.b) { pair.t = 0; } else pair.t = ib === ia ? 0 : (f - ia) / (ib - ia);
+  return pair;
 }
 
 // ---- Layout and scroll.
 let vw = 1, vh = 1, dpr = 1;
+let lastW = 0, maxH = 0;
 function layout() {
   dpr = Math.min(devicePixelRatio || 1, 2); vw = innerWidth; vh = innerHeight;
-  canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+  // A phone's address bar sliding changes the height a little: keep the canvas at the tallest height seen for this width (it is
+  // sized in CSS to the large viewport), so the picture doesn't jump.
+  if (vw !== lastW) { lastW = vw; maxH = 0; }
+  maxH = Math.max(maxH, vh);
+  const cw = Math.round(vw * dpr), ch = Math.round(maxH * dpr);
+  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; ctx.imageSmoothingQuality = 'high'; }
   for (const c of chapters) { const r = c.el.getBoundingClientRect(); c.top = r.top + scrollY; c.h = r.height; }
 }
 addEventListener('resize', layout);
+addEventListener('load', layout);   // (fonts and layout settled: the chapters' tops)
 let target = scrollY, shown = scrollY;
 addEventListener('scroll', () => { target = scrollY; }, { passive: true });
 
@@ -49,8 +67,8 @@ addEventListener('scroll', () => { target = scrollY; }, { passive: true });
 let px = 0, py = 0, mx = 0, my = 0;
 addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { mx = (e.clientX / vw - 0.5); my = (e.clientY / vh - 0.5); } }, { passive: true });
 function draw(img, alpha = 1, zoom = 1) {
-  if (!img) return;
-  const W = canvas.width, H = canvas.height, s = Math.max(W / img.width, H / img.height) * 1.04 * zoom;
+  if (!img || alpha <= 0.002) return;
+  const W = canvas.width, H = canvas.height, s = Math.max(W / img.width, H / img.height) * 1.015 * zoom;
   const w = img.width * s, h = img.height * s;
   ctx.globalAlpha = alpha;
   ctx.drawImage(img, (W - w) / 2 - px * W * 0.012, (H - h) / 2 - py * H * 0.012, w, h);
@@ -66,11 +84,15 @@ for (const c of chapters) {
 
 // ---- The loop: ease the scroll, find the chapter and its progress, draw.
 const T = 0.4;   // the last share of a chapter over which the next opens out of a slit of light
-let lastCh = -1;
+let lastCh = -1, lastT = performance.now();
+/** A chapter's picture at position f: the two nearest frames, crossfaded (smooth while frames are still arriving). */
+function drawSeq(c, f, alpha, zoom) { const q = frames(c, f); draw(q.a, alpha, zoom); if (q.b && q.b !== q.a && q.t > 0.01) draw(q.b, alpha * q.t, zoom); }
 function tick() {
   requestAnimationFrame(tick);
+  const now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
   const d = target - shown;
-  shown = reduced || Math.abs(d) < 0.5 ? target : shown + d * 0.1;
+  // Eased toward the scroll (frame-rate independent), straight from it on touch, and snapped when close.
+  shown = reduced || coarse || Math.abs(d) < 1 ? target : shown + d * (1 - Math.exp(-dt * 14));
   px += (mx - px) * 0.04; py += (my - py) * 0.04;
   // Which chapter: the one whose stretch holds the viewport's top.
   let ci = 0;
@@ -88,12 +110,12 @@ function tick() {
   const W = canvas.width, H = canvas.height;
   ctx.fillStyle = '#08090b'; ctx.fillRect(0, 0, W, H);
   const fade0 = ci === 0 ? Math.min(1, 0.35 + p * 3) : 1;         // the first frame comes up out of the dark
-  draw(frame(c, p * (c.n - 1)), fade0, 1 + p * 0.04);
+  drawSeq(c, p * (c.n - 1), fade0, 1 + p * 0.02);
   const next = chapters[ci + 1];
   if (next && p > 1 - T) {
     const u = (p - (1 - T)) / T, e = u * u * (3 - 2 * u), half = H * 0.5 * e;
     ctx.save(); ctx.beginPath(); ctx.rect(0, H / 2 - half, W, half * 2); ctx.clip();
-    draw(frame(next, 0), 1, 1.08 - 0.04 * e); ctx.restore();
+    drawSeq(next, 0, 1, 1.04 - 0.02 * e); ctx.restore();
     if (e > 0.001 && e < 0.999) {
       const glow = (1 - e) * 0.9;
       const gr = ctx.createLinearGradient(0, 0, W, 0);
