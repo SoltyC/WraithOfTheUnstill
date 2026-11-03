@@ -7,6 +7,9 @@ import { EBB_ORIGIN as O } from '../world/ebbhold.js';
 import { PEOPLE } from './drowned.js';
 import { hallAlive, bakehouseBehind, hallFleeing } from './crowds.js';
 import { faceOffset } from './wave.js';
+import { SOUNDING } from '../world/sounding.js';
+/** The Sounding's water (world y). */
+const LV = 1.41;
 
 const W = (x, y, z) => [x + O.x, y + O.y, z + O.z];
 const key = (t, p, at, fov = 0.7) => ({ t, p: W(...p), at: W(...at), fov });
@@ -21,7 +24,7 @@ const SZ = 42.75;
 const SEFA_X = 57;
 /** Lights for her shots: the stair is under the gallery above, out of the sea-light. Warm in the past; the wave's own cold
  *  green-white once it is over her. */
-const KEY_RUN = { at: [SEFA_X - 2, sy(SEFA_X - 2) + 3.2, SZ - 1.6], r: 16, c: [1, 0.78, 0.55], i: 9 };
+const KEY_RUN = { on: 'sefa', at: [-1.4, 2.4, -1.3], r: 11, c: [1, 0.78, 0.55], i: 11 };
 const KEY_WAVE = { at: [SEFA_X + 1.5, sy(SEFA_X) + 3.6, SZ - 1.4], r: 13, c: [0.55, 0.95, 0.88], i: 9 };
 /** Her held instant, close: brighter, so the still water glints. */
 const KEY_HELD = { ...KEY_WAVE, r: 15, i: 15 };
@@ -52,7 +55,7 @@ export function releaseShots(o = {}) {
   push({ dur: 8, ease: 1, drift: 0.04, grade: 'past', light: PAST, crowd: hall, keys: [key(0, [4, 4.5, -1.5], [120, 3, 0], 0.78), key(1, [26, 4, -1], [130, 2.5, 0], 0.72)] });
   push({ dur: 5, ease: 0.6, dof: 1.5, grade: 'past', light: PAST, keys: [key(0, [156.8, 25.9, 51.2], [161, 25.2, 56], 0.6), key(1, [157.3, 25.8, 51.0], [161, 25.2, 56], 0.57)] });
   // 4. Sefa runs up the long stair towards her father. A shudder: she stops; the camera shakes.
-  push({ dur: 6, ease: 0.4, grade: 'past', light: PAST, key: KEY_RUN, crowd: father(), shake: 0.035, shakeAt: 0.62,
+  push({ dur: 6, ease: 0.4, grade: 'past', light: { fill: 5, beam: 1.6 }, key: KEY_RUN, crowd: father(), shake: 0.035, shakeAt: 0.62,
     sefa: { path: [[SEFA_X - 10, sy(SEFA_X - 10), SZ], [SEFA_X - 1.5, sy(SEFA_X - 1.5), SZ], [SEFA_X, sy(SEFA_X), SZ]] },
     keys: [key(0, [SEFA_X - 15, sy(SEFA_X - 15) + 1.3, SZ + 0.9], [SEFA_X - 6, sy(SEFA_X - 6) + 0.9, SZ], 0.62), key(1, [SEFA_X - 7, sy(SEFA_X - 7) + 1.3, SZ + 0.9], [SEFA_X + 6, sy(SEFA_X + 6) + 1.4, SZ], 0.62)] });
   // 5. The sea-doors break: the water comes down the hall as a wall, the people running from it towards the camera.
@@ -100,10 +103,17 @@ export function releaseShots(o = {}) {
   const wide14 = [key(0, [SEFA_X - 3.2, sy(SEFA_X - 3.2) + 0.6, SZ - 2.0], [SEFA_X + 2, sy(SEFA_X) + 3.2, SZ + 0.4], 0.78), key(1, [SEFA_X - 3.0, sy(SEFA_X - 3) + 0.6, SZ - 1.9], [SEFA_X + 2, sy(SEFA_X) + 3.4, SZ + 0.4], 0.78)];
   push({ dur: 4, ease: 0.5, freeze: true, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: held, keys: wide14 });
   push({ dur: 2.2, ease: 0, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: { front: [front, front - 3.5], t: [11, 13.2] }, shake: 0.03, keys: wide14 });
-  shots.push(card(5, '', 1, { subs: [{ t: 0.5, d: 4, text: '(the sound of the water coming, then gone)' }] }));
+  // 15. Black, the water's sound, then silence — long enough to be uncomfortable. Under it, out of the city: the Wraith is on the
+  //     Sounding's rim when it is over, at dawn (the world has these seconds to come in around the camera).
+  shots.push(card(5, '', 1, { leave: true, hour: 6.2, subs: [{ t: 0.5, d: 4, text: '(the sound of the water coming, then gone)' }] }));
   shots.push(card(8, '', 1));
-  // 16–17. Under the water, robes rising; dawn, the signature frame, thousands of robes on the water.
-  shots.push(card(15, 'Under the water: dark, then veils and robes rising past the camera, slowly, more and more.'));
-  shots.push(card(15, 'Dawn. The camera breaks the surface into the signature frame. Thousands of floating robes, out to the mist. A long, slow crane up, held.'));
+  // 16. Under the water: dark, then the robes rising past the camera, slowly, more and more.
+  const SW = (x, y, z) => [SOUNDING.x + x, LV + y, SOUNDING.z + z];
+  const wkey = (t, p, at, fov = 0.8) => ({ t, p: SW(...p), at: SW(...at), fov });
+  shots.push({ dur: 15, ease: 0.6, wraith: false, blur: 0.4, robes: { rise: [2, 17] },
+    keys: [wkey(0, [3, -12, -2], [6, -26, 8], 0.9), wkey(0.5, [3, -11.4, -2], [5, -2, 4], 0.9), wkey(1, [3, -10.8, -2], [4, 6, 1], 0.85)] });
+  // 17. Dawn: a cut up through the surface (a camera at the waterline splits the frame) into the signature frame — the robes out to the mist — and cranes up, and holds.
+  shots.push({ dur: 15, ease: 0.8, wraith: false, blur: 0.3, robes: {},
+    keys: [wkey(0, [0.4, 0.45, 0.2], [40, 0.4, 16], 0.85), wkey(0.1, [0.5, 0.7, 0.3], [40, 0.2, 16], 0.85), wkey(0.75, [-3, 5.5, -5], [60, -2, 38], 0.8), wkey(1, [-4, 7, -6], [60, -2, 40], 0.8)] });
   return { shots, opt: { blendIn: 0, blendOut: 0, letterbox: true } };
 }

@@ -12,7 +12,8 @@
 // card: { text, dim }), subs ([{ t, d, who, text }] subtitles), wraith (false: the Wraith not in the shot; or { path: [[x, y, z,
 // yaw], ...] } moved along it), sefa ({ path: [[x, y, z], ...] local, run along it over the shot, or one point; yaw; reach:
 // [x, y, z] her hand raised to it}), wave ({ front: x or [from, to] local, t: s or [from, to] — the wave's own time: a constant
-// holds it }), key ({ at: [x, y, z] local, r, c: [r, g, b], i } a light for the shot), look ({ id: one of the Drowned, y: height on them, w: 0..1 } the camera turned to follow them), and onCut(g)
+// holds it }), robes ({ rise: [from, to] s into their rise, or omitted: afloat } the robes on the Sounding), leave (out of the
+// city on this cut), hour (the time of day from this cut), key ({ at: [x, y, z] local, r, c: [r, g, b], i } a light for the shot), look ({ id: one of the Drowned, y: height on them, w: 0..1 } the camera turned to follow them), and onCut(g)
 // for anything else.
 
 import { shotAt, evalShot, totalLength } from '../game/director.js';
@@ -21,6 +22,7 @@ import { CUTSCENES, build } from '../game/cutscenes.js';
 import { GRADES, mixGrades } from '../post/grades.js';
 import { releaseShots } from '../game/release.js';
 import { EBB_ORIGIN } from '../world/ebbhold.js';
+import { SOUNDING } from '../world/sounding.js';
 
 /** The farthest a blend carries the camera (m); beyond it a blend becomes a cut. */
 const BLEND_MAX = 25;
@@ -51,10 +53,11 @@ export function addDirectorSystem(g) {
   /** This frame's slug and subtitle → shownText (and the DOM when it changes). */
   function overlayFor(sh, u, ts) {
     let slug = '', dim = 0, sub = '';
-    if (sh.slug) { slug = sh.slug.text; dim = sh.slug.dim ?? 0.75; }
+    // (A card with no words is still a card: black, or the shot dimmed.)
+    if (sh.slug) { slug = sh.slug.text || ' '; dim = sh.slug.dim ?? 0.75; }
     if (sh.subs) for (const q of sh.subs) if (ts >= q.t && ts < q.t + (q.d || 3)) sub = (q.who ? q.who + ': ' : '') + q.text;
     if (ov && (slug !== shownText.slug || sub !== shownText.sub || dim !== shownText.dim)) {
-      ov.style.display = slug || sub ? 'block' : 'none';
+      ov.style.display = slug || sub ? 'block' : 'none';   // (' ': a wordless card)
       ov.style.background = slug ? 'rgba(6,7,8,' + dim + ')' : 'transparent';
       slugEl.textContent = slug; subEl.textContent = sub;
     }
@@ -157,6 +160,7 @@ export function addDirectorSystem(g) {
       setFrozen(false); frozenAt = -1;
       if (g.sefa) g.sefa.show(false);
       if (g.wave) g.wave.set(0, 0, false);
+      if (g.drift) g.drift.set(false, 0, 0);
       if (!wraithShown && g.game) { g.game.setPlayerVisible(true); wraithShown = true; }
       overlayFor({}, 0, 0);
       // Out: blended (the last shot's camera, as it was last placed, is held as the difference to the player's, dying away), or a cut.
@@ -224,9 +228,16 @@ export function addDirectorSystem(g) {
       const want = sh.wraith !== false;
       if (want !== wraithShown && g.game) { g.game.setPlayerVisible(want); wraithShown = want; }
       sh.onCut?.(g);
+      // Out of the city (the release ends on the Sounding: the city's own exit puts the Wraith on the rim), and the hour.
+      if (sh.leave && g.ebbhold && g.ebbhold.active) g.ebbhold.exit();
+      if (sh.hour !== undefined && g.params) { g.params.v.timeOfDay = sh.hour; g.params.version++; }
       sefaFor(sh, at.u, true);
     }
     sefaFor(sh, at.u, false);
+    if (g.drift) {
+      if (sh.robes) { const lv = g.water && g.water.levelAt ? g.water.levelAt(SOUNDING.x, SOUNDING.z) : 1.41; g.drift.set(true, Number.isFinite(lv) && lv > -50 ? lv : 1.41, clock.simTime, sh.robes.rise ? lerp2(sh.robes.rise, at.u) : null); }
+      else g.drift.set(false, 0, 0);
+    }
     if (g.wave) { if (sh.wave) g.wave.set(lerp2(sh.wave.front, at.u), lerp2(sh.wave.t ?? 0, at.u), true); else g.wave.set(0, 0, false); }
     lookFor(sh, at.u);
     overlayFor(sh, at.u, at.u * sh.dur);

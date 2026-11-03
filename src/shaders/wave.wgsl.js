@@ -112,7 +112,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let n1 = wNoise(q * 1.7); let n2 = wNoise(q * 5.3 + 3.1); let n3 = wNoise(vec3f(lp.z * 2.6, lp.y * 0.25 - t * 1.4, lp.x * 0.4));
   let marble = smoothstep(0.55, 0.75, n1 * 0.6 + n2 * 0.4);
   let lace = wNoise(lp * 3.7 + vec3f(0.0, -t * 1.2, 0.0)) * 0.5 + wNoise(lp * 9.5) * 0.3 + h * 0.4;
-  var foam = lip * smoothstep(0.42, 0.62, n1 * 0.4 + n2 * 0.25 + lace * 0.45) + face * smoothstep(0.6, 0.82, n3 * 0.75 + lace * 0.35) * 0.85 + toe * smoothstep(0.25, 0.55, n1 * 0.5 + n2 * 0.5)
+  var foam = lip * smoothstep(0.42, 0.62, n1 * 0.4 + n2 * 0.25 + lace * 0.45) + face * (0.25 + 0.55 * smoothstep(0.5, 0.85, n3 * 0.75 + lace * 0.35)) + toe * smoothstep(0.25, 0.55, n1 * 0.5 + n2 * 0.5)
            + (1.0 - smoothstep(0.15, 0.25, s)) * marble * 0.55;
   foam = clamp(foam, 0.0, 1.0);
   // Light: the sea-light down the slits (the hall's sun), the lamps, the haze.
@@ -125,7 +125,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let deep = vec3f(0.012, 0.04, 0.042);
   let scat = vec3f(0.09, 0.42, 0.36);
   let through = beamAt(lp - N * 0.6) * uniforms.ebbParams.z;
-  let trans = scat * (vec3f(0.45, 0.85, 0.8) * through / max(ex, 1e-6) * (0.35 + 0.65 * pow(max(dot(-V, L), 0.0), 3.0)) + fillC * 0.6) * (0.25 + 1.6 * thin);
+  let trans = scat * (vec3f(0.45, 0.85, 0.8) * through / max(ex, 1e-6) * (0.35 + 0.65 * pow(max(dot(-V, L), 0.0), 3.0)) + fillC * 0.6) * (0.5 + 1.4 * thin + 0.35 * face);
   let lampT = spellLit(wp, -N, scat * (0.3 + thin), 0.2, ex);
   var col = deep * (fillC * 0.6 + key * max(nl, 0.0) * 0.3) + trans + lampT * 0.6;
   // Its surface: glossy, the slits' light and the lamps in it.

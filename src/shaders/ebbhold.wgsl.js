@@ -278,6 +278,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let tone = mix(mix(vec3f(0.66, 0.52, 0.34), vec3f(0.48, 0.29, 0.11), smoothstep(0.0, 0.3, cav)), vec3f(0.27, 0.14, 0.05), smoothstep(0.45, 0.95, cav));
     albedo = mix(tone * (0.85 + 0.3 * eNoise(lp * 70.0)) * (1.0 - 0.3 * lip), vec3f(0.8, 0.7, 0.52), slash);
     rough = mix(0.55, 0.8, slash);
+  } else if (kind == 17) {
+    // The swaddle: undyed oat-coloured wool, soft and matt, one madder band wound round its middle.
+    let q = fragmentInputs.vLocal;
+    let bandd = abs(q.x - 0.02);
+    let band = 1.0 - smoothstep(0.022, 0.03, bandd);
+    albedo = mix(vec3f(0.5, 0.43, 0.33), vec3f(0.42, 0.1, 0.07), band) * (0.9 + 0.2 * eNoise(q * 60.0)); rough = 0.92;
   } else if (kind == 14) {
     // Linen, parchment, dough: pale and soft, each piece its own shade.
     albedo = matRetint(ms, layer, mix(vec3f(0.5, 0.44, 0.34), vec3f(0.36, 0.3, 0.22), fract(seed * 7.3)), 0.3); rough = 0.85;

@@ -211,6 +211,14 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - **Crowd:** a `run` motion, with walk and run loops baked on whole gait strides so they close cleanly; `hallFleeing` runners frozen mid-stride, with a clear lane for the camera.
   - **Director:** `sefa`, `wave`, `look` (follow a person), `key` (a light per shot, the fourth spell slot) and `shakeAt`.
   - **Still cards:** the Listener lets go (13), Morrow and the jetty (10), the kelp (11), the robes (16–17). The Listener's rise (old 7) is cut until F9; "Everything stops" is shown on the frozen wave instead.
+- **The user on the second cut:** "IT LOOKS AMAZING."
+- **Third cut** (`review/release/release-cut3.mp4`): the ending is real footage.
+  - **15, black:** the release leaves the city (its own exit: the Wraith ends on the Sounding's rim) and sets dawn while the screen is black. Wordless cards now really are black; they weren't in the rough cut.
+  - **16, the rise:** under the Sounding, empty robes rise past the camera, hood first, settling flat at the top.
+  - **17, the dawn:** a cut up through the surface (a camera at the waterline splits the frame) into the robes on the water, out to the far shore; a crane up and hold.
+  - **The robes** (`game/drift.js`, `render/drift.js`, `shaders/drift.wgsl.js`): 8,000 empty robes, face down, sleeves spread, in wind-rows. The middle is packed (where they came up). 360 are in detail (856 triangles each); the rest are 64 triangles each.
+  - **Fixed:** Teodor's daughter was gold because the swaddle's shader kind had no colour branch and fell through to bronze. She is now oat wool with a madder band. Sefa's run has a light that goes with her, and the wave's face has fewer dark streaks.
+  - **Still to do:** the dawn is the region's overcast. The weather override is saved state, so it wasn't touched. Up close from below, the robes read as flat planks.
 - **Decision:** the order stands. Don't polish the card version. Build the captioned pieces as real footage, one at a time, each reviewed alone before it goes into the cut (release-cinematic.md's "Sefa alone" checkpoint). Start with Sefa, the wave and the freeze, because shots 4–8 hang on them. Fix the broken real shots (well, Ise, the dolly through a figure, Teodor's hood) in the same pass, then re-cut.
 
 **Cut scope here last.** This is the reason for the chapter.
