@@ -13,6 +13,7 @@
 
 import { createWraithView } from '../render/wraith.js';
 import { ARCHETYPES, scaledGround } from '../character/veiled.js';
+import { LAP } from '../world/jetty.js';
 
 const NEAR = 60, FAR = 260, TALK_R = 3.2, LOOK_R = 9;
 const FULL_R = 22, BUDGET = 3;
@@ -191,6 +192,28 @@ export function addNpcSystems(g) {
     put(n, x, z) { n.x = x; n.z = z; n.xf.ox = x; n.xf.oz = z; n.placed = false; n.at = [x, z]; n.vx = 0; n.vz = 0; },
   };
 
+  /** A carried prop to its hand (world): a staff planted beside the right, a lantern hanging from the left, a held thing between
+   *  both, a thing lengthwise across the lap, its far end in the left, a blade in the right fist. */
+  function placeProp(prop, n, w, xf) {
+    const b = w.body, sites = g.architecture.sites, o = prop.index * 4, kind = prop.kind;
+    const k = kind === 'lantern' || kind === 'lap' ? 0 : 3;
+    const hx = xf.ox + (b.ha[k] - xf.ox) * xf.s, hy = xf.oy + (b.ha[k + 1] - xf.oy) * xf.s, hz = xf.oz + (b.ha[k + 2] - xf.oz) * xf.s;
+    if (kind === 'held') {
+      // In both hands: between them, a little out from the body.
+      sites[o] = xf.ox + ((b.ha[0] + b.ha[3]) * 0.5 - xf.ox) * xf.s + b.f[0] * 0.04; sites[o + 1] = xf.oy + ((b.ha[1] + b.ha[4]) * 0.5 - xf.oy) * xf.s;
+      sites[o + 2] = xf.oz + ((b.ha[2] + b.ha[5]) * 0.5 - xf.oz) * xf.s + b.f[2] * 0.04;
+    } else if (kind === 'lap') {
+      // Lengthwise out from the lap, cradled on the left hand and forearm: its middle over the hand, a little to the right and up
+      // (so the arm is under it, not along its side). (Sized for Morrow's Lung: world/jetty.js LAP.)
+      const fx = Math.sin(n.yaw), fz = Math.cos(n.yaw);
+      sites[o] = hx - fx * LAP[0] + fz * LAP[1]; sites[o + 1] = hy + LAP[2]; sites[o + 2] = hz - fz * LAP[0] - fx * LAP[1];
+    }
+    else if (kind === 'lantern' || kind === 'blade') { sites[o] = hx; sites[o + 1] = hy - 0.02; sites[o + 2] = hz; }
+    else { ground.qx = hx; ground.qz = hz; ground.sample(); sites[o] = hx; sites[o + 1] = ground.h - 0.05; sites[o + 2] = hz; }
+    // A prop that comes and goes with the figure's work (the Lung's gash and slump, world/jetty.js: n.gash its progress).
+    sites[o + 3] = !prop.show || prop.show(n.gash ?? 0) ? 1 : 0;
+  }
+
   loop.add({ name: 'npcs', update: () => {
     frame++;
     const cp = camera.position, p = controller.pos, dt = clock.dt;
@@ -234,7 +257,10 @@ export function addNpcSystems(g) {
       if (show !== n.shown) {
         n.shown = show; n.view.setEnabled(show); changed = true; if (!show) n.placed = false;
         const prop = g.props?.[n.id];
-        if (prop && !show) g.architecture.sites[prop.index * 4 + 3] = 0;
+        if (prop && !show) {
+          g.architecture.sites[prop.index * 4 + 3] = 0;
+          if (prop.also) for (let a = 0; a < prop.also.length; a++) g.architecture.sites[prop.also[a].index * 4 + 3] = 0;
+        }
       }
       if (n.target) n.target.hidden = !show;
       if (!show) continue;
@@ -279,15 +305,8 @@ export function addNpcSystems(g) {
       // What they carry: a staff planted beside the right hand, a lantern hanging from the left.
       const prop = g.props?.[n.id];
       if (prop) {
-        const b = w.body, sites = g.architecture.sites, o = prop.index * 4, k = prop.kind === 'lantern' ? 0 : 3;
-        const hx = xf.ox + (b.ha[k] - xf.ox) * xf.s, hy = xf.oy + (b.ha[k + 1] - xf.oy) * xf.s, hz = xf.oz + (b.ha[k + 2] - xf.oz) * xf.s;
-        if (prop.kind === 'held') {
-          // In both hands: between them, a little out from the body.
-          sites[o] = xf.ox + ((b.ha[0] + b.ha[3]) * 0.5 - xf.ox) * xf.s + b.f[0] * 0.04; sites[o + 1] = xf.oy + ((b.ha[1] + b.ha[4]) * 0.5 - xf.oy) * xf.s;
-          sites[o + 2] = xf.oz + ((b.ha[2] + b.ha[5]) * 0.5 - xf.oz) * xf.s + b.f[2] * 0.04;
-        } else if (prop.kind === 'lantern') { sites[o] = hx; sites[o + 1] = hy - 0.02; sites[o + 2] = hz; }
-        else { ground.qx = hx; ground.qz = hz; ground.sample(); sites[o] = hx; sites[o + 1] = ground.h - 0.05; sites[o + 2] = hz; }
-        sites[o + 3] = 1;
+        placeProp(prop, n, w, xf);
+        if (prop.also) for (let a = 0; a < prop.also.length; a++) placeProp(prop.also[a], n, w, xf);
       }
       if (n.target) { const h = w.body.head; n.target.x = xf.ox + (h[0] - xf.ox) * xf.s; n.target.y = xf.oy + (h[1] - xf.oy) * xf.s; n.target.z = xf.oz + (h[2] - xf.oz) * xf.s; }
     }

@@ -56,9 +56,13 @@ export async function addArchitectureSystem(g) {
   g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]));
   // Nothing grows through the erg's ruins and glass (the oasis palms round the caravanserai, the canyon flora).
   g.trees?.setExclusions(sites.filter((s) => /^(ruin|glass)-/.test(s.id)).map((s) => [s.at[0], s.at[1], (s.id === 'ruin-caravanserai' ? 24 : s.footprint) + 3]));
-  /** Prop sites by NPC id (the NPC system places them at the hand). */
+  /** Prop sites by NPC id (the NPC system places them at the hand); a second one in the other hand rides along in `also`. */
   g.props = {};
-  sites.forEach((s, i) => { if (s.prop) g.props[s.npc] = { index: i, kind: s.kind }; });
+  sites.forEach((s, i) => {
+    if (!s.prop) return;
+    const p = { index: i, kind: s.kind, also: null, show: s.show ?? null };
+    if (g.props[s.npc]) (g.props[s.npc].also ||= []).push(p); else g.props[s.npc] = p;
+  });
   controller.solids = solids;
   // The camera keeps out of walls, columns and plinths (with the Warden's own occluder).
   const wardenOcc = g.arm.occluder;
