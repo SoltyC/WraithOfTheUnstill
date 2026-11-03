@@ -1,97 +1,136 @@
-// The site's behaviour: reveals as lines come into view; each film plays only while it is on screen (and loads only when it
-// first comes near); the snow you write in; the music, off until asked for (M); the trailer in a dialog; a note when the
-// browser can't run the game.
+// The site: one fixed canvas the scroll drives through the game's world. Each chapter is a stretch of scroll whose frames
+// (/seq/<name>/NNN.webp, from the game's own films) play through as you scroll it; between chapters the next land opens out of a
+// slit of light. The scroll is eased, so the camera glides rather than steps. Frames load in the order they're needed (this
+// chapter, then the next, then the rest), and the nearest loaded frame stands in for one still on its way. Normal scrolling
+// everywhere: nothing here captures touch.
 
-import { createSnow } from './snow.js';
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.querySelector('.stage'), ctx = canvas.getContext('2d', { alpha: false });
+const chapters = [...document.querySelectorAll('.ch')].map((el, i) => ({ el, i, seq: el.dataset.seq, n: +el.dataset.n, name: el.dataset.name, frames: new Array(+el.dataset.n), top: 0, h: 1 }));
+const params = new URLSearchParams(location.search);
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-// ?at=<section id>: jump straight there (for shots and links that must land exactly).
-const at = new URLSearchParams(location.search).get('at');
-if (at) { document.documentElement.style.scrollBehavior = 'auto'; addEventListener('load', () => document.getElementById(at)?.scrollIntoView()); }
-// ?solo=<section id>: that section alone at the top (screenshots of one beat).
-const solo = new URLSearchParams(location.search).get('solo');
-if (solo) document.querySelectorAll('.reveal').forEach((el) => el.classList.add('in'));
-if (solo) for (const el of document.querySelectorAll('main > section, main > .chapters > article, .chapters')) {
-  if (el.id !== solo && !el.querySelector('#' + solo)) el.style.display = 'none';
+// ---- Frames: a load queue in priority order.
+let loaded = 0; const total = chapters.reduce((a, c) => a + c.n, 0);
+const bar = document.querySelector('.loading span');
+const queued = new Set(), queue = [];
+let inflight = 0;
+function want(c, k) { const key = c.i * 1000 + k; if (queued.has(key)) return; queued.add(key); queue.push([c, k]); }
+function pump() {
+  while (inflight < 6 && queue.length) {
+    const [c, k] = queue.shift(); inflight++;
+    const img = new Image(); img.decoding = 'async';
+    img.onload = () => { c.frames[k] = img; inflight--; loaded++; bar.style.width = (100 * loaded / total) + '%'; if (loaded === total) bar.style.opacity = '0'; pump(); };
+    img.onerror = () => { inflight--; pump(); };
+    img.src = `/seq/${c.seq}/${String(k + 1).padStart(3, '0')}.webp`;
+  }
+}
+/** Queue a chapter's frames: every 8th first (a coarse pass that makes scrubbing work at once), then the rest. */
+function queueChapter(c) { for (let k = 0; k < c.n; k += 8) want(c, k); for (let k = 0; k < c.n; k++) want(c, k); }
+for (const c of chapters) queueChapter(c);
+pump();
+function frame(c, k) {
+  k = Math.max(0, Math.min(c.n - 1, Math.round(k)));
+  for (let d = 0; d < c.n; d++) { if (c.frames[k - d]) return c.frames[k - d]; if (c.frames[k + d]) return c.frames[k + d]; }
+  return null;
 }
 
-// Reveals.
-const io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }, { threshold: 0.2 });
-document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+// ---- Layout and scroll.
+let vw = 1, vh = 1, dpr = 1;
+function layout() {
+  dpr = Math.min(devicePixelRatio || 1, 2); vw = innerWidth; vh = innerHeight;
+  canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+  for (const c of chapters) { const r = c.el.getBoundingClientRect(); c.top = r.top + scrollY; c.h = r.height; }
+}
+addEventListener('resize', layout);
+let target = scrollY, shown = scrollY;
+addEventListener('scroll', () => { target = scrollY; }, { passive: true });
 
-// Films: load when near, play while visible (the hero plays at once).
-const films = [...document.querySelectorAll('video[data-src]')];
-const near = new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting && !e.target.src) { e.target.src = e.target.dataset.src; e.target.load(); }
-}, { rootMargin: '120% 0px' });
-const seen = new IntersectionObserver((es) => {
-  for (const e of es) { const v = e.target; if (e.isIntersecting && !reduced) v.play().catch(() => {}); else v.pause(); }
-}, { threshold: 0.15 });
-films.forEach((v) => { near.observe(v); seen.observe(v); });
-if (reduced) document.querySelectorAll('video[autoplay]').forEach((v) => { v.removeAttribute('autoplay'); v.pause(); });
+/** Cover-fit an image into the canvas, with a slight drift from the pointer (a held camera, breathing). */
+let px = 0, py = 0, mx = 0, my = 0;
+addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { mx = (e.clientX / vw - 0.5); my = (e.clientY / vh - 0.5); } }, { passive: true });
+function draw(img, alpha = 1, zoom = 1) {
+  if (!img) return;
+  const W = canvas.width, H = canvas.height, s = Math.max(W / img.width, H / img.height) * 1.04 * zoom;
+  const w = img.width * s, h = img.height * s;
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(img, (W - w) / 2 - px * W * 0.012, (H - h) / 2 - py * H * 0.012, w, h);
+  ctx.globalAlpha = 1;
+}
 
-// The snow.
-const snowSec = document.querySelector('.snow'), canvas = document.querySelector('.snow-canvas');
-let snow = null;
-try { snow = createSnow(canvas, { reducedMotion: reduced }); } catch (e) { console.error('snow:', e && e.message); }
-if (!snow) snowSec.classList.add('no-gl');
-else {
-  let demoed = false;
-  new IntersectionObserver((es) => {
-    for (const e of es) {
-      if (e.isIntersecting) {
-        snow.start();
-        // The first time: the world writes a line itself, to show what it does (a slow S across the near snow).
-        if (!demoed) { demoed = true; const pts = []; for (let i = 0; i <= 60; i++) { const u = i / 60; pts.push([0.28 + 0.5 * u, 0.62 - 0.07 * Math.sin(u * Math.PI * 2)]); } setTimeout(() => snow.demo(pts), 700); }
-      } else snow.stop();
+// ---- The rail.
+const rail = document.querySelector('.rail');
+for (const c of chapters) {
+  const a = document.createElement('a'); a.href = '#' + c.el.id; a.innerHTML = `<span class="lbl">${c.name}</span><span class="dot"></span>`;
+  rail.appendChild(a); c.link = a;
+}
+
+// ---- The loop: ease the scroll, find the chapter and its progress, draw.
+const T = 0.4;   // the last share of a chapter over which the next opens out of a slit of light
+let lastCh = -1;
+function tick() {
+  requestAnimationFrame(tick);
+  const d = target - shown;
+  shown = reduced || Math.abs(d) < 0.5 ? target : shown + d * 0.1;
+  px += (mx - px) * 0.04; py += (my - py) * 0.04;
+  // Which chapter: the one whose stretch holds the viewport's top.
+  let ci = 0;
+  for (let i = 0; i < chapters.length; i++) if (shown >= chapters[i].top - 1) ci = i;
+  const c = chapters[ci], span = Math.max(1, c.h - vh), p = Math.max(0, Math.min(1, (shown - c.top) / span));
+  // Words: each chapter's progress as a CSS variable.
+  for (let i = Math.max(0, ci - 1); i <= Math.min(chapters.length - 1, ci + 1); i++) {
+    const q = chapters[i], qp = Math.max(0, Math.min(1, (shown - q.top) / Math.max(1, q.h - vh)));
+    q.el.style.setProperty('--p', qp.toFixed(4));
+  }
+  if (ci !== lastCh) { lastCh = ci; for (const q of chapters) q.link.classList.toggle('on', q === c); }
+  document.body.classList.toggle('past-title', ci > 0 || p > 0.3);
+  document.body.classList.toggle('on-outro', shown > chapters[chapters.length - 1].top + chapters[chapters.length - 1].h - vh * 1.2);
+  // Draw: this chapter's frame; over its last stretch, the next opens out of a horizontal slit, a line of light at its edges.
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#08090b'; ctx.fillRect(0, 0, W, H);
+  const fade0 = ci === 0 ? Math.min(1, 0.35 + p * 3) : 1;         // the first frame comes up out of the dark
+  draw(frame(c, p * (c.n - 1)), fade0, 1 + p * 0.04);
+  const next = chapters[ci + 1];
+  if (next && p > 1 - T) {
+    const u = (p - (1 - T)) / T, e = u * u * (3 - 2 * u), half = H * 0.5 * e;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, H / 2 - half, W, half * 2); ctx.clip();
+    draw(frame(next, 0), 1, 1.08 - 0.04 * e); ctx.restore();
+    if (e > 0.001 && e < 0.999) {
+      const glow = (1 - e) * 0.9;
+      const gr = ctx.createLinearGradient(0, 0, W, 0);
+      gr.addColorStop(0, 'rgba(255,240,215,0)'); gr.addColorStop(0.5, `rgba(255,240,215,${glow})`); gr.addColorStop(1, 'rgba(255,240,215,0)');
+      ctx.fillStyle = gr; ctx.fillRect(0, H / 2 - half - 1.5 * dpr, W, 1.5 * dpr); ctx.fillRect(0, H / 2 + half, W, 1.5 * dpr);
     }
-  }, { threshold: 0.05 }).observe(snowSec);
+  }
 }
 
-// The music: off until asked for; M toggles; paused when the tab is hidden.
-const music = document.querySelector('.music'), sound = document.querySelector('.sound'), label = sound.querySelector('.sound-label');
-let on = false;
-const setSound = (v) => {
-  on = v; sound.setAttribute('aria-pressed', String(on)); label.textContent = on ? 'Sound on' : 'Sound off';
-  if (on) { music.volume = 0; music.play().then(() => fade(0.7)).catch(() => {}); } else fade(0, () => music.pause());
-};
-let fadeT = 0;
+// ---- Music: off until asked for; M toggles; fades; paused with the tab.
+const music = document.querySelector('.music'), sound = document.querySelector('.sound');
+let on = false, fadeT = 0;
 function fade(to, done) {
-  cancelAnimationFrame(fadeT);
-  const from = music.volume, t0 = performance.now();
-  const step = (now) => { const k = Math.min(1, (now - t0) / 1200); music.volume = from + (to - from) * k; if (k < 1) fadeT = requestAnimationFrame(step); else if (done) done(); };
-  fadeT = requestAnimationFrame(step);
+  cancelAnimationFrame(fadeT); const from = music.volume, t0 = performance.now();
+  const st = (now) => { const k = Math.min(1, (now - t0) / 1400); music.volume = from + (to - from) * k; if (k < 1) fadeT = requestAnimationFrame(st); else if (done) done(); };
+  fadeT = requestAnimationFrame(st);
 }
+function setSound(v) { on = v; sound.setAttribute('aria-pressed', String(on)); if (on) { music.volume = 0; music.play().then(() => fade(0.75)).catch(() => {}); } else fade(0, () => music.pause()); }
 sound.addEventListener('click', () => setSound(!on));
-window.addEventListener('keydown', (e) => { if ((e.key === 'm' || e.key === 'M') && !e.target.closest('input, textarea')) setSound(!on); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && on) music.pause(); else if (!document.hidden && on) music.play().catch(() => {}); });
+addEventListener('keydown', (e) => { if (e.key === 'm' || e.key === 'M') setSound(!on); });
+document.addEventListener('visibilitychange', () => { if (!on) return; if (document.hidden) music.pause(); else music.play().catch(() => {}); });
 
-// The trailer.
+// ---- The trailer.
 const dlg = document.querySelector('.trailer-dialog'), tv = dlg.querySelector('video');
-document.querySelectorAll('[data-trailer]').forEach((b) => b.addEventListener('click', () => {
-  if (on) music.pause();
-  dlg.showModal(); tv.play().catch(() => {});
-}));
-const closeT = () => { tv.pause(); dlg.close(); if (on) music.play().catch(() => {}); };
+document.querySelectorAll('[data-trailer]').forEach((b) => b.addEventListener('click', () => { if (on) music.pause(); dlg.showModal(); tv.play().catch(() => {}); }));
+const closeT = () => { tv.pause(); if (dlg.open) dlg.close(); if (on) music.play().catch(() => {}); };
 dlg.querySelector('.close').addEventListener('click', closeT);
 dlg.addEventListener('click', (e) => { if (e.target === dlg) closeT(); });
 dlg.addEventListener('cancel', () => { tv.pause(); if (on) music.play().catch(() => {}); });
 
-// Until the game is live (play.solcrisp.org), its buttons say so and take you to the trailer instead (PLAY_LIVE).
-const PLAY_LIVE = false;
-if (!PLAY_LIVE) {
-  document.querySelectorAll('a[href^="https://play.solcrisp.org"]').forEach((a) => {
-    a.removeAttribute('href'); a.setAttribute('role', 'button'); a.tabIndex = 0; a.dataset.trailer = '';
-    a.addEventListener('click', () => { if (on) music.pause(); dlg.showModal(); tv.play().catch(() => {}); });
-    if (a.classList.contains('bar-play')) a.textContent = 'Coming soon';
-    else a.textContent = 'Playable soon · watch the trailer';
-  });
-  // In the hero, one button (the trailer) and the kicker says it is coming.
-  const heroPlay = document.querySelector('.hero .btn-main'); if (heroPlay) heroPlay.remove();
-  const heroTrailer = document.querySelector('.hero .btn-ghost'); if (heroTrailer) heroTrailer.className = 'btn btn-main';
-  const kick = document.querySelector('.hero .kicker'); if (kick) kick.textContent = 'A game for your browser · coming soon';
-  const note = document.querySelector('.play-text p');
-  if (note) note.textContent = 'Free, in your browser, no download — opening soon. Best on a desktop or laptop with a recent Chrome or Edge.';
+// ---- Start. (?at=<id>: land on a chapter, for links and shots; ?p=0..1: that far into it.)
+layout();
+const at = params.get('at');
+if (at) {
+  document.documentElement.style.scrollBehavior = 'auto';
+  const c = chapters.find((q) => q.el.id === at);
+  const y = c ? c.top + (+(params.get('p') || 0.35)) * Math.max(1, c.h - vh) : (document.getElementById(at)?.offsetTop || 0);
+  scrollTo(0, y); target = shown = y;
 }
-// The game needs WebGPU: say so beside the button if this browser can't.
-if (!('gpu' in navigator)) document.querySelector('.gpu-note').hidden = false;
+requestAnimationFrame(tick);
