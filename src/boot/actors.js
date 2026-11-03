@@ -244,7 +244,9 @@ export async function createActors(g) {
   const { clock } = await import('../core/clock.js');
   const { createFlow, flowTuning } = await import('../game/flow.js');
   const flow = createFlow();
-  const combat = createCombat({ shaped, frost, gale, stone, warden, controller, flow, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
+  // Tide bending (Phase 10 F4): Surge on a tap, Draw while held, Undertow on Heavy (lent by the Listener; ?tide=1 until then).
+  const tide = (await import('../game/bending/tide.js')).createTideBending({ ts: terrainState, ground, lights: content.clipmap.spellLights, water: () => g.water || null });
+  const combat = createCombat({ shaped, frost, gale, stone, tide, warden, controller, flow, ts: terrainState, clock, teleport: (x, z) => requestTeleport(x, z) });
   climb.spend = (c) => combat.spend(c);
   combat.sfx = sfx;
   combat.shrineX = monastery.pos[0]; combat.shrineZ = monastery.pos[1];
@@ -278,7 +280,7 @@ export async function createActors(g) {
 
   Object.assign(g, {
     clock, ws, pois, routes, monastery, controller, arm, pendingTp, requestTeleport, surfWake, restoration,
-    bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, stoneMod, stone, stoneMass, stoneView, stoneFx, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
+    bellwether, bellView, bellFar, bellClimb, frostMod, frost, galeMod, gale, stoneMod, stone, tide, stoneMass, stoneView, stoneFx, elements, ribbon, crystals, shapedMod, shaped, shapedView, wardenMod, warden, SFX, sfx, music, wardenView, wardenFar,
     climb, knock, BRUSH_PLOUGH, pillars, pillarCrystals, spikes, spikesView, losBlocker: blocker, combatTuning, combat, flow, flowTuning, vignette, streaks, weaponView, releaseCam, bars, flashEl, weather, footprints,
     /** A cast's flash at the hand (0..1): set by the verbs, eased out by the combat system. */
     castFlash: { v: 0.5 - 0.5 },

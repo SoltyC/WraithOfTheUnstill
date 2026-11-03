@@ -196,6 +196,9 @@ export function addDrownedSystem(g) {
     inp.attacked = controller.walkMul < 1 && lastWalkMul >= 1;
     wasGrounded = controller.grounded; lastVy = V.y; lastDodge = controller.dodgeT; lastWalkMul = controller.walkMul;
     noiseStep(noise, inp, dt);
+    // A Surge's front or an Undertow is a sound of its own (game/bending/tide.js): louder than the Wraith, it is what is heard — a decoy.
+    const td = g.tide;
+    if (td && td.noiseLevel > 0) noiseAt(noise, td.noiseX - O.x, P.y - O.y, td.noiseZ - O.z, td.noiseLevel);
     quietFor = noise.level < 0.15 ? quietFor + dt : 0;
     if ((trailT += dt) >= 0.125) {
       trailT = 0; const o = trailAt * 4;

@@ -413,6 +413,18 @@ skim, fast enough, lands into it (not verified in Chrome yet). The playtest page
 - **Wet Shaped:** soaked then frozen is already a Flow reaction. Draw on a soaked enemy dries and crumbles mud Shaped (§4.4).
 - **Wardens:** Tide does nothing to the Frost Warden and the Bellwether. **Those fights are not touched** (user rule).
 
+**F4 mechanics built 2026-11-03** (`game/bending/tide.js`, `game/combat/tideHits.js`; key 4 with Tide unlocked):
+- **Surge** (tap): a rolling wave, 14 m/s over 20 m, soaking (wetness) and packing what it crosses; it shoves, soaks and strikes a
+  Shaped once; ripples on open water; **its front is a sound** (0.7, over a walk's 0.42): the Drowned and the Listener hear it,
+  not the Wraith (`systems/drowned.js` feeds it into the hall's noise).
+- **Draw** (hold): water gathers at the aim (12 m) over 1.2 s, its source packed into crust; Shaped near are drawn in, and a soaked
+  one there is dried until it crumbles. Let go: the mass is thrown as a Surge up to 1.8× stronger and wider.
+- **Undertow** (heavy): a whirlpool for 3.2 s that drags Shaped in and round, wears at those in it, and leaves a 0.28 m basin.
+- Focus: Surge 10, Draw 12/s while gathering, Undertow 26. Tests: `tests/tide.test.js`. Chrome: all three on the Sounding, 0 GPU errors.
+- **Not yet:** their water is not drawn (no wave body, no hanging mass, no whirlpool; only ripples on open water and the wet ground):
+  a water-FX renderer is the next job; drying (wetness down) needs a brush program; the reaction table's Tide column, the
+  combinations (Surge + Crystallize ramp, Ridge dams); sounds of their own.
+
 ### F5 — Fog and weather (1–2 sessions)
 
 - Ground fog that pools in hollows and thins with the sun, stilled and standing.

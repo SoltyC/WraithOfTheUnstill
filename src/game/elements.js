@@ -7,7 +7,7 @@
 export const ELEMENTS = ['frost', 'gale', 'stone', 'tide', 'ember'];
 export const ELEMENT_NAMES = { frost: 'Frost', gale: 'Gale', stone: 'Stone', tide: 'Tide', ember: 'Ember' };
 /** Elements whose verbs exist (the others can be unlocked but not yet bent). */
-export const BUILT = new Set(['frost', 'gale', 'stone']);
+export const BUILT = new Set(['frost', 'gale', 'stone', 'tide']);
 
 export function createElements(unlocked = ['frost']) {
   return {
