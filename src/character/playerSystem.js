@@ -4,6 +4,7 @@
 import { input, Action } from '../input/actions.js';
 import { clock } from '../core/clock.js';
 import { angleDelta } from '../core/scratch.js';
+import { skimTuning } from './skimTuning.js';
 
 /** Surf steering feel: mouse pixels → steer (fraction of carve grip), and how fast it recentres. */
 const SURF_STEER_PER_PX = 0.0032, SURF_STEER_RETURN = 2.6, SURF_KEY_STEER = 0.75;
@@ -64,6 +65,18 @@ export function createPlayerSystem(ctx) {
         if (sv) { sv.qx = controller.pos.x; sv.qz = controller.pos.z; if (sv.sample() && sv.frozen > 1.2) { sf.canSurf = true; sf.slick = 1; } }
         // The Long Walker's back is stone, not sand (game/walker/deck.js).
         if (controller.deck !== null && controller.deck.riding) sf.canSurf = false;
+        // Water-skim (F3, lent with Tide): over water deep enough to carry it, the surf rides the surface (character/skimTuning.js);
+        // the shallows bleed its speed, and too shallow it beaches. Started on the run (off a bank, out of a glide), not from a swim.
+        sf.shoal = 0;
+        const wlv = controller.waterLevel;
+        if (els && els.unlocked.has('tide') && wlv === wlv) {
+          const gq = controller.ground; gq.qx = controller.pos.x; gq.qz = controller.pos.z; gq.sample();
+          const depth = wlv - gq.h;
+          if (depth > skimTuning.beach) {
+            sf.canSurf = true; sf.tuning = skimTuning;
+            sf.shoal = Math.max(0, Math.min(1, 1 - (depth - skimTuning.beach) / (skimTuning.shoalDepth - skimTuning.beach)));
+          }
+        }
         // Glide (hold traversal in the air): the same hold, the same steering.
         gl.want = d[Action.Traverse] === 1 && !controller.swimming;
         if (surfing) {

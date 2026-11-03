@@ -25,7 +25,7 @@ export function addDrownedSystem(g) {
   const noise = g.noise = createNoise();
   const people = PEOPLE.map(newPerson);
   let made = false, quietFor = 0;
-  const inp = { x: 0, y: 0, z: 0, speed: 0, grounded: true, quiet: false, swimming: false, landed: false, landV: 0, jumped: false, dodged: false, attacked: false };
+  const inp = { x: 0, y: 0, z: 0, speed: 0, grounded: true, quiet: false, swimming: false, skimming: false, landed: false, landV: 0, jumped: false, dodged: false, attacked: false };
   let wasGrounded = true, lastVy = 0, lastDodge = 0, lastWalkMul = 1;
   const w = { x: 0, y: 0, z: 0, quietFor: 0 };
   // The Wraith's last 4 s (8 a second: x, y, z, facing; local), for the record (release-cinematic.md "Your record").
@@ -189,7 +189,7 @@ export function addDrownedSystem(g) {
     const dt = Math.min(clock.dt, 0.1), P = controller.pos, V = controller.vel;
     // The noise from the body.
     inp.x = P.x - O.x; inp.y = P.y - O.y; inp.z = P.z - O.z;
-    inp.speed = Math.hypot(V.x, V.z); inp.grounded = controller.grounded; inp.quiet = controller.quiet; inp.swimming = controller.swimming;
+    inp.speed = Math.hypot(V.x, V.z); inp.grounded = controller.grounded; inp.quiet = controller.quiet; inp.swimming = controller.swimming; inp.skimming = controller.skimming;
     inp.landed = controller.grounded && !wasGrounded; inp.landV = -lastVy;
     inp.jumped = !controller.grounded && wasGrounded && V.y > 2;
     inp.dodged = controller.dodgeT > 0 && lastDodge <= 0;

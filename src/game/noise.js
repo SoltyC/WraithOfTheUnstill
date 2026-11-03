@@ -7,6 +7,7 @@ export const NOISE = {
   quiet: 0.1,      // the quiet walk at its full pace
   walk: 0.42,      // an ordinary walk at full pace
   swim: 0.36,      // strokes
+  skim: 0.8,       // skimming at speed (F3: the loudest way to move; the Listener hunts it)
   jump: 0.5,
   land: 0.9,       // the hardest landing (scaled by the fall: from 4 m/s down)
   dodge: 0.85,
@@ -21,12 +22,13 @@ export function createNoise() {
 }
 
 /**
- * One frame. i: { x, y, z, speed (horizontal m/s), grounded, quiet, swimming, landed (this frame), landV (m/s down),
+ * One frame. i: { x, y, z, speed (horizontal m/s), grounded, quiet, swimming, skimming, landed (this frame), landV (m/s down),
  * jumped, dodged, attacked } — the events true for the one frame they happen.
  */
 export function noiseStep(n, i, dt) {
   let s = 0;
-  if (i.swimming) s = i.speed > 0.3 ? NOISE.swim * Math.min(1, i.speed / 3) : 0;
+  if (i.skimming) s = NOISE.skim * Math.min(1, i.speed / 10);
+  else if (i.swimming) s = i.speed > 0.3 ? NOISE.swim * Math.min(1, i.speed / 3) : 0;
   else if (i.grounded && i.speed > 0.3) s = i.quiet ? NOISE.quiet * Math.min(1, i.speed / 2.2) : NOISE.walk * Math.min(1, i.speed / 5.2);
   let b = 0;
   if (i.jumped) b = Math.max(b, NOISE.jump);

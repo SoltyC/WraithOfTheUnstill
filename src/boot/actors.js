@@ -71,7 +71,7 @@ export async function createActors(g) {
   };
   const stone = stoneMod.createStoneBending({ ts: terrainState, ground, lights: content.clipmap.spellLights, frost, mass: stoneMass, surfaceAt });
   const { createElements } = await import('../game/elements.js');
-  const elements = createElements(['frost', ...(qs.get('gale') === '1' ? ['gale'] : []), ...(qs.get('stone') === '1' ? ['stone'] : [])]);
+  const elements = createElements(['frost', ...(qs.get('gale') === '1' ? ['gale'] : []), ...(qs.get('stone') === '1' ? ['stone'] : []), ...(qs.get('tide') === '1' ? ['tide'] : [])]);
   const { createRibbon } = await import('../render/ribbon.js');
   const ribbon = createRibbon(scene, atmosphere, frost.ribbonNodes, frostMod.ribbonTuning.radius);
   bindShadows(ribbon.material, shadows);

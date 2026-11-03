@@ -389,6 +389,14 @@ The biggest technical risk. Nothing else is worth building if this frame fails.
 
 **Checkpoint: the user plays the skim.** This needs to feel right before anything leans on it.
 
+**F3 core built 2026-11-03:** the surf model on a cushion of water (`character/skimTuning.js`): the least friction and the widest
+turns in the game, carves bleed little, the shallows bleed speed (`shoal`, from the depth under the body) and it beaches under
+0.12 m. Over water deep enough, with Tide (lent by the Listener; `?tide=1` until then), holding Traverse on the run rides the
+surface; under 3.2 m/s the cushion fails and the body goes in. Skimming is the loudest way to move (`NOISE.skim` 0.8: the Listener
+hunts it). Bot on the Sounding: up on the water at 3.7 m/s, held 2 cm over it, 12.7 m/s by 9 s into deep water; let go, it brakes
+and sinks into a swim; 0 GPU errors. Tests: `tests/skim.test.js`. **Not yet:** the V-wake, spray and glossy mud track; glide
+landing into a skim and the take-off off a bank; Flow on the wake; the feel, which is the user's checkpoint.
+
 ### F4 — Tide verbs (2 sessions)
 
 | Slot | Verb | What it does | Writes |

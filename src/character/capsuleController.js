@@ -98,6 +98,8 @@ export class CapsuleController {
     this.currentX = 0.5 - 0.5; this.currentZ = 0.5 - 0.5;
     /** Water level query (render/water.js), set by the owner; the player system reads it. */
     this.water = null;
+    /** On a skim (F3): riding the water's surface (systems read it: the noise, the wake). */
+    this.skimming = false;
     /** Snow-surf (traversal): the owner sets surf.want / canSurf / steer / throttle. */
     this.surf = new Surf();
     /** Glide (the Gale's traversal): the owner sets glide.want / steer / throttle / rise; the
@@ -258,6 +260,10 @@ export class CapsuleController {
     g.qx = p.x; g.qz = p.z;
     g.sample();
     let gy = g.h;
+    // Skimming (F3): the water's surface is the ground — a cushion under the feet while the speed holds; below it, in it goes.
+    const wl2 = this.waterLevel;
+    this.skimming = surfing && this.surf.tuning.sink !== undefined && wl2 === wl2 && wl2 > gy && Math.hypot(v.x, v.z) >= this.surf.tuning.sink;
+    if (this.skimming) gy = wl2 + 0.02;
     if (this.solids !== null) { const so = this.solids; so.qx = p.x; so.qz = p.z; so.qh = gy; so.qf = p.y; so.floorQ(); gy = so.h; }
     if (this.deck !== null) { const dk = this.deck; dk.qx = p.x; dk.qz = p.z; dk.qh = gy; dk.qf = p.y; dk.floorQ(); gy = dk.h; }
     if (this.grounded) {
