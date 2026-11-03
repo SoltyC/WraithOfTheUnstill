@@ -86,6 +86,10 @@ if (!PLAY_LIVE) {
     if (a.classList.contains('bar-play')) a.textContent = 'Coming soon';
     else a.textContent = 'Playable soon · watch the trailer';
   });
+  // In the hero, one button (the trailer) and the kicker says it is coming.
+  const heroPlay = document.querySelector('.hero .btn-main'); if (heroPlay) heroPlay.remove();
+  const heroTrailer = document.querySelector('.hero .btn-ghost'); if (heroTrailer) heroTrailer.className = 'btn btn-main';
+  const kick = document.querySelector('.hero .kicker'); if (kick) kick.textContent = 'A game for your browser · coming soon';
   const note = document.querySelector('.play-text p');
   if (note) note.textContent = 'Free, in your browser, no download — opening soon. Best on a desktop or laptop with a recent Chrome or Edge.';
 }
