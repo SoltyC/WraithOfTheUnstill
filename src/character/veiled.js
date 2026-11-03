@@ -12,6 +12,9 @@ export const ARCHETYPES = {
   lantern: { scale: 0.98, hunch: 0.08, breath: 0.012, tint: [0.95, 1.25, 2.1], shift: [8, 14], lantern: true },
   monk: { scale: 1.0, hunch: 0.14, breath: 0.01, tint: [2.4, 1.05, 0.95], shift: [12, 20] },
   pilgrim: { scale: 0.96, hunch: 0.1, breath: 0.012, tint: [1.5, 1.5, 1.4], shift: [9, 15] },
+  // The Listener (docs/phase-10/listener-design.md): a Veiled twenty times a person, in the great well. Its time runs at 1/√scale
+  // (timeK: a body this size moves as a giant does, not as a doll), its breath slow, its robe the drowned city's grey.
+  listener: { scale: 20, hunch: 0.38, breath: 0.004, tint: [0.78, 0.86, 0.92], shift: [999, 999], timeK: 0.224 },
 };
 
 /**

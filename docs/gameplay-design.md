@@ -132,14 +132,14 @@ Shadow of the Colossus [P]: each colossus was designed as body, climbable surfac
 
 **Five axes. Each Warden must differ from every other on at least three.**
 
-| Axis | Frost Warden (mammoth) | Bellwether (meadow) | **Long Walker (dunes)** | Mire (Ph. 10, sketch) | Ember (Ph. 11, sketch) | Sea (Ph. 12, sketch) |
+| Axis | Frost Warden (mammoth) | Bellwether (meadow) | **Long Walker (dunes)** | The Listener (Ph. 10; `docs/phase-10/listener-design.md`) | Ember (Ph. 11, sketch) | Sea (Ph. 12, sketch) |
 |---|---|---|---|---|---|---|
-| Target | static, rooted | a building: the manor is its body | **always moving, never attacks directly** | hidden, submerged | aggressive, fast | vast, surfacing in waves |
-| Win condition | freeze joints, shatter | strip vents, climb, open valves | **bring it home: stumble it, board it, steer it to the dry well** | find it (lure by light and sound in fog), drain its core | a duel: crack and cool its crust, dodge-heavy | ride the waves to it; all elements |
-| Discovery | which joints | which vents, the order | **read the gait; learn to steer** | where it is (knowledge hunt) | when it is vulnerable (rhythm) | how to reach it |
-| Arena | open snowfield | manor grounds and the hill | **the whole erg is the arena; the fight travels about 2 km** | fog-bound channels | the caldera, which shrinks | open sea |
-| Tempo | deliberate | staged siege | **continuous pursuit, calm on its back** | slow stalking, sudden strikes | frantic | epic, rising |
-| Mood | grief | relief | **companionship, a journey** | dread | fury | farewell |
+| Target | static, rooted | a building: the manor is its body | **always moving, never attacks directly** | hidden in the dark of the great well; seen whole only when stranded | aggressive, fast | vast, surfacing in waves |
+| Win condition | freeze joints, shatter | strip vents, climb, open valves | **bring it home: stumble it, board it, steer it to the dry well** | find it, herd it, strand it, draw it dry | a duel: crack and cool its crust, dodge-heavy | ride the waves to it; all elements |
+| Discovery | which joints | which vents, the order | **read the gait; learn to steer** | how it perceives (noise) | when it is vulnerable (rhythm) | how to reach it |
+| Arena | open snowfield | manor grounds and the hill | **the whole erg is the arena; the fight travels about 2 km** | the drowned city: flooded halls, sea-doors, the well, whose water falls in the fight | the caldera, which shrinks | open sea |
+| Tempo | deliberate | staged siege | **continuous pursuit, calm on its back** | stalking, then sudden | frantic | epic, rising |
+| Mood | grief | relief | **companionship, a journey** | dread, then pity | fury | farewell |
 
 ### 5.1 The Long Walker (replaces the D10 fight in `docs/phase-9/plan.md`)
 

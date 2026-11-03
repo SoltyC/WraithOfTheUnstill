@@ -238,7 +238,10 @@ export function buildCity() {
   }
   for (const [x, z] of [[112, 30], [148, 30], [112, -30], [148, -30], [L - 6, 17], [L - 6, -17]]) lamps.push([x, 2.5, z]);
   for (const [x, y, z] of [[-16, 3, 8], [-16, 3, -8], [-46, -14, 0], [-70, -27, 12], [-96, -27, 16], [-80, -27, -16]]) lamps.push([x, y, z]);
-  for (const x of [60, 130, 200]) glows.push([x, H.water + 4, 0, [0.3, 0.7, 0.95], 10, 40]);
+  for (const x of [130, 200]) glows.push([x, H.water + 4, 0, [0.3, 0.7, 0.95], 10, 40]);
+  // The strand: the light in the water between the Listener's cupped hands (world/listener.js: under its hands, 7 m in front of it
+  // at (62, 22)), lighting them, its chest and its bowed hood from below — the thing it holds, and how it is seen in the dark well.
+  glows.push([62, H.water + 0.6, 15, [0.35, 0.72, 1], 16, 34]);
 
   const spawns = {
     undercroft: [-80, -30, 4, 1.5708],

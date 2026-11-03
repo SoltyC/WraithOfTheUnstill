@@ -209,6 +209,12 @@ export function addNpcSystems(g) {
       sites[o] = hx - fx * LAP[0] + fz * LAP[1]; sites[o + 1] = hy + LAP[2]; sites[o + 2] = hz - fz * LAP[0] - fx * LAP[1];
     }
     else if (kind === 'lantern' || kind === 'blade') { sites[o] = hx; sites[o + 1] = hy - 0.02; sites[o + 2] = hz; }
+    else if (kind === 'earL' || kind === 'earR') {
+      // On the hood, either side of the head (the Listener's bronze ears): along the head's own right, so they turn with it.
+      const h = b.head, sd = (kind === 'earR' ? 1 : -1) * 0.13, r = b.hr, u = b.hu;
+      sites[o] = xf.ox + (h[0] + r[0] * sd + u[0] * 0.02 - xf.ox) * xf.s; sites[o + 1] = xf.oy + (h[1] + r[1] * sd + u[1] * 0.02 - xf.oy) * xf.s;
+      sites[o + 2] = xf.oz + (h[2] + r[2] * sd + u[2] * 0.02 - xf.oz) * xf.s;
+    }
     else { ground.qx = hx; ground.qz = hz; ground.sample(); sites[o] = hx; sites[o + 1] = ground.h - 0.05; sites[o + 2] = hz; }
     // A prop that comes and goes with the figure's work (the Lung's gash and slump, world/jetty.js: n.gash its progress).
     sites[o + 3] = !prop.show || prop.show(n.gash ?? 0) ? 1 : 0;
@@ -281,7 +287,8 @@ export function addNpcSystems(g) {
       const step = n.lod; n.lod = 0;
       { const wr = n.view.wraith, cl = wr.cloth;
         if (full) { wr.maxSteps = 2; cl.dt = 1 / 120; cl.iterations = 6; }
-        else { wr.maxSteps = 1; cl.dt = Math.min(1 / 40, Math.max(1 / 120, step)); cl.iterations = 4; } }
+        else { wr.maxSteps = 1; cl.dt = Math.min(1 / 40, Math.max(1 / 120, step)); cl.iterations = 4; }
+        if (n.A.timeK) cl.dt *= n.A.timeK; }
       // Inputs in simulation space.
       sim[0] = xf.ox + (n.x + n.offX - xf.ox) / xf.s; sim[2] = xf.oz + (n.z + n.offZ - xf.oz) / xf.s; sim[1] = xf.oy + (n.y - xf.oy) / xf.s;
       w.bx = sim[0]; w.by = sim[1]; w.bz = sim[2];
@@ -291,7 +298,10 @@ export function addNpcSystems(g) {
       // cloth on the body where it is now. Its robe was still in the pose it was last drawn in, and a body that had moved less
       // than its own teleport threshold since flung it out for the first second of the shot.
       if (n.fresh || (step > 0.75 && dc < 30)) { w.teleport(); n.fresh = false; }
-      w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1); w.time = clock.simTime;
+      // (A giant's time runs slower: its archetype's timeK, 1/√scale — or its robe flaps at a doll's speed.)
+      const tk = n.A.timeK ?? 1;
+      if (n.lookYaw !== undefined) { w.body.lookYaw = n.lookYaw; w.body.lookPitch = n.lookPitch; }
+      w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1) * tk; w.time = clock.simTime * tk;
       if (g.wind) { g.wind.sx = n.x; g.wind.sz = n.z; g.wind.sample(); w.windStrength = g.wind.speed * 0.9; w.windX = g.wind.outX; w.windZ = g.wind.outZ; }
       else { w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ; }
       if (n.gnd) w.windStrength = 0.12;   // a sealed interior: only the stir of their own moving

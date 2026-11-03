@@ -443,6 +443,17 @@ Level 1 (flanking allowed). **All must be beatable with Frost alone,** because T
 
 ### F9 — The Warden: the Listener (working name; 3 sessions)
 
+**Part 1 built 2026-11-03** (design review: `listener-design.md`; the fight's phases wait for Tide, F3/F4, which do not exist yet):
+- **The figure:** a Veiled at twenty times a person (`listener` archetype; its time at 1/√20, so it moves as a giant), standing in the
+  Tide Hall's great well on a drowned plinth, the water at its hips, hands cupped at the surface over the strand's light; two bronze
+  ears on its hood (props that turn with its head). `systems/listener.js`, `world/listener.js`.
+- **It listens:** its head turns and lifts to the loudest noise in the hall (`g.noise`), holds while the sound lasts, and settles back
+  to its hands after 3 s of quiet. Bodies gained a head look (`lookYaw`, `lookPitch`; the hood goes with it).
+- **Film:** `review/listener/listener-5.mp4` (across the well; a sound on the causeway at 3 s). 0 GPU errors.
+- **Weak:** dark: it reads by the strand's light from below and little else; from the causeway's rail its head is seen only over the
+  edge, small, 37 m down; the ears are dark bronze in a dark well. Not yet in the cutscene's shots 7, 9, 13. Perf not measured.
+- **Checkpoint: the user, on the figure alone, before it goes into any shot.**
+
 Replaces the sketch in `gameplay-design.md` §5. See *Warden brief* below.
 
 **Checkpoint: the user plays the fight.**

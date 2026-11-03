@@ -44,6 +44,8 @@ export class Body {
     /** Attack pose (inputs, game/weapons): the torso turns `twist` rad from the facing (the head stays steadier) and
      *  pitches `atkLean` rad more; each hand with ikW > 0 reaches for ikT (torso-local x, y, z; L then R). */
     this.twist = 0.5 - 0.5; this.atkLean = 0.5 - 0.5;
+    /** Where the head looks (inputs): turned lookYaw rad from the facing, lifted lookPitch rad (negative: up). The hood goes with it. */
+    this.lookYaw = 0.5 - 0.5; this.lookPitch = 0.5 - 0.5;
     this.ikW = new Float64Array(2); this.ikT = new Float64Array(6);
     /** Climbing (inputs): when set, the torso frame comes from the surface — forward into it,
      *  up along the climb — and the arms reach up onto it, alternating with climbPhase. */
@@ -154,8 +156,9 @@ export class Body {
     // Swimming, the head stays up out of the water, looking ahead.
     // Gliding, the head lifts to look ahead.
     // (An attack's torso twist is only partly followed: the head keeps watching the target.)
-    const hl = (this.lean * 0.5 * (1 - sw) + 0.15 * sw) * (1 - gl) + GLIDE_HEAD * gl, chl = Math.cos(hl), shl = Math.sin(hl);
-    const hcy = this.twist === 0 ? cy : Math.cos(this.yaw + this.twist * 0.35), hsy = this.twist === 0 ? sy : Math.sin(this.yaw + this.twist * 0.35);
+    const hl = (this.lean * 0.5 * (1 - sw) + 0.15 * sw) * (1 - gl) + GLIDE_HEAD * gl + this.lookPitch, chl = Math.cos(hl), shl = Math.sin(hl);
+    const ht = this.twist * 0.35 + this.lookYaw;
+    const hcy = ht === 0 ? cy : Math.cos(this.yaw + ht), hsy = ht === 0 ? sy : Math.sin(this.yaw + ht);
     this.hr[0] = hcy; this.hr[1] = 0; this.hr[2] = -hsy;
     this.hu[0] = shl * hsy; this.hu[1] = chl; this.hu[2] = shl * hcy;
     this.hf[0] = chl * hsy; this.hf[1] = -shl; this.hf[2] = chl * hcy;
