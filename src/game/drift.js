@@ -79,20 +79,22 @@ export function robeTemplate(detail = 1) {
     const hem = v < 0.12 ? 0.04 * Math.sin(u * 7) * (1 - v / 0.12) : 0;
     return [u * w, -1.0 + v * 1.95 + hem];
   }, (u, v) => {
+    // Soaked wool lies within a few cm of the water; only the air caught under the back and the hood domes it up, rounded.
     const edge = Math.pow(Math.abs(u), 3);
-    const back = 0.09 * Math.sin(Math.PI * Math.min(1, v * 1.2)) * (1 - edge);
-    const hood = v > 0.74 ? 0.17 * Math.sin(Math.PI * Math.min(1, (v - 0.74) / 0.26)) * (1 - Math.abs(u) * 0.8) : 0;
-    const folds = D ? 0.04 * Math.sin(u * 11 + Math.sin(v * 5) * 1.4) * Math.max(0, 1 - v * 1.6) : 0;
-    return back + hood + folds - 0.035 * edge;
+    const back = 0.045 * Math.sin(Math.PI * Math.min(1, v * 1.2)) * (1 - u * u);
+    const hq = 1 - ((v - 0.86) / 0.13) ** 2 - u * u / 0.45;
+    const hood = hq > 0 ? 0.1 * Math.pow(hq, 0.6) : 0;
+    const folds = D ? 0.015 * Math.sin(u * 11 + Math.sin(v * 5) * 1.4) * Math.max(0, 1 - v * 1.6) : 0;
+    return back + hood + folds - 0.03 * edge;
   });
   // The sleeves: spread from the shoulders, a little forward, flattened, the cuffs flared and sunk.
   for (const s of [-1, 1]) {
     const ang = s * (1.35 + 0.08 * s), ca = Math.cos(ang), sa = Math.sin(ang);
     grid(D ? 6 : 2, D ? 10 : 2, (u, v) => {
-      const len = 0.08 + v * 0.66, w = 0.09 + 0.06 * v;
+      const len = 0.08 + v * 0.66, w = 0.1 + 0.1 * v * v;   // the cuff opens out flat, wide as the forearm's cloth
       const ax = sa * len, az = 0.42 + ca * len * 0.35 + 0.1 * v;
       return [s * 0.24 + ax + u * w * ca * s, az - u * w * Math.abs(sa)];
-    }, (u, v) => 0.07 * (1 - u * u) * (1 - v * 0.5) - 0.03 * v * v);
+    }, (u, v) => 0.035 * (1 - u * u) * (1 - v * 0.5) - 0.02 * v * v);
   }
   return { pos, nrm, idx };
 }

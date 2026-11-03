@@ -22,8 +22,21 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let P = uniforms.robesParams; let R = vertexInputs.robe; let R2 = vertexInputs.robe2;
   var p = vertexInputs.position * R.w; var n = vertexInputs.normal;
   let seed = R2.y;
-  // Rising (under the water): each starts deep and comes up over ~14 s, staggered; hood up while it rises, laid flat at the top.
   var under = 0.0;
+  // Afloat, soaked: each its own. The cloth lies low, its edges and hollows awash (the waterline cuts an uneven outline), the
+  // air caught under it in soft pockets, the edges crumpled. (A sum of sines: its slope is exact.)
+  {
+    let s1 = seed * 41.0; let s2 = seed * 67.0; let s3 = seed * 23.0;
+    let a1 = 2.1 * p.x + s1; let a2 = 1.7 * p.z + s2; let a3 = 3.9 * p.x - 3.1 * p.z + s3;
+    let A = 0.022;
+    let dh = A * (sin(a1) * sin(a2) + 0.5 * sin(a3)) - 0.004;
+    let gx = A * (2.1 * cos(a1) * sin(a2) + 1.95 * cos(a3));
+    let gz = A * (1.7 * sin(a1) * cos(a2) - 1.55 * cos(a3));
+    let crumple = vec2f(0.05 * sin(p.z * 3.7 + seed * 53.0), 0.04 * sin(p.x * 4.3 + seed * 29.0));
+    p = vec3f(p.x + crumple.x, p.y * 0.8 + dh, p.z + crumple.y);
+    n = normalize(vec3f(n.x - gx, n.y, n.z - gz));
+  }
+  // Rising (under the water): each starts deep and comes up over ~14 s, staggered; hood up while it rises, laid flat at the top.
   if (P.w > 0.5) {
     let k = clamp((uniforms.robesRise.x - seed * 8.0) / 12.0, 0.0, 1.0);
     let e = k * k * (3.0 - 2.0 * k);
@@ -38,8 +51,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   }
   let cy = cos(R.z); let sy = sin(R.z);
   var wp = vec3f(R.x + p.x * cy + p.z * sy, P.y + p.y - under, R.y - p.x * sy + p.z * cy);
-  // The swell: slow, long, a small chop on top; the cloth rides it.
-  let sw = 0.06 * sin(wp.x * 0.09 + P.x * 0.7) + 0.05 * sin(wp.z * 0.13 - P.x * 0.55 + 1.3) + 0.015 * sin((wp.x + wp.z) * 0.9 + P.x * 1.9);
+  // A slow lift and a small chop: the Sounding's water lies still (a mirror), so the cloth only breathes on it — riding a swell
+  // the surface doesn't have, it would sink and surface whole.
+  let sw = 0.012 * sin(wp.x * 0.09 + P.x * 0.7) + 0.01 * sin(wp.z * 0.13 - P.x * 0.55 + 1.3) + 0.006 * sin((wp.x + wp.z) * 0.9 + P.x * 1.9);
   wp.y += sw * (1.0 - min(under, 1.0));
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (P.z < 0.5) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }
@@ -71,6 +85,14 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var N = normalize(fragmentInputs.vNormal);
   if (dot(N, V) < 0.0) { N = -N; }
   let r = fragmentInputs.vRobe;
+  // The slack of soaked cloth: wrinkles finer than the mesh, near only (far, they would shimmer).
+  let near = 1.0 - smoothstep(12.0, 35.0, length(cam - wp));
+  if (near > 0.0) {
+    let q = wp * vec3f(6.0, 6.0, 9.0) + vec3f(r.y * 31.0);
+    let w0 = rNoise(q);
+    let gw = vec2f(rNoise(q + vec3f(0.07, 0.0, 0.0)) - w0, rNoise(q + vec3f(0.0, 0.0, 0.07)) - w0) / 0.07;
+    N = normalize(N - vec3f(gw.x, 0.0, gw.y) * 0.1 * near);
+  }
   // Wet wool: the Wraith's charcoal for most, the city's dyes deepened by the water for some.
   var dye = vec3f(0.035, 0.034, 0.038);
   let d = i32(r.x + 0.5);
