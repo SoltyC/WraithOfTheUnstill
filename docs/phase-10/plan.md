@@ -396,6 +396,9 @@ surface; under 3.2 m/s the cushion fails and the body goes in. Skimming is the l
 hunts it). Bot on the Sounding: up on the water at 3.7 m/s, held 2 cm over it, 12.7 m/s by 9 s into deep water; let go, it brakes
 and sinks into a swim; 0 GPU errors. Tests: `tests/skim.test.js`. **Not yet:** the V-wake, spray and glossy mud track; glide
 landing into a skim and the take-off off a bank; Flow on the wake; the feel, which is the user's checkpoint.
+**Then:** the skim cuts its own wake in the water (it rode 2 cm over the surface, where the water counted it out: the spray trail
+was the snow-surf's): a churned lane and the V's arms, strongest at speed. A glide (or a jump) coming down on to water holding the
+skim, fast enough, lands into it (not verified in Chrome yet). The playtest page has two skim spots (`?tide=1`).
 
 ### F4 — Tide verbs (2 sessions)
 

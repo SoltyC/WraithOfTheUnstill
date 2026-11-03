@@ -410,17 +410,19 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     time: 0.5, px: 0.5, py: 0.5, pz: 0.5, speed: 0.5 - 0.5,
     /** Swimming (owner): the stroke phase 0..1 — each stroke's sweep throws a ring and a little foam. */
     swimming: false, strokePhase: 0.5 - 0.5,
+    /** Skimming (owner, F3): riding the surface on its cushion — in the water for the wake, and a hard one: a skim cuts the V at speed. */
+    skimming: false,
     /** True while the Wraith stands in water; its depth there (m). */
     inWater: false, depth: 0.5 - 0.5,
     update() {
       params.x = this.time;
       this.qx = this.px; this.qz = this.pz; this.levelQ(); const lv = this.lv;
-      this.inWater = lv === lv && this.py < lv + 0.02;
+      this.inWater = lv === lv && (this.py < lv + 0.02 || (this.skimming && this.py < lv + 0.1));
       this.depth = this.inWater ? lv - this.py : 0;
       if (this.inWater && this.depth < 1.3) {   // at the surface only (it floats with the feet 1 m down): a body under it lays no trail or foam
         const t = this.time, sp = this.speed, dx = this.px - lastX, dz = this.pz - lastZ, moved = Math.sqrt(dx * dx + dz * dz);
         // Deeper in the water, a bigger wake (wading shins push less than a swimming body).
-        const body = Math.min(1, 0.35 + this.depth * 0.6);
+        const body = this.skimming ? 1.25 : Math.min(1, 0.35 + this.depth * 0.6);
         if (!wasIn) { emit(this.px, this.pz, t, 1.6, 0, 0); lastEmit = t; lastX = this.px; lastZ = this.pz; }
         else if (moved > (this.simOn ? 0.14 : 0.32) && moved < 3) {
           // The trail: a point every 14 cm along the path (the churned lane; with the simulation off,
@@ -443,7 +445,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
       if (want) {
         // (A body deep under the water no longer moves the surface: the feet float 1 m down.)
         const deep = this.depth < 1.3 ? 1 : this.depth > 2.5 ? 0 : 1 - (this.depth - 1.3) / 1.2;
-        const rate = this.inWater ? Math.min(1, 0.35 + this.depth * 0.6) * 0.055 * Math.min(this.speed, 9) * deep : 0;
+        const rate = this.inWater ? (this.skimming ? 0.7 : Math.min(1, 0.35 + this.depth * 0.6)) * 0.055 * Math.min(this.speed, this.skimming ? 13 : 9) * deep : 0;
         if (!this.inWater) { bodyX = this.px; bodyZ = this.pz; }
         if (simStep(this.px, this.pz, this.time, rate)) { simWarm++; on = this.simOn ? 1 : 0; }
       } else { simPox = 1e7; simPoz = 1e7; simT = -1; nSplat = 0; }

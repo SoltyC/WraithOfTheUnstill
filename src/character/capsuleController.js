@@ -260,9 +260,10 @@ export class CapsuleController {
     g.qx = p.x; g.qz = p.z;
     g.sample();
     let gy = g.h;
-    // Skimming (F3): the water's surface is the ground — a cushion under the feet while the speed holds; below it, in it goes.
-    const wl2 = this.waterLevel;
-    this.skimming = surfing && this.surf.tuning.sink !== undefined && wl2 === wl2 && wl2 > gy && Math.hypot(v.x, v.z) >= this.surf.tuning.sink;
+    // Skimming (F3): the water's surface is the ground — a cushion under the feet while the speed holds; below it, in it goes. Coming
+    // down on to it (a glide, a jump) holding the skim, fast enough, it catches the body: the glide lands into a skim.
+    const wl2 = this.waterLevel, sfk = this.surf;
+    this.skimming = (surfing || (sfk.want && sfk.canSurf)) && sfk.tuning.sink !== undefined && wl2 === wl2 && wl2 > gy && Math.hypot(v.x, v.z) >= sfk.tuning.sink;
     if (this.skimming) gy = wl2 + 0.02;
     if (this.solids !== null) { const so = this.solids; so.qx = p.x; so.qz = p.z; so.qh = gy; so.qf = p.y; so.floorQ(); gy = so.h; }
     if (this.deck !== null) { const dk = this.deck; dk.qx = p.x; dk.qz = p.z; dk.qh = gy; dk.qf = p.y; dk.floorQ(); gy = dk.h; }

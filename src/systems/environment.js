@@ -285,7 +285,7 @@ export async function addEnvironmentSystems(g) {
     }
     wa.time = clock.simTime; wa.px = controller.pos.x; wa.py = controller.pos.y; wa.pz = controller.pos.z;
     wa.speed = Math.sqrt(controller.vel.x * controller.vel.x + controller.vel.z * controller.vel.z);
-    wa.swimming = controller.swimming; wa.strokePhase = g.wraithView.wraith.swimPhase;
+    wa.swimming = controller.swimming; wa.skimming = controller.skimming; wa.strokePhase = g.wraithView.wraith.swimPhase;
     // The oasis's well is choked while the erg is stilled: its pool fills once the Dunes are restored.
     if (wa.setOasis(ws.restoration.dunes === 'restored')) engine.snapshotRenderingReset();
     // The planar reflection's plane and camera, before the water uploads its level.
