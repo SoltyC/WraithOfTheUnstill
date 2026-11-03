@@ -71,6 +71,22 @@ Picked by adapter caps and a two-second frame-time probe behind the gate; a qual
 - **Hosting: Cloudflare Pages**, the same build; video and image sequences on R2; `_headers` for immutable hashed assets.
 - **Analytics** (privacy-light): which tier, how far people scroll, whether they press Play.
 
+## 4b. Built 2026-11-04 (the first version)
+
+The user: anyone may view it, at **solcrisp.org**; music: *The Final Lullaby*; "make the best website likely to attract the most
+people". So the first version favours reach and speed over a live game in the page:
+
+- **`site/`** (its own build: `npm run site:build` → `dist-site/`, 21 KB of code and styles, fonts aside): the hero (the fen's
+  dawn mirror, the Wraith wading), **the snow you write in** (a self-contained WebGL2 snowfield at dusk, carved by cursor or
+  finger and slowly healing, a demo stroke drawn first; works on nearly every device, where the full game needs WebGPU), the four
+  lands, the Wardens, the dive as a tease, the trailer (click to play), and **Play free in your browser** (→ play.solcrisp.org).
+- Films from the game's own footage, 720p, ~7 MB in all, each loaded only as it comes near and played only on screen; the music
+  off until chosen (M), paused with the tab; reduced motion respected; SEO, Open Graph and VideoGame structured data; `_headers`.
+- **Hosting:** two Cloudflare Pages projects: `wraith-site` (solcrisp.org) and `wraith-game` (play.solcrisp.org):
+  `npm run deploy:site`, `npm run deploy:game` (needs `wrangler login`).
+- Checked in Windows Chrome (headless screenshots, `?solo=<section>` for one section alone): every section, desktop and 520 px.
+- **Not yet** (the plan's beats 2 and 3 as live verbs, the restoration scrub, the live game in the page): the next versions.
+
 ## 5. Phases
 
 | Phase | Work | Sessions | Checkpoint (the user) |

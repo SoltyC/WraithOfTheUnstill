@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>The Wraith of the Unstill — play free in your browser</title>
+  <meta name="description" content="A mythic action-exploration game in which the ground itself is the canvas. The world is stilling; you are what is left of its motion. Surf the snow, glide the meadows, skim the fen, and release the Wardens that hold each land still. Free, in your browser.">
+  <meta name="theme-color" content="#0b0c0e">
+  <link rel="canonical" href="https://solcrisp.org/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://solcrisp.org/">
+  <meta property="og:title" content="The Wraith of the Unstill">
+  <meta property="og:description" content="The world is stilling. You are what is left of its motion. Free, in your browser.">
+  <meta property="og:image" content="https://solcrisp.org/media/og.jpg">
+  <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Wraith of the Unstill">
+  <meta name="twitter:description" content="The world is stilling. You are what is left of its motion. Free, in your browser.">
+  <meta name="twitter:image" content="https://solcrisp.org/media/og.jpg">
+  <link rel="icon" href="/media/icon.png">
+  <link rel="preload" as="image" href="/media/hero.jpg">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"The Wraith of the Unstill","url":"https://solcrisp.org/","description":"A mythic action-exploration game in which the ground itself is the canvas.","genre":["Action","Adventure","Exploration"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any (WebGPU browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"trailer":{"@type":"VideoObject","name":"The Wraith of the Unstill — trailer","description":"Ninety seconds of the frost steppe and the meadow.","thumbnailUrl":"https://solcrisp.org/media/meadow.jpg","contentUrl":"https://solcrisp.org/media/trailer.mp4","uploadDate":"2026-11-04"}}</script>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <a class="skip" href="#play">Skip to Play</a>
+  <header class="bar">
+    <a class="mark" href="#top" aria-label="The Wraith of the Unstill">W</a>
+    <button class="sound" type="button" aria-pressed="false" title="Music (M)"><span class="sound-dot"></span><span class="sound-label">Sound off</span></button>
+    <a class="bar-play" href="https://play.solcrisp.org/">Play free</a>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <video class="bg" autoplay muted loop playsinline preload="auto" poster="/media/hero.jpg" aria-hidden="true"><source src="/media/hero.mp4" type="video/mp4"></video>
+      <div class="veil"></div>
+      <div class="hero-text">
+        <p class="kicker reveal">A game you can play in this browser</p>
+        <h1 class="title reveal">The Wraith<br>of the Unstill</h1>
+        <p class="lede reveal">The world is stilling. The wind has died in the meadows, the dunes have stopped walking, the fen lies like glass. What was left of its motion gathered in an empty robe. That is you.</p>
+        <div class="ctas reveal">
+          <a class="btn btn-main" href="https://play.solcrisp.org/">Play free in your browser</a>
+          <button class="btn btn-ghost" type="button" data-trailer>Watch the trailer</button>
+        </div>
+      </div>
+      <div class="scroll-hint" aria-hidden="true"><span></span></div>
+    </section>
+
+    <section class="snow" id="remember" aria-labelledby="remember-h">
+      <canvas class="snow-canvas" aria-label="A field of snow at dusk. Drag across it to write in the snow."></canvas>
+      <img class="snow-fallback" src="/media/frost.jpg" alt="The Wraith surfing a snowfield under the peaks">
+      <div class="snow-text">
+        <h2 id="remember-h" class="reveal">The ground remembers.</h2>
+        <p class="reveal">Every step, every spell, every creature writes into one shared land of snow, sand, mud and grass, and the world carries the marks until it slowly heals them.</p>
+        <p class="hint reveal"><span class="hint-hand" aria-hidden="true"></span>Draw in the snow</p>
+      </div>
+    </section>
+
+    <section class="chapters" aria-label="The lands">
+      <article class="chapter" id="frost">
+        <video class="bg" muted loop playsinline preload="none" poster="/media/frost.jpg" data-src="/media/frost.mp4" aria-hidden="true"></video>
+        <div class="chapter-text">
+          <p class="kicker reveal">I · The frost steppe</p>
+          <h2 class="reveal">Carve the snow at speed.</h2>
+          <p class="reveal">Surf the drifts down from the monastery, throw a ribbon of ice, raise a spire. The snow keeps every line you cut.</p>
+        </div>
+      </article>
+      <article class="chapter right" id="meadow">
+        <video class="bg" muted loop playsinline preload="none" poster="/media/meadow.jpg" data-src="/media/meadow.mp4" aria-hidden="true"></video>
+        <div class="chapter-text">
+          <p class="kicker reveal">II · The highland meadow</p>
+          <h2 class="reveal">Bring back the wind.</h2>
+          <p class="reveal">Grass that parts around you, a village of veiled pilgrims, a manor that is not what it seems. Glide from the ridges on the robe.</p>
+        </div>
+      </article>
+      <article class="chapter" id="dunes">
+        <video class="bg" muted loop playsinline preload="none" poster="/media/dunes.jpg" data-src="/media/dunes.mp4" aria-hidden="true"></video>
+        <div class="chapter-text">
+          <p class="kicker reveal">III · The glass dunes</p>
+          <h2 class="reveal">Ride the sand.</h2>
+          <p class="reveal">An erg that has stopped walking, storms that arrive like walls, ruins half-buried in amber light. Raise stone from the sand and surf its crests.</p>
+        </div>
+      </article>
+      <article class="chapter right" id="fen">
+        <video class="bg" muted loop playsinline preload="none" poster="/media/hero.jpg" data-src="/media/hero.mp4" aria-hidden="true"></video>
+        <div class="chapter-text">
+          <p class="kicker reveal">IV · The mirefen</p>
+          <h2 class="reveal">Skim the still water.</h2>
+          <p class="reveal">A fen like a mirror at dawn. Everything out here listens, and the water tells on you.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="wardens" id="released" aria-labelledby="wardens-h">
+      <div class="wardens-text">
+        <h2 id="wardens-h" class="reveal">Not killed.<br>Released.</h2>
+        <p class="reveal">In each land a colossal Warden holds its element still. You don't slay them. You find out what each one is keeping from happening, and you set it free. Motion returns to the land, and it is yours.</p>
+      </div>
+      <div class="wardens-pair">
+        <figure class="reveal"><video muted loop playsinline preload="none" poster="/media/walker.jpg" data-src="/media/walker.mp4" aria-hidden="true"></video><figcaption>The Long Walker, waking</figcaption></figure>
+        <figure class="reveal"><video muted loop playsinline preload="none" poster="/media/warden.jpg" data-src="/media/warden.mp4" aria-hidden="true"></video><figcaption>The Frost Warden</figcaption></figure>
+      </div>
+    </section>
+
+    <section class="deep" id="below" aria-labelledby="deep-h">
+      <video class="bg" muted loop playsinline preload="none" poster="/media/dive.jpg" data-src="/media/dive.mp4" aria-hidden="true"></video>
+      <div class="deep-text">
+        <h2 id="deep-h" class="reveal">Something waits under the Sounding.</h2>
+        <p class="reveal">Five hundred metres across, and nobody's found the bottom.</p>
+      </div>
+    </section>
+
+    <section class="trailer" id="trailer" aria-labelledby="trailer-h">
+      <h2 id="trailer-h" class="reveal">The trailer</h2>
+      <button class="facade reveal" type="button" data-trailer aria-label="Play the trailer">
+        <img src="/media/meadow.jpg" alt="" loading="lazy"><span class="play-glyph" aria-hidden="true"></span>
+      </button>
+    </section>
+
+    <section class="play" id="play" aria-labelledby="play-h">
+      <video class="bg" muted loop playsinline preload="none" poster="/media/meadow.jpg" data-src="/media/meadow.mp4" aria-hidden="true"></video>
+      <div class="veil"></div>
+      <div class="play-text">
+        <h2 id="play-h" class="reveal">Step into the robe.</h2>
+        <p class="reveal">Free, in your browser, no download. Best on a desktop or laptop with a recent Chrome or Edge.</p>
+        <a class="btn btn-main big reveal" href="https://play.solcrisp.org/">Play free in your browser</a>
+        <p class="gpu-note" hidden>Your browser can't run the game yet: it needs WebGPU (Chrome or Edge on desktop, Safari 26). You can still look around here.</p>
+        <p class="controls reveal">WASD to move · mouse to look · hold right mouse to surf and glide · Q and F to bend · 1–5 for the elements</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>The Wraith of the Unstill · a game by Sol Crisp · music: <em>The Final Lullaby</em></p>
+    <p><a href="https://play.solcrisp.org/">Play</a> · <a href="#trailer">Trailer</a> · <a href="#top">Top</a></p>
+  </footer>
+
+  <dialog class="trailer-dialog" aria-label="Trailer">
+    <button class="close" type="button" aria-label="Close">×</button>
+    <video controls playsinline preload="none" poster="/media/meadow.jpg"><source src="/media/trailer.mp4" type="video/mp4"></video>
+  </dialog>
+  <audio class="music" src="/media/the-final-lullaby.mp3" preload="none" loop></audio>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
