@@ -92,4 +92,17 @@ describe('Ebbhold, the Tide Hall', () => {
     expect(all.length).toBeLessThan(512);
     for (const [x, y, z] of all) expect(city.airs.some((a) => x >= a.x0 - 1 && x <= a.x1 + 1 && z >= a.z0 - 1 && z <= a.z1 + 1 && y >= a.y0 - 3 && y <= a.y1), `lamp ${x},${y},${z}`).toBe(true);
   });
+  it('puts a foot on the tread as drawn, the body on the flight\'s smooth line', () => {
+    const S = createEbbholdSolids(), O = EBB_ORIGIN;
+    const at = (x, treads) => { S.qx = x + O.x; S.qz = 42.75 + O.z; S.ref = (x - 16) * 0.3 + O.y + 0.6; S.treads = treads; S.floorQ(); S.treads = false; return S.h - O.y; };
+    let worst = 0, flat = 0;
+    for (let x = 30; x < 40; x += 0.05) {
+      const line = at(x, false), tread = at(x, true);
+      worst = Math.max(worst, Math.abs(tread - line));
+      if (Math.abs(at(x + 0.05, true) - tread) < 1e-9) flat++;
+    }
+    expect(worst).toBeGreaterThan(0.1);          // the treads stand off the line by up to half a rise
+    expect(worst).toBeLessThanOrEqual(0.151);
+    expect(flat).toBeGreaterThan(150);           // and are flat between their edges
+  });
 });

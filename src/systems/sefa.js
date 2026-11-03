@@ -14,7 +14,7 @@ export function addSefaSystem(g) {
   const st = { x: 0, y: 0, z: 0, vx: 0, vz: 0, yaw: 0, on: false };
   const ground = {
     qx: 0.5, qz: 0.5, h: 0.5,
-    sample() { S.qx = this.qx; S.qz = this.qz; S.ref = st.y + O.y + 0.6; S.floorQ(); this.h = S.h > -1e3 ? S.h : st.y + O.y; },
+    sample() { S.qx = this.qx; S.qz = this.qz; S.ref = st.y + O.y + 0.6; S.treads = true; S.floorQ(); S.treads = false; this.h = S.h > -1e3 ? S.h : st.y + O.y; },
     covers() { return true; },
   };
   let n = null;

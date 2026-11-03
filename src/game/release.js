@@ -45,24 +45,31 @@ export function releaseShots(o = {}) {
   const push = (s) => { shots.push({ wraith: false, blur: 0.5, ...s }); };
   // 1. The hall from high over the west bridge, as the light floods back into it and the colour warms: the reward, it seems.
   //    (Once the Listener is built, this opens on the well's water falling.)
-  push({ dur: 8, ease: 1, drift: 0.05, grade: ['present', 'past'], light: [{ fill: 1, beam: 1 }, PAST], keys: [key(0, [20, 62, 0], [140, 0, 0], 0.85), key(1, [34, 55, 0], [150, 3, 0], 0.8)] });
+  push({ dur: 8, ease: 1, drift: 0.05, grade: ['present', 'past'], light: [{ fill: 1, beam: 1 }, PAST], keys: [key(0, [20, 62, 0], [140, 0, 0], 0.85), key(1, [34, 55, 0], [150, 3, 0], 0.8)],
+    subs: [{ t: 2.5, d: 4.5, text: 'Ebbhold. Forty years ago.' }] });
   // 2. Match cuts: Hanne as the player saw her, then the same framing, dry and sunlit; Teodor and his daughter over the cradle;
   //    Old Ise on her stair (the camera on her, wherever her sweeping has got to).
   const side = [key(0, [41.3, 1.5, 53.7], [39.1, 1.15, 55.2], 0.5), key(1, [41.1, 1.46, 53.5], [39.05, 1.13, 55.22], 0.48)];
   push({ dur: 3, ease: 0.5, dof: 0.9, keys: side });
-  push({ dur: 4, ease: 0.5, dof: 0.9, grade: 'past', light: PAST, crowd: bake, keys: side });
-  push({ dur: 4, ease: 0.6, dof: 0.8, grade: 'past', light: TEO, keys: [key(0, [120.3, 0.45, -58.4], [119, 0.2, -54.6], 0.5), key(1, [120.1, 0.42, -58.1], [119, 0.2, -54.6], 0.47)] });
-  push({ dur: 5, ease: 0.6, dof: 1.2, grade: 'past', light: PAST, key: { on: 'ise', at: [-2.2, 2.4, -1.4], r: 9, c: [1, 0.78, 0.55], i: 7 }, look: { id: 'ise', y: 1.0, from: [-4.2, 1.3, -1.6] }, keys: still([0, 0, 0], [1, 0, 0], 0.55) });
+  push({ dur: 4, ease: 0.5, dof: 0.9, grade: 'past', light: PAST, crowd: bake, keys: side, subs: [{ t: 0.5, d: 3.3, who: 'Hanne', text: 'Who’s had the crust off this? I can see you!' }] });   // cut-001
+  push({ dur: 4, ease: 0.6, dof: 0.8, grade: 'past', light: TEO, keys: [key(0, [120.3, 0.45, -58.4], [119, 0.2, -54.6], 0.5), key(1, [120.1, 0.42, -58.1], [119, 0.2, -54.6], 0.47)],
+    subs: [{ t: 0.5, d: 3.3, who: 'Teodor', text: 'There. There she is. Hello. Hello, you.' }] });   // cut-002
+  push({ dur: 5, ease: 0.6, dof: 1.2, grade: 'past', light: PAST, key: { on: 'ise', at: [-2.2, 2.4, -1.4], r: 9, c: [1, 0.78, 0.55], i: 7 }, look: { id: 'ise', y: 1.0, from: [-4.2, 1.3, -1.6] }, keys: still([0, 0, 0], [1, 0, 0], 0.55),
+    subs: [{ t: 0.8, d: 3.8, who: 'Old Ise', text: 'Come on, little ones. Mind the stair.' }] });   // cut-003
   // 3. Wide: the great hall alive; Liese at the wheel.
-  push({ dur: 8, ease: 1, drift: 0.04, grade: 'past', light: PAST, crowd: hall, keys: [key(0, [4, 4.5, -1.5], [120, 3, 0], 0.78), key(1, [26, 4, -1], [130, 2.5, 0], 0.72)] });
-  push({ dur: 5, ease: 0.6, dof: 1.5, grade: 'past', light: PAST, keys: [key(0, [156.8, 25.9, 51.2], [161, 25.2, 56], 0.6), key(1, [157.3, 25.8, 51.0], [161, 25.2, 56], 0.57)] });
+  push({ dur: 8, ease: 1, drift: 0.04, grade: 'past', light: PAST, crowd: hall, keys: [key(0, [4, 4.5, -1.5], [120, 3, 0], 0.78), key(1, [26, 4, -1], [130, 2.5, 0], 0.72)],
+    subs: [{ t: 1.5, d: 2.2, who: 'Liese', text: 'You’re late.' }, { t: 4, d: 3, who: 'Morrow', text: 'The door’s not going anywhere.' }] });   // cut-004, cut-005 (young Morrow)
+  push({ dur: 5, ease: 0.6, dof: 1.5, grade: 'past', light: PAST, keys: [key(0, [156.8, 25.9, 51.2], [161, 25.2, 56], 0.6), key(1, [157.3, 25.8, 51.0], [161, 25.2, 56], 0.57)],
+    subs: [{ t: 0.2, d: 2.7, who: 'Liese', text: 'Bring me a fish when you come back down. A real one.' }, { t: 3, d: 2, who: 'Morrow', text: 'Bring yourself up for once.' }] });   // cut-006, cut-007
   // 4. Sefa runs up the long stair towards her father. A shudder: she stops; the camera shakes.
   push({ dur: 6, ease: 0.4, grade: 'past', light: { fill: 5, beam: 1.6 }, key: KEY_RUN, crowd: father(), shake: 0.035, shakeAt: 0.62,
     sefa: { path: [[SEFA_X - 10, sy(SEFA_X - 10), SZ], [SEFA_X - 1.5, sy(SEFA_X - 1.5), SZ], [SEFA_X, sy(SEFA_X), SZ]] },
-    keys: [key(0, [SEFA_X - 15, sy(SEFA_X - 15) + 1.3, SZ + 0.9], [SEFA_X - 6, sy(SEFA_X - 6) + 0.9, SZ], 0.62), key(1, [SEFA_X - 7, sy(SEFA_X - 7) + 1.3, SZ + 0.9], [SEFA_X + 6, sy(SEFA_X + 6) + 1.4, SZ], 0.62)] });
+    keys: [key(0, [SEFA_X - 15, sy(SEFA_X - 15) + 1.3, SZ + 0.9], [SEFA_X - 6, sy(SEFA_X - 6) + 0.9, SZ], 0.62), key(1, [SEFA_X - 7, sy(SEFA_X - 7) + 1.3, SZ + 0.9], [SEFA_X + 6, sy(SEFA_X + 6) + 1.4, SZ], 0.62)],
+    subs: [{ t: 0.4, d: 2.6, who: 'Sefa', text: 'Papa! Papa, look!' }, { t: 3.9, d: 2.1, who: 'Teodor', text: 'Sefa, come here. Come here now.' }] });   // cut-010, cut-011
   // 5. The sea-doors break: the water comes down the hall as a wall, the people running from it towards the camera.
   push({ dur: 8, ease: 0.2, shake: 0.09, grade: 'past', light: PAST, crowd: hallFleeing(11, 110, 232), wave: { front: [266, 200], t: [0, 8] },
-    keys: [key(0, [150, 3.2, -1.5], [250, 12, 0], 0.72), key(1, [146, 3.0, -1.5], [240, 13, 0], 0.76)] });
+    keys: [key(0, [150, 3.2, -1.5], [250, 12, 0], 0.72), key(1, [146, 3.0, -1.5], [240, 13, 0], 0.76)],
+    subs: [{ t: 0.3, d: 2.8, who: 'Liese', text: 'The doors! Hold the wheel! Hold it!' }, { t: 3.6, d: 3, text: 'Run! Get up the stair!' }] });   // cut-012, cut-013
   // 6. Close: the wave over Sefa, inches from her raised hand (it is slower here: the moment stretched).
   const hand = [SEFA_X + 0.42, sy(SEFA_X) + 1.08, SZ], front = hand[0] + 0.15 - faceOffset(SZ, hand[1]);
   const sefaHeld = { path: [[SEFA_X, sy(SEFA_X), SZ]], yaw: Math.PI / 2, reach: hand };
@@ -71,7 +78,8 @@ export function releaseShots(o = {}) {
   // 7. Everything stops: the water, the spray, the drops in the air. Silence.
   const held = { front, t: 11 };
   push({ dur: 7, ease: 0.7, freeze: true, grade: ['past', 'held'], light: [PAST, { fill: 1, beam: 0.8 }], key: KEY_WAVE, sefa: sefaHeld, wave: held,
-    keys: [key(0, [30, 5, -16], [62, 13, 18], 0.8), key(1, [36, 6, -12], [62, 13.5, 20], 0.76)] });
+    keys: [key(0, [30, 5, -16], [62, 13, 18], 0.8), key(1, [36, 6, -12], [62, 13.5, 20], 0.76)],
+    subs: [{ t: 0.8, d: 3, who: 'The Listener', text: 'Hush.' }] });   // lis-010: the moment everything stops
   // 8. Through the frozen crowd, caught running; Hanne's hands in the dough; to Sefa's hand.
   push({ dur: 9, ease: 0.8, freeze: true, grade: 'held', crowd: hallFleeing(5, 6, front - 6), wave: held, sefa: sefaHeld,
     keys: [key(0, [10, 1.7, 0], [40, 2.5, 0], 0.7), key(1, [front - 16, 1.8, 0], [front, 6, 0], 0.72)] });
@@ -80,14 +88,15 @@ export function releaseShots(o = {}) {
     keys: [key(0, [SEFA_X - 1.6, sy(SEFA_X) + 1.2, SZ - 2.1], [hand[0], hand[1], hand[2]], 0.6), key(1, [SEFA_X - 0.6, sy(SEFA_X) + 1.15, SZ - 1.2], [hand[0], hand[1], hand[2]], 0.5)] });
   // 9. Time passes over them; the flames don't move. The Listener by the well, listening.
   push({ dur: 13, ease: 0, freeze: true, grade: 'held', light: [{ fill: 1, beam: 1 }, { fill: 0.45, beam: 0.3 }], crowd: hall, keys: still([30, 30, -30], [130, 0, 0], 0.75),
-    subs: [{ t: 6, d: 5, who: 'The Listener', text: 'Stay. I have you.' }] });
+    subs: [{ t: 5, d: 4, who: 'The Listener', text: 'Stay. I have you.' }, { t: 9.8, d: 2.8, who: 'The Listener', text: 'Someone will come.' }] });   // lis-011, lis-012
   // 10–11. Morrow and the knife; the Wraith coming down through the kelp, seen from below.
   // 10. The jetty, years on (out of the city for it: the city's own exit puts the hidden Wraith on the rim, beside the jetty). Morrow,
   //     old, the Lung in her lap, a knife along its seam — the place it tore. A long time.
   const J = (f, u, y) => jettyPoint(JETTY.len - f, u, y);
   const M = { f: JETTY.len - 2.2, cut: [0.1, 0.5] };
   shots.push({ dur: 8, ease: 0.8, wraith: false, blur: 0.3, leave: true, hour: 17.6, morrow: M,
-    keys: [{ t: 0, p: J(6.4, 0.7, 1.7), at: J(-8, -0.9, 0.7), fov: 0.62 }, { t: 1, p: J(5.4, 0.6, 1.6), at: J(-8, -0.8, 0.7), fov: 0.6 }] });
+    keys: [{ t: 0, p: J(6.4, 0.7, 1.7), at: J(-8, -0.9, 0.7), fov: 0.62 }, { t: 1, p: J(5.4, 0.6, 1.6), at: J(-8, -0.8, 0.7), fov: 0.6 }],
+    subs: [{ t: 1, d: 4, text: 'The Sounding. Forty years later.' }] });
   // Close on her hands, from her left at their height (the Lung against the sky, her right arm coming over it): the knife
   // raised, one slash out along the seam, the bladder slumping as the air goes out of it (systems/morrow.js: the stroke at 0.6).
   shots.push({ dur: 4, ease: 0.5, wraith: false, blur: 0.2, dof: 0.7, morrow: { ...M, cut: [0.5, 0.78] },
@@ -98,7 +107,8 @@ export function releaseShots(o = {}) {
   //     on the causeway (their view: the first thing to move in all that time).
   push({ dur: 8, ease: 0.5, freeze: true, enter: 'hall', grade: 'held', light: { fill: 0.75, beam: 1.5 }, crowd: hall,
     wraith: { path: [[...W(105, 30, 2), 0.4], [...W(103.5, 17, 0.5), 0.5], [...W(102, 7, -1.5), 0.6]] },
-    keys: [key(0, [97, 1.3, -7], [104.8, 26, 1.8], 0.62), key(1, [97.2, 1.3, -6.9], [102.2, 8.2, -1.3], 0.5)] });
+    keys: [key(0, [97, 1.3, -7], [104.8, 26, 1.8], 0.62), key(1, [97.2, 1.3, -6.9], [102.2, 8.2, -1.3], 0.5)],
+    subs: [{ t: 2.6, d: 2.2, who: 'The Held', text: 'Someone’s here.' }, { t: 5.2, d: 2.6, who: 'The Held', text: 'Are you the one?' }] });   // hel-011, hel-017
   // 12. The player's own record: each person named, from their own eyes, the dark robe bending down. "Don't."
   const rec = (o.record || []).filter((r) => r.kind === 'named');
   const list = (rec.length ? rec : (o.record || [])).slice(0, 12);
@@ -131,7 +141,7 @@ export function releaseShots(o = {}) {
     const mid = [(eye[0] + head[0]) / 2, head[1] + 0.9, (eye[2] + head[2]) / 2];
     push({ dur: list.length > 6 ? 1.6 : 2.4, ease: 0, grade: 'held', dof: 0, record: r.id, wraith: { path }, keys: still(eye, head, 0.95),
       light: { fill: 1.9, beam: 1 }, key: { at: mid, r: 7, c: [0.62, 0.8, 1], i: 6 },
-      subs: [{ t: 0, d: 0.7, text: d.name + ', ' + (TASK[d.task] || '') }, { t: 0.7, d: 3, who: d.name, text: r.kind === 'named' ? 'Don’t.' : '…' }] });
+      subs: [{ t: 0, d: 0.7, text: d.name + ', ' + (TASK[d.task] || '') }, { t: 0.7, d: 3, who: d.name, text: r.kind === 'named' ? (d.id === 'liese' ? 'Morrow, don’t.' : 'Don’t.') : '…' }] });   // don-004: Liese thinks it is her sister
   }
   if (shots[back]) shots[back].enter = 'hall';   // back into the city for the record
   if (rec.length > 12) shots.push(card(Math.min(6, 0.3 * (rec.length - 12)), rec.slice(12).map((r) => (PEOPLE.find((q) => q.id === r.id) || {}).name).join('   '), 0.85));
@@ -142,11 +152,13 @@ export function releaseShots(o = {}) {
   //     Listener itself, when it is built, turns its head here.)
   push({ dur: 5, ease: 0.6, freeze: true, grade: ['held', 'present'], light: [{ fill: 0.7, beam: 0.6 }, { fill: 1.8, beam: 2.6 }], sefa: sefaHeld,
     wraith: { path: [[...W(124, 0, 8), Math.PI / 2], [...W(124, 0, 8), Math.PI / 2]] },
-    keys: [key(0, [128.3, 0.75, 9.7], [123.6, 2.15, 7.5], 0.62), key(1, [128.1, 0.7, 9.6], [123.6, 2.4, 7.5], 0.58)] });
+    keys: [key(0, [128.3, 0.75, 9.7], [123.6, 2.15, 7.5], 0.62), key(1, [128.1, 0.7, 9.6], [123.6, 2.4, 7.5], 0.58)],
+    subs: [{ t: 0.3, d: 1.8, who: 'The Listener', text: 'I kept them.' }, { t: 2.3, d: 2.6, who: 'The Listener', text: 'I kept them as long as I could.' }] });   // lis-013, lis-014
   // 14. Sefa's frozen wave; then time again: the drops fall, the water moves. Cut to black before anyone is hurt.
   const wide14 = [key(0, [SEFA_X - 13.5, sy(SEFA_X - 13.5) + 0.7, SZ - 1.6], [SEFA_X + 0.5, sy(SEFA_X) + 2.6, SZ + 0.2], 0.42), key(1, [SEFA_X - 13.2, sy(SEFA_X - 13.2) + 0.68, SZ - 1.6], [SEFA_X + 0.5, sy(SEFA_X) + 2.7, SZ + 0.2], 0.41)];   // (outside the lip: under it the frame is all water)
   push({ dur: 4, ease: 0.5, freeze: true, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: held, keys: wide14 });
-  push({ dur: 2.2, ease: 0, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: { front: [front, front - 3.5], t: [11, 13.2] }, shake: 0.03, keys: wide14 });
+  push({ dur: 2.2, ease: 0, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: { front: [front, front - 3.5], t: [11, 13.2] }, shake: 0.03, keys: wide14,
+    subs: [{ t: 0.1, d: 2, text: '(every one of them, at once, breathes in)' }] });   // cut-020, cut-021
   // 15. Black, the water's sound, then silence — long enough to be uncomfortable. Under it, out of the city: the Wraith is on the
   //     Sounding's rim when it is over, at dawn (the world has these seconds to come in around the camera).
   shots.push(card(5, '', 1, { leave: true, hour: 6.2, subs: [{ t: 0.5, d: 4, text: '(the sound of the water coming, then gone)' }] }));

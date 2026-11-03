@@ -269,6 +269,15 @@ export function subtractHoles(u0, u1, v0, v1, holes) {
   return out.filter(([a, b, c, d]) => b - a > 1e-3 && d - c > 1e-3);
 }
 
+/** A flight is drawn as treads of this rise (render/ebbhold.js), each flat at its line's height at its middle. */
+export const TREAD = 0.3;
+/** The top of the tread under (x, z) (local) on a flight: where a foot stands (the line runs ±TREAD/2 off it). */
+export function treadTop(b, x, z) {
+  const R = b.ramp, n = Math.max(1, Math.round(Math.abs(R.y1 - R.y0) / TREAD));
+  const u = Math.min(1, Math.max(0, ((R.axis === 'x' ? x : z) - R.a) / (R.b - R.a))), s = Math.min(n - 1, Math.floor(u * n));
+  return R.y0 + (R.y1 - R.y0) * (s + 0.5) / n;
+}
+
 /** Top of a box at (x, z) (local): flat, or a flight's line. */
 export function boxTop(b, x, z) {
   if (!b.ramp) return b.y1;
@@ -294,7 +303,7 @@ export function createEbbholdSolids(city = buildCity()) {
   const airs = city.airs.map((a) => ({ id: a.id, x0: a.x0 + O.x, x1: a.x1 + O.x, z0: a.z0 + O.z, z1: a.z1 + O.z, y0: a.y0 + O.y, y1: a.y1 + O.y, water: a.water === null ? NaN : a.water + O.y }));
   const pools = city.pools.map((p) => ({ x0: p.x0 + O.x, x1: p.x1 + O.x, z0: p.z0 + O.z, z1: p.z1 + O.z, water: p.water + O.y }));
   const STEP = 0.7, R = 0.38, BODY = 1.75;
-  const top = (i, x, z) => (RAMP[i] ? boxTop(boxes[i], x - O.x, z - O.z) + O.y : Y1[i]);
+  const top = (i, x, z) => (RAMP[i] ? (S.treads ? treadTop(boxes[i], x - O.x, z - O.z) : boxTop(boxes[i], x - O.x, z - O.z)) + O.y : Y1[i]);
   const bot = (i, x, z) => (RAMP[i] ? boxTop(boxes[i], x - O.x, z - O.z) - 1.2 + O.y : Y0[i]);
   const S = {
     x0: Math.min(...airs.map((r) => r.x0)) - 5, x1: Math.max(...airs.map((r) => r.x1)) + 5,
@@ -302,6 +311,8 @@ export function createEbbholdSolids(city = buildCity()) {
     airs, boxes, city,
     /** The body's feet (owner): floors above ref + STEP are not under it. */
     ref: 0.5,
+    /** A flight's treads as drawn, not its smooth line (a foot's ground: the line is a body's, gliding up the stair). */
+    treads: false,
     qx: 0.5, qz: 0.5, qy: 0.5, h: 0.5, lv: 0.5,
     contains(x, z) { return x > S.x0 && x < S.x1 && z > S.z0 && z < S.z1; },
     /** Ground under (qx, qz) not above ref + STEP → h (−1e4: none). */

@@ -23,7 +23,7 @@ import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
 import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
-import { EBB_ORIGIN, HALL, buildCity, createEbbholdSolids } from '../world/ebbhold.js';
+import { EBB_ORIGIN, HALL, TREAD, buildCity, createEbbholdSolids } from '../world/ebbhold.js';
 
 const TAU = Math.PI * 2;
 /** Catmull-Rom through [t, v] points (t ascending) at t. */
@@ -205,7 +205,7 @@ export function ebbholdGeometry(city = buildCity()) {
     else if (b.kind === 'door') k = K.door;
     if (b.ramp) {
       // A flight as treads of 0.3 m, each 1.2 m deep under its top (the collision's line runs through their middles), nosed in bronze.
-      const R = b.ramp, n = Math.max(1, Math.round(Math.abs(R.y1 - R.y0) / 0.3));
+      const R = b.ramp, n = Math.max(1, Math.round(Math.abs(R.y1 - R.y0) / TREAD));
       for (let s = 0; s < n; s++) {
         const u0 = R.a + (R.b - R.a) * s / n, u1 = R.a + (R.b - R.a) * (s + 1) / n, top = R.y0 + (R.y1 - R.y0) * (s + 0.5) / n;
         if (R.axis === 'x') box(Math.min(u0, u1), Math.max(u0, u1), top - 1.2, top, b.z0, b.z1, K.floor, seed);

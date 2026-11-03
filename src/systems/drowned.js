@@ -55,7 +55,8 @@ export function addDrownedSystem(g) {
   function groundFor(p) {
     return {
       qx: 0.5, qz: 0.5, h: 0.5,
-      sample() { S.qx = this.qx; S.qz = this.qz; S.ref = p.y + O.y + 0.6; S.floorQ(); this.h = S.h > -1e3 ? S.h : p.y + O.y; },
+      // (Feet on the treads as drawn: on the flight's smooth line they sank into one step and stood off the next.)
+      sample() { S.qx = this.qx; S.qz = this.qz; S.ref = p.y + O.y + 0.6; S.treads = true; S.floorQ(); S.treads = false; this.h = S.h > -1e3 ? S.h : p.y + O.y; },
       covers() { return true; },
     };
   }
