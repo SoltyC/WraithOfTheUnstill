@@ -111,6 +111,19 @@ export function addDirectorSystem(g) {
     S.set(x, y, z, yaw, vx, vz);
     S.reachTo(q.reach || null);
   }
+  /** Who a shot is about (one of the Drowned: followed, lit, or the one in a record shot), or null. */
+  const aboutId = (q) => (q ? (q.look && q.look.id) || (q.key && q.key.on !== 'sefa' && q.key.on) || q.record || null : null);
+  const atWarm = { i: 0, u: 0, cut: false };
+  /** The people the shots of the next moments are about are kept shown and simulated wherever the camera is (systems/npcs.js
+   *  warm): cut to while hidden far off, a robe was in its last-drawn pose and settled on camera, flailing for half a second. */
+  function warmAhead() {
+    if (!g.drowned) return;
+    const a = aboutId(shots[at.i]);
+    shotAt(shots, Math.min(len - 1e-3, t + 1.5), 0, atWarm);
+    const b = aboutId(shots[atWarm.i]);
+    const P = g.drowned.people;
+    for (let k = 0; k < P.length; k++) if (P[k].npc) P[k].npc.warm = P[k].d.id === a || P[k].d.id === b;
+  }
   /** The game camera's pose now → cur (position, a look-at 10 m ahead, fov). */
   function camNow() {
     const p = camera.position, r = camera.rotation, cp = Math.cos(r.x);
@@ -156,6 +169,7 @@ export function addDirectorSystem(g) {
       if (!d.active) return;
       d.active = false; shots = null; controller.hold = false; post.taa.dofOn = false; post.taa.blur = 0;
       if (g.crowd) g.crowd.show(false);
+      if (g.drowned) for (const p of g.drowned.people) if (p.npc) p.npc.warm = false;   // (no longer kept for a shot)
       // Back to the world as it was: its grade, the city's light, everyone moving, the Wraith seen, no captions.
       if (hourHeld) { clock.pinHour = pinSaved; hourHeld = false; }
       g.regradeWanted = true;   // the world's own grade here (the cutscene may have ended somewhere else)
@@ -220,6 +234,7 @@ export function addDirectorSystem(g) {
     if (t >= len && !manual) { d.stop(); return; }
     shotAt(shots, t, 0, at);
     const sh = shots[at.i];
+    warmAhead();
     if (at.i !== lastI) {
       // A cut resets the temporal history; the opening of a blended start is not a cut.
       if (!(lastI < 0 && blendIn > 0)) { post.post.resetHistory = true; if (g.atmosphere) g.atmosphere.snapExposure = true; }

@@ -253,9 +253,9 @@ export function addNpcSystems(g) {
       const gd = n.gnd || ground;
       gd.qx = n.x; gd.qz = n.z;
       const known = gd.covers();
-      const show = known && dc < FAR && !n.hide;
+      const show = known && (dc < FAR || n.warm) && !n.hide;   // (warm: a cutscene is about to cut to them)
       if (show !== n.shown) {
-        n.shown = show; n.view.setEnabled(show); changed = true; if (!show) n.placed = false;
+        n.shown = show; n.view.setEnabled(show); changed = true; if (!show) n.placed = false; else n.fresh = true;
         const prop = g.props?.[n.id];
         if (prop && !show) {
           g.architecture.sites[prop.index * 4 + 3] = 0;
@@ -276,7 +276,7 @@ export function addNpcSystems(g) {
       }
       // LOD: the nearest two every frame; the rest from the frame's budget (with the time they missed).
       n.lod += dt;
-      const full = (i === n0 || i === n1) && dc < FULL_R;
+      const full = ((i === n0 || i === n1) && dc < FULL_R) || n.warm;
       if (!full) { if (n.lod < waitFor(dc) || budget <= 0) continue; budget--; }
       const step = n.lod; n.lod = 0;
       { const wr = n.view.wraith, cl = wr.cloth;
@@ -287,6 +287,10 @@ export function addNpcSystems(g) {
       w.bx = sim[0]; w.by = sim[1]; w.bz = sim[2];
       w.vx = n.path ? Math.sin(n.yaw) * 1.05 / xf.s : (n.vx || 0) / xf.s; w.vz = n.path ? Math.cos(n.yaw) * 1.05 / xf.s : (n.vz || 0) / xf.s;
       if (n.hunch !== undefined) w.body.hunch = n.hunch;
+      // Shown again (hidden, unsimulated, while far: a cut to them), or back in close after a long while unsimulated: settle the
+      // cloth on the body where it is now. Its robe was still in the pose it was last drawn in, and a body that had moved less
+      // than its own teleport threshold since flung it out for the first second of the shot.
+      if (n.fresh || (step > 0.75 && dc < 30)) { w.teleport(); n.fresh = false; }
       w.yaw = n.yaw; w.grounded = true; w.dt = Math.min(step, 0.1); w.time = clock.simTime;
       if (g.wind) { g.wind.sx = n.x; g.wind.sz = n.z; g.wind.sample(); w.windStrength = g.wind.speed * 0.9; w.windX = g.wind.outX; w.windZ = g.wind.outZ; }
       else { w.windStrength = wind; w.windX = g.wraithView.wraith.windX; w.windZ = g.wraithView.wraith.windZ; }
