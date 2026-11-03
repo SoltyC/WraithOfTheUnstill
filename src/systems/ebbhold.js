@@ -22,7 +22,7 @@ export function addEbbholdSystem(g) {
     floorQ() { this.h = this.qh; }, floorAnyQ() { this.h = this.qh; }, floorReachQ() { this.h = this.qh; },
   };
   const occluder = { qx: 0.5, qy: 0.5, qz: 0.5, reach: 0.5, frame() {}, probe() { S.qx = this.qx; S.qy = this.qy; S.qz = this.qz; return S.solidQ(); } };
-  let saved = null, lampsAdded = false;
+  let saved = null, lampsAdded = false, cityShown = true;
   const city = {
     S, active: false,
     /** Into the city at a spawn (EBB_SPAWNS key). */
@@ -78,6 +78,15 @@ export function addEbbholdSystem(g) {
   loop.add({ name: 'ebbhold', update: () => {
     // The lamps join the world lights once that system exists (it is added after this one).
     if (!lampsAdded && g.worldLights && view) { for (const l of view.lamps) g.worldLights.add(l); lampsAdded = true; }
+    // The city's stone and its rooms' water are drawn only while the Wraith is in it: it floats 400 m up, beyond the world's west
+    // edge, and from outside it hung in the sky as a dark block 280 m tall (seen from the Sounding and the meadow alike). Drawn for the
+    // first frames regardless, so their pipelines are built at load.
+    if (view && (g.clock.frame > 90 || city.active) && cityShown !== city.active) {
+      cityShown = city.active;
+      view.mesh.setEnabled(cityShown);
+      if (view.waterMeshes) for (const m of view.waterMeshes) m.setEnabled(cityShown);
+      g.engine.snapshotRenderingReset();
+    }
     if (!city.active) return;
     S.ref = controller.pos.y;
     // A fall out of every space (a gap in the stone): back onto the causeway rather than falling for ever.

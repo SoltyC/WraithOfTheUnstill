@@ -590,3 +590,17 @@ About 0.2 ms, inside F1's 1.5 ms water budget. 0 GPU errors, 0 late pipelines.
 | Reflection off | 17.10, 17.11 | 17, 17 | 18.6, 18.9 | 493 |
 
 About 1.07 ms against a 1.0 ms budget. GPU and main thread not separated. 0 GPU errors, 0 late pipelines.
+
+## 3 November — Phase 10 U7, the release's heavy shots
+
+Presented frame times while the cutscene plays (`bot perf`, 240 frames each, default preset, this PC). 0 GPU errors, 0 late pipelines.
+
+| Shot | p50 ms | p95 ms | max ms |
+|---|---|---|---|
+| The sea-doors: the wave down the hall, spray, 48 runners | 12.4 | 15.6 | 17.4 |
+| The frozen dolly through the runners | 12.8 | 14.7 | 17.1 |
+| Sefa's hand under the curl | 11.0 | 12.9 | 15.3 |
+| The rise: robes past the camera, under the Sounding | 6.8 | 8.4 | 10.1 |
+| The dawn: 8,000 robes on the water | 9.1 | 10.7 | 11.9 |
+
+The wave is the tightest (p95 15.6 against 16.7). Not yet measured on the laptop's Low preset.

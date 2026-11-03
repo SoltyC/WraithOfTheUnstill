@@ -13,7 +13,7 @@
 // yaw], ...] } moved along it), sefa ({ path: [[x, y, z], ...] local, run along it over the shot, or one point; yaw; reach:
 // [x, y, z] her hand raised to it}), wave ({ front: x or [from, to] local, t: s or [from, to] — the wave's own time: a constant
 // holds it }), robes ({ rise: [from, to] s into their rise, or omitted: afloat } the robes on the Sounding), leave (out of the
-// city on this cut), hour (the time of day from this cut), key ({ at: [x, y, z] local, r, c: [r, g, b], i } a light for the shot), look ({ id: one of the Drowned, y: height on them, w: 0..1 } the camera turned to follow them), and onCut(g)
+// city on this cut), morrow ({ f: m along the jetty, yaw, cut: [from, to] the knife along the seam } her at its end), hour (the time of day from this cut), key ({ at: [x, y, z] local, r, c: [r, g, b], i } a light for the shot), look ({ id: one of the Drowned, y: height on them, w: 0..1 } the camera turned to follow them), and onCut(g)
 // for anything else.
 
 import { shotAt, evalShot, totalLength } from '../game/director.js';
@@ -38,7 +38,9 @@ export function addDirectorSystem(g) {
   const smoother = (u) => u * u * u * (u * (u * 6 - 15) + 10);
   // The grade and the city's light as they were before the cutscene (restored after), and the frozen clock.
   const gradeSaved = new Float32Array(16), base = { fill: 0, beam: 0 };
-  let frozenAt = -1, wraithShown = true, presentNeeded = false;
+  let frozenAt = -1, wraithShown = true, presentNeeded = false, resnap = 0;
+  // The hour as it was held (or not) before a shot set its own; given back at the end, the day running on from the shot's.
+  let pinSaved = null, hourHeld = false;
   GRADES.present = { g0: [0, 0, 0], g1: [1, 1, 1], g2: [1, 1, 1] };
   // The overlay: a rough cut's caption cards and the subtitles (DOM in play; drawn into a film's frames by drawOverlay).
   const ov = typeof document !== 'undefined' ? document.createElement('div') : null;
@@ -68,7 +70,7 @@ export function addDirectorSystem(g) {
     const G = post.post.grade;
     if (sh.grade) {
       const a = Array.isArray(sh.grade) ? sh.grade[0] : sh.grade, b = Array.isArray(sh.grade) ? sh.grade[1] : sh.grade, e = smoother(u);
-      if (a === 'present' && b === 'present') G.set(gradeSaved);
+      if (a === 'present' && b === 'present') g.regradeWanted = true;
       else {
         mixGrades(G, a, b, e);
         // 'present' is whatever the world's grade was: blend toward it rather than toward neutral.
@@ -76,7 +78,7 @@ export function addDirectorSystem(g) {
         G[3] = 1;
       }
       post.post.gradeDirty = true;
-    } else if (presentNeeded) { G.set(gradeSaved); post.post.gradeDirty = true; presentNeeded = false; }
+    } else if (presentNeeded) { g.regradeWanted = true; presentNeeded = false; }   // the world's own grade, wherever the shot is
     if (sh.grade) presentNeeded = true;   // a shot without a grade is the present: back to it on the next that has none
     const v = g.ebbholdView;
     if (v && sh.light) {
@@ -129,7 +131,7 @@ export function addDirectorSystem(g) {
       shots = list; t = 0; len = totalLength(list); lastI = -1; manual = false; onEnd = opt.onEnd || null;
       d.letterbox = opt.letterbox !== false; d.active = true; controller.hold = true;
       blendIn = opt.blendIn || 0; blendOut = opt.blendOut || 0; outT = -1;
-      gradeSaved.set(post.post.grade); frozenAt = -1;
+      gradeSaved.set(post.post.grade); frozenAt = -1; pinSaved = clock.pinHour; hourHeld = false;
       if (g.ebbholdView) { base.fill = g.ebbholdView.params.y; base.beam = g.ebbholdView.params.z; }
       if (blendIn > 0) {
         // The first shot's opening camera, against the camera as it is now: that difference decays away.
@@ -148,19 +150,21 @@ export function addDirectorSystem(g) {
       d.play(b.shots, { ...b.opt, ...opt });
       return true;
     },
-    /** Hold the timeline at time s (s): a film drives it frame by frame. */
-    seek(s) { manual = true; t = s; },
+    /** Hold the timeline at time s (s): a film drives it frame by frame. hold false: jump there and play on. */
+    seek(s, hold = true) { manual = hold; t = s; },
     stop() {
       if (!d.active) return;
       d.active = false; shots = null; controller.hold = false; post.taa.dofOn = false; post.taa.blur = 0;
       if (g.crowd) g.crowd.show(false);
       // Back to the world as it was: its grade, the city's light, everyone moving, the Wraith seen, no captions.
-      post.post.grade.set(gradeSaved); post.post.gradeDirty = true;
+      if (hourHeld) { clock.pinHour = pinSaved; hourHeld = false; }
+      g.regradeWanted = true;   // the world's own grade here (the cutscene may have ended somewhere else)
       if (g.ebbholdView) { g.ebbholdView.params.y = base.fill; g.ebbholdView.params.z = base.beam; }
       setFrozen(false); frozenAt = -1;
       if (g.sefa) g.sefa.show(false);
       if (g.wave) g.wave.set(0, 0, false);
       if (g.drift) g.drift.set(false, 0, 0);
+      if (g.morrow) g.morrow.show(false);
       if (!wraithShown && g.game) { g.game.setPlayerVisible(true); wraithShown = true; }
       overlayFor({}, 0, 0);
       // Out: blended (the last shot's camera, as it was last placed, is held as the difference to the player's, dying away), or a cut.
@@ -229,16 +233,21 @@ export function addDirectorSystem(g) {
       if (want !== wraithShown && g.game) { g.game.setPlayerVisible(want); wraithShown = want; }
       sh.onCut?.(g);
       // Out of the city (the release ends on the Sounding: the city's own exit puts the Wraith on the rim), and the hour.
+      if ((sh.leave && g.ebbhold && g.ebbhold.active) || (sh.enter && g.ebbhold && !g.ebbhold.active)) { g.regradeWanted = true; resnap = 2; }
       if (sh.leave && g.ebbhold && g.ebbhold.active) g.ebbhold.exit();
-      if (sh.hour !== undefined && g.params) { g.params.v.timeOfDay = sh.hour; g.params.version++; }
+      if (sh.enter && g.ebbhold && !g.ebbhold.active) { g.ebbhold.enter(sh.enter); controller.hold = true; }
+      if (sh.hour !== undefined && g.params) { g.params.v.timeOfDay = sh.hour; g.params.version++; clock.pinHour = sh.hour; hourHeld = true; }
       sefaFor(sh, at.u, true);
     }
     sefaFor(sh, at.u, false);
+    if (g.morrow) { if (sh.morrow) g.morrow.show(true, sh.morrow.f, sh.morrow.yaw ?? null, lerp2(sh.morrow.cut ?? 0, at.u)); else if (g.morrow.st.on) g.morrow.show(false); }
     if (g.drift) {
       if (sh.robes) { const lv = g.water && g.water.levelAt ? g.water.levelAt(SOUNDING.x, SOUNDING.z) : 1.41; g.drift.set(true, Number.isFinite(lv) && lv > -50 ? lv : 1.41, clock.simTime, sh.robes.rise ? lerp2(sh.robes.rise, at.u) : null); }
       else g.drift.set(false, 0, 0);
     }
     if (g.wave) { if (sh.wave) g.wave.set(lerp2(sh.wave.front, at.u), lerp2(sh.wave.t ?? 0, at.u), true); else g.wave.set(0, 0, false); }
+    // A cut in or out of the city: once the world has graded the new place, that is the 'present' to blend toward.
+    if (resnap > 0 && --resnap === 0) gradeSaved.set(post.post.grade);
     lookFor(sh, at.u);
     overlayFor(sh, at.u, at.u * sh.dur);
     // The Wraith moved along a path through the shot (a replay of its own record).

@@ -191,18 +191,20 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     }
     let T = exp(-sig * min(dist, 400.0));
     c = vec4f(c.rgb * T + alb * E * (1.0 - T) * exposure, c.a);
-    // Light shafts: the sun bent down through the surface, focused into beams by its ripples. Ten
-    // jittered samples along the first 45 m of the view ray, each lit from where its beam left the
-    // surface, dimmed along the beam and on to the eye (TAA integrates the jitter).
+    // Light shafts: the sun bent down through the surface, focused into beams by its ripples. Sixteen
+    // samples along the first 45 m of the view ray, each lit from where its beam left the surface,
+    // dimmed along the beam and on to the eye. Their offset varies across the screen but not in time:
+    // a jitter that changed each frame flickered wherever TAA let go of its history (a moving camera,
+    // the robes rising through the beams; user, 2026-11-03).
     let Ls = P.sun.xyz;
     if (!inside && Ls.y > 0.04) {
       let rs = refract(-Ls, vec3f(0.0, 1.0, 0.0), 0.7502);
       let len = min(dist, 45.0);
-      let jit = fract(52.9829189 * fract(dot(vec2f(p) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));
+      let jit = fract(52.9829189 * fract(dot(vec2f(p), vec2f(0.06711056, 0.00583715))));
       let tw = P.pad[4].w;
       var acc = vec3f(0.0);
-      for (var k = 0; k < 10; k++) {
-        let s = (f32(k) + jit) * 0.1 * len;
+      for (var k = 0; k < 16; k++) {
+        let s = (f32(k) + jit) * 0.0625 * len;
         let q = cam + dir * s;
         let up = uwL - q.y;
         if (up < 0.0) { continue; }
@@ -210,7 +212,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
         let beam = uwFocus(q.xz - rs.xz * along, tw);
         acc += beam * exp(-sig * (along + s));
       }
-      c = vec4f(c.rgb + acc * atmoLight[0].xyz * (0.05 * len * 0.1) * exposure * smoothstep(0.04, 0.2, Ls.y), c.a);
+      c = vec4f(c.rgb + acc * atmoLight[0].xyz * (0.05 * len * 0.0625) * exposure * smoothstep(0.04, 0.2, Ls.y), c.a);
     }
   }
   // Clouds over the sky.

@@ -219,6 +219,21 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - **The robes** (`game/drift.js`, `render/drift.js`, `shaders/drift.wgsl.js`): 8,000 empty robes, face down, sleeves spread, in wind-rows. The middle is packed (where they came up). 360 are in detail (856 triangles each); the rest are 64 triangles each.
   - **Fixed:** Teodor's daughter was gold because the swaddle's shader kind had no colour branch and fell through to bronze. She is now oat wool with a madder band. Sefa's run has a light that goes with her, and the wave's face has fewer dark streaks.
   - **Still to do:** the dawn is the region's overcast. The weather override is saved state, so it wasn't touched. Up close from below, the robes read as flat planks.
+- **The user on the third cut:** the light filtering down while the robes rise was flickering.
+- **Fourth cut** (`review/release/release-cut4.mp4`):
+  - **The flicker:** the underwater shafts' jitter changed every frame and relied on TAA to average it, which failed wherever the history was dropped. The jitter is now fixed in time and varied across the screen, with 16 samples instead of 10 (`shaders/post/ao.wgsl.js`). Measured frame by frame, the alternation is gone.
+  - **10, the jetty** (`world/jetty.js`, `systems/morrow.js`):
+    - **The jetty:** a rotted timber jetty, 52 m out from the Sounding's east rim. It's an architecture site: walkable, lit, with a lantern on a gallows and a pile of brass.
+    - **Morrow:** old and bowed at its end, the Lung (a held prop between her hands) in her lap, her right hand working along its seam.
+    - **The shot:** dusk, in two angles. The cut leaves the city for it and goes back in for the record.
+  - **The director:**
+    - holds a shot's hour (`hour` pins the clock; given back at the end);
+    - takes 'present' from the world's own grade, not a copy saved at the start (a cut out of the city had stamped the city's grade on the Sounding);
+    - can go back into the city (`enter`).
+  - **Old bug fixed:** the sealed city's mesh and rooms' water were drawn from outside: a dark block about 280 m tall in the western sky, seen from the Sounding and the meadow. Now drawn only while the Wraith is inside (after the first frames, so the pipelines are built at load).
+  - **Shot 14:** reframed outside the lip; under it the frame was all water. Sefa is placed under the card before it, so the frozen shot has her.
+  - **The jetty's planks** are kept free of the frost's snow (`NO_SNOW`).
+  - **Still weak:** the Lung is a crude block close up; Morrow stands (no sitting pose without a clip through the gate); the kelp (11) and the Listener (13) are still cards.
 - **Decision:** the order stands. Don't polish the card version. Build the captioned pieces as real footage, one at a time, each reviewed alone before it goes into the cut (release-cinematic.md's "Sefa alone" checkpoint). Start with Sefa, the wave and the freeze, because shots 4–8 hang on them. Fix the broken real shots (well, Ise, the dolly through a figure, Teodor's hood) in the same pass, then re-cut.
 
 **Cut scope here last.** This is the reason for the chapter.

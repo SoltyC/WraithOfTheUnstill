@@ -8,6 +8,7 @@ import { PEOPLE } from './drowned.js';
 import { hallAlive, bakehouseBehind, hallFleeing } from './crowds.js';
 import { faceOffset } from './wave.js';
 import { SOUNDING } from '../world/sounding.js';
+import { jettyPoint, JETTY } from '../world/jetty.js';
 /** The Sounding's water (world y). */
 const LV = 1.41;
 
@@ -80,11 +81,19 @@ export function releaseShots(o = {}) {
   push({ dur: 13, ease: 0, freeze: true, grade: 'held', light: [{ fill: 1, beam: 1 }, { fill: 0.45, beam: 0.3 }], crowd: hall, keys: still([30, 30, -30], [130, 0, 0], 0.75),
     subs: [{ t: 6, d: 5, who: 'The Listener', text: 'Stay. I have you.' }] });
   // 10–11. Morrow and the knife; the Wraith coming down through the kelp, seen from below.
-  shots.push(card(14, 'The jetty, years on. Morrow, old. A knife on the Lung, cutting it at the seam: the place it tore. She sits there a long time with it in her lap.'));
+  // 10. The jetty, years on (out of the city for it: the city's own exit puts the hidden Wraith on the rim, beside the jetty). Morrow,
+  //     old, the Lung in her lap, a knife along its seam — the place it tore. A long time.
+  const J = (f, u, y) => jettyPoint(JETTY.len - f, u, y);
+  const M = { f: JETTY.len - 2.2, cut: [0.1, 0.5] };
+  shots.push({ dur: 8, ease: 0.8, wraith: false, blur: 0.3, leave: true, hour: 17.6, morrow: M,
+    keys: [{ t: 0, p: J(6.4, 0.7, 1.7), at: J(-8, -0.9, 0.7), fov: 0.62 }, { t: 1, p: J(5.4, 0.6, 1.6), at: J(-8, -0.8, 0.7), fov: 0.6 }] });
+  shots.push({ dur: 7, ease: 0.6, wraith: false, blur: 0.3, dof: 0.6, morrow: { ...M, cut: [0.5, 0.9] },
+    keys: [{ t: 0, p: J(1.3, 2.3, 1.05), at: J(1.95, 0.1, 0.62), fov: 0.5 }, { t: 1, p: J(1.45, 2.05, 1.0), at: J(1.95, 0.08, 0.6), fov: 0.47 }] });
   shots.push(card(8, 'Hard cut: the Wraith comes down through the kelp, seen from below by the held people. Heads turn. Hands reach.'));
   // 12. The player's own record: each person named, from their own eyes, the dark robe bending down. "Don't."
   const rec = (o.record || []).filter((r) => r.kind === 'named');
   const list = (rec.length ? rec : (o.record || [])).slice(0, 12);
+  const back = shots.length;
   if (!list.length) shots.push(card(8, 'No names were said. The doors the Wraith forced, the rooms it flooded, the people pulled off its robe.'));
   for (const r of list) {
     const d = PEOPLE.find((q) => q.id === r.id);
@@ -96,11 +105,13 @@ export function releaseShots(o = {}) {
     push({ dur: list.length > 6 ? 1.6 : 2.4, ease: 0, grade: 'held', dof: 0, wraith: { path }, keys: still(eye, [end[0], end[1] + 1.3, end[2]], 0.7),
       subs: [{ t: 0, d: 0.7, text: d.name + ', ' + (TASK[d.task] || '') }, { t: 0.7, d: 3, who: d.name, text: r.kind === 'named' ? 'Don’t.' : '…' }] });
   }
+  if (shots[back]) shots[back].enter = 'hall';   // back into the city for the record
   if (rec.length > 12) shots.push(card(Math.min(6, 0.3 * (rec.length - 12)), rec.slice(12).map((r) => (PEOPLE.find((q) => q.id === r.id) || {}).name).join('   '), 0.85));
   // 13–15. Now: the Listener lets go. Sefa's wave; the first breath; black before anyone is hurt; silence.
-  shots.push(card(5, 'Back to now. The player’s hand on the Undertow. The Listener turns its head to the Wraith and, for the first time, is not listening for anything. It lets go.', 0.85));
+  // (Sefa placed and posed under the card, unfrozen, so the frozen shot after it has her as she was.)
+  shots.push(card(5, 'Back to now. The player’s hand on the Undertow. The Listener turns its head to the Wraith and, for the first time, is not listening for anything. It lets go.', 0.85, { sefa: sefaHeld }));
   // 14. Sefa's frozen wave; then time again: the drops fall, the water moves. Cut to black before anyone is hurt.
-  const wide14 = [key(0, [SEFA_X - 3.2, sy(SEFA_X - 3.2) + 0.6, SZ - 2.0], [SEFA_X + 2, sy(SEFA_X) + 3.2, SZ + 0.4], 0.78), key(1, [SEFA_X - 3.0, sy(SEFA_X - 3) + 0.6, SZ - 1.9], [SEFA_X + 2, sy(SEFA_X) + 3.4, SZ + 0.4], 0.78)];
+  const wide14 = [key(0, [SEFA_X - 13.5, sy(SEFA_X - 13.5) + 0.7, SZ - 1.6], [SEFA_X + 0.5, sy(SEFA_X) + 2.6, SZ + 0.2], 0.42), key(1, [SEFA_X - 13.2, sy(SEFA_X - 13.2) + 0.68, SZ - 1.6], [SEFA_X + 0.5, sy(SEFA_X) + 2.7, SZ + 0.2], 0.41)];   // (outside the lip: under it the frame is all water)
   push({ dur: 4, ease: 0.5, freeze: true, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: held, keys: wide14 });
   push({ dur: 2.2, ease: 0, grade: 'past', light: PAST, key: KEY_HELD, sefa: sefaHeld, wave: { front: [front, front - 3.5], t: [11, 13.2] }, shake: 0.03, keys: wide14 });
   // 15. Black, the water's sound, then silence — long enough to be uncomfortable. Under it, out of the city: the Wraith is on the

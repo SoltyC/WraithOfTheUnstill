@@ -174,7 +174,7 @@ export async function createWorld(g) {
   const ebbholdView = ebbMod.createEbbholdView(scene, atmosphere, content.clipmap, matLib);
   shadows.addCaster(ebbholdView.mesh, ebbholdView.makeShadowMaterial, 2);
   bindShadows(ebbholdView.material, shadows);
-  water.addInterior(ebbMod.ebbholdWaterQuads());
+  ebbholdView.waterMeshes = water.addInterior(ebbMod.ebbholdWaterQuads());
   ebbholdView.freeze();
   // The cutscenes' crowd (Phase 10 U6): robes baked in a worker after load, played back on the GPU.
   const crowd = (await import('../render/crowd.js')).createCrowd(scene, atmosphere, content.clipmap);
