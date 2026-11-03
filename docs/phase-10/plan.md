@@ -234,6 +234,7 @@ The user's direction: the gameplay must carry the story, and freeing the Warden 
   - **Shot 14:** reframed outside the lip; under it the frame was all water. Sefa is placed under the card before it, so the frozen shot has her.
   - **The jetty's planks** are kept free of the frost's snow (`NO_SNOW`).
   - **Fifth cut:** the Lung rebuilt and 10b a profile; the floating robes soaked and low; the record shots held at 2 m.
+  - **Sixth cut:** the knife made to read ("the slashing of the Lung is not very apparent"). The Lung is 1.6× bigger, held up on her left forearm (her sleeves had swallowed it). It is cut with one push slash out along the seam, a gash opening behind the blade and the bladder slumping in stages. The close (shot 16) is from her left at hand height, against the sky. Every close angle under a metre was lost to her hood and sleeves.
   - **Still weak:** Morrow stands (no sitting pose without a clip through the gate); the kelp (11) and the Listener (13) are still cards; perf not yet measured on the laptop's Low preset.
 - **Decision:** the order stands. Don't polish the card version. Build the captioned pieces as real footage, one at a time, each reviewed alone before it goes into the cut (release-cinematic.md's "Sefa alone" checkpoint). Start with Sefa, the wave and the freeze, because shots 4–8 hang on them. Fix the broken real shots (well, Ise, the dolly through a figure, Teodor's hood) in the same pass, then re-cut.
 
