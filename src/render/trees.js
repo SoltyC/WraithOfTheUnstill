@@ -287,7 +287,8 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     bakeList.push({ geom: growTree(SPECIES_IDS[si], 1000 + si * 131 + v * 17, 0), barkLayer: MAT[SPECIES[SPECIES_IDS[si]].bark] });
   }
   const imp = createImpostors(scene, atmo, { trees: bakeList, leafColor: atlas, leafSurface: atlases.surface, barkAlb: matLib.alb, n: IMP.n, px: IMP.px, max: IMP.max });
-  imp.params.set(LOD_OUT - HYST - 6, LOD_OUT + HYST + 6, IMP.r * 0.82, IMP.r);
+  // The far edge fades over the last third of the reach (on Low's 1.1 km a 200 m band showed as a speckled stripe on the hills).
+  imp.params.set(LOD_OUT - HYST - 6, LOD_OUT + HYST + 6, IMP.r * 0.62, IMP.r);
   mats.push(imp.material);
   const impBakeMs = imp.bakeMs;
   function buildCanopy() {

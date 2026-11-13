@@ -21,6 +21,7 @@ import { MAX_PER_CELL } from '../render/lightGrid.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
+import { boot } from '../core/graphics.js';
 import { SNOW_WGSL } from './snow.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { MEADOW_WGSL } from './meadow.wgsl.js';
@@ -508,7 +509,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     var ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy, villageAt(wp.xz));
     // The melt band: wet, darker ground and grass bleached to straw.
     ms.albedo = mix(ms.albedo, ms.albedo * vec3f(1.05, 0.92, 0.66) * 0.8, border.y);
-    var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs, uniforms.envMisc.w, canopy);
+    // Low and Medium draw no far-tree shadows (the impostors cast only into the third cascade, which
+    // those presets keep for the land): past the geometry trees' reach the canopy map stands in for
+    // the crowns' shadow, so a forest floor seen from afar sits in shade instead of glaring between
+    // the trees (docs/meadow-overhaul.md).
+    let farShade = ${boot.shadows.treeCascades < 3 ? '1.0' : '0.0'} * smoothstep(${(boot.trees.out ?? 365) - 10}.0, ${(boot.trees.out ?? 365) + 40}.0, dist) * smoothstep(0.12, 0.6, canopy);
+    var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs * (1.0 - 0.82 * farShade), uniforms.envMisc.w, canopy);
     let exm = uniforms.fogParams.z * atmoExposure();
     let gb = gridBase(wp);
     for (var li = 0u; li < ${LIGHT_SLOTS + MAX_PER_CELL}u; li++) {

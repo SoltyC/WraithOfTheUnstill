@@ -183,3 +183,13 @@ About 8 ms is terrain, sky and the base passes.
 - **Open:** no outcrop yet sits where the camera usually stands (the village and lake views). The
   biggest steep ground is south-west of the village. Larger cliff faces (40–80 m) on the meadow's
   rim would need their own family.
+
+**Low/Medium far forest floor (2026-11-14).**
+- **Stand-in shadow:** the impostors cast shadows only into the third cascade, which Low and Medium
+  keep for the land. So past `TREE_LEVELS.out` the meadow terrain (`shaders/clipmap.wgsl.js`) shades
+  the ground under the canopy map as the crowns' missing shadow (High keeps the real shadows).
+  `screenshots/meadow-m2/aerial-south-low` against `aerial-south-low-shaded`.
+- **Far fade:** the far forest's edge fades over the last 38% of its reach. On Low's 1.1 km a 200 m
+  band showed as a speckled stripe on the hills.
+- **Not measured:** the GPU was shared with the user's games, so no frame-time numbers were taken. It's
+  one smoothstep and a multiply in the meadow branch.
