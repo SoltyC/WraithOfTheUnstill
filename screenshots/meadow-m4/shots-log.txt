@@ -1,0 +1,2 @@
+2026-11-13T12:19:45.208Z 1/1 p8-meadow-noon: saved screenshots/meadow-m4/p8-meadow-noon.png
+2026-11-13T12:19:45.213Z Shots done: 1/1 spot(s) (p8-meadow-noon*) → screenshots/meadow-m4/.

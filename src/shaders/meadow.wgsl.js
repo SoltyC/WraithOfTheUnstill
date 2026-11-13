@@ -13,7 +13,27 @@
 // The wet and flattened terrain state darkens and flattens the ground (footprints, the surf's
 // groove).
 
+
+/** The meadow's colour field, shared by the turf (MEADOW_WGSL) and the grass blades (shaders/grass.wgsl.js)
+ *  so the field reads as one sward where the blades thin out over the ground: a saturated spring green
+ *  (the meadow reference, screenshots/reference/meadow-target.jpg) in broad swathes of lighter,
+ *  yellower grass and deeper green. Self-contained value noise: the same on both. */
+export const MEADOW_TINT_WGSL = /* wgsl */ `
+fn mtHash(p: vec2f) -> f32 { return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453); }
+fn mtNoise(p: vec2f) -> f32 {
+  let i = floor(p); let f = p - i; let u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mtHash(i), mtHash(i + vec2f(1.0, 0.0)), u.x), mix(mtHash(i + vec2f(0.0, 1.0)), mtHash(i + vec2f(1.0, 1.0)), u.x), u.y);
+}
+fn meadowTint(p: vec2f) -> vec3f {
+  let n = mtNoise(p * 0.011 + 3.7) * 0.6 + mtNoise(p * 0.047 + 11.3) * 0.3 + mtNoise(p * 0.19) * 0.1;
+  var t = mix(vec3f(1.0), vec3f(1.16, 1.1, 0.74), smoothstep(0.52, 0.82, n));
+  t *= mix(vec3f(1.0), vec3f(0.8, 0.9, 0.88), smoothstep(0.46, 0.16, n));
+  return t;
+}
+`;
+
 export const MEADOW_WGSL = /* wgsl */ `
+${MEADOW_TINT_WGSL}
 struct MeadowSurf { albedo: vec3f, N: vec3f, rough: f32, ao: f32, rock: f32, wetK: f32 };
 
 // Top-down sample of one layer (planar xz), normal into world space (x → +x, y → +z).
@@ -72,11 +92,11 @@ fn meadowSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, canopy:
     // Height-blended weights: the layer whose texel stands higher wins near the boundary. A layer
     // whose landform mask is ~0 here is not sampled at all (turf wins outright there).
     var wT = 1.0;
-    var wD = rise * 0.8 + 0.25 * smoothstep(0.2, 0.7, n3);
+    var wD = rise * 0.4 + 0.12 * smoothstep(0.3, 0.8, n3);   // thin wind-worn grass on the rises (was 0.8: the meadow read yellow)
     var wS = max(damp * 0.7, smoothstep(0.32, 0.5, slope)) + state.y * 0.8; // wet state: bared, muddy
-    let turf = mdLayer(MAT_TURF, p, 0.42, Ng, fp, vec3f(0.095, 0.12, 0.055), 0.35);
+    let turf = mdLayer(MAT_TURF, p, 0.42, Ng, fp, vec3f(0.085, 0.15, 0.035) * meadowTint(p), 0.35);
     var dry = turf; var soil = turf;
-    if (wD > 0.04) { dry = mdLayer(MAT_GRASS_GROUND, p + vec2f(31.0, 5.0), 0.38, Ng, fp, vec3f(0.24, 0.21, 0.12), 0.6); } else { wD = 0.0; }
+    if (wD > 0.04) { dry = mdLayer(MAT_GRASS_GROUND, p + vec2f(31.0, 5.0), 0.38, Ng, fp, vec3f(0.19, 0.2, 0.085), 0.6); } else { wD = 0.0; }
     if (wS > 0.04) { soil = mdLayer(MAT_SOIL, p + vec2f(-13.0, 41.0), 0.33, Ng, fp, vec3f(0.12, 0.09, 0.06), 0.6); } else { wS = 0.0; }
     wT *= 0.6 + turf.h; wD *= 0.6 + dry.h; wS *= 0.6 + soil.h;
     wT = pow(wT, k); wD = pow(wD, k); wS = pow(wS, k);
@@ -127,7 +147,7 @@ fn meadowSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, canopy:
   }
   // Large-scale life: greener and yellower swathes, darker damp ground.
   let hueN = noised(p * 0.006 + 31.0).x;
-  o.albedo *= mix(vec3f(1.0), vec3f(1.08, 1.04, 0.82), smoothstep(0.1, 0.7, hueN));
+  o.albedo *= mix(vec3f(1.0), vec3f(1.04, 1.02, 0.9), smoothstep(0.1, 0.7, hueN));
   o.albedo *= mix(vec3f(1.0), vec3f(0.8, 0.88, 0.85), damp * 0.6);
   // The village's ground (villageAt: r paved, g earth, b yard, a cobble variant): the scanned cobbles,
   // flags and earth over the turf, height-blended so stones stand proud of the soil at their worn edge

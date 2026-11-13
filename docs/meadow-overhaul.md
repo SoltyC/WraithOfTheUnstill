@@ -106,3 +106,26 @@ meadow shot) at the reference's framing.
   ground under canopy past LOD_OUT in the terrain shader (part of M3).
 - The far forest is broadleaf-uniform where the groves are, and needs the M4 grass and M5 sky
   around it.
+
+**M4: grass (2026-11-13).**
+- **One colour field for blades and ground:** `MEADOW_TINT_WGSL` in `shaders/meadow.wgsl.js` is
+  shared by the turf and the grass blades, so the sward stays continuous where blades thin out
+  over the ground. It is a saturated spring green (green ≈ 2× red, as in the reference; it was an
+  olive at 1.4×) in broad lighter and deeper swathes.
+- **Less yellow:** the dry, worn layer on rises is halved, and the straw patches are rarer.
+- **Fuller field:** the sparse patches fill in.
+- **Cost:** +0.3 ms on High (A/B at a fixed 0.8 scale, `tools/bot/frame-perf.mjs`).
+- **Shots:** `screenshots/meadow-m4/meadow-215-before/after`, `lake-90-before/after-sky`,
+  `grass-closeup`.
+
+**M5: sky (2026-11-13).**
+- **Fair-weather cumulus** (`shaders/post/fog.wgsl.js` `cloudDensity`): under a high sun with
+  scattered cover the cells get dense cores and crisp edges, so they have bright tops and shaded
+  bellies.
+- **Low sun:** they fade back to the soft wisps, because backlit at dusk the dense cells went dark
+  grey (`frost-dusk-check`).
+- **Cost:** no extra march steps.
+
+**A pre-existing cost to fix:** this meadow vista already runs ~18.6 ms at 0.8 scale on High before
+any of this branch's grass work, so dynamic resolution sits at its 0.6 floor. That needs a frame
+profile (grass rings, near trees, shadows) before more density goes in.

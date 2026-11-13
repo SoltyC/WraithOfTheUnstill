@@ -23,6 +23,7 @@ import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js
 
 /** Rings: [cell (m), grid (cells per side), blades per clump, segments per blade]. */
 import { boot } from '../core/graphics.js';
+import { MEADOW_TINT_WGSL } from './meadow.wgsl.js';
 /** Rings of clumps round the camera: [cell (m), clumps across, blades per clump, segments] — the graphics preset's (core/graphics.js; high: [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]]). */
 export const GRASS_RINGS = boot.grass;
 export const vertsPerBlade = (seg) => (seg + 1) * 2;
@@ -171,7 +172,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let tussock = smoothstep(0.12, 0.3, dw) * (1.0 - smoothstep(0.5, 0.75, dw)) * smoothstep(0.58, 0.8, vn(root * 0.11 + 17.0) * 0.7 + vn(root * 0.4 + 3.0) * 0.3) * 0.5;
   // Toward the erg the meadow's own grass dries: straw-coloured, shorter, thinning in patches.
   let straw = smoothstep(0.06, 0.35, dw);
-  let dens = max(max(smoothstep(0.45, 0.8, mw) * smoothstep(0.05, 0.4, patchN + 0.2) * (1.0 - 0.55 * straw * smoothstep(0.7, 0.3, patchN)), reed * (0.6 + 0.4 * patchN)), tussock) * uniforms.grassParams.z
+  let dens = max(max(smoothstep(0.45, 0.8, mw) * smoothstep(-0.15, 0.25, patchN + 0.2) * (1.0 - 0.55 * straw * smoothstep(0.7, 0.3, patchN)), reed * (0.6 + 0.4 * patchN)), tussock) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
   // The village's ground (villageAt): none on cobbles (a few tufts in the joints near the edge), sparse
   // along the earth road's edge, short and thin trampled grass in the yards.
@@ -256,7 +257,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vFar = far;
   vertexOutputs.vFrost = st.z;
   vertexOutputs.vStraw = straw * (1.0 - reed);
-  vertexOutputs.vDry = max(max(max(smoothstep(0.55, 0.85, vn(root * 0.031 + 5.0) + 0.3 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw))), reed * (1.0 - uniforms.grassErg.x));
+  vertexOutputs.vDry = max(max(max(smoothstep(0.75, 1.0, vn(root * 0.031 + 5.0) + 0.25 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw))), reed * (1.0 - uniforms.grassErg.x));
 }
 `;
 
@@ -276,6 +277,7 @@ ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${MEADOW_TINT_WGSL}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -292,7 +294,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let sd = fragmentInputs.vSeed;
   // Colour: dark at the root, green through the body, paler and warmer at the tip; patches of
   // dry, straw-coloured grass; per-blade variation.
-  let green = mix(vec3f(0.075, 0.11, 0.03), vec3f(0.12, 0.15, 0.045), sd);
+  // Spring green (the meadow reference), in the turf's own swathes (MEADOW_TINT_WGSL, shared).
+  let green = mix(vec3f(0.085, 0.18, 0.028), vec3f(0.14, 0.25, 0.042), sd) * meadowTint(wp.xz);
   let dry = mix(vec3f(0.2, 0.19, 0.09), vec3f(0.25, 0.23, 0.12), sd);
   var albedo = mix(green, dry, fragmentInputs.vDry * (0.25 + 0.45 * t));
   // The margin's straw: pale gold, bleached toward the tip.

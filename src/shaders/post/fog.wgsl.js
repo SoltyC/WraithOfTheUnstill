@@ -133,7 +133,13 @@ fn cloudDensity(p: vec3f, lay: vec2f, lod: f32) -> f32 {
     let detail = textureSampleLevel(noiseTex, noiseSampler, uv * 6.1 + vec2f(h * 0.37, -h * 0.29), 0.0).g;
     d = clamp(d - (1.0 - d) * detail * 0.6 * fine, 0.0, 1.0);
   }
-  return d * mix(0.006, 0.012, cover) * (1.0 + 0.9 * P.pad[0].w);
+  // Fair-weather cumulus (scattered cover): dense cores with crisp edges, so each cell has a bright
+  // top and a shaded belly (the meadow reference's sky); a closing deck keeps its soft, even density.
+  // Only under a high sun: backlit at dusk, dense cells went dark grey (their shade side has no multiple
+  // scattering here), so the low sun keeps the soft wisps.
+  let fair = (1.0 - smoothstep(0.35, 0.7, cover)) * smoothstep(0.18, 0.45, P.sun.y);
+  d = mix(d, smoothstep(0.03, 0.42, d), fair * 0.85);
+  return d * mix(0.006, 0.012, cover) * (1.0 + 1.6 * fair) * (1.0 + 0.9 * P.pad[0].w);
 }
 
 @compute @workgroup_size(8, 8, 1)
