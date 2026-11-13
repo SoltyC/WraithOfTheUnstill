@@ -357,7 +357,16 @@ const PIECE_NORMAL = /* wgsl */ `
     pieceLayer = pieceLayerOf(pk);
     let nObj = octDecode(pt.xy * 2.0 - 1.0);
     let nc = normalize(nObj * fragmentInputs.vInvS);
-    pieceScan = matBiplanarG(pieceLayer, fragmentInputs.vPm, nc, pieceScaleOf(pk), pdx, pdy);
+    // The scans' detail fades out by 180 m (sub-pixel there; it was a third of the piece path's cost).
+    let scanK = smoothstep(180.0, 130.0, length(camPos - wp));
+    if (scanK > 0.0) {
+      pieceScan = matBiplanarG(pieceLayer, fragmentInputs.vPm, nc, pieceScaleOf(pk), pdx, pdy);
+      pieceScan.albedo = mix(matMean(pieceLayer), pieceScan.albedo, scanK);
+      pieceScan.N = normalize(mix(nc, pieceScan.N, scanK));
+      pieceScan.ao = mix(1.0, pieceScan.ao, scanK);
+    } else {
+      pieceScan.albedo = matMean(pieceLayer); pieceScan.N = nc; pieceScan.ao = 1.0;
+    }
     let ns = normalize(mix(nc, pieceScan.N, 0.7));
     N = normalize(fragmentInputs.vB1 * ns.x + fragmentInputs.vB2 * ns.y + fragmentInputs.vB3 * ns.z);
     pieceAO = pt.z * mix(1.0, pieceScan.ao, 0.6);

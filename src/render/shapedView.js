@@ -20,6 +20,7 @@ import { bellwetherVertexWGSL, bellwetherFragmentWGSL } from '../shaders/bellwet
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
+import { Constants } from '@babylonjs/core/Engines/constants.js';
 
 /**
  * @param {import('@babylonjs/core').Scene} scene
@@ -86,8 +87,26 @@ export function createShapedView(scene, atmo, chunks, opts = {}) {
   if (nbrBuf) mat.setStorageBuffer('chunkNbr', nbrBuf);
   if (pieces) { mat.setTexture('pieceAtlas', pieces.set.atlas); bindMaterialLibrary(mat, pieces.matLib); }
   mesh.material = mat;
+  // Depth prepass (opts.prepass; drawn first: render/trees.js orders 'shapedZ' meshes with the
+  // leaves'): the colour pass then shades each visible pixel once, however many of the body's
+  // overlapping masses lie behind it (the Walker's hull and legs overlap many deep).
+  let zMesh = null, zMat = null;
+  if (opts.prepass) {
+    zMesh = new Mesh('shapedZ-' + name, scene, null, mesh);
+    zMesh.alwaysSelectAsActiveMesh = true; zMesh.doNotSyncBoundingInfo = true; zMesh.freezeWorldMatrix();
+    zMat = new ShaderMaterial('shapedZ-' + name, scene, { vertex: shader, fragment: 'shadowDepth' }, {
+      attributes, uniforms: ['viewProjection', 'shadowLight', 'shadowOrigin'], storageBuffers: sbufs, shaderLanguage: ShaderLanguage.WGSL,
+    });
+    zMat.setStorageBuffer('chunkData', buf);
+    if (nbrBuf) zMat.setStorageBuffer('chunkNbr', nbrBuf);
+    zMat.disableColorWrite = true;
+    zMesh.material = zMat;
+    mat.depthFunction = Constants.EQUAL;
+  }
   return {
-    mesh, material: mat,
+    mesh, material: mat, zMesh,
+    /** Show or hide the view (and its prepass). */
+    setEnabled(on) { mesh.setEnabled(on); if (zMesh) zMesh.setEnabled(on); },
     makeShadowMaterial(name, light, origin) {
       const m = new ShaderMaterial(name, scene, { vertex: shader, fragment: 'shadowDepth' }, {
         attributes, uniforms: ['viewProjection', 'shadowLight', 'shadowOrigin'],
@@ -98,7 +117,7 @@ export function createShapedView(scene, atmo, chunks, opts = {}) {
       m.setVector4('shadowLight', light); m.setVector4('shadowOrigin', origin);
       return m;
     },
-    freeze() { mat.freeze(); fastFrozenIsReady(mat); },
+    freeze() { mat.freeze(); fastFrozenIsReady(mat); if (zMat) { zMat.freeze(); fastFrozenIsReady(zMat); } },
     update() { buf.update(chunks); },
     /** Re-upload the neighbour lists (they change only when the rig is re-measured). */
     updateNeighbours() { if (nbrBuf) nbrBuf.update(nbr); },

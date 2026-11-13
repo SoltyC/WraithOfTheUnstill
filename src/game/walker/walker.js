@@ -76,7 +76,12 @@ function buildChunks(ctx) {
   const { SAND, RUIN, THORN, POD, GLASS } = CHUNK, SANDSTONE = CHUNK.SANDSTONE, HIDE = CHUNK.DUNEHIDE;
   // Hull: banded sandstone masses under the deck, packed sand at the belly and draped down the flanks.
   for (const z of [-15, -9, -3, 3, 9, 15]) for (const x of [-7, 0, 7]) add(B_BODY, x + (hh(x, z) - 0.5), -3.9, z, 10.5, 8.0, 9.0, HIDE, { seed: 7 });
-  for (const z of [-15, -9, -3, 3, 9, 15]) add(B_BODY, 0, -6.9, z, 15, 3.6, 7.6, SAND);
+  // The belly: drifted sand clinging to the stone, masses of varied size, depth and yaw (an even row of
+  // identical slabs stacked like shingles, each rim's shadow a crescent on the next), two of them rock.
+  for (let k = 0; k < 7; k++) {
+    const z = -16.5 + k * 5.5 + (hh(k, 3) - 0.5) * 2.4, x = (hh(k, 5) - 0.5) * 4.5, a = (hh(k, 15) - 0.5) * 1.3;
+    add(B_BODY, x, -6.4 - 1.0 * hh(k, 13), z, 11 + 5 * hh(k, 7), 4.4 + 1.6 * hh(k, 9), 6.5 + 3 * hh(k, 11), k === 2 || k === 5 ? HIDE : SAND, { f: [Math.sin(a), 0, Math.cos(a)] });
+  }
   for (const z of [-14, -7, 0, 7, 14]) for (const s of [-1, 1]) add(B_BODY, s * 11.9, -3.2, z, 2.6, 6, 7.2, SAND);
   for (const s of [-1, 1]) add(B_BODY, 0, -3.2, s * 18.4, 23, 6.5, 4.5, HIDE, { seed: 9 });
   // The court's floor: carved plates.

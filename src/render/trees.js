@@ -94,7 +94,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   // material), then the canyon's cliff walls (render/canyonWalls.js) last: much of them lies behind
   // terrain already drawn (buried feet, walls past a rim), which the depth test then skips — measured
   // 0.46 ms against 0.65 ms drawn first, in a rim view.
-  const zRank = (sm) => { const n = sm.getMesh().name; return n.startsWith('treeZ') ? 0 : n.startsWith('canyon') ? 3 : 2; };
+  const zRank = (sm) => { const n = sm.getMesh().name; return n.startsWith('treeZ') || n.startsWith('shapedZ') ? 0 : n.startsWith('canyon') ? 3 : 2; };
   scene.setRenderingOrder(0, (a, b) => (zRank(a) - zRank(b)) || RenderingGroup.PainterSortCompare(a, b));
   // The erg's species share one material vector each, its z the Dunes' restoration (owner: dunesRestored):
   // stilled, their leaves hang grey and dry.

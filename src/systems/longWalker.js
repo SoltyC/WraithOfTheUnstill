@@ -73,23 +73,34 @@ export async function addLongWalkerBody(g) {
   }
   const pieces = (lod) => (set ? { set, kinds: walker.kinds, seeds: walker.seeds, lod, matLib: g.matLib } : null);
   // Near and far views (as the Bellwether's): near, the finer clod gives its slabs flat faces and chipped edges.
-  const view = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalker', subdivisions: 3, pieces: pieces(low ? 1 : 0) });
+  const view = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalker', subdivisions: 3, pieces: pieces(low ? 1 : 0), prepass: !!set });
   bindShadows(view.material, shadows);
-  shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
   view.freeze();
-  const far = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalkerFar', subdivisions: 1, pieces: low ? null : pieces(1) });
+  const far = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalkerFar', subdivisions: 1, pieces: low ? null : pieces(1), prepass: !!set && !low });
   bindShadows(far.material, shadows);
-  shadows.addCaster(far.mesh, far.makeShadowMaterial, 2, 2);
   far.freeze();
+  // Shadows from coarser shadow-only meshes (a layer the camera does not draw): a shadow needs the mass,
+  // not the sculpt. Near: LOD1 (its own body's self-shadow stays smooth); beyond: LOD2. Measured: the
+  // sculpted views casting their own shadows cost ~0.5 ms of the Walker's ~1.3 at 100 m (High, 3060).
+  const SHADOW_LAYER = 0x10000000;
+  const shadowView = (nm, lod) => {
+    const v = createShapedView(scene, atmosphere, walker.chunks, { name: nm, subdivisions: 1, pieces: pieces(lod) });
+    v.mesh.layerMask = SHADOW_LAYER; v.freeze(); return v;
+  };
+  let shadowNear = view, shadowFar = far;
+  if (set) { shadowNear = shadowView('longWalkerShadowN', low ? 2 : 1); shadowFar = low ? far : shadowView('longWalkerShadowF', 2); }
+  shadows.addCaster(shadowNear.mesh, shadowNear.makeShadowMaterial, 1);
+  shadows.addCaster(shadowFar.mesh, shadowFar.makeShadowMaterial, 2, set ? 0 : 2);
   // Skitters aboard (slots, −1 empty): they ride the deck as the Wraith does (the director spawns them).
   const aboard = g.walkerAboard = new Int8Array(4).fill(-1);
   g.walker = walker; g.walkerDeck = deck; g.walkerView = view; g.walkerFar = far; g.walkerSys = walkerSys;
   const drawn = new Map();
-  const setOn = (mesh, on) => {
+  const setOn = (v, on) => {
     // Culled only after it has drawn for a while (pipelines are made while the loading screen is up).
+    const mesh = v.mesh;
     if (mesh.isEnabled()) drawn.set(mesh, (drawn.get(mesh) || 0) + 1);
     if (!on && (drawn.get(mesh) || 0) < 30) return;
-    if (mesh.isEnabled() !== on) { mesh.setEnabled(on); engine.snapshotRenderingReset(); }
+    if (mesh.isEnabled() !== on) { v.setEnabled(on); engine.snapshotRenderingReset(); }
   };
   loop.add({ name: 'walkerBody', update: () => {
     if (!g.walkerPlaced) { deck.on = false; return; }
@@ -100,9 +111,13 @@ export async function addLongWalkerBody(g) {
     // Drawn from afar (the erg's landmark): the near view within `near`, the far one beyond.
     const c = g.camera.position, d2 = (walker.x - c.x) ** 2 + (walker.z - c.z) ** 2;
     const shown = d2 < walkerSys.far * walkerSys.far || capture, near = d2 < walkerSys.near * walkerSys.near;
-    setOn(view.mesh, shown && near); setOn(far.mesh, shown && !near);
+    setOn(view, shown && near); setOn(far, shown && !near);
+    if (shadowNear !== view) setOn(shadowNear, shown && near);
+    if (shadowFar !== far) setOn(shadowFar, shown && !near);
     if (view.mesh.isEnabled()) view.update();
     if (far.mesh.isEnabled()) far.update();
+    if (shadowNear !== view && shadowNear.mesh.isEnabled()) shadowNear.update();
+    if (shadowFar !== far && shadowFar.mesh.isEnabled()) shadowFar.update();
   } });
 }
 

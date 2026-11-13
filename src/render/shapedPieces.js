@@ -29,12 +29,17 @@ export async function loadPieces(scene, set, opt = {}) {
   const base = import.meta.env.BASE_URL + 'models/';
   const buf = await (await fetch(base + set + '.glb')).arrayBuffer();
   const meshes = parseGlb(buf);
+  // Shadow LODs (tools/models/shadow_lod.py: LOD2, about a tenth; never drawn in colour), if the set has them.
+  try {
+    const r = await fetch(base + set + '-shadow.glb');
+    if (r.ok) for (const [k, m] of parseGlb(await r.arrayBuffer())) meshes.set(k, m);
+  } catch { /* optional */ }
   /** family → lod → variants */
   const fam = {};
   for (const [name, m] of meshes) {
     const r = /^([a-z]+)_(\d+)_lod(\d)$/.exec(name);
     if (!r) continue;
-    const f = (fam[r[1]] ||= [[], []]);
+    const f = (fam[r[1]] ||= [[], [], []]);
     f[+r[3]][+r[2]] = m;
   }
   const atlas = await new Promise((res, rej) => {
@@ -47,11 +52,11 @@ export async function loadPieces(scene, set, opt = {}) {
   atlas.anisotropicFilteringLevel = 8;
   return {
     atlas,
-    /** The piece for a chunk of `kind` with `seed`, at `lod` (0 near, 1 far/Low), or null. */
+    /** The piece for a chunk of `kind` with `seed`, at `lod` (0 near, 1 far/Low, 2 shadow), or null. */
     pick(kind, seed, lod) {
       const f = fam[PIECE_FAMILY[Math.floor(kind + 0.02)]];
       if (!f) return null;
-      const list = f[lod].length ? f[lod] : f[0];
+      const list = f[lod].length ? f[lod] : f[lod === 2 && f[1].length ? 1 : 0];
       return list[hash(seed) % list.length] || null;
     },
   };

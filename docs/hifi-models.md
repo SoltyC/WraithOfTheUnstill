@@ -82,11 +82,16 @@ GPU frame time, Walker drawn minus culled (`tools/bot/walker-perf.mjs 60`, media
 The cost is per pixel, not per triangle: LOD1 from 90 m changed nothing, and taking the scans off saved
 ~0.35 ms. The rest is the piece path's extra pixel work over the Walker's heavily overlapping masses.
 
-Open issues:
-- **Cost:** a depth prepass for the Walker, culling the hull masses buried under the deck, and no
-  scans beyond ~150 m. Target: within +0.5 ms on High.
-- **The belly:** the sand discs under the hull stack like shingles. Each rim's sun shadow draws a
-  dark crescent on the next. The sculpts are fine; the layout is the problem (walker.js `buildChunks`
-  belly row), and the noisy clods used to hide it. Re-space them, or give the belly hide pieces.
-- **Atlas size:** 7.3 MB (4K) + 3.6 MB (2K) lossless WebP. KTX2/BC7 (PLAN Q1) would roughly halve the
-  download and cut VRAM to ¼.
+**Fixed (2026-11-13, second pass):**
+- a depth prepass for the Walker's views (`shapedView` `prepass`, ordered with the trees' leaf prepass)
+- the scans fade out from 130 to 180 m
+- shadows cast from shadow-only coarse meshes: LOD1 near, LOD2 (`tools/models/shadow_lod.py`,
+  `walker-pieces-shadow.glb`) beyond 90 m
+- the belly re-laid as seven masses of varied size, depth and yaw, two of them rock
+
+Now (same method): High **~0.8–0.9 ms** (old clods ~0.5); Low ~0.05 ms (within noise). Shots:
+`screenshots/walker-pieces/walker-fix1-*.png`.
+
+Still open:
+- **Atlas size:** 7.3 MB (4K) + 3.6 MB (2K) lossless WebP; KTX2/BC7 (PLAN Q1) would roughly halve
+  the download and cut VRAM to ¼.
