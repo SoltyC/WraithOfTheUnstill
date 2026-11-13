@@ -108,6 +108,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
 export const treeVertexWGSL = VERTEX;
 
 const LEAF_UV = /* wgsl */ `
+fn treeTone(h: f32) -> vec3f {
+  let k = fract(h * 7.31);
+  return mix(vec3f(0.78, 0.9, 0.95), vec3f(1.12, 1.06, 0.82), k) * mix(0.82, 1.12, fract(h * 3.17));
+}
 fn leafUv(uv: vec2f, cellIdx: f32) -> vec2f {
   let c = floor(cellIdx + 0.5);
   let col = c - 4.0 * floor(c / 4.0); let row = floor(c / 4.0);
@@ -180,6 +184,9 @@ ${leafPass ? `
   // Per-cluster colour: a little hue and value variation, and the tree's own (vHue).
   let h = fract(info.y * 0.0137 + fragmentInputs.vHue);
   var albedo = lc.rgb * mix(vec3f(0.85, 0.95, 0.8), vec3f(1.1, 1.05, 0.9), h) * (0.85 + 0.35 * fragmentInputs.vHue);
+  // Tree-to-tree tone (shared with the far impostors, shaders/impostor.wgsl.js treeTone): a forest
+  // runs from deep blue-green to sunlit yellow-green, not one green.
+  albedo *= treeTone(fragmentInputs.vHue);
   albedo *= mix(1.0, 0.76, uniforms.wetParams.x); // rain
   // The erg's species keep their own colour (shared sprites, render/trees.js SPECIES_IDS 5…):
   // the acacia's dusty olive, the tamarisk's grey-green, the palm's sun-yellowed fronds.

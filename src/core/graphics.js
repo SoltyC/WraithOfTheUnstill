@@ -55,7 +55,12 @@ export const GRASS_LEVELS = {
   high: [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]],
 };
 /** Trees: instance budgets per variant (near, far, the shadow-only middle) and the placement radius scale. */
-export const TREE_LEVELS = { low: { near: 50, far: 110, mid: 60, radius: 0.6 }, medium: { near: 70, far: 180, mid: 110, radius: 0.8 }, high: { near: 90, far: 260, mid: 160, radius: 1 } };
+export const TREE_LEVELS = {
+  low: { near: 50, far: 110, mid: 60, radius: 0.6, imp: { r: 1100, n: 6, px: 80, variants: 4, max: 32768 } },
+  medium: { near: 70, far: 180, mid: 110, radius: 0.8, imp: { r: 1800, n: 8, px: 96, variants: 8, max: 81920 } },
+  high: { near: 90, far: 260, mid: 160, radius: 1, imp: { r: 2600, n: 8, px: 128, variants: 8, max: 163840 } },
+};
+/** imp: the far forest (render/impostors.js): reach (m), views per side, pixels per view, variants baked per species, instance cap. */
 
 function read() {
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); return s && typeof s === 'object' ? s : null; } catch { return null; }

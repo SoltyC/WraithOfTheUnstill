@@ -29,6 +29,7 @@ import { hashU32, valueNoise } from '../terrain/noise.js';
 import { bindEnvironment, env } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
+import { createImpostors } from './impostors.js';
 
 const VARIANTS = 8;
 // Shrubs and logs/stumps fill tree cells left empty; the last four grow in the erg and on its margin (Phase 9 D8).
@@ -247,8 +248,10 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
       const ps = grove > 0.12 ? 0.5 : grove > 0.0 ? 0.14 : 0, pl = grove > 0.2 ? 0.14 : 0;
       if (hu < ps) kind = 3; else if (hu < ps + pl) kind = 4; else return false;
     }
+    // Steep ground (summed 8 m rise in x and z): forest climbs the hills, as in the meadow reference
+    // (screenshots/reference/meadow-target.jpg) — a hill was bare above ~32° (sl 5); now to ~48°.
     const h = heightAt(x, z), sl = Math.abs(heightAt(x + 8, z) - h) + Math.abs(heightAt(x, z + 8) - h);
-    if (sl > 5) return false;
+    if (sl > 9) return false;
     for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
     if (keepOut && keepOut(x, z, 0.6)) return false; // the village: plots (+2 m) and roads (half width + 2 m)
     if (waterAt) { const wl = waterAt(x, z); if (wl === wl && h < wl + 0.5) return false; }
@@ -267,11 +270,36 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   // pine, oak, birch, shrub, log; acacia, deadwood, tamarisk, palm (the erg's cast no canopy: no forest haze or floor there): radius (m) at scale 1, opacity
 const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6, 0.35, 0, 0, 0, 0, 0];
   let canopyDirty = true;
+  // The far list: filled by buildCanopy (its whole-world pass), tiled for placeFar.
+  const IMP_OFF = typeof location !== 'undefined' && new URLSearchParams(location.search).get('imp') === '0';   // ?imp=0: no far forest (comparison shots)
+  const IMP = boot.trees.imp, FAR_CAP = 400000, TILE = 128, TILES = 8192 / TILE;
+  const farX = new Float32Array(FAR_CAP), farZ = new Float32Array(FAR_CAP), farY = new Float32Array(FAR_CAP), farSc = new Float32Array(FAR_CAP);
+  const farL = new Uint8Array(FAR_CAP), farYaw = new Float32Array(FAR_CAP), farHue = new Float32Array(FAR_CAP);
+  const tileStart = new Uint32Array(TILES * TILES + 1), tileIdx = new Uint32Array(FAR_CAP);
+  const tileOf = (x, z) => Math.max(0, Math.min(TILES - 1, Math.floor((z + 4096) / TILE))) * TILES + Math.max(0, Math.min(TILES - 1, Math.floor((x + 4096) / TILE)));
+  let farN = 0, farLastX = 1e9, farLastZ = 1e9;
+  // Bake: the meadow's species (pine, oak, birch) × IMP.variants, from the near trees' own seeds.
+  const bakeList = [];
+  for (let si = 0; si < 3; si++) for (let v = 0; v < IMP.variants; v++) {
+    bakeList.push({ geom: growTree(SPECIES_IDS[si], 1000 + si * 131 + v * 17, 0), barkLayer: MAT[SPECIES[SPECIES_IDS[si]].bark] });
+  }
+  const imp = createImpostors(scene, atmo, { trees: bakeList, leafColor: atlas, leafSurface: atlases.surface, barkAlb: matLib.alb, n: IMP.n, px: IMP.px, max: IMP.max });
+  imp.params.set(LOD_OUT - HYST - 6, LOD_OUT + HYST + 6, IMP.r * 0.82, IMP.r);
+  mats.push(imp.material);
+  const impBakeMs = imp.bakeMs;
   function buildCanopy() {
     const N = CANOPY_N, cs = 8192 / N, a = new Uint8Array(N * N);
     const g0 = Math.floor(-4096 / CELL), g1 = Math.ceil(4096 / CELL);
+    farN = 0;
     for (let gz = g0; gz <= g1; gz++) for (let gx = g0; gx <= g1; gx++) {
-      if (!treeAt(gx, gz) || CROWN_A[T.si] === 0) continue;
+      if (!treeAt(gx, gz)) continue;
+      // The far forest's list (impostors): every meadow tree in the world, its near look's yaw and tint.
+      if (T.si < 3 && farN < FAR_CAP) {
+        const k = farN++;
+        farX[k] = T.x; farZ[k] = T.z; farY[k] = heightAt(T.x, T.z); farSc[k] = T.sc;
+        farL[k] = T.si * IMP.variants + (T.v % IMP.variants); farYaw[k] = h01(gx, gz, SEED + 9) * 6.283; farHue[k] = h01(gx, gz, SEED + 11);
+      }
+      if (CROWN_A[T.si] === 0) continue;
       const r = CROWN_R[T.si] * T.sc, op = CROWN_A[T.si];
       const i0 = Math.max(0, Math.floor((T.x - r - 2 + 4096) / cs)), i1 = Math.min(N - 1, Math.floor((T.x + r + 2 + 4096) / cs));
       const j0 = Math.max(0, Math.floor((T.z - r - 2 + 4096) / cs)), j1 = Math.min(N - 1, Math.floor((T.z + r + 2 + 4096) / cs));
@@ -289,6 +317,33 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     }
     atmo.canopyTex.update(b);
     canopyDirty = false;
+    // Tile the far list (128 m tiles over the world) so a placement visits only the tiles in reach.
+    tileStart.fill(0);
+    for (let k = 0; k < farN; k++) tileStart[tileOf(farX[k], farZ[k]) + 1]++;
+    for (let t = 0; t < TILES * TILES; t++) tileStart[t + 1] += tileStart[t];
+    const fill = tileStart.slice(0, TILES * TILES);
+    for (let k = 0; k < farN; k++) tileIdx[fill[tileOf(farX[k], farZ[k])]++] = k;
+    farLastX = 1e9; api.farTrees = farN;
+  }
+  // ── The far forest (render/impostors.js) ───────────────────────────────────────────────────────
+  function placeFar(cx, cz) {
+    if (!imp || IMP_OFF) return;
+    const r0 = LOD_OUT - HYST - 12, r1 = IMP.r + 60, r02 = r0 * r0, r12 = r1 * r1;
+    const t0x = Math.max(0, Math.floor((cx - r1 + 4096) / TILE)), t1x = Math.min(TILES - 1, Math.floor((cx + r1 + 4096) / TILE));
+    const t0z = Math.max(0, Math.floor((cz - r1 + 4096) / TILE)), t1z = Math.min(TILES - 1, Math.floor((cz + r1 + 4096) / TILE));
+    const b = imp.buf; let n = 0;
+    for (let tz = t0z; tz <= t1z; tz++) for (let tx = t0x; tx <= t1x; tx++) {
+      const t = tz * TILES + tx;
+      for (let q = tileStart[t]; q < tileStart[t + 1] && n < imp.max; q++) {
+        const k = tileIdx[q], dx = farX[k] - cx, dz = farZ[k] - cz, d2 = dx * dx + dz * dz;
+        if (d2 < r02 || d2 > r12) continue;
+        const o = n++ * 16;
+        b[o] = farX[k]; b[o + 1] = farZ[k]; b[o + 2] = farSc[k]; b[o + 3] = farYaw[k];
+        b[o + 4] = farL[k]; b[o + 5] = farHue[k]; b[o + 6] = farY[k]; b[o + 7] = 0;
+      }
+    }
+    api.farDrawn = n;
+    if (imp.commit(n)) engine.snapshotRenderingReset();
   }
   let warmed = false; // every mesh draws through loading, so all its pipelines exist
   function rebuild(cx, cz, fresh, now) {
@@ -354,10 +409,12 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
   }
 
   const api = {
+    impostors: imp,
     /** Drawn meshes (bark and leaves, near -0 and far -1). */
     meshes: sets.flatMap((s) => s.meshes).filter((m) => !shadowOnly.includes(m)),
     /** Shadow casters: [mesh, minCascade, maxCascade] — cascade 1 from the shadow-only set (cascade 0 receivers read it too), 2–3 from the far trees. */
-    casters: sets.flatMap((s) => s.meshes).map((m) => shadowOnly.includes(m) ? [m, 1, 1] : m.name.startsWith('tree-') && m.name.endsWith('-1') ? [m, 2, 3] : null).filter(Boolean), materials: mats,
+    casters: [...sets.flatMap((s) => s.meshes).map((m) => shadowOnly.includes(m) ? [m, 1, 1] : m.name.startsWith('tree-') && m.name.endsWith('-1') ? [m, 2, 3] : null).filter(Boolean), [imp.mesh, 2, 3]], materials: mats,
+    impBakeMs: 0,
     /** Owner fields: camera x, z, time, wind strength and direction. */
     camX: 0.5, camZ: 0.5, time: 0.5,
     /** Canopy cover around the camera, 0..1, eased (out: the forest haze). */
@@ -378,6 +435,10 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
       for (const l of lodV) l.w = now;
       this.canopy += (canopyTarget - this.canopy) * Math.min(1, (now - lastNow) * 0.7); lastNow = now;
       if (canopyDirty && streamer.overview) { const tc = performance.now(); buildCanopy(); api.canopyMs = performance.now() - tc; }
+      if (farN && !this.hold) {
+        const fx = this.camX - farLastX, fz = this.camZ - farLastZ;
+        if (fx * fx + fz * fz > 80 * 80) { farLastX = this.camX; farLastZ = this.camZ; const tf = performance.now(); placeFar(farLastX, farLastZ); api.farMs = performance.now() - tf; }
+      }
       const dx = this.camX - lastX, dz = this.camZ - lastZ, m2 = dx * dx + dz * dz;
       if (m2 > REPLACE * REPLACE && !this.hold) {
         lastX = this.camX; lastZ = this.camZ;
@@ -445,6 +506,7 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
       return m;
     },
     makeShadowMaterial(name, light, origin) {
+      if (name.includes('treeImpostors')) return imp.makeShadowMaterial(name, light, origin);
       const leaf = name.includes('-leaf-');
       const m = new ShaderMaterial(name, scene, { vertex: 'tree', fragment: leaf ? 'treeShadow' : 'treeBarkShadow' }, {
         attributes: ['position', 'normal', 'uv', 'info'],

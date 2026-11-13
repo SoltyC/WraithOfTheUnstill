@@ -72,3 +72,37 @@ hills stay forested to the horizon.
 
 Order: M1 → M2 → M4 → M5 → M3 → M6. The user reviews after M2 (the hill shot) and after M4 (the
 meadow shot) at the reference's framing.
+
+## Progress
+
+**M1 (2026-11-13):** done.
+- Crown depth per leaf (`world/trees/generator.js` `crownDepth`, packed into `info.z`) gives dark
+  crown cores under lit shells.
+- Oak leaves drawn at real size: 25–50 cm leaves had read as brush strokes.
+- A tone per tree (`treeTone`, shared with the impostors).
+
+**M2 (2026-11-13):** the far forest is done (`render/impostors.js`, `shaders/impostor.wgsl.js`).
+- **Bake:** octahedral impostors baked at load on the GPU (raw WebGPU, 52 ms).
+  - High: 8×8 views × 128 px of pine, oak and birch × 8 variants, from the near trees' own seeds,
+    leaf atlas, bark scans and crown depth.
+  - Low: 6×6 × 80 px × 4 variants.
+- **Placement:** every meadow tree in the world is listed once in `buildCanopy`'s whole-world pass
+  (47k trees) and tiled at 128 m; `placeFar` refreshes the set every 80 m (1.2 ms).
+- **Draw:** each tree blends the 4 baked views nearest the eye, so nothing pops. A depth prepass
+  means each pixel is shaded once.
+  - Shadows in cascades 2–3 (High only, via the trees' cascade lever), sampled a crown's radius
+    toward the sun so a tree doesn't shadow itself.
+  - The fade with the near trees is dithered by distance at LOD_OUT.
+- **Steeper ground:** trees now grow on slopes up to ~48° (was ~32°), for both the near and far sets.
+- **Cost** (`tools/bot/far-perf.mjs`, 3060, other GPU apps closed):
+  - High: 0.8 ms for 22k trees (2.0 ms before the prepass)
+  - Low: within noise for 6.5k trees
+- **Shots:** `screenshots/meadow-m2/` (`aerial-south-before/after`, `village-lake-after`).
+- **Tools:** `tools/bot/vista.mjs` (eye-level compass shots), `tools/bot/far-perf.mjs`; `?imp=0`
+  turns the far forest off.
+
+**Open:**
+- On Low the far trees cast no shadows, so the forest floor glares between them. Fix: darken the
+  ground under canopy past LOD_OUT in the terrain shader (part of M3).
+- The far forest is broadleaf-uniform where the groves are, and needs the M4 grass and M5 sky
+  around it.
