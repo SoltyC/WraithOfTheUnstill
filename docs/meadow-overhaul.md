@@ -151,3 +151,35 @@ About 8 ms is terrain, sky and the base passes.
 - **After, High:** base **14.8 ms** (−3.8). Near trees 0.64, far forest 1.24.
 - **After, Low (0.8 forced):** base 10.5 → 10.1; near trees 0.51 → 0.05.
 - **The handover at 170 m doesn't show** in the lake views (`screenshots/meadow-m2/*-handover170.png`).
+
+**M6: limestone outcrops (2026-11-14).**
+- **Sculpt:** `tools/models/outcrop_pieces.py` runs the same Blender pipeline as the Walker on one
+  family: 10 pale limestone scarps. They are bedded (soft beds undercut), with wide weathered joints
+  (narrow V-joints aliased into bright zigzags), runnels on the top faces, clamped fracture facets,
+  and a foot tucked under the body.
+  - Meshes: LOD0 4,000 triangles, LOD1 1,200, LOD2 320. One 4K normal + AO atlas.
+  - `tools/models/preview.py` renders a piece set in Blender for a quick look.
+- **Placement** (`render/outcrops.js`): once over the whole world, on the meadow's steepest ground
+  (about 37° and up) and its crowns.
+  - Sparse: a few big exposures, not fields of blocks. ~12–40 m long.
+  - Turned along the contour, seated about 50% proud.
+- **Trees step aside:** trees whose root falls on a footprint (+3 m) aren't placed (`trees.setOutcrops`;
+  near trees, far forest and canopy map alike), so pale rock shows through the canopy as in the
+  reference.
+- **Draw:** thin-instanced per variant and LOD (LOD0 within 220 m, LOD1 to 800 m, LOD2 to 3 km),
+  re-sorted every 40 m, shadows in the cascades by LOD.
+- **Material** (`shaders/outcrop.wgsl.js`): the baked normal/AO plus the pale stone scan biplanar in
+  the rock's own frame. Rain-washed pale and weathered grey patches, iron stains, lichen, moss on the
+  up-facing hollows, grime streaks, a greened foot. Limestone albedo 0.34–0.52 (0.6 clipped beside
+  the grass).
+- **Solid:** `rockSolids` gives each outcrop an ellipse and height band (`outcrops.near`).
+- **Dev:** `?outcrops=0` turns them off; `outcrops.addTest(x, z, h, size, variant, yaw)` places a
+  look-dev rock.
+- **Cost** (`tools/bot/view-costs.mjs` at the hillside vista):
+  - High: 0.26 ms
+  - Low: 0.44 ms, with only LOD0 casting and a 1.5 km reach on Low (0.59 before)
+  - 670 placed before thinning; 0 GPU errors
+- **Shots:** `screenshots/meadow-m6/` (`hillside-first`: the aliased joints; `hillside-final`).
+- **Open:** no outcrop yet sits where the camera usually stands (the village and lake views). The
+  biggest steep ground is south-west of the village. Larger cliff faces (40–80 m) on the meadow's
+  rim would need their own family.

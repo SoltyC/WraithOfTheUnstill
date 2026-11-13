@@ -193,6 +193,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   let waterAt = null;
   /** (x, z, extra m) → true inside the village's plots and roads (world/villageKeepout.js). */
   let keepOut = null;
+  /** (x, z) → true on a limestone outcrop (render/outcrops.js covers). */
+  let rockAt = null;
   /** Places with no trees ([x, z, r]): built sites, paths. */
   let exclude = [];
   function meadowAt(x, z) { streamer.mqx = x; streamer.mqz = z; streamer.sampleBiome(); return streamer.bw1; }
@@ -254,6 +256,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
     if (sl > 9) return false;
     for (const e of exclude) { const ex = x - e[0], ez = z - e[1]; if (ex * ex + ez * ez < e[2] * e[2]) return false; }
     if (keepOut && keepOut(x, z, 0.6)) return false; // the village: plots (+2 m) and roads (half width + 2 m)
+    if (rockAt && rockAt(x, z)) return false;         // the meadow's limestone outcrops (render/outcrops.js): rocky clearings
     if (waterAt) { const wl = waterAt(x, z); if (wl === wl && h < wl + 0.5) return false; }
     // Species: pines above ~330 m and on rises; oaks in the low groves; birches at edges.
     const hs = h01(gx, gz, SEED + 6), alt = Math.max(0, Math.min(1, (h - 280) / 120));
@@ -485,6 +488,8 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     },
     /** Keep clear of the village's plots and roads. */
     setKeepOut(fn) { keepOut = fn; lastX = 1e9; canopyDirty = true; },
+    /** Keep off the outcrops (re-places the trees, the canopy map and the far forest). */
+    setOutcrops(fn) { rockAt = fn; lastX = 1e9; canopyDirty = true; },
     setExclusions(list) { exclude = list; lastX = 1e9; canopyDirty = true; },
     /** The water's planar reflection material for a drawn mesh (render/waterReflect.js):
      *  reflPlane (level, aerial flip), screenInfo (the reflection target's size). */

@@ -63,6 +63,7 @@ export function addRockSolidSystem(g) {
     rk.posts = rk.n;
     rocksNear(px, pz, RADIUS, rocks.exclusions, add);
     if (g.trees) g.trees.trunksNear(px, pz, RADIUS, addTrunk);
+    if (g.outcrops) g.outcrops.near(px, pz, RADIUS, addPost);   // the meadow's limestone outcrops (render/outcrops.js)
   }
 
   loop.add({ name: 'rockSolids', update: () => {

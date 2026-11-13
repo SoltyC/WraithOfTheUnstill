@@ -15,6 +15,7 @@ const set = (lever, on) => {
   if (lever === 'trees') return `g.trees.meshes.forEach(m=>m.setEnabled(${on})); g.trees.casters.forEach(([m])=>{ if(!m.name.includes('mpostor')) m.setEnabled(${on}); }); g.engine.snapshotRenderingReset(); return 1;`;
   if (lever === 'far') return `g.trees.impostors.setEnabled(${on}); g.engine.snapshotRenderingReset(); return 1;`;
   if (lever === 'groundCover') return `g.groundCover.mesh.setEnabled(${on}); g.engine.snapshotRenderingReset(); return 1;`;
+  if (lever === 'outcrops') return `g.outcrops && g.outcrops.meshes.forEach(m=>m.setEnabled(${on})); g.engine.snapshotRenderingReset(); return 1;`;
   if (lever === 'water') return `g.water && g.water.mesh && g.water.mesh.setEnabled(${on}); g.engine.snapshotRenderingReset(); return 1;`;
   return `g.setToggle(${JSON.stringify(lever)}, ${on}); return 1;`;
 };
