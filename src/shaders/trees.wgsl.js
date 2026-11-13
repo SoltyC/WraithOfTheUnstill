@@ -194,7 +194,12 @@ ${leafPass ? `
   if (sp > 4.5) { albedo = mix(albedo, lum * vec3f(1.0, 0.92, 0.78) * 0.9, 0.8 * (1.0 - uniforms.treeMat.z)); }
   // Inner crown is darker (light has crossed the leaves above): height in tree and facing — but
   // never black (light comes through and between the leaves).
-  let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, info.w);
+  // Crown depth (world/trees/generator.js crownDepth: packed round the atlas cell, 0 hull … 1 core):
+  // the core sees little sky and loses the light the outer leaves took (the crown reads as a mass
+  // with a sunlit shell and a dark heart, as the reference's trees do).
+  let crownD = smoothstep(0.3, 0.8, (info.z - floor(info.z + 0.5)) / 0.9 + 0.5);   // most leaves sit 0.4–0.7: spread them
+  let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, info.w) * mix(1.0, 0.24, pow(crownD, 1.6));
+  let coreLight = mix(1.0, 0.4, crownD * crownD);
   // Leaves: the 4-tap lookup — the cut-out edges already break the penumbra up, TAA blends it.
   let vis = shadowVisibilityFast(wp, camPos);
   let nl = dot(N, L);
@@ -203,12 +208,12 @@ ${leafPass ? `
   let sky = shIrradiance(N) * uniforms.envMisc.w * inner * mix(1.0, canopySky(canopy), 1.0 - info.w);
   // Transmitted sky and fill: a shaded leaf is still lit through from the leaves around it.
   let through = (shIrradiance(-N) * uniforms.envMisc.w * 0.35 + canopyFill(canopy, N) * 0.5) * (1.0 - thick);
-  col = albedo * (key * diff * vis * inner / PI + sky + canopyFill(canopy, N) * inner * 0.6 + through);
+  col = albedo * (key * diff * vis * coreLight * mix(1.0, inner, 0.5) / PI + sky + canopyFill(canopy, N) * inner * 0.6 + through * mix(1.0, 0.35, crownD));
   // The erg's trees stand on bright sand: light thrown up off it (the sky's, and the sun's where the
   // ground round the tree is lit) fills the crown's underside, so they never go black in a canyon's shade.
   if (sp > 4.5) { col += albedo * (shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w + key * max(L.y, 0.0) * vis / PI) * 1.4 * (0.7 - 0.3 * N.y); }
   // Light through the leaves toward the sun: the blade glows, the veins and twigs stay dark.
-  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * (1.0 - thick) * (0.6 + 0.4 * clamp(-nl, 0.0, 1.0));
+  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * (1.0 - thick) * (0.6 + 0.4 * clamp(-nl, 0.0, 1.0)) * coreLight;
   col += key * albedo * vec3f(0.95, 1.2, 0.5) * back * vis * 0.7;
   // A waxy sheen on the blades (sharp, small).
   let Hh = normalize(L + V);
@@ -349,7 +354,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var albedo = lc.rgb * (0.85 + 0.35 * fragmentInputs.vHue);
   let lum = dot(albedo, vec3f(0.3, 0.55, 0.15));
   if (sp > 4.5) { albedo = mix(albedo * 1.5, lum * vec3f(1.0, 0.92, 0.78) * 1.35, 0.8 * (1.0 - uniforms.treeMat.z)); }
-  let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, fragmentInputs.vInfo.w);
+  let inner = mix(0.68, 1.0, clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(0.82, 1.0, fragmentInputs.vInfo.w) * mix(1.0, 0.24, pow(smoothstep(0.3, 0.8, (fragmentInputs.vInfo.z - floor(fragmentInputs.vInfo.z + 0.5)) / 0.9 + 0.5), 1.6));
   let diff = clamp((dot(N, L) + 0.35) / 1.35, 0.0, 1.0);
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * 0.5;
   var col = albedo * (key * (diff * inner / PI + back * vec3f(0.95, 1.2, 0.5) * 0.7) * vis + shIrradiance(N) * uniforms.envMisc.w * inner * 1.2);` : `

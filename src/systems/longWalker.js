@@ -28,11 +28,12 @@ import { WALKER_SEAT, CAMP_WELL, CAMP_GATE_YAW, CIRCUIT, circuitTarget, trackPri
 import { hasSpawnRoom } from '../game/shaped/spawnRoom.js';
 import { worldState } from '../game/worldState.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
+import { graphics } from '../core/graphics.js';
 
 export const FLAG = { HEAPED: 'dunes:court-heaped', WOKE: 'dunes:walker-woke', BOARDED: 'dunes:walker-boarded', RELEASED: 'dunes:walker-released' };
 
 export const walkerSys = {
-  near: 300, far: 3200,          // m: the near (finer) view within, drawn within, culled beyond
+  near: 90, far: 3200,           // m: the near view (sculpted LOD0) within, the far one (LOD1) out to `far`, culled beyond
   padR: 4,                       // m: the ring round a landing spot — anything changed within it trips the foot (play: 2.8 was too tight)
   crushPad: 2.8,                 // m: the foot's own pad (what it lands on)
   ridgeH: 0.35, pitH: 0.35,      // m of Stone's mass within the ring that trips it
@@ -61,12 +62,22 @@ export async function addLongWalkerBody(g) {
   controller.deck = deck;
   if (g.wraithGround) g.wraithGround.deck = deck;
   const { createShapedView } = await import('../render/shapedView.js');
+  // Sculpted pieces (docs/hifi-models.md): the hide, sand, sandstone, ruin plates and thorns are
+  // authored meshes with baked detail; near views take LOD0 (LOD1 on Low), the far view LOD1.
+  // ?pieces=0 shows the old procedural clods (comparison shots).
+  const low = graphics.preset === 'low';
+  let set = null;
+  if (!g.qs || g.qs.get('pieces') !== '0') {
+    try { set = await (await import('../render/shapedPieces.js')).loadPieces(scene, 'walker-pieces', { atlas: low || graphics.preset === 'medium' ? '-2k' : '' }); }
+    catch (e) { console.warn('walker pieces: falling back to procedural clods', e); }
+  }
+  const pieces = (lod) => (set ? { set, kinds: walker.kinds, seeds: walker.seeds, lod, matLib: g.matLib } : null);
   // Near and far views (as the Bellwether's): near, the finer clod gives its slabs flat faces and chipped edges.
-  const view = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalker', subdivisions: 3 });
+  const view = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalker', subdivisions: 3, pieces: pieces(low ? 1 : 0) });
   bindShadows(view.material, shadows);
   shadows.addCaster(view.mesh, view.makeShadowMaterial, 1);
   view.freeze();
-  const far = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalkerFar', subdivisions: 1 });
+  const far = createShapedView(scene, atmosphere, walker.chunks, { name: 'longWalkerFar', subdivisions: 1, pieces: low ? null : pieces(1) });
   bindShadows(far.material, shadows);
   shadows.addCaster(far.mesh, far.makeShadowMaterial, 2, 2);
   far.freeze();

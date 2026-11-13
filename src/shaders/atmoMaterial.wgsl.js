@@ -88,8 +88,24 @@ fn atmoTransmittance(r: f32, mu: f32) -> vec3f {
   return textureSampleLevel(transmittanceLut, transmittanceLutSampler, transmittanceUv(r, mu), 0.0).rgb;
 }
 
+// Art direction (Elden Ring's sky and fog colour controls, docs/aesthetic.md): a tint by the
+// direction's bearing to the sun (warm toward it, cool away), strongest near the horizon, kept at
+// luminance 1 so exposure holds. 1 when the art layer is off.
+fn atmoArtTint(dir: vec3f) -> vec3f {
+  let a = atmoParams.art0;
+  if (a.w <= 0.0) { return vec3f(1.0); }
+  let dh = normalize(vec2f(dir.x, dir.z) + vec2f(1e-6, 0.0));
+  let sd = normalize(vec2f(atmoParams.sunDir.x, atmoParams.sunDir.z) + vec2f(1e-6, 0.0));
+  let t = smoothstep(-0.6, 0.9, dot(sd, dh));
+  let tint = mix(atmoParams.art1.rgb, a.rgb, t);
+  let hz = 1.0 - smoothstep(0.05, 0.75, abs(dir.y));
+  return mix(vec3f(1.0), tint, a.w * (0.4 + 0.6 * hz));
+}
 // Sky radiance in a world direction, from both sky-view LUTs (sun and moon).
 fn atmoSky(dir: vec3f) -> vec3f {
+  return atmoSkyPhys(dir) * atmoArtTint(dir);
+}
+fn atmoSkyPhys(dir: vec3f) -> vec3f {
   let r = atmoCamR();
   let dh = normalize(vec2f(dir.x, dir.z) + vec2f(1e-6, 0.0));
   let sd = normalize(vec2f(atmoParams.sunDir.x, atmoParams.sunDir.z) + vec2f(1e-6, 0.0));
@@ -126,6 +142,20 @@ fn atmoAerial(uv: vec2f, distKm: f32) -> vec4f {
   if (slice < 0.0) {
     let w = clamp(apKmToSlice(distKm), 0.0, 1.0);
     ap = vec4f(ap.rgb * w, mix(1.0, ap.a, w));
+  }
+  // Art direction: the near air clear (contrast where play happens), the far haze coloured by its
+  // bearing to the sun and leaning to the region's key colour.
+  let art = atmoParams.art0.w;
+  if (art > 0.0) {
+    let ndc = vec4f(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, 0.5, 1.0);
+    let wp = atmoParams.invViewProj * ndc;
+    let dir = normalize(wp.xyz / wp.w - atmoParams.camPos.xyz);
+    let near = smoothstep(0.0, max(atmoParams.art1.w, 1e-3), distKm);
+    let wn = mix(1.0, near, art);
+    var rgb = ap.rgb * wn * atmoArtTint(dir);
+    let l = dot(rgb, vec3f(0.2126, 0.7152, 0.0722));
+    rgb = mix(rgb, atmoParams.art2.rgb * l, atmoParams.art2.w * art);
+    ap = vec4f(rgb, mix(1.0, ap.a, wn));
   }
   return ap;
 }

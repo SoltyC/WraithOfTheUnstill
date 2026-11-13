@@ -11,7 +11,7 @@ fs.rmSync(log, { force: true });
 const { browser, close } = await connectWinChrome();
 const ctx = await browser.newContext({ viewport: { width: 2560, height: 1440 } });
 const page = await ctx.newPage();
-await page.goto(`http://localhost:4173/?shots=${prefix}&capture=1&res=2560x1440&dir=${dir}&title=0`);
+await page.goto(`http://localhost:4173/?shots=${prefix}&capture=1&res=2560x1440&dir=${dir}&title=0${process.argv[4] ? "&" + process.argv[4] : ""}`);
 const t0 = Date.now();
 for (;;) {
   await new Promise((r) => setTimeout(r, 5000));

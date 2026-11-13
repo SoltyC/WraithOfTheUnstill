@@ -234,7 +234,7 @@ export function createWalker(ctx) {
   }
 
   const self = {
-    chunks, count: N, state: WK.BURIED, mode: MODE.CIRCUIT, t: 0, ev: 0, time: 0,
+    chunks, count: N, kinds: ck, seeds: cseed, state: WK.BURIED, mode: MODE.CIRCUIT, t: 0, ev: 0, time: 0,
     x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0, speed: 0, targetYaw: 0,
     /** World transform of the deck frame: T (x, y, z), R columns (Ex, Ey, Ez); last frame's too (deck carry). */
     R, Rp, Tp, dt: 0,

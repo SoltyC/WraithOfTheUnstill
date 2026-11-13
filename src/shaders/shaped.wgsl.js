@@ -9,11 +9,13 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const shapedVertexWGSL = /* wgsl */ `
-attribute position: vec3f;          // unit icosphere vertex
-attribute uv: vec2f;                // x = chunk record index
-uniform viewProjection: mat4x4f;
+function shapedVertex(piece) {
+  return /* wgsl */ `
+attribute position: vec3f;          // unit icosphere vertex (or a sculpted piece's)
+attribute uv: vec2f;                // x = chunk record index, y = 1 on a sculpted piece
+${piece ? PIECE_VERTEX_DECL : ''}uniform viewProjection: mat4x4f;
 var<storage, read> chunkData: array<vec4f>;
 varying vWorldPos: vec3f;
 varying vLocal: vec3f;
@@ -29,6 +31,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let a = chunkData[ci * 4u]; let b = chunkData[ci * 4u + 1u]; let c = chunkData[ci * 4u + 2u]; let d = chunkData[ci * 4u + 3u];
   let seed = d.x; let kind = d.y;
   var v = vertexInputs.position;
+  ${piece ? 'if (vertexInputs.uv.y < 0.5) {' : ''}
   // An irregular clod: each vertex pushed in or out by a hash of its direction and the seed.
   v *= 0.78 + 0.36 * hs(v * 3.1 + seed);
   if (kind > 0.5 && kind < 1.5) {
@@ -59,6 +62,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
     let t = 1.0 - 0.8 * max(-v.y, 0.0);
     v = vec3f(v.x * t, v.y, v.z * t);
   }
+  ${piece ? '}' : ''}
   let local = v * vec3f(a.w, b.w, c.w) * 0.5;
   let f = b.xyz; let u = c.xyz; let r = cross(u, f);
   // A small per-chunk twist so clusters do not line up.
@@ -73,11 +77,36 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vKind = kind;
   vertexOutputs.vGlow = d.z;
   vertexOutputs.vSeed = seed;
+  ${piece ? PIECE_VERTEX_OUT : ''}
 }
 `;
+}
+export const shapedVertexWGSL = shapedVertex(false);
 
-export const shapedFragmentWGSL = /* wgsl */ `
+const PIECE_VERTEX_DECL = /* wgsl */ `
+attribute uv2: vec2f;               // the piece's place in the baked atlas
+varying vAtlas: vec2f;
+varying vPiece: f32;
+varying vPm: vec3f;                 // chunk-local metres (before the twist): the scans' projection
+varying vInvS: vec3f;               // 1 / half-size: object normal → chunk frame
+varying vB1: vec3f;                 // the chunk's rotation (twist included), chunk frame → world
+varying vB2: vec3f;
+varying vB3: vec3f;
+`;
+const PIECE_VERTEX_OUT = /* wgsl */ `
+  vertexOutputs.vAtlas = vertexInputs.uv2;
+  vertexOutputs.vPiece = vertexInputs.uv.y;
+  vertexOutputs.vPm = local;
+  vertexOutputs.vInvS = 1.0 / max(vec3f(a.w, b.w, c.w), vec3f(1e-3));
+  vertexOutputs.vB1 = r * ct + f * st;
+  vertexOutputs.vB2 = u;
+  vertexOutputs.vB3 = f * ct - r * st;
+`;
+
+function shapedFragment(piece) {
+  return /* wgsl */ `
 ${ENV_DECL}
+${piece ? PIECE_FRAGMENT_DECL : ''}
 varying vWorldPos: vec3f;
 varying vLocal: vec3f;
 varying vKind: f32;
@@ -86,6 +115,7 @@ varying vSeed: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${piece ? MATERIALS_WGSL + PIECE_FRAGMENT_FN : ''}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -95,6 +125,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Flat facets.
   var N = normalize(cross(dpdx(wp), dpdy(wp)));
   if (dot(N, V) < 0.0) { N = -N; }
+  ${piece ? PIECE_NORMAL : 'let pieceAO = 1.0;'}
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let vis = shadowVisibility(wp, N, camPos, fragmentInputs.position.xy);
@@ -184,8 +215,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
       // Root: thin, dark, ropy.
       albedo = vec3f(0.11, 0.075, 0.045) * (0.7 + 0.6 * (0.5 + 0.5 * sin(lv.y * 30.0 + sd)));
     }
+    ${piece ? 'if (isPiece) { albedo = matRetint(pieceScan, pieceLayer, albedo, 0.45); }' : ''}
     let diff = clamp((nl + 0.25) / 1.25, 0.0, 1.0);
-    col = albedo * (key * (diff * vis + trans * pow(1.0 - nv, 2.0)) / PI + sky * under);
+    col = albedo * (key * (diff * vis * mix(1.0, pieceAO, 0.35) + trans * pow(1.0 - nv, 2.0)) / PI + sky * under * pieceAO);
     if(kind==15 || kind==16){
       // Dense amber glass: absorption through thickness, atmospheric reflection and sharp facets.
       // This is an opaque solid in the shared shadow-casting path; no scene-copy refraction pass.
@@ -274,3 +306,64 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)
 }
 `;
+}
+export const shapedFragmentWGSL = shapedFragment(false);
+
+
+// Sculpted pieces: the baked atlas, and the scans laid over it in the chunk's own frame (they ride
+// with the body: no swimming). Kind → scan layer and its scale (repeats per metre).
+const PIECE_FRAGMENT_DECL = /* wgsl */ `
+varying vAtlas: vec2f;
+varying vPiece: f32;
+varying vPm: vec3f;
+varying vInvS: vec3f;
+varying vB1: vec3f;
+varying vB2: vec3f;
+varying vB3: vec3f;
+var pieceAtlas: texture_2d<f32>;
+var pieceAtlasSampler: sampler;
+${MATERIALS_DECL}
+`;
+const PIECE_FRAGMENT_FN = /* wgsl */ `
+fn pieceLayerOf(k: i32) -> i32 {
+  if (k == 17) { return MAT_CLIFF_STRATA; }
+  if (k == 12 || k == 14) { return MAT_SANDSTONE_SMOOTH; }
+  if (k == 13) { return MAT_STONE_PALE; }
+  return MAT_SAND_FINE;
+}
+fn pieceScaleOf(k: i32) -> f32 {
+  if (k == 17) { return 0.22; }
+  if (k == 11) { return 0.5; }
+  return 0.45;
+}
+fn octDecode(e: vec2f) -> vec3f {
+  var n = vec3f(e.x, e.y, 1.0 - abs(e.x) - abs(e.y));
+  let t = max(-n.z, 0.0);
+  n.x += select(t, -t, n.x >= 0.0);
+  n.y += select(t, -t, n.y >= 0.0);
+  return normalize(n);
+}
+`;
+const PIECE_NORMAL = /* wgsl */ `
+  // A sculpted piece: the sculpt's normal and occlusion from the atlas, the scan's detail over it.
+  let pt = textureSample(pieceAtlas, pieceAtlasSampler, fragmentInputs.vAtlas);
+  let pdx = dpdx(fragmentInputs.vPm); let pdy = dpdy(fragmentInputs.vPm);
+  let isPiece = fragmentInputs.vPiece > 0.5;
+  var pieceAO = 1.0;
+  var pieceScan: MatS;
+  var pieceLayer = 0;
+  if (isPiece) {
+    let pk = i32(floor(fragmentInputs.vKind + 0.02));
+    pieceLayer = pieceLayerOf(pk);
+    let nObj = octDecode(pt.xy * 2.0 - 1.0);
+    let nc = normalize(nObj * fragmentInputs.vInvS);
+    pieceScan = matBiplanarG(pieceLayer, fragmentInputs.vPm, nc, pieceScaleOf(pk), pdx, pdy);
+    let ns = normalize(mix(nc, pieceScan.N, 0.7));
+    N = normalize(fragmentInputs.vB1 * ns.x + fragmentInputs.vB2 * ns.y + fragmentInputs.vB3 * ns.z);
+    pieceAO = pt.z * mix(1.0, pieceScan.ao, 0.6);
+  }
+`;
+
+/** The Shaped shader for a view with sculpted pieces (render/shapedPieces.js). */
+export const shapedPieceVertexWGSL = shapedVertex(true);
+export const shapedPieceFragmentWGSL = shapedFragment(true);

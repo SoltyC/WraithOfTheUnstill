@@ -53,7 +53,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   const skyViewMoon = tex(SKYVIEW_W, SKYVIEW_H, 'atmo-skyview-moon');
   const aerialLut = tex(AP_RES * AP_SLICES, AP_RES, 'atmo-aerial');
 
-  const paramsData = new Float32Array(44);
+  const paramsData = new Float32Array(56);
   const atmoParams = new StorageBuffer(engine, paramsData.byteLength, undefined, 'atmo-params');
   const atmoLight = new StorageBuffer(engine, 13 * 16, undefined, 'atmo-light'); // key, sky up/side, horizon+exposure, 9 SH
   // Frame meter, written by the post chain's metering pass (post/meter.js); zero = no meter yet.
@@ -119,6 +119,8 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
     ready: false,
     /** Set to jump exposure to its target next frame (teleports, photo spots). */
     snapExposure: true,
+    /** Art direction (render/artDirection.js writes it): art0, art1, art2 of AtmoParams. */
+    art: new Float32Array(12),
     update() {
       const p = paramsData;
       // invViewProj of the camera as it will render this frame (force-refresh the cached
@@ -148,6 +150,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
       p[36] = villageBox.x; p[37] = villageBox.y; p[38] = villageBox.z; p[39] = this.eyeOpen;
       p[32] = this.cover; p[33] = SUN_ILLUMINANCE; p[34] = MOON_ILLUMINANCE; p[35] = this.snow;
       const haze = tunables.v.fogDensity;
+      for (let i = 0; i < 12; i++) p[44 + i] = this.art[i];
       p[28] = haze; p[29] = NIGHT_FLOOR * env.night; p[30] = clock.realDt; p[31] = this.snapExposure || this.alwaysSnap ? 1 : 0;
       this.snapExposure = false;
       atmoParams.update(p);

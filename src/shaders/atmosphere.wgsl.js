@@ -32,6 +32,10 @@ struct AtmoParams {
                         //     the cloud deck), z = undimmed moon illuminance, w = snowfall 0..1
   village: vec4f,       // village ground mask box: xy = world origin (m), z = 1 / extent (1/m), 0 = none, w = deep water (exposure × w, at least 1: the Sounding, U2)
   storm: vec4f,         // x = thunderstorm 0..1 (a darker sky and exposure), y = lightning key illuminance (added to the key colour), z = low desert dust density, w = local sandstorm
+  // Art direction (render/artDirection.js; docs/aesthetic.md): painterly colour over the physical sky.
+  art0: vec4f,          // rgb = tint toward the sun (luminance 1), w = strength 0..1 (0: off)
+  art1: vec4f,          // rgb = tint away from the sun, w = clear air near the camera (km)
+  art2: vec4f,          // rgb = the region's key colour (luminance 1), w = how far the haze leans to it
 };
 `;
 

@@ -126,21 +126,21 @@ export function drawLeafAtlases() {
     } else {
       const kind = row === 1 ? 'oak' : 'birch';
       const hueBase = kind === 'oak' ? 96 : 84;
-      const tips = kind === 'oak' ? 6 : 8;
+      const tips = kind === 'oak' ? 9 : 8;   // oak: many twigs of small leaves (the 2 m cards made 25–50 cm leaves read as brush strokes)
       for (let t = 0; t < tips; t++) {
-        const ang = -Math.PI / 2 + (t - (tips - 1) / 2) * (kind === 'oak' ? 0.45 : 0.32) + (R() - 0.5) * 0.2;
+        const ang = -Math.PI / 2 + (t - (tips - 1) / 2) * (kind === 'oak' ? 0.3 : 0.32) + (R() - 0.5) * 0.2;
         const len = cell * (0.5 + R() * 0.3), ex = bx + Math.cos(ang) * len, ey = by + Math.sin(ang) * len;
         const mx = (bx + ex) / 2 + (R() - 0.5) * 50, my = (by + ey) / 2 + (R() - 0.5) * 50;
         const tw = kind === 'oak' ? 9 : 6;
         twigPath(c, bx, by, ex, ey, mx, my); c.strokeStyle = hsl(26, 0.28, 0.19); c.lineWidth = tw; c.lineCap = 'round'; c.stroke();
         twigPath(h, bx, by, ex, ey, mx, my); h.strokeStyle = grey(0.85); h.lineWidth = tw; h.stroke();
-        const nL = kind === 'oak' ? 11 : 17;
+        const nL = kind === 'oak' ? 22 : 17;
         for (let k = 0; k < nL; k++) {
           const f = 0.2 + 0.8 * (k / nL);
           // On the curved twig (quadratic at f).
           const px = (1 - f) * (1 - f) * bx + 2 * (1 - f) * f * mx + f * f * ex, py = (1 - f) * (1 - f) * by + 2 * (1 - f) * f * my + f * f * ey;
           const la = ang + (k % 2 ? 1 : -1) * (0.6 + R() * 0.5);
-          const ll = cell * (kind === 'oak' ? 0.16 + 0.07 * R() : 0.085 + 0.035 * R());
+          const ll = cell * (kind === 'oak' ? 0.075 + 0.035 * R() : 0.085 + 0.035 * R());
           const age = R() < 0.06 ? 0.8 + 0.2 * R() : R() * 0.3;
           leaf(c, h, R, px, py, la, ll, ll * (kind === 'oak' ? 0.42 : 0.36), kind, hueBase + (R() - 0.5) * 12, age);
         }

@@ -1,0 +1,2 @@
+2026-11-13T11:12:04.770Z 1/1 rv-m04-horizon-dusk: saved screenshots/meadow-baseline/rv-m04-horizon-dusk.png
+2026-11-13T11:12:04.779Z Shots done: 1/1 spot(s) (rv-m04-horizon-dusk*) → screenshots/meadow-baseline/.

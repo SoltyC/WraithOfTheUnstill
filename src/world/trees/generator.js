@@ -226,6 +226,7 @@ export function growTree(speciesId, seed, lod = 0) {
   if (sp.whorl) for (let k = 0; k < 4; k++) cluster(add(tNodes[tSegs].p, [0, -k * 0.6, 0]), [0, 1, 0], rr(R, sp.leafSize) * 0.8, k * 31);
   return finish();
   function finish() {
+    crownDepth(out);
     return {
       positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv),
       info: new Float32Array(out.info), indices: new Uint32Array(out.idx), height: H, trunkR: r0,
@@ -303,4 +304,40 @@ export function growLog(seed, lod = 0) {
     positions: new Float32Array(out.pos), normals: new Float32Array(out.nrm), uvs: new Float32Array(out.uv),
     info: new Float32Array(out.info), indices: new Uint32Array(out.idx), height: stump ? L : r0 * 2, trunkR: r0, length: stump ? 0 : L,
   };
+}
+
+/**
+ * Crown depth (docs/meadow-overhaul.md M1): how deep each leaf vertex sits in its crown, 0 on the
+ * hull … 1 at the core, against the crown's own hull (the farthest leaf from the crown's centre in
+ * each of 8×16 direction bins, so a lopsided or flat-topped crown keeps its shape). Packed into
+ * info.z as a fraction around the atlas cell (cell + (depth − 0.5) × 0.9: leafUv rounds it off),
+ * so no attribute is added. The leaf shader darkens the core: sky occlusion and light lost.
+ */
+function crownDepth(out) {
+  const P = out.pos, I = out.info, n = P.length / 3;
+  let cx = 0, cy = 0, cz = 0, m = 0;
+  for (let i = 0; i < n; i++) if (I[i * 4] === KIND.LEAF) { cx += P[i * 3]; cy += P[i * 3 + 1]; cz += P[i * 3 + 2]; m++; }
+  if (m < 8) return;
+  cx /= m; cy /= m; cz /= m;
+  // Vertical squash: crowns are wider than tall in their bins' eyes (keeps the top's bins honest).
+  const BT = 8, BP = 16, hull = new Float64Array(BT * BP);
+  const bin = (dx, dy, dz) => {
+    const r = Math.hypot(dx, dy, dz) || 1e-6;
+    const t = Math.min(BT - 1, Math.floor((Math.acos(Math.max(-1, Math.min(1, dy / r))) / Math.PI) * BT));
+    const ph = Math.min(BP - 1, Math.floor(((Math.atan2(dz, dx) + Math.PI) / (2 * Math.PI)) * BP));
+    return t * BP + ph;
+  };
+  for (let i = 0; i < n; i++) if (I[i * 4] === KIND.LEAF) {
+    const dx = P[i * 3] - cx, dy = P[i * 3 + 1] - cy, dz = P[i * 3 + 2] - cz, b = bin(dx, dy, dz);
+    hull[b] = Math.max(hull[b], Math.hypot(dx, dy, dz));
+  }
+  // Empty bins borrow the mean (a gap in the crown is not a hole to the core).
+  let mean = 0, k = 0; for (const h of hull) if (h > 0) { mean += h; k++; } mean /= Math.max(k, 1);
+  for (let b = 0; b < hull.length; b++) if (!hull[b]) hull[b] = mean;
+  for (let i = 0; i < n; i++) if (I[i * 4] === KIND.LEAF) {
+    const dx = P[i * 3] - cx, dy = P[i * 3 + 1] - cy, dz = P[i * 3 + 2] - cz;
+    const e = Math.hypot(dx, dy, dz) / hull[bin(dx, dy, dz)];
+    const d = Math.max(0, Math.min(1, 1 - e));
+    I[i * 4 + 2] = Math.round(I[i * 4 + 2]) + (Math.sqrt(d) - 0.5) * 0.9;
+  }
 }

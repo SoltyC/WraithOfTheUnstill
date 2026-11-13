@@ -202,6 +202,10 @@ export async function addEnvironmentSystems(g) {
   }
   // Grades (post/grades.js): the LUT is rebuilt only when the blended grade moves.
   const { blendGrade } = await import('../post/grades.js');
+  // Art direction over the atmosphere (render/artDirection.js): blended like the grades.
+  const { blendArt } = await import('../render/artDirection.js');
+  const artOn = !g.qs || g.qs.get('art') !== '0';
+  const artW = { frost: 1, meadow: 0, dunes: 0 }, artR = { frost: 0, meadow: 0, dunes: 0 };
   let lastGradeR=-1,lastGradeM=-1,lastGradeMR=-1,lastGradeD=-1,lastGradeDR=-1,lastGradeS=-1;
   // The land under the camera (biome weights, eased): which biome the player is in, and how much of
   // each one's restoration (and grade) applies here — borders blend.
@@ -229,6 +233,8 @@ export async function addEnvironmentSystems(g) {
     const dW=bwD/Math.max(bwF+bwM+bwD,1e-3);
     restoration.value = (rFrost + (rMeadow - rFrost) * mW)*(1-dW)+rDunes*dW;
     restoration.frost = rFrost; restoration.meadow = rMeadow; restoration.dunes=rDunes;
+    artW.frost = bwF; artW.meadow = bwM; artW.dunes = bwD; artR.frost = rFrost; artR.meadow = rMeadow; artR.dunes = rDunes;
+    blendArt(atmosphere.art, artW, artR, env.env.night || 0, artOn);
     post.heat.hour=params.v.timeOfDay;post.heat.time=clock.simTime;post.heat.weight=bwD;
     post.heat.restored=rDunes;post.heat.wet=weather.wet;post.heat.cover=weather.cover+(1-weather.cover)*atmosphere.sandStorm;
     g.sandDust.duneWeight=bwD;

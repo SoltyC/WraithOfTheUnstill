@@ -1,0 +1,2 @@
+2026-11-13T11:04:33.181Z 1/1 p8-forest-shafts: saved screenshots/art-before/p8-forest-shafts.png
+2026-11-13T11:04:33.183Z Shots done: 1/1 spot(s) (p8-forest-shafts*) → screenshots/art-before/.

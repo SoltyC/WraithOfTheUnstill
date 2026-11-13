@@ -1,0 +1,2 @@
+2026-11-13T11:27:01.043Z 1/1 rv-m11-forest-edge: saved screenshots/meadow-m1c/rv-m11-forest-edge.png
+2026-11-13T11:27:01.046Z Shots done: 1/1 spot(s) (rv-m11-forest-edge*) → screenshots/meadow-m1c/.
