@@ -129,3 +129,25 @@ meadow shot) at the reference's framing.
 **A pre-existing cost to fix:** this meadow vista already runs ~18.6 ms at 0.8 scale on High before
 any of this branch's grass work, so dynamic resolution sits at its 0.6 floor. That needs a frame
 profile (grass rings, near trees, shadows) before more density goes in.
+
+**Meadow perf profile (2026-11-13)** (`tools/bot/view-costs.mjs`: each lever's cost from the open-meadow vista
+(-250, -450) facing 215°, 3060, 0.8 scale fixed). Base 18.6 ms:
+
+| Lever | Cost |
+|---|---|
+| near trees | **4.6** (LOD1 alone 4.55) |
+| shadows | 2.5 |
+| grass | 1.8 |
+| rocks | 0.9 |
+| far forest | 0.6 |
+| each post effect | ≤ 0.1 |
+
+About 8 ms is terrain, sky and the base passes.
+
+- **Cause:** the geometry trees between 55 and 365 m. About 1,650 of them, drawn in three passes,
+  whether on screen or not (thin instances are not frustum-culled per tree).
+- **Fix:** the impostors take over at `TREE_LEVELS.out`: 170 m on High, 150 on Medium, 130 on Low
+  (was 365 × radius).
+- **After, High:** base **14.8 ms** (−3.8). Near trees 0.64, far forest 1.24.
+- **After, Low (0.8 forced):** base 10.5 → 10.1; near trees 0.51 → 0.05.
+- **The handover at 170 m doesn't show** in the lake views (`screenshots/meadow-m2/*-handover170.png`).

@@ -56,11 +56,13 @@ export const GRASS_LEVELS = {
 };
 /** Trees: instance budgets per variant (near, far, the shadow-only middle) and the placement radius scale. */
 export const TREE_LEVELS = {
-  low: { near: 50, far: 110, mid: 60, radius: 0.6, imp: { r: 1100, n: 6, px: 80, variants: 4, max: 32768 } },
-  medium: { near: 70, far: 180, mid: 110, radius: 0.8, imp: { r: 1800, n: 8, px: 96, variants: 8, max: 81920 } },
-  high: { near: 90, far: 260, mid: 160, radius: 1, imp: { r: 2600, n: 8, px: 128, variants: 8, max: 163840 } },
+  low: { near: 50, far: 110, mid: 60, radius: 0.6, out: 130, imp: { r: 1100, n: 6, px: 80, variants: 4, max: 32768 } },
+  medium: { near: 70, far: 180, mid: 110, radius: 0.8, out: 150, imp: { r: 1800, n: 8, px: 96, variants: 8, max: 81920 } },
+  high: { near: 90, far: 260, mid: 160, radius: 1, out: 170, imp: { r: 2600, n: 8, px: 128, variants: 8, max: 163840 } },
 };
-/** imp: the far forest (render/impostors.js): reach (m), views per side, pixels per view, variants baked per species, instance cap. */
+/** out: where the geometry trees end and the impostors take over (m; was 365 × radius: the far geometry set
+ *  between 55 m and 365 m cost 4.6 ms on High in an open meadow view, the impostors beyond 0.6 ms for 22k trees).
+ *  imp: the far forest (render/impostors.js): reach (m), views per side, pixels per view, variants baked per species, instance cap. */
 
 function read() {
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); return s && typeof s === 'object' ? s : null; } catch { return null; }

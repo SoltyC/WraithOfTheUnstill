@@ -17,7 +17,7 @@ import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
  *  Fade kinds (world2.y): 1 plain, 2 detail in, 3 detail out, 4 edge in, 5 edge out. */
 import { boot } from '../core/graphics.js';
 /** (Scaled by the graphics preset's tree distance: core/graphics.js, read at boot; high 55 and 365 m.) */
-export const LOD_NEAR = Math.round(55 * Math.min(1, 0.4 + 0.6 * boot.trees.radius)), LOD_OUT = Math.round(365 * boot.trees.radius), FADE = 0.6;
+export const LOD_NEAR = Math.round(55 * Math.min(1, 0.4 + 0.6 * boot.trees.radius)), LOD_OUT = boot.trees.out ?? Math.round(365 * boot.trees.radius), FADE = 0.6;
 
 const VERTEX = /* wgsl */ `
 attribute position: vec3f;
