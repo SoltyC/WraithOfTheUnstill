@@ -721,3 +721,9 @@ Prototype on codex/desert-storm, not integrated/enabled. One12-float CPU/GPU fro
 - **Generated clips keep their body; the hands go to the work by IK** (the dough, the wheel's bars), carrying the clip's own hand rhythm. The clip itself is unchanged, so the gate's judgement stands.
 - **Crowds are our own cloth, baked after load in a worker** (not shipped files): the five motions are about 23 MB of half floats on the GPU (472 frames × 3,018 particles × 16 bytes) and nothing to download. Played back interpolated between 15 fps frames in the vertex shader.
 - **The release's rough cut uses caption cards for every piece not built** (Sefa, the Listener, the wave, Morrow, the robes): the order and timing are judged on the real rooms and people now, and each card is replaced as its piece arrives.
+
+## 2026-11-14 — Imported meshes allowed; the aim moves toward realism
+
+- **Authored and imported meshes are allowed** (user, 2026-11-14): our Blender sculpts and kits, and CC0 scanned models (Poly Haven, Smithsonian Open Access, other CC0 or public-domain scan collections). This supersedes "no imported meshes" (Pre-production, and "Buildings: procedural Shaper stone"). The Shaper stone stays where it is until a kit replaces it piece by piece. Every third-party mesh goes in ASSETS.md with its licence.
+- **Still out:** AI-generated character meshes. MPFB 2 (CC0 output) human bases are allowed for hands and bodies under cloth, driven by our own procedural motion (user, 2026-11-14); other rigged human assets stay out.
+- **Art direction:** from "stylized realism, not photoreal" to as close to real as the browser allows on High/Ultra, measured against reference shots (docs/realism-plan.md). Low keeps its 60 fps floor.

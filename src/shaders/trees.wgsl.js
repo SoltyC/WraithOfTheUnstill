@@ -10,6 +10,7 @@ import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 
@@ -147,6 +148,7 @@ ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 ${leafPass ? LEAF_UV : MATERIALS_WGSL}
 ${DISSOLVE}
 
@@ -222,9 +224,11 @@ ${leafPass ? `
   // Light through the leaves toward the sun: the blade glows, the veins and twigs stay dark.
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * (1.0 - thick) * (0.6 + 0.4 * clamp(-nl, 0.0, 1.0)) * coreLight;
   col += key * albedo * vec3f(0.95, 1.2, 0.5) * back * vis * 0.7;
-  // A waxy sheen on the blades (sharp, small).
-  let Hh = normalize(L + V);
-  col += key * pow(max(dot(Nleaf, Hh), 0.0), 60.0) * 0.08 * vis * clamp(nl, 0.0, 1.0);
+  // The waxy cuticle (shared BRDF, realism plan R1): the sun's highlight on each leaf's own surface,
+  // and the sky's sheen, held down inside the crown (inner) where the sky is hidden.
+  let lRough = mix(0.5, 0.3, uniforms.wetParams.x);
+  col += key * vis * coreLight * brdfSunSpec(Nleaf, V, L, lRough, vec3f(0.04)) * aggregateMask(V, L, normalize(fragmentInputs.vNormal));
+  col += skySpec(Nleaf, V, lRough, vec3f(0.04), inner * inner) * uniforms.envMisc.w * mix(1.0, canopySky(canopy), 1.0 - info.w) * aggregateOcc(Nleaf, V, normalize(fragmentInputs.vNormal));
   col += spellLit(wp, N, albedo, 0.4, ex);` : `
   let bk = matUv(i32(uniforms.treeMat.x + 0.5), fragmentInputs.vUv * vec2f(1.2, 0.6), N, wp);
   // Bark: the scan, darkened toward the root, mossy on the shaded, lower side.
@@ -241,6 +245,8 @@ ${leafPass ? `
   let canopy = canopyAt(wp.xz);
   let sky = shIrradiance(N) * uniforms.envMisc.w * mix(1.0, bk.ao, 0.8) * mix(1.0, canopySky(canopy), 1.0 - info.w);
   col = albedo * (key * nl * vis / PI + sky + canopyFill(canopy, N) * mix(1.0, bk.ao, 0.8));
+  let bRough = mix(clamp(bk.rough, 0.55, 1.0), 0.35, uniforms.wetParams.x);
+  col += key * vis * brdfSunSpec(N, V, L, bRough, vec3f(0.04)) + skySpec(N, V, bRough, vec3f(0.04), bk.ao) * uniforms.envMisc.w * mix(1.0, canopySky(canopy), 1.0 - info.w);
   col += spellLit(wp, N, albedo, 0.0, ex);`}
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   fragmentOutputs.color = vec4f(displayTransform(col, ex), 0.0);
@@ -342,6 +348,7 @@ varying vFade: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 ${leaf ? LEAF_UV : ''}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {

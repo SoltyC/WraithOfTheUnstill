@@ -25,6 +25,7 @@ import { boot } from '../core/graphics.js';
 import { SNOW_WGSL } from './snow.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { MEADOW_WGSL } from './meadow.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 import { SAND_WGSL } from './sand.wgsl.js';
 import { SANDSTONE_WGSL } from './sandstone.wgsl.js';
 import { BORDER_WGSL } from './common.wgsl.js';
@@ -397,6 +398,7 @@ ${STATE_COMPACTION_WGSL}
 ${MATERIALS_DECL}
 ${MATERIALS_WGSL}
 ${SNOW_WGSL}
+${BRDF_WGSL()}
 ${MEADOW_WGSL}
 ${SAND_WGSL}
 ${SANDSTONE_WGSL}

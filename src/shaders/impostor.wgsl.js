@@ -9,6 +9,7 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 
 /** Shared by the bake and the draw: the hemi-octahedral map and each baked view's frame. */
 export const IMP_COMMON_WGSL = /* wgsl */ `
@@ -111,6 +112,7 @@ varying vR: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 
 fn ign(p: vec2f) -> f32 { return fract(52.9829189 * fract(dot(p, vec2f(0.06711056, 0.00583715)))); }
 
@@ -158,6 +160,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Light through the crown toward the sun.
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 2.5) * (0.6 + 0.4 * clamp(-nl, 0.0, 1.0));
   col += key * albedo * vec3f(0.95, 1.2, 0.5) * back * vis * 0.45 * ao;
+  // The leaves' sheen, averaged over a crown (rougher than one leaf; shared BRDF, realism plan R1).
+  col += key * vis * brdfSunSpec(N, V, L, 0.62, vec3f(0.04)) * ao * aggregateMask(V, L, N) + skySpec(N, V, 0.62, vec3f(0.04), ao * ao) * uniforms.envMisc.w * smoothstep(0.1, 0.6, dot(N, V));
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   let exposure = uniforms.fogParams.z * atmoExposure();
   fragmentOutputs.color = vec4f(displayTransform(col, exposure), 0.0);

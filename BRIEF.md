@@ -94,7 +94,7 @@ The continent is ringed by mountains in the macro heightfield, with a matte-proj
 
 **Measurement machine.** The build agent runs on the target PC (Windows 11, RTX 5070 Ti), so measure every performance number there and capture every gate screenshot there. State the machine in `PERF.md` anyway. If work ever happens on another machine, its numbers are indicative only.
 
-**Assets.** Generate procedurally wherever that gives a better or more controllable result: terrain, noise, masks, rocks, trees, creatures, cloth, and most textures. Use free CC0 assets where hand-authored data wins, such as Poly Haven HDRIs and PBR scans or ambientCG detail textures. **No rigged human assets and no AI-generated character meshes.** Every character is procedural and cloth-driven (§8). Vendor everything into the repository; there are no runtime CDN fetches. Document every third-party asset and its licence in `ASSETS.md`.
+**Assets.** Generate procedurally wherever that gives a better or more controllable result: terrain, noise, masks, rocks, trees, creatures, cloth, and most textures. Use free CC0 assets where hand-authored data wins, such as Poly Haven HDRIs and PBR scans or ambientCG detail textures. Authored meshes (our Blender sculpts and kits) and CC0 scanned models are allowed (DECISIONS 2026-11-14). **No rigged human assets (except MPFB 2 bases under cloth, on our own motion) and no AI-generated character meshes.** Every character is procedural and cloth-driven (§8). Vendor everything into the repository; there are no runtime CDN fetches. Document every third-party asset and its licence in `ASSETS.md`.
 
 ---
 

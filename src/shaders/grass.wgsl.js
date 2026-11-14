@@ -19,6 +19,7 @@ import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WATER_LEVEL_DECL } from './atmoMaterial.wgsl.js';
 import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
 
 /** Rings: [cell (m), grid (cells per side), blades per clump, segments per blade]. */
@@ -277,6 +278,7 @@ ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 ${MEADOW_TINT_WGSL}
 
 @fragment
@@ -335,9 +337,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Light through the blade: strongest looking toward the sun (the reference's glowing grass).
   let back = pow(clamp(dot(-V, L), 0.0, 1.0), 3.0) * (0.35 + 0.65 * t);
   col += key * albedo * vec3f(0.95, 1.3, 0.8) * back * vis * 0.32;
-  // Sheen along the blade.
-  let H = normalize(L + V);
-  col += key * pow(max(dot(N, H), 0.0), 24.0) * (0.06 + 0.3 * rime + 0.55 * wetG) * vis * t;
+  // The shared BRDF (realism plan R1): a blade's waxy cuticle (rough ~0.5) catches the sun and the
+  // sky at grazing angles (the silvery sheen across a field); glossier wet, rougher rimed. The root's
+  // own shade (ao) holds the sky's reflection down in the sward.
+  let gRough = mix(mix(0.5, 0.22, wetG), 0.65, rime);
+  let gF0 = vec3f(0.04);
+  col += (key * vis * brdfSunSpec(N, V, L, gRough, gF0) * aggregateMask(V, L, vec3f(0.0, 1.0, 0.0)) + skySpec(N, V, gRough, gF0, ao) * uniforms.envMisc.w * canopySky(canopy) * aggregateOcc(N, V, vec3f(0.0, 1.0, 0.0)) * t) * mix(0.5, 1.0, t);
   let ex = uniforms.fogParams.z * atmoExposure();
   col += spellLit(wp, N, albedo, 0.4, ex);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);

@@ -9,6 +9,7 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
 function shapedVertex(piece) {
@@ -115,6 +116,7 @@ varying vSeed: f32;
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 ${piece ? MATERIALS_WGSL + PIECE_FRAGMENT_FN : ''}
 
 @fragment
@@ -218,6 +220,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     ${piece ? 'if (isPiece) { albedo = matRetint(pieceScan, pieceLayer, albedo, 0.45); }' : ''}
     let diff = clamp((nl + 0.25) / 1.25, 0.0, 1.0);
     col = albedo * (key * (diff * vis * mix(1.0, pieceAO, 0.35) + trans * pow(1.0 - nv, 2.0)) / PI + sky * under * pieceAO);
+    ${piece ? `// Sculpted pieces: the shared BRDF (realism plan R1), the scans' roughness.
+    if (isPiece) { col += key * vis * brdfSunSpec(N, V, L, pieceScan.rough, vec3f(0.04)) * mix(1.0, pieceAO, 0.35) + skySpec(N, V, pieceScan.rough, vec3f(0.04), pieceAO * under) * uniforms.envMisc.w; }` : ''}
     if(kind==15 || kind==16){
       // Dense amber glass: absorption through thickness, atmospheric reflection and sharp facets.
       // This is an opaque solid in the shared shadow-casting path; no scene-copy refraction pass.
@@ -364,8 +368,9 @@ const PIECE_NORMAL = /* wgsl */ `
       pieceScan.albedo = mix(matMean(pieceLayer), pieceScan.albedo, scanK);
       pieceScan.N = normalize(mix(nc, pieceScan.N, scanK));
       pieceScan.ao = mix(1.0, pieceScan.ao, scanK);
+      pieceScan.rough = mix(0.8, max(pieceScan.rough, 0.45), scanK);
     } else {
-      pieceScan.albedo = matMean(pieceLayer); pieceScan.N = nc; pieceScan.ao = 1.0;
+      pieceScan.albedo = matMean(pieceLayer); pieceScan.N = nc; pieceScan.ao = 1.0; pieceScan.rough = 0.8;
     }
     let ns = normalize(mix(nc, pieceScan.N, 0.7));
     N = normalize(fragmentInputs.vB1 * ns.x + fragmentInputs.vB2 * ns.y + fragmentInputs.vB3 * ns.z);

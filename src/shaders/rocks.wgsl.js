@@ -12,6 +12,7 @@ import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 import { STATE_SAMPLE_WGSL } from './terrainState.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
@@ -158,6 +159,7 @@ ${MATERIALS_DECL}
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 ${MATERIALS_WGSL}
 
 fn rk_fpFade(lambda: f32, fp: f32) -> f32 { return 1.0 - smoothstep(lambda * 0.12, lambda * 0.5, fp); }
@@ -214,10 +216,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let ao = (0.75 + 0.25 * clamp(N.y * 0.5 + 0.5, 0.0, 1.0)) * mix(rao, 1.0, snow);
   let sky = shIrradiance(N) * cold * uniforms.envMisc.w * ao * canopySky(canopy);
   var col = albedo * (key * diff * vis / PI + sky + canopyFill(canopy, N) * ao);
-  // Rock: a little sheen at grazing (weathered surface); snow: soft sheen.
-  let H = normalize(L + V);
-  let spec = pow(max(dot(N, H), 0.0), mix(24.0, 12.0, snow)) * 0.04 * vis * clamp(nl, 0.0, 1.0);
-  col += key * spec;
+  // Shared BRDF (realism plan R1): weathered rock, rough moss, snow's soft sheen.
+  let rRough = mix(mix(0.78, 0.92, moss), 0.6, snow);
+  col += key * vis * brdfSunSpec(N, V, L, rRough, vec3f(0.04)) + skySpec(N, V, rRough, vec3f(0.04), ao) * cold * uniforms.envMisc.w * canopySky(canopy);
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   var outc = displayTransform(col, uniforms.fogParams.z * atmoExposure());
   fragmentOutputs.color = vec4f(outc, 0.0); // alpha: SSR weight (none)

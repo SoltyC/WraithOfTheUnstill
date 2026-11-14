@@ -232,11 +232,16 @@ fn meadowLight(s: MeadowSurf, N: vec3f, V: vec3f, L: vec3f, key: vec3f, vis: f32
   let nl = dot(N, L);
   let diff = clamp(nl, 0.0, 1.0);
   let sky = shIrradiance(N) * skyScale * s.ao * vec3f(0.98, 1.0, 0.96) * canopySky(canopy);
-  var col = s.albedo * (key * diff * vis / PI + sky + canopyFill(canopy, N) * s.ao);
-  let H = normalize(L + V);
-  let nh = max(dot(N, H), 0.0);
-  let F = 0.04 + 0.96 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
-  col += key * pow(nh, mix(8.0, 240.0, (1.0 - s.rough) * (1.0 - s.rough))) * F * (0.15 + 1.4 * s.wetK) * clamp(nl, 0.0, 1.0) * vis;
+  // The shared BRDF (shaders/brdf.wgsl.js, realism plan R1): wet ground goes glossy; the sky's
+  // reflection loses what the crowns hide.
+  // Turf is grass seen from afar: rough, and its highlight masked like the blades' (aggregateMask);
+  // bare rock and soil keep the scan's roughness and the full lobe.
+  let turf = (1.0 - s.rock) * (1.0 - s.wetK);
+  let rough = mix(mix(s.rough, max(s.rough, 0.75), turf), 0.15, s.wetK);
+  let f0 = vec3f(mix(0.04, 0.02, s.wetK));
+  var col = s.albedo * diffuseEnergy(f0, rough, N, V) * (key * diff * vis / PI + sky + canopyFill(canopy, N) * s.ao);
+  col += key * vis * brdfSunSpec(N, V, L, rough, f0) * mix(1.0, aggregateMask(V, L, N), turf);
+  col += skySpec(N, V, rough, f0, s.ao) * skyScale * canopySky(canopy);
   return col;
 }
 `;

@@ -10,6 +10,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 
 const VERTEX = /* wgsl */ `
 attribute position: vec3f;           // the piece, unit space (game frame: +y up)
@@ -62,6 +63,7 @@ ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${MATERIALS_WGSL}
+${BRDF_WGSL()}
 fn octDecode(e: vec2f) -> vec3f {
   var n = vec3f(e.x, e.y, 1.0 - abs(e.x) - abs(e.y));
   let t = max(-n.z, 0.0);
@@ -126,9 +128,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let sky = shIrradiance(N) * uniforms.envMisc.w * ao;
   // Light bounced off the sunlit meadow onto the rock's lower faces.
   let bounce = vec3f(0.16, 0.24, 0.08) * key * max(L.y, 0.0) * clamp(-N.y * 0.5 + 0.5, 0.0, 1.0) * 0.18 * ao;
-  var col = albedo * (key * diff * vis * mix(0.55, 1.0, cavity) / PI + sky * 1.15 + bounce);
-  let H = normalize(L + V);
-  col += key * pow(max(dot(N, H), 0.0), 24.0) * 0.04 * vis * (1.0 - moss);
+  // The shared BRDF (shaders/brdf.wgsl.js): the scans' roughness (lichen a touch rougher, moss
+  // rougher still), the sun's GGX highlight and the sky's sheen at grazing angles.
+  let rough = mix(mix(0.8, mix(st.rough, li.rough, lichen), scanK), 0.92, moss);
+  let f0 = vec3f(0.04);
+  var col = albedo * diffuseEnergy(f0, rough, N, V) * (key * diff * vis * mix(0.55, 1.0, cavity) / PI + sky * 1.15 + bounce);
+  col += key * vis * brdfSunSpec(N, V, L, rough, f0) * mix(0.55, 1.0, cavity);
+  col += skySpec(N, V, rough, f0, ao) * uniforms.envMisc.w;
   col = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, dist * 0.001);
   let exposure = uniforms.fogParams.z * atmoExposure();
   fragmentOutputs.color = vec4f(displayTransform(col, exposure), 0.0);
