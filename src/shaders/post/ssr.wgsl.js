@@ -144,7 +144,10 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
       for (var k = 0; k < 4; k++) {
         let o = (alongV * (f32(k) - 1.5) * 1.12 + acrossV * select(-0.5, 0.5, (k & 1) == 1)) * wSig * select(0.0, 1.0, wSig > 0.004);
         let nk = normalize(vec3f(-(wSl.x + o.x), 1.0, -(wSl.y + o.y)));
-        var Rf = reflect(-V, nk); Rf.y = max(Rf.y, 0.01);
+        // A facet tilted so far that it would mirror the water itself adds nothing here (the
+        // water's own sky and sun glint stand): clamped to the horizon it took the far bank.
+        let Rf = reflect(-V, nk);
+        if (Rf.y < 0.005) { continue; }
         let cf = P.vp * vec4f(P.cam.xyz + Rf * 1e4, 1.0);
         if (cf.w <= 0.0) { continue; }
         let uvf = (cf.xy / cf.w) * 0.5 + 0.5;

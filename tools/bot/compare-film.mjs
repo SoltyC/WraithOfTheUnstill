@@ -37,16 +37,31 @@ const SHOTS = {
     const e = u * u * (3 - 2 * u), a = 250 * Math.PI / 180, d = 6 * e;
     const x = -250 + Math.sin(a) * d, z = -450 + Math.cos(a) * d;
     cam.at(x, G(x, z) + 1.3, z, x + Math.sin(a) * 80, G(x, z) + 2.5, z + Math.cos(a) * 80, 0.9);` },
+  // The lake (realism plan W): a slow pan across it from the west shore, the same at golden hour,
+  // into the sun from the east shore, and down into the shallows. W(x, z): the eye's base (ground or water).
+  'water-shore': { at: [-243, -443], hour: 13.0, cam: `
+    const e = u * u * (3 - 2 * u), a = (30 + 35 * e) * Math.PI / 180, x = -243, z = -443, y = W(x, z) + 1.6;
+    cam.at(x, y, z, x + Math.sin(a) * 100, y - 3.5, z + Math.cos(a) * 100, 0.9);` },
+  'water-golden': { at: [-243, -443], hour: 17.6, cam: `
+    const e = u * u * (3 - 2 * u), a = (70 - 25 * e) * Math.PI / 180, x = -243, z = -443, y = W(x, z) + 1.6;
+    cam.at(x, y, z, x + Math.sin(a) * 100, y - 2.0, z + Math.cos(a) * 100, 0.9);` },
+  'water-sun': { at: [-10, -330], hour: 16.3, cam: `
+    const e = u * u * (3 - 2 * u), s = g.env.env.sunDir, b = Math.atan2(s.x, s.z) + (-0.25 + 0.5 * e), x = -10, z = -330, y = W(x, z) + 1.6;
+    cam.at(x, y, z, x + Math.sin(b) * 100, y - 4, z + Math.cos(b) * 100, 0.9);` },
+  'water-shallows': { at: [-243, -443], hour: 12.0, cam: `
+    const e = u * u * (3 - 2 * u), x = -238 + 4 * e, z = -440 + 4 * e, y = W(x, z) + 1.7;
+    cam.at(x, y, z, x + 6, y - 4.5, z + 6, 0.95);` },
 };
 
 for (const [name, s] of Object.entries(SHOTS)) {
-  if (only && !only.split(',').includes(name)) continue;
+  if (only ? !only.split(',').includes(name) : name.startsWith('water-')) continue;
   await bot('teleport', { x: s.at[0], z: s.at[1] }); await sleep(6000);
   await ev(`if (g.game && g.game.setPlayerVisible) g.game.setPlayerVisible(false); g.ws.weatherOverride = 'clear';
     if (g.ws.restoration) g.ws.restoration.meadow = 'restored'; if (g.restoration) g.restoration.snap = true;
-    g.params.v.timeOfDay = ${s.hour}; g.params.version++; return 1`);
+    g.params.v.timeOfDay = ${s.hour}; g.params.v.windStrength = 0.6; g.params.version++; return 1`);
   await sleep(4000);
   const js = `const G = (x, z) => { g.ground.qx = x; g.ground.qz = z; g.ground.sample(); return g.ground.h; };
+    const W = (x, z) => { const l = g.water.levelAt(x, z); return Math.max(G(x, z), l > -1e3 ? l : -1e9); };
     const u = Math.min(1, t / ${SECONDS}); cam.tod(${s.hour}); ${s.cam}`;
   const r = await bot('film', { name: `${tag}-${name}`, dir: 'compare', seconds: SECONDS, fps: FPS, size: SIZE, quality: 0.92, warm: 60, js });
   console.log(name, JSON.stringify(r).slice(0, 200));
