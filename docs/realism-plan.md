@@ -423,3 +423,17 @@ Order, revised 2026-11-14 with assets as the priority:
   - Loaded into atlas row 0 (`data/textures/leaf-pine*.webp`).
   - Pine form: crown from 42–58% of the height (it was 25–40%), 16–26 whorl branches (26–40),
     gnarl 0.24. The 'spider' of straight spokes under the crown is gone.
+- 2026-11-14 — **Exposure and contrast.**
+  - `tools/bot/look-set.mjs` takes `restored`. Every earlier shot was the meadow *stilled* (the
+    game's drained grade, 45% desaturated), so realism is now judged in both states.
+  - Dusk: a field in a ridge's shadow went near black. The meter may now open up to +1.5 stop
+    (was +0.75) (`atmosphereCompute`).
+  - The day shadow lift goes 2.6 → 1.6 (`post/chain.js`), so the darks are kept deeper.
+  - **Diagnosis of the "milky" look against the reference:**
+    - It isn't the haze (fogDensity 6 → 1.5 barely changes it), nor bloom, LUT or grain (all off:
+      still there).
+    - The frame lacks deep darks: inner crowns, the shade inside the sward and the forest's depth
+      are lit flat, because there is no real occlusion or bounce. R2 is the fix.
+  - Also seen against the reference:
+    - the distant mountain ring is low-poly white cut-outs (an asset to replace);
+    - the flowers are an even carpet (to thin and cluster in A3).

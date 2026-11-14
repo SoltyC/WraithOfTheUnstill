@@ -52,7 +52,9 @@ export function createPostChain(scene, camera, atmo, shadows, surface, windMap) 
   post.onResizeOut(wire);
   post.onParams(() => { post.bloomOn = bloom.on; post.bloomIntensity = bloom.intensity; });
   // Shade lift (display pass): by day only, so moonlit and lamp-lit nights keep their blacks.
-  const lift = { day: 2.6, night: 0.3 };
+  // (realism plan, 2026-11-14: 1.6 by day, was 2.6 — the lift greyed the darks the reference keeps deep;
+  // the wider meter range, atmosphereCompute, now opens a shaded scene instead.)
+  const lift = { day: 1.6, night: 0.3 };
   post.onParams(() => { const d = env.envMisc.y; post.shadowLift = lift.night + (lift.day - lift.night) * d; });
   registerToggle({ key: 'postTaa', label: 'TAA', group: 'Post', on: true, onChange: (on) => { taa.on = on; post.resetHistory = true; } });
   registerToggle({ key: 'postMirage', label: 'heat mirage', group: 'Post', on: true, onChange: (on) => { heat.mirage = on; post.resetHistory = true; } });

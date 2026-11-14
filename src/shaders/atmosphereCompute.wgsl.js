@@ -343,7 +343,7 @@ fn main() {
   let lumW = vec3f(0.2126, 0.7152, 0.0722);
   let adapt = dot(outLight[0].xyz, lumW) * (0.5 / PI_A) + dot(outLight[1].xyz, lumW) + 1e-5;
   // The analytic exposure assumes mid-grey ground under this light. The frame meter (Phase 6)
-  // corrects it within tight limits (−1 … +0.75 stop): expected scene luminance for ~0.5 albedo vs
+  // corrects it within limits (−1 … +1.5 stop): expected scene luminance for ~0.5 albedo vs
   // what the last frame actually held. Snow (albedo ~0.9) lands near the old frost compensation
   // (0.62); a scene in a ridge's shadow opens up a little; staring at a bright sky closes down.
   // Without a valid meter it falls back to that biome compensation.
@@ -351,7 +351,9 @@ fn main() {
   let mt = meter[0];
   if (mt.y > 0.5) {
     let expected = 0.5 * adapt;
-    comp = clamp(pow(expected / exp2(mt.x), 0.75), 0.5, 1.68);
+    // (realism plan, 2026-11-14: up to +1.5 stop, was +0.75. A field in a ridge's shadow under a
+    // bright evening sky went near black; the eye — and a film camera's operator — opens up there.)
+    comp = clamp(pow(expected / exp2(mt.x), 0.75), 0.5, 2.83);
   }
   // Weather: an overcast or snowing day is meant to read grey and heavy, not auto-exposed back
   // to a sunny day's brightness (−0.5 stop under a closed deck).

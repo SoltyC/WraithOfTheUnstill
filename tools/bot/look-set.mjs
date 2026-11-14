@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // The realism plan's fixed look-dev set (docs/realism-plan.md): the same cameras and hours before and
 // after each phase. One shot each, named look-<tag>-<name>.
-//   tools/bot/play.sh "" ""   then   node tools/bot/look-set.mjs <tag> [only=name,name]
+//   tools/bot/play.sh "" ""   then   node tools/bot/look-set.mjs <tag> [only=name,name] [restored]
+// (restored: the meadow in its restored state, full colour; the default is the game's start, stilled)
 import { bot, js } from './client.mjs';
-const [tag = 'x', only = ''] = process.argv.slice(2);
+const [tag = 'x', only = '', state = ''] = process.argv.slice(2);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // name, x, z, height above ground, hour, yaw (deg), pitch (+ looks up)
 const SET = [
@@ -17,7 +18,7 @@ const SET = [
   ['scarp', -400, -540, 6, 12.5, 323, -0.25],
 ];
 await bot('teleport', { x: -250, z: -450 }); await sleep(5000);
-await js(`g.game.setPlayerVisible(false);g.ws.weatherOverride='clear';return 1`);
+await js(`g.game.setPlayerVisible(false);g.ws.weatherOverride='clear';g.ws.restoration.meadow='${state === 'restored' ? 'restored' : 'stilled'}';if(g.restoration)g.restoration.snap=true;return 1`);
 for (const [name, x, z, h, hour, yd, pitch] of SET) {
   if (only && !only.split(',').includes(name)) continue;
   const hourChanged = await js(`const c=g.params.v.timeOfDay!==${hour};g.params.v.timeOfDay=${hour};g.params.version++;return c`);
