@@ -64,12 +64,14 @@ fn skyRefl(N: vec3f, V: vec3f, rough: f32) -> vec3f {
   let Rd = normalize(mix(N, R, (1.0 - a) * (sqrt(1.0 - a) + a)));
   let wide = shIrradiance(Rd);
   ${boot.names.shadows === 'low' ? 'return wide;' : `
-  if (rough > 0.85) { return wide; }
+  // (Past 0.48 the lobe is wide enough that the SH stands in: grass, leaves, turf and most rock skip
+  // the two LUT taps — the meadow's biggest pixel counts; perf pass 2026-11-14.)
+  if (rough > 0.48) { return wide; }
   // Below the horizon the reflection sees ground, not sky: the SH's own lower half (it is lit by
   // the ground's bounce) stands in, fading in as the ray dips.
   let sharp = atmoSky(normalize(vec3f(Rd.x, max(Rd.y, 0.015), Rd.z)));
   let s = mix(sharp, wide, smoothstep(0.02, -0.12, Rd.y));
-  return mix(s, wide, smoothstep(0.25, 0.85, rough));`}
+  return mix(s, wide, smoothstep(0.15, 0.48, rough));`}
 }
 /** Foliage is a porous aggregate: a reflection that heads back into the sward or the crown (below the
  *  aggregate's own surface normal Nm) meets another blade or leaf, not the sky. */

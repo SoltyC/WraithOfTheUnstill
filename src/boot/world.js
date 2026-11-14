@@ -124,6 +124,17 @@ export async function createWorld(g) {
     return false;
   };
   if (keepOut) rocks.setKeepOut(keepOut);
+  // Only the rocks the shader keeps (frost; the meadow's only with ?boulders=0): see rocks.js put().
+  {
+    const { MEADOW_ICO } = await import('../shaders/rocks.wgsl.js');
+    rocks.setBiomeKeep((x, z, seed) => {
+      const A = streamer.biomeA; if (!A) return true;
+      const i = Math.min(1023, Math.max(0, Math.floor((x + 4096) / 8))), j = Math.min(1023, Math.max(0, Math.floor((4096 - z) / 8))), o = (j * 1024 + i) * 4;
+      const sum = Math.max(A[o] + A[o + 1] + A[o + 2] + A[o + 3], 0.05 * 255);
+      // (a margin under the shader's 0.55: the CPU map and the GPU's agree, but a rock straddling a border keeps its chance)
+      return A[o] / sum > 0.45 || (MEADOW_ICO && A[o + 1] / sum > 0.45 && seed * 7.7 - Math.floor(seed * 7.7) < 0.3);
+    });
+  }
   bindShadows(rocks.material, shadows);
   // Rocks shadow the near and middle cascades only (beyond ~800 m they are sub-texel).
   // Each rock tier casts only into the cascades its distances fall in (near < 140 m: 0–1; outcrops

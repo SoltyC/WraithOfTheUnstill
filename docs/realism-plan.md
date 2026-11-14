@@ -472,3 +472,22 @@ Order, revised 2026-11-14 with assets as the priority:
     the after's right half, divider, labels, captions.
   - Output: `screenshots/compare/realism-before-after.mp4` (CRF 18, 128 MB) and `-share.mp4`
     (7.5 Mbit/s, 27 MB).
+- 2026-11-14 — **Fixes after the first film.**
+  - **The invisible far tree, found.** A tree set switched on compiles its pipelines asynchronously.
+    A snapshot recorded before they were ready left the mesh out until the next re-record, and a
+    still camera never made one: the tree's shadow drew, the tree didn't. `trees.js` now re-records
+    600 ms after a set changes or the load warms. Three fresh loads in a row: tree present.
+  - **R5, grass transmission.** The grass's back-light was 0.32 × pow 3. It is now a narrow lobe
+    (pow 6, 0.72) plus a wide one (pow 1.5, 0.15), stronger toward the tip and on seed heads,
+    gold-green at the tips. A sward between the eye and a low sun glows.
+  - **R2b, ground bounce by biome.** The SH ambient's lower hemisphere was grey, 30% albedo
+    everywhere but snow. Now:
+    - meadow (0.09, 0.15, 0.045);
+    - mire dark olive; dunes warm 0.35; snow 0.78.
+    - The grey lift in every shade is gone.
+  - **Performance (meadow view, High, 0.8 scale): 16.8 → 15.2 ms.**
+    - The icosphere rocks the vertex shader throws away on the meadow are no longer placed
+      (`rocks.setBiomeKeep`, the shader's rule on the CPU): 1.05 → 0.11 ms.
+    - Surfaces rougher than 0.48 take the SH for their sky reflection, skipping the two LUT taps
+      (grass, leaves, turf).
+    - Left: grass 2.5 ms, shadows 2.3 ms, far forest 1.2 ms, trees 1.0 ms.

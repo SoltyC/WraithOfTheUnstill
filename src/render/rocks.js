@@ -175,8 +175,13 @@ export function createRocks(scene, clipmap, atmo, matLib) {
   let camCX = 0, camCZ = 0;
   /** Places kept clear of rocks (built sites): [x, z, radius] each. */
   let exclude = [];
+  // The shader's biome keep (shaders/rocks.wgsl.js), on the CPU: a rock it would throw away is not
+  // placed at all. On the meadow every icosphere was culled in the vertex shader yet still ran it,
+  // in colour and in three cascades: ~1 ms on the 3060 for nothing drawn (realism plan, perf).
+  let biomeKeep = null;
   function put(n, x, z, size, yaw, seed, aspect, burial, kind) {
     if (keepOut && keepOut(x, z, size)) return;
+    if (biomeKeep && !biomeKeep(x, z, seed)) return;
     for (let k = 0; k < exclude.length; k++) {
       const e = exclude[k], ex = x - e[0], ez = z - e[1], r = e[2] + size;
       if (ex * ex + ez * ez < r * r) return;
@@ -243,6 +248,8 @@ export function createRocks(scene, clipmap, atmo, matLib) {
     setExclusions(list) { exclude = list; cellX = NaN; },
     /** The village's keep-out test (see setRockKeepOut); re-places the rocks. */
     setKeepOut(fn) { keepOut = fn; cellX = NaN; },
+    /** (x, z, seed) → false where the vertex shader would drop the rock (world.js: the streamer's biome map). */
+    setBiomeKeep(fn) { biomeKeep = fn; cellX = NaN; },
     /** The exclusions (the CPU collision path keeps the same clear circles). */
     get exclusions() { return exclude; },
     /** The terrain state the rocks sit on (deformed snow); shadow casters made later bind it too. */
