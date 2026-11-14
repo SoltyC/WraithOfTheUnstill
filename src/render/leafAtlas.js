@@ -96,7 +96,7 @@ function leaf(c, h, R, x, y, a, L, W, kind, hue, age) {
 let baked = null;
 // The photographed leaves are lit and pale (mean sRGB ≈ 0.53, 0.65, 0.29): scaled toward a living
 // leaf's top-side albedo (sRGB ≈ 0.3–0.4 green), the drawn rows' level.
-const LEAF_GAIN = 0.62;
+const LEAF_GAIN = 0.48;
 export async function preloadBakedLeaves() {
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('leafscan') === '0') return;
   try {
