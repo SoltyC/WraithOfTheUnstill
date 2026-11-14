@@ -2,13 +2,19 @@
 # light them with a low sun, render one PNG.   blender -b --factory-startup --python tools/models/preview.py -- <glb> <png> [filter]
 import bpy, sys, math
 a = sys.argv[sys.argv.index('--') + 1:]
-src, out = a[0], a[1]; flt = a[2] if len(a) > 2 else 'lod0'
+src, out = a[0], a[1]; flt = a[2] if len(a) > 2 else 'lod0'; atlas = a[3] if len(a) > 3 else None
 for o in list(bpy.data.objects): bpy.data.objects.remove(o)
 bpy.ops.import_scene.gltf(filepath=src)
-obs = sorted([o for o in bpy.data.objects if o.type == 'MESH' and o.data.name.endswith(flt)], key=lambda o: o.data.name)[:6]
+obs = sorted([o for o in bpy.data.objects if o.type == 'MESH' and o.data.name.endswith(flt)], key=lambda o: int(''.join(c for c in o.data.name.split('_')[1] if c.isdigit()) or 0))
+step = max(1, len(obs) // 6); obs = obs[::step][:6]
 for o in [o for o in bpy.data.objects if o.type == 'MESH' and o not in obs]: bpy.data.objects.remove(o)
 mat = bpy.data.materials.new('stone'); mat.use_nodes = True
 bsdf = mat.node_tree.nodes['Principled BSDF']; bsdf.inputs['Base Color'].default_value = (0.55, 0.53, 0.5, 1); bsdf.inputs['Roughness'].default_value = 0.85
+if atlas:   # the baked AO (B) on the base colour, so the sculpt's cracks and seams show
+    nt = mat.node_tree; tx = nt.nodes.new('ShaderNodeTexImage'); tx.image = bpy.data.images.load(atlas); tx.image.colorspace_settings.name = 'Non-Color'
+    sp = nt.nodes.new('ShaderNodeSeparateColor'); mu = nt.nodes.new('ShaderNodeMix'); mu.data_type = 'RGBA'; mu.blend_type = 'MULTIPLY'; mu.inputs['Factor'].default_value = 1.0
+    mu.inputs[6].default_value = (0.55, 0.53, 0.5, 1)
+    nt.links.new(tx.outputs['Color'], sp.inputs['Color']); nt.links.new(sp.outputs['Blue'], mu.inputs[7]); nt.links.new(mu.outputs[2], bsdf.inputs['Base Color'])
 for k, o in enumerate(obs):
     o.location = ((k % 3) * 2.6 - 2.6, (k // 3) * 2.4, 0); o.data.materials.clear(); o.data.materials.append(mat)
     for p in o.data.polygons: p.use_smooth = True

@@ -52,6 +52,8 @@ export const outcropFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 var pieceAtlas: texture_2d<f32>;
 var pieceAtlasSampler: sampler;
+var pieceMask: texture_2d<f32>;
+var pieceMaskSampler: sampler;
 ${MATERIALS_DECL}
 varying vWorldPos: vec3f;
 varying vAtlas: vec2f;
@@ -82,6 +84,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let camPos = uniforms.cameraPosition;
   let V = normalize(camPos - wp);
   let pt = textureSample(pieceAtlas, pieceAtlasSampler, fragmentInputs.vAtlas);
+  // Baked weathering masks (tools/models/assetkit.py): r convexity (0.5 flat), g cavity (short-reach
+  // occlusion), b the sculpt's joints and bed seams. The rock's story comes from its real shape.
+  let mk = textureSample(pieceMask, pieceMaskSampler, fragmentInputs.vAtlas);
+  let edge = smoothstep(0.56, 0.8, mk.r);
+  let crease = smoothstep(0.44, 0.22, mk.r);
+  let dirt = 1.0 - smoothstep(0.5, 0.95, mk.g);
+  let seam = smoothstep(0.15, 0.7, mk.b);
   let pm = fragmentInputs.vPm;
   let pdx = dpdx(pm); let pdy = dpdy(pm);
   // The sculpt's normal: object → rock frame (inverse scale) → world (the yaw).
@@ -102,17 +111,21 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let base = matRetint(st, MAT_STONE_PALE, mix(tone, vec3f(0.5, 0.38, 0.26), iron * 0.6), 0.25);
   let lichenBase = matRetint(li, MAT_ROCK_LICHEN, vec3f(0.42, 0.46, 0.36), 0.6);
   let seedO = vec2f(fragmentInputs.vSeed * 13.1, fragmentInputs.vSeed * 7.7);
-  let lichen = smoothstep(0.5, 0.75, on2(pm.xz * 0.35 + pm.y * 0.2 + seedO) * 0.7 + on2(pm.xy * 1.3 + seedO) * 0.3);
+  // Lichen grows on the open faces, not on the worn edges or down in the joints.
+  let lichen = smoothstep(0.5, 0.75, on2(pm.xz * 0.35 + pm.y * 0.2 + seedO) * 0.7 + on2(pm.xy * 1.3 + seedO) * 0.3) * (1.0 - edge) * (1.0 - seam * 0.7);
   albedo = mix(albedo, mix(base, lichenBase, lichen * 0.8), scanK);
+  // Edges are washed and knocked pale; creases, cracks and the joints hold dark, earthy grime.
+  albedo *= 1.0 + 0.22 * edge;
+  albedo = mix(albedo, albedo * vec3f(0.5, 0.47, 0.4), clamp(dirt * 0.8 + crease * 0.5 + seam * 0.55, 0.0, 0.85));
   nr = normalize(mix(nc, normalize(mix(st.N, li.N, lichen)), 0.65 * scanK));
   sao = mix(1.0, st.ao, 0.6 * scanK);
-  let ao = pt.z * sao;
+  let ao = pt.z * sao * mix(1.0, mk.g, 0.6);
   let cavity = pt.z * pt.z;   // the joints and bed seams read deep in direct light; the sky still reaches the faces
   let N0 = normalize(vec3f(nr.x * fragmentInputs.vRot.x - nr.z * fragmentInputs.vRot.y, nr.y, nr.x * fragmentInputs.vRot.y + nr.z * fragmentInputs.vRot.x));
   // Moss where water lies: up-facing ledges and hollows (low AO), most on the shaded side; grime
   // streaks down the faces below the ledges.
   let up = clamp(N0.y, 0.0, 1.0);
-  let moss = smoothstep(0.55, 0.95, up * 0.8 + (1.0 - pt.z) * 0.9 + 0.25 * on2(pm.xz * 0.6 + seedO)) * smoothstep(-0.2, 0.4, on2(pm.xz * 0.15 + seedO * 2.0));
+  let moss = smoothstep(0.55, 0.95, up * 0.8 + (1.0 - pt.z) * 0.9 + seam * 0.45 * up + dirt * 0.3 + 0.25 * on2(pm.xz * 0.6 + seedO)) * smoothstep(-0.2, 0.4, on2(pm.xz * 0.15 + seedO * 2.0)) * (1.0 - edge * 0.8);
   albedo = mix(albedo, vec3f(0.11, 0.16, 0.05) * (0.8 + 0.4 * on2(pm.xz * 3.0)), moss * 0.85);
   let streak = (1.0 - up) * smoothstep(0.55, 0.9, on2(vec2f(pm.x * 1.7 + pm.z * 1.7, pm.y * 0.08) + seedO));
   albedo *= 1.0 - 0.45 * streak;
@@ -130,7 +143,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let bounce = vec3f(0.16, 0.24, 0.08) * key * max(L.y, 0.0) * clamp(-N.y * 0.5 + 0.5, 0.0, 1.0) * 0.18 * ao;
   // The shared BRDF (shaders/brdf.wgsl.js): the scans' roughness (lichen a touch rougher, moss
   // rougher still), the sun's GGX highlight and the sky's sheen at grazing angles.
-  let rough = mix(mix(0.8, mix(st.rough, li.rough, lichen), scanK), 0.92, moss);
+  let rough = clamp(mix(mix(0.8, mix(st.rough, li.rough, lichen), scanK), 0.92, moss) - 0.12 * edge + 0.08 * dirt, 0.4, 1.0);
   let f0 = vec3f(0.04);
   var col = albedo * diffuseEnergy(f0, rough, N, V) * (key * diff * vis * mix(0.55, 1.0, cavity) / PI + sky * 1.15 + bounce);
   col += key * vis * brdfSunSpec(N, V, L, rough, f0) * mix(0.55, 1.0, cavity);

@@ -17,7 +17,7 @@ import { CLIPMAP_N, CLIPMAP_LEVELS } from './clipmap.wgsl.js';
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL, BORDER_WGSL } from './common.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WATER_LEVEL_DECL } from './atmoMaterial.wgsl.js';
-import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
+import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL, CLEAR_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { BRDF_WGSL } from './brdf.wgsl.js';
 import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js';
@@ -119,6 +119,7 @@ var<storage, read> windMap: array<u32>;
 var<storage, read> surfaceMat: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
+${CLEAR_VERTEX_WGSL}
 ${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vT: f32;                     // 0 root … 1 tip
 varying vSide: f32;                  // −1 … 1 across
 varying vWorldPos: vec3f;
@@ -188,6 +189,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let gy2 = gGround(root.x + 0.7, root.y); let gy3 = gGround(root.x, root.y + 0.7);
   let slope = length(vec2f(gy2 - gy, gy3 - gy)) / 0.7;
   keep *= 1.0 - smoothstep(0.55, 0.8, slope);
+  // Not through the rocks (render/clearance.js): none on a boulder or outcrop, shorter round its foot.
+  let clr = clearAt(root, cam.xz);
+  keep *= 1.0 - smoothstep(0.55, 0.85, clr);
   if (gy < waterLevelV(root) + 0.04) { keep = 0.0; } // not under water
   // Pressed and ploughed ground lays the grass down (footprints, the surf's groove, compaction).
   let st = stateSurface(root.x, root.y);
@@ -195,7 +199,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (1.0 - 0.35 * straw * (1.0 - reed)) * (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z);
+  var hgt = (1.0 - 0.35 * straw * (1.0 - reed)) * (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z) * (1.0 - 0.6 * clr);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;

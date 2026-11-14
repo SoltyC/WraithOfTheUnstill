@@ -16,6 +16,10 @@ import { BRDF_WGSL } from './brdf.wgsl.js';
 import { STATE_SAMPLE_WGSL } from './terrainState.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
+/** The meadow's boulders are sculpted pieces now (render/outcrops.js createBoulders, docs/realism-plan.md
+ *  A1); the icospheres stay on the frost steppe. ?boulders=0 brings the meadow's icospheres back. */
+export const MEADOW_ICO = typeof location !== 'undefined' && new URLSearchParams(location.search).get('boulders') === '0';
+
 /** Vertex code shared by the colour pass and (with normals off) the shadow casters. */
 const ROCKS_VERTEX = /* wgsl */ `
 attribute position: vec3f;   // unit icosphere
@@ -132,7 +136,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // On the frost steppe; on the meadow, a third of them (mossed boulders and outcrops); none on
   // slopes where the terrain material already shows rock (render systems/rockSolids.js agrees).
   let bw = rk_biome(x, z);
-  let keep = (bw.x > 0.55 || (bw.y > 0.55 && fract(seed * 7.7) < 0.3)) && slope < 0.9;
+  let keep = (bw.x > 0.55 || (${MEADOW_ICO ? 'true' : 'false'} && bw.y > 0.55 && fract(seed * 7.7) < 0.3)) && slope < 0.9;
   vertexOutputs.vMeadow = select(0.0, 1.0, bw.x <= 0.55);
   vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
   if (!keep) { vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0); }

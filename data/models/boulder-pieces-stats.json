@@ -1,0 +1,140 @@
+{
+ "set": "boulder-pieces",
+ "atlas": 4096,
+ "pieces": [
+  {
+   "name": "boulder_0_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_1_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_2_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_3_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_4_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_5_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_6_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_7_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_8_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_9_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_10_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  },
+  {
+   "name": "boulder_11_lod0",
+   "size_m": 2.0,
+   "tris_high": 196608,
+   "tris": [
+    2400,
+    720,
+    192
+   ],
+   "texel_px_per_m": 309.5
+  }
+ ],
+ "atlas_fill": 0.589,
+ "texel_px_per_m_min": 309.5
+}

@@ -7,6 +7,7 @@ export function bindAtmosphere(mat, atmo) {
   mat.setTexture('canopyTex', atmo.canopyTex);
   mat.setTexture('waterTex', atmo.waterTex);
   mat.setTexture('villageTex', atmo.villageTex);
+  mat.setTexture('clearTex', atmo.clearTex);
   mat.setStorageBuffer('atmoParams', atmo.atmoParams);
   mat.setStorageBuffer('atmoLight', atmo.atmoLight);
 }

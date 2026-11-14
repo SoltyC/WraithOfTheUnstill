@@ -1,0 +1,118 @@
+{
+ "set": "outcrop-pieces",
+ "atlas": 4096,
+ "pieces": [
+  {
+   "name": "limestone_0_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_1_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_2_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_3_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_4_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_5_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_6_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_7_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_8_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  },
+  {
+   "name": "limestone_9_lod0",
+   "size_m": 25.0,
+   "tris_high": 196608,
+   "tris": [
+    4000,
+    1200,
+    320
+   ],
+   "texel_px_per_m": 18.1
+  }
+ ],
+ "atlas_fill": 0.383,
+ "texel_px_per_m_min": 18.1
+}

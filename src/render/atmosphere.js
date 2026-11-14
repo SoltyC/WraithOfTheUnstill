@@ -15,6 +15,7 @@ import { Matrix, Vector4 } from '@babylonjs/core/Maths/math.vector.js';
 import { transmittanceCS, multiScatCS, skyViewCS, aerialCS, ambientCS } from '../shaders/atmosphereCompute.wgsl.js';
 import { AP_RES, AP_SLICES, SKYVIEW_W, SKYVIEW_H } from '../shaders/atmosphere.wgsl.js';
 import { env } from './environment.js';
+import { CLEAR_N } from '../shaders/atmoMaterial.wgsl.js';
 import { params as tunables } from '../core/params.js';
 import { createDesertAerosol } from '../world/desertAerosol.js';
 import { clock } from '../core/clock.js';
@@ -86,6 +87,10 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   const canopyTex = new RawTexture(new Uint8Array(CANOPY_N * CANOPY_N), CANOPY_N, CANOPY_N, Constants.TEXTUREFORMAT_R, scene, false, false,
     Constants.TEXTURE_BILINEAR_SAMPLINGMODE, Constants.TEXTURETYPE_UNSIGNED_BYTE);
   canopyTex.name = 'canopy'; canopyTex.wrapU = Constants.TEXTURE_CLAMP_ADDRESSMODE; canopyTex.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
+  // Rock clearance round the camera (render/clearance.js fills it; toroidal, so it wraps).
+  const clearTex = new RawTexture(new Uint8Array(CLEAR_N * CLEAR_N), CLEAR_N, CLEAR_N, Constants.TEXTUREFORMAT_R, scene, false, false,
+    Constants.TEXTURE_BILINEAR_SAMPLINGMODE, Constants.TEXTURETYPE_UNSIGNED_BYTE);
+  clearTex.name = 'clearance'; clearTex.wrapU = Constants.TEXTURE_WRAP_ADDRESSMODE; clearTex.wrapV = Constants.TEXTURE_WRAP_ADDRESSMODE;
   // World water levels (render/water.js fills it; −1e4: no water), read with textureLoad (nearest).
   const waterTex = new RawTexture(new Float32Array(CANOPY_N * CANOPY_N).fill(-1e4), CANOPY_N, CANOPY_N, Constants.TEXTUREFORMAT_R, scene, false, false,
     Constants.TEXTURE_NEAREST_SAMPLINGMODE, Constants.TEXTURETYPE_FLOAT);
@@ -103,7 +108,7 @@ export function createAtmosphere(scene, camera, biomeA, villageMask = null) {
   const desert=createDesertAerosol();
   let builtHaze = NaN,builtDust=NaN;
   return {
-    canopyTex, waterTex, villageTex, villageBox, desert, biomeA, lutBuilds:0, sandStorm:0.0,
+    canopyTex, waterTex, villageTex, clearTex, villageBox, desert, biomeA, lutBuilds:0, sandStorm:0.0,
     transmittanceLut, multiScatLut, skyViewSun, skyViewMoon, aerialLut, atmoParams, atmoLight, meterBuf,
     /** Weather inputs (world/weather.js): cloud cover and snowfall, 0..1. */
     cover: 0.5 - 0.5, snow: 0.5 - 0.5,

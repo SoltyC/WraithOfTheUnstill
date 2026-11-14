@@ -8,6 +8,7 @@
 // (render/canyonWalls.js postsNear): they are the ones the camera keeps out of too.
 
 import { rocksNear } from '../render/rocks.js';
+import { MEADOW_ICO } from '../shaders/rocks.wgsl.js';
 
 const RADIUS = 26, CELL = 4;
 
@@ -25,7 +26,7 @@ export function addRockSolidSystem(g) {
     return A[o + ch] / Math.max(A[o] + A[o + 1] + A[o + 2] + A[o + 3], 0.05 * 255);
   }
   // shaders/rocks.wgsl.js keeps a rock on the frost steppe, or on the meadow for 30 % of seeds.
-  const kept = (x, z, seed) => biomeShare(x, z, 0) > 0.55 || (biomeShare(x, z, 1) > 0.55 && seed * 7.7 - Math.floor(seed * 7.7) < 0.3);
+  const kept = (x, z, seed) => biomeShare(x, z, 0) > 0.55 || (MEADOW_ICO && biomeShare(x, z, 1) > 0.55 && seed * 7.7 - Math.floor(seed * 7.7) < 0.3);
   function add(x, z, yaw, rx, rz, up, size, seed) {
     if (rk.n >= MAX) return;
     ground.qx = x; ground.qz = z;
@@ -64,6 +65,7 @@ export function addRockSolidSystem(g) {
     rocksNear(px, pz, RADIUS, rocks.exclusions, add);
     if (g.trees) g.trees.trunksNear(px, pz, RADIUS, addTrunk);
     if (g.outcrops) g.outcrops.near(px, pz, RADIUS, addPost);   // the meadow's limestone outcrops (render/outcrops.js)
+    if (g.boulders) g.boulders.near(px, pz, RADIUS, addPost);   // and its sculpted boulders (createBoulders)
   }
 
   loop.add({ name: 'rockSolids', update: () => {

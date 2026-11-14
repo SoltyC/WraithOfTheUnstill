@@ -55,10 +55,15 @@ stays first, because without it any asset looks matte and plastic, however well 
    - meso (cracks, ledges, knots and seams: baked normal and AO);
    - micro (grain and pores: the tiling scans, through a detail normal).
    - Each must read at its own distance, and none may be missing.
-3. **Texel density:**
-   - unique baked maps at 512 px/m or more for environment pieces, 1024 px/m or more for heroes and
-     creatures;
-   - the micro detail tiles at 2–4 px/mm in the near field.
+3. **Texel density** (corrected 2026-11-14 against the stats; a 25 m scarp can't carry 512 px/m of
+   unique bake, and AAA terrain-scale rock doesn't either):
+   - unique baked maps (normal, AO, masks):
+     - 200 px/m or more for props under 3 m (boulders, logs, stumps);
+     - 1024 px/m or more for heroes and creatures;
+     - 16 px/m or more for terrain-scale pieces (scarps, cliffs), where the bake carries the form and
+       the masks;
+   - everything gets tiling scan detail on top at 1024 px/m or more (2–4 px/mm) in the near field.
+   - `<set>-stats.json` reports the minimum per set.
 4. **Unique surface story:**
    - baked curvature and cavity drive edge wear, dirt in crevices, moss and lichen where water sits,
      and streaks below ledges;
@@ -327,3 +332,41 @@ Order, revised 2026-11-14 with assets as the priority:
     - the small procedural boulders (`render/rocks.js`) are the weakest asset in every meadow
       frame. They get sculpted replacements in A1.
 
+- 2026-11-14 — **A1 (first pass): the shared asset pipeline, outcrops re-baked, sculpted boulders.**
+  - `tools/models/assetkit.py` (shared by every piece script):
+    - sculpt with a per-vertex feature mask (joints, seams, cracks), decimate, one atlas;
+    - Cycles bakes the normal, AO (0.35 reach) and a second atlas `-mask.webp`: R convexity
+      (pointiness), G cavity (0.035 reach AO), B the sculptor's feature mask;
+    - LOD1/2, GLB, and `-stats.json` (triangles per LOD, px/m, atlas fill).
+    - `tools/models/preview.py` renders the turntable, with the baked AO if given the atlas.
+  - **The stats caught a defect at once.** The old unwrap (55°, margins 0.004/0.008) cut the
+    outcrops into ~650 islands, and their gaps took 90% of the atlas: 9 px/m. At 66° with
+    0.001/0.003 the fill is 38% and the density 18 px/m. The checklist's texel targets were also
+    corrected (see the checklist).
+  - Outcrop shader driven by the masks:
+    - worn edges pale; grime in cracks, creases and joints;
+    - moss in up-facing seams; lichen kept off the edges and joints;
+    - roughness from the masks.
+  - `tools/models/boulder_pieces.py`: 12 limestone boulders (rounded, angular, slab), 2,400
+    triangles at LOD0, 310 px/m.
+    - `render/outcrops.js` is now a piece field per family (`createOutcrops`, `createBoulders`).
+    - Boulders: clusters of scree within 28 m of the scarps, a scatter on the slopes, rare
+      erratics on the flat; 8,354 placed; LOD at 45/160 m, gone at 450 m (260 on Low); solid
+      (rockSolids).
+    - The meadow's procedural icosphere boulders are retired (`?boulders=0` brings them back);
+      the frost keeps its own.
+  - `render/clearance.js`: a toroidal 512² map at 0.5 m round the camera, so the grass and the
+    ground cover no longer grow through rocks. Before it, every rock was buried in blades.
+  - Architecture moved to the shared BRDF.
+  - Cost (RTX 3060, scarp view, 240 frames, GPU otherwise idle):
+    - High 14.15 ms vs 13.82 ms without boulders: **+0.33 ms**;
+    - Low 7.19 vs 7.05 ms: **+0.14 ms**;
+    - R1's specular within noise (14.22 off vs 14.15 on).
+  - Shots: `screenshots/bot/look-r2-*` (`look-r2old-*` = `?boulders=0`).
+  - Honest read:
+    - the outcrops read as weathered limestone;
+    - at eye height in knee-high grass, small boulders mostly hide (realistic, but their quality
+      only shows from 2–5 m);
+    - the turntable showed the first boulder shapes too blobby, re-sculpted blockier.
+  - Not yet done in A1: the dithered LOD crossfade, KTX2/BC7 compression (24 MB of new WebP), and
+    re-baking the Walker through assetkit.

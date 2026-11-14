@@ -63,6 +63,14 @@ export async function addEnvironmentSystems(g) {
   loop.add({ name: 'shadows', update: () => shadows.update() });
   loop.add({ name: 'rocks', update: () => { rocks.camX = camera.position.x; rocks.camZ = camera.position.z; rocks.update(); } });
   if (g.outcrops) loop.add({ name: 'outcrops', update: () => { const o = g.outcrops; o.camX = camera.position.x; o.camZ = camera.position.z; o.update(); } });
+  if (g.boulders) loop.add({ name: 'boulders', update: () => { const o = g.boulders; o.camX = camera.position.x; o.camZ = camera.position.z; o.update(); } });
+  if (g.clearance) {
+    let lastN = -1;
+    loop.add({ name: 'clearance', update: () => {
+      const n = (g.outcrops ? g.outcrops.count : 0) + (g.boulders ? g.boulders.count : 0);
+      g.clearance.update(camera.position.x, camera.position.z, n !== lastN); lastN = n;
+    } });
+  }
   // The canyon's cliff walls: levels of detail by distance (every few frames; the switches are rare).
   let canyonTick = 0;
   // Its collision (world/solids.js walls) is refreshed round the Wraith twice a second.

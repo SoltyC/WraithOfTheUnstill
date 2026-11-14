@@ -13,6 +13,8 @@ const SET = [
   ['near', -380, -470, 1.7, 12.5, 200, -0.25],
   ['golden', -250, -450, 2, 17.6, 235, 0.04],
   ['golden-back', -250, -450, 2, 17.6, 80, 0.04],
+  ['scree', -390, -481, 2, 12.5, 229, -0.25],
+  ['scarp', -400, -540, 6, 12.5, 323, -0.25],
 ];
 await bot('teleport', { x: -250, z: -450 }); await sleep(5000);
 await js(`g.game.setPlayerVisible(false);g.ws.weatherOverride='clear';return 1`);

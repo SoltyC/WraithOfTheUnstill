@@ -205,6 +205,18 @@ export async function createWorld(g) {
       outcrops.onPlaced = () => trees.setOutcrops(outcrops.covers);
     } catch (e) { console.warn('outcrops: none', e); }
   }
+  // Sculpted limestone boulders (docs/realism-plan.md A1): scree below the scarps, scatter, erratics.
+  let boulders = null;
+  if (!g.qs || g.qs.get('boulders') !== '0') {
+    try {
+      boulders = await (await import('../render/outcrops.js')).createBoulders(scene, atmosphere, matLib, streamer, { keepOut, waterAt: (x, z) => water.wetAt(x, z), exclusions: () => rocks.exclusions || [], outcrops });
+      bindShadows(boulders.material, shadows);
+      for (const [m, c0, c1] of boulders.casters()) shadows.addCaster(m, boulders.makeShadowMaterial, c1, c0);
+      boulders.freeze();
+    } catch (e) { console.warn('boulders: none', e); }
+  }
+  // Where the rocks stand, round the camera: the grass and ground cover step round them (render/clearance.js).
+  const clearance = (await import('../render/clearance.js')).createClearance(atmosphere, [outcrops, boulders]);
   post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k];for(let k=36;k<b.length;k++)P[144+k-36]=b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');
@@ -242,5 +254,5 @@ export async function createWorld(g) {
   // The wadis' evening water once the Dunes are restored (D7b), laid on the rendered ground.
   const wadiWater = (await import('../render/wadiWater.js')).createWadiWater(scene, content.clipmap, atmosphere, shadows, bindShadows, canyon.wadis, post.post.waterRipples, ground, post.post.waterSim[0]);
   water.extra = wadiWater;   // wading in the braids when they run
-  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, outcrops, wraithView, wraithGround, terrainState, matLib, fire, galeFx, tideFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, kelp, ebbholdView, crowd, wave, drift: robes });
+  Object.assign(g, { scene, camera, env, ground, streamer, atmosphere, content, bindShadows, shadows, post, ring, spindrift, canyon, slotShafts, sandfalls, wadiWater, sandDust, dust, snowfall, rain, bolt, rocks, outcrops, boulders, clearance, wraithView, wraithGround, terrainState, matLib, fire, galeFx, tideFx, pollenFx, grass, groundCover, motes, trees, wind, water, waterReflect, underwaterFx, kelp, ebbholdView, crowd, wave, drift: robes });
 }

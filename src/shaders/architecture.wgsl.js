@@ -8,6 +8,7 @@
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
+import { BRDF_WGSL } from './brdf.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
 export const ARCH_SITES = 640; // frost 58 (incl. 5 NPC props) + the meadow village (~110 buildings, ~100 lanterns) + the manor, shrines and side sites (~400 before the nooks) + the 39 nooks (464) + the erg's ruins (Phase 9 D7)
@@ -66,6 +67,7 @@ ${MATERIALS_DECL}
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
+${BRDF_WGSL()}
 ${MATERIALS_WGSL}
 ${SPELL_LIGHT_WGSL}
 
@@ -429,8 +431,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // detail far off), the highlight widens instead of sparkling under the TAA jitter.
   let nVar = dot(abs(dpdx(N)) + abs(dpdy(N)), vec3f(1.0));
   rough = max(rough, clamp(nVar * 0.6, 0.0, 0.9));
-  let shin = mix(16.0, 140.0, 1.0 - rough);
-  col += key * pow(max(dot(N, H), 0.0), shin) * (1.0 - rough) * 0.6 * vis * clamp(nl, 0.0, 1.0);
+  // The shared BRDF (realism plan R1): the scans' roughness drives the sun's highlight and the sky's
+  // reflection (glass keeps its own below).
+  col += key * vis * brdfSunSpec(N, V, L, rough, vec3f(0.04)) * (1.0 - glassK);
+  col += skySpec(N, V, rough, vec3f(0.04), ao) * skyTint * uniforms.envMisc.w * (1.0 - glassK);
   col += sheen * key * pow(max(dot(N, H), 0.0), 20.0) * vis * clamp(nl, 0.0, 1.0) * (albedo * 3.0 + 0.012);
   if (glassK > 0.0) {
     // Light through the glass when the sun is behind it (warm, as through amber), and the fracture

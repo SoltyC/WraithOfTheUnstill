@@ -11,7 +11,7 @@
 // and turf scans carry on beyond it.
 
 import { ENV_DECL, COMMON_WGSL, SPELL_LIGHT_DECL, SPELL_LIGHT_WGSL } from './common.wgsl.js';
-import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
+import { ATMO_MATERIAL_WGSL, VILLAGE_VERTEX_WGSL, CLEAR_VERTEX_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL, BARE_WGSL } from './grass.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
@@ -43,6 +43,7 @@ var<storage, read> windMap: array<u32>;
 var<storage, read> surfaceMat: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
+${CLEAR_VERTEX_WGSL}
 ${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vUv: vec2f;
 varying vCell: f32;
 varying vWorldPos: vec3f;
@@ -106,6 +107,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var acc = 0.0;
   for (var i = 0; i < 9; i++) { acc += w[i]; if (kind < 0 && r < acc) { kind = i; } }
   if (slope > 1.2 || gy < waterLevelV(root) + 0.2) { kind = -1; } // not on steep ground, not under water
+  if (clearAt(root, cam.xz) > 0.45) { kind = -1; }                // not on the rocks (render/clearance.js)
 
   // The card: base, along (spine direction per segment), across, size, atlas cell, curve.
   let S = 4.0;

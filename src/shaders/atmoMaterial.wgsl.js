@@ -4,7 +4,18 @@
 
 import { ATMO_PARAMS_WGSL, ATMO_COMMON_WGSL, AP_RES, AP_SLICES } from './atmosphere.wgsl.js';
 
-export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex', 'waterTex', 'villageTex'];
+export const ATMO_MATERIAL_TEXTURES = ['transmittanceLut', 'skyViewSun', 'skyViewMoon', 'aerialLut', 'canopyTex', 'waterTex', 'villageTex', 'clearTex'];
+/** The clearance map (render/clearance.js): where rocks stand, round the camera, so the grass and the
+ *  ground cover don't grow through them. Toroidal: CLEAR_N² cells of CLEAR_CELL m, addressed by world
+ *  position modulo the period (valid within half a period of the camera; faded out before that). */
+export const CLEAR_N = 512, CLEAR_CELL = 0.5;
+export const CLEAR_VERTEX_WGSL = /* wgsl */ `
+var clearTex: texture_2d<f32>;
+var clearTexSampler: sampler;
+fn clearAt(p: vec2f, cam: vec2f) -> f32 {
+  return textureSampleLevel(clearTex, clearTexSampler, p / ${(CLEAR_N * CLEAR_CELL).toFixed(1)}, 0.0).r * (1.0 - smoothstep(${(CLEAR_N * CLEAR_CELL * 0.36).toFixed(1)}, ${(CLEAR_N * CLEAR_CELL * 0.46).toFixed(1)}, length(p - cam)));
+}
+`;
 /** The same lookup for vertex stages that bind no atmoParams (grass, ground cover): declare
  *  VILLAGE_VERTEX_WGSL in the vertex shader, give the material the villageTex sampler (in
  *  ATMO_MATERIAL_TEXTURES) and set the `villageBox` uniform (atmo.villageBox). */
