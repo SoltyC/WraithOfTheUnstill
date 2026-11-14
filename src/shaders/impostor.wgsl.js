@@ -199,7 +199,12 @@ struct FO { @location(0) alb: vec4f, @location(1) nrm: vec4f };
   let d = impFrameDir(u.frame.xy, NF);
   // Every sample and derivative first (uniform control flow), then the kind.
   let luv = leafUv(i.uv, i.info.z);
-  let lc = textureSample(leafTex, samp, luv);
+  let lc0 = textureSample(leafTex, samp, luv);
+  // Coverage kept through the mips (shaders/trees.wgsl.js leafCoverage): the bake reads the scanned
+  // sprays several mips down, where their averaged alpha would thin the crown to twigs.
+  let tq = luv * 4096.0;
+  let mipq = max(0.5 * log2(max(dot(dpdx(tq), dpdx(tq)), dot(dpdy(tq), dpdy(tq)))), 0.0);
+  let lc = vec4f(lc0.rgb, lc0.a * (1.0 + mipq * 0.3));
   let ls = textureSample(leafSurf, samp, luv);
   let bk = textureSample(barkTex, samp, i.uv, i32(u.frame.z)).rgb;
   var Nc = normalize(cross(dpdy(i.lp), dpdx(i.lp)));

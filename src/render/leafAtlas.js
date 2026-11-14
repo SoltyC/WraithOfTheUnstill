@@ -90,6 +90,23 @@ function leaf(c, h, R, x, y, a, L, W, kind, hue, age) {
 }
 
 /** Draw both atlases; returns { color, surface } OffscreenCanvases (surface holds normals). */
+// Realism plan A2: the broadleaf rows (oak 1, birch 2) come from scanned leaves, sprays modelled and
+// rendered in Blender (tools/models/leaf_atlas.py; ambientCG LeafSet016 / LeafSet014, CC0), over the
+// drawn ones. Loaded before the trees are made (preloadBakedLeaves); ?leafscan=0 keeps the drawn rows.
+let baked = null;
+// The photographed leaves are lit and pale (mean sRGB ≈ 0.53, 0.65, 0.29): scaled toward a living
+// leaf's top-side albedo (sRGB ≈ 0.3–0.4 green), the drawn rows' level.
+const LEAF_GAIN = 0.62;
+export async function preloadBakedLeaves() {
+  if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('leafscan') === '0') return;
+  try {
+    const base = import.meta.env.BASE_URL + 'textures/';
+    const [c, s] = await Promise.all(['leaf-broadleaf.webp', 'leaf-broadleaf-surface.webp'].map(async (f) =>
+      createImageBitmap(await (await fetch(base + f)).blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' })));
+    baked = { c, s };
+  } catch (e) { console.warn('leaf atlas: drawn rows only', e); }
+}
+
 export function drawLeafAtlases() {
   const { size, cell } = ATLAS;
   const cv = new OffscreenCanvas(size, size), c = cv.getContext('2d');
@@ -166,6 +183,12 @@ export function drawLeafAtlases() {
     }
   }
   const sv = new OffscreenCanvas(size, size); sv.getContext('2d').putImageData(out, 0, 0);
+  if (baked) {
+    const cell = ATLAS.cell, cc = cv.getContext('2d'), sc = sv.getContext('2d');
+    cc.setTransform(1, 0, 0, 1, 0, 0); cc.clearRect(0, cell, size, 2 * cell);
+    cc.filter = `brightness(${LEAF_GAIN})`; cc.drawImage(baked.c, 0, cell, size, 2 * cell); cc.filter = 'none';
+    sc.setTransform(1, 0, 0, 1, 0, 0); sc.clearRect(0, cell, size, 2 * cell); sc.drawImage(baked.s, 0, cell, size, 2 * cell);
+  }
   return { color: cv, surface: sv };
 }
 

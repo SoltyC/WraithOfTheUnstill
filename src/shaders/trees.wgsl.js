@@ -113,6 +113,14 @@ fn treeTone(h: f32) -> vec3f {
   let k = fract(h * 7.31);
   return mix(vec3f(0.78, 0.9, 0.95), vec3f(1.12, 1.06, 0.82), k) * mix(0.82, 1.12, fract(h * 3.17));
 }
+// Coverage kept through the mips (Golus, "Anti-aliased alpha test"): a scanned spray is mostly gaps,
+// and averaging its alpha down the mip chain thins a distant crown to bare twigs under a fixed
+// cut-out. The alpha is scaled up with the mip level the sample reads.
+fn leafCoverage(a: f32, luv: vec2f) -> f32 {
+  let t = luv * 4096.0;
+  let mip = max(0.5 * log2(max(dot(dpdx(t), dpdx(t)), dot(dpdy(t), dpdy(t)))), 0.0);
+  return a * (1.0 + mip * 0.3);
+}
 fn leafUv(uv: vec2f, cellIdx: f32) -> vec2f {
   let c = floor(cellIdx + 0.5);
   let col = c - 4.0 * floor(c / 4.0); let row = floor(c / 4.0);
@@ -279,7 +287,8 @@ ${SHADOW_FADE}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   if (shadowFadeOut(fragmentInputs.position.xy, fragmentInputs.vFade)) { discard; }
-  let a = textureSampleLevel(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z), 1.0).a;
+  // (read at mip 1: its coverage kept, leafCoverage's scale for one level)
+  let a = textureSampleLevel(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z), 1.0).a * 1.3;
   if (a < 0.5) { discard; }
   let d = dot(fragmentInputs.vWorldPos - uniforms.shadowOrigin.xyz, -uniforms.shadowLight.xyz);
   fragmentOutputs.color = vec4f(d, 0.0, 0.0, 1.0);
@@ -318,7 +327,8 @@ ${LEAF_UV}
 ${DISSOLVE}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
-  let a = textureSample(leafAtlas, leafAtlasSampler, leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z)).a;
+  let luv = leafUv(fragmentInputs.vUv, fragmentInputs.vInfo.z);
+  let a = leafCoverage(textureSample(leafAtlas, leafAtlasSampler, luv).a, luv);
   // A card seen edge-on smears its leaves into streaks: it thins away (the crossed card facing the
   // view carries the cluster there).
   let wp = fragmentInputs.vWorldPos;

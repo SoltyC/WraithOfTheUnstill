@@ -20,10 +20,10 @@ export const SPECIES = {
     child: { count: [3, 6], angle: [0.6, 1.0], len: [0.3, 0.5] }, leafSize: [1.1, 1.7], leafDensity: 1.6, cell: 0, bark: 'bark-pine' },
   oak: { height: [13, 20], trunkR: [0.38, 0.62], trunkLean: 0.08, crownStart: [0.28, 0.42], levels: 3,
     whorl: false, branches: [9, 14], branchAngle: [0.55, 1.05], branchLen: [0.45, 0.65], droop: 0.12, up: 0.35,
-    child: { count: [3, 5], angle: [0.5, 0.95], len: [0.4, 0.6] }, leafSize: [1.5, 2.3], leafDensity: 2.2, cell: 1, bark: 'bark-oak' },
+    child: { count: [3, 5], angle: [0.5, 0.95], len: [0.4, 0.6] }, leafSize: [1.05, 1.5], leafDensity: 5.5, leafAlong: true, cell: 1, bark: 'bark-oak' },
   birch: { height: [13, 20], trunkR: [0.16, 0.26], trunkLean: 0.12, crownStart: [0.35, 0.5], levels: 3,
     whorl: false, branches: [10, 16], branchAngle: [0.5, 0.85], branchLen: [0.28, 0.4], droop: 0.35, up: 0.25,
-    child: { count: [2, 4], angle: [0.45, 0.8], len: [0.45, 0.65] }, leafSize: [1.0, 1.5], leafDensity: 2.0, cell: 2, bark: 'bark-smooth' },
+    child: { count: [2, 4], angle: [0.45, 0.8], len: [0.45, 0.65] }, leafSize: [0.85, 1.15], leafDensity: 5.5, leafAlong: true, cell: 2, bark: 'bark-smooth' },
   // Understory shrub (hazel-like): several slender stems from the ground, arching out, dense
   // small-leaved clusters — it grows in groves' gaps and along their edges.
   shrub: { height: [2.0, 3.6], trunkR: [0.035, 0.06], trunkLean: 0.2, crownStart: [0.2, 0.3], levels: 2, stems: [7, 12],
@@ -133,14 +133,26 @@ export function growTree(speciesId, seed, lod = 0) {
     }
     const sides = r > 0.25 ? (lod ? 7 : 10) : r > 0.08 ? (lod ? 5 : 6) : (lod ? 3 : 4);
     if (r > (lod ? 0.03 : 0.012)) tube(nodes, sides, 1 / 1.6);
+    // Realism plan A2: a broadleaf carries sprays along its outer branches as well as on its twigs
+    // (each card one scanned spray, tools/models/leaf_atlas.py): the level above the twigs gets a sparser set.
+    if (sp.leafAlong && !lod && level === sp.levels - 1) {
+      const n = Math.round(sp.leafDensity * 0.45 * L);
+      for (let k = 0; k < n; k++) {
+        const t = 0.35 + 0.65 * (k + R()) / n, ni = Math.min(nodes.length - 1, Math.round(t * (nodes.length - 1)));
+        cluster(nodes[ni].p, norm(add(d, [R() - 0.5, R() * 0.6 - 0.2, R() - 0.5], 1.4)), rr(R, sp.leafSize), Math.floor(R() * 997));
+      }
+    }
     if (level >= sp.levels || (lod && level >= sp.levels - 1)) {
       // Twig end: leaf clusters along the outer part.
-      const n = sp.leafDensity > 0 ? Math.max(1, Math.round((lod ? 1.2 : 2.5) * sp.leafDensity * L)) : 0;
+      const n = sp.leafDensity > 0 ? Math.max(1, Math.round((lod ? 1.2 : 2.5) * (lod && sp.leafAlong ? 3.0 : sp.leafDensity) * L)) : 0;
       for (let k = 0; k < n; k++) {
-        const t = 0.45 + 0.55 * (k + R() * 0.5) / n, ni = Math.min(nodes.length - 1, Math.round(t * (nodes.length - 1)));
+        const t0 = sp.leafAlong ? 0.15 : 0.45;
+        const t = t0 + (1 - t0) * (k + R() * 0.5) / n, ni = Math.min(nodes.length - 1, Math.round(t * (nodes.length - 1)));
         // A flat-topped crown (the acacia): leaves only up in its layer, pressed level.
         if (sp.flatTop && nodes[ni].p[1] < H * sp.flatTop) continue;
-        cluster(nodes[ni].p, sp.flatTop ? [d[0], 0.15, d[2]] : d, rr(R, sp.leafSize) * (lod ? 1.4 : 1), Math.floor(R() * 997));
+        // (broadleaf sprays turn every way off the shoot, so the crown is not a stack of parallel cards)
+        const ld = sp.leafAlong ? norm(add(d, [R() - 0.5, R() * 0.6 - 0.2, R() - 0.5], 1.2)) : d;
+        cluster(nodes[ni].p, sp.flatTop ? [d[0], 0.15, d[2]] : ld, rr(R, sp.leafSize) * (lod ? (sp.leafAlong ? 1.9 : 1.4) : 1), Math.floor(R() * 997));
       }
       return;
     }

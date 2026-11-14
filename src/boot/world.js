@@ -157,6 +157,7 @@ export async function createWorld(g) {
   bindShadows(motes.material, shadows);
   motes.freeze();
   // Trees (Phase 8): grown variants in groves; near ones shadow the near cascades, far the far.
+  await (await import('../render/leafAtlas.js')).preloadBakedLeaves();   // the scanned broadleaf sprays (realism plan A2)
   const trees = (await import('../render/trees.js')).createTrees(scene, content.clipmap, atmosphere, matLib, streamer, wind);
   for (const m of trees.materials) bindShadows(m, shadows);
   // (Lower graphics presets leave trees out of the farther cascades — Low casts none: core/graphics.js treeCascades.)

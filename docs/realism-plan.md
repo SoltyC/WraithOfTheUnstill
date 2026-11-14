@@ -370,3 +370,37 @@ Order, revised 2026-11-14 with assets as the priority:
     - the turntable showed the first boulder shapes too blobby, re-sculpted blockier.
   - Not yet done in A1: the dithered LOD crossfade, KTX2/BC7 compression (24 MB of new WebP), and
     re-baking the Walker through assetkit.
+- 2026-11-14 — **A2 (first pass): scanned-leaf sprays for oak and birch.**
+  - **Diagnosis.** The drawn atlas put about 200 leaves on each 2 m card (a whole bush per card),
+    so every crown was a stack of puffballs.
+  - `tools/models/leaf_atlas.py` (Blender) models each atlas cell as one spray:
+    - a woody stem with side shoots;
+    - oak: 60–80 real lobed leaves crowded at the shoot tips;
+    - birch: 70–110 toothed leaves along arching, drooping shoots;
+    - each leaf a curled, folded blade turned off the card.
+    - The photographs are ambientCG LeafSet016 / LeafSet014 (CC0, credited in ASSETS.md).
+  - Outputs: colour + alpha, and a card-space normal + thickness, written to
+    `data/textures/leaf-broadleaf*.webp`. `render/leafAtlas.js` lays them over rows 1–2 of the drawn
+    atlas; the scans are scaled ×0.62 toward living-leaf albedo, and `?leafscan=0` keeps the drawn rows.
+  - Generator (oak, birch):
+    - cards of 1.05–1.5 m and 0.85–1.15 m, from 1.5–2.3 m and 1.0–1.5 m;
+    - 5.5 sprays per metre, spread from 15% along the twigs and also along the level above;
+    - turned every way off the shoot;
+    - far LOD cards ×1.9 at 3 per metre.
+  - **Coverage through the mips** (Golus):
+    - the depth prepass, the shadow cut-out and the impostor bake scale alpha by mip level;
+    - without it the open sprays averaged away, and every tree past ~60 m and the whole far forest
+      went to bare twigs.
+  - Result:
+    - crowns have individual leaves, gaps and sky through them;
+    - the masses are kept;
+    - the far forest is unchanged in density.
+  - Cost (RTX 3060, scarp view): High 14.5 → 15.2 ms (+0.45 geometry, +0.23 atlas); Low +0.13 ms.
+    The trimmed density (7 → 5.5) saved only 0.1 ms, so the rest is cut-out pixels, not triangles.
+  - The first attempt (smaller cards with the old drawn sprite) was reverted: the puffs stayed and the
+    distant trees went bare (the mip problem above).
+  - Still to do in A2:
+    - pine needles (LeafSet019 is cypress, not pine);
+    - bark: real branch taper, gnarl and root flare;
+    - wind on the sprays;
+    - leaf colour variety per tree in the scans' own hues.
