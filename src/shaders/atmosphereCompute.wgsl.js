@@ -225,6 +225,12 @@ ${HEAD}
 // Frame meter (post/meter): x = trimmed mean log2 absolute luminance of the last frame, y = valid.
 @group(0) @binding(9) var<storage, read> meter: array<vec4f, 1>;
 // Frost weight at the camera (biome map: 8 m texels, row 0 = north): snow fields expose lower.
+/** The biome shares under the camera: frost, meadow, mire, dunes (0..1, summing to 1). */
+fn biomeAtCamera() -> vec4f {
+  let i = clamp(i32((P.camPos.x + 4096.0) / 8.0), 0, 1023); let j = clamp(i32((4096.0 - P.camPos.z) / 8.0), 0, 1023);
+  let a = unpack4x8unorm(biomeA[j * 1024 + i]);
+  return a / max(a.x + a.y + a.z + a.w, 0.05);
+}
 fn frostAtCamera() -> f32 {
   let i = clamp(i32((P.camPos.x + 4096.0) / 8.0), 0, 1023); let j = clamp(i32((4096.0 - P.camPos.z) / 8.0), 0, 1023);
   let a = unpack4x8unorm(biomeA[j * 1024 + i]);
@@ -306,7 +312,13 @@ fn main() {
   let keyUp = select(max(P.moonDir.y, 0.0), max(P.sunDir.y, 0.0), dot(sunC, vec3f(1.0)) >= dot(moonC, vec3f(1.0)));
   // Ground albedo for the lower hemisphere: snow returns ~80 % (the bounce that lights a robe's
   // folds, a wall's foot and a rock's underside on the steppe); bare ground ~30 %.
-  let groundAlb = mix(0.3, 0.78, smoothstep(0.3, 0.8, frostAtCamera()));
+  // (realism plan R2b, 2026-11-14: coloured by what lies there — a meadow's sward returns ~12 %, and
+  // green; a grey 30 % bounce lifted every shade toward grey, part of the "milky" look. Snow ~78 %,
+  // sand ~35 % warm, mire ~10 % dark olive.)
+  let bw = biomeAtCamera();
+  let groundAlb = vec3f(0.3) * (1.0 - bw.x - bw.y - bw.z - bw.w) + vec3f(0.78) * smoothstep(0.3, 0.8, bw.x) * select(1.0, 1.0, true)
+    + vec3f(0.09, 0.15, 0.045) * bw.y + vec3f(0.08, 0.1, 0.06) * bw.z + vec3f(0.42, 0.34, 0.24) * bw.w
+    + vec3f(0.3) * bw.x * (1.0 - smoothstep(0.3, 0.8, bw.x));
   let groundRad = groundAlb * (outLight[0].xyz * keyUp / PI_A * 0.6 + outLight[1].xyz);
   var sh: array<vec3f, 9>;
   for (var q = 0; q < 9; q++) { sh[q] = vec3f(0.0); }
