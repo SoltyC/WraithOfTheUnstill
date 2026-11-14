@@ -414,3 +414,12 @@ Order, revised 2026-11-14 with assets as the priority:
     sequence's camera jumps (its shadow and litter still draw). A fresh pose shows it. It looks
     like a dissolve fade-in that never completes (`render/trees.js` kinds 2/4; `treeLod.w` against
     the stamp). It predates A2, and A2's shot comparisons tripped over it twice. To investigate.
+- 2026-11-14 — **A2: pine.**
+  - `tools/models/needle_atlas.py` models the pine row in Blender. Scots pine shoots: paired needles
+    7 cm long at 40–72° round each shoot, the older wood bare, a tuft at the bud, blue-green with
+    per-needle tone, orange-brown stems.
+  - The first try was too dense (spruce-like pipe-cleaners) and was thinned to ~640–760 fascicles
+    per unit of shoot.
+  - Loaded into atlas row 0 (`data/textures/leaf-pine*.webp`).
+  - Pine form: crown from 42–58% of the height (it was 25–40%), 16–26 whorl branches (26–40),
+    gnarl 0.24. The 'spider' of straight spokes under the crown is gone.

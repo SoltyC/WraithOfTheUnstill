@@ -90,7 +90,7 @@ function leaf(c, h, R, x, y, a, L, W, kind, hue, age) {
 }
 
 /** Draw both atlases; returns { color, surface } OffscreenCanvases (surface holds normals). */
-// Realism plan A2: the broadleaf rows (oak 1, birch 2) come from scanned leaves, sprays modelled and
+// Realism plan A2: row 0 (pine) is modelled needles (tools/models/needle_atlas.py); the broadleaf rows (oak 1, birch 2) come from scanned leaves, sprays modelled and
 // rendered in Blender (tools/models/leaf_atlas.py; ambientCG LeafSet016 / LeafSet014, CC0), over the
 // drawn ones. Loaded before the trees are made (preloadBakedLeaves); ?leafscan=0 keeps the drawn rows.
 let baked = null;
@@ -101,9 +101,9 @@ export async function preloadBakedLeaves() {
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('leafscan') === '0') return;
   try {
     const base = import.meta.env.BASE_URL + 'textures/';
-    const [c, s] = await Promise.all(['leaf-broadleaf.webp', 'leaf-broadleaf-surface.webp'].map(async (f) =>
+    const [c, s, pc, ps] = await Promise.all(['leaf-broadleaf.webp', 'leaf-broadleaf-surface.webp', 'leaf-pine.webp', 'leaf-pine-surface.webp'].map(async (f) =>
       createImageBitmap(await (await fetch(base + f)).blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' })));
-    baked = { c, s };
+    baked = { c, s, pc, ps };
   } catch (e) { console.warn('leaf atlas: drawn rows only', e); }
 }
 
@@ -188,6 +188,9 @@ export function drawLeafAtlases() {
     cc.setTransform(1, 0, 0, 1, 0, 0); cc.clearRect(0, cell, size, 2 * cell);
     cc.filter = `brightness(${LEAF_GAIN})`; cc.drawImage(baked.c, 0, cell, size, 2 * cell); cc.filter = 'none';
     sc.setTransform(1, 0, 0, 1, 0, 0); sc.clearRect(0, cell, size, 2 * cell); sc.drawImage(baked.s, 0, cell, size, 2 * cell);
+    // Row 0: modelled pine shoots (tools/models/needle_atlas.py), authored at their albedo.
+    cc.clearRect(0, 0, size, cell); cc.drawImage(baked.pc, 0, 0, size, cell);
+    sc.clearRect(0, 0, size, cell); sc.drawImage(baked.ps, 0, 0, size, cell);
   }
   return { color: cv, surface: sv };
 }

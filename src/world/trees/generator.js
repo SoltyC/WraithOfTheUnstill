@@ -15,8 +15,8 @@
 const TAU = Math.PI * 2;
 
 export const SPECIES = {
-  pine: { height: [14, 24], trunkR: [0.22, 0.38], trunkLean: 0.04, crownStart: [0.25, 0.4], levels: 2,
-    whorl: true, branches: [26, 40], branchAngle: [1.25, 1.6], branchLen: [0.32, 0.42], droop: 0.55, up: 0.0,
+  pine: { height: [14, 24], trunkR: [0.22, 0.38], trunkLean: 0.06, crownStart: [0.42, 0.58], levels: 2, gnarl: 0.24,
+    whorl: true, branches: [16, 26], branchAngle: [1.25, 1.6], branchLen: [0.32, 0.42], droop: 0.55, up: 0.0,
     child: { count: [3, 6], angle: [0.6, 1.0], len: [0.3, 0.5] }, leafSize: [1.1, 1.7], leafDensity: 1.6, cell: 0, bark: 'bark-pine' },
   oak: { height: [13, 20], trunkR: [0.38, 0.62], trunkLean: 0.08, crownStart: [0.28, 0.42], levels: 3,
     whorl: false, branches: [9, 14], branchAngle: [0.55, 1.05], branchLen: [0.45, 0.65], droop: 0.12, up: 0.35,
