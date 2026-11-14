@@ -86,7 +86,9 @@ fn waterLevelAt(p: vec2f) -> f32 {
   return textureLoad(waterTex, vec2i(i32(clamp((p.x + 4096.0) / 4.0, 0.0, 2047.0)), i32(clamp((4096.0 - p.y) / 4.0, 0.0, 2047.0))), 0).r;
 }
 /** Under the crowns the open sky is partly hidden (scale the sky IBL by this)… */
-fn canopySky(c: f32) -> f32 { return 1.0 - 0.45 * c; }
+// (realism plan R2c, 2026-11-14: a closed canopy lets through 10–20 % of the sky, not 55 %; the
+// forest's interior and its floor seen from the meadow read deep, as the reference's do.)
+fn canopySky(c: f32) -> f32 { return 1.0 - 0.82 * c; }
 /** …and the sunlit leaves above and around send down a warm-green fill: irradiance/π like the
  *  sky term (add to it). The reference's forest is never black in the shade. */
 fn canopyFill(c: f32, N: vec3f) -> vec3f {
