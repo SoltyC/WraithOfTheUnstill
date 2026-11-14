@@ -19,10 +19,8 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WSIM_SAMPLE_WGSL } from './waterSim.wgsl.js';
-import { WAVE_BANDS_WGSL } from './waterFFT.wgsl.js';
 import { WEATHER_FOG_WGSL } from './post/fog.wgsl.js';
 import { SOUNDING } from '../world/sounding.js';
-import { W_SIGMA as W_SIGMA_V, W_BODY as W_BODY_V, vec3 as v3, WATER_FRESNEL_WGSL } from './waterOptics.js';
 
 /** Under the water (Phase 10 U1; post/compose applies the same): extinction (1/m) and what the
  *  body scatters back per unit of light, for clear water and the mire's tannin. */
@@ -51,9 +49,8 @@ export const WATER_RIPPLES = 64;
 /**
  * Slope of the water surface at p (dh/dx, dh/dz) and foam, from the wind (direction × speed
  * factor) and the ripples. Needs `waterRipples: array<vec4f>` (x, z, start time, strength),
- * `waterSim: array<vec4f>` (the simulation's current state), a value noise
- * `wNoised(p) -> vec3f` (value, d/dx, d/dy) and waveBands() (shaders/waterFFT.wgsl.js: WAVE_BANDS_WGSL
- * with its textures, or WAVE_BANDS_NONE_WGSL) declared by the host.
+ * `waterSim: array<vec4f>` (the simulation's current state) and a value noise
+ * `wNoised(p) -> vec3f` (value, d/dx, d/dy) declared by the host.
  */
 export const WATER_WAVES_WGSL = /* wgsl */ `
 ${WSIM_SAMPLE_WGSL(WATER_RIPPLES)}
@@ -61,11 +58,32 @@ fn waterHash(i: f32) -> f32 { return fract(sin(i * 91.7 + 3.1) * 43758.5453); }
 // fp: the pixel's footprint on the water (m). A wave train shorter than the footprint fades out
 // and its slope becomes roughness (w: the slope variance it took with it) — no aliasing stripes.
 fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
-  // The lake's own waves: the FFT bands (shaders/waterFFT.wgsl.js), scaled by the wind here and
-  // by the gust patches; what the pixel cannot resolve becomes roughness.
-  let wb = waveBands(p, t, length(wind), fp);
-  var g = wb.xy;
-  var lost = wb.z;
+  let wsp = length(wind);
+  let wd = select(vec2f(1.0, 0.0), wind / wsp, wsp > 1e-4);
+  let calm = clamp(wsp, 0.0, 1.8);
+  var g = vec2f(0.0);
+  var lost = 0.0;
+  // Ten wave trains, 9 cm to 4 m, spread about the wind; short ones answer the wind at once.
+  for (var i = 0; i < 10; i++) {
+    let fi = f32(i);
+    let lam = 0.09 * pow(1.52, fi);
+    let k = 6.2831853 / lam;
+    let w = sqrt(9.81 * k + 7.4e-5 * k * k * k);       // gravity–capillary dispersion
+    let ang = (waterHash(fi) - 0.5) * 2.4;
+    let ca = cos(ang); let sa = sin(ang);
+    let d = vec2f(wd.x * ca - wd.y * sa, wd.x * sa + wd.y * ca);
+    let st0 = 0.05 * smoothstep(0.0, 0.2 + 0.45 * fi / 9.0, calm) * (0.55 + 0.45 * min(calm, 1.0));
+    let keep = 1.0 - smoothstep(lam * 0.12, lam * 0.45, fp);
+    let st = st0 * keep;
+    lost += st0 * st0 * (1.0 - keep * keep);
+    let ph = k * dot(d, p) - w * t + waterHash(fi + 17.0) * 6.2831853;
+    g += d * (st * cos(ph));
+  }
+  // Cat's paws: patchy, drifting fine roughness (two octaves of noise, carried downwind).
+  let q = p * 2.3 + wd * t * 0.9;
+  let kq = 1.0 - smoothstep(0.05, 0.2, fp);
+  g += (wNoised(q).yz * 0.010 + wNoised(q * 2.7 + 11.0).yz * 0.006) * calm * kq;
+  lost += 0.0001 * calm * (1.0 - kq);
   // The Wraith in the water (render/water.js writes a dense trail: x, z, time, w = 8·bin + strength
   // with bin the heading in 64 steps, 64 = a splash). A body moving through water does not throw
   // rings: each trail point sends one soft crest out sideways (none ahead of where the body went),
@@ -201,12 +219,10 @@ fn main(input: VertexInputs) -> FragmentInputs {
 }
 `;
 
-/** Clear upland water (shaders/waterOptics.js, realism plan W1): red goes first, then blue (the
- *  dissolved organics); green lasts. The body sends back ~1 %: a lake's look is its reflection. */
+/** Clear highland water: red goes first, then green; a little green-blue body colour. */
 const OPTICS = /* wgsl */ `
-const W_SIGMA: vec3f = ${v3(W_SIGMA_V)};   // diffuse attenuation (1/m)
-const W_BODY: vec3f = ${v3(W_BODY_V)};    // irradiance reflectance of the deep body
-${WATER_FRESNEL_WGSL}
+const W_SIGMA: vec3f = vec3f(0.42, 0.085, 0.075);   // absorption + scattering out (1/m)
+const W_BODY: vec3f = vec3f(0.010, 0.026, 0.022);    // what the deep body sends back up (≈ 2–3 %: lakes are dark)
 // The mire's black water (Phase 10 F1): humic tannins take the blue first, then the green, so a
 // hand's depth is amber, a knee's depth tea, and anything deeper black; it sends back almost
 // nothing (a mirror over a dark body). Blended in by the mire's biome weight.
@@ -246,9 +262,6 @@ ${absorb ? '' : SHADOW_RECEIVE_WGSL}
 ${WIND_WGSL}
 ${GROUND_WGSL}
 fn wNoised(p: vec2f) -> vec3f { return noised(p); }
-fn waveDir() -> vec2f { return windBlock[0].xy; }
-fn waveBase() -> f32 { return windBlock[0].z; }
-${WAVE_BANDS_WGSL(0)}
 ${WATER_WAVES_WGSL}
 ${RAIN_RIPPLES_WGSL}
 ${OPTICS}
@@ -278,7 +291,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let mire = wMire(wp.xz) * select(1.0, 0.0, fragmentInputs.vFlow.w < -1.5);   // an interior's water is clear
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   // Light lost at the surface (flat-water Fresnel: the surface pass adds the reflection back).
-  let F = waterFresnel(abs(V.y));
+  let F = 0.02 + 0.98 * pow(1.0 - abs(V.y), 5.0);
   // Caustics on the bed: two drifting cell layers focusing the sun, strongest in the shallows and
   // with wind on the water (a mirror focuses nothing).
   let t = uniforms.waterParams.x;
@@ -384,44 +397,30 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   let shore = smoothstep(0.0, 0.25, depth);   // a believable fade-out width over a gentle bank
   let nv = max(dot(N, V), 0.0);
-  let F = waterFresnel(nv) * shore;
+  let F = (0.02 + 0.98 * pow(1.0 - nv, 5.0)) * shore;
   let canopy = canopyAt(wp.xz);
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
   let vis = shadowVisibilityFast(wp, camPos);
   // Sun glints: GGX on the wave normal, rougher in the gusts; the disc itself where it is calm.
-  // (The bands' unresolved variance, sl.w, carries the wind's roughness: only a floor here.)
-  let r0 = 0.01;
+  let r0 = 0.012 + 0.03 * clamp(wf.z, 0.0, 1.6);
   // Specular AA (adapted from web-ocean (Noniv, MIT) ocean.js: dpdx/dpdy of the slope widen the lobe):
-  // slope change across the pixel (box-filter variance /12, as GGX alpha² = 2·var). Gated on the
-  // footprint so close-up glints stay sharp.
+  // slope change across the pixel (box-filter variance /12, as GGX alpha² = 2·var) plus the sheen
+  // the unresolved ripples add with range. Gated on the footprint so close-up glints stay sharp.
   let aa = (dot(dsx, dsx) + dot(dsy, dsy)) * (1.0 / 6.0) * smoothstep(0.008, 0.05, fp);
-  let rough = sqrt(r0 * r0 + sl.w * 2.0 + min(aa, 0.08));
+  let sheen = 0.007 * smoothstep(30.0, 400.0, dist);
+  let rough = sqrt(r0 * r0 + sl.w * 2.0 + min(aa, 0.08) + sheen);
   // Grazing view (web-ocean (Noniv, MIT) ocean.js, reflection tilt): the facets seen lean toward the
   // viewer, so the reflector tilts up and mirrors higher, greyer sky as the roughness grows.
   let sigV = rough * 0.7071;
   let aV = V.y / (max(sqrt(1.0 - V.y * V.y), 1e-3) * 1.4142 * max(sigV, 1e-3));
   let tilt = 0.32 * sigV * (1.0 - smoothstep(0.0, 2.5, aV));
-  // The waves the pixel cannot resolve (sl.w: their slope variance per axis, the bands' and the
-  // ripples' below the footprint) still scatter what it mirrors: four looks across that spread are
-  // averaged, so a ruffled patch blurs and dims the mirrored shore and range, and calm water stays
-  // sharp (realism plan W2; post/ssr does the same for what it mirrors).
-  let sig = sqrt(sl.w) * select(0.0, 1.0, sl.w > 1.6e-5);
-  let tiltV = normalize(vec3f(V.x, 0.0, V.z) + vec3f(1e-5, 0.0, 0.0)) * tilt;
+  let nV = normalize(N + normalize(vec3f(V.x, 0.0, V.z) + vec3f(1e-5, 0.0, 0.0)) * tilt);
+  var R = reflect(-V, nV); R.y = abs(R.y);
   let ex = uniforms.fogParams.z * atmoExposure();
   let interiorW = fragmentInputs.vFlow.w < -1.5;
-  var R = reflect(-V, normalize(N + tiltV)); R.y = abs(R.y);
-  var skyAcc = vec3f(0.0);
-  // Taps along the view (a slope that way swings the reflection up and down: the vertical smear of
-  // a reflection on moving water) and a little across it; (±1.5, ±0.5)σ keeps the variance.
-  let alongV = normalize(V.xz + vec2f(1e-5, 0.0)); let acrossV = vec2f(-alongV.y, alongV.x);
-  for (var k = 0; k < 4; k++) {
-    let o = (alongV * (f32(k) - 1.5) * 1.12 + acrossV * select(-0.5, 0.5, (k & 1) == 1)) * sig;
-    var Rk = reflect(-V, normalize(normalize(vec3f(-(sl.x + o.x), 1.0, -(sl.y + o.y))) + tiltV)); Rk.y = abs(Rk.y);
-    skyAcc += atmoSky(Rk);
-  }
   // An interior's water mirrors no sky: the dark of the room (SSR adds the lamps and walls it can see).
-  var sky = select(skyAcc * 0.25 * (1.0 - 0.75 * canopy), vec3f(0.004, 0.006, 0.007) / max(ex, 1e-6), interiorW);
+  var sky = select(atmoSky(R) * (1.0 - 0.75 * canopy), vec3f(0.004, 0.006, 0.007) / max(ex, 1e-6), interiorW);
   // The planar reflection (trees off screen too), on its plane only, bent by the waves; where it
   // holds a tree the post chain's SSR leaves this pixel to it (alpha below).
   var planar = 0.0;
@@ -435,23 +434,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let c = uniforms.reflVP * vec4f(wp.x + sl.x * bend, wp.y, wp.z + sl.y * bend, 1.0);
     if (c.w > 0.0 && c0.w > 0.0) {
       let uv = vec2f(c.x / c.w * 0.5 + 0.5, 0.5 - c.y / c.w * 0.5);
-      // Blurred by the unresolved waves as the sky is (four looks; the alpha, the tree's distance, kept).
-      var rf = textureSampleLevel(reflTex, reflTexSampler, uv, 0.0);
-      var cov = clamp(rf.a, 0.0, 1.0);
-      if (sig > 0.0) {
-        var rgb = rf.rgb * cov;
-        for (var k = 1; k < 4; k++) {
-          let o = (alongV * (f32(k) - 1.5) * 1.12 + acrossV * select(-0.5, 0.5, (k & 1) == 1)) * sig * 2.0 * bend;
-          let ck = uniforms.reflVP * vec4f(wp.x + sl.x * bend + o.x, wp.y, wp.z + sl.y * bend + o.y, 1.0);
-          let rk = textureSampleLevel(reflTex, reflTexSampler, vec2f(ck.x / ck.w * 0.5 + 0.5, 0.5 - ck.y / ck.w * 0.5), 0.0);
-          let ak = clamp(rk.a, 0.0, 1.0);
-          rgb += rk.rgb * ak; cov += ak;
-        }
-        rf = vec4f(rgb / max(cov, 1e-4), rf.a);
-        cov *= 0.25;
-      }
+      let rf = textureSampleLevel(reflTex, reflTexSampler, uv, 0.0);
       let edge = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-      planar = cov * smoothstep(0.0, 0.03, edge);
+      planar = clamp(rf.a, 0.0, 1.0) * smoothstep(0.0, 0.03, edge);
       if (planar > 0.0) {
         // The air between the water and the tree: the post chain hazes only the view's path to
         // the water, so the reflected path gets the same weather fog and forest haze here.
@@ -468,7 +453,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   let H = normalize(L + V);
   let nl = max(dot(N, L), 0.0);
-  let Fs = waterFresnel(dot(H, V));
+  let Fs = 0.02 + 0.98 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
   let spec = key * ggxD(max(dot(N, H), 0.0), rough) * Fs * nl / max(4.0 * nv * nl, 0.05) * vis * nl * shore;
   // The water body: light scattered back up out of it (its colour), lit by the sun and the sky.
   let light = key * max(L.y, 0.0) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, vec3f(0.0, 1.0, 0.0));

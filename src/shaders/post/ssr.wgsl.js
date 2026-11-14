@@ -11,7 +11,6 @@ import {shelterWGSL} from '../../world/windShelter.js';
 import { POST_PARAMS_WGSL } from './common.wgsl.js';
 import { WIND_CORE_WGSL, WIND_STORM_WGSL } from '../wind.wgsl.js';
 import { WATER_WAVES_WGSL } from '../water.wgsl.js';
-import { WAVE_BANDS_WGSL } from '../waterFFT.wgsl.js';
 
 export const ssrCS = /* wgsl */ `
 ${POST_PARAMS_WGSL}
@@ -35,9 +34,6 @@ fn wNoised(p: vec2f) -> vec3f {
 ${WIND_CORE_WGSL}
 ${WIND_STORM_WGSL}
 ${shelterWGSL('postWindShelter','P.shelterInfo',k=>`P.shelter[${k}/4u][${k}%4u]`)}
-fn waveDir() -> vec2f { return P.pad[4].xy; }
-fn waveBase() -> f32 { return P.pad[4].z; }
-${WAVE_BANDS_WGSL(9)}
 ${WATER_WAVES_WGSL}
 
 fn posOr(q: vec2i, sz: vec2i, fallback: vec3f) -> vec3f {
@@ -76,7 +72,6 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   var n = normalize(nc);
   let V = normalize(P.cam.xyz - pos);
   if (dot(n, V) < 0.0) { n = -n; }
-  var wSl = vec2f(0.0); var wSig = 0.0;      // water: the resolved slope and the spread of the rest
   // Water: the surface is flat in the depth buffer; its waves and the Wraith's ripples (the same
   // function the water shader uses, the same wind) bend the reflected ray.
   if (isWater) {
@@ -86,7 +81,6 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let fp = dist0 * P.size.w * 2.0 / max(abs(V.y), 0.05);
     let sl = waterSlope(pos.xz, P.pad[4].w, wv, fp);
     n = normalize(vec3f(-sl.x, 1.0, -sl.y));
-    wSl = sl.xy; wSig = sqrt(sl.w);
   }
   let R = reflect(-V, n);
   // March: growing steps from a small offset; per-pixel jitter (TAA integrates it).
@@ -137,36 +131,22 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     // Water with nothing hit nearby: what lies far along the reflected ray — the far shore, the
     // mountains, the sky with its clouds — read from the frame where that direction lands.
     if (isWater && !planar) {
-      // Rough water mirrors a blur: four looks along the spread of the unresolved waves (realism
-      // plan W2), so a ruffled patch smears the range it would mirror when calm.
-      var acc = vec3f(0.0); var wsum = 0.0;
-      let alongV = normalize(V.xz + vec2f(1e-5, 0.0)); let acrossV = vec2f(-alongV.y, alongV.x);
-      for (var k = 0; k < 4; k++) {
-        let o = (alongV * (f32(k) - 1.5) * 1.12 + acrossV * select(-0.5, 0.5, (k & 1) == 1)) * wSig * select(0.0, 1.0, wSig > 0.004);
-        let nk = normalize(vec3f(-(wSl.x + o.x), 1.0, -(wSl.y + o.y)));
-        // A facet tilted so far that it would mirror the water itself adds nothing here (the
-        // water's own sky and sun glint stand): clamped to the horizon it took the far bank.
-        let Rf = reflect(-V, nk);
-        if (Rf.y < 0.005) { continue; }
-        let cf = P.vp * vec4f(P.cam.xyz + Rf * 1e4, 1.0);
-        if (cf.w <= 0.0) { continue; }
+      var Rf = R; Rf.y = max(Rf.y, 0.01);
+      let cf = P.vp * vec4f(P.cam.xyz + Rf * 1e4, 1.0);
+      if (cf.w > 0.0) {
         let uvf = (cf.xy / cf.w) * 0.5 + 0.5;
-        // Each look fades out toward the frame's edge (no step when one leaves it).
-        let e = min(min(uvf.x, 1.0 - uvf.x), min(uvf.y, 1.0 - uvf.y));
-        let we = smoothstep(0.0, 0.12, e);
-        if (we <= 0.0) { continue; }
-        let pf = vec2i(clamp(uvf, vec2f(0.0), vec2f(0.9999)) * P.size.xy);
-        var cc = textureLoad(sceneTex, pf, 0).rgb;
-        if (textureLoad(depthTex, pf, 0) <= 0.0 && P.fog2.y > 0.02) {
-          let cl = textureSampleLevel(cloudTex, cloudSampler, vec2f(uvf.x, uvf.y), 0.0);
-          cc = cc * cl.a + cl.rgb * P.keyCol.w * atmoLight[3].w;
+        if (all(uvf > vec2f(0.0)) && all(uvf < vec2f(1.0))) {
+          let pf = vec2i(uvf * P.size.xy);
+          var cc = textureLoad(sceneTex, pf, 0).rgb;
+          if (textureLoad(depthTex, pf, 0) <= 0.0 && P.fog2.y > 0.02) {
+            let cl = textureSampleLevel(cloudTex, cloudSampler, vec2f(uvf.x, uvf.y), 0.0);
+            cc = cc * cl.a + cl.rgb * P.keyCol.w * atmoLight[3].w;
+          }
+          let edgeF = min(min(uvf.x, 1.0 - uvf.x), min(uvf.y, 1.0 - uvf.y));
+          let wF = clamp(mask * smoothstep(0.0, 0.1, edgeF) * P.ssr.x, 0.0, 1.0);
+          textureStore(outSsr, hp, vec4f(cc * wF, wF));
+          return;
         }
-        acc += cc * we; wsum += we;
-      }
-      if (wsum > 0.0) {
-        let wF = clamp(mask * (wsum * 0.25) * P.ssr.x * exp(-wSig * wSig * 500.0), 0.0, 1.0);
-        textureStore(outSsr, hp, vec4f(acc / wsum * wF, wF));
-        return;
       }
     }
     textureStore(outSsr, hp, vec4f(0.0)); return;
@@ -176,7 +156,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let edge = min(min(hitUv.x, 1.0 - hitUv.x), min(hitUv.y, 1.0 - hitUv.y));
   var conf = smoothstep(0.0, 0.08, edge) * (1.0 - smoothstep(P.ssr.y * 0.6, P.ssr.y, t)) * (1.0 - smoothstep(100.0, 160.0, dist0));
   conf *= 1.0 - smoothstep(0.2, 0.6, dot(R, V));
-  if (!isWater) { conf *= 1.0; } else { conf = smoothstep(0.0, 0.08, edge) * exp(-wSig * wSig * 500.0); } // water reflects at any distance, a rough patch handing back to its blurred sky
+  if (!isWater) { conf *= 1.0; } else { conf = smoothstep(0.0, 0.08, edge); } // water reflects at any distance
   let w = clamp(mask * conf * P.ssr.x, 0.0, 1.0);
   textureStore(outSsr, hp, vec4f(hc * w, w)); // premultiplied: bilinear upsampling stays correct
 }

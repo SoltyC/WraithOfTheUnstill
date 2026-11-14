@@ -9,9 +9,9 @@ B=$1; A=$2; OUT=$3
 F=/mnt/c/ffmpeg/bin/ffmpeg.exe
 TMP=$(mktemp -d -p "${TMPDIR:-/tmp}")
 FONT="C\\:/Windows/Fonts/arialbd.ttf"
-declare -A CAP=([lake]="Lake and ranges - eroded mountains, scanned-leaf forest" [meadow]="The sward - GTAO depth, clumped flowers, seed heads" [scarp]="Sculpted limestone outcrop and boulders" [tree]="Tree close-up - real leaf sprays, crooked limbs" [vista]="Wide - shared PBR lighting, forest depth" [golden]="Late afternoon toward the sun" [water-shore]="Lake - FFT waves, gust patches drifting over a mirror" [water-golden]="Golden hour - the range and treeline mirrored" [water-sun]="Into the sun - glitter on wind-driven ripples" [water-shallows]="Shallows - pebbles and silt seen through clear water")
+declare -A CAP=([lake]="Lake and ranges - eroded mountains, scanned-leaf forest" [meadow]="The sward - GTAO depth, clumped flowers, seed heads" [scarp]="Sculpted limestone outcrop and boulders" [tree]="Tree close-up - real leaf sprays, crooked limbs" [vista]="Wide - shared PBR lighting, forest depth" [golden]="Late afternoon toward the sun")
 list=$TMP/list.txt; : > "$list"
-for s in ${SHOTS:-lake meadow scarp tree vista golden}; do
+for s in lake meadow scarp tree vista golden; do
   out="$TMP/$s.mp4"
   vf="[0:v]crop=960:1080:0:0[l];[1:v]crop=960:1080:960:0[r];[l][r]hstack=inputs=2,"
   vf+="drawbox=x=958:y=0:w=4:h=1080:color=white@0.9:t=fill,"
