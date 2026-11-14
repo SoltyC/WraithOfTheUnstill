@@ -63,20 +63,26 @@ fn waterSlope(p: vec2f, t: f32, wind: vec2f, fp: f32) -> vec4f {
   let calm = clamp(wsp, 0.0, 1.8);
   var g = vec2f(0.0);
   var lost = 0.0;
-  // Ten wave trains, 9 cm to 4 m, spread about the wind; short ones answer the wind at once.
-  for (var i = 0; i < 10; i++) {
+  // Fourteen wave trains, 7 cm to 5 m, spread about the wind (the short ones wider: wind chop is
+  // short-crested, coming from all round the wind); short ones answer the wind at once.
+  // The crests are bent by a slow warp of the plane (a few metres, a few tenths of a radian), so
+  // no train runs on as one straight ruled line: the chop breaks into lumps, as real chop does.
+  // (What turns a crest is the warp's gradient, amplitude × frequency: kept to ~0.1–0.15.)
+  let wq = p * 0.09 + wd * t * 0.04;
+  let pw = p + (wNoised(wq).yz * 0.5 + wNoised(wq * 4.4 + 7.3).yz * 0.09);
+  for (var i = 0; i < 14; i++) {
     let fi = f32(i);
-    let lam = 0.09 * pow(1.52, fi);
+    let lam = 0.07 * pow(1.39, fi);
     let k = 6.2831853 / lam;
     let w = sqrt(9.81 * k + 7.4e-5 * k * k * k);       // gravity–capillary dispersion
-    let ang = (waterHash(fi) - 0.5) * 2.4;
+    let ang = (waterHash(fi) - 0.5) * (1.7 + 1.5 * (1.0 - fi / 13.0));
     let ca = cos(ang); let sa = sin(ang);
     let d = vec2f(wd.x * ca - wd.y * sa, wd.x * sa + wd.y * ca);
-    let st0 = 0.05 * smoothstep(0.0, 0.2 + 0.45 * fi / 9.0, calm) * (0.55 + 0.45 * min(calm, 1.0));
+    let st0 = 0.042 * smoothstep(0.0, 0.2 + 0.45 * fi / 13.0, calm) * (0.55 + 0.45 * min(calm, 1.0));
     let keep = 1.0 - smoothstep(lam * 0.12, lam * 0.45, fp);
     let st = st0 * keep;
     lost += st0 * st0 * (1.0 - keep * keep);
-    let ph = k * dot(d, p) - w * t + waterHash(fi + 17.0) * 6.2831853;
+    let ph = k * dot(d, pw) - w * t + waterHash(fi + 17.0) * 6.2831853;
     g += d * (st * cos(ph));
   }
   // Cat's paws: patchy, drifting fine roughness (two octaves of noise, carried downwind).
@@ -166,8 +172,11 @@ fn rainRipples(p: vec2f, t: f32, fp: f32) -> vec2f {
       let d = length((q - (c + 0.15 + 0.7 * h.xy)) * cell);
       let r = ph * 0.2 * (1.0 + 0.5 * h.x);
       let x = d - r;
-      let env = exp(-x * x / 0.00022) * (1.0 - ph) * (1.0 - ph);
-      g += (q - (c + 0.15 + 0.7 * h.xy)) * cell / max(d, 0.01) * (env * cos(x * 95.0) * 0.3);
+      // A drop's ring is a few millimetres high: a shallow slope that dies as it spreads (it dents
+      // the reflection; it does not draw a bright circle).
+      let k = 1.0 - ph;
+      let env = exp(-x * x / 0.00022) * k * k * k;
+      g += (q - (c + 0.15 + 0.7 * h.xy)) * cell / max(d, 0.01) * (env * cos(x * 95.0) * 0.12);
     } }
   }
   return g * (1.0 - smoothstep(0.03, 0.14, fp));
@@ -351,6 +360,29 @@ fn bogLitter(p0: vec2f, t: f32, fp: f32, drift: vec2f) -> vec4f {
   let cov = smoothstep(1.0, 0.6, e);
   return vec4f(col, mix(cov, far, smoothstep(0.02, 0.06, fp)));
 }
+/** One size of glitter facets (cell c, m): a jittered point per cell flashing on its own phase,
+ *  normalised to mean 1. */
+fn glitterCells(p: vec2f, t: f32, c: f32, seed: f32) -> f32 {
+  let q = p / c; let id = floor(q); let f = q - id;
+  let h = wHash3(id + seed);
+  let d = length(f - (0.2 + 0.6 * h.xy));
+  let dot1 = 1.0 - smoothstep(0.08, 0.26, d);
+  let fl = max(sin(t * (2.5 + 4.0 * h.z) + h.x * 37.0), 0.0);
+  // The point covers ≈ 0.11 of its cell, the flash² averages 0.25: × 36 keeps the mean at 1.
+  return dot1 * fl * fl * 36.0;
+}
+fn waterGlitter(p: vec2f, t: f32, fp: f32, wind: f32) -> f32 {
+  let amt = 0.9 * smoothstep(0.05, 0.4, wind);
+  // Three sizes, each drawn while its cell spans more than about one and a half pixels.
+  let a = 1.0 - smoothstep(0.06, 0.1, fp);    // 12 cm
+  let b = 1.0 - smoothstep(0.25, 0.4, fp);    // 50 cm
+  let c = 1.0 - smoothstep(0.8, 1.3, fp);     // 1.6 m
+  var gl = 1.0;
+  if (c > 0.0) { gl = mix(gl, glitterCells(p, t * 0.6, 1.6, 23.0), c); }
+  if (b > 0.0) { gl = mix(gl, 0.4 * gl + 0.6 * glitterCells(p, t * 0.8, 0.5, 9.0), b); }
+  if (a > 0.0) { gl = mix(gl, 0.4 * gl + 0.6 * glitterCells(p, t, 0.12, 0.0), a); }
+  return mix(1.0, gl, amt);
+}
 fn ggxD(nh: f32, a: f32) -> f32 { let a2 = a * a; let d = nh * nh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d); }
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -454,7 +486,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let H = normalize(L + V);
   let nl = max(dot(N, L), 0.0);
   let Fs = 0.02 + 0.98 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
-  let spec = key * ggxD(max(dot(N, H), 0.0), rough) * Fs * nl / max(4.0 * nv * nl, 0.05) * vis * nl * shore;
+  var spec = key * ggxD(max(dot(N, H), 0.0), rough) * Fs * nl / max(4.0 * nv * nl, 0.05) * vis * nl * shore;
+  // Glitter: the sun's path on rough water is not a sheen but countless facets each flashing for
+  // an instant. The wide lobe above is their average; here it is gathered into points (world cells,
+  // two sizes, a facet flashing on its own phase), the same light on average. Where a cell is
+  // smaller than about two pixels the points are left averaged (the far path stays a smooth column).
+  spec *= waterGlitter(wp.xz, t, fp, clamp(wf.z, 0.0, 1.6));
   // The water body: light scattered back up out of it (its colour), lit by the sun and the sky.
   let light = key * max(L.y, 0.0) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, vec3f(0.0, 1.0, 0.0));
   let body = mix(W_BODY, T_BODY, mire) * light * (1.0 - T);

@@ -166,7 +166,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   var wp: vec3f;
   let boost = 1.0 + dist * 0.045;
   if (kind < 0.5) {
-    let r = select(0.05, 0.26, onWater > 0.5) * boost * (0.45 + 0.55 * sqrt(life));
+    let r = select(0.05, 0.18, onWater > 0.5) * boost * (0.45 + 0.55 * sqrt(life));
     wp = vec3f(p.x + corner.x * r, y + 0.012, p.y + corner.y * r);
   } else {
     let toCam = normalize(vec3f(cam.x - p.x, 0.0, cam.z - p.y) + vec3f(1e-5, 0.0, 0.0));
@@ -230,7 +230,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let col = sky * mix(0.7, 1.0, info.y) + atmoKeyColor() * 0.04 + gridAcc(wp + vec3f(0.0, 0.3, 0.0), V, 1.0) * 0.55 / max(ex, 1e-6);
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
   let outc = displayTransform(lit, ex);
-  let a = clamp(fragmentInputs.vAlpha * shape * mix(0.55, 0.38, info.y), 0.0, 1.0);
+  // On water the ring is mostly the water's own (shaders/water.wgsl.js bends its reflection): this
+  // adds only the faint bright lip of a fresh one, not a painted circle.
+  let a = clamp(fragmentInputs.vAlpha * shape * mix(0.55, 0.12, info.y), 0.0, 1.0);
   fragmentOutputs.color = vec4f(outc * a, a);
 }
 `;
