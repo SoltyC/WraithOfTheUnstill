@@ -44,8 +44,8 @@ export function createCompose(post, scene, camera, atmo, fog) {
   const comp = {
     aoOn: true,
     /** AO world radius (m) and intensity. */
-    aoRadius: 0.9,
-    aoIntensity: 0.55,
+    aoRadius: 1.2,
+    aoIntensity: 1.0,
     ssrOn: true,
     /** SSR: blend strength, max ray length (m), surface thickness (m). */
     ssrIntensity: 1, ssrRange: 40, ssrThickness: 0.6,

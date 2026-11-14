@@ -353,7 +353,8 @@ fn main() {
     let expected = 0.5 * adapt;
     // (realism plan, 2026-11-14: up to +1.5 stop, was +0.75. A field in a ridge's shadow under a
     // bright evening sky went near black; the eye — and a film camera's operator — opens up there.)
-    comp = clamp(pow(expected / exp2(mt.x), 0.75), 0.5, 2.83);
+    // (By day the old +0.75 stop stands: a close view of dark grass otherwise opened up and went flat.)
+    comp = clamp(pow(expected / exp2(mt.x), 0.75), 0.5, mix(2.83, 1.68, smoothstep(0.12, 0.3, P.sunDir.y)));
   }
   // Weather: an overcast or snowing day is meant to read grey and heavy, not auto-exposed back
   // to a sunny day's brightness (−0.5 stop under a closed deck).

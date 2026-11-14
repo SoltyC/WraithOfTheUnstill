@@ -450,3 +450,17 @@ Order, revised 2026-11-14 with assets as the priority:
     - canopySky 0.45 → 0.82 (a closed canopy passes 10–20% of the sky);
     - leaf gain 0.62 → 0.48 (canopy albedo; the forest now reads deep against the meadow, as in
       the reference).
+- 2026-11-14 — **R2a: GTAO.**
+  - `shaders/post/ao.wgsl.js` replaces Alchemy AO with GTAO (Jimenez 2016):
+    - two slices per pixel, rotated per pixel and per frame, four steps a side;
+    - the normal projected into each slice; the cosine-weighted arc integrated analytically;
+    - multi-bounce at albedo 0.2;
+    - a world radius growing with distance (0.54 m up close, ~4 m at 150 m), faded out by 260 m.
+  - The old short-range Alchemy term is kept as a contact factor and multiplied in: at half
+    resolution blades are too thin for the horizon search, and the dark wedges at their bases came
+    from it.
+  - Intensity 1.0, radius 1.2.
+  - Result: forest interiors and the shade under crowns read as real shade (the reference's depth);
+    the sward keeps its dark gaps. Cost 0.25 ms (15.25 vs 15.0 ms, AO on/off, same view).
+  - The +1.5 stop exposure headroom is now for a low sun only. By day, a close view of dark grass
+    opened up and went flat.

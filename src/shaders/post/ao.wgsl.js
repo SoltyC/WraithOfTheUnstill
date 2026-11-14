@@ -1,7 +1,7 @@
 // Screen-space ambient occlusion (BRIEF §5.8), half resolution, from the reverse-Z depth alone
-// (no normal buffer: the normal comes from the depth's smaller-step derivative). Alchemy AO
-// (McGuire 2011): 8 samples on a disc of fixed world radius, rotated per pixel and per frame so
-// TAA integrates the noise. It is restrained and grounds contacts — trail floors, berm feet, the
+// (no normal buffer: the normal comes from the depth's smaller-step derivative). GTAO (Jimenez
+// 2016, since 2026-11-14; Alchemy AO before): two horizon slices of six steps a side, rotated per
+// pixel and per frame so TAA integrates the noise. It is restrained and grounds contacts — trail floors, berm feet, the
 // Wraith's hem on the snow, rocks bedded in drifts — and fades out with distance.
 // Output: r = AO (1 = open), g = linear distance of the sample (for the depth-aware upsample).
 
@@ -46,28 +46,76 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   var n = cross(dy, dx);
   n = select(normalize(n), normalize(P.cam.xyz - pos), dot(n, n) < 1e-12 || length(dx) > 500.0 || length(dy) > 500.0);
   if (dot(n, P.cam.xyz - pos) < 0.0) { n = -n; }
-  let R = P.ao.x;
-  let rPx = clamp(R * P.ao.w / max(dist, 0.1), 2.0, 96.0);
-  // Per-pixel rotation (interleaved gradient noise), advanced each frame.
+  // GTAO (Jimenez et al. 2016; realism plan R2a, 2026-11-14, replacing Alchemy AO): two slices
+  // through the view direction per pixel, rotated per pixel and per frame (TAA integrates them); on
+  // each, the highest horizon either side within the radius, the normal projected into the slice,
+  // and the cosine-weighted visible arc integrated analytically. Multi-bounce (Jimenez's fit) keeps
+  // lit surroundings from blackening the creases. The world radius grows with distance (a forest's
+  // gaps and a hollow's floor occlude at 100 m too), the result fading out by 260 m.
+  let R = P.ao.x * (0.45 + dist / 60.0);   // blade-scale gaps up close, a forest's gaps far off
+  let rPx = clamp(R * P.ao.w / max(dist, 0.1), 3.0, 128.0);
+  let V = normalize(P.cam.xyz - pos);
   let ign = fract(52.9829189 * fract(dot(vec2f(p) + f32(i32(P.jitter.z) % 8) * 5.588238, vec2f(0.06711056, 0.00583715))));
-  let rot = ign * 6.2831853;
-  var sum = 0.0;
-  let N = 8;
-  for (var i = 0; i < N; i++) {
-    let t = (f32(i) + 0.5) / f32(N);
-    let a = rot + f32(i) * 2.39996323;
-    let r = rPx * sqrt(t);
-    let q = p + vec2i(vec2f(cos(a), sin(a)) * r);
-    let v = posOr(q, sz, pos) - pos; // sky taps occlude nothing
-    let vv = dot(v, v);
-    // Samples beyond the radius fade out (no dark halos from distant geometry).
-    let fall = clamp(1.0 - vv / (R * R * 4.0), 0.0, 1.0);
-    sum += max(dot(v, n) - 0.01 * dist, 0.0) / (vv + 0.01) * fall;
+  let ign2 = fract(ign * 7.13 + 0.37);
+  let STEPS = 4;
+  var vis = 0.0;
+  for (var sl = 0; sl < 2; sl++) {
+    let a = (f32(sl) + ign) * 1.5707963;
+    let d2 = vec2f(cos(a), sin(a));
+    // The slice's world axis: toward the texel one step along d2, made orthogonal to V.
+    let tw = posOr(p + vec2i(d2 * max(rPx * 0.25, 2.0)), sz, pos + vec3f(d2.x, 0.0, d2.y)) - pos;
+    var t = tw - V * dot(tw, V);
+    t = select(normalize(t), normalize(cross(V, vec3f(0.0, 1.0, 0.0))), dot(t, t) < 1e-10);
+    let ax = normalize(cross(t, V));
+    let pn = n - ax * dot(n, ax);
+    let pl = length(pn);
+    let cn = clamp(dot(pn / max(pl, 1e-5), V), -1.0, 1.0);
+    let ng = select(-1.0, 1.0, dot(pn, t) >= 0.0) * acos(cn);
+    var hc = vec2f(-1.0, -1.0);              // cos of the horizon, side −d2 (x) and +d2 (y)
+    for (var k = 0; k < STEPS; k++) {
+      let f = (f32(k) + ign2) / f32(STEPS);
+      let o = d2 * max(rPx * f * f, 1.0 + f32(k));
+      for (var sd = 0; sd < 2; sd++) {
+        let q = p + vec2i(select(-o, o, sd == 1));
+        let w = posOr(q, sz, pos) - pos;
+        let wl = length(w);
+        if (wl < 1e-4) { continue; }
+        // Falloff toward the radius (and a thickness guess: far-in-front samples count less).
+        let fall = clamp(1.0 - (wl * wl) / (R * R), 0.0, 1.0);
+        let c = mix(-1.0, dot(w / wl, V), fall);
+        if (sd == 0) { hc.x = max(hc.x, c); } else { hc.y = max(hc.y, c); }
+      }
+    }
+    var h1 = -acos(clamp(hc.x, -1.0, 1.0));
+    var h2 = acos(clamp(hc.y, -1.0, 1.0));
+    h1 = ng + max(h1 - ng, -1.5707963);
+    h2 = ng + min(h2 - ng, 1.5707963);
+    let sn = sin(ng);
+    let arc = 0.25 * (-cos(2.0 * h1 - ng) + cn + 2.0 * h1 * sn) + 0.25 * (-cos(2.0 * h2 - ng) + cn + 2.0 * h2 * sn);
+    vis += pl * arc;
   }
-  var ao = max(1.0 - 2.0 * P.ao.y / f32(N) * sum, 0.0);
-  ao = pow(ao, 1.4);
-  // Fade with distance: contact shading near the player, none across the field.
-  ao = mix(ao, 1.0, smoothstep(40.0, 140.0, dist));
+  vis = clamp(vis * 0.5, 0.0, 1.0);
+  // Multi-bounce (albedo ~0.2: grass in its own shade, bark, rock).
+  let alb = 0.2;
+  let ma = 2.0404 * alb - 0.3324; let mb = -4.7951 * alb + 0.6417; let mc = 2.7552 * alb + 0.6903;
+  vis = max(vis, ((vis * ma + mb) * vis + mc) * vis);
+  // Contact (the former Alchemy term, McGuire 2011, at its old 0.9 m and 0.55): blades are a pixel or
+  // two wide at half resolution, too thin for the horizon search, and their bases' dark wedges come
+  // from this short-range term; the product keeps both scales.
+  let Rc = 0.9;
+  let rPc = clamp(Rc * P.ao.w / max(dist, 0.1), 2.0, 96.0);
+  var csum = 0.0;
+  for (var i = 0; i < 8; i++) {
+    let tt = (f32(i) + 0.5) / 8.0;
+    let aa = ign * 6.2831853 + f32(i) * 2.39996323;
+    let q = p + vec2i(vec2f(cos(aa), sin(aa)) * rPc * sqrt(tt));
+    let v = posOr(q, sz, pos) - pos;
+    let vv = dot(v, v);
+    csum += max(dot(v, n) - 0.01 * dist, 0.0) / (vv + 0.01) * clamp(1.0 - vv / (Rc * Rc * 4.0), 0.0, 1.0);
+  }
+  let contact = pow(max(1.0 - 2.0 * 0.55 / 8.0 * csum, 0.0), 1.4);
+  var ao = mix(1.0, vis, clamp(P.ao.y, 0.0, 1.0)) * mix(contact, 1.0, smoothstep(40.0, 140.0, dist));
+  ao = mix(ao, 1.0, smoothstep(140.0, 260.0, dist));
   textureStore(outAo, hp, vec4f(ao, dist, 0.0, 1.0));
 }
 `;
