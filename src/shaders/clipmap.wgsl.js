@@ -527,6 +527,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
                               vN.z - stateGrad.y * vN.y));
     let canopy = canopyAt(wp.xz);
     var ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy, villageAt(wp.xz));
+    // The water's edge and the bed (realism plan W1): the world water-level map (render/water.js
+    // carries each level a few metres up the bank, so the dry side knows where the line is).
+    let wLvl = waterLevelAt(wp.xz);
+    let wE = wLvl - wp.y;
+    if (wE > -0.75) { ms = meadowWaterEdge(ms, wp, wE, Ngm, fp); }
     // The melt band: wet, darker ground and grass bleached to straw.
     ms.albedo = mix(ms.albedo, ms.albedo * vec3f(1.05, 0.92, 0.66) * 0.8, border.y);
     // Low and Medium draw no far-tree shadows (the impostors cast only into the third cascade, which
@@ -535,6 +540,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // the trees (docs/meadow-overhaul.md).
     let farShade = ${boot.shadows.treeCascades < 3 ? '1.0' : '0.0'} * smoothstep(${(boot.trees.out ?? 365) - 10}.0, ${(boot.trees.out ?? 365) + 40}.0, dist) * smoothstep(0.12, 0.6, canopy);
     var mcol = meadowLight(ms, ms.N, V, L, key, vis * cs * (1.0 - 0.82 * farShade), uniforms.envMisc.w, canopy);
+    // Under the water the light reaching the bed has crossed the depth above it (the sun's ray bent
+    // steeper by refraction); the view's path back up is the water's absorb pass (W_SIGMA in shaders/water.wgsl.js).
+    if (wE > 0.0) {
+      let cosT = sqrt(1.0 - (1.0 - L.y * L.y) / 1.777);
+      mcol *= exp(-vec3f(0.42, 0.085, 0.075) * wE / max(cosT, 0.5));
+    }
     let exm = uniforms.fogParams.z * atmoExposure();
     let gb = gridBase(wp);
     for (var li = 0u; li < ${LIGHT_SLOTS + MAX_PER_CELL}u; li++) {
