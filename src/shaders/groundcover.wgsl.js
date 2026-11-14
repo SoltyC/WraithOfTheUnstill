@@ -90,7 +90,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
     forest * 0.22 * smoothstep(0.4, 0.7, pClover),         // 3 sorrel
     forest * 0.18 * smoothstep(0.5, 0.75, 1.0 - pFern),    // 4 moss
     rim * 0.35,                                            // 5 bracken (the forest's edge)
-    open * 0.95 * smoothstep(0.38, 0.62, pFlower),         // 6 flowers
+    // (realism plan A3: a meadow is grass with flowers in it, not a carpet of them — fewer, and
+    // clumped at the metre scale inside the drifts)
+    open * 0.5 * smoothstep(0.42, 0.68, pFlower) * (0.25 + 0.75 * smoothstep(0.38, 0.72, vn(root * 0.5 + 51.0))), // 6 flowers
     open * 0.4 * smoothstep(0.4, 0.7, pClover),            // 7 clover / plantain
     open * 0.012 + smoothstep(0.4, 0.65, slope) * 0.2 * (1.0 - forest), // 8 pebbles (worn, steeper ground)
   );
