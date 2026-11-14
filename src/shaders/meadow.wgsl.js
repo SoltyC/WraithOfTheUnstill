@@ -26,8 +26,10 @@ fn mtNoise(p: vec2f) -> f32 {
 }
 fn meadowTint(p: vec2f) -> vec3f {
   let n = mtNoise(p * 0.011 + 3.7) * 0.6 + mtNoise(p * 0.047 + 11.3) * 0.3 + mtNoise(p * 0.19) * 0.1;
-  var t = mix(vec3f(1.0), vec3f(1.16, 1.1, 0.74), smoothstep(0.52, 0.82, n));
-  t *= mix(vec3f(1.0), vec3f(0.8, 0.9, 0.88), smoothstep(0.46, 0.16, n));
+  // (realism plan A3: stronger — a real sward runs from deep blue-green in its lush hollows to warm,
+  // drier drifts; the even lime read as a game's)
+  var t = mix(vec3f(1.0), vec3f(1.22, 1.12, 0.68), smoothstep(0.52, 0.85, n));
+  t *= mix(vec3f(1.0), vec3f(0.66, 0.8, 0.84), smoothstep(0.48, 0.14, n));
   return t;
 }
 `;

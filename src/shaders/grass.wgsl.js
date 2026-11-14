@@ -311,6 +311,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // as a black spike on the (undarkened) turf; far off the blade is the turf's own tone.
   albedo *= mix(mix(0.35, 1.0, smoothstep(0.0, 0.45, t)), 1.0, far);
   albedo = mix(albedo, albedo * vec3f(1.15, 1.1, 0.8), t * t * 0.5);
+  // Seed heads (realism plan A3): in drifts of the uncut sward the tall blades' tips go to pale,
+  // buff seed — early summer's haze over a meadow.
+  let seedP = smoothstep(0.52, 0.8, mtNoise(wp.xz * 0.08 + 5.0)) * smoothstep(0.8, 0.97, t) * (1.0 - far);
+  albedo = mix(albedo, vec3f(0.34, 0.3, 0.19) * (0.8 + 0.4 * sd), seedP * 0.7);
   // Blade texture: a lighter midrib, fine lengthwise veins, darker edges, and pale dry flecks
   // toward the tip (grass up close is striped, not flat).
   let sd2 = fragmentInputs.vSide;
