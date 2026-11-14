@@ -21,6 +21,7 @@ import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
 import { WSIM_SAMPLE_WGSL } from './waterSim.wgsl.js';
 import { WEATHER_FOG_WGSL } from './post/fog.wgsl.js';
 import { SOUNDING } from '../world/sounding.js';
+import { W_SIGMA as W_SIGMA_V, W_BODY as W_BODY_V, vec3 as v3, WATER_FRESNEL_WGSL } from './waterOptics.js';
 
 /** Under the water (Phase 10 U1; post/compose applies the same): extinction (1/m) and what the
  *  body scatters back per unit of light, for clear water and the mire's tannin. */
@@ -219,10 +220,12 @@ fn main(input: VertexInputs) -> FragmentInputs {
 }
 `;
 
-/** Clear highland water: red goes first, then green; a little green-blue body colour. */
+/** Clear upland water (shaders/waterOptics.js, realism plan W1): red goes first, then blue (the
+ *  dissolved organics); green lasts. The body sends back ~1 %: a lake's look is its reflection. */
 const OPTICS = /* wgsl */ `
-const W_SIGMA: vec3f = vec3f(0.42, 0.085, 0.075);   // absorption + scattering out (1/m)
-const W_BODY: vec3f = vec3f(0.010, 0.026, 0.022);    // what the deep body sends back up (≈ 2–3 %: lakes are dark)
+const W_SIGMA: vec3f = ${v3(W_SIGMA_V)};   // diffuse attenuation (1/m)
+const W_BODY: vec3f = ${v3(W_BODY_V)};    // irradiance reflectance of the deep body
+${WATER_FRESNEL_WGSL}
 // The mire's black water (Phase 10 F1): humic tannins take the blue first, then the green, so a
 // hand's depth is amber, a knee's depth tea, and anything deeper black; it sends back almost
 // nothing (a mirror over a dark body). Blended in by the mire's biome weight.
@@ -291,7 +294,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let mire = wMire(wp.xz) * select(1.0, 0.0, fragmentInputs.vFlow.w < -1.5);   // an interior's water is clear
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   // Light lost at the surface (flat-water Fresnel: the surface pass adds the reflection back).
-  let F = 0.02 + 0.98 * pow(1.0 - abs(V.y), 5.0);
+  let F = waterFresnel(abs(V.y));
   // Caustics on the bed: two drifting cell layers focusing the sun, strongest in the shallows and
   // with wind on the water (a mirror focuses nothing).
   let t = uniforms.waterParams.x;
@@ -397,7 +400,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let T = exp(-mix(W_SIGMA, T_SIGMA, mire) * wPath(depth, V));
   let shore = smoothstep(0.0, 0.25, depth);   // a believable fade-out width over a gentle bank
   let nv = max(dot(N, V), 0.0);
-  let F = (0.02 + 0.98 * pow(1.0 - nv, 5.0)) * shore;
+  let F = waterFresnel(nv) * shore;
   let canopy = canopyAt(wp.xz);
   let L = uniforms.keyDir;
   let key = atmoKeyColor();
@@ -453,7 +456,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   let H = normalize(L + V);
   let nl = max(dot(N, L), 0.0);
-  let Fs = 0.02 + 0.98 * pow(1.0 - max(dot(H, V), 0.0), 5.0);
+  let Fs = waterFresnel(dot(H, V));
   let spec = key * ggxD(max(dot(N, H), 0.0), rough) * Fs * nl / max(4.0 * nv * nl, 0.05) * vis * nl * shore;
   // The water body: light scattered back up out of it (its colour), lit by the sun and the sky.
   let light = key * max(L.y, 0.0) * vis / PI + shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, vec3f(0.0, 1.0, 0.0));

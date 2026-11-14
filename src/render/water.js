@@ -179,6 +179,20 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   // lakes and rivers alike store their level; dry ground −1e4.
   const wl = new Float32Array(N * N);
   for (let k = 0; k < N * N; k++) wl[k] = !Number.isNaN(wet[k]) ? wet[k] : !Number.isNaN(rLevel[k]) ? rLevel[k] : -1e4;
+  // Carried two texels (8 m) up the dry bank, so the terrain knows how far above the line it
+  // stands (the wet bank, realism plan W1). Every reader compares the level with the ground, so a
+  // bank above its water's level stays dry for them all.
+  for (let pass = 0; pass < 2; pass++) {
+    const src = wl.slice(), row = new Uint8Array(N);
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (src[j * N + i] > -1e3) { row[j] = 1; break; }
+    for (let j = 1; j < N - 1; j++) for (let i = 1; i < N - 1; i++) {
+      if (i === 1 && !(row[j - 1] | row[j] | row[j + 1])) break;
+      const o = j * N + i; if (src[o] > -1e3) continue;
+      let m = -1e4;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) m = Math.max(m, src[o + dj * N + di]);
+      wl[o] = m;
+    }
+  }
   atmo.waterTex.update(wl);
   // The oasis pool (world/oasis.js) has water only once the erg is restored: its texels are drawn
   // by a mesh of their own (shown by setOasis) and read dry on the CPU while it is choked.

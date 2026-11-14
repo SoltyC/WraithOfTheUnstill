@@ -228,6 +228,86 @@ fn meadowSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32, state: vec4f, canopy:
   return o;
 }
 
+// Wave-sorted pebbles (the lake margin): warped Voronoi cells of ~8.5 cm, each holding one
+// rounded, slightly elongated stone of its own size, tone and lie (limestone pale and buff, grey and
+// dark grits), silt in the gaps. Out: albedo, cover; the stones' domes tilt *N. Past ~5 cm a pixel
+// the average.
+fn mdPebbles(p: vec2f, fp: f32, N: ptr<function, vec3f>) -> vec4f {
+  let avg = vec3f(0.2, 0.185, 0.16);
+  let k = 1.0 - smoothstep(0.02, 0.07, fp);
+  if (k <= 0.0) { return vec4f(avg, 0.5); }
+  let C = 0.11;
+  let q = p / C + 0.4 * vec2f(noised(p * 2.3).x, noised(p * 2.3 + 7.0).x);
+  let qi = floor(q);
+  var d1 = 9.0; var h1 = vec3f(0.0); var o1 = vec2f(0.0);
+  for (var j = -1; j <= 1; j++) { for (var i = -1; i <= 1; i++) {
+    let c = qi + vec2f(f32(i), f32(j));
+    let h = fract(sin(vec3f(dot(c, vec2f(127.1, 311.7)), dot(c, vec2f(269.5, 183.3)), dot(c, vec2f(419.2, 371.9)))) * 43758.5453);
+    let o = q - c - (0.2 + 0.6 * h.xy);
+    let d = dot(o, o);
+    if (d < d1) { d1 = d; h1 = h; o1 = o; }
+  } }
+  let a = h1.x * 6.2831853; let ca = cos(a); let sa = sin(a);
+  let ro = vec2f(o1.x * ca - o1.y * sa, o1.x * sa + o1.y * ca);
+  let r = 0.2 + 0.36 * h1.z * h1.z + 0.06 * h1.x;
+  let e = length(vec2f(ro.x * 0.72, ro.y)) / r;
+  let cover = smoothstep(1.0, 0.86, e) * step(0.12, fract(h1.y * 7.31));
+  let t = h1.y;
+  var tone = mix(vec3f(0.36, 0.34, 0.3), vec3f(0.3, 0.25, 0.18), smoothstep(0.3, 0.5, t));
+  tone = mix(tone, vec3f(0.19, 0.19, 0.185), smoothstep(0.6, 0.7, t));
+  tone = mix(tone, vec3f(0.085, 0.08, 0.075), smoothstep(0.88, 0.95, t));
+  tone *= 0.85 + 0.3 * (noised(p * 60.0 + h1.xy * 9.0).x * 0.5 + 0.5);
+  // A low dome: steepest a little in from the rim, flat on top (the rim itself fades with cover).
+  let sl = o1 / (r * C * 9.0) * 0.55 * smoothstep(1.0, 0.75, e) * k * select(0.0, 1.0, cover > 0.0);
+  *N = normalize(*N + vec3f(sl.x, 0.0, sl.y));
+  return vec4f(mix(avg, tone, k), mix(0.5, cover, k));
+}
+
+// The water's edge and the bed beneath it (realism plan W1/W4). e: how far under the water's level
+// the ground lies (m; negative above it). Above the line the bank is wet (capillary rise, splash),
+// darker and a little glossy to ~0.5 m; the lapping keeps a strip of washed pebbles and mud bare
+// right at the line; under the water the turf gives way to the bed: wave-sorted pebbles in the
+// margin, soft olive silt beyond (a stone here and there), dark weed beds in patches from ~0.5 m
+// down. Everything wet is darker (water fills the pores: a wet stone loses ~40 % of its albedo).
+fn meadowWaterEdge(s: MeadowSurf, wp: vec3f, e: f32, Ng: vec3f, fp: f32) -> MeadowSurf {
+  var o = s;
+  if (e < -0.75) { return o; }
+  let p = wp.xz;
+  let n1 = noised(p * 0.7 + 5.0).x; let n2 = noised(p * 0.21 + 11.0).x;
+  let bare = smoothstep(-0.2 + 0.08 * n1, 0.03, e);
+  let wet = smoothstep(-0.6 + 0.15 * n1, -0.04, e);
+  if (bare > 0.001) {
+    let si = mdLayer(MAT_SOIL, p + vec2f(-23.0, 9.0), 0.5, Ng, fp, vec3f(0.12, 0.105, 0.075), 0.4);
+    var ba = si.albedo; var bN = si.N; var bao = si.ao;
+    // Weed beds (and an algal film on the silt) from half a metre down, in patches.
+    let wW = smoothstep(0.45, 1.1, e) * smoothstep(0.05, 0.45, noised(p * 0.09 + 3.0).x + 0.25 * n1) * (1.0 - smoothstep(4.0, 7.0, e));
+    if (wW > 0.01) {
+      let wd = mdLayer(MAT_MOSS, p + vec2f(19.0, 31.0), 0.8, Ng, fp, vec3f(0.04, 0.06, 0.022), 0.5);
+      let k = clamp(wW * (0.7 + wd.h - si.h) * 1.4, 0.0, 1.0);
+      ba = mix(ba, wd.albedo, k); bN = normalize(mix(bN, wd.N, k)); bao = mix(bao, wd.ao, k);
+    }
+    ba = mix(ba, ba * vec3f(0.85, 0.95, 0.7), smoothstep(0.2, 1.0, e) * 0.6);   // the green-brown film
+    // Pebbles: thick in the wave-washed margin, in drifts along it, sparse out on the silt.
+    let n3 = noised(p * 0.9 + 21.0).x;
+  let zone = (1.0 - smoothstep(0.15, 0.55, e + 0.25 * n2)) * smoothstep(-0.35, 0.35, n2 + 0.45 * n3);
+    let dens = max(zone, 0.12 * (1.0 - smoothstep(1.0, 2.5, e)));
+    var pN = bN;
+    let pb = mdPebbles(p, fp, &pN);
+    let pk = clamp(pb.a * smoothstep(0.0, 0.35, dens - 0.35 * (1.0 - pb.a) + 0.15 * n1), 0.0, 1.0);
+    ba = mix(ba, pb.rgb * mix(vec3f(1.0), vec3f(0.85, 0.92, 0.72), smoothstep(0.3, 1.2, e) * 0.7), pk);
+    bN = normalize(mix(bN, pN, pk)); bao = mix(bao, 1.0, pk * 0.5);
+    o.albedo = mix(o.albedo, ba, bare);
+    o.N = normalize(mix(o.N, bN, bare));
+    o.ao = mix(o.ao, bao, bare);
+    o.rough = mix(o.rough, 0.8, bare);
+    o.rock = mix(o.rock, 1.0, bare);       // no grass sheen on the bed
+  }
+  o.albedo *= mix(1.0, 0.6, wet);
+  // Gloss on the wet bank only (under the water the surface does the reflecting).
+  o.wetK = max(o.wetK, wet * 0.32 * (1.0 - smoothstep(-0.02, 0.02, e)));
+  return o;
+}
+
 // Lit colour of the meadow ground (linear HDR): Lambert with the key light, the live-sky SH
 // (warmer than the frost's, the green bounce of the field under it), a soft sheen at grazing.
 fn meadowLight(s: MeadowSurf, N: vec3f, V: vec3f, L: vec3f, key: vec3f, vis: f32, skyScale: f32, canopy: f32) -> vec3f {
