@@ -404,3 +404,13 @@ Order, revised 2026-11-14 with assets as the priority:
     - bark: real branch taper, gnarl and root flare;
     - wind on the sprays;
     - leaf colour variety per tree in the scans' own hues.
+- 2026-11-14 — **A2 (second pass): gnarl and fuller far crowns.**
+  - Per-species `gnarl` in the generator (oak 0.34, birch 0.18, others 0.12 as before): per-node
+    wander plus a slow sinuous bend, with finer segments on LOD0. Oak limbs are crooked now, not
+    straight sticks.
+  - The far LOD's sprays are ×2.0 and 4.2 per metre, so trees past 55 m no longer read as saplings.
+  - Meadow view, High: 13.85 ms.
+  - **Flaky, still open:** in some `look-set` runs a far-set tree stays invisible after the shot
+    sequence's camera jumps (its shadow and litter still draw). A fresh pose shows it. It looks
+    like a dissolve fade-in that never completes (`render/trees.js` kinds 2/4; `treeLod.w` against
+    the stamp). It predates A2, and A2's shot comparisons tripped over it twice. To investigate.
