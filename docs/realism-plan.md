@@ -491,3 +491,61 @@ Order, revised 2026-11-14 with assets as the priority:
     - Surfaces rougher than 0.48 take the SH for their sky reflection, skipping the two LUT taps
       (grass, leaves, turf).
     - Left: grass 2.5 ms, shadows 2.3 ms, far forest 1.2 ms, trees 1.0 ms.
+
+## W — Water (planned 2026-11-14)
+
+> User: "the meadow needs more realistic water — it looks very static or out of place … plan good water
+> implementation which feels more detailed meeting our standards"
+
+### Where it stands (shots: `screenshots/bot/water-{shore,graze,down,sun}.png`)
+
+The system is rich (`shaders/water.wgsl.js`, `render/water.js`, `render/waterReflect.js`,
+`shaders/waterSim.wgsl.js`):
+- an absorb pass with caustics, and a surface pass with Fresnel sky, glints and SSR;
+- a planar reflection of the trees on High;
+- waves from a wind-aligned spectrum;
+- a ripple simulation round the Wraith.
+
+What reads wrong, in order of how much it hurts:
+
+1. **Colour: a swimming pool.** The body's scattering albedo `UW_ALB_CLEAR` (0.05, 0.13, 0.15) makes
+   every lake bright, opaque turquoise. A real upland lake scatters ~1–2% back: deep water is
+   near-black blue-green, its look almost all reflection. Ours is all body colour with a faint
+   reflection over it.
+2. **Waves: a pattern.** `waterSlope` sums hashed sine trains. At any distance they read as
+   regular parallel ribs, the same over the whole lake, so the surface looks printed and static.
+   Real lakes are patchy:
+   - glassy calms between dark, ruffled "cat's paws" that the gusts drive across the water;
+   - capillary chop only where the wind touches;
+   - long slow swell on bigger water.
+3. **Reflection: half the world is missing.** The planar pass draws only trees. The mountains,
+   hills, far shore and clouds come from the sky lookup or SSR, which loses them off screen. So
+   a still lake doesn't mirror the range behind it, the most recognisable thing calm water does.
+   There's also no distance-driven blur or vertical stretch.
+4. **The shore is a hard line** where turf meets bright water:
+   - no wet, darker bank;
+   - no shallow gradient showing the bed (mud, pebbles, weed);
+   - no lapping wet line, no reeds or rushes, no floating leaves.
+5. **Sun glitter** smears into horizontal streaks (specular aliasing under TAA).
+
+### Plan
+
+| # | Step | What | Cost (High, est.) |
+|---|---|---|---|
+| W1 | **Optics** | Re-derive the body from physical coefficients (fresh upland water: absorption ~(0.45, 0.06, 0.03) /m, scattering ~0.004 /m, single-scattering albedo ~2%), so deep water goes dark and reflection-dominated, shallows show the bed. Refraction offset of the bed by depth and slope. Fresnel from the real normal, exact for n = 1.333 (Schlick under-reflects at grazing). Mire keeps its tannin set. | ~0 |
+| W2 | **Waves, rebuilt** | An FFT ocean (Tessendorf) sized for a lake: a JONSWAP spectrum with short fetch, three cascades (~40 m, 6 m, 0.9 m tiles, 128²) computed in compute shaders and sampled as normal/foam maps. The wind field (`world/wind.js`) scales the spectrum per point, so **gust patches (cat's paws) travel across the lake** with glassy calms between them; plus a slow drift. The cascades are rotated and mixed by a large calm/ruffle mask, so no tiling reads. Specular anti-aliasing (Toksvig: roughness from normal variance per mip), so the glitter stays sparkles, not streaks. | 0.3–0.5 ms (compute 3 × 128² FFT) |
+| W3 | **Reflections** | Add to the planar reflection: the terrain's coarse clipmap levels (hills, far shore, the mountains), the mountain ring, the clouds and the sky. Reflection blurred by the wave slope variance (sharper close and calm, smeared far and ruffled), plus a slight vertical stretch at grazing (the anisotropic lobe on water). SSR stays for near dynamic objects. Low and Medium: sky + SSR as now. | 0.6–1.0 ms (half-res planar pass with terrain LODs) |
+| W4 | **Shoreline** | Terrain: a wet band 0–1.2 m above the level (darker, glossier soil and turf, the scan's mud), sloping into a submerged bed of `cobble-river` / mud / weed by depth. Water: soft edge by depth (no line); a thin lapping wet line that breathes with the wave height. Reeds and rushes in the shallows and on low banks (ground cover, the oasis reed path generalised); lily pads and floating leaves on calm, shallow, sheltered water. | ~0.3 ms |
+| W5 | **Life** | Insects skimming (the motes), pollen drifting on the surface, occasional fish rings (the ripple sim's splash), leaves drifting in the gust patches. All small, but what makes water read alive in a still frame and in motion. | ~0.1 ms |
+| W6 | **Validation** | Water shots in `look-set` (shore, grazing, down into the shallows, toward the sun, golden hour, a gusty frame), checked against reference photos of upland lakes, and a water shot in the comparison film. | — |
+
+Order: **W1 → W2 → W4 → W3 → W5.**
+- W1 is one afternoon and fixes the biggest wrongness.
+- W2 is what stops it reading static.
+- W4 seats the water in the meadow.
+- W3 is the most expensive, so it goes last on High only.
+
+Presets:
+- Low keeps the analytic waves, one FFT cascade at most, no planar pass.
+- Medium gets two cascades.
+- High gets all three cascades plus the terrain reflection.
