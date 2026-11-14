@@ -343,8 +343,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let trans = clamp(-nl, 0.0, 1.0) * 0.35 * vec3f(0.9, 1.1, 0.6);
   var col = albedo * (key * (diff + trans) * vis / PI + sky + canopyFill(canopy, N) * ao);
   // Light through the blade: strongest looking toward the sun (the reference's glowing grass).
-  let back = pow(clamp(dot(-V, L), 0.0, 1.0), 3.0) * (0.35 + 0.65 * t);
-  col += key * albedo * vec3f(0.95, 1.3, 0.8) * back * vis * 0.32;
+  // (realism plan R5: a blade between the eye and a low sun passes about a third of the light on its
+  // back — a narrow bright lobe and a wide soft one; the tips and seed heads light up gold, the
+  // reference's glowing field)
+  let fwd = clamp(dot(-V, L), 0.0, 1.0);
+  let back = (pow(fwd, 6.0) * 0.72 + pow(fwd, 1.5) * 0.15) * (0.3 + 0.7 * t) * (1.0 + 1.2 * seedP);
+  col += key * albedo * mix(vec3f(0.95, 1.3, 0.8), vec3f(1.2, 1.25, 0.66), t * t) * back * vis;
   // The shared BRDF (realism plan R1): a blade's waxy cuticle (rough ~0.5) catches the sun and the
   // sky at grazing angles (the silvery sheen across a field); glossier wet, rougher rimed. The root's
   // own shade (ao) holds the sky's reflection down in the sward.
