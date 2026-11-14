@@ -405,6 +405,20 @@ ${SANDSTONE_WGSL}
 ${DUNE_CREST_NORMAL_WGSL}
 ${BORDER_WGSL}
 
+// Erosion detail for distant terrain (see the fragment's vN).
+fn farDetail(Ng: vec3f, wp: vec3f, dist: f32) -> vec3f {
+  let k = smoothstep(600.0, 1500.0, dist);
+  if (k <= 0.0) { return Ng; }
+  let steep = 1.0 - smoothstep(0.55, 0.95, Ng.y);
+  var g = vec2f(0.0); var amp = 90.0; var f = 1.0 / 320.0;
+  for (var o = 0; o < 4; o++) {
+    let n = noised(wp.xz * f + vec2f(f32(o) * 17.3, f32(o) * 5.1));
+    g += -select(-1.0, 1.0, n.x > 0.5) * n.yz * amp * f * 2.0;
+    amp *= 0.42; f *= 2.3;
+  }
+  return normalize(Ng - vec3f(g.x, 0.0, g.y) * (0.2 + 0.8 * steep) * k);
+}
+
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
   let level = i32(fragmentInputs.vLevel + 0.5);
@@ -413,7 +427,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Pixel footprint in metres (detail fades by it): computed before any branch.
   let fp = length(fwidth(wp)) * 0.7;
   let V = normalize(camPos - wp);
-  var N = normalize(fragmentInputs.vNormal);
+  // Distant slopes (realism plan, 2026-11-14): past ~600 m the clipmap's coarse levels smooth a
+  // mountain into facets; erosion detail (ridged gullies and ribs, steeper on steep faces) is added
+  // to the normal every material reads, fading in to 1.5 km.
+  let vN = farDetail(normalize(fragmentInputs.vNormal), wp, length(camPos - wp));
+  var N = vN;
   matDpx = dpdx(wp); matDpy = dpdy(wp);
   // Differentiate the cached unwrapped phase before material branches (uniform derivatives).
   let phase=fragmentInputs.vCrest.x/max(fragmentInputs.vCrest.w,0.0001);
@@ -457,7 +475,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let sky = shIrradiance(N) * uniforms.envMisc.w;
   let bounce = (key * max(L.y, 0.0) * (0.12 / PI) + skyUp * 0.25) * mix(0.0, 1.0, clamp(-N.y * 0.5 + 0.5, 0.0, 1.0));
   // Lambert: albedo/π · E · cosθ for the key; sky terms are already radiance (E/π).
-  let vis = shadowVisibility(wp, normalize(fragmentInputs.vNormal), camPos, fragmentInputs.position.xy);
+  let vis = shadowVisibility(wp, normalize(vN), camPos, fragmentInputs.position.xy);
   var col = albedo * (key * diff * cs * vis * (1.0 / PI) + sky * mix(1.0, cs, 0.5));
   // Frost Steppe material (Phase 2) over the clay view, by frost weight.
   let wSum = wA.x + wA.y + wA.z + wA.w + wB.x + wB.y;
@@ -473,8 +491,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // Reflection weight for SSR (post chain): Fresnel × the ice/wet gloss, in the target's alpha.
   var ssrMask = 0.0;
   if (wFrost > 0.001) {
-    let Ng = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
-                             fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
+    let Ng = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y,
+                             vN.z - stateGrad.y * vN.y));
     var fs = frostSurface(wp, Ng, normalize(fragmentInputs.vNormalC), normalize(fragmentInputs.vWind), fragmentInputs.vLake, fp);
     frostApplyState(&fs, wp, st, stateSurface(wp.x, wp.z), fp);
     var fcol = frostLight(fs, wp, Ng, V, L, key, vis * cs, uniforms.envMisc.w, fp);
@@ -505,8 +523,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var wMeadow = smoothstep(0.3, 0.7, wA.y / max(wSum, 0.001)) * (1.0 - sea);
   if (isBorder) { wMeadow = (1.0 - border.x) * smoothstep(0.3, 0.7, shFM) * (1.0 - sea); }
   if (wMeadow > 0.001) {
-    let Ngm = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
-                              fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
+    let Ngm = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y,
+                              vN.z - stateGrad.y * vN.y));
     let canopy = canopyAt(wp.xz);
     var ms = meadowSurface(wp, Ngm, normalize(fragmentInputs.vNormalC), fp, stateSurface(wp.x, wp.z), canopy, villageAt(wp.xz));
     // The melt band: wet, darker ground and grass bleached to straw.
@@ -553,8 +571,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   }
   let wSand = wDune * (1.0 - smoothstep(0.42, 0.58, slope));
   if (wSand > 0.001) {
-    let Ngs = normalize(vec3f(fragmentInputs.vNormal.x - stateGrad.x * fragmentInputs.vNormal.y, fragmentInputs.vNormal.y,
-                              fragmentInputs.vNormal.z - stateGrad.y * fragmentInputs.vNormal.y));
+    let Ngs = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y,
+                              vN.z - stateGrad.y * vN.y));
     let sst = stateSurface(wp.x, wp.z);
     let crestN = duneCrestNormal(Ngs, fragmentInputs.vCrest, crestGradient, fragmentInputs.vCrestSpacing, dist, fp);
     let ss = sandSurface(wp, crestN, normalize(fragmentInputs.vNormalC), fp, sst, L);

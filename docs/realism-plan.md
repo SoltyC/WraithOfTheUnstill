@@ -437,3 +437,16 @@ Order, revised 2026-11-14 with assets as the priority:
   - Also seen against the reference:
     - the distant mountain ring is low-poly white cut-outs (an asset to replace);
     - the flowers are an even carpet (to thin and cluster in A3).
+- 2026-11-14 — **Distant mountains.**
+  - The white low-poly peaks in the meadow's views are the continent's own terrain at the
+    clipmap's coarse levels (not the ring, which was hidden to check).
+  - `clipmap.wgsl.js` `farDetail()` adds erosion to the normal every material reads, from 600 m,
+    full by 1.5 km: four octaves of ridged-noise gradients (320 m → 27 m), stronger on steep faces.
+    The snow and rock shading then follow the gullies and ribs.
+  - The ring (`ring.wgsl.js`) gets the same detail (900 → 25 m), plus strata, ribs and
+    gully-bedded snow.
+  - Shots: `screenshots/bot/look-lg-meadow-e` (before) / `look-mt2-meadow-e` (after).
+  - Also this round:
+    - canopySky 0.45 → 0.82 (a closed canopy passes 10–20% of the sky);
+    - leaf gain 0.62 → 0.48 (canopy albedo; the forest now reads deep against the meadow, as in
+      the reference).
