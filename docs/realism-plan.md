@@ -464,3 +464,11 @@ Order, revised 2026-11-14 with assets as the priority:
     the sward keeps its dark gaps. Cost 0.25 ms (15.25 vs 15.0 ms, AO on/off, same view).
   - The +1.5 stop exposure headroom is now for a low sun only. By day, a close view of dark grass
     opened up and went flat.
+- 2026-11-14 — **Before/after film.**
+  - `tools/bot/compare-film.mjs` runs six scripted camera moves (lake, sward, scarp, tree, vista,
+    late afternoon; 5 s each, 30 fps, 1080p, restored meadow, clear) in the bot's film mode against
+    two builds: `main` in a worktree on :4174, and this branch.
+  - `tools/bot/compare-encode.sh` cuts them split-screen, DLSS-clip style: the before's left half,
+    the after's right half, divider, labels, captions.
+  - Output: `screenshots/compare/realism-before-after.mp4` (CRF 18, 128 MB) and `-share.mp4`
+    (7.5 Mbit/s, 27 MB).
