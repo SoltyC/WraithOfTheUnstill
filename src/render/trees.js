@@ -185,7 +185,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   const byKey = (si, v, lod) => sets[(si * VARIANTS + v) * 3 + lod];
 
   // ── Placement ──────────────────────────────────────────────────────────────────────────────
-  let lastX = 1e9, lastZ = 1e9, fading = false, cleanAt = 0, canopySum = 0, canopyTarget = 0, lastNow = 0;
+  let lastX = 1e9, lastZ = 1e9, fading = false, cleanAt = 0, canopySum = 0, canopyTarget = 0, lastNow = 0, lateReset = 0;
   /** Each placed tree's state at the last placement (cell key → 1 near, 2 far); swapped per rebuild. */
   let prev = new Map(), cur = new Map();
   const t0 = performance.now();
@@ -409,7 +409,11 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
       }
     }
     // A re-record is a hitch: none when the counts stayed (every placement in treeless country).
-    if (changed) engine.snapshotRenderingReset();
+    // A set switched on compiles its pipelines asynchronously: a recording made before they are ready
+    // leaves the mesh out until the next re-record, and with a still camera there was none — a tree's
+    // shadow drawn, the tree not (realism plan log, the far-set "fade-in" flake). Record once more when
+    // they have had time to compile.
+    if (changed) { engine.snapshotRenderingReset(); lateReset = performance.now() + 600; }
   }
 
   const api = {
@@ -426,7 +430,7 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     /** Canopy cover at the last placement (unsmoothed). */
     cover: 0.5 - 0.5, wind: 1.5 - 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5,
     /** Loading is over: from here an empty set is switched off (see rebuild). */
-    warmed() { warmed = true; for (const s of sets) for (const m of s.meshes) m.setEnabled(s.n > 0); engine.snapshotRenderingReset(); },
+    warmed() { warmed = true; for (const s of sets) for (const m of s.meshes) m.setEnabled(s.n > 0); engine.snapshotRenderingReset(); lateReset = performance.now() + 600; },
     /** True: keep the current placement however far the camera moves (filmed camera moves: no trees fading in and out at the
      *  edge, no shadows shifting with them). */
     hold: false,
@@ -437,6 +441,7 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
       for (let k = 5; k < desertMat.length; k++) desertMat[k].z = this.dunesRestored;
       const now = (performance.now() - t0) * 0.001;
       for (const l of lodV) l.w = now;
+      if (lateReset && performance.now() > lateReset) { lateReset = 0; engine.snapshotRenderingReset(); }
       this.canopy += (canopyTarget - this.canopy) * Math.min(1, (now - lastNow) * 0.7); lastNow = now;
       if (canopyDirty && streamer.overview) { const tc = performance.now(); buildCanopy(); api.canopyMs = performance.now() - tc; }
       if (farN && !this.hold) {
