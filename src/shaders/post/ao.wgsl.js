@@ -210,7 +210,12 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   if (P.ssr.w > 0.5 && abs(c.a) > 0.03) { // negative: water (shaders/water.wgsl.js)
     let r = textureSampleLevel(ssrTex, ssrSampler, uv, 0.0);
     dbgSsr = r.a;
-    c = vec4f(c.rgb * (1.0 - r.a) + r.rgb, c.a);
+    // Water: nearly all its colour is its reflection (the body sends back ~1 %, realism plan W1), so
+    // what SSR mirrors replaces it by the SSR's confidence (its weight over the reflectance), not
+    // by the reflectance alone — that left (1 − F)·F of the sky over the mirrored shore: a ghost.
+    let refl = abs(c.a) - select(0.0, 1.0, c.a < -1.0);
+    let k = select(r.a, clamp(r.a / max(refl, 0.03), 0.0, 1.0), c.a < 0.0);
+    c = vec4f(c.rgb * (1.0 - k) + r.rgb, c.a);
   }
   // Under the water (Phase 10 U1; render/water.js's level at the camera in taa.w, the mire's
   // tannin share there in bloom.w): a pixel whose ray starts under the surface is seen through

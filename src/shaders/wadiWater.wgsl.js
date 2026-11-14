@@ -8,6 +8,7 @@ import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { FIELD_WGSL } from './grass.wgsl.js';
 import { WATER_WAVES_WGSL } from './water.wgsl.js';
+import { WAVE_BANDS_NONE_WGSL } from './waterFFT.wgsl.js';
 
 export const wadiVertexWGSL = /* wgsl */ `
 attribute position: vec3f;   // x, the braid's seed, z
@@ -50,6 +51,7 @@ ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 fn wNoised(p: vec2f) -> vec3f { return noised(p); }
+${WAVE_BANDS_NONE_WGSL}
 ${WATER_WAVES_WGSL}
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {

@@ -45,8 +45,9 @@ export const RIVER_R = 4;
  * @param {string} base  world data URL
  * @param {any} ground  CPU ground (qx, qz → sample() → h): river surfaces near the Wraith
  * @param {any[]} sim    the ripple simulation's two state buffers (post.waterSim)
+ * @param {any} waves    the lake waves' FFT (post.waterWaves, render/waterWaves.js)
  */
-export async function createWater(scene, clipmap, atmo, wind, streamer, ripples, base, ground, sim) {
+export async function createWater(scene, clipmap, atmo, wind, streamer, ripples, base, ground, sim, waves) {
   const S = ShaderStore.ShadersStoreWGSL;
   S.waterVertexShader = waterVertexWGSL; S.waterAbsorbFragmentShader = waterAbsorbFragmentWGSL; S.waterSurfaceFragmentShader = waterSurfaceFragmentWGSL;
   const [hy, llb] = await Promise.all([
@@ -101,6 +102,27 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
   // water). Only a shallow margin (FLOOD_DEPTH): ground far below the level is downhill of the
   // lake, not its shore — flooding there spilled terraces of water floating over slopes. Never
   // into a river (it runs at its own level). Then a one-texel rim the terrain hides.
+  // One level per lake: the bake stores it in 1/32 m steps and a lake's texels can differ by a
+  // step or two — each step left a crack in the sheet (its open side) that showed across a calm
+  // mirror. Connected texels within 0.15 m of each other take the highest of them.
+  {
+    const comp = new Int32Array(N * N).fill(-1), stack = [];
+    for (let s = 0; s < N * N; s++) {
+      if (Number.isNaN(level[s]) || comp[s] >= 0) continue;
+      const members = []; let top = -Infinity;
+      comp[s] = s; stack.push(s);
+      while (stack.length) {
+        const o = stack.pop(); members.push(o); top = Math.max(top, level[o]);
+        const i = o % N, j = (o - i) / N;
+        for (let k = 0; k < 4; k++) {
+          const q = k === 0 ? (i + 1 < N ? o + 1 : -1) : k === 1 ? (i > 0 ? o - 1 : -1) : k === 2 ? (j + 1 < N ? o + N : -1) : (j > 0 ? o - N : -1);
+          if (q < 0 || comp[q] >= 0 || Number.isNaN(level[q]) || Math.abs(level[q] - level[o]) > 0.15) continue;
+          comp[q] = s; stack.push(q);
+        }
+      }
+      for (const o of members) level[o] = top;
+    }
+  }
   const wet = level.slice();
   for (let pass = 0; pass < FLOOD; pass++) {
     const src = wet.slice();
@@ -205,21 +227,47 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     }
   }
   let oasisFull = true;
-  // Geometry: lakes — per row, runs of texels at one level become one quad.
+  // Geometry: lakes — per row, runs of texels at one level become one strip. Its top and bottom
+  // edges carry a vertex wherever a run of the row above or below starts or ends, so neighbouring
+  // rows share every vertex along their common edge: no T-junctions (they left hairline cracks
+  // across a calm mirror). Each strip is a fan from its top-left corner (the collinear triangles
+  // along its own top edge are empty).
   const lakeQuads = (pos, idx, flow, oasis) => {
-    for (let j = 0; j < N; j++) {
+    const runsOf = (j) => {
+      const r = [];
+      if (j < 0 || j >= N) return r;
       let i = 0;
       while (i < N) {
         const v = wet[j * N + i];
         if (Number.isNaN(v) || oasisT[j * N + i] !== oasis) { i++; continue; }
         let e = i + 1;
         while (e < N && wet[j * N + e] === v && oasisT[j * N + e] === oasis) e++;
-        const x0 = -HALF + i * C, x1 = -HALF + e * C, z0 = HALF - j * C, z1 = HALF - (j + 1) * C, b = pos.length / 3;
-        pos.push(x0, v, z0, x1, v, z0, x1, v, z1, x0, v, z1);
-        for (let k = 0; k < 4; k++) flow.push(0, 0, 0, -1); // a lake: flat at its level
-        idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
-        i = e;
+        r.push(i, e, v); i = e;
       }
+      return r;
+    };
+    const cuts = (runs, i, e) => {
+      const c = [];
+      for (let k = 0; k < runs.length; k += 3) for (const x of [runs[k], runs[k + 1]]) if (x > i && x < e) c.push(x);
+      return c;
+    };
+    let above = [], cur = runsOf(0);
+    for (let j = 0; j < N; j++) {
+      const below = runsOf(j + 1);
+      for (let k = 0; k < cur.length; k += 3) {
+        const i = cur[k], e = cur[k + 1], v = cur[k + 2];
+        const z0 = HALF - j * C, z1 = HALF - (j + 1) * C, X = (q) => -HALF + q * C;
+        const top = [i, ...cuts(above, i, e).sort((a, b) => a - b), e];
+        const bot = [i, ...cuts(below, i, e).sort((a, b) => a - b), e];
+        const b0 = pos.length / 3;
+        // Boundary, clockwise from the top-left: along the top, then back along the bottom.
+        for (const q of top) pos.push(X(q), v, z0);
+        for (let q = bot.length - 1; q >= 0; q--) pos.push(X(bot[q]), v, z1);
+        const n = top.length + bot.length;
+        for (let q = 0; q < n; q++) flow.push(0, 0, 0, -1); // a lake: flat at its level
+        for (let q = 1; q < n - 1; q++) idx.push(b0, b0 + q + 1, b0 + q);
+      }
+      above = cur; cur = below;
     }
   };
   const pos = [], idx = [], flow = [];
@@ -267,7 +315,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     const mat = new ShaderMaterial(name, scene, { vertex: 'water', fragment }, {
       attributes: ['position', 'flow'],
       uniforms: ['viewProjection', 'levels', 'waterParams', ...(absorb ? [] : ['reflVP', 'reflFog', 'reflHaze']), ...ENV_UNIFORMS],
-      samplers: [...ATMO_MATERIAL_TEXTURES, ...(absorb ? [] : [...SHADOW_TEXTURES, 'reflTex'])],
+      samplers: [...ATMO_MATERIAL_TEXTURES, 'waveTex0', 'waveTex1', 'waveTex2', ...(absorb ? [] : [...SHADOW_TEXTURES, 'reflTex'])],
       storageBuffers: ['levelData', 'waterRipples', 'waterSim', 'biomeA', ...ATMO_MATERIAL_BUFFERS, ...(absorb ? [] : ['shadowData'])],
       shaderLanguage: ShaderLanguage.WGSL,
       needAlphaBlending: true,
@@ -276,6 +324,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
     mat.setStorageBuffer('waterRipples', ripples); mat.setStorageBuffer('waterSim', sim[0]); mat.setStorageBuffer('biomeA', atmo.biomeA);
     mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('waterParams', params);
+    waves.tex.forEach((t, c) => mat.setTexture('waveTex' + c, t));
     mat.backFaceCulling = false;
     // Absorb: dst × transmittance (alpha kept). Surface: dst + light, alpha replaced (the SSR mark).
     mat.alphaMode = absorb ? Constants.ALPHA_MULTIPLY : Constants.ALPHA_ONEONE_ONEZERO;
@@ -430,6 +479,7 @@ export async function createWater(scene, clipmap, atmo, wind, streamer, ripples,
     inWater: false, depth: 0.5 - 0.5,
     update() {
       params.x = this.time;
+      waves.update(this.time);
       this.qx = this.px; this.qz = this.pz; this.levelQ(); const lv = this.lv;
       this.inWater = lv === lv && (this.py < lv + 0.02 || (this.skimming && this.py < lv + 0.1));
       this.depth = this.inWater ? lv - this.py : 0;

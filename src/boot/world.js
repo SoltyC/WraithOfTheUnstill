@@ -177,7 +177,7 @@ export async function createWorld(g) {
   trees.freeze();
   // Water (Phase 8): the bake's unfrozen lakes, flat at their levels; absorb + surface passes, the
   // post chain's SSR reflects on them (waves and ripples shared through the wind block and a buffer).
-  const water = await (await import('../render/water.js')).createWater(scene, content.clipmap, atmosphere, wind, streamer, post.post.waterRipples, import.meta.env.BASE_URL + 'world/', ground, post.post.waterSim);
+  const water = await (await import('../render/water.js')).createWater(scene, content.clipmap, atmosphere, wind, streamer, post.post.waterRipples, import.meta.env.BASE_URL + 'world/', ground, post.post.waterSim, post.post.waterWaves);
   bindShadows(water.materials[1], shadows); // the surface pass (the absorb pass reads no shadows)
   // The water's planar reflection of the trees (Phase 10 F1), bound before the water freezes.
   const waterReflect = (await import('../render/waterReflect.js')).createWaterReflect(scene, camera, trees, water, (m) => bindShadows(m, shadows), post.post.params);
