@@ -23,6 +23,7 @@ uniform params: vec4f;   // x = tonemapper (0 ACES, 1 AgX), y = grain, z = frame
 uniform viewport: vec4f; // render size (w, h), 1/w, 1/h
 uniform params2: vec4f;  // x = sharpen (0..1), y = bloom intensity, z = bloom on, w = shadow lift
 uniform params3: vec4f;  // x = sand veil (in a Whirler's dust cloud)
+uniform flare: vec4f;    // xy = the sun on the screen (0..1, y up), z = on, w = the disc's radius (px)
 
 // ACES (Narkowicz fit), the Phase 0–5 look.
 fn aces(x: vec3f) -> vec3f {
@@ -92,6 +93,67 @@ fn loadHdr(p: vec2i) -> vec3f {
   let q = clamp(p, vec2i(0), vec2i(uniforms.viewport.xy) - 1);
   return textureLoad(src, q, 0).rgb;
 }
+fn lumHdr(p: vec2f) -> f32 { return dot(loadHdr(vec2i(p)), vec3f(0.2126, 0.7152, 0.0722)); }
+
+// The lens looking into the sun (a camera's, which is how a low sun is seen on a screen): the
+// aperture's six blades diffract the disc into twelve thin spikes, and light bounced between the
+// lens elements leaves faint ghosts on the line from the sun through the frame's centre. Both
+// scale with how much of the disc is actually seen: every pixel tests the same few texels (the
+// disc against the sky a few radii out, so trees, cloud and the deck hide it), which stay cached.
+fn sunFlare(px: vec2f) -> vec3f {
+  let F = uniforms.flare;
+  if (F.z < 0.5) { return vec3f(0.0); }
+  let sz = uniforms.viewport.xy;
+  let sp = F.xy * sz;
+  let rd = F.w;
+  var ring = 0.0;
+  for (var k = 0; k < 8; k++) {
+    let a = f32(k) * 0.7853982;
+    ring += lumHdr(sp + vec2f(cos(a), sin(a)) * rd * 3.5);
+  }
+  ring = max(ring / 8.0, 1e-4);
+  var vis = 0.0; var disc = 0.0;
+  for (var k = 0; k < 7; k++) {
+    let a = f32(k) * 0.8975979;
+    let q = sp + select(vec2f(cos(a), sin(a)) * rd * 0.55, vec2f(0.0), k == 6);
+    let l = lumHdr(q);
+    let v = smoothstep(2.0, 5.0, l / ring) * select(1.0, 0.0, any(q < vec2f(0.0)) || any(q >= sz));
+    vis += v; disc += l * v;
+  }
+  vis /= 7.0;
+  if (vis < 0.01) { return vec3f(0.0); }
+  // The light the flare carries: the sky's own glow round the sun (the disc itself is far past
+  // white; the lens returns a small share of it).
+  let I = ring * vis;
+  let d = px - sp;
+  let r = length(d);
+  let H = sz.y;
+  var col = vec3f(0.0);
+  if (r < H * 0.45) {
+    // Spikes: six lines through the sun, each thin (a pixel or two) and fading with distance.
+    var sp6 = 0.0;
+    for (var k = 0; k < 6; k++) {
+      let a = f32(k) * 0.5235988 + 0.26;
+      let dir = vec2f(cos(a), sin(a));
+      let perp = abs(d.x * dir.y - d.y * dir.x);
+      let w = 0.9 + r * 0.004;
+      sp6 += exp(-perp * perp / (w * w)) * (0.6 + 0.4 * fract(sin(f32(k) * 12.9898) * 43758.5453));
+    }
+    col += vec3f(1.0, 0.97, 0.92) * I * sp6 * 0.8 * exp(-r / (H * 0.03)) * smoothstep(rd * 0.8, rd * 2.0, r);
+  }
+  // Ghosts: on the line through the centre, soft discs tinted by the coatings.
+  let c = sz * 0.5;
+  let gT = array<f32, 3>(-0.45, 0.35, -1.1);
+  let gR = array<f32, 3>(0.035, 0.018, 0.06);
+  let gC = array<vec3f, 3>(vec3f(0.35, 0.55, 1.0), vec3f(0.6, 1.0, 0.7), vec3f(1.0, 0.7, 0.45));
+  for (var k = 0; k < 3; k++) {
+    let gp = c + (sp - c) * gT[k];
+    let gr = gR[k] * H;
+    let x = length(px - gp) / gr;
+    col += gC[k] * I * 0.06 * (1.0 - smoothstep(0.7, 1.0, x)) * (0.6 + 0.4 * x * x);
+  }
+  return col;
+}
 
 @fragment
 fn main(input: FragmentInputs) -> FragmentOutputs {
@@ -101,6 +163,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     let b = textureSampleLevel(bloom, bloomSampler, (fragmentInputs.position.xy) * uniforms.viewport.zw, 0.0).rgb;
     hdr = mix(hdr, b, uniforms.params2.y);
   }
+  hdr += sunFlare(fragmentInputs.position.xy);
   var c = tonemap(hdr);
   // Post-TAA sharpening (BRIEF §5.8, last in the chain), contrast-adaptive (AMD CAS-style) on the
   // tonemapped image: strong where the neighbourhood is flat, weak at hard edges (no halos).

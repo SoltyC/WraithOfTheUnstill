@@ -35,6 +35,12 @@ ${WIND_CORE_WGSL}
 ${WIND_STORM_WGSL}
 ${shelterWGSL('postWindShelter','P.shelterInfo',k=>`P.shelter[${k}/4u][${k}%4u]`)}
 ${WATER_WAVES_WGSL}
+// Rain (pad[0].w: the deck's gloom, post/fog.js: 0.45 rain + 0.55 storm): the drops damp the wind
+// waves (as shaders/water.wgsl.js does) and pit the surface finer than any pixel, so the water
+// mirrors the grey sky and the shore smoothly, not as hard facets: the waves bend the ray less,
+// and the reflection steps back a little.
+fn waterRain() -> f32 { return clamp(P.pad[0].w * 4.0, 0.0, 1.0); }
+fn waterRainKeep() -> f32 { return 1.0 - 0.3 * waterRain(); }
 
 fn posOr(q: vec2i, sz: vec2i, fallback: vec3f) -> vec3f {
   let c = clamp(q, vec2i(0), sz - 1);
@@ -79,7 +85,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
     let wv = windStorm(pos.xz,P.pad[4],P.pad[5],storm,P.desert[1],P.desert[2])*postWindShelter(pos.xz,1.0);
     // The pixel's footprint on the water (as the water shader's fwidth sees it, at half resolution).
     let fp = dist0 * P.size.w * 2.0 / max(abs(V.y), 0.05);
-    let sl = waterSlope(pos.xz, P.pad[4].w, wv, fp);
+    let sl = waterSlope(pos.xz, P.pad[4].w, wv, fp).xy * (1.0 - 0.75 * waterRain());
     n = normalize(vec3f(-sl.x, 1.0, -sl.y));
   }
   let R = reflect(-V, n);
@@ -143,7 +149,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
             cc = cc * cl.a + cl.rgb * P.keyCol.w * atmoLight[3].w;
           }
           let edgeF = min(min(uvf.x, 1.0 - uvf.x), min(uvf.y, 1.0 - uvf.y));
-          let wF = clamp(mask * smoothstep(0.0, 0.1, edgeF) * P.ssr.x, 0.0, 1.0);
+          let wF = clamp(mask * smoothstep(0.0, 0.1, edgeF) * P.ssr.x * waterRainKeep(), 0.0, 1.0);
           textureStore(outSsr, hp, vec4f(cc * wF, wF));
           return;
         }
@@ -156,7 +162,7 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let edge = min(min(hitUv.x, 1.0 - hitUv.x), min(hitUv.y, 1.0 - hitUv.y));
   var conf = smoothstep(0.0, 0.08, edge) * (1.0 - smoothstep(P.ssr.y * 0.6, P.ssr.y, t)) * (1.0 - smoothstep(100.0, 160.0, dist0));
   conf *= 1.0 - smoothstep(0.2, 0.6, dot(R, V));
-  if (!isWater) { conf *= 1.0; } else { conf = smoothstep(0.0, 0.08, edge); } // water reflects at any distance
+  if (!isWater) { conf *= 1.0; } else { conf = smoothstep(0.0, 0.08, edge) * waterRainKeep(); } // water reflects at any distance
   let w = clamp(mask * conf * P.ssr.x, 0.0, 1.0);
   textureStore(outSsr, hp, vec4f(hc * w, w)); // premultiplied: bilinear upsampling stays correct
 }

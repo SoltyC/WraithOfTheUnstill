@@ -105,13 +105,14 @@ export function createPost(scene, camera) {
   const effectRenderer = new EffectRenderer(engine);
   const display = new EffectWrapper({
     engine, name: 'display', vertexShader: displayVertexWGSL, fragmentShader: displayFragmentWGSL,
-    attributeNames: ['position'], uniformNames: ['params', 'viewport', 'params2', 'params3'], samplerNames: ['src', 'lut', 'bloom'],
+    attributeNames: ['position'], uniformNames: ['params', 'viewport', 'params2', 'params3', 'flare'], samplerNames: ['src', 'lut', 'bloom'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   const displayParams = new Vector4(1, 0.035, 0, 1);
   const viewport = new Vector4(OW, OH, 1 / OW, 1 / OH);
   const displayParams2 = new Vector4(0.35, 0, 0, 0);
   const displayParams3 = new Vector4(0, 0, 0, 0);   // x = sand veil (the Wraith inside a Whirler's dust cloud)
+  const flareParams = new Vector4(0, 0, 0, 0);     // the sun on the screen (shaders/post/display.wgsl.js sunFlare; post/chain.js)
   /** The texture the display pass shows (the last post output; the scene target until passes exist). */
   let finalTex = sceneRT, bloomTex = lutTex;
   display.onApplyObservable.add(() => {
@@ -123,6 +124,7 @@ export function createPost(scene, camera) {
     e.setVector4('viewport', viewport);
     e.setVector4('params2', displayParams2);
     e.setVector4('params3', displayParams3);
+    e.setVector4('flare', flareParams);
   });
 
   // --- Shared per-frame parameters (one upload per frame; layout in shaders/post/common.wgsl.js). -
@@ -145,6 +147,8 @@ export function createPost(scene, camera) {
     shadowLift: 0,
     /** Sand-on-camera veil while the Wraith stands in a Whirler's dust cloud (after TAA; the UI is apart). */
     sandBlind: 0,
+    /** The sun for the lens flare (post/chain.js): screen x, y (0..1, y up), on, the disc radius as a share of the height. */
+    flare: [0, 0, 0, 0],
     lutOn: true,
     /** Grade parameters (see shaders/post/lut.wgsl.js), written by the owner; set gradeDirty. */
     grade: gradeData,
@@ -232,6 +236,7 @@ export function createPost(scene, camera) {
       displayParams.x = post.tonemapper; displayParams.y = post.grain; displayParams.z = frame % 1024; displayParams.w = post.lutOn ? 1 : 0;
       displayParams2.x = post.sharpen; displayParams2.y = post.bloomIntensity; displayParams2.z = post.bloomOn ? 1 : 0; displayParams2.w = post.shadowLift;
       displayParams3.x = post.sandBlind;
+      const fl = post.flare; flareParams.set(fl[0], fl[1], fl[2], fl[3] * OH);
       engine.restoreDefaultFramebuffer();
       effectRenderer.render(display);
     },

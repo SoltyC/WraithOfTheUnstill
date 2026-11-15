@@ -396,8 +396,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let fl = fragmentInputs.vFlow;
   var sl = waterSlopeF(wp.xz, t, wf.xy * wf.z, fp, fl);
   if (uniforms.wetParams.z > 0.02) {
-    // Rain: rings on the surface, and a pitted, busier water that mirrors less sharply.
-    sl = vec4f(sl.xy + rainRipples(wp.xz, t, fp), sl.z, sl.w + 0.0009 * uniforms.wetParams.z);
+    // Rain: rings on the surface, and a pitted, busier water that mirrors less sharply. The drops
+    // also damp the short wind waves (the turbulence they stir drains them), so the chop flattens
+    // and the lake loses its hard bright-and-dark facets for an even, dimpled grey.
+    let rw = uniforms.wetParams.z;
+    sl = vec4f(sl.xy * (1.0 - 0.7 * clamp(rw, 0.0, 1.0)) + rainRipples(wp.xz, t, fp), sl.z, sl.w + 0.0009 * rw);
   }
   // Screen derivatives of the slope (specular AA, below) before any branch: they need uniform flow.
   let dsx = dpdx(sl.xy); let dsy = dpdy(sl.xy);
@@ -482,6 +485,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
         sky = mix(sky, tree, planar);
       }
     }
+  }
+  // Rain pits the whole surface finer than any pixel: each spot mirrors a spread of the sky, not
+  // one direction of it, so the lake goes a duller, even grey (the sky's average over the
+  // reflected hemisphere) instead of showing bright facets of it, and the far shore it mirrors
+  // is smeared into that grey too.
+  let rainW = clamp(uniforms.wetParams.z, 0.0, 1.0);
+  if (rainW > 0.02 && !interiorW) {
+    let skyAvg = shIrradiance(normalize(vec3f(R.x, max(R.y, 0.3), R.z))) * uniforms.envMisc.w / PI * (1.0 - 0.75 * canopy);
+    sky = mix(sky, skyAvg, 0.8 * rainW);
   }
   let H = normalize(L + V);
   let nl = max(dot(N, L), 0.0);

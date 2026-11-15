@@ -32,7 +32,13 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
   let g0 = (a + b + d + e) * 0.25; let g1 = (b + c + e + f) * 0.25; let g2 = (d + e + g + h) * 0.25;
   let g3 = (e + f + h + i) * 0.25; let g4 = (j + k + l + m) * 0.25;
   let w0 = kw(g0) * 0.125; let w1 = kw(g1) * 0.125; let w2 = kw(g2) * 0.125; let w3 = kw(g3) * 0.125; let w4 = kw(g4) * 0.5;
-  o = (g0 * w0 + g1 * w1 + g2 * w2 + g3 * w3 + g4 * w4) / (w0 + w1 + w2 + w3 + w4);` : `
+  o = (g0 * w0 + g1 * w1 + g2 * w2 + g3 * w3 + g4 * w4) / (w0 + w1 + w2 + w3 + w4);
+  // The sun's disc is thousands of times the sky and wide enough that no 2×2 group around it is
+  // dim, so the Karis weights leave it whole and the bloom spread it into a glare a hand across.
+  // Light far past white (pre-exposed luma over ~24) is rolled off going into the chain: the disc
+  // still blooms, as a halo; everything under it is untouched.
+  let ol = dot(o, vec3f(0.2126, 0.7152, 0.0722));
+  o = o * (24.0 / (24.0 + max(ol - 24.0, 0.0)));` : `
   o = e * 0.125 + (a + c + g + i) * 0.03125 + (b + d + f + h) * 0.0625 + (j + k + l + m) * 0.125;`}
   textureStore(dst, gid.xy, vec4f(max(o, vec3f(0.0)), 1.0));
 }

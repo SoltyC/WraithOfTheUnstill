@@ -13,6 +13,7 @@ import { createFog } from './fog.js';
 import { meterCS } from '../shaders/post/meter.wgsl.js';
 import { params } from '../core/params.js';
 import { env } from '../render/environment.js';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { registerToggle } from '../core/systems.js';
 
 /**
@@ -56,6 +57,21 @@ export function createPostChain(scene, camera, atmo, shadows, surface, windMap) 
   // the wider meter range, atmosphereCompute, now opens a shaded scene instead.)
   const lift = { day: 1.6, night: 0.3 };
   post.onParams(() => { const d = env.envMisc.y; post.shadowLift = lift.night + (lift.day - lift.night) * d; });
+  // The lens flare (display pass): the sun projected to the screen; the pass itself tests how much
+  // of the disc is seen. Off when the sun is behind the view or set.
+  const flare = { on: true }, sunW = new Vector3(), sunS = new Vector3(), fwd = new Vector3();
+  post.onParams(() => {
+    const s = env.sunDir, cp = camera.globalPosition, f = post.flare;
+    camera.getDirectionToRef(Vector3.Forward(), fwd);
+    const front = fwd.x * s.x + fwd.y * s.y + fwd.z * s.z;
+    if (!flare.on || front < 0.2 || s.y < -0.01) { f[2] = 0; return; }
+    sunW.set(cp.x + s.x * 1e4, cp.y + s.y * 1e4, cp.z + s.z * 1e4);
+    Vector3.TransformCoordinatesToRef(sunW, camera.getTransformationMatrix(), sunS);
+    f[0] = sunS.x * 0.5 + 0.5; f[1] = sunS.y * 0.5 + 0.5; f[2] = 1;
+    // The disc's angular radius (atmoSunDisc: ~0.6°) on the screen, as a share of the height.
+    f[3] = 0.0105 / Math.tan(camera.fov / 2) * 0.5;
+  });
+  registerToggle({ key: 'postFlare', label: 'lens flare', group: 'Post', on: true, onChange: (on) => { flare.on = on; } });
   registerToggle({ key: 'postTaa', label: 'TAA', group: 'Post', on: true, onChange: (on) => { taa.on = on; post.resetHistory = true; } });
   registerToggle({ key: 'postMirage', label: 'heat mirage', group: 'Post', on: true, onChange: (on) => { heat.mirage = on; post.resetHistory = true; } });
   registerToggle({ key: 'postHeat', label: 'heat shimmer', group: 'Post', on: true, onChange: (on) => { heat.on = on; post.resetHistory = true; } });
