@@ -17,6 +17,7 @@ import { MAT, NS, rot, cloth } from './architecture.js';
 import { stick } from './camp.js';
 import { layWall } from './masonry.js';
 import { towerHouse } from './towerKit.js';
+import { campSites } from './refugeeKit.js';
 
 /** The farms: id, the house's place, facing (down the slope, so the house looks out over its own terraces). */
 export const SOW_FARMS = [
@@ -296,22 +297,12 @@ function fissureBuild(k) {
   };
 }
 
-/** The camp: a fire ring, two lean-to shelters of cart cloth on poles, bundles, a cart drawn up. */
-function campBuild(b, facing, R) {
-  for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2; b.box(Math.cos(a) * 0.85, Math.sin(a) * 0.85, -0.2, 0.18 + R() * 0.08, 0.16, 0.12, -a, MAT.STONE, 9700 + k, { solid: false, plain: true, ...NS }); }
-  b.drum(0, 0, -0.1, 0.06, 0.65, 0.65, 10, MAT.EMBER, 9710, { solid: false });
-  for (let k = 0; k < 4; k++) { const a = k * 1.7; stick(b, [Math.cos(a) * 0.5, 0.05, Math.sin(a) * 0.5], [-Math.cos(a) * 0.15, 0.35, -Math.sin(a) * 0.15], 0.05, 0.04, 5, MAT.WOOD, 9711 + k); }
-  for (const [cx, cz, yaw, s] of [[-7.5, 5, 2.4, 9720], [8, 4, -2.2, 9730], [1, -9.5, 0.1, 9740]]) {
-    const P = rot(yaw), at = (u, y, f) => { const p = P(u, y, f); return [cx + p[0], p[1], cz + p[2]]; };
-    stick(b, at(-1.6, -0.3, 0), at(-1.6, 1.6, 0), 0.05, 0.045, 6, MAT.WOOD, s);
-    stick(b, at(1.6, -0.3, 0), at(1.6, 1.6, 0), 0.05, 0.045, 6, MAT.WOOD, s + 1);
-    stick(b, at(-1.7, 1.55, 0), at(1.7, 1.55, 0), 0.04, 0.04, 5, MAT.WOOD, s + 2);
-    cloth(b, (u, v) => at((u - 0.5) * 3.5, 1.55 - v * 1.5 - 0.1 * Math.sin(Math.PI * u) * Math.sin(Math.PI * v), -v * 2.2), 6, 4, MAT.CANVAS, s + 3);
-    for (let q = 0; q < 3; q++) b.drum(...[cx + P(-0.8 + q * 0.7, 0, -1.2)[0], cz + P(-0.8 + q * 0.7, 0, -1.2)[2]], 0, 0.4 + (q % 2) * 0.15, 0.25, 0.19, 9, MAT.CANVAS, s + 5 + q, { solid: false });
-  }
-  b.blockers.push({ site: b.site, kind: 'circle', x: 0, z: 0, r: 0.9, y0: -0.2, y1: 0.4 });
-  b.light(0, 0.45, 0, 13, 1.0, 0.52, 0.22, 1.7, 'fire');
-}
+/** Who can come to the headland. The farm plots share space with chickens or a flock where there was one. */
+const CAMP_GROUPS = [
+  ...SOW_FARMS.map(({ id }) => ({ id, kind: 'farm', size: 5, animals: id === 'aled' || id === 'ffion' })),
+  { id: 'cinderhold', kind: 'town', size: 24 },
+  { id: 'chapel', kind: 'chapel', size: 12 },
+];
 
 /** Every Sow and mountain-sign site. ov: the 8 m overview heights (g.streamer.overview); baked: data/world/sowHeights.json. */
 export function sowSites(ov, SOW_HEIGHTS = {}) {
@@ -340,7 +331,17 @@ export function sowSites(ov, SOW_HEIGHTS = {}) {
     out.push({ ...base, id: `sow-${farm.id}-cart`, build: cartBuild(farm, rel), footprint: 1 });
     out.push({ ...base, id: `sow-${farm.id}-load`, build: loadBuild(farm, rel), footprint: 1, hidden: true });
   }
-  out.push({ id: 'emb-camp', at: CAMP.at, facing: 0, build: campBuild, footprint: 10, seatAt: 'center', hidden: true, glow: 1 });
+  // The cliff starts south of the clearing. The lookout stands on the lip and faces back up the coast at the crater.
+  const campOptions = { origin: CAMP.at, heightAt: hAt, radius: 98, lookoutAt: [30, -91] };
+  const [emptyCamp] = campSites([], campOptions);
+  const [middle, ...plots] = campSites(CAMP_GROUPS, campOptions);
+  // Clear the headland around the camp, including the gaps between the occupied plots.
+  middle.footprint = 56;
+  // Keep a sightline from the road through the trees on the approach to the clearing.
+  middle.treeClearings = [
+    [724, -2571, 12], [729, -2551, 12], [731, -2536, 12], [733, -2525, 9],
+  ];
+  out.push(middle, ...plots, { ...emptyCamp, id: 'emb-camp-empty' });
   FISSURES.forEach(([x, z], k) => out.push({ id: 'emb-fissure-' + k, at: [x, z], facing: 0.4 + k * 0.3, build: fissureBuild(k), footprint: 4, seatAt: 'center' }));
   return out;
 }

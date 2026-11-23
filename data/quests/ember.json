@@ -800,6 +800,60 @@
     "ember-aled": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-lied"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.aled.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go",
+            "ember:bethan-stays"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.aled.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go",
+            "ember:sign-aled",
+            "ember:aled-showing"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.aled.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go",
+            "ember:tithe-exposed"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.aled.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.aled.camp.home"
+      },
+      {
+        "when": {
           "flag": "ember:aled-go"
         },
         "say": "ember.aled.gone"
@@ -856,6 +910,60 @@
     "ember-nia": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-lied"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.nia.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go",
+            "ember:ffion-stays"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.nia.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go",
+            "ember:sign-aled",
+            "ember:aled-showing"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.nia.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.nia.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-go"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.nia.camp.home"
+      },
+      {
+        "when": {
           "flag": "ember:aled-believes"
         },
         "say": "ember.nia.b"
@@ -865,6 +973,60 @@
       }
     ],
     "ember-bethan": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-lied"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.bethan.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go",
+            "ember:huw-stays"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.bethan.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go",
+            "ember:sign-bethan",
+            "ember:bethan-showing"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.bethan.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go",
+            "ember:tithe-exposed"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.bethan.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.bethan.camp.home"
+      },
       {
         "when": {
           "flag": "ember:bethan-go"
@@ -917,6 +1079,60 @@
     "ember-tomos": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-lied"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.tomos.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go",
+            "ember:aled-stays"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.tomos.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go",
+            "ember:sign-bethan",
+            "ember:bethan-showing"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.tomos.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go",
+            "ember:tithe-exposed"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.tomos.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-go"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.tomos.camp.home"
+      },
+      {
+        "when": {
           "flag": "ember:bethan-believes"
         },
         "say": "ember.tomos.b"
@@ -926,6 +1142,60 @@
       }
     ],
     "ember-huw": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-lied"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.huw.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go",
+            "ember:mari-stays"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.huw.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go",
+            "ember:sign-huw",
+            "ember:huw-showing"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.huw.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.huw.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.huw.camp.home"
+      },
       {
         "when": {
           "flag": "ember:huw-go"
@@ -978,6 +1248,60 @@
     "ember-elin": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-lied"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.elin.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go",
+            "ember:ffion-stays"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.elin.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go",
+            "ember:sign-huw",
+            "ember:huw-showing"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.elin.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.elin.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-go"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.elin.camp.home"
+      },
+      {
+        "when": {
           "flag": "ember:huw-believes"
         },
         "say": "ember.elin.b"
@@ -987,6 +1311,60 @@
       }
     ],
     "ember-ffion": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-lied"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.ffion.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go",
+            "ember:gwil-stays"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.ffion.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go",
+            "ember:sign-ffion",
+            "ember:ffion-showing"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.ffion.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.ffion.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.ffion.camp.home"
+      },
       {
         "when": {
           "flag": "ember:ffion-go"
@@ -1039,6 +1417,60 @@
     "ember-dai": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-lied"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.dai.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go",
+            "ember:bethan-stays"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.dai.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go",
+            "ember:sign-ffion",
+            "ember:ffion-showing"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.dai.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.dai.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-go"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.dai.camp.home"
+      },
+      {
+        "when": {
           "flag": "ember:ffion-believes"
         },
         "say": "ember.dai.b"
@@ -1048,6 +1480,60 @@
       }
     ],
     "ember-gwil": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-lied"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.gwil.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go",
+            "ember:huw-stays"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.gwil.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go",
+            "ember:sign-gwil",
+            "ember:gwil-showing"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.gwil.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.gwil.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.gwil.camp.home"
+      },
       {
         "when": {
           "flag": "ember:gwil-go"
@@ -1100,6 +1586,60 @@
     "ember-sian": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-lied"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.sian.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go",
+            "ember:mari-stays"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.sian.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go",
+            "ember:sign-gwil",
+            "ember:gwil-showing"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.sian.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go",
+            "ember:tithe-exposed"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.sian.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-go"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.sian.camp.home"
+      },
+      {
+        "when": {
           "flag": "ember:gwil-believes"
         },
         "say": "ember.sian.b"
@@ -1109,6 +1649,60 @@
       }
     ],
     "ember-mari": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-lied"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.mari.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go",
+            "ember:gwil-stays"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.mari.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go",
+            "ember:sign-mari",
+            "ember:mari-showing"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.mari.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.mari.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.mari.camp.home"
+      },
       {
         "when": {
           "flag": "ember:mari-go"
@@ -1159,6 +1753,60 @@
       }
     ],
     "ember-rhys": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-lied"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.rhys.camp.lied"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go",
+            "ember:aled-stays"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.rhys.camp.lost"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go",
+            "ember:sign-mari",
+            "ember:mari-showing"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.rhys.camp.shown"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go",
+            "ember:lie-found"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.rhys.camp.rumour"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-go"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.rhys.camp.home"
+      },
       {
         "when": {
           "flag": "ember:mari-believes"
@@ -2725,6 +3373,366 @@
       "speaker": "ember-corwen",
       "lines": [
         "Down. Not looking back."
+      ]
+    },
+    "ember.aled.camp.lied": {
+      "speaker": "ember-aled",
+      "lines": [
+        "You said that night. I spent it counting the flock and you knew the mountain would still be there at dawn."
+      ]
+    },
+    "ember.aled.camp.lost": {
+      "speaker": "ember-aled",
+      "lines": [
+        "Bethan's cistern had water when ours ran dry. I've put a full jug by the road twice now."
+      ]
+    },
+    "ember.aled.camp.shown": {
+      "speaker": "ember-aled",
+      "lines": [
+        "I can still see the ice go white on the trough and lift off it. The ewes put their noses down and turned away."
+      ]
+    },
+    "ember.aled.camp.rumour": {
+      "speaker": "ember-aled",
+      "lines": [
+        "A boy from the mine brought up a sack of feed. He said his father's name was on the board they hung from the cage."
+      ]
+    },
+    "ember.aled.camp.home": {
+      "speaker": "ember-aled",
+      "lines": [
+        "The two ewes in the pen are Nia's. I leave the gate bar low enough for her to reach."
+      ]
+    },
+    "ember.nia.camp.lied": {
+      "speaker": "ember-nia",
+      "lines": [
+        "I slept in my boots that night. Grandad said I could take them off when it got light."
+      ]
+    },
+    "ember.nia.camp.lost": {
+      "speaker": "ember-nia",
+      "lines": [
+        "I put a bowl down for Ffion's dog. A gull took what was in it."
+      ]
+    },
+    "ember.nia.camp.shown": {
+      "speaker": "ember-nia",
+      "lines": [
+        "Grandad showed me where your ice was. The white part on the edge was gone before I got there."
+      ]
+    },
+    "ember.nia.camp.rumour": {
+      "speaker": "ember-nia",
+      "lines": [
+        "Dai heard what you said about the night. He asked if I'd been scared. I said I was asleep."
+      ]
+    },
+    "ember.nia.camp.home": {
+      "speaker": "ember-nia",
+      "lines": [
+        "The small ewe keeps putting her head through the sticks. I moved the grass where she could reach it."
+      ]
+    },
+    "ember.bethan.camp.lied": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "You could have said you didn't know the hour. I'd still have put the crock on the cart."
+      ]
+    },
+    "ember.bethan.camp.lost": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "I've got Huw's sieve. He lent it to me the week the cistern sank. It's hanging behind the cloth."
+      ]
+    },
+    "ember.bethan.camp.shown": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "You made me put my hand under the old waterline. There was clay where the plaster had been."
+      ]
+    },
+    "ember.bethan.camp.rumour": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "They weighed my figs every week. I wonder if they put a weight on the cage when there was a man in it."
+      ]
+    },
+    "ember.bethan.camp.home": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "I saved the good crock and a rake. Tomos is using the crock to soak figs for the ones with sore teeth."
+      ]
+    },
+    "ember.tomos.camp.lied": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "Mother made me turn the cart around three times to see if anyone else was coming. You could have told us what you knew."
+      ]
+    },
+    "ember.tomos.camp.lost": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "Aled mended that wheel with a peg from his gate. I can hear it knock once on every turn."
+      ]
+    },
+    "ember.tomos.camp.shown": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "After you took her to the cistern, Mother carried the empty jugs to the cart herself."
+      ]
+    },
+    "ember.tomos.camp.rumour": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "I used to leave the figs by the cage. No one said what the names on that board were for."
+      ]
+    },
+    "ember.tomos.camp.home": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "I set the fig boards on two stones. They'll do for a bench if the little ones sit in the middle."
+      ]
+    },
+    "ember.huw.camp.lied": {
+      "speaker": "ember-huw",
+      "lines": [
+        "I left a week's grain on the floor because you gave me a night. I would have gone if you'd shown me the crack."
+      ]
+    },
+    "ember.huw.camp.lost": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Mari borrowed my flail and tied its split end with vine. It's outlasted the floor."
+      ]
+    },
+    "ember.huw.camp.shown": {
+      "speaker": "ember-huw",
+      "lines": [
+        "The crack made steam on the side we'd swept. I kept looking for where it began."
+      ]
+    },
+    "ember.huw.camp.rumour": {
+      "speaker": "ember-huw",
+      "lines": [
+        "I let the rumour stand a day. I wish I'd sent someone to the lower farms with the truth of it."
+      ]
+    },
+    "ember.huw.camp.home": {
+      "speaker": "ember-huw",
+      "lines": [
+        "I brought the flail. This ground won't take threshing, but the handle is good ash."
+      ]
+    },
+    "ember.elin.camp.lied": {
+      "speaker": "ember-elin",
+      "lines": [
+        "The bees had settled. If I'd known there was another morning, I'd have taken a hive."
+      ]
+    },
+    "ember.elin.camp.lost": {
+      "speaker": "ember-elin",
+      "lines": [
+        "Ffion used to keep a jar ready for me when the comb was full. I've still got the last one."
+      ]
+    },
+    "ember.elin.camp.shown": {
+      "speaker": "ember-elin",
+      "lines": [
+        "Huw scraped the flour from the split. It came up wet. He didn't sweep that side again."
+      ]
+    },
+    "ember.elin.camp.rumour": {
+      "speaker": "ember-elin",
+      "lines": [
+        "Huw wanted to wait after word went round. I left the harness hung from the shafts."
+      ]
+    },
+    "ember.elin.camp.home": {
+      "speaker": "ember-elin",
+      "lines": [
+        "I brought the wax. When the thread is dry, I'll mend the tear over the cart."
+      ]
+    },
+    "ember.ffion.camp.lied": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "It didn't go that night. The dog wouldn't cross the byre door the next morning either. We were staying gone."
+      ]
+    },
+    "ember.ffion.camp.lost": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "Gwil used to bring a bucket when the hens went off their water. I've left his by the rope line."
+      ]
+    },
+    "ember.ffion.camp.shown": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "You stood where the dog stopped. I hadn't thought to look at the dust down near the floor."
+      ]
+    },
+    "ember.ffion.camp.rumour": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "They said the night had come and gone. The byre was every bit as still in the morning."
+      ]
+    },
+    "ember.ffion.camp.home": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "I brought the feed tin. The hens that are left lay under the cart for shelter."
+      ]
+    },
+    "ember.dai.camp.lied": {
+      "speaker": "ember-dai",
+      "lines": [
+        "I told the dog it would be all right when the sun came up. I didn't tell him to go home."
+      ]
+    },
+    "ember.dai.camp.lost": {
+      "speaker": "ember-dai",
+      "lines": [
+        "Bethan used to put the soft figs aside for me. Tomos has brought a few, but they're the hard ones."
+      ]
+    },
+    "ember.dai.camp.shown": {
+      "speaker": "ember-dai",
+      "lines": [
+        "After you showed Gran the hens, she called the dog and he didn't come until she stepped out."
+      ]
+    },
+    "ember.dai.camp.rumour": {
+      "speaker": "ember-dai",
+      "lines": [
+        "The grown-ups were talking about the night again. I went to get the dog before they asked me."
+      ]
+    },
+    "ember.dai.camp.home": {
+      "speaker": "ember-dai",
+      "lines": [
+        "The dog wants to sleep under the cart. Gran says the cart will still be there in the morning."
+      ]
+    },
+    "ember.gwil.camp.lied": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "I drew water at first light and it was still hot. You didn't need to name a night."
+      ]
+    },
+    "ember.gwil.camp.lost": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "Huw carried from our well every other day. I kept the smoother handle on his bucket."
+      ]
+    },
+    "ember.gwil.camp.shown": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "It steamed before you laid the bucket on the coping. The rope was warm right up to my hand."
+      ]
+    },
+    "ember.gwil.camp.rumour": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "Word went over the walls before I drew the first bucket. The water was still hot."
+      ]
+    },
+    "ember.gwil.camp.home": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "Sian saved the rope. We've cut the hot end off and hung the pot with what was left."
+      ]
+    },
+    "ember.sian.camp.lied": {
+      "speaker": "ember-sian",
+      "lines": [
+        "I filled the buckets to leave that night. In the morning I tipped one out to make the cart lighter."
+      ]
+    },
+    "ember.sian.camp.lost": {
+      "speaker": "ember-sian",
+      "lines": [
+        "Mari used to water the new vines with this bucket. There's a cut in the handle where she hung it."
+      ]
+    },
+    "ember.sian.camp.shown": {
+      "speaker": "ember-sian",
+      "lines": [
+        "Father gave me the rope after you left. It was warm where he'd been holding it."
+      ]
+    },
+    "ember.sian.camp.rumour": {
+      "speaker": "ember-sian",
+      "lines": [
+        "Tomos says there were names on the cage. I thought the names in a tally were the ones that paid."
+      ]
+    },
+    "ember.sian.camp.home": {
+      "speaker": "ember-sian",
+      "lines": [
+        "I brought both buckets. The shallow one leaks, so the dog can have that."
+      ]
+    },
+    "ember.mari.camp.lied": {
+      "speaker": "ember-mari",
+      "lines": [
+        "I left my knife in the ground when you said it would go that night. A knife is easy to find. Look at the hill."
+      ]
+    },
+    "ember.mari.camp.lost": {
+      "speaker": "ember-mari",
+      "lines": [
+        "Gwil was going to bring the long rope down for the terraces. There's still a hook for it by the steps."
+      ]
+    },
+    "ember.mari.camp.shown": {
+      "speaker": "ember-mari",
+      "lines": [
+        "I watched the frost lift right out of my grandmother's soil. The vine above it still looked green."
+      ]
+    },
+    "ember.mari.camp.rumour": {
+      "speaker": "ember-mari",
+      "lines": [
+        "They wanted to count the nights. I counted the vines that felt warm at the root."
+      ]
+    },
+    "ember.mari.camp.home": {
+      "speaker": "ember-mari",
+      "lines": [
+        "I've put the vine cuttings where the cloth drips. Two still have green under the bark."
+      ]
+    },
+    "ember.rhys.camp.lied": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "You gave us one night. I had time to pick up the wire, if I'd known when to stop winding it."
+      ]
+    },
+    "ember.rhys.camp.lost": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "Aled said he'd take the broken gate off its hinge on the way out. It's still up when I close my eyes."
+      ]
+    },
+    "ember.rhys.camp.shown": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "Mother said to pull up a stake after you showed her the frost. The end came out warm."
+      ]
+    },
+    "ember.rhys.camp.rumour": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "When the word got round, I kept the cart pointed down the road. Easier than turning it twice."
+      ]
+    },
+    "ember.rhys.camp.home": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "I saved a coil of wire from the top terrace. It'll keep the rope off the wet ground."
       ]
     }
   },

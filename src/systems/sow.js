@@ -48,7 +48,13 @@ export function addSowSystem(g) {
     return {
       id, farm, kinId, sign: sowPoint(farm, ...SOW_SIGNS[id]), door: chapter.table[`sow-${id}-door`].pos, yard: chapter.table[`sow-${id}-yard`].pos,
       cart: sowPoint(farm, 0, 12.9), gate: sowPoint(farm, 0, 12),
-      site: { door: siteIdx(`sow-${id}-door`), bundles: siteIdx(`sow-${id}-bundles`), cart: siteIdx(`sow-${id}-cart`), load: siteIdx(`sow-${id}-load`) },
+      site: {
+        door: siteIdx(`sow-${id}-door`),
+        bundles: siteIdx(`sow-${id}-bundles`),
+        cart: siteIdx(`sow-${id}-cart`),
+        load: siteIdx(`sow-${id}-load`),
+        camp: siteIdx('emb-camp-' + id),
+      },
       elder: null, kin: null, leg: 0, hidden: false, t: 0,
     };
   });
@@ -184,8 +190,11 @@ export function addSowSystem(g) {
   // Loading the harvest costs the afternoon.
   const loaded = new Set();
 
-  // The headland camp: shown once a family is on the road (its fire: the site's own light and glowing coals).
+  // The headland's sites are built once. The road and the eruption decide which clearings are occupied.
   const campSite = siteIdx('emb-camp');
+  const coldSite = siteIdx('emb-camp-empty');
+  const lookoutSite = siteIdx('emb-camp-lookout');
+  const otherCamps = ['cinderhold', 'chapel'].map((id) => ({ id, site: siteIdx('emb-camp-' + id) }));
   let acc = 0;
   loop.add({ name: 'sow', update: () => {
     setBrains();
@@ -195,6 +204,8 @@ export function addSowSystem(g) {
     if (acc > 0.2) {
       acc = 0;
       const road = onRoad();
+      const sites = g.archSites;
+      let occupied = false;
       chapter.graph.vars['ember:sow-road'] = road;   // (read by Cinderhold's purse: systems/cinderhold.js)
       for (const f of fams) {
         if (!has(`ember:${f.id}-ready`) && !going(f) && readyToGo(f.id, flags, road, g.ember?.stage || 0)) { flags.add(`ember:${f.id}-ready`); }
@@ -205,13 +216,23 @@ export function addSowSystem(g) {
           say(f.farm.id[0].toUpperCase() + f.farm.id.slice(1), 'The cart is loaded', 'Two hours gone. The mountain did not wait for them.', 6);
         }
         // The farm shows it.
-        const s = g.archSites, gone = going(f) && !(f.id === 'aled' && has('ember:aled-stays'));
-        if (f.site.door >= 0) s[f.site.door].hidden = gone;
-        if (f.site.bundles >= 0) s[f.site.bundles].hidden = !(has(`ember:${f.id}-believes`) || has(`ember:${f.id}-lied`)) || f.hidden;
-        if (f.site.load >= 0) s[f.site.load].hidden = !has(`ember:${f.id}-load`) || f.hidden;
-        if (f.site.cart >= 0) s[f.site.cart].hidden = gone && f.hidden;
+        const gone = going(f) && !(f.id === 'aled' && has('ember:aled-stays'));
+        if (f.site.door >= 0) sites[f.site.door].hidden = gone;
+        if (f.site.bundles >= 0) sites[f.site.bundles].hidden = !(has(`ember:${f.id}-believes`) || has(`ember:${f.id}-lied`)) || f.hidden;
+        if (f.site.load >= 0) sites[f.site.load].hidden = !has(`ember:${f.id}-load`) || f.hidden;
+        if (f.site.cart >= 0) sites[f.site.cart].hidden = gone && f.hidden;
+        const fled = gone && !has('ember:' + f.id + '-stays');
+        if (f.site.camp >= 0) sites[f.site.camp].hidden = !fled;
+        occupied ||= fled;
       }
-      if (campSite >= 0) g.archSites[campSite].hidden = road === 0;
+      for (const { id, site } of otherCamps) {
+        const fled = has('ember:fled-' + id);
+        if (site >= 0) sites[site].hidden = !fled;
+        occupied ||= fled;
+      }
+      if (campSite >= 0) sites[campSite].hidden = !occupied;
+      if (lookoutSite >= 0) sites[lookoutSite].hidden = !occupied;
+      if (coldSite >= 0) sites[coldSite].hidden = occupied || !has('ember:after');
       const all = fams.every(decided);
       const n = fams.filter(decided).length;
       chapter.graph.vars['ember:sow-decided'] = n;
