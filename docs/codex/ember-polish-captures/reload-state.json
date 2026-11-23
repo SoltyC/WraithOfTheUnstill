@@ -1,0 +1,1161 @@
+{
+  "comparison": {
+    "sow": {
+      "ruins": true,
+      "nearbyRuins": true,
+      "camp": true,
+      "flags": true,
+      "flows": true,
+      "ash": true,
+      "stage": true
+    },
+    "cinderhold": {
+      "ruins": true,
+      "nearbyRuins": true,
+      "camp": true,
+      "flags": true,
+      "flows": true,
+      "ash": true,
+      "stage": true
+    },
+    "camp": {
+      "ruins": true,
+      "nearbyRuins": true,
+      "camp": true,
+      "flags": true,
+      "flows": true,
+      "ash": true,
+      "stage": true
+    }
+  },
+  "before": {
+    "sow": {
+      "ruins": {
+        "ruin:ash-chapel": {
+          "force": [
+            0.4834693285146083,
+            -0.8753613016267248
+          ],
+          "seed": 317,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:cin-cage": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:cin-town": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-bundles": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 503,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-cart": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-door": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-farm": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-load": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-mari-bundles": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 503,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-cart": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-door": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-farm": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-load": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        }
+      },
+      "nearbyRuins": {},
+      "camp": [
+        "emb-camp",
+        "emb-camp-aled",
+        "emb-camp-ffion",
+        "emb-camp-lookout"
+      ],
+      "flags": [
+        "ember:after",
+        "ember:aled-go",
+        "ember:dead-lava:ember-bron",
+        "ember:dead-lava:ember-gethin",
+        "ember:dead-lava:ember-gwil",
+        "ember:dead-lava:ember-ifor",
+        "ember:dead-lava:ember-orrin",
+        "ember:dead-lava:ember-sian",
+        "ember:dead-lava:ember-teg",
+        "ember:dead-lava:ember-vell",
+        "ember:dead-lava:ember-wyn",
+        "ember:dead:ember-annick",
+        "ember:dead:ember-brannoc",
+        "ember:dead:ember-bron",
+        "ember:dead:ember-corwen",
+        "ember:dead:ember-edda",
+        "ember:dead:ember-gethin",
+        "ember:dead:ember-gwil",
+        "ember:dead:ember-ifor",
+        "ember:dead:ember-lio",
+        "ember:dead:ember-mari",
+        "ember:dead:ember-orrin",
+        "ember:dead:ember-rhys",
+        "ember:dead:ember-sian",
+        "ember:dead:ember-teg",
+        "ember:dead:ember-vell",
+        "ember:dead:ember-wyn",
+        "ember:dead:ember-ysolt",
+        "ember:erupted",
+        "ember:ffion-go",
+        "ember:gwil-stays",
+        "ember:lost-chapel",
+        "ember:lost-cinderhold",
+        "ember:lost:chapel",
+        "ember:lost:cinderhold",
+        "ember:lost:gwil",
+        "ember:lost:mari",
+        "ember:mari-stays"
+      ],
+      "flows": {
+        "shown": 1,
+        "cooling": 1,
+        "fronts": [
+          296.0637060482099,
+          1776.3711366177608,
+          700.0926917671011
+        ]
+      },
+      "ash": {
+        "falling": 0.15,
+        "ground": 1,
+        "grass": 1,
+        "trees": 1
+      },
+      "stage": 5
+    },
+    "cinderhold": {
+      "ruins": {
+        "ruin:ash-chapel": {
+          "force": [
+            0.4834693285146083,
+            -0.8753613016267248
+          ],
+          "seed": 317,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:cin-cage": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:cin-town": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-bundles": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 503,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-cart": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-door": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-farm": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-load": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-mari-bundles": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 503,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-cart": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-door": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-farm": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-load": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        }
+      },
+      "nearbyRuins": {
+        "cin-cage": {
+          "hidden": false,
+          "state": "rest",
+          "drawn": true
+        },
+        "cin-town": {
+          "hidden": true,
+          "state": "rest",
+          "drawn": true
+        }
+      },
+      "camp": [
+        "emb-camp",
+        "emb-camp-aled",
+        "emb-camp-ffion",
+        "emb-camp-lookout"
+      ],
+      "flags": [
+        "ember:after",
+        "ember:aled-go",
+        "ember:dead-lava:ember-bron",
+        "ember:dead-lava:ember-gethin",
+        "ember:dead-lava:ember-gwil",
+        "ember:dead-lava:ember-ifor",
+        "ember:dead-lava:ember-orrin",
+        "ember:dead-lava:ember-sian",
+        "ember:dead-lava:ember-teg",
+        "ember:dead-lava:ember-vell",
+        "ember:dead-lava:ember-wyn",
+        "ember:dead:ember-annick",
+        "ember:dead:ember-brannoc",
+        "ember:dead:ember-bron",
+        "ember:dead:ember-corwen",
+        "ember:dead:ember-edda",
+        "ember:dead:ember-gethin",
+        "ember:dead:ember-gwil",
+        "ember:dead:ember-ifor",
+        "ember:dead:ember-lio",
+        "ember:dead:ember-mari",
+        "ember:dead:ember-orrin",
+        "ember:dead:ember-rhys",
+        "ember:dead:ember-sian",
+        "ember:dead:ember-teg",
+        "ember:dead:ember-vell",
+        "ember:dead:ember-wyn",
+        "ember:dead:ember-ysolt",
+        "ember:erupted",
+        "ember:ffion-go",
+        "ember:gwil-stays",
+        "ember:lost-chapel",
+        "ember:lost-cinderhold",
+        "ember:lost:chapel",
+        "ember:lost:cinderhold",
+        "ember:lost:gwil",
+        "ember:lost:mari",
+        "ember:mari-stays"
+      ],
+      "flows": {
+        "shown": 1,
+        "cooling": 1,
+        "fronts": [
+          296.0637060482099,
+          1776.3711366177608,
+          700.0926917671011
+        ]
+      },
+      "ash": {
+        "falling": 0.15,
+        "ground": 1,
+        "grass": 1,
+        "trees": 1
+      },
+      "stage": 5
+    },
+    "camp": {
+      "ruins": {
+        "ruin:ash-chapel": {
+          "force": [
+            0.4834693285146083,
+            -0.8753613016267248
+          ],
+          "seed": 317,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:cin-cage": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:cin-town": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-bundles": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 503,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-cart": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-door": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-farm": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-load": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-mari-bundles": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 503,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-cart": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-door": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-farm": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-load": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        }
+      },
+      "nearbyRuins": {},
+      "camp": [
+        "emb-camp",
+        "emb-camp-aled",
+        "emb-camp-ffion",
+        "emb-camp-lookout"
+      ],
+      "flags": [
+        "ember:after",
+        "ember:aled-go",
+        "ember:dead-lava:ember-bron",
+        "ember:dead-lava:ember-gethin",
+        "ember:dead-lava:ember-gwil",
+        "ember:dead-lava:ember-ifor",
+        "ember:dead-lava:ember-orrin",
+        "ember:dead-lava:ember-sian",
+        "ember:dead-lava:ember-teg",
+        "ember:dead-lava:ember-vell",
+        "ember:dead-lava:ember-wyn",
+        "ember:dead:ember-annick",
+        "ember:dead:ember-brannoc",
+        "ember:dead:ember-bron",
+        "ember:dead:ember-corwen",
+        "ember:dead:ember-edda",
+        "ember:dead:ember-gethin",
+        "ember:dead:ember-gwil",
+        "ember:dead:ember-ifor",
+        "ember:dead:ember-lio",
+        "ember:dead:ember-mari",
+        "ember:dead:ember-orrin",
+        "ember:dead:ember-rhys",
+        "ember:dead:ember-sian",
+        "ember:dead:ember-teg",
+        "ember:dead:ember-vell",
+        "ember:dead:ember-wyn",
+        "ember:dead:ember-ysolt",
+        "ember:erupted",
+        "ember:ffion-go",
+        "ember:gwil-stays",
+        "ember:lost-chapel",
+        "ember:lost-cinderhold",
+        "ember:lost:chapel",
+        "ember:lost:cinderhold",
+        "ember:lost:gwil",
+        "ember:lost:mari",
+        "ember:mari-stays"
+      ],
+      "flows": {
+        "shown": 1,
+        "cooling": 1,
+        "fronts": [
+          296.0637060482099,
+          1776.3711366177608,
+          700.0926917671011
+        ]
+      },
+      "ash": {
+        "falling": 0.142,
+        "ground": 1,
+        "grass": 1,
+        "trees": 1
+      },
+      "stage": 5
+    }
+  },
+  "after": {
+    "sow": {
+      "ruins": {
+        "ruin:ash-chapel": {
+          "force": [
+            0.4834693285146083,
+            -0.8753613016267248
+          ],
+          "seed": 317,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:cin-cage": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:cin-town": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-bundles": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 503,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-cart": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-door": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-farm": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-load": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-mari-bundles": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 503,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-cart": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-door": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-farm": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-load": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        }
+      },
+      "nearbyRuins": {},
+      "camp": [
+        "emb-camp",
+        "emb-camp-aled",
+        "emb-camp-ffion",
+        "emb-camp-lookout"
+      ],
+      "flags": [
+        "ember:after",
+        "ember:aled-go",
+        "ember:dead-lava:ember-bron",
+        "ember:dead-lava:ember-gethin",
+        "ember:dead-lava:ember-gwil",
+        "ember:dead-lava:ember-ifor",
+        "ember:dead-lava:ember-orrin",
+        "ember:dead-lava:ember-sian",
+        "ember:dead-lava:ember-teg",
+        "ember:dead-lava:ember-vell",
+        "ember:dead-lava:ember-wyn",
+        "ember:dead:ember-annick",
+        "ember:dead:ember-brannoc",
+        "ember:dead:ember-bron",
+        "ember:dead:ember-corwen",
+        "ember:dead:ember-edda",
+        "ember:dead:ember-gethin",
+        "ember:dead:ember-gwil",
+        "ember:dead:ember-ifor",
+        "ember:dead:ember-lio",
+        "ember:dead:ember-mari",
+        "ember:dead:ember-orrin",
+        "ember:dead:ember-rhys",
+        "ember:dead:ember-sian",
+        "ember:dead:ember-teg",
+        "ember:dead:ember-vell",
+        "ember:dead:ember-wyn",
+        "ember:dead:ember-ysolt",
+        "ember:erupted",
+        "ember:ffion-go",
+        "ember:gwil-stays",
+        "ember:lost-chapel",
+        "ember:lost-cinderhold",
+        "ember:lost:chapel",
+        "ember:lost:cinderhold",
+        "ember:lost:gwil",
+        "ember:lost:mari",
+        "ember:mari-stays"
+      ],
+      "flows": {
+        "shown": 1,
+        "cooling": 1,
+        "fronts": [
+          296.0637060482099,
+          1776.3711366177608,
+          700.0926917671011
+        ]
+      },
+      "ash": {
+        "falling": 0.15,
+        "ground": 1,
+        "grass": 1,
+        "trees": 1
+      },
+      "stage": 5
+    },
+    "cinderhold": {
+      "ruins": {
+        "ruin:ash-chapel": {
+          "force": [
+            0.4834693285146083,
+            -0.8753613016267248
+          ],
+          "seed": 317,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:cin-cage": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:cin-town": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-bundles": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 503,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-cart": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-door": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-farm": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-load": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-mari-bundles": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 503,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-cart": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-door": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-farm": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-load": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        }
+      },
+      "nearbyRuins": {
+        "cin-cage": {
+          "hidden": false,
+          "state": "rest",
+          "drawn": true
+        },
+        "cin-town": {
+          "hidden": true,
+          "state": "rest",
+          "drawn": true
+        }
+      },
+      "camp": [
+        "emb-camp",
+        "emb-camp-aled",
+        "emb-camp-ffion",
+        "emb-camp-lookout"
+      ],
+      "flags": [
+        "ember:after",
+        "ember:aled-go",
+        "ember:dead-lava:ember-bron",
+        "ember:dead-lava:ember-gethin",
+        "ember:dead-lava:ember-gwil",
+        "ember:dead-lava:ember-ifor",
+        "ember:dead-lava:ember-orrin",
+        "ember:dead-lava:ember-sian",
+        "ember:dead-lava:ember-teg",
+        "ember:dead-lava:ember-vell",
+        "ember:dead-lava:ember-wyn",
+        "ember:dead:ember-annick",
+        "ember:dead:ember-brannoc",
+        "ember:dead:ember-bron",
+        "ember:dead:ember-corwen",
+        "ember:dead:ember-edda",
+        "ember:dead:ember-gethin",
+        "ember:dead:ember-gwil",
+        "ember:dead:ember-ifor",
+        "ember:dead:ember-lio",
+        "ember:dead:ember-mari",
+        "ember:dead:ember-orrin",
+        "ember:dead:ember-rhys",
+        "ember:dead:ember-sian",
+        "ember:dead:ember-teg",
+        "ember:dead:ember-vell",
+        "ember:dead:ember-wyn",
+        "ember:dead:ember-ysolt",
+        "ember:erupted",
+        "ember:ffion-go",
+        "ember:gwil-stays",
+        "ember:lost-chapel",
+        "ember:lost-cinderhold",
+        "ember:lost:chapel",
+        "ember:lost:cinderhold",
+        "ember:lost:gwil",
+        "ember:lost:mari",
+        "ember:mari-stays"
+      ],
+      "flows": {
+        "shown": 1,
+        "cooling": 1,
+        "fronts": [
+          296.0637060482099,
+          1776.3711366177608,
+          700.0926917671011
+        ]
+      },
+      "ash": {
+        "falling": 0.15,
+        "ground": 1,
+        "grass": 1,
+        "trees": 1
+      },
+      "stage": 5
+    },
+    "camp": {
+      "ruins": {
+        "ruin:ash-chapel": {
+          "force": [
+            0.4834693285146083,
+            -0.8753613016267248
+          ],
+          "seed": 317,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:cin-cage": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:cin-town": {
+          "force": [
+            -0.9994465620244591,
+            -0.03326514177767945
+          ],
+          "seed": 255,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-bundles": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 503,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-cart": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-door": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-farm": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-gwil-load": {
+          "force": [
+            0.8942918152951378,
+            -0.4474842445227843
+          ],
+          "seed": 410,
+          "strength": 1,
+          "char": 0
+        },
+        "ruin:sow-mari-bundles": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 503,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-cart": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-door": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-farm": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        },
+        "ruin:sow-mari-load": {
+          "force": [
+            0.6955660752071391,
+            -0.7184621319324607
+          ],
+          "seed": 410,
+          "strength": 1.6,
+          "char": 0
+        }
+      },
+      "nearbyRuins": {},
+      "camp": [
+        "emb-camp",
+        "emb-camp-aled",
+        "emb-camp-ffion",
+        "emb-camp-lookout"
+      ],
+      "flags": [
+        "ember:after",
+        "ember:aled-go",
+        "ember:dead-lava:ember-bron",
+        "ember:dead-lava:ember-gethin",
+        "ember:dead-lava:ember-gwil",
+        "ember:dead-lava:ember-ifor",
+        "ember:dead-lava:ember-orrin",
+        "ember:dead-lava:ember-sian",
+        "ember:dead-lava:ember-teg",
+        "ember:dead-lava:ember-vell",
+        "ember:dead-lava:ember-wyn",
+        "ember:dead:ember-annick",
+        "ember:dead:ember-brannoc",
+        "ember:dead:ember-bron",
+        "ember:dead:ember-corwen",
+        "ember:dead:ember-edda",
+        "ember:dead:ember-gethin",
+        "ember:dead:ember-gwil",
+        "ember:dead:ember-ifor",
+        "ember:dead:ember-lio",
+        "ember:dead:ember-mari",
+        "ember:dead:ember-orrin",
+        "ember:dead:ember-rhys",
+        "ember:dead:ember-sian",
+        "ember:dead:ember-teg",
+        "ember:dead:ember-vell",
+        "ember:dead:ember-wyn",
+        "ember:dead:ember-ysolt",
+        "ember:erupted",
+        "ember:ffion-go",
+        "ember:gwil-stays",
+        "ember:lost-chapel",
+        "ember:lost-cinderhold",
+        "ember:lost:chapel",
+        "ember:lost:cinderhold",
+        "ember:lost:gwil",
+        "ember:lost:mari",
+        "ember:mari-stays"
+      ],
+      "flows": {
+        "shown": 1,
+        "cooling": 1,
+        "fronts": [
+          296.0637060482099,
+          1776.3711366177608,
+          700.0926917671011
+        ]
+      },
+      "ash": {
+        "falling": 0.142,
+        "ground": 1,
+        "grass": 1,
+        "trees": 1
+      },
+      "stage": 5
+    }
+  }
+}
