@@ -7,7 +7,7 @@ import { h2 } from './masonry.js';
 const TAU = Math.PI * 2;
 
 /** A round stick from a to b (radius ra at a, rb at b), n sides, smooth normals, capped ends. */
-export function stick(B, a, b, ra, rb, n, mat, seed) {
+function stick0(B, a, b, ra, rb, n, mat, seed) {
   const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], L = Math.hypot(d[0], d[1], d[2]) || 1;
   const t = [d[0] / L, d[1] / L, d[2] / L];
   // A frame round the axis.
@@ -97,3 +97,6 @@ export function feltTent(B, x, z, r, h, door, seed, { ribs = 7, ax = 0, az = 0, 
     stick(B, [stake[0], -0.3, stake[2]], [stake[0] + 0.03, 0.3, stake[2]], 0.025, 0.02, 5, MAT_WOOD, seed + k + 9);
   }
 }
+
+/** (One piece for the fracture: world/fracture.js groups what it builds together.) */
+export function stick(B, ...a) { return B.piece ? B.piece(() => stick0(B, ...a)) : stick0(B, ...a); }

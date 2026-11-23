@@ -33,10 +33,17 @@ const HANG = 0, REACH = 1, PULL = 2;
 /** Where the nearest shut valve lies from the climber (`valveWay`). */
 export const VALVE_WAY = { NONE: 0, UP: 1, DOWN: 2, ROUND: 3 };
 
-/** @param {{ bell: any, ground?: any }} ctx */
+/**
+ * @param {{ bell: any, ground?: any, dims?: { segs: number, segLen: number, radius: (s: number) => number, valves: number, valveS: number[], valveTh: number[] },
+ *           tuning?: Partial<typeof neckTuning> }} ctx
+ *   bell: anything with the neck's surface (neckEval, sp/sn/st/sc, floorY, valves, shaking, active, climbed); dims and tuning: another
+ *   tube than the Bellwether's own (the Lake Beacon, systems/beacon.js: the climb taught before the fight).
+ */
 export function createNeckClimb(ctx) {
   const { bell } = ctx;
-  const T = neckTuning;
+  const D = ctx.dims || { segs: NECK_SEGS, segLen: SEG_LEN, radius: neckRadius, valves: VALVES, valveS: VALVE_S, valveTh: VALVE_TH };
+  // (The Bellwether's climb reads the shared tuning live, so the dev sliders move it; another tube takes its own copy.)
+  const T = ctx.tuning || ctx.dims ? { ...neckTuning, sMax: D.segs - 0.8, ...(ctx.tuning || {}) } : neckTuning;
   const Ts = new Float64Array(3), Ta = new Float64Array(3);
   const P = new Float64Array(3), Nn = new Float64Array(3), Tt = new Float64Array(3);
   const hold = new Float64Array(8), holdW = new Float64Array(12), reachFrom = new Float64Array(3);
@@ -118,7 +125,7 @@ export function createNeckClimb(ctx) {
       this.nearValve = -1;
       const V = bell.valves;
       let best = T.valveReach;
-      for (let k = 0; k < VALVES; k++) {
+      for (let k = 0; k < D.valves; k++) {
         if (V.open[k]) continue;
         const d = Math.hypot(V.x[k] - this.x, V.y[k] - this.y, V.z[k] - this.z);
         if (d < best) { best = d; this.nearValve = k; }
@@ -131,9 +138,9 @@ export function createNeckClimb(ctx) {
   function wayToValve(c) {
     const V = bell.valves;
     let bd = 1e18, ds = 0, dth = 0;
-    for (let k = 0; k < VALVES; k++) {
+    for (let k = 0; k < D.valves; k++) {
       if (V.open[k]) continue;
-      const a = (VALVE_S[k] - c.s) * SEG_LEN, b = (VALVE_TH[k] - c.th) * neckRadius(VALVE_S[k]), d = a * a + b * b;
+      const a = (D.valveS[k] - c.s) * D.segLen, b = (D.valveTh[k] - c.th) * D.radius(D.valveS[k]), d = a * a + b * b;
       if (d < bd) { bd = d; ds = a; dth = b; }
     }
     if (bd === 1e18) return VALVE_WAY.NONE;
@@ -207,7 +214,7 @@ export function createNeckClimb(ctx) {
     const s0 = c.s, t0 = c.th, x = c.x, y = c.y, z = c.z;
     const nx = -c.fx, ny = -c.fy, nz = -c.fz;
     for (let i = 0; i < 4; i++) {
-      const hs = Math.max(0, Math.min(NECK_SEGS, hold[i * 2]));
+      const hs = Math.max(0, Math.min(D.segs, hold[i * 2]));
       // Hands find the crags a hair proud of the smooth tube.
       bell.neckEval(hs, hold[i * 2 + 1], 0.08);
       holdW[i * 3] = bell.sp[0]; holdW[i * 3 + 1] = bell.sp[1]; holdW[i * 3 + 2] = bell.sp[2];
@@ -233,10 +240,10 @@ export function createNeckClimb(ctx) {
     if (!bell.active) return;
     const cx = c.px, cy = c.py + 1.1, cz = c.pz;
     let bestS = -1, bestD = 1e9, bestTh = 0;
-    for (let s = 0.5; s <= NECK_SEGS - 0.99; s += 0.25) {
+    for (let s = 0.5; s <= D.segs - 0.99; s += 0.25) {
       bell.neckEval(s, 0, 0);
       const ax = cx - bell.sc[0], ay = cy - bell.sc[1], az = cz - bell.sc[2];
-      const d = Math.hypot(ax, ay, az) - neckRadius(s);
+      const d = Math.hypot(ax, ay, az) - D.radius(s);
       if (d < bestD) {
         bestD = d; bestS = s;
         // The angle round the neck from the top (u) toward the right (r): from the frame at s.

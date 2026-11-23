@@ -215,7 +215,9 @@ export async function addEnvironmentSystems(g) {
   const { blendArt } = await import('../render/artDirection.js');
   const artOn = !g.qs || g.qs.get('art') !== '0';
   const artW = { frost: 1, meadow: 0, dunes: 0 }, artR = { frost: 0, meadow: 0, dunes: 0 };
-  let lastGradeR=-1,lastGradeM=-1,lastGradeMR=-1,lastGradeD=-1,lastGradeDR=-1,lastGradeS=-1;
+  let lastGradeR=-1,lastGradeM=-1,lastGradeMR=-1,lastGradeD=-1,lastGradeDR=-1,lastGradeS=-1,lastGradeE=-1;
+  // The Ember's share (its weights are not on the CPU: by distance from the volcano, world/crater.js, as the bake lays it).
+  let eW = 0;
   // The land under the camera (biome weights, eased): which biome the player is in, and how much of
   // each one's restoration (and grade) applies here — borders blend.
   let bwF = 1, bwM = 0, bwD = 0, rDunes = ws.restoration.dunes === 'restored' ? 1 : 0, rMeadow = ws.restoration.meadow === 'restored' ? 1 : 0, rFrost = restoration.value, biomeT = 0;
@@ -227,6 +229,7 @@ export async function addEnvironmentSystems(g) {
       streamer.mqx = camera.position.x; streamer.mqz = camera.position.z; streamer.sampleBiome();
       const k = pendingTp.active || restoration.snap || g.capture ? 1 : 0.35;
       bwF += (streamer.bw0 - bwF) * k; bwM += (streamer.bw1 - bwM) * k; bwD += (streamer.bw3-bwD)*k;
+      { const d = Math.hypot(camera.position.x - 2350, camera.position.z + 2150), t = Math.min(1, Math.max(0, (d - 2200) / 1000)); eW += ((1 - t * t * (3 - 2 * t)) - eW) * k; }
       ws.biome = bwD>bwF && bwD>bwM ? 'dunes' : bwM > bwF ? 'meadow' : 'frost';
     }
     // A load or a photo spot sets the state outright (restoration.snap): no easing in.
@@ -254,9 +257,9 @@ export async function addEnvironmentSystems(g) {
     const mBlend = bwM / Math.max(bwF + bwM, 1e-3);
     // Compare independent inputs; a weighted scalar key can cancel two simultaneous changes.
     if (g.regradeWanted) { g.regradeWanted = false; lastGradeR = NaN; }   // asked for afresh (systems/director.js: a cutscene over)
-    if (Number.isNaN(lastGradeR) || Math.abs(r-lastGradeR)>.002 || Math.abs(mBlend-lastGradeM)>.002 || Math.abs(rMeadow-lastGradeMR)>.002 || Math.abs(dW-lastGradeD)>.002 || Math.abs(rDunes-lastGradeDR)>.002 || gs!==lastGradeS) {
-      lastGradeR=r;lastGradeM=mBlend;lastGradeMR=rMeadow;lastGradeD=dW;lastGradeDR=rDunes;lastGradeS=gs;
-      blendGrade(post.post.grade, r, gs, mBlend, rMeadow,dW,rDunes);
+    if (Number.isNaN(lastGradeR) || Math.abs(r-lastGradeR)>.002 || Math.abs(mBlend-lastGradeM)>.002 || Math.abs(rMeadow-lastGradeMR)>.002 || Math.abs(dW-lastGradeD)>.002 || Math.abs(rDunes-lastGradeDR)>.002 || gs!==lastGradeS || Math.abs(eW-lastGradeE)>.005) {
+      lastGradeR=r;lastGradeM=mBlend;lastGradeMR=rMeadow;lastGradeD=dW;lastGradeDR=rDunes;lastGradeS=gs;lastGradeE=eW;
+      blendGrade(post.post.grade, r, gs, mBlend, rMeadow,dW,rDunes,eW);
       post.post.gradeDirty = true;
     }
   } });
@@ -410,7 +413,10 @@ export async function addEnvironmentSystems(g) {
     const move = Math.min(1, r * 1.5 + 2 * warden.gust + (weather.snow > held ? 1 : 0));
     snowfall.windSpeed = (1 + 7 * Math.pow(Math.max(w, 0), 1.5)) * move;
     snowfall.fallSpeed = (1.1 + 0.9 * weather.gust) * move;
-    snowfall.density = Math.max(weather.snow, held); snowfall.dt = clock.dt;
+    snowfall.density = Math.max(weather.snow, held, snowfall.ashFall); snowfall.dt = clock.dt;
+    // (Ash from the eruption, systems/eruption.js: grey, slow, and falling whatever the air is doing.)
+    snowfall.ash = snowfall.ashFall > weather.snow ? 1 : 0;
+    if (snowfall.ash) { snowfall.fallSpeed = 0.7 + 0.4 * weather.gust; snowfall.windSpeed = Math.max(snowfall.windSpeed, 1.5); }
     snowfall.update();
     // Sound: listener at the camera; the wind bed follows the wind (silent while stilled); the
     // Ribbon hisses while it flows; a formation chimes where it rises.

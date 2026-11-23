@@ -7,6 +7,7 @@
 // on the first key or pointer press (browser autoplay rules).
 
 import { createSandSurfSound } from './sandSurfSound.js';
+import { createLungSound } from './lungSound.js';
 import {createStormWind} from './stormWind.js';
 
 export const SFX = { THUD: 0, CRUNCH: 1, SHATTER: 2, WHOOSH: 3, CHIME: 4, BOOM: 5, RUMBLE: 6, STEP: 7, SHARD: 8, CHARGE: 9, THUNDER: 10, FLOW_UP: 11, FLOW_DOWN: 12, SWISH: 13, CLANG: 14, TOLL: 15 };
@@ -37,6 +38,7 @@ export function createSfx() {
     master.connect(comp); comp.connect(ac.destination);
     const nb = noiseBuffer(ac, 2.5);
     self.sandSound = createSandSurfSound(ac, nb, master);
+    self.lungSound = createLungSound(ac, nb, master);
     for (let i = 0; i < VOICES; i++) {
       const src = ac.createBufferSource(); src.buffer = nb; src.loop = true; src.loopStart = Math.random() * 2;
       const filt = ac.createBiquadFilter(); const ng = ac.createGain(); ng.gain.value = 0;
@@ -262,6 +264,8 @@ export function createSfx() {
       sand.active = this.enabled && this.sandActive; sand.speed = this.sandSpeed;
       sand.grip = this.sandGrip; sand.wet = this.sandWet; sand.frozen = this.sandFrozen; sand.avalanche = this.sandAvalanche;
       sand.update();
+      const lung = this.lungSound;
+      if (lung) { lung.stream = this.enabled ? (this.lungStream ?? 0) : 0; lung.spin = this.enabled ? (this.lungSpin ?? -1) : -1; lung.under = !!this.lungUnder; lung.update(this.lungDt ?? 0); }
       const t = ac.currentTime, gust = 0.7 + 0.3 * Math.sin(this.time * 0.9) * Math.sin(this.time * 0.37 + 1.1);
       master.gain.setTargetAtTime(this.enabled?0.7*this.volume:0,t,.03);
       windGain.gain.setTargetAtTime(Math.min(0.5, this.wind * 0.32 * gust)*(1-.75*Math.max(0,Math.min(1,this.stormDensity))), t, 0.3);

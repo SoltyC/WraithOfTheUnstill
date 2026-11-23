@@ -107,6 +107,8 @@ export class Wraith {
     /** Most cloth substeps one update may take (the player 4; background figures fewer, so a slow frame
      *  does not make the next one slower). */
     this.maxSteps = 4;
+    /** GPU cloth (set by the owner before the first update): the CPU places pins only. */
+    this.gpu = false; this.gpuTeleported = true; this.gpuPrevVX = 0.5 - 0.5; this.gpuPrevVY = 0.5 - 0.5; this.gpuPrevVZ = 0.5 - 0.5;
     /** Extra substeps still owed to settling the cloth after a teleport. */
     this.settleLeft = 0;
     this._lx = NaN; this._ly = NaN; this._lz = NaN; // last input position (teleport detection)
@@ -152,6 +154,7 @@ export class Wraith {
     this.cloth.airDrag = AIR_DRAG + SURF_AIR_DRAG * this.surf; this.cloth.resetFrame();
     this.settleLeft = SETTLE_STEPS;
     this._lx = this.bx; this._ly = this.by; this._lz = this.bz;
+    this.gpuTeleported = true; this.gpuPrevVX = this.vx; this.gpuPrevVY = this.vy; this.gpuPrevVZ = this.vz;
   }
 
   update() {
@@ -225,8 +228,14 @@ export class Wraith {
     // Substeps at 120 Hz; the first frames after a spawn settle the cloth.
     // After a teleport the cloth settles over a few frames (120 extra substeps, 24 a frame: one
     // frame of 120 was a visible hitch).
-    let steps = Math.min(this.maxSteps, Math.max(1, Math.round(this.dt / SUB)));
-    if (this.settleLeft > 0) { const k = Math.min(SETTLE_PER_FRAME, this.settleLeft); steps += k; this.settleLeft -= k; }
+    // On the GPU (a Veiled; character/wraith/clothGpu.js): only the pinned particles are placed here; the
+    // solver, the settling after a teleport and the packing run in the crowd's compute pass.
+    if (this.gpu) { this._pins(); return; }
+    // Substeps cover the frame's real time (rounding to whole 1/120 s steps ran the robe at 3/4 speed at 90 fps:
+    // one 1/120 s step per 1/90 s frame). The cloth corrects its Verlet velocity when the substep length changes.
+    let steps = Math.min(this.maxSteps, Math.max(1, Math.ceil(this.dt / SUB - 0.01)));
+    this.cloth.dt = Math.max(1 / 1000, Math.min(this.dt / steps, 1 / 40));
+    if (this.settleLeft > 0) { const k = Math.min(SETTLE_PER_FRAME, this.settleLeft); steps += k; this.settleLeft -= k; this.cloth.dt = SUB; }
     for (let s = 0; s < steps; s++) { this._pins(); this.cloth.step(); }
     this._pack();
   }
@@ -306,6 +315,9 @@ export class Wraith {
     }
   }
 
+  /** Mantle kept outside the sleeves (0..1) without a performance: a costume carrying something (systems/npcs.js). */
+  overArms = 0;
+
   _cap(ax, ay, az, bx, by, bz, r) {
     const c = this.cloth.col, o = this._k++ * 7;
     c[o] = ax; c[o + 1] = ay; c[o + 2] = az; c[o + 3] = bx; c[o + 4] = by; c[o + 5] = bz; c[o + 6] = r;
@@ -318,7 +330,12 @@ export class Wraith {
     b.toWorld(0, 0.02, -0.01);
     this._cap(b.out[0], b.out[1], b.out[2], b.chest[0], b.chest[1] + 0.08, b.chest[2], 0.17);
     // Shoulder bar.
-    this._cap(b.sh[0], b.sh[1], b.sh[2], b.sh[3], b.sh[4], b.sh[5], 0.085);
+    if (this.overArms > 0) {
+      // A costume's shawl (mantle-only collider): a fatter bar set back and down, so the shawl lies over the sleeve tops and the
+      // tunic's back (no cloth-on-cloth collision: the robe's back stood out through it).
+      const k = this.overArms, f = b.f, bk = 0.06 * k, dn = 0.05 * k;
+      this._cap(b.sh[0] - f[0] * bk, b.sh[1] - dn, b.sh[2] - f[2] * bk, b.sh[3] - f[0] * bk, b.sh[4] - dn, b.sh[5] - f[2] * bk, 0.085 + 0.07 * k);
+    } else this._cap(b.sh[0], b.sh[1], b.sh[2], b.sh[3], b.sh[4], b.sh[5], 0.085);
     // Legs: hips → knees → feet.
     for (let f = 0; f < 2; f++) {
       b.toWorld(f === 0 ? -0.11 : 0.11, -0.04, 0);
@@ -334,8 +351,9 @@ export class Wraith {
     // Head.
     this._cap(b.head[0], b.head[1], b.head[2], b.head[0], b.head[1] + 0.05, b.head[2], 0.14);
     // The sleeve's own capsule is thinner than the sleeve, so the mantle would ride on the arm with the sleeve through it.
-    if (this.performance !== null) {
-      const w = this.performance.weight;
+    // Also always on for a figure whose arm is held out of the gait (a costume's basket carry: overArms, 0..1).
+    if (this.performance !== null || this.overArms > 0) {
+      const w = Math.max(this.performance !== null ? this.performance.weight : 0, this.overArms);
       for (let s = 0; s < 2; s++) {
         const o = s * 3;
         this._cap(b.sh[o], b.sh[o + 1], b.sh[o + 2], b.el[o], b.el[o + 1], b.el[o + 2], 0.06 + (OVER_UPPER - 0.06) * w);

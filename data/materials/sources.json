@@ -1,5 +1,5 @@
 {
-  "comment": "Scanned PBR sources (CC0, Poly Haven), packed by tools/textures/build.mjs into data/textures/<id>.{alb,nrm,hgt}.webp. `size` is the packed albedo/normal resolution (height/AO is half). `layer` is the index in the runtime texture arrays (src/materials/library.js, MAT in shaders/materials.wgsl.js) — append only.",
+  "comment": "Scanned PBR sources (CC0, Poly Haven and ambientCG), packed by tools/textures/build.mjs into data/textures/<id>.{alb,nrm,hgt}.webp. `size` is the packed albedo/normal resolution (height/AO is half). `layer` is the index in the runtime texture arrays (src/materials/library.js, MAT in shaders/materials.wgsl.js) \u2014 append only.",
   "size": 2048,
   "materials": [
     {
@@ -7,28 +7,28 @@
       "id": "stone-pale",
       "source": "polyhaven",
       "asset": "rock_boulder_dry",
-      "use": "Shaper ashlar — pale, weathered, chipped limestone faces"
+      "use": "Shaper ashlar \u2014 pale, weathered, chipped limestone faces"
     },
     {
       "layer": 1,
       "id": "stone-dressed",
       "source": "polyhaven",
       "asset": "rock_01",
-      "use": "Shaper ashlar — smoother dressed faces, carved parts"
+      "use": "Shaper ashlar \u2014 smoother dressed faces, carved parts"
     },
     {
       "layer": 2,
       "id": "rock-strata",
       "source": "polyhaven",
       "asset": "dark_rock_02",
-      "use": "outcrops and boulders — dark stratified rock"
+      "use": "outcrops and boulders \u2014 dark stratified rock"
     },
     {
       "layer": 3,
       "id": "rock-lichen",
       "source": "polyhaven",
       "asset": "lichen_rock",
-      "use": "outcrops — lichen-crusted faces (sheltered, north)"
+      "use": "outcrops \u2014 lichen-crusted faces (sheltered, north)"
     },
     {
       "layer": 4,
@@ -42,210 +42,231 @@
       "id": "timber",
       "source": "polyhaven",
       "asset": "rough_wood",
-      "use": "weathered timber — sleds, poles, beams, staffs"
+      "use": "weathered timber \u2014 sleds, poles, beams, staffs"
     },
     {
       "layer": 6,
       "id": "wool",
       "source": "polyhaven",
       "asset": "poly_wool_herringbone",
-      "use": "felt and wool — tents, bundles, robe detail"
+      "use": "felt and wool \u2014 tents, bundles, robe detail"
     },
     {
       "layer": 7,
       "id": "linen",
       "source": "polyhaven",
       "asset": "rough_linen",
-      "use": "linen — wrappings, bier cloth"
+      "use": "linen \u2014 wrappings, bier cloth"
     },
     {
       "layer": 8,
       "id": "turf",
       "source": "polyhaven",
       "asset": "leafy_grass",
-      "use": "meadow ground — short green turf and leaves (close detail under the grass)"
+      "use": "meadow ground \u2014 short green turf and leaves (close detail under the grass)"
     },
     {
       "layer": 9,
       "id": "grass-ground",
       "source": "polyhaven",
       "asset": "grass_ground",
-      "use": "meadow ground — dry grass, roots and dirt (worn, exposed, paths)"
+      "use": "meadow ground \u2014 dry grass, roots and dirt (worn, exposed, paths)"
     },
     {
       "layer": 10,
       "id": "forest-floor",
       "source": "polyhaven",
       "asset": "leaves_forest_ground",
-      "use": "forest floor — dirt with leaves and twigs (under the canopy)"
+      "use": "forest floor \u2014 dirt with leaves and twigs (under the canopy)"
     },
     {
       "layer": 11,
       "id": "forest-litter",
       "source": "polyhaven",
       "asset": "forrest_ground_01",
-      "use": "forest floor — grass, twigs and fallen leaves (grove edges)"
+      "use": "forest floor \u2014 grass, twigs and fallen leaves (grove edges)"
     },
     {
       "layer": 12,
       "id": "soil",
       "source": "polyhaven",
       "asset": "forest_ground_06",
-      "use": "bare soil — compact, scattered leaves (banks, trampled ground)"
+      "use": "bare soil \u2014 compact, scattered leaves (banks, trampled ground)"
     },
     {
       "layer": 13,
       "id": "moss",
       "source": "polyhaven",
       "asset": "forest_leaves_02",
-      "use": "moss and sticks — on stone, logs and the shaded floor"
+      "use": "moss and sticks \u2014 on stone, logs and the shaded floor"
     },
     {
       "layer": 14,
       "id": "rock-mossy",
       "source": "polyhaven",
       "asset": "mossy_rock",
-      "use": "meadow rock — lichen and moss on striated stone"
+      "use": "meadow rock \u2014 lichen and moss on striated stone"
     },
     {
       "layer": 15,
       "id": "stone-mossy",
       "source": "polyhaven",
       "asset": "mossy_sandstone",
-      "use": "Shaper ruins in the meadow — weathered sandstone, moss-covered"
+      "use": "Shaper ruins in the meadow \u2014 weathered sandstone, moss-covered"
     },
     {
       "layer": 16,
       "id": "bark-pine",
       "source": "polyhaven",
       "asset": "pine_bark",
-      "use": "pine bark — deep plates"
+      "use": "pine bark \u2014 deep plates"
     },
     {
       "layer": 17,
       "id": "bark-oak",
       "source": "polyhaven",
       "asset": "bark_brown_02",
-      "use": "broadleaf bark — furrowed, knotted"
+      "use": "broadleaf bark \u2014 furrowed, knotted"
     },
     {
       "layer": 18,
       "id": "bark-smooth",
       "source": "polyhaven",
       "asset": "bark_platanus",
-      "use": "smooth mottled bark — birch/rowan-like trunks"
+      "use": "smooth mottled bark \u2014 birch/rowan-like trunks"
     },
     {
       "layer": 19,
       "id": "plaster",
       "source": "polyhaven",
       "asset": "plastered_wall",
-      "use": "village walls — cream lime plaster between timber framing (retinted; stains procedural)"
+      "use": "village walls \u2014 cream lime plaster between timber framing (retinted; stains procedural)"
     },
     {
       "layer": 20,
       "id": "thatch",
       "source": "polyhaven",
       "asset": "reed_roof_03",
-      "use": "village roofs — reed thatch"
+      "use": "village roofs \u2014 reed thatch"
     },
     {
       "layer": 21,
       "id": "roof-slate",
       "source": "polyhaven",
       "asset": "grey_roof_tiles",
-      "use": "village roofs — grey slate"
+      "use": "village roofs \u2014 grey slate"
     },
     {
       "layer": 22,
       "id": "roof-clay",
       "source": "polyhaven",
       "asset": "clay_roof_tiles_02",
-      "use": "village roofs and pots — clay tile (desaturated)"
+      "use": "village roofs and pots \u2014 clay tile (desaturated)"
     },
     {
       "layer": 23,
       "id": "siding",
       "source": "polyhaven",
       "asset": "weathered_plank_siding",
-      "use": "barns and lean-tos — lapped plank siding; shingles by procedural cuts"
+      "use": "barns and lean-tos \u2014 lapped plank siding; shingles by procedural cuts"
     },
     {
       "layer": 24,
       "id": "planks",
       "source": "polyhaven",
       "asset": "weathered_planks",
-      "use": "doors, shutters, crates, stalls — weathered vertical boards"
+      "use": "doors, shutters, crates, stalls \u2014 weathered vertical boards"
     },
     {
       "layer": 25,
       "id": "cobble-setts",
       "source": "polyhaven",
       "asset": "cobblestone_floor_03",
-      "use": "village streets — small cobble setts"
+      "use": "village streets \u2014 small cobble setts"
     },
     {
       "layer": 26,
       "id": "cobble-river",
       "source": "polyhaven",
       "asset": "cobblestone_floor_08",
-      "use": "courtyards, the stream edge — large rounded cobbles"
+      "use": "courtyards, the stream edge \u2014 large rounded cobbles"
     },
     {
       "layer": 27,
       "id": "flagstone",
       "source": "polyhaven",
       "asset": "rock_path",
-      "use": "paths and the stair landings — irregular flagstones"
+      "use": "paths and the stair landings \u2014 irregular flagstones"
     },
     {
       "layer": 28,
       "id": "earth",
       "source": "polyhaven",
       "asset": "dirt_floor",
-      "use": "tracks and yards — packed earth"
+      "use": "tracks and yards \u2014 packed earth"
     },
     {
       "layer": 29,
       "id": "cobble-mossy",
       "source": "polyhaven",
       "asset": "mossy_cobblestone",
-      "use": "the bridge and old lanes — mossy cobbles"
+      "use": "the bridge and old lanes \u2014 mossy cobbles"
     },
     {
       "layer": 30,
       "id": "iron",
       "source": "polyhaven",
       "asset": "rusty_metal_04",
-      "use": "fittings, sconces, railings — dark wrought iron"
+      "use": "fittings, sconces, railings \u2014 dark wrought iron"
     },
     {
       "layer": 31,
       "id": "sand-rippled",
       "source": "polyhaven",
       "asset": "aerial_beach_01",
-      "use": "the erg — wind-rippled fine sand (albedo/grain detail, retinted)"
+      "use": "the erg \u2014 wind-rippled fine sand (albedo/grain detail, retinted)"
     },
     {
       "layer": 32,
       "id": "sand-fine",
       "source": "polyhaven",
       "asset": "dense_sand",
-      "use": "the erg — fine compacted dune sand, grain detail"
+      "use": "the erg \u2014 fine compacted dune sand, grain detail"
     },
     {
       "layer": 33,
       "id": "cliff-strata",
       "source": "polyhaven",
       "asset": "cliff_side",
-      "use": "the Red Galleries' walls — layered red-brown sandstone cliff (the canyon wall kit)"
+      "use": "the Red Galleries' walls \u2014 layered red-brown sandstone cliff (the canyon wall kit)"
     },
     {
       "layer": 34,
       "id": "sandstone-smooth",
       "source": "polyhaven",
       "asset": "sandstone_cracks",
-      "use": "the Needle's slot walls, arches and hoodoos — pale wind-polished sandstone"
+      "use": "the Needle's slot walls, arches and hoodoos \u2014 pale wind-polished sandstone"
+    },
+    {
+      "layer": 35,
+      "id": "obsidian",
+      "source": "ambientcg",
+      "asset": "Rock035",
+      "use": "volcano \u2014 black glassy rock, the upper cone and crater rim (no free obsidian scan; the nearest, pushed glossier in the shader)"
+    },
+    {
+      "layer": 36,
+      "id": "lava-crust",
+      "source": "ambientcg",
+      "asset": "Lava001",
+      "use": "volcano \u2014 black lava crust with molten seams (emission in the height map's blue) \u2014 the crater floor and fresh flows"
+    },
+    {
+      "layer": 37,
+      "id": "ash-ground",
+      "source": "polyhaven",
+      "asset": "burned_ground_01",
+      "use": "volcano \u2014 charred ground, ash and cinders on the lower flanks"
     }
   ]
 }

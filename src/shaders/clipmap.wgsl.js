@@ -28,6 +28,9 @@ import { MEADOW_WGSL } from './meadow.wgsl.js';
 import { BRDF_WGSL } from './brdf.wgsl.js';
 import { SAND_WGSL } from './sand.wgsl.js';
 import { SANDSTONE_WGSL } from './sandstone.wgsl.js';
+import { VOLCANO_WGSL } from './volcano.wgsl.js';
+/** The eruption's flows' glowing segments the ground is lit by (render/clipmap.js lavaSegs). */
+export const LAVA_SEGS = 24;
 import { BORDER_WGSL } from './common.wgsl.js';
 import { TERRAIN_NOISE_WGSL } from './terrainNoise.wgsl.js';
 
@@ -375,6 +378,8 @@ export const clipmapFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform levels: array<vec4f,16>;
 uniform playerPos: vec4f;
+uniform lavaSegs: array<vec4f, ${LAVA_SEGS * 2}>;   // the flows' hot stretches: (a, intensity), (b, radius) — systems/eruption.js
+uniform lavaGlow: vec4f;            // the crater's lake: x = level (m), y = glow, z = radius (m) (systems/volcano.js)
 uniform spellLights: array<vec4f,${LIGHT_SLOTS * 2}>;   // LIGHT_SLOTS × (pos.xyz, radius), (colour.rgb, intensity)
 ${GRID_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -402,6 +407,7 @@ ${BRDF_WGSL()}
 ${MEADOW_WGSL}
 ${SAND_WGSL}
 ${SANDSTONE_WGSL}
+${VOLCANO_WGSL}
 ${DUNE_CREST_NORMAL_WGSL}
 ${BORDER_WGSL}
 
@@ -417,6 +423,45 @@ fn farDetail(Ng: vec3f, wp: vec3f, dist: f32) -> vec3f {
     amp *= 0.42; f *= 2.3;
   }
   return normalize(Ng - vec3f(g.x, 0.0, g.y) * (0.2 + 0.8 * steep) * k);
+}
+
+// Lamps, fires and spell lights on a lit ground (the ember and volcano surfaces; the meadow's own loop adds its wet sheen too).
+fn pointLit(wp: vec3f, N: vec3f, albedo: vec3f, ex: f32) -> vec3f {
+  var acc = vec3f(0.0);
+  let gb = gridBase(wp);
+  for (var li = 0u; li < ${LIGHT_SLOTS + MAX_PER_CELL}u; li++) {
+    var lp: vec4f; var lc: vec4f;
+    if (li < ${LIGHT_SLOTS}u) { lp = uniforms.spellLights[li * 2u]; lc = uniforms.spellLights[li * 2u + 1u]; }
+    else {
+      let id = select(0u, gridId(gb, li - ${LIGHT_SLOTS}u), gb != 0u);
+      if (id == 0u) { break; }
+      lp = gridPos(id); lc = gridCol(id);
+    }
+    if (lc.w <= 0.0) { continue; }
+    let lv = lp.xyz - wp; let d = max(length(lv), 0.35);
+    if (d >= lp.w) { continue; }
+    let fall = (1.0 - d / lp.w) * (1.0 - d / lp.w) / (1.0 + d * d * 0.6);
+    acc += albedo * lc.rgb * lc.w * fall * max(dot(N, lv / d), 0.0);
+  }
+  return acc / max(ex, 1e-6) * 0.35;
+}
+
+// The eruption's flows lighting the land round them: each hot stretch a glowing segment a metre over the ground; the light
+// falls off with distance from it (reaching tens of metres), across the slope that faces it.
+fn lavaSegLit(wp: vec3f, N: vec3f, albedo: vec3f, ex: f32) -> vec3f {
+  var acc = vec3f(0.0);
+  for (var i = 0u; i < ${LAVA_SEGS}u; i++) {
+    let A = uniforms.lavaSegs[i * 2u]; let B = uniforms.lavaSegs[i * 2u + 1u];
+    if (A.w <= 0.0) { continue; }
+    let ab = B.xyz - A.xyz; let tt = clamp(dot(wp - A.xyz, ab) / max(dot(ab, ab), 1e-3), 0.0, 1.0);
+    let c = A.xyz + ab * tt + vec3f(0.0, 1.5, 0.0);
+    let lv = c - wp; let d = length(lv);
+    if (d > B.w * 3.0) { continue; }
+    let R = B.w;
+    let ff = R * R / (R * R + d * d * 5.0) * (1.0 - smoothstep(R * 1.2, R * 3.0, d));
+    acc += vec3f(1.0, 0.3, 0.06) * A.w * ff * clamp(dot(N, lv / max(d, 1e-3)) * 0.8 + 0.2, 0.0, 1.0);
+  }
+  return albedo * acc / max(ex, 1e-6);
 }
 
 @fragment
@@ -447,7 +492,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
              + vec3f(0.52, 0.42, 0.28) * wA.w + vec3f(0.10, 0.095, 0.09) * wB.x + vec3f(0.50, 0.46, 0.38) * wB.y;
   albedo = albedo / max(wA.x + wA.y + wA.z + wA.w + wB.x + wB.y, 0.001);
   let slope = 1.0 - N.y;
-  albedo = mix(albedo, vec3f(0.30, 0.29, 0.28), smoothstep(0.35, 0.6, slope));
+  // The volcano's cone (centre 2350, -2150; tools/bake-world/geography.mjs): black basalt and ash up its flanks, darkest near the
+  // crater, in streaks down the flows, fading out over the ash plain — so the cone reads as a volcano from kilometres away.
+  let vcd = length(wp.xz - vec2f(2350.0, -2150.0));
+  let cone = (1.0 - smoothstep(500.0, 1500.0, vcd)) * smoothstep(0.3, 0.7, wB.x / max(wA.x + wA.y + wA.z + wA.w + wB.x + wB.y, 0.001));
+  let vang = atan2(wp.z + 2150.0, wp.x - 2350.0);
+  let flow = smoothstep(0.35, 0.9, sin(vang * 23.0 + 3.0 * sin(vang * 5.0 + vcd * 0.004)) * 0.5 + 0.5);
+  let basalt = mix(vec3f(0.07, 0.065, 0.062), vec3f(0.035, 0.032, 0.031), flow * (1.0 - smoothstep(200.0, 1100.0, vcd)));
+  albedo = mix(albedo, basalt, cone);
+  albedo = mix(albedo, mix(vec3f(0.30, 0.29, 0.28), vec3f(0.06, 0.055, 0.05), cone), smoothstep(0.35, 0.6, slope));
   // Clay-view sea: below sea level reads as dark water until the Phase 12 ocean exists.
   let sea = smoothstep(0.5, -1.5, wp.y);
   albedo = mix(albedo, vec3f(0.035, 0.065, 0.085), sea);
@@ -654,6 +707,38 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     }
     col = mix(col, scol, wSand);
     ssrMask = max(ssrMask, wSand * max(ss.wetK, glassK * 0.08) * (0.03 + 0.97 * pow(1.0 - max(dot(ss.N, V), 0.0), 5.0)) * 0.7);
+  }
+  // The volcano's cone (shaders/volcano.wgsl.js): ash, glassy black rock and lava crust, the seams glowing near the crater.
+  let wEmb = smoothstep(0.3, 0.7, wB.x / max(wSum, 0.001)) * (1.0 - sea);
+  let wVolc = volcanoCone(wp, wB.x / max(wSum, 0.001)) * (1.0 - sea);
+  // The ember ground off the cone (the cone's own surface goes over it).
+  if (wEmb > 0.001 && wVolc < 0.999) {
+    let Nge = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y, vN.z - stateGrad.y * vN.y));
+    let es = emberSurface(wp, Nge, normalize(fragmentInputs.vNormalC), fp);
+    let exe = uniforms.fogParams.z * atmoExposure();
+    col = mix(col, volcanoLight(es, V, L, key, vis * cs, uniforms.envMisc.w) + pointLit(wp, es.N, es.albedo, exe) + lavaSegLit(wp, es.N, es.albedo, exe), wEmb * (1.0 - wVolc));
+  }
+  if (wVolc > 0.001) {
+    let Ngv = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y, vN.z - stateGrad.y * vN.y));
+    let vs = volcanoSurface(wp, Ngv, normalize(fragmentInputs.vNormalC), fp);
+    var vcol = volcanoLight(vs, V, L, key, vis * cs, uniforms.envMisc.w);
+    let exv = uniforms.fogParams.z * atmoExposure();
+    vcol += vec3f(1.0, 0.22, 0.03) * vs.glow * 1.0 / max(exv, 1e-6) + pointLit(wp, vs.N, vs.albedo, exv) + lavaSegLit(wp, vs.N, vs.albedo, exv);
+    // The lake's light up the pit's walls (world/crater.js): from the nearest of its surface, falling off with distance.
+    let lg = uniforms.lavaGlow;
+    if (lg.y > 0.0) {
+      let rel = wp.xz - vec2f(2350.0, -2150.0);   // (the crater: world/crater.js PIT)
+      let dd = length(rel);
+      if (dd < lg.z + 160.0 && wp.y > lg.x - 2.0) {
+        let near = rel * min(1.0, (lg.z * 0.85) / max(dd, 1e-3));
+        let toL = vec3f(near.x - rel.x, lg.x - wp.y, near.y - rel.y);
+        let dl = length(toL) + 1.0;
+        let ff = lg.z * lg.z / (lg.z * lg.z + dl * dl * 3.0);
+        let nl = clamp(dot(vs.N, toL / dl) * 0.8 + 0.2, 0.0, 1.0);
+        vcol += vs.albedo * vec3f(1.0, 0.3, 0.06) * lg.y * ff * nl / max(exv, 1e-6);
+      }
+    }
+    col = mix(col, vcol, wVolc);
   }
   // The oasis basin (world/oasis.js): dried mud, crazed into polygons — bare while the erg is stilled,
   // the lakebed under the water once it is restored. A tint and the cracks on the lit colour.

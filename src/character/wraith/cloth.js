@@ -49,6 +49,8 @@ export class Cloth {
     /** Ground query for flagged particles (qx/qz → sample() → h); optional. */
     this.groundQuery = null;
     this.dt = 1 / 120;
+    /** The previous substep's length (time-corrected Verlet). */
+    this._ldt = 0;
   }
 
   addParticle(x, y, z, invMass) {
@@ -110,6 +112,8 @@ export class Cloth {
 
   step() {
     const dt = this.dt, p = this.p, q = this.q, w = this.w, n = this.n;
+    // Time-corrected Verlet: (p − q) is the last substep's travel; scale it when the substep length changes.
+    const rr = this._ldt > 0 ? Math.min(2, Math.max(0.5, dt / this._ldt)) : 1; this._ldt = dt;
     const keep = Math.exp(-this.damping * dt), air = Math.exp(-this.airDrag * dt);
     const fvx = this.frameVX * dt, fvy = this.frameVY * dt, fvz = this.frameVZ * dt;
     // Carry (1 − inertia) of the frame's velocity change into every free particle.
@@ -124,7 +128,7 @@ export class Cloth {
       const o = i * 3;
       const x = p[o], y = p[o + 1], z = p[o + 2];
       q[o] -= cvx; q[o + 1] -= cvy; q[o + 2] -= cvz;
-      let vx = (fvx + (x - q[o] - fvx) * keep) * air, vy = (fvy + (y - q[o + 1] - fvy) * keep) * air, vz = (fvz + (z - q[o + 2] - fvz) * keep) * air;
+      let vx = (fvx + ((x - q[o]) * rr - fvx) * keep) * air, vy = (fvy + ((y - q[o + 1]) * rr - fvy) * keep) * air, vz = (fvz + ((z - q[o + 2]) * rr - fvz) * keep) * air;
       const v2 = vx * vx + vy * vy + vz * vz;
       if (v2 > vmax * vmax) { const s = vmax / Math.sqrt(v2); vx *= s; vy *= s; vz *= s; }
       p[o] = x + vx + ax;

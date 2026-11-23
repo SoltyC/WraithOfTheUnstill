@@ -47,6 +47,9 @@ export const walkerSys = {
   steerIdle: 30,                 // s without a rider before a steered Walker returns to its circuit
   sunLow: [0.02, 0.36],          // sin(elevation) of a sun low enough to throw into the shaft
   songSteer: 1.4,                // the phrase known (the Singing Dunes), a pillar turns it this much more
+  // The other two instruments answer the Walker as well (M2, docs/direction.md: each instrument woken makes it easier to bring home):
+  clockKneel: 1.45,              // the sand-clock running true: it rests this much longer when it kneels (time to climb)
+  sunPace: 0.85,                 // the light thrown down the Galleries: it walks this much slower (easier to keep up with and stumble)
   mirrorTol: 0.42,               // rad: a mirror-stone turned within this of true
   litHold: 2.5,                  // s the eye must stay lit before it lies down
   restHour: 17.7,                // waiting by its well: the evening
@@ -373,7 +376,10 @@ export function addLongWalkerSystem(g) {
     placed = false; g.walkerPlaced = false;
   }
 
+  const BASE_KNEEL = walkerTuning.kneelTime, BASE_SPEED = walkerTuning.speed;
   loop.add({ name: 'longWalker', update: () => {
+    walkerTuning.kneelTime = BASE_KNEEL * (flags.has('dunes:instrument-clock') ? S.clockKneel : 1);
+    walkerTuning.speed = BASE_SPEED * (flags.has('dunes:instrument-sun') ? S.sunPace : 1);
     // Buried, its flat court sits on sloping sand: the sand is heaped round it once, so nothing hovers (the state only
     // exists near the Wraith, so this waits until it is close).
     if (W.state === WK.BURIED && ts && !flags.has(FLAG.HEAPED) && Math.abs(W.x - controller.pos.x) < 34 && Math.abs(W.z - controller.pos.z) < 34) {

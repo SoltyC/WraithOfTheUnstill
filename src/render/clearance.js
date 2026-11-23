@@ -38,6 +38,9 @@ export function createClearance(atmo, sources) {
     }
   }
   return {
+    /** Another source (systems/releaseLines.js: a running stream's bed); invalidate() re-stamps on the next update. */
+    addSource(src) { sources.push(src); lx = 1e9; },
+    invalidate() { lx = 1e9; },
     update(cx, cz, force = false) {
       if (!force && (cx - lx) ** 2 + (cz - lz) ** 2 < MOVE * MOVE) return;
       lx = cx; lz = cz;

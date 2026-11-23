@@ -10,7 +10,9 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 const rd = (f) => fs.readFileSync(dir + f);
 const east = (f, n, ch) => { const a = rd(f), p = []; for (let j = 0; j < n; j++) p.push(a.subarray((j * n + n * 3 / 8) * ch, (j * n + n) * ch)); return sha(Buffer.concat(p)); };
 const north = (f, n, ch) => sha(rd(f).subarray(0, Math.floor(n * (4096 - 1408) / 8192) * n * ch));
-const tiles = (t0, t1, j0, j1) => { const p = []; for (let tj = j0; tj < j1; tj++) for (let ti = t0; ti < t1; ti++) p.push(rd(`height/${ti}_${tj}.u16`)); return sha(Buffer.concat(p)); };
+const tiles = (t0, t1, j0, j1, skip = []) => { const p = []; for (let tj = j0; tj < j1; tj++) for (let ti = t0; ti < t1; ti++) if (!skip.includes(`${ti}_${tj}`)) p.push(rd(`height/${ti}_${tj}.u16`)); return sha(Buffer.concat(p)); };
+// (The crater's pit, src/world/crater.js / tools/world/carveCrater.mjs, was cut into these two tiles after F0, on purpose.)
+const CRATER_TILES = ['12_11', '12_12'];
 const u16 = (f) => { const b = rd(f); return new Uint16Array(b.buffer, b.byteOffset, b.length / 2); };
 const MAPS = [['biomeA', 'biome_a.rgba8', 1024, 4], ['biomeB', 'biome_b.rgba8', 1024, 4], ['surface', 'surface.rgba8', 2048, 4], ['hydro', 'hydro.rgba8', 2048, 4], ['lakeLevel', 'lake_level.u16', 2048, 2]];
 
@@ -20,7 +22,7 @@ describe('F0: the fen grows and nothing else moves', () => {
     expect(north(f, n, ch)).toBe(base[k + 'North']);
   });
   it('the height tiles outside the fen are byte-identical', () => {
-    expect(tiles(6, 16, 0, 16)).toBe(base.heightEast);
+    expect(tiles(6, 16, 0, 16, CRATER_TILES)).toBe(base.heightEastNoCrater);
     expect(tiles(0, 6, 0, 5)).toBe(base.heightNorth);
   });
   it('the mask is exactly 0 where the fen must not reach', () => {

@@ -74,6 +74,116 @@
       "width": 80,
       "rise": 5,
       "top": 100
+    },
+    {
+      "id": "meadow-manor-east",
+      "biome": "meadow",
+      "name": "The Manor wind",
+      "pts": [
+        [
+          372,
+          1046
+        ],
+        [
+          392,
+          990
+        ],
+        [
+          410,
+          934
+        ]
+      ],
+      "width": 70,
+      "rise": 6,
+      "top": 130
+    },
+    {
+      "id": "meadow-knoll",
+      "biome": "meadow",
+      "name": "The Knoll wind",
+      "pts": [
+        [
+          590,
+          790
+        ],
+        [
+          614,
+          742
+        ],
+        [
+          640,
+          694
+        ]
+      ],
+      "width": 70,
+      "rise": 5.5,
+      "top": 110
+    },
+    {
+      "id": "dunes-heat-well",
+      "biome": "dunes",
+      "name": "The Wellhouse heat",
+      "pts": [
+        [
+          1698,
+          726
+        ],
+        [
+          1725,
+          662
+        ],
+        [
+          1752,
+          598
+        ]
+      ],
+      "width": 60,
+      "rise": 7,
+      "top": 220
+    },
+    {
+      "id": "dunes-heat-stair",
+      "biome": "dunes",
+      "name": "The Stair heat",
+      "pts": [
+        [
+          1418,
+          607
+        ],
+        [
+          1445,
+          543
+        ],
+        [
+          1472,
+          479
+        ]
+      ],
+      "width": 60,
+      "rise": 7,
+      "top": 230
+    },
+    {
+      "id": "dunes-heat-lip",
+      "biome": "dunes",
+      "name": "The Lip heat",
+      "pts": [
+        [
+          1168,
+          504
+        ],
+        [
+          1195,
+          440
+        ],
+        [
+          1222,
+          376
+        ]
+      ],
+      "width": 60,
+      "rise": 6,
+      "top": 200
     }
   ],
   "banners": [
@@ -148,6 +258,60 @@
         1180
       ],
       "h": 240.2
+    },
+    {
+      "id": "rw-east-banner-1",
+      "stream": "meadow-manor-east",
+      "pos": [
+        418,
+        922
+      ],
+      "h": 329.8
+    },
+    {
+      "id": "rw-east-banner-2",
+      "stream": "meadow-knoll",
+      "pos": [
+        586,
+        806
+      ],
+      "h": 386.2
+    },
+    {
+      "id": "rw-east-banner-3",
+      "stream": "meadow-knoll",
+      "pos": [
+        646,
+        684
+      ],
+      "h": 349.8
+    },
+    {
+      "id": "rw-west-banner-1",
+      "stream": "dunes-heat-well",
+      "pos": [
+        1760,
+        640
+      ],
+      "h": 152.9
+    },
+    {
+      "id": "rw-west-banner-2",
+      "stream": "dunes-heat-stair",
+      "pos": [
+        1480,
+        520
+      ],
+      "h": 203.9
+    },
+    {
+      "id": "rw-west-banner-3",
+      "stream": "dunes-heat-lip",
+      "pos": [
+        1230,
+        420
+      ],
+      "h": 248.7
     }
   ],
   "summit": {
@@ -278,6 +442,86 @@
     "meadow": [
       0.99,
       -0.13
+    ],
+    "dunes": [
+      0.951,
+      0.309
+    ]
+  },
+  "eastRoad": {
+    "_note": "The meadow's release line (docs/direction.md M4): from the manor hill east to the lip of the Dry Stair, on the Manor and Knoll winds. Not a race: the way on to the dunes.",
+    "start": [
+      330,
+      1000,
+      14,
+      1.5708
+    ],
+    "checks": [
+      {
+        "name": "Over the manor's east wind",
+        "pos": [
+          392,
+          990
+        ],
+        "r": 70,
+        "agl": 15
+      },
+      {
+        "name": "Over the knoll",
+        "pos": [
+          614,
+          742
+        ],
+        "r": 70,
+        "agl": 15
+      },
+      {
+        "name": "The lip of the Dry Stair",
+        "pos": [
+          1040,
+          380
+        ],
+        "r": 60,
+        "agl": 8
+      }
+    ]
+  },
+  "westRoad": {
+    "_note": "The dunes' release line (docs/direction.md M4): heat rising off the Dry Stair's ledges carries a glide from the Wellhouse back up west to the lip, and on to the meadow. Not a race.",
+    "start": [
+      1730,
+      665,
+      3,
+      -1.977
+    ],
+    "checks": [
+      {
+        "name": "Over the Wellhouse heat",
+        "pos": [
+          1725,
+          662
+        ],
+        "r": 60,
+        "agl": 40
+      },
+      {
+        "name": "Over the Stair heat",
+        "pos": [
+          1445,
+          543
+        ],
+        "r": 60,
+        "agl": 40
+      },
+      {
+        "name": "The lip of the Dry Stair",
+        "pos": [
+          1040,
+          380
+        ],
+        "r": 60,
+        "agl": 8
+      }
     ]
   }
 }

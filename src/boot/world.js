@@ -228,7 +228,7 @@ export async function createWorld(g) {
     } catch (e) { console.warn('boulders: none', e); }
   }
   // Where the rocks stand, round the camera: the grass and ground cover step round them (render/clearance.js).
-  const clearance = (await import('../render/clearance.js')).createClearance(atmosphere, [outcrops, boulders]);
+  const clearance = (await import('../render/clearance.js')).createClearance(atmosphere, [outcrops, boulders].filter(Boolean));
   post.post.onParams((P) => { const b = wind.block; for (let k = 0; k < 8; k++) P[120 + k] = b[k];for(let k=36;k<b.length;k++)P[144+k-36]=b[k]; });
   // The Wraith (Phase 3): procedural gait, cloth robe; replaces the Phase 0 capsule's look.
   const { createWraithView } = await import('../render/wraith.js');

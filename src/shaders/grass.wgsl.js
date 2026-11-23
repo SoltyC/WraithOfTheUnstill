@@ -25,6 +25,7 @@ import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js
 /** Rings: [cell (m), grid (cells per side), blades per clump, segments per blade]. */
 import { boot } from '../core/graphics.js';
 import { MEADOW_TINT_WGSL } from './meadow.wgsl.js';
+import { SOW_WGSL } from './volcano.wgsl.js';
 /** Rings of clumps round the camera: [cell (m), clumps across, blades per clump, segments] — the graphics preset's (core/graphics.js; high: [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]]). */
 export const GRASS_RINGS = boot.grass;
 export const vertsPerBlade = (seg) => (seg + 1) * 2;
@@ -79,6 +80,13 @@ fn gDunes(x: f32, z: f32) -> f32 {
   return a.w / max(a.x + a.y + a.z + a.w, 0.05);
 }
 /** Frost share of frost + meadow at (x, z) (the border's snow patches). */
+/** The ember share (what biome A leaves: ember and coast — no coast inland). */
+fn gEmber(x: f32, z: f32) -> f32 {
+  let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
+  let a = unpack4x8unorm(biomeA[j * N8 + i]);
+  return clamp(1.0 - (a.x + a.y + a.z + a.w), 0.0, 1.0);
+}
+${SOW_WGSL}
 fn gFrostMeadow(x: f32, z: f32) -> f32 {
   let i = clamp(i32((x + W_HALF) / C8), 0, N8 - 1); let j = clamp(i32((W_HALF - z) / C8), 0, N8 - 1);
   let a = unpack4x8unorm(biomeA[j * N8 + i]);
@@ -162,7 +170,12 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // At the frost border the meadow is wherever the snow has gone (its patches), not the 8 m weight.
   let bsn = borderSnow(root, gFrostShare(root.x, root.y));
   // (the frost border's patches only where there is frost or meadow to speak of: not across the dune basin)
-  let mw = max(gMeadow(root.x, root.y), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)) * smoothstep(0.2, 0.5, gFrostMeadow(root.x, root.y))) * (1.0 - gBareMaterial(root.x, root.y));
+  // The Sow's valley (world/sow.js): the one green ground in the Ember Waste, autumn-dry.
+  // (Only in the ember biome: the farms' distances are not paid for by every blade in the meadow.)
+  let sowE = smoothstep(0.4, 0.8, gEmber(root.x, root.y));
+  var sowG = 0.0;
+  if (sowE > 0.0) { sowG = sowE * sowFertile(root) * (1.0 - sowYard(root)); }
+  let mw = max(max(gMeadow(root.x, root.y), sowG), (1.0 - bsn.x) * 0.85 * step(0.02, 1.0 - gFrostShare(root.x, root.y)) * smoothstep(0.2, 0.5, gFrostMeadow(root.x, root.y))) * (1.0 - gBareMaterial(root.x, root.y));
   let patchN = vn(root * 0.05) * 0.7 + vn(root * 0.21) * 0.3;
   // Under the crowns the grass thins to a few shade-tolerant tufts (the forest floor shows).
   let canopy = textureSampleLevel(canopyTex, canopyTexSampler, (root + 4096.0) / 8192.0, 0.0).r;
@@ -173,7 +186,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let dw = gDunes(root.x, root.y);
   let tussock = smoothstep(0.12, 0.3, dw) * (1.0 - smoothstep(0.5, 0.75, dw)) * smoothstep(0.58, 0.8, vn(root * 0.11 + 17.0) * 0.7 + vn(root * 0.4 + 3.0) * 0.3) * 0.5;
   // Toward the erg the meadow's own grass dries: straw-coloured, shorter, thinning in patches.
-  let straw = smoothstep(0.06, 0.35, dw);
+  let straw = max(smoothstep(0.06, 0.35, dw), 0.45 * sowG);
   let dens = max(max(smoothstep(0.45, 0.8, mw) * smoothstep(-0.15, 0.25, patchN + 0.2) * (1.0 - 0.55 * straw * smoothstep(0.7, 0.3, patchN)), reed * (0.6 + 0.4 * patchN)), tussock) * uniforms.grassParams.z
            * (1.0 - 0.85 * smoothstep(0.2, 0.65, canopy));
   // The village's ground (villageAt): none on cobbles (a few tufts in the joints near the edge), sparse
@@ -199,7 +212,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let flat = clamp(st.x * 1.4 + dep * 6.0, 0.0, 1.0);
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
-  var hgt = (1.0 - 0.35 * straw * (1.0 - reed)) * (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z) * (1.0 - 0.6 * clr);
+  var hgt = (1.0 - 0.35 * straw * (1.0 - reed)) * (1.0 - 0.4 * sowG) * (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z) * (1.0 - 0.6 * clr);
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;

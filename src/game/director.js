@@ -29,6 +29,8 @@ export function shotAt(shots, t, dt = 0, out = { i: 0, u: 0, cut: false }) {
 
 /** The camera of shot `sh` at u → out [px, py, pz, ax, ay, az, fov, focus]. time: the scene clock (for the drift). */
 export function evalShot(sh, u, time, out) {
+  // (A live shot — game/scenes.js — works its camera out each frame from what it is filming.)
+  if (sh.eval) return sh.eval(u, time, out);
   const K = sh.keys, n = K.length;
   const e = sh.ease ?? 1, w = u + (smoother(u) - u) * e;
   let k = 0;

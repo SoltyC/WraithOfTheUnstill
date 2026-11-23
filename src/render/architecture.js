@@ -66,7 +66,7 @@ export function createArchitectureView(scene, atmo, chunks, matLib) {
   const shadowMats = new Map();
   return {
     /** Chunk views: { id, mesh, prop, sites, cx, cz, radius, vertexCount } (debugging: view.chunks). */
-    chunks: views, material: mat, sites, glow, char, params, spin,
+    chunks: views, material: mat, sites, glow, char, params, spin, siteBlock,
     makeShadowMaterial(name, light, origin) {
       if (shadowMats.has(light)) return shadowMats.get(light);
       const m = new ShaderMaterial(name, scene, { vertex: 'arch', fragment: 'shadowDepth' }, {

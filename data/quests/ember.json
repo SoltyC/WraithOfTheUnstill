@@ -1,0 +1,3059 @@
+{
+  "_review": "The Ember slice (2026-11-22; places from src/world/sow.js SOW_FARMS, SOW_SIGNS) (docs/phase-11/ember-design.md §9): Cole, the new steam, the six farms of the Sow.",
+  "chapter": "ember",
+  "title": "The Mountain Is Waking",
+  "npcs": [
+    {
+      "id": "ember-cole",
+      "name": "Cole",
+      "archetype": "child",
+      "home": {
+        "poi": "ember-cole"
+      },
+      "tint": [
+        0.22,
+        0.2,
+        0.19
+      ],
+      "about": "A miner's boy from Cinderhold. His father went into the deep tubes and did not come up. He ran down the mountain to warn anyone who would listen. No one has."
+    },
+    {
+      "id": "ember-aled",
+      "name": "Aled",
+      "archetype": "elder",
+      "home": {
+        "poi": "sow-aled-door"
+      },
+      "costume": {
+        "base": "sow"
+      },
+      "about": "Keeps a flock on the high pasture above the valley. Has buried two wives and outlived the old mill."
+    },
+    {
+      "id": "ember-nia",
+      "name": "Nia",
+      "archetype": "child",
+      "home": {
+        "poi": "sow-aled-yard"
+      },
+      "costume": {
+        "base": "sow",
+        "basket": false
+      },
+      "about": "Aled's granddaughter, nine. Talks to the sheep."
+    },
+    {
+      "id": "ember-bethan",
+      "name": "Bethan",
+      "archetype": "elder",
+      "home": {
+        "poi": "sow-bethan-door"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.5,
+          0.42,
+          0.3
+        ],
+        "shawl": [
+          0.12,
+          0.03,
+          0.02
+        ]
+      },
+      "about": "A widow who runs the cistern farm with her son. Sells figs to the miners."
+    },
+    {
+      "id": "ember-tomos",
+      "name": "Tomos",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "sow-bethan-yard"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.5,
+          0.42,
+          0.3
+        ],
+        "shawl": [
+          0.05,
+          0.04,
+          0.03
+        ],
+        "basket": false
+      },
+      "about": "Bethan's son. Carries the figs up to Cinderhold."
+    },
+    {
+      "id": "ember-huw",
+      "name": "Huw",
+      "archetype": "elder",
+      "home": {
+        "poi": "sow-huw-door"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.36,
+          0.44,
+          0.3
+        ],
+        "shawl": [
+          0.05,
+          0.04,
+          0.03
+        ]
+      },
+      "about": "Threshes for the whole valley on the best floor in the Sow. Proud of it."
+    },
+    {
+      "id": "ember-elin",
+      "name": "Elin",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "sow-huw-yard"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.36,
+          0.44,
+          0.3
+        ],
+        "shawl": [
+          0.02,
+          0.035,
+          0.09
+        ]
+      },
+      "about": "Huw's wife. Keeps the bees."
+    },
+    {
+      "id": "ember-ffion",
+      "name": "Ffion",
+      "archetype": "elder",
+      "home": {
+        "poi": "sow-ffion-door"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.75,
+          0.55,
+          0.3
+        ],
+        "shawl": [
+          0.02,
+          0.05,
+          0.04
+        ]
+      },
+      "about": "Keeps hens and a dog that will not go into her byre."
+    },
+    {
+      "id": "ember-dai",
+      "name": "Dai",
+      "archetype": "child",
+      "home": {
+        "poi": "sow-ffion-yard"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.75,
+          0.55,
+          0.3
+        ],
+        "basket": false
+      },
+      "about": "Ffion's grandson. Ffion's dog follows him everywhere."
+    },
+    {
+      "id": "ember-gwil",
+      "name": "Gwil",
+      "archetype": "elder",
+      "home": {
+        "poi": "sow-gwil-door"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.6,
+          0.3,
+          0.25
+        ],
+        "shawl": [
+          0.06,
+          0.05,
+          0.09
+        ]
+      },
+      "about": "Has the only well in the lower valley and has never let anyone forget it."
+    },
+    {
+      "id": "ember-sian",
+      "name": "Sian",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "sow-gwil-yard"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.6,
+          0.3,
+          0.25
+        ],
+        "shawl": [
+          0.1,
+          0.06,
+          0.02
+        ],
+        "basket": false
+      },
+      "about": "Gwil's daughter. Does the work her father talks about."
+    },
+    {
+      "id": "ember-mari",
+      "name": "Mari",
+      "archetype": "elder",
+      "home": {
+        "poi": "sow-mari-door"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.55,
+          0.5,
+          0.45
+        ],
+        "shawl": [
+          0.1,
+          0.06,
+          0.02
+        ]
+      },
+      "about": "The oldest vines in the Sow are hers. Her grandmother planted the bottom terrace."
+    },
+    {
+      "id": "ember-rhys",
+      "name": "Rhys",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "sow-mari-yard"
+      },
+      "costume": {
+        "base": "sow",
+        "tint": [
+          0.55,
+          0.5,
+          0.45
+        ],
+        "basket": false
+      },
+      "about": "Mari's son. Would rather be anywhere else, until someone says so."
+    },
+    {
+      "id": "ember-orrin",
+      "name": "Morcant",
+      "archetype": "elder",
+      "home": {
+        "poi": "cin-orrin"
+      },
+      "costume": {
+        "base": "cinder",
+        "shawl": [
+          0.13,
+          0.025,
+          0.02
+        ]
+      },
+      "about": "Head of the guild of Cinderhold. Knows where the tithe goes."
+    },
+    {
+      "id": "ember-teg",
+      "name": "Teg",
+      "archetype": "elder",
+      "home": {
+        "poi": "cin-teg"
+      },
+      "costume": {
+        "base": "cinder",
+        "shawl": [
+          0.13,
+          0.025,
+          0.02
+        ]
+      },
+      "about": "The guild's measurer. Reads the bell in the deep seam every morning and writes it down."
+    },
+    {
+      "id": "ember-vell",
+      "name": "Vell",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "cin-vell"
+      },
+      "costume": {
+        "base": "cinder",
+        "shawl": [
+          0.1,
+          0.03,
+          0.02
+        ]
+      },
+      "about": "The guild's purse. Every debt in Cinderhold is in Vell's book."
+    },
+    {
+      "id": "ember-bron",
+      "name": "Bron",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "cin-bron"
+      },
+      "costume": {
+        "base": "cinder"
+      },
+      "about": "Foreman of the deep shift. The miners do what Bron says, and Bron does what the guild says."
+    },
+    {
+      "id": "ember-wyn",
+      "name": "Nesta",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "cin-wyn"
+      },
+      "costume": {
+        "base": "cinder",
+        "tint": [
+          0.34,
+          0.3,
+          0.26
+        ]
+      },
+      "about": "Pushes the carts from the middle gallery. In debt to the guild for her mother’s burial."
+    },
+    {
+      "id": "ember-ifor",
+      "name": "Ifor",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "cin-miner1"
+      },
+      "costume": {
+        "base": "cinder",
+        "tint": [
+          0.28,
+          0.26,
+          0.25
+        ]
+      },
+      "about": "A miner of the rows. Owes Vell four seasons."
+    },
+    {
+      "id": "ember-gethin",
+      "name": "Gethin",
+      "archetype": "child",
+      "home": {
+        "poi": "cin-miner2"
+      },
+      "costume": {
+        "base": "cinder",
+        "tint": [
+          0.34,
+          0.3,
+          0.27
+        ]
+      },
+      "about": "Ifor's boy. Runs the lamps."
+    },
+    {
+      "id": "ember-annick",
+      "name": "Annick",
+      "archetype": "elder",
+      "home": {
+        "poi": "ash-annick"
+      },
+      "costume": {
+        "base": "ash",
+        "shawl": [
+          0.22,
+          0.21,
+          0.2
+        ]
+      },
+      "about": "The Seer of the Ash Chapel. Has read the mountain for fifty years and been right every time."
+    },
+    {
+      "id": "ember-edda",
+      "name": "Nerys",
+      "archetype": "elder",
+      "home": {
+        "poi": "ash-edda"
+      },
+      "costume": {
+        "base": "ash"
+      },
+      "about": "The eldest of the faithful. Knows the scripture by heart, and has never had to read the end of it."
+    },
+    {
+      "id": "ember-corwen",
+      "name": "Bryok",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "ash-corwen"
+      },
+      "costume": {
+        "base": "ash"
+      },
+      "about": "Keeps the cells. Came up the mountain twenty years ago to die and never did."
+    },
+    {
+      "id": "ember-lio",
+      "name": "Lio",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "ash-lio"
+      },
+      "costume": {
+        "base": "ash",
+        "tint": [
+          0.72,
+          0.7,
+          0.66
+        ]
+      },
+      "about": "Rings the hours. Has not missed one in eleven years."
+    },
+    {
+      "id": "ember-ysolt",
+      "name": "Elowen",
+      "archetype": "child",
+      "home": {
+        "poi": "ash-ysolt"
+      },
+      "costume": {
+        "base": "ash"
+      },
+      "about": "Born at the chapel. Has never been below the scree."
+    },
+    {
+      "id": "ember-brannoc",
+      "name": "Idris",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "ash-brannoc"
+      },
+      "costume": {
+        "base": "ash",
+        "tint": [
+          0.74,
+          0.71,
+          0.68
+        ]
+      },
+      "about": "Tends the spring. Has noticed. Has said nothing."
+    }
+  ],
+  "places": {
+    "ember-cole": {
+      "pos": [
+        990,
+        -1322
+      ],
+      "name": "The Cinder Shrine"
+    },
+    "ember-fissures": {
+      "pos": [
+        2045,
+        -1704
+      ],
+      "name": "The New Steam"
+    },
+    "ember-sow": {
+      "pos": [
+        860,
+        -1950
+      ],
+      "name": "The Sow"
+    },
+    "ember-camp": {
+      "pos": [
+        720,
+        -2640
+      ],
+      "name": "The Headland Camp"
+    },
+    "sow-aled": {
+      "pos": [
+        800,
+        -1640
+      ],
+      "name": "Aled's Fold"
+    },
+    "sow-aled-sign": {
+      "pos": [
+        788.2,
+        -1637.5
+      ]
+    },
+    "sow-aled-door": {
+      "pos": [
+        800.5,
+        -1644.7
+      ]
+    },
+    "sow-aled-yard": {
+      "pos": [
+        798,
+        -1647.2
+      ]
+    },
+    "sow-bethan": {
+      "pos": [
+        945,
+        -1720
+      ],
+      "name": "Bethan's Cistern Farm"
+    },
+    "sow-bethan-sign": {
+      "pos": [
+        943,
+        -1728.6
+      ]
+    },
+    "sow-bethan-door": {
+      "pos": [
+        940.5,
+        -1718.7
+      ]
+    },
+    "sow-bethan-yard": {
+      "pos": [
+        939.2,
+        -1715.3
+      ]
+    },
+    "sow-huw": {
+      "pos": [
+        910,
+        -1860
+      ],
+      "name": "Huw's Floor"
+    },
+    "sow-huw-sign": {
+      "pos": [
+        902.2,
+        -1852.7
+      ]
+    },
+    "sow-huw-door": {
+      "pos": [
+        905.9,
+        -1862.3
+      ]
+    },
+    "sow-huw-yard": {
+      "pos": [
+        903.7,
+        -1856
+      ]
+    },
+    "sow-ffion": {
+      "pos": [
+        950,
+        -1960
+      ],
+      "name": "Ffion's Byre"
+    },
+    "sow-ffion-sign": {
+      "pos": [
+        954.3,
+        -1954.8
+      ]
+    },
+    "sow-ffion-door": {
+      "pos": [
+        947.9,
+        -1955.8
+      ]
+    },
+    "sow-ffion-yard": {
+      "pos": [
+        949.4,
+        -1952.6
+      ]
+    },
+    "sow-gwil": {
+      "pos": [
+        730,
+        -2110
+      ],
+      "name": "Gwil's Well"
+    },
+    "sow-gwil-sign": {
+      "pos": [
+        720.2,
+        -2108.6
+      ]
+    },
+    "sow-gwil-door": {
+      "pos": [
+        726.3,
+        -2107.2
+      ]
+    },
+    "sow-gwil-yard": {
+      "pos": [
+        731.2,
+        -2102.7
+      ]
+    },
+    "sow-mari": {
+      "pos": [
+        790,
+        -2260
+      ],
+      "name": "Mari's Terraces"
+    },
+    "sow-mari-sign": {
+      "pos": [
+        774.2,
+        -2241.9
+      ]
+    },
+    "sow-mari-door": {
+      "pos": [
+        788,
+        -2255.7
+      ]
+    },
+    "sow-mari-yard": {
+      "pos": [
+        789.7,
+        -2252.6
+      ]
+    },
+    "ember-cinderhold": {
+      "pos": [
+        1915,
+        -2010
+      ],
+      "name": "Cinderhold"
+    },
+    "cin-thermo": {
+      "pos": [
+        1991.5,
+        -1968
+      ]
+    },
+    "cin-shaft": {
+      "pos": [
+        1965,
+        -2042
+      ]
+    },
+    "cin-galleryS": {
+      "pos": [
+        1987,
+        -2056
+      ]
+    },
+    "cin-orrin": {
+      "pos": [
+        1875,
+        -1982.5
+      ]
+    },
+    "cin-teg": {
+      "pos": [
+        1985,
+        -1971
+      ]
+    },
+    "cin-vell": {
+      "pos": [
+        1881,
+        -1982.2
+      ]
+    },
+    "cin-bron": {
+      "pos": [
+        1961,
+        -2038
+      ]
+    },
+    "cin-wyn": {
+      "pos": [
+        1935,
+        -2018
+      ]
+    },
+    "cin-miner1": {
+      "pos": [
+        1853,
+        -2049
+      ]
+    },
+    "cin-miner2": {
+      "pos": [
+        1865,
+        -2049
+      ]
+    },
+    "ember-chapel": {
+      "pos": [
+        2185,
+        -2320
+      ],
+      "name": "The Ash Chapel"
+    },
+    "ember-hollow": {
+      "pos": [
+        2422,
+        -2291
+      ],
+      "name": "The Still Hollow"
+    },
+    "ash-scripture": {
+      "pos": [
+        2181,
+        -2329.5
+      ]
+    },
+    "ash-spring": {
+      "pos": [
+        2216,
+        -2352
+      ]
+    },
+    "ash-annick": {
+      "pos": [
+        2173,
+        -2317
+      ]
+    },
+    "ash-edda": {
+      "pos": [
+        2191,
+        -2314
+      ]
+    },
+    "ash-corwen": {
+      "pos": [
+        2215,
+        -2308
+      ]
+    },
+    "ash-lio": {
+      "pos": [
+        2213,
+        -2322
+      ]
+    },
+    "ash-ysolt": {
+      "pos": [
+        2171,
+        -2316
+      ]
+    },
+    "ash-brannoc": {
+      "pos": [
+        2211,
+        -2348
+      ]
+    }
+  },
+  "talk": {
+    "ember-cole": [
+      {
+        "when": {
+          "flag": "ember:debtors-up"
+        },
+        "say": "ember.cole.father"
+      },
+      {
+        "when": {
+          "flag": "ember:sow-all"
+        },
+        "say": "ember.cole.after"
+      },
+      {
+        "when": {
+          "flag": "ember:steam-read"
+        },
+        "say": "ember.cole.seen"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.cole.wait"
+      },
+      {
+        "say": "ember.cole.warn"
+      }
+    ],
+    "ember-aled": [
+      {
+        "when": {
+          "flag": "ember:aled-go"
+        },
+        "say": "ember.aled.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:aled-lied"
+        },
+        "say": "ember.aled.lied"
+      },
+      {
+        "when": {
+          "flag": "ember:aled-stays"
+        },
+        "say": "ember.aled.stays"
+      },
+      {
+        "when": {
+          "flag": "ember:aled-ready"
+        },
+        "say": "ember.aled.ready"
+      },
+      {
+        "when": {
+          "flag": "ember:aled-believes"
+        },
+        "say": "ember.aled.waits"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:sign-aled",
+            "ember:warned"
+          ]
+        },
+        "say": "ember.aled.show"
+      },
+      {
+        "when": {
+          "flag": "ember:lie-found"
+        },
+        "say": "ember.aled.liar"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.aled.mountain"
+      },
+      {
+        "say": "ember.aled.hello"
+      }
+    ],
+    "ember-nia": [
+      {
+        "when": {
+          "flag": "ember:aled-believes"
+        },
+        "say": "ember.nia.b"
+      },
+      {
+        "say": "ember.nia.a"
+      }
+    ],
+    "ember-bethan": [
+      {
+        "when": {
+          "flag": "ember:bethan-go"
+        },
+        "say": "ember.bethan.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:bethan-lied"
+        },
+        "say": "ember.bethan.lied"
+      },
+      {
+        "when": {
+          "flag": "ember:bethan-ready"
+        },
+        "say": "ember.bethan.ready"
+      },
+      {
+        "when": {
+          "flag": "ember:bethan-believes"
+        },
+        "say": "ember.bethan.waits"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:sign-bethan",
+            "ember:warned"
+          ]
+        },
+        "say": "ember.bethan.show"
+      },
+      {
+        "when": {
+          "flag": "ember:lie-found"
+        },
+        "say": "ember.bethan.liar"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.bethan.mountain"
+      },
+      {
+        "say": "ember.bethan.hello"
+      }
+    ],
+    "ember-tomos": [
+      {
+        "when": {
+          "flag": "ember:bethan-believes"
+        },
+        "say": "ember.tomos.b"
+      },
+      {
+        "say": "ember.tomos.a"
+      }
+    ],
+    "ember-huw": [
+      {
+        "when": {
+          "flag": "ember:huw-go"
+        },
+        "say": "ember.huw.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:huw-lied"
+        },
+        "say": "ember.huw.lied"
+      },
+      {
+        "when": {
+          "flag": "ember:huw-ready"
+        },
+        "say": "ember.huw.ready"
+      },
+      {
+        "when": {
+          "flag": "ember:huw-believes"
+        },
+        "say": "ember.huw.waits"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:sign-huw",
+            "ember:warned"
+          ]
+        },
+        "say": "ember.huw.show"
+      },
+      {
+        "when": {
+          "flag": "ember:lie-found"
+        },
+        "say": "ember.huw.liar"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.huw.mountain"
+      },
+      {
+        "say": "ember.huw.hello"
+      }
+    ],
+    "ember-elin": [
+      {
+        "when": {
+          "flag": "ember:huw-believes"
+        },
+        "say": "ember.elin.b"
+      },
+      {
+        "say": "ember.elin.a"
+      }
+    ],
+    "ember-ffion": [
+      {
+        "when": {
+          "flag": "ember:ffion-go"
+        },
+        "say": "ember.ffion.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:ffion-lied"
+        },
+        "say": "ember.ffion.lied"
+      },
+      {
+        "when": {
+          "flag": "ember:ffion-ready"
+        },
+        "say": "ember.ffion.ready"
+      },
+      {
+        "when": {
+          "flag": "ember:ffion-believes"
+        },
+        "say": "ember.ffion.waits"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:sign-ffion",
+            "ember:warned"
+          ]
+        },
+        "say": "ember.ffion.show"
+      },
+      {
+        "when": {
+          "flag": "ember:lie-found"
+        },
+        "say": "ember.ffion.liar"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.ffion.mountain"
+      },
+      {
+        "say": "ember.ffion.hello"
+      }
+    ],
+    "ember-dai": [
+      {
+        "when": {
+          "flag": "ember:ffion-believes"
+        },
+        "say": "ember.dai.b"
+      },
+      {
+        "say": "ember.dai.a"
+      }
+    ],
+    "ember-gwil": [
+      {
+        "when": {
+          "flag": "ember:gwil-go"
+        },
+        "say": "ember.gwil.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:gwil-lied"
+        },
+        "say": "ember.gwil.lied"
+      },
+      {
+        "when": {
+          "flag": "ember:gwil-ready"
+        },
+        "say": "ember.gwil.ready"
+      },
+      {
+        "when": {
+          "flag": "ember:gwil-believes"
+        },
+        "say": "ember.gwil.waits"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:sign-gwil",
+            "ember:warned"
+          ]
+        },
+        "say": "ember.gwil.show"
+      },
+      {
+        "when": {
+          "flag": "ember:lie-found"
+        },
+        "say": "ember.gwil.liar"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.gwil.mountain"
+      },
+      {
+        "say": "ember.gwil.hello"
+      }
+    ],
+    "ember-sian": [
+      {
+        "when": {
+          "flag": "ember:gwil-believes"
+        },
+        "say": "ember.sian.b"
+      },
+      {
+        "say": "ember.sian.a"
+      }
+    ],
+    "ember-mari": [
+      {
+        "when": {
+          "flag": "ember:mari-go"
+        },
+        "say": "ember.mari.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:mari-lied"
+        },
+        "say": "ember.mari.lied"
+      },
+      {
+        "when": {
+          "flag": "ember:mari-ready"
+        },
+        "say": "ember.mari.ready"
+      },
+      {
+        "when": {
+          "flag": "ember:mari-believes"
+        },
+        "say": "ember.mari.waits"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:sign-mari",
+            "ember:warned"
+          ]
+        },
+        "say": "ember.mari.show"
+      },
+      {
+        "when": {
+          "flag": "ember:lie-found"
+        },
+        "say": "ember.mari.liar"
+      },
+      {
+        "when": {
+          "flag": "ember:warned"
+        },
+        "say": "ember.mari.mountain"
+      },
+      {
+        "say": "ember.mari.hello"
+      }
+    ],
+    "ember-rhys": [
+      {
+        "when": {
+          "flag": "ember:mari-believes"
+        },
+        "say": "ember.rhys.b"
+      },
+      {
+        "say": "ember.rhys.a"
+      }
+    ],
+    "ember-orrin": [
+      {
+        "when": {
+          "flag": "ember:tithe-exposed"
+        },
+        "say": "ember.orrin.sealed"
+      },
+      {
+        "when": {
+          "flag": "ember:cin-vote"
+        },
+        "say": "ember.orrin.after"
+      },
+      {
+        "when": {
+          "flag": "know:tithe",
+          "notFlag": "ember:tithe-kept"
+        },
+        "say": "ember.orrin.tithe"
+      },
+      {
+        "say": "ember.orrin.hello"
+      }
+    ],
+    "ember-teg": [
+      {
+        "when": {
+          "flag": "ember:teg-yes"
+        },
+        "say": "ember.teg.yes"
+      },
+      {
+        "when": {
+          "flag": "ember:cin-reading"
+        },
+        "say": "ember.teg.show"
+      },
+      {
+        "say": "ember.teg.hello"
+      }
+    ],
+    "ember-vell": [
+      {
+        "when": {
+          "flag": "ember:vell-yes",
+          "var": {
+            "name": "ember:stage",
+            "gte": 3
+          }
+        },
+        "say": "ember.vell.yesFire"
+      },
+      {
+        "when": {
+          "flag": "ember:vell-yes"
+        },
+        "say": "ember.vell.yes"
+      },
+      {
+        "say": "ember.vell.hello"
+      }
+    ],
+    "ember-bron": [
+      {
+        "when": {
+          "any": [
+            {
+              "flag": "ember:tithe-exposed"
+            },
+            {
+              "flag": "ember:cin-vote"
+            }
+          ]
+        },
+        "say": "ember.bron.going"
+      },
+      {
+        "when": {
+          "flag": "know:tithe",
+          "notFlag": "ember:tithe-kept"
+        },
+        "say": "ember.bron.tithe"
+      },
+      {
+        "say": "ember.bron.hello"
+      }
+    ],
+    "ember-wyn": [
+      {
+        "when": {
+          "any": [
+            {
+              "flag": "ember:tithe-exposed"
+            },
+            {
+              "flag": "ember:cin-vote"
+            }
+          ]
+        },
+        "say": "ember.wyn.going"
+      },
+      {
+        "say": "ember.wyn.hello"
+      }
+    ],
+    "ember-ifor": [
+      {
+        "say": "ember.ifor.hello"
+      }
+    ],
+    "ember-gethin": [
+      {
+        "say": "ember.gethin.hello"
+      }
+    ],
+    "ember-annick": [
+      {
+        "when": {
+          "flag": "ember:seer-forced"
+        },
+        "say": "ember.annick.forced"
+      },
+      {
+        "when": {
+          "flag": "ember:annick-promise"
+        },
+        "say": "ember.annick.promise"
+      },
+      {
+        "when": {
+          "flag": "ember:bells"
+        },
+        "say": "ember.annick.bells"
+      },
+      {
+        "when": {
+          "flag": "ember:chapel-doubt"
+        },
+        "say": "ember.annick.alone"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "ember:omens",
+            "gte": 1
+          }
+        },
+        "say": "ember.annick.omens"
+      },
+      {
+        "say": "ember.annick.hello"
+      }
+    ],
+    "ember-edda": [
+      {
+        "when": {
+          "flag": "ember:chapel-doubt"
+        },
+        "say": "ember.edda.gone"
+      },
+      {
+        "when": {
+          "flag": "ember:bells"
+        },
+        "say": "ember.chapel.bells"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:scripture",
+            "ember:omens-enough"
+          ]
+        },
+        "say": "ember.edda.read"
+      },
+      {
+        "when": {
+          "var": {
+            "name": "ember:omens",
+            "gte": 1
+          }
+        },
+        "say": "ember.edda.seer"
+      },
+      {
+        "say": "ember.edda.hello"
+      }
+    ],
+    "ember-corwen": [
+      {
+        "when": {
+          "flag": "ember:chapel-doubt"
+        },
+        "say": "ember.faithful.going"
+      },
+      {
+        "say": "ember.corwen.hello"
+      }
+    ],
+    "ember-lio": [
+      {
+        "when": {
+          "flag": "ember:chapel-doubt"
+        },
+        "say": "ember.faithful.going"
+      },
+      {
+        "say": "ember.lio.hello"
+      }
+    ],
+    "ember-ysolt": [
+      {
+        "when": {
+          "flag": "ember:chapel-doubt"
+        },
+        "say": "ember.faithful.going"
+      },
+      {
+        "say": "ember.ysolt.hello"
+      }
+    ],
+    "ember-brannoc": [
+      {
+        "when": {
+          "flag": "ember:chapel-doubt"
+        },
+        "say": "ember.faithful.going"
+      },
+      {
+        "say": "ember.brannoc.hello"
+      }
+    ]
+  },
+  "dialogue": {
+    "ember.cole.warn": {
+      "speaker": "ember-cole",
+      "lines": [
+        "You're not from the mines. Are you from the north?",
+        "My father went into the deep tubes at Cinderhold and didn't come up. The guild says the tubes have always smoked. They haven't. Not like this.",
+        "There's steam on the north-west flank. New steam, where the old maps don't show any. The ground's waking up.",
+        "Nobody listens to me. Go and look. You'll see."
+      ]
+    },
+    "ember.cole.wait": {
+      "speaker": "ember-cole",
+      "lines": [
+        "The north-west flank. High up, above the scree. You'll see it smoking if the wind's right.",
+        "Put your cold on it. Then tell me it's nothing."
+      ]
+    },
+    "ember.cole.seen": {
+      "speaker": "ember-cole",
+      "lines": [
+        "You saw it. Then it's true.",
+        "The farms in the green valley west of the cone. The Sow. Six families. They sell us figs and laugh at the guild.",
+        "They won't believe the mountain. They believe their own ground. If something's wrong at a farm, they'll see it if you show them."
+      ]
+    },
+    "ember.cole.after": {
+      "speaker": "ember-cole",
+      "lines": [
+        "I'm going back up for my father. Don't tell me not to."
+      ]
+    },
+    "ember.aled.hello": {
+      "speaker": "ember-aled",
+      "lines": [
+        "You'll be the thing from the north. I heard. Nia, inside.",
+        "The flock's up on the high pasture. They came down to the fold this morning and wouldn't drink from the trough. Sheep are fools.",
+        "It always shakes in autumn. My father said so and his father."
+      ]
+    },
+    "ember.aled.mountain": {
+      "speaker": "ember-aled",
+      "lines": [
+        "The mountain does what the mountain does. My sheep are my business, and they're fine."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:aled-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.aled.lied"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.aled.show": {
+      "speaker": "ember-aled",
+      "lines": [
+        "What is it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Show him the trough by the fold.",
+            "then": [
+              {
+                "setFlag": "ember:aled-showing"
+              }
+            ]
+          },
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:aled-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.aled.lied"
+              }
+            ]
+          },
+          {
+            "text": "Nothing. Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.aled.shown": {
+      "speaker": "ember-aled",
+      "lines": [
+        "Warm. The spring under the fold's run cold eighty years.",
+        "...They knew. The flock knew before I did."
+      ]
+    },
+    "ember.aled.waits": {
+      "speaker": "ember-aled",
+      "lines": [
+        "I believe you. I won't be the first to run down that road with my tail up. Not while the others sit tight."
+      ]
+    },
+    "ember.aled.liar": {
+      "speaker": "ember-aled",
+      "lines": [
+        "You told the Prys girl it went last night. It didn't. Go and tell someone else."
+      ]
+    },
+    "ember.aled.gone": {
+      "speaker": "ember-aled",
+      "lines": [
+        "We're going. Go on, see to the others."
+      ]
+    },
+    "ember.aled.lied": {
+      "speaker": "ember-aled",
+      "lines": [
+        "Tonight? ...Then we go now. Leave it all. Go!"
+      ]
+    },
+    "ember.aled.stays": {
+      "speaker": "ember-aled",
+      "lines": [
+        "No promise, no going. The flock and I will see what the mountain does."
+      ]
+    },
+    "ember.aled.ready": {
+      "speaker": "ember-aled",
+      "lines": [
+        "The others are going. Then I'll go. But the flock can't walk the coast road in a day.",
+        "Will you come back for them? Say it and I'll go."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Promise to come back for the flock.",
+            "then": [
+              {
+                "setFlag": "ember:aled-promise"
+              },
+              {
+                "setFlag": "ember:aled-go"
+              }
+            ]
+          },
+          {
+            "text": "Don't promise.",
+            "then": [
+              {
+                "setFlag": "ember:aled-stays"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ember.nia.a": {
+      "speaker": "ember-nia",
+      "lines": [
+        "Grandad says you're a ghost. Are you?"
+      ]
+    },
+    "ember.nia.b": {
+      "speaker": "ember-nia",
+      "lines": [
+        "We're going to the sea. I've never seen it."
+      ]
+    },
+    "ember.bethan.hello": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "We've nothing to spare, if that's what you're after. Tomos sold the last figs at Cinderhold.",
+        "The cistern's down by half overnight. Not a crack in the plaster I could find, and I looked."
+      ]
+    },
+    "ember.bethan.mountain": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "The mountain's the mountain's business. My cistern's mine."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:bethan-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.bethan.lied"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.bethan.show": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "What is it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Show her the crack at the old waterline.",
+            "then": [
+              {
+                "setFlag": "ember:bethan-showing"
+              }
+            ]
+          },
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:bethan-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.bethan.lied"
+              }
+            ]
+          },
+          {
+            "text": "Nothing. Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.bethan.shown": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "There. I looked straight at that and didn't see it.",
+        "The ground's drinking it. Or cooking it off. All right. All right."
+      ]
+    },
+    "ember.bethan.waits": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "I'll go. I'm packing. Just give me a moment to think who else."
+      ]
+    },
+    "ember.bethan.liar": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "You lied to the others about the night. Why would I listen to you about my water?"
+      ]
+    },
+    "ember.bethan.gone": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "We're going. Go on, see to the others."
+      ]
+    },
+    "ember.bethan.lied": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "Tonight? ...Then we go now. Leave it all. Go!"
+      ]
+    },
+    "ember.bethan.stays": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "Someone stays with the harvest. Go."
+      ]
+    },
+    "ember.bethan.ready": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "We're ready. The figs are in the loft. Will you help us get them on the cart, or do we leave them?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Help them load the cart.",
+            "then": [
+              {
+                "setFlag": "ember:bethan-load"
+              },
+              {
+                "setFlag": "ember:bethan-go"
+              }
+            ]
+          },
+          {
+            "text": "Tell them to leave the harvest.",
+            "then": [
+              {
+                "setFlag": "ember:bethan-light"
+              },
+              {
+                "setFlag": "ember:bethan-go"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ember.tomos.a": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "Mam doesn't trust anyone from up the mountain. Or down it."
+      ]
+    },
+    "ember.tomos.b": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "I'll get the cart round."
+      ]
+    },
+    "ember.huw.hello": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Mind the floor. Best floor in the Sow. Every family threshes here.",
+        "It's been warm underfoot this week, mind. Elin says it's the sun. I say she's right, she usually is."
+      ]
+    },
+    "ember.huw.mountain": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Smoke on the mountain? There's always smoke on the mountain."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:huw-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.huw.lied"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.huw.show": {
+      "speaker": "ember-huw",
+      "lines": [
+        "What is it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Show him the crack across the threshing floor.",
+            "then": [
+              {
+                "setFlag": "ember:huw-showing"
+              }
+            ]
+          },
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:huw-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.huw.lied"
+              }
+            ]
+          },
+          {
+            "text": "Nothing. Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.huw.shown": {
+      "speaker": "ember-huw",
+      "lines": [
+        "That wasn't there at harvest. It's breathing. The floor's breathing.",
+        "My grandfather laid this floor. Elin. Elin, come and look."
+      ]
+    },
+    "ember.huw.waits": {
+      "speaker": "ember-huw",
+      "lines": [
+        "I'll not be the first. If Bethan goes, I'll go. She's never been wrong about a thing."
+      ]
+    },
+    "ember.huw.liar": {
+      "speaker": "ember-huw",
+      "lines": [
+        "They're saying you lied about the night. I've no time for liars."
+      ]
+    },
+    "ember.huw.gone": {
+      "speaker": "ember-huw",
+      "lines": [
+        "We're going. Go on, see to the others."
+      ]
+    },
+    "ember.huw.lied": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Tonight? ...Then we go now. Leave it all. Go!"
+      ]
+    },
+    "ember.huw.stays": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Someone stays with the harvest. Go."
+      ]
+    },
+    "ember.huw.ready": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Bethan's gone. Then we go. The grain's in sacks. Load it with us, or leave it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Help them load the cart.",
+            "then": [
+              {
+                "setFlag": "ember:huw-load"
+              },
+              {
+                "setFlag": "ember:huw-go"
+              }
+            ]
+          },
+          {
+            "text": "Tell them to leave the harvest.",
+            "then": [
+              {
+                "setFlag": "ember:huw-light"
+              },
+              {
+                "setFlag": "ember:huw-go"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ember.elin.a": {
+      "speaker": "ember-elin",
+      "lines": [
+        "Huw thinks the floor is the valley. He's not wrong."
+      ]
+    },
+    "ember.elin.b": {
+      "speaker": "ember-elin",
+      "lines": [
+        "Thank you. He'd never have seen it on his own."
+      ]
+    },
+    "ember.ffion.hello": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "Don't mind the dog. He won't go in the byre. Hasn't for three days.",
+        "I lost four hens in there this week. Not a mark on them. Foxes, Dai says. Foxes don't leave the hen."
+      ]
+    },
+    "ember.ffion.mountain": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "The mountain? I've hens to see to."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:ffion-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.ffion.lied"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.ffion.show": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "What is it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Show her the byre, and what is on the floor.",
+            "then": [
+              {
+                "setFlag": "ember:ffion-showing"
+              }
+            ]
+          },
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:ffion-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.ffion.lied"
+              }
+            ]
+          },
+          {
+            "text": "Nothing. Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.ffion.shown": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "The air. It's the air in there. The dog had more sense than me.",
+        "Dai. Get your coat. Don't go in the byre."
+      ]
+    },
+    "ember.ffion.waits": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "I'll go. I'll go now. Only, someone has to tell the others."
+      ]
+    },
+    "ember.ffion.liar": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "You told them it would go and it didn't. Dai believed you. Now he doesn't believe anyone."
+      ]
+    },
+    "ember.ffion.gone": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "We're going. Go on, see to the others."
+      ]
+    },
+    "ember.ffion.lied": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "Tonight? ...Then we go now. Leave it all. Go!"
+      ]
+    },
+    "ember.ffion.stays": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "Someone stays with the harvest. Go."
+      ]
+    },
+    "ember.ffion.ready": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "The hens are in the basket. Help us with the rest, or go?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Help them load the cart.",
+            "then": [
+              {
+                "setFlag": "ember:ffion-load"
+              },
+              {
+                "setFlag": "ember:ffion-go"
+              }
+            ]
+          },
+          {
+            "text": "Tell them to leave the harvest.",
+            "then": [
+              {
+                "setFlag": "ember:ffion-light"
+              },
+              {
+                "setFlag": "ember:ffion-go"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ember.dai.a": {
+      "speaker": "ember-dai",
+      "lines": [
+        "The dog won't go in there. I don't either."
+      ]
+    },
+    "ember.dai.b": {
+      "speaker": "ember-dai",
+      "lines": [
+        "Are the hens coming too?"
+      ]
+    },
+    "ember.gwil.hello": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "The only well below the terraces. Everyone comes to Gwil in a dry year.",
+        "Water's been sweet as ever. Bit warm. Sian says it tastes of eggs. Sian says a lot."
+      ]
+    },
+    "ember.gwil.mountain": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "You climbed the mountain and you come down here to tell me about it? I've a well to mind."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:gwil-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.gwil.lied"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.gwil.show": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "What is it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Draw the bucket in front of him.",
+            "then": [
+              {
+                "setFlag": "ember:gwil-showing"
+              }
+            ]
+          },
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:gwil-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.gwil.lied"
+              }
+            ]
+          },
+          {
+            "text": "Nothing. Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.gwil.shown": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "Hot. The well's hot. Forty years and it's never been warm.",
+        "Sian was right. Don't tell her I said so."
+      ]
+    },
+    "ember.gwil.waits": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "I'll go when the others go. The well's the valley's. I can't leave it while there's a family drinking from it."
+      ]
+    },
+    "ember.gwil.liar": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "You lied to them. I knew you would. Off my land."
+      ]
+    },
+    "ember.gwil.gone": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "We're going. Go on, see to the others."
+      ]
+    },
+    "ember.gwil.lied": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "Tonight? ...Then we go now. Leave it all. Go!"
+      ]
+    },
+    "ember.gwil.stays": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "Someone stays with the harvest. Go."
+      ]
+    },
+    "ember.gwil.ready": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "The others are on the road. The well's no one's now. Help us load, or do we go light?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Help them load the cart.",
+            "then": [
+              {
+                "setFlag": "ember:gwil-load"
+              },
+              {
+                "setFlag": "ember:gwil-go"
+              }
+            ]
+          },
+          {
+            "text": "Tell them to leave the harvest.",
+            "then": [
+              {
+                "setFlag": "ember:gwil-light"
+              },
+              {
+                "setFlag": "ember:gwil-go"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ember.sian.a": {
+      "speaker": "ember-sian",
+      "lines": [
+        "The water tastes of eggs. I'm not making it up."
+      ]
+    },
+    "ember.sian.b": {
+      "speaker": "ember-sian",
+      "lines": [
+        "He'll never say I was right. I'll take it anyway."
+      ]
+    },
+    "ember.mari.hello": {
+      "speaker": "ember-mari",
+      "lines": [
+        "The bottom terrace is the oldest. My grandmother planted it.",
+        "The vines down there are going brown at the root. In autumn. It's not the season for it. Rhys says it's blight."
+      ]
+    },
+    "ember.mari.mountain": {
+      "speaker": "ember-mari",
+      "lines": [
+        "The mountain was here before the vines. It'll be here after. That's not news."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:mari-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.mari.lied"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.mari.show": {
+      "speaker": "ember-mari",
+      "lines": [
+        "What is it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Take her down to the bottom terrace.",
+            "then": [
+              {
+                "setFlag": "ember:mari-showing"
+              }
+            ]
+          },
+          {
+            "text": "Tell them it goes tonight.",
+            "then": [
+              {
+                "setFlag": "ember:mari-lied"
+              },
+              {
+                "setFlag": "ember:lied"
+              },
+              {
+                "say": "ember.mari.lied"
+              }
+            ]
+          },
+          {
+            "text": "Nothing. Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.mari.shown": {
+      "speaker": "ember-mari",
+      "lines": [
+        "The soil's warm. In my hand, it's warm.",
+        "It's not blight. Rhys, it's not blight."
+      ]
+    },
+    "ember.mari.waits": {
+      "speaker": "ember-mari",
+      "lines": [
+        "I'll not leave the vines while the floor's still threshing. If Huw stays, the valley stays."
+      ]
+    },
+    "ember.mari.liar": {
+      "speaker": "ember-mari",
+      "lines": [
+        "You lied. Huw's girl believed you and stood on the road all night. Go away."
+      ]
+    },
+    "ember.mari.gone": {
+      "speaker": "ember-mari",
+      "lines": [
+        "We're going. Go on, see to the others."
+      ]
+    },
+    "ember.mari.lied": {
+      "speaker": "ember-mari",
+      "lines": [
+        "Tonight? ...Then we go now. Leave it all. Go!"
+      ]
+    },
+    "ember.mari.stays": {
+      "speaker": "ember-mari",
+      "lines": [
+        "Someone stays with the harvest. Go."
+      ]
+    },
+    "ember.mari.ready": {
+      "speaker": "ember-mari",
+      "lines": [
+        "Huw's gone. Then it's true for all of us. The wine's in the cellar. Help Rhys load it, or leave it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Help them load the cart.",
+            "then": [
+              {
+                "setFlag": "ember:mari-load"
+              },
+              {
+                "setFlag": "ember:mari-go"
+              }
+            ]
+          },
+          {
+            "text": "Tell them to leave the harvest.",
+            "then": [
+              {
+                "setFlag": "ember:mari-light"
+              },
+              {
+                "setFlag": "ember:mari-go"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "ember.rhys.a": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "Mam won't leave the vines. Nobody can make her."
+      ]
+    },
+    "ember.rhys.b": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "I'll stay for the vintage. Someone has to."
+      ]
+    },
+    "ember.orrin.hello": {
+      "speaker": "ember-orrin",
+      "lines": [
+        "The mountain's grumbled since my grandfather held this chair. The guild decides what it means. Not a ghost from the north.",
+        "Three masters, three votes. Talk to Teg, if you like numbers. Talk to Vell, if you like money. You'll get no further with me."
+      ]
+    },
+    "ember.orrin.tithe": {
+      "speaker": "ember-orrin",
+      "lines": [
+        "You've been at the shaft. I can see it on you.",
+        "The tithe keeps the seams open. It always has. Something below wants feeding, and we feed it, and we eat.",
+        "So. What will you do with what you saw?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Say you'll forget the cage, if the guild opens the lower tube to the coast.",
+            "then": [
+              {
+                "setFlag": "ember:tithe-kept"
+              },
+              {
+                "setFlag": "ember:orrin-yes"
+              },
+              {
+                "setFlag": "ember:tube-open"
+              },
+              {
+                "say": "ember.orrin.deal"
+              }
+            ]
+          },
+          {
+            "text": "Say nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.orrin.deal": {
+      "speaker": "ember-orrin",
+      "lines": [
+        "Then we understand each other. The tube opens when the guild votes. My vote is yes.",
+        "And the cage goes down one last time. It's owed."
+      ]
+    },
+    "ember.orrin.after": {
+      "speaker": "ember-orrin",
+      "lines": [
+        "The guild has voted. Go and tell someone else's village about the end of the world."
+      ]
+    },
+    "ember.orrin.sealed": {
+      "speaker": "ember-orrin",
+      "lines": [
+        "You took my miners. The tube is shut. Whoever needs it can go round the mountain, in the fire.",
+        "Get out of my hall."
+      ]
+    },
+    "ember.teg.hello": {
+      "speaker": "ember-teg",
+      "lines": [
+        "I read the bell in the north gallery every morning. Twenty years of mornings, in the book.",
+        "It's been reading warm. Warm is a word. I don't vote on words."
+      ]
+    },
+    "ember.teg.show": {
+      "speaker": "ember-teg",
+      "lines": [
+        "You read the bell? Then you saw a number. What was it?"
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Show Teg the bell in the north gallery.",
+            "then": [
+              {
+                "setFlag": "ember:teg-showing"
+              }
+            ]
+          },
+          {
+            "text": "Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.teg.shown": {
+      "speaker": "ember-teg",
+      "lines": [
+        "Past the last mark. Past the mark my master cut, and his master.",
+        "I'll vote to go. I'll say it in the hall with the number in my hand."
+      ]
+    },
+    "ember.teg.yes": {
+      "speaker": "ember-teg",
+      "lines": [
+        "My vote is yes. One more, and the guild moves."
+      ]
+    },
+    "ember.vell.hello": {
+      "speaker": "ember-vell",
+      "lines": [
+        "Every miner here owes the guild. If they walk away from the seams, who pays the debt? You?",
+        "I'll vote to leave when leaving costs less than staying. Not before."
+      ]
+    },
+    "ember.vell.yes": {
+      "speaker": "ember-vell",
+      "lines": [
+        "The Sow's emptying. No figs, no bread, no fodder for the lift mules. Staying's costing more than going.",
+        "My vote is yes."
+      ]
+    },
+    "ember.vell.yesFire": {
+      "speaker": "ember-vell",
+      "lines": [
+        "Look at it. Nobody's paying any debts to a mountain like that.",
+        "My vote is yes."
+      ]
+    },
+    "ember.bron.hello": {
+      "speaker": "ember-bron",
+      "lines": [
+        "The guild says dig, we dig. The guild says stop, we stop.",
+        "It's not my place to say what the mountain's doing. It's my place to bring the shift up alive."
+      ]
+    },
+    "ember.bron.tithe": {
+      "speaker": "ember-bron",
+      "lines": [
+        "What? You look like you've seen the bottom of the shaft."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Take Bron to see the cage.",
+            "then": [
+              {
+                "setFlag": "ember:bron-showing"
+              }
+            ]
+          },
+          {
+            "text": "Nothing.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.bron.shown": {
+      "speaker": "ember-bron",
+      "lines": [
+        "Hal. Hal Tanner. They told us he went south.",
+        "Every name on this board went south.",
+        "We're bringing them up. Then we're leaving, and the guild can dig its own hole."
+      ]
+    },
+    "ember.bron.going": {
+      "speaker": "ember-bron",
+      "lines": [
+        "Go on. We'll get the shift out. All of it, this time."
+      ]
+    },
+    "ember.wyn.hello": {
+      "speaker": "ember-wyn",
+      "lines": [
+        "Mind the rails. The carts don't stop for ghosts."
+      ]
+    },
+    "ember.wyn.going": {
+      "speaker": "ember-wyn",
+      "lines": [
+        "We're going. Debt and all."
+      ]
+    },
+    "ember.ifor.hello": {
+      "speaker": "ember-ifor",
+      "lines": [
+        "Four seasons I owe Vell. Four seasons of the deep shift.",
+        "If the mountain wants to cancel that, I'll not argue with it."
+      ]
+    },
+    "ember.gethin.hello": {
+      "speaker": "ember-gethin",
+      "lines": [
+        "I do the lamps. All of them. They never go out, not ever."
+      ]
+    },
+    "ember.cole.father": {
+      "speaker": "ember-cole",
+      "lines": [
+        "Da! They brought him up. He's thin, and he can't see right in the light, but he's walking.",
+        "He says there were others down there with him. Bron's bringing them all."
+      ]
+    },
+    "ember.annick.hello": {
+      "speaker": "ember-annick",
+      "lines": [
+        "You come up the mountain with a cold in you. We don't get many visitors who are dead.",
+        "If you have come to tell me the mountain is waking, I know. I have known for longer than you have had a shape.",
+        "And don't bring me your measurements. The mountain is not a cart to be weighed."
+      ]
+    },
+    "ember.annick.omens": {
+      "speaker": "ember-annick",
+      "lines": [
+        "The signs are coming, one by one, as it was written.",
+        "It is not a warning. It is the calling. The last Shaper's hearth is inside this mountain, and it is waking for us."
+      ]
+    },
+    "ember.annick.alone": {
+      "speaker": "ember-annick",
+      "lines": [
+        "So. You read them the end of the scripture. Go down, and do not look back.",
+        "They have gone down. I will not. I will be at the spring when it comes."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Take her by force.",
+            "then": [
+              {
+                "setFlag": "ember:seer-forced"
+              },
+              {
+                "say": "ember.annick.taken"
+              }
+            ]
+          },
+          {
+            "text": "Promise to stand with her at the spring when it comes.",
+            "then": [
+              {
+                "setFlag": "ember:annick-promise"
+              },
+              {
+                "say": "ember.annick.promised"
+              }
+            ]
+          },
+          {
+            "text": "Leave her.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.annick.taken": {
+      "speaker": "ember-annick",
+      "lines": [
+        "Put me down. Put me DOWN.",
+        "You will carry me off my own mountain? Then you are what the fen says you are."
+      ]
+    },
+    "ember.annick.forced": {
+      "speaker": "ember-annick",
+      "lines": [
+        "(She will not look at you.)"
+      ]
+    },
+    "ember.annick.promised": {
+      "speaker": "ember-annick",
+      "lines": [
+        "...Then you are a stranger thing than I thought.",
+        "At the spring, then. When the bell rings on its own."
+      ]
+    },
+    "ember.annick.promise": {
+      "speaker": "ember-annick",
+      "lines": [
+        "You'll come back. I can see it on you. At the spring, when the bell rings on its own."
+      ]
+    },
+    "ember.edda.hello": {
+      "speaker": "ember-edda",
+      "lines": [
+        "Welcome, cold one. The Seer reads the mountain. We tend the spring and ring the hours.",
+        "The scripture is on the stone by the door. Fifty lines. Most of us have never needed the last one."
+      ]
+    },
+    "ember.edda.seer": {
+      "speaker": "ember-edda",
+      "lines": [
+        "The Seer says the signs are the calling. The Seer has never been wrong."
+      ]
+    },
+    "ember.edda.read": {
+      "speaker": "ember-edda",
+      "lines": [
+        "You've seen the signs. I've seen them too. I've been waiting for someone to say it."
+      ],
+      "choice": {
+        "options": [
+          {
+            "text": "Read Nerys the end of the scripture: go down, children, and do not look back.",
+            "then": [
+              {
+                "setFlag": "ember:chapel-doubt"
+              },
+              {
+                "setFlag": "ember:path-known"
+              },
+              {
+                "say": "ember.edda.going"
+              }
+            ]
+          },
+          {
+            "text": "Not yet.",
+            "then": []
+          }
+        ]
+      }
+    },
+    "ember.edda.going": {
+      "speaker": "ember-edda",
+      "lines": [
+        "Go down, and do not look back. I have said it a thousand times and never once listened to it.",
+        "We'll take the pilgrims' path round the north flank. It's ours. Nobody else knows it in the ash.",
+        "The Seer will not come. You know that."
+      ]
+    },
+    "ember.edda.gone": {
+      "speaker": "ember-edda",
+      "lines": [
+        "Down, and not looking back."
+      ]
+    },
+    "ember.chapel.bells": {
+      "speaker": "ember-edda",
+      "lines": [
+        "(A raised hand. The bell is ringing. No one here speaks while the bell speaks.)"
+      ],
+      "then": [
+        {
+          "setFlag": "ember:chapel-rude"
+        }
+      ]
+    },
+    "ember.annick.bells": {
+      "speaker": "ember-annick",
+      "lines": [
+        "(A raised hand. The bell is ringing. No one here speaks while the bell speaks.)"
+      ],
+      "then": [
+        {
+          "setFlag": "ember:chapel-rude"
+        }
+      ]
+    },
+    "ember.corwen.hello": {
+      "speaker": "ember-corwen",
+      "lines": [
+        "The cells are warm this year. Warmer every night. I've stopped needing a blanket."
+      ]
+    },
+    "ember.lio.hello": {
+      "speaker": "ember-lio",
+      "lines": [
+        "Eleven years I've rung the hours. Lately the bell rings a little before I touch it. The ground shakes it."
+      ]
+    },
+    "ember.ysolt.hello": {
+      "speaker": "ember-ysolt",
+      "lines": [
+        "Is it true there's green down there? Like in the stories?"
+      ]
+    },
+    "ember.brannoc.hello": {
+      "speaker": "ember-brannoc",
+      "lines": [
+        "Taste the spring, if you want. I won't stop you. I won't tell you what you'll find either."
+      ]
+    },
+    "ember.faithful.going": {
+      "speaker": "ember-corwen",
+      "lines": [
+        "Down. Not looking back."
+      ]
+    }
+  },
+  "quests": [
+    {
+      "id": "ember-waking",
+      "kind": "main",
+      "title": "The Mountain Is Waking",
+      "summary": "A miner's boy says the mountain is waking. The people who live on it have no reason to believe a hooded thing from the north.",
+      "start": {
+        "any": [
+          {
+            "near": {
+              "x": 990,
+              "z": -1322,
+              "r": 140
+            }
+          },
+          {
+            "near": {
+              "x": 860,
+              "z": -1950,
+              "r": 320
+            }
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "cole",
+          "journal": "A boy waits at the Cinder Shrine, below the cone's west side, watching the mountain.",
+          "when": {
+            "event": "talk:ember-cole"
+          },
+          "goal": {
+            "npc": "ember-cole",
+            "radius": 6
+          },
+          "actions": [
+            {
+              "setFlag": "ember:warned"
+            }
+          ]
+        },
+        {
+          "id": "steam",
+          "journal": "Cole says there is new steam on the cone's north-west flank, high above the scree. Go and see what the ground is hiding.",
+          "when": {
+            "flag": "ember:steam-read"
+          },
+          "goal": {
+            "at": [
+              2045,
+              -1704
+            ],
+            "label": "The new steam",
+            "radius": 40
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        },
+        {
+          "id": "sow",
+          "journal": "Six farms in the green valley west of the cone: the Sow. They won't believe the mountain. Find what is wrong on each family's own land, and show the elder.",
+          "when": {
+            "flag": "ember:sow-all"
+          },
+          "goal": {
+            "at": [
+              860,
+              -1950
+            ],
+            "label": "The Sow",
+            "radius": 260
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ember-cinderhold",
+      "kind": "main",
+      "title": "The Guild of Cinderhold",
+      "summary": "The miners live by the guild’s word, and the guild lives by the mine.",
+      "start": {
+        "any": [
+          {
+            "near": {
+              "x": 1915,
+              "z": -2010,
+              "r": 180
+            }
+          },
+          {
+            "flag": "ember:steam-read"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "guild",
+          "journal": "Cinderhold, the miners' town on a bench of the cone's west flank, above the Sow. Three masters of the guild decide for everyone. Speak to Morcant, its head, in the hall.",
+          "when": {
+            "event": "talk:ember-orrin"
+          },
+          "goal": {
+            "npc": "ember-orrin",
+            "radius": 6
+          }
+        },
+        {
+          "id": "decide",
+          "journal": "The guild votes, two of three. Teg trusts numbers. Vell trusts money. Morcant trusts no one. The miners trust the guild.",
+          "when": {
+            "flag": "ember:cin-decided"
+          },
+          "goal": {
+            "at": [
+              1915,
+              -2010
+            ],
+            "label": "Cinderhold",
+            "radius": 120
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ember-chapel",
+      "kind": "main",
+      "title": "The Seer of the Ash Chapel",
+      "summary": "The pilgrims on the south flank live nearest the crater of anyone, and read the mountain by their own scripture.",
+      "start": {
+        "any": [
+          {
+            "near": {
+              "x": 2185,
+              "z": -2320,
+              "r": 180
+            }
+          },
+          {
+            "flag": "ember:steam-read"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "id": "seer",
+          "journal": "The Ash Chapel, high on the cone's south-west flank, nearest the crater of anyone. Speak to Annick, its Seer.",
+          "when": {
+            "event": "talk:ember-annick"
+          },
+          "goal": {
+            "npc": "ember-annick",
+            "radius": 6
+          }
+        },
+        {
+          "id": "omens",
+          "journal": "The faithful believe their scripture, not measurements. It names three omens. Find them on the mountain, and wait for the bell before you speak.",
+          "when": {
+            "flag": "ember:chapel-doubt"
+          },
+          "goal": {
+            "at": [
+              2185,
+              -2320
+            ],
+            "label": "The Ash Chapel",
+            "radius": 90
+          },
+          "actions": [
+            {
+              "autosave": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "clues": {
+    "ember-clue-bethan": {
+      "name": "The cistern",
+      "verb": "Look",
+      "at": {
+        "poi": "sow-bethan-sign"
+      },
+      "r": 3.2,
+      "when": {
+        "notFlag": [
+          "ember:sign-bethan",
+          "ember:bethan-believes"
+        ]
+      },
+      "title": "The cistern",
+      "text": "A dark band runs round the plaster a hand above the water: last night's level. Along it, a hairline crack, and the plaster is warm to the touch.",
+      "then": [
+        {
+          "setFlag": "ember:sign-bethan"
+        }
+      ]
+    },
+    "ember-clue-huw": {
+      "name": "The threshing floor",
+      "verb": "Look",
+      "at": {
+        "poi": "sow-huw-sign"
+      },
+      "r": 4.8,
+      "when": {
+        "notFlag": [
+          "ember:sign-huw",
+          "ember:huw-believes"
+        ]
+      },
+      "title": "The threshing floor",
+      "text": "A crack runs across the flags, new and clean-edged. Warm air breathes up out of it, smelling of struck flint.",
+      "then": [
+        {
+          "setFlag": "ember:sign-huw"
+        }
+      ]
+    },
+    "ember-clue-ffion": {
+      "name": "The byre",
+      "verb": "Look",
+      "at": {
+        "poi": "sow-ffion-sign"
+      },
+      "r": 3.2,
+      "when": {
+        "notFlag": [
+          "ember:sign-ffion",
+          "ember:ffion-believes"
+        ]
+      },
+      "title": "The byre",
+      "text": "The air inside is still and heavy. Two hens lie on the floor with nothing on them. Near the ground, it's hard to breathe.",
+      "then": [
+        {
+          "setFlag": "ember:sign-ffion"
+        }
+      ]
+    },
+    "ember-clue-thermo": {
+      "name": "The bell-thermometer",
+      "verb": "Look",
+      "at": {
+        "poi": "cin-thermo"
+      },
+      "r": 3.2,
+      "when": {
+        "notFlag": "ember:cin-reading"
+      },
+      "title": "The bell in the deep seam",
+      "text": "An iron rod runs down into the seam; the glass bell on top of it is fogged and hot to the touch. The bead inside stands above every mark on the guild's board. The highest mark is a hand's width below it.",
+      "then": [
+        {
+          "setFlag": "ember:cin-reading"
+        }
+      ]
+    },
+    "ember-clue-cage": {
+      "name": "The cage",
+      "verb": "Look",
+      "at": {
+        "poi": "cin-shaft"
+      },
+      "r": 4.5,
+      "when": {
+        "notFlag": "know:tithe"
+      },
+      "title": "The tithe cage",
+      "text": "A board is nailed inside the cage: names, chalked and struck through, a tally of seasons by each. Debts. The newest name is fresh: HAL TANNER. Cole's father. The guild told the town its debtors went south.",
+      "then": [
+        {
+          "setFlag": "know:tithe"
+        }
+      ]
+    },
+    "ember-clue-scripture": {
+      "name": "The scripture",
+      "verb": "Read",
+      "at": {
+        "poi": "ash-scripture"
+      },
+      "r": 3,
+      "when": {
+        "notFlag": "ember:scripture"
+      },
+      "title": "The scripture stone",
+      "text": "Fifty lines, carved deep and worn shallow. The last ones are clean, as if no one's hand has ever rested there: \"When the spring sours, when the birds fall out of the air, when the mountain breathes by day, the hearth is calling. Go down, children, and do not look back.\"",
+      "then": [
+        {
+          "setFlag": "ember:scripture"
+        }
+      ]
+    },
+    "ember-clue-birds": {
+      "name": "The still hollow",
+      "verb": "Look",
+      "at": {
+        "poi": "ember-hollow"
+      },
+      "r": 5,
+      "when": {
+        "notFlag": "ember:omen-birds"
+      },
+      "title": "The still hollow",
+      "text": "Birds lie on the ash with nothing on them, wings folded as if they landed to sleep. Your cowl light gutters; the air here is heavy and does not move. You take one, light in the hand.",
+      "then": [
+        {
+          "setFlag": "ember:omen-birds"
+        }
+      ]
+    }
+  },
+  "names": {}
+}

@@ -56,6 +56,10 @@ export class Surf {
     this.canSurf = false;       // the surface underfoot can be surfed
     this.slick = 0;             // 0 snow … 1 glass underfoot (D7's fused ground): little friction or drag
     this.shoal = 0;             // 0 deep water … 1 the shallowest a skim runs (owner: the depth under the body): the shallows bleed speed
+    /** A release line's current underfoot (owner: systems/releaseLines.js via the player system): unit flow (curX, curZ) and its push (m/s²). */
+    this.curX = 0.5 - 0.5; this.curZ = 0.5 - 0.5; this.curA = 0.5 - 0.5;
+    /** …and the way the channel turns a rider who is not steering (downstream, back toward the middle). */
+    this.curWX = 0.5 - 0.5; this.curWZ = 0.5 - 0.5;
     this.steer = 0.5 - 0.5;     // −1..1: turn left … right (fraction of the grip limit)
     this.throttle = 0.5 - 0.5;  // −1 brake … +1 push
     this.grounded = true;
@@ -127,6 +131,8 @@ export class Surf {
         const sc = Math.min(this.speed, cruise);
         a += T.push * Math.max(0, 1 - this.speed / cruise) + T.drag * sc * sc + T.friction;
       }
+      // A release line's current carries the surf downstream (only what lies along the heading: riding across it is free).
+      if (this.curA > 0) a += this.curA * Math.max(0, hx * this.curX + hz * this.curZ);
       // Downhill along the heading: horizontal part of gravity's tangential component.
       a += T.gravity * (nx * hx + nz * hz) * ny;
       // Drag.
@@ -141,6 +147,11 @@ export class Surf {
     const want = Math.max(-1, Math.min(1, this.steer)) * grip / s;
     this.turnRate += (want - this.turnRate) * (1 - Math.exp(-h * T.turnResponse));
     this.heading += this.turnRate * h;
+    // …and leans the carve into the stream when it is near enough along it (the channel holds the rider; steering wins).
+    if (this.curA > 0 && this.grounded) {
+      const al = hx * this.curX + hz * this.curZ;
+      if (al > 0.2) { const want = Math.atan2(this.curWX, this.curWZ), d = Math.atan2(Math.sin(want - this.heading), Math.cos(want - this.heading)); this.heading += d * Math.min(1, h * 2.6 * (1 - Math.min(1, Math.abs(this.steer)))); }
+    }
     this.latAccel = this.turnRate * this.speed;
     if (this.grounded) a -= T.carveDrag * Math.abs(this.latAccel);
     this.speed = Math.min(this._speedCap, Math.max(0, this.speed + a * h));

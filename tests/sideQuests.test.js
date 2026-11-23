@@ -38,7 +38,8 @@ describe('every quest step points somewhere', () => {
     }
   });
   it('a step that says "Talk to X" points at X', () => {
-    const byName = new Map(data.npcs.map((n) => [n.name.replace(/^Old /, ''), n.id]));
+    // (The first of a name: Wenna and Doran also stand at the Wellhouse later, as meadow-wenna-south / meadow-doran-south.)
+    const byName = new Map(); for (const n of data.npcs) { const k = n.name.replace(/^Old /, ''); if (!byName.has(k)) byName.set(k, n.id); }
     for (const [q, s] of steps) {
       const m = /^Talk to (?:Elder |Old )?([A-Z][a-z]+)/.exec(s.journal);
       if (!m || !byName.has(m[1])) continue;

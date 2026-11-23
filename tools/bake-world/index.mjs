@@ -24,6 +24,7 @@ import { carveRavines, KIND } from './ravines.mjs';
 import { ravineWalls } from './ravineWalls.mjs';
 import { carveOasis } from './oasis.mjs';
 import { carveDryStair } from './dryStair.mjs';
+import { carveCrater, PIT } from '../../src/world/crater.js';
 import { seatPOIs } from './seats.mjs';
 import { bakeDuneMap } from './dunemap.mjs';
 import { forecourtPaving, forecourtBounds } from '../../src/world/manor.js';
@@ -205,6 +206,9 @@ export async function bake({ seed = 1, out, scale = 1, preview } = {}) {
   // The oasis pool by the Wellhouse (D8), into the playa: a basin and a lake on the hydro map.
   const oasis = carveOasis(h2, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, hydro, lakeLevel, n4, c4);
   log('oasis pool', oasis.texels, 'texels, level', oasis.level.toFixed(2), Date.now() - t0, 'ms');
+  // The crater's pit (src/world/crater.js): the lava lake's bowl at the summit.
+  { const R = PIT.reach + 4, get = (i, j) => h2[j * n2 + i] / HEIGHT_SCALE - HEIGHT_OFFSET, set = (i, j, m) => { h2[j * n2 + i] = Math.round(clamp((m + HEIGHT_OFFSET) * HEIGHT_SCALE, 0, 65535)); };
+    log('crater pit', carveCrater(get, set, PIT.x - R, PIT.x + R, PIT.z - R, PIT.z + R, c2, HALF), 'texels', Date.now() - t0, 'ms'); }
   // The cliff lines of the ravines' risers for the wall kit (D7b), traced on the carved height.
   const ravW = ravineWalls(h2, rav.mask, n2, c2, HALF, { offset: HEIGHT_OFFSET, scale: HEIGHT_SCALE }, rav.feats, rav.roadDist);
   log('ravine walls', ravW.walls.length, 'lines,', ravW.walls.reduce((a, w) => a + w.pts.length, 0), 'points', Date.now() - t0, 'ms');

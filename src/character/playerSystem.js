@@ -5,6 +5,7 @@ import { input, Action } from '../input/actions.js';
 import { clock } from '../core/clock.js';
 import { angleDelta } from '../core/scratch.js';
 import { skimTuning } from './skimTuning.js';
+import { surfTuning } from './surf.js';
 
 /** Surf steering feel: mouse pixels → steer (fraction of carve grip), and how fast it recentres. */
 const SURF_STEER_PER_PX = 0.0032, SURF_STEER_RETURN = 2.6, SURF_KEY_STEER = 0.75;
@@ -22,7 +23,7 @@ const GLIDE_CAM_FOLLOW = 2.2, GLIDE_CAM_BANK = 0.45, GLIDE_EXTRA_FOV = 0.14, WIN
  */
 export function createPlayerSystem(ctx) {
   const { controller, arm, capsule, playerPos, bodyParams, capsuleHalfHeight, material, wind, streams } = ctx;
-  let steerAcc = 0;
+  let steerAcc = 0, onCurrent = false, curDriftX = 0, curDriftZ = 0;
   return {
     name: 'player',
     update() {
@@ -63,6 +64,28 @@ export function createPlayerSystem(ctx) {
         // ... and wherever the terrain state holds glass (a shattered Glass-sworn's ground: frozen 2 in the collision snapshot).
         const sv = ctx.world && ctx.world.ground ? ctx.world.ground.state : null;
         if (sv) { sv.qx = controller.pos.x; sv.qz = controller.pos.z; if (sv.sample() && sv.frozen > 1.2) { sf.canSurf = true; sf.slick = 1; } }
+        // A release line's meltwater (systems/releaseLines.js): surfable whatever the ground, slick, with a current downstream.
+        // On a line over real water (the Outflow's lake, river and sea) the surf skims, Tide or not; a swimmer in it is carried.
+        const cur = ctx.world ? ctx.world.currents : null;
+        sf.curA = 0; onCurrent = false;
+        if (cur && (controller.grounded || controller.swimming)) {
+          cur.qx = controller.pos.x; cur.qz = controller.pos.z;
+          if (cur.query()) {
+            onCurrent = true; curDriftX = cur.fx * cur.a * 0.45; curDriftZ = cur.fz * cur.a * 0.45;
+            const wl = controller.waterLevel;
+            let wet = false;
+            if (wl === wl) { const gq = controller.ground; gq.qx = controller.pos.x; gq.qz = controller.pos.z; gq.sample(); wet = wl - gq.h > skimTuning.beach; }
+            if (wet) { sf.canSurf = true; sf.tuning = skimTuning; }
+            // A swimmer in the current who holds the traverse is lifted onto it: up to the surface, moving with the flow, skimming.
+            if (wet && controller.swimming && d[Action.Traverse] === 1) {
+              controller.swimming = false; controller.submerged = false; controller.pos.y = wl + 0.05;
+              controller.vel.x = cur.fx * 9; controller.vel.z = cur.fz * 9; controller.vel.y = 0; controller.grounded = true;
+              sf.want = true; sf.heading = Math.atan2(cur.fx, cur.fz);
+            }
+            else if (!sf.canSurf) { sf.canSurf = true; sf.tuning = surfTuning; }
+            sf.slick = Math.max(sf.slick, cur.slick); sf.curX = cur.fx; sf.curZ = cur.fz; sf.curA = cur.a; sf.curWX = cur.wx; sf.curWZ = cur.wz;
+          }
+        }
         // The Long Walker's back is stone, not sand (game/walker/deck.js).
         if (controller.deck !== null && controller.deck.riding) sf.canSurf = false;
         // Water-skim (F3, lent with Tide): over water deep enough to carry it, the surf rides the surface (character/skimTuning.js);
@@ -104,6 +127,7 @@ export function createPlayerSystem(ctx) {
         if (input.pressed[Action.Jump]) controller.jumpRequested = true;
         const wa = controller.water;
         if (wa) { wa.qx = controller.pos.x; wa.qz = controller.pos.z; wa.levelQ(); controller.waterLevel = wa.lv; controller.currentX = wa.fx; controller.currentZ = wa.fz; }
+        if (onCurrent && controller.swimming) { controller.currentX += curDriftX; controller.currentZ += curDriftZ; }
         arm.under = controller.submerged;
         controller.dt = dt;
         controller.update();

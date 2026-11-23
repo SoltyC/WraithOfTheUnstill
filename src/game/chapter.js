@@ -19,16 +19,19 @@ import { QuestGraph } from './quests/questGraph.js';
  */
 export function mergeChapters(base, ...more) {
   const out = { ...base, npcs: [...base.npcs], quests: [...base.quests] };
-  for (const k of ['places', 'talk', 'dialogue', 'echoes', 'lore', 'names', 'barks']) out[k] = { ...(base[k] || {}) };
+  for (const k of ['places', 'talk', 'dialogue', 'echoes', 'lore', 'names', 'barks', 'clues']) out[k] = { ...(base[k] || {}) };
   for (const d of more) {
     out.npcs.push(...(d.npcs || [])); out.quests.push(...(d.quests || []));
-    for (const k of ['places', 'talk', 'dialogue', 'echoes', 'lore', 'names', 'barks']) {
+    for (const k of ['places', 'talk', 'dialogue', 'echoes', 'lore', 'names', 'barks', 'clues']) {
       for (const id in d[k] || {}) {
         if (k !== 'barks' && id in out[k]) throw new Error(`chapter data: duplicate ${k} "${id}"`);
         out[k][id] = d[k][id];
       }
     }
     if (d.village) out.village = d.village;
+  }
+  // In front of a table from any chapter (applied once all are in: a chapter may go in front of one merged after it).
+  for (const d of more) {
     for (const [from, to] of [['talkFirst', 'talk'], ['barksFirst', 'barks']]) {
       for (const id in d[from] || {}) {
         if (!out[to][id]) throw new Error(`chapter data: ${from} "${id}" has no ${to} table to go in front of`);

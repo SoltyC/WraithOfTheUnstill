@@ -36,7 +36,7 @@ export function addWraithSystem(g) {
     if (game.wraithHeld || game.pendingBend !== null || game.pendingWeapon !== null) return;
     g.wraithGround.feet = p.y + 1;
     surfWake.x = p.x; surfWake.y = p.y; surfWake.z = p.z; surfWake.grounded = controller.grounded; surfWake.dt = clock.dt;
-    surfWake.enabled = toggles.on.footprints !== false;
+    surfWake.enabled = toggles.on.footprints !== false && !(controller.surf.curA > 0);   // (riding a release line's water: no snow ploughed into a trench)
     surfWake.wet = weather.wet; surfWake.update();
     wraithView.update();
     wraithFootfalls();

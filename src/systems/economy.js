@@ -51,6 +51,8 @@ export function addEconomySystem(g) {
       if (line) { note(a.marks ? 'Marks' : 'Given', '+ ' + line, a.marks ? inventory.marks + ' in the pouch' : null, 5); chime(0.5); }
       if (a.thread) syncHealth(true);
     },
+    /** Maximum health again from the threads (a thread given away). */
+    syncHealth() { syncHealth(false); combat.health = Math.min(combat.health, combat.maxHealth); },
     /** Rest at a shrine: the flask fills, the traders restock. */
     rest() {
       const filled = inventory.refillFlask();
@@ -88,7 +90,9 @@ export function addEconomySystem(g) {
   }
   /** Maximum health follows the threads; a new segment also fills what it adds. */
   function syncHealth(fill) {
-    const m = maxHealth(inventory.threads);
+    // (Threads given up at the volcano's summit are gone for good: systems/emberClock.js, a saved quest var.)
+    const given = g.chapter?.graph.vars['ember:threads-given'] || 0;
+    const m = Math.max(maxHealth(0) * 0.5, maxHealth(inventory.threads) - (maxHealth(1) - maxHealth(0)) * given);
     if (m === lastMax) return;
     combat.maxHealth = m;
     if (fill && m > lastMax) combat.health = Math.min(m, combat.health + (m - lastMax));

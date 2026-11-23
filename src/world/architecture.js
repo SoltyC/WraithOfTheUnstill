@@ -18,7 +18,9 @@ export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, M
   // The village (docs/village/plan-materials.md): each a single chamfered piece like WOOD, no snow caps.
   PLASTER: 8, THATCH: 9, SLATE: 10, TILE: 11, SHINGLE: 12, PLANK: 13, COBBLE: 14, FLAG: 15, EARTH: 16, IRON: 17, GLASS: 18,
   // The erg's battle glass (Phase 9 D7, world/glassKit.js): fused sand, clear and glossy.
-  BATTLE_GLASS: 19 };
+  BATTLE_GLASS: 19,
+  // Cinderhold's dark lava stone (world/cinderhold.js): laid like Shaper stone, on the rock scan, near black.
+  BASALT: 20 };
 const FOUND = 3; // m of foundation below the seat
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -27,6 +29,10 @@ export class Builder {
   constructor() { this.pos = []; this.nrm = []; this.uv = []; this.info = []; this.idx = []; this.blockers = []; this.platforms = []; this.lights = []; this.site = 0; }
   /** A point light in site-local metres (data only; the renderer picks the nearest few). kind: 'fire' (warm, flickers),
    *  'candle' (small, warm, gentle flicker), 'bounce' (steady, night only), 'lamp' (steady). */
+  /** A structure: what fn builds stands and falls together (a tower going over whole before it breaks: world/fracture.js). */
+  struct(fn) { return fn(); }
+  /** One piece: what fn builds is one group to the fracture (world/fracture.js); here, just built. */
+  piece(fn) { return fn(); }
   light(x, y, z, radius, r, g, b, intensity, kind) { this.lights.push({ site: this.site, x, y, z, radius, color: [r, g, b], intensity, kind }); }
   /** One flat quad (a, b, c, d counter-clockwise seen from outside), uv in metres along ab and ad. */
   quad(a, b, c, d, mat, seed, carve = 0, uvs = null) {
@@ -94,10 +100,10 @@ export class Builder {
     const cy = Math.cos(yaw), sy = Math.sin(yaw), ct = Math.cos(tilt), st = Math.sin(tilt), cr = Math.cos(roll), sr = Math.sin(roll);
     // Shaper stone is laid, not boxed (world/masonry.js): plinths get walled sides and paving,
     // walls and piers coursed blocks, everything else one chamfered block.
-    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS || mat === MAT.METAL || mat === MAT.EMBER || (mat >= MAT.PLASTER && mat <= MAT.GLASS)) && !plain) {
+    if ((mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.WOOD || mat === MAT.CANVAS || mat === MAT.METAL || mat === MAT.EMBER || mat === MAT.BASALT || (mat >= MAT.PLASTER && mat <= MAT.GLASS)) && !plain) {
       const flat = tilt === 0 && roll === 0;
       // Snow banked against whatever stands on the ground (or on a floor) — never a hard line.
-      const stone = mat === MAT.STONE || mat === MAT.GLYPH;
+      const stone = mat === MAT.STONE || mat === MAT.GLYPH || mat === MAT.BASALT;
       if (drift && stone && flat && y0 > -FOUND - 0.5 && y0 < 0.8 && y1 > 0.3) {
         // On a raised floor (y0 > 0.2) the drift is a small one: it must not hang past the floor's edge.
         const big = Math.min(hx, hz) > 3, onFloor = y0 > 0.2;
@@ -108,9 +114,9 @@ export class Builder {
       if (!stone) {
         // Timber and felt: one piece, lightly arrised.
         chamferBlock(this, [x, (y0 + y1) / 2, z], R3(1, 0, 0), R3(0, 1, 0), R3(0, 0, 1), hx, (y1 - y0) / 2, hz, Math.min(0.02, hx * 0.2, hz * 0.2, (y1 - y0) * 0.2), 63, mat, seed, carve);
-      } else if (mat === MAT.STONE && flat && Math.min(hx, hz) > 3) {
+      } else if ((mat === MAT.STONE || mat === MAT.BASALT) && flat && Math.min(hx, hz) > 3) {
         this.plinth(x, z, y0, y1, hx, hz, yaw, mat, seed, course);
-      } else if (mat === MAT.STONE && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) {
+      } else if ((mat === MAT.STONE || mat === MAT.BASALT) && flat && Math.max(hx, hz) > 0.9 && y1 - y0 > 0.8) {
         layWall(this, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin, course, blockLen: 1.35, cap });
       } else {
         // One block.
@@ -690,7 +696,7 @@ const TAU = Math.PI * 2;
 export const rot = (yaw) => { const c = Math.cos(yaw), s = Math.sin(yaw); return (u, y, f) => [u * c + f * s, y, -u * s + f * c]; };
 
 /** A smooth cloth surface from f(u, v) → [x, y, z] over u, v ∈ [0, 1] (normals by differences, up-facing). */
-export function cloth(b, f, nu, nv, mat, seed) {
+function cloth0(b, f, nu, nv, mat, seed) {
   const pts = [], nrm = [], e = 1e-3;
   for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
     const u = i / nu, v = j / nv, p = f(u, v), u0 = Math.min(u, 1 - e), v0 = Math.min(v, 1 - e);   // differences stay inside [0, 1]
@@ -986,7 +992,7 @@ export function buildArchitecture(sites) {
 }
 
 /** Sites with no snow on or round them: the meadow's places (hub, village, stair, manor, side-quest sites, meadow shrines). */
-export const NO_SNOW = /^(hub|vil|stair|manor|side|ruin|glass|sounding)-|^shrine-meadow|^nook-m-/;
+export const NO_SNOW = /^(hub|vil|stair|manor|side|ruin|glass|sounding|flue|gap|beacon|sow|emb|cin|ash)-|^shrine-meadow|^nook-m-/;
 
 /** Chunk edge, metres: sites are grouped by the cell of their anchor. */
 export const ARCH_CHUNK_CELL = 128;
@@ -1044,3 +1050,6 @@ export function chunkArchitecture(sites, built, cell = ARCH_CHUNK_CELL) {
     return { id: 'arch-' + key, prop: key === 'props', sites: idxs, cx, cz, radius, vertexCount: nv, positions, normals, uvs, info, indices };
   });
 }
+
+/** (One piece for the fracture: world/fracture.js groups what it builds together.) */
+export function cloth(B, ...a) { return B.piece ? B.piece(() => cloth0(B, ...a)) : cloth0(B, ...a); }

@@ -79,7 +79,9 @@ export function mesoHeight(x, z, wFrost, wMeadow, wMire, wDunes, wEmber, wCoast,
   if (wEmber > 0.001) {
     const phase = u / 60 + 0.6 * fbm(u / 500, v / 350, 3, S + 21);
     const p = phase - Math.floor(phase);
-    h += wEmber * (duneProfile(p) * 3.2 * (0.6 + 0.4 * fbm(v / 140, u / 300, 2, S + 22)) + 0.4 * fbm(x / 30, z / 30, 3, S + 23));
+    // (None in the crater's pit, world/crater.js: ash holds no dunes on its walls; on them the dunes read as flutes.)
+    const cdx = x - 2350, cdz = z + 2150, pit = smooth01(150, 210, Math.sqrt(cdx * cdx + cdz * cdz));
+    h += wEmber * pit * (duneProfile(p) * 3.2 * (0.6 + 0.4 * fbm(v / 140, u / 300, 2, S + 22)) + 0.4 * fbm(x / 30, z / 30, 3, S + 23));
   }
   if (wMeadow > 0.001) h += wMeadow * 1.1 * fbm(x / 55, z / 55, 4, S + 31);
   if (wMire > 0.001) h += wMire * 0.35 * fbm(x / 9, z / 9, 3, S + 41);

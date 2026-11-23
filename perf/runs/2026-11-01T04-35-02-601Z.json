@@ -1,0 +1,516 @@
+{
+  "date": "2026-11-01T04:35:02.601Z",
+  "build": "production",
+  "machine": {
+    "adapter": "nvidia / ampere",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+    "devicePixelRatio": 1,
+    "screen": "2560x1440",
+    "window": "2560x1440",
+    "render": "2560x1440",
+    "timestampQuery": true
+  },
+  "settings": {
+    "secondsPerPhase": 12,
+    "settle": 3,
+    "spot": "p9b-clear",
+    "url": "?bench=dunes&stone=1&title=0&res=2560x1440&gfx=high&spot=p9b-clear&benchSeconds=12",
+    "gpuTimer": true,
+    "gpuSampleEvery": 4
+  },
+  "scene": {
+    "drawCalls": 305,
+    "pipelines": 99,
+    "latePipelines": 0,
+    "gpuMB": 3031
+  },
+  "phases": [
+    {
+      "name": "surf",
+      "seconds": 12,
+      "presented": {
+        "frames": 781,
+        "meanMs": 15.365,
+        "medianMs": 15.3,
+        "p95Ms": 18.3,
+        "p99Ms": 21.7,
+        "maxMs": 30.4,
+        "minMs": 7.8,
+        "fps": 65.1,
+        "low1Fps": 46.1,
+        "hitchesOverMedianPlus4": 17
+      },
+      "gpu": {
+        "frame": {
+          "frames": 196,
+          "meanMs": 14.517,
+          "medianMs": 14.376,
+          "p95Ms": 16.923,
+          "p99Ms": 17.922,
+          "maxMs": 17.995,
+          "minMs": 12.705,
+          "fps": 68.9,
+          "low1Fps": 55.8,
+          "hitchesOverMedianPlus4": 0
+        },
+        "main": {
+          "frames": 196,
+          "meanMs": 0.026,
+          "medianMs": 0,
+          "p95Ms": 0,
+          "p99Ms": 0.722,
+          "maxMs": 0.724,
+          "minMs": 0,
+          "fps": 38824.8,
+          "low1Fps": 1385.2,
+          "hitchesOverMedianPlus4": 0
+        },
+        "shadow": {
+          "frames": 196,
+          "meanMs": 11.351,
+          "medianMs": 11.105,
+          "p95Ms": 13.481,
+          "p99Ms": 14.394,
+          "maxMs": 14.55,
+          "minMs": 10.2,
+          "fps": 88.1,
+          "low1Fps": 69.5,
+          "hitchesOverMedianPlus4": 0
+        },
+        "compute": {
+          "frames": 196,
+          "meanMs": 2.986,
+          "medianMs": 3.174,
+          "p95Ms": 3.302,
+          "p99Ms": 3.512,
+          "maxMs": 3.59,
+          "minMs": 2.283,
+          "fps": 334.9,
+          "low1Fps": 284.8,
+          "hitchesOverMedianPlus4": 0
+        },
+        "passes": 48
+      },
+      "drawCalls": 257,
+      "hitches": [
+        {
+          "frame": 86,
+          "atMs": 1316,
+          "ms": 19.8,
+          "prev": 12.1,
+          "next": 13.3
+        },
+        {
+          "frame": 92,
+          "atMs": 1412,
+          "ms": 21.1,
+          "prev": 15,
+          "next": 12
+        },
+        {
+          "frame": 183,
+          "atMs": 2847,
+          "ms": 19.7,
+          "prev": 17.8,
+          "next": 19.6
+        },
+        {
+          "frame": 184,
+          "atMs": 2866,
+          "ms": 19.6,
+          "prev": 19.7,
+          "next": 14.3
+        },
+        {
+          "frame": 211,
+          "atMs": 3353,
+          "ms": 19.8,
+          "prev": 18.3,
+          "next": 18.6
+        },
+        {
+          "frame": 299,
+          "atMs": 4801,
+          "ms": 30.4,
+          "prev": 14.8,
+          "next": 16
+        },
+        {
+          "frame": 320,
+          "atMs": 5124,
+          "ms": 19.7,
+          "prev": 10.9,
+          "next": 16.4
+        },
+        {
+          "frame": 324,
+          "atMs": 5188,
+          "ms": 24.8,
+          "prev": 7.9,
+          "next": 16.4
+        },
+        {
+          "frame": 331,
+          "atMs": 5295,
+          "ms": 21.9,
+          "prev": 13.2,
+          "next": 16.5
+        },
+        {
+          "frame": 357,
+          "atMs": 5712,
+          "ms": 29.7,
+          "prev": 16.1,
+          "next": 16.5
+        },
+        {
+          "frame": 371,
+          "atMs": 5927,
+          "ms": 23.1,
+          "prev": 10.3,
+          "next": 15.2
+        },
+        {
+          "frame": 377,
+          "atMs": 6018,
+          "ms": 19.6,
+          "prev": 10.7,
+          "next": 15.9
+        },
+        {
+          "frame": 386,
+          "atMs": 6156,
+          "ms": 19.7,
+          "prev": 13.8,
+          "next": 15.6
+        },
+        {
+          "frame": 402,
+          "atMs": 6384,
+          "ms": 20.1,
+          "prev": 10.9,
+          "next": 15.9
+        },
+        {
+          "frame": 492,
+          "atMs": 7713,
+          "ms": 21.7,
+          "prev": 15.2,
+          "next": 12.7
+        },
+        {
+          "frame": 616,
+          "atMs": 9564,
+          "ms": 22.4,
+          "prev": 14.8,
+          "next": 13.1
+        },
+        {
+          "frame": 728,
+          "atMs": 11246,
+          "ms": 28.3,
+          "prev": 16.1,
+          "next": 14.7
+        }
+      ],
+      "jsHeapMB": 811.6
+    },
+    {
+      "name": "ridge",
+      "seconds": 12,
+      "presented": {
+        "frames": 713,
+        "meanMs": 16.833,
+        "medianMs": 16.9,
+        "p95Ms": 18.3,
+        "p99Ms": 19.8,
+        "maxMs": 30.6,
+        "minMs": 7.1,
+        "fps": 59.4,
+        "low1Fps": 50.5,
+        "hitchesOverMedianPlus4": 4
+      },
+      "gpu": {
+        "frame": {
+          "frames": 178,
+          "meanMs": 16.717,
+          "medianMs": 16.73,
+          "p95Ms": 17.504,
+          "p99Ms": 17.65,
+          "maxMs": 17.707,
+          "minMs": 15.765,
+          "fps": 59.8,
+          "low1Fps": 56.7,
+          "hitchesOverMedianPlus4": 0
+        },
+        "main": {
+          "frames": 178,
+          "meanMs": 0.719,
+          "medianMs": 0.723,
+          "p95Ms": 0.726,
+          "p99Ms": 0.733,
+          "maxMs": 0.754,
+          "minMs": 0,
+          "fps": 1391.1,
+          "low1Fps": 1363.9,
+          "hitchesOverMedianPlus4": 0
+        },
+        "shadow": {
+          "frames": 178,
+          "meanMs": 13.447,
+          "medianMs": 13.448,
+          "p95Ms": 14.143,
+          "p99Ms": 14.274,
+          "maxMs": 14.298,
+          "minMs": 12.677,
+          "fps": 74.4,
+          "low1Fps": 70.1,
+          "hitchesOverMedianPlus4": 0
+        },
+        "compute": {
+          "frames": 178,
+          "meanMs": 2.385,
+          "medianMs": 2.406,
+          "p95Ms": 2.498,
+          "p99Ms": 2.724,
+          "maxMs": 2.813,
+          "minMs": 2.024,
+          "fps": 419.3,
+          "low1Fps": 367.1,
+          "hitchesOverMedianPlus4": 0
+        },
+        "passes": 48
+      },
+      "drawCalls": 403,
+      "hitches": [
+        {
+          "frame": 11,
+          "atMs": 188,
+          "ms": 25.3,
+          "prev": 17.4,
+          "next": 14.9
+        },
+        {
+          "frame": 456,
+          "atMs": 7586,
+          "ms": 21.3,
+          "prev": 17.8,
+          "next": 16.5
+        },
+        {
+          "frame": 458,
+          "atMs": 7633,
+          "ms": 30.6,
+          "prev": 16.5,
+          "next": 18.6
+        },
+        {
+          "frame": 589,
+          "atMs": 9912,
+          "ms": 22.4,
+          "prev": 16.9,
+          "next": 15
+        }
+      ],
+      "jsHeapMB": 832.6
+    },
+    {
+      "name": "fight",
+      "seconds": 12.01,
+      "presented": {
+        "frames": 746,
+        "meanMs": 16.094,
+        "medianMs": 16.1,
+        "p95Ms": 18,
+        "p99Ms": 19.5,
+        "maxMs": 20.5,
+        "minMs": 12.1,
+        "fps": 62.1,
+        "low1Fps": 51.3,
+        "hitchesOverMedianPlus4": 2
+      },
+      "gpu": {
+        "frame": {
+          "frames": 187,
+          "meanMs": 15.714,
+          "medianMs": 15.745,
+          "p95Ms": 16.287,
+          "p99Ms": 16.494,
+          "maxMs": 16.529,
+          "minMs": 14.876,
+          "fps": 63.6,
+          "low1Fps": 60.6,
+          "hitchesOverMedianPlus4": 0
+        },
+        "main": {
+          "frames": 187,
+          "meanMs": 0.47,
+          "medianMs": 0.724,
+          "p95Ms": 0.729,
+          "p99Ms": 0.731,
+          "maxMs": 0.732,
+          "minMs": 0,
+          "fps": 2128.7,
+          "low1Fps": 1367.7,
+          "hitchesOverMedianPlus4": 0
+        },
+        "shadow": {
+          "frames": 187,
+          "meanMs": 12.608,
+          "medianMs": 12.602,
+          "p95Ms": 13.039,
+          "p99Ms": 13.141,
+          "maxMs": 13.166,
+          "minMs": 12.2,
+          "fps": 79.3,
+          "low1Fps": 76.1,
+          "hitchesOverMedianPlus4": 0
+        },
+        "compute": {
+          "frames": 187,
+          "meanMs": 2.47,
+          "medianMs": 2.48,
+          "p95Ms": 2.57,
+          "p99Ms": 2.607,
+          "maxMs": 2.699,
+          "minMs": 2.098,
+          "fps": 404.9,
+          "low1Fps": 383.6,
+          "hitchesOverMedianPlus4": 0
+        },
+        "passes": 48
+      },
+      "drawCalls": 305,
+      "hitches": [
+        {
+          "frame": 446,
+          "atMs": 7203,
+          "ms": 20.5,
+          "prev": 16.6,
+          "next": 13.8
+        },
+        {
+          "frame": 461,
+          "atMs": 7445,
+          "ms": 20.1,
+          "prev": 16.7,
+          "next": 12.9
+        },
+        {
+          "frame": 725,
+          "atMs": 11683,
+          "ms": 20.2,
+          "prev": 14.4,
+          "next": 13.2
+        }
+      ],
+      "jsHeapMB": 830.1
+    },
+    {
+      "name": "front",
+      "seconds": 12.01,
+      "presented": {
+        "frames": 773,
+        "meanMs": 15.535,
+        "medianMs": 15.5,
+        "p95Ms": 17.3,
+        "p99Ms": 18.6,
+        "maxMs": 23.9,
+        "minMs": 11.2,
+        "fps": 64.4,
+        "low1Fps": 53.8,
+        "hitchesOverMedianPlus4": 4
+      },
+      "gpu": {
+        "frame": {
+          "frames": 193,
+          "meanMs": 15.29,
+          "medianMs": 15.293,
+          "p95Ms": 16.047,
+          "p99Ms": 16.292,
+          "maxMs": 16.296,
+          "minMs": 14.221,
+          "fps": 65.4,
+          "low1Fps": 61.4,
+          "hitchesOverMedianPlus4": 0
+        },
+        "main": {
+          "frames": 193,
+          "meanMs": 0.582,
+          "medianMs": 0.729,
+          "p95Ms": 0.732,
+          "p99Ms": 0.733,
+          "maxMs": 0.734,
+          "minMs": 0,
+          "fps": 1718.5,
+          "low1Fps": 1363.9,
+          "hitchesOverMedianPlus4": 0
+        },
+        "shadow": {
+          "frames": 193,
+          "meanMs": 12.067,
+          "medianMs": 11.993,
+          "p95Ms": 12.781,
+          "p99Ms": 12.941,
+          "maxMs": 12.965,
+          "minMs": 11.612,
+          "fps": 82.9,
+          "low1Fps": 77.3,
+          "hitchesOverMedianPlus4": 0
+        },
+        "compute": {
+          "frames": 193,
+          "meanMs": 2.474,
+          "medianMs": 2.47,
+          "p95Ms": 2.563,
+          "p99Ms": 2.765,
+          "maxMs": 2.793,
+          "minMs": 2.105,
+          "fps": 404.3,
+          "low1Fps": 361.7,
+          "hitchesOverMedianPlus4": 0
+        },
+        "passes": 48
+      },
+      "drawCalls": 305,
+      "hitches": [
+        {
+          "frame": 471,
+          "atMs": 7259,
+          "ms": 20,
+          "prev": 15.4,
+          "next": 12.5
+        },
+        {
+          "frame": 490,
+          "atMs": 7561,
+          "ms": 23.9,
+          "prev": 15.3,
+          "next": 13.9
+        },
+        {
+          "frame": 659,
+          "atMs": 10227,
+          "ms": 20.1,
+          "prev": 17.7,
+          "next": 12.3
+        },
+        {
+          "frame": 730,
+          "atMs": 11347,
+          "ms": 23.8,
+          "prev": 16.2,
+          "next": 14.8
+        }
+      ],
+      "jsHeapMB": 834.3
+    }
+  ],
+  "events": [],
+  "phaseSetupAtMs": [
+    2004,
+    17012,
+    32027,
+    47041
+  ]
+}

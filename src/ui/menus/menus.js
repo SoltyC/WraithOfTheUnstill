@@ -56,7 +56,7 @@ export function createMenus(g) {
 
   function journal(tab = 'quests') {
     head('Journal', 'What the Wraith has carried');
-    tabs([['quests', 'Journeys'], ['inventory', 'Inventory'], ['robes', 'Robes'], ['echoes', 'Echoes'], ['lore', 'Lore'], ['beasts', 'Bestiary'], ['remembrance', 'Remembrance'], ...(chapter.graph.flags.has('ebb:register-read') ? [['register', 'Register']] : [])], tab, (k) => open('journal', k));
+    tabs([['quests', 'Journeys'], ['inventory', 'Inventory'], ['robes', 'Robes'], ['echoes', 'Echoes'], ['lore', 'Lore'], ['beasts', 'Bestiary'], ['remembrance', 'Remembrance'], ...(chapter.graph.flags.has('ebb:register-read') ? [['register', 'Names']] : [])], tab, (k) => open('journal', k));
     el('div', 'codex-rule', sheet);
     const j = chapter.journal();
     if (tab === 'quests') {
@@ -85,14 +85,13 @@ export function createMenus(g) {
     } else if (tab === 'remembrance') {
       remembranceTab({ el, listPage, rem: g.remembrance, elements: g.elements });
     } else if (tab === 'register') {
-      // Ebbhold's register (systems/drowned.js): a name carried from here is the one said to the Drowned.
-      const flags = chapter.graph.flags, vars = chapter.graph.vars;
-      listPage([['The Register', PEOPLE.map((d) => ({ ...d, title: d.name, done: flags.has('ebb:named:' + d.id) }))]], (pg, d) => {
-        el('h2', null, pg, d.name); el('p', null, pg, d.line);
-        if (flags.has('ebb:named:' + d.id)) { el('p', 'past', pg, 'Still.'); return; }
-        const on = vars['ebb.carry'] === d.name, b = el('button', 'robe-wear', pg, on ? 'Carried' : 'Carry this name');
-        if (on) b.disabled = true; else b.onclick = () => { vars['ebb.carry'] = d.name; close(); };
-      }, 'The book is empty.');
+      // Ebbhold's names (systems/drowned.js, M3): only the ones read where those people work. Said to them where they stand.
+      const flags = chapter.graph.flags;
+      const known = PEOPLE.filter((d) => flags.has('ebb:knows:' + d.id));
+      listPage([['Names', known.map((d) => ({ ...d, title: d.name, done: flags.has('ebb:named:' + d.id) }))]], (pg, d) => {
+        el('h2', null, pg, d.name); el('p', null, pg, d.sign === 'register' ? 'The register’s last line, still wet: the keeper’s own name.' : d.sign.text);
+        el('p', flags.has('ebb:named:' + d.id) ? 'past' : null, pg, flags.has('ebb:named:' + d.id) ? 'Still.' : 'Said to them where they stand.');
+      }, 'No names yet. People mark what is theirs.');
     } else if (tab === 'robes') {
       const flags = chapter.graph.flags, vars = chapter.graph.vars;
       const worn = wornRobe(flags, vars).id;

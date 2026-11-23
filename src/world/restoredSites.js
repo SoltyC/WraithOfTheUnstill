@@ -83,7 +83,7 @@ export function restoredSites(table, data, wind) {
   const sites = [];
   const fly = (biome) => downwind(...wind[biome]);
   for (const bn of data.banners) {
-    const biome = bn.stream.startsWith('frost') ? 'frost' : 'meadow';
+    const biome = data.streams.find((q) => q.id === bn.stream)?.biome || 'meadow';
     sites.push({ id: bn.id, at: bn.pos, facing: fly(biome), build: banner, footprint: 1.4, seatAt: 'center', hidden: true });
   }
   const sh = table['rw-shelf'];

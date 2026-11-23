@@ -10,6 +10,7 @@ import sideData from '../../data/quests/meadow-side.json';
 import frostRestored from '../../data/quests/frost-restored.json';
 import meadowRestored from '../../data/quests/meadow-restored.json';
 import dunesData from '../../data/quests/dunes.json';
+import emberData from '../../data/quests/ember.json';
 import { createChapter, mergeChapters } from '../game/chapter.js';
 import { applyEcho } from '../game/echoes.js';
 import { surfTuning } from '../character/surf.js';
@@ -25,7 +26,7 @@ export function addChapterSystem(g) {
   const { loop, controller, scene, input, Action, params, ws, warden, wardenMod, frost, music, game, clock, capture } = g;
   g.surfTuning = surfTuning;
   const hud = g.hud = createHud();
-  const data = mergeChapters(frostData, meadowData, sideData, frostRestored, meadowRestored, dunesData);
+  const data = mergeChapters(frostData, meadowData, sideData, frostRestored, meadowRestored, dunesData, emberData);
   // Places the data gives a kind and a biome (the Green Shrine in Hearn, the side quests' sites) join the baked ones: compass, map, travel.
   for (const id in data.places) { const p = data.places[id]; if (p.kind && p.biome && !g.pois.some((q) => q.id === id)) { g.pois.push({ id, kind: p.kind, biome: p.biome, pos: p.pos, h: p.h }); if (p.name) data.names[id] ||= p.name; } }
   const chapter = g.chapter = createChapter({
@@ -107,6 +108,31 @@ export function addChapterSystem(g) {
     return true;
   }
 
+  /** The Wardens and how a traveller would name where they are (docs/direction.md M4: a shrine says which way the nearest held one lies). */
+  const WARDENS = [
+    { id: 'frost', at: [1092, 2276], where: 'the Warden in the high snow', released: () => ws.restoration.frost === 'restored' },
+    { id: 'meadow', at: [300, 1000], where: 'the manor on its hill', released: () => ws.restoration.meadow === 'restored' },
+    { id: 'dunes', at: [2436, 1124], where: 'the star dune where the Walker lies', released: () => ws.restoration.dunes === 'restored' },
+    { id: 'listener', at: [-2800, -1400], where: 'the Sounding, at the edge of the sea', released: () => g.story?.heldOf('listener') === 'released' },
+  ];
+  const DIRS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+  /** One line for a shrine at (x, z): which way the nearest held Warden lies (null when none is held). */
+  function wayOn(x, z) {
+    let best = null, bd = Infinity;
+    for (const w of WARDENS) { if (w.released()) continue; const d = Math.hypot(w.at[0] - x, w.at[1] - z); if (d < bd) { bd = d; best = w; } }
+    if (!best || bd < 150) return null;
+    const a = Math.atan2(best.at[0] - x, best.at[1] - z), dir = DIRS[((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8];
+    return `The motes drift ${dir}, toward ${best.where}.`;
+  }
+  g.wayOn = wayOn;
+  /** The way to the nearest held Warden from (x, z) as a unit (dx, dz), or null (systems/shrineWind.js: the grass shows it). */
+  g.wayDir = (x, z) => {
+    let best = null, bd = Infinity;
+    for (const w of WARDENS) { if (w.released()) continue; const d = Math.hypot(w.at[0] - x, w.at[1] - z); if (d < bd) { bd = d; best = w; } }
+    if (!best || bd < 150) return null;
+    return { dx: (best.at[0] - x) / bd, dz: (best.at[1] - z) / bd };
+  };
+
   /** Use a shrine: the stones remember (unlock, quest event, save). The shrine menu opens from here (UI). */
   function useShrine(t) {
     chapter.raise('shrine:' + t.id);
@@ -117,8 +143,9 @@ export function addChapterSystem(g) {
     chapter.graph.vars.lastShrine = k;
     g.setRespawn?.(t);
     g.economy?.rest();                              // the flask fills, the traders restock
-    if (!chapter.shrines.has(t.id)) { chapter.shrines.add(t.id); hud.notice('Shrine', 'The stones remember', 'Rested. The way back here is open.', 6); }
-    else hud.notice('Shrine', 'Rested', null, 3);
+    const way = wayOn(t.x, t.z);
+    if (!chapter.shrines.has(t.id)) { chapter.shrines.add(t.id); hud.notice('Shrine', 'The stones remember', 'Rested. The way back here is open.' + (way ? ' ' + way : ''), 7); }
+    else hud.notice('Shrine', 'Rested', way, way ? 5 : 3);
     if (!capture) game.saves.requestAutosave();
     g.openShrine?.(t);
   }
@@ -169,6 +196,9 @@ export function addChapterSystem(g) {
       for (let i = 0; i < targets.length; i++) {
         const t = targets[i];
         if (t.hidden || (t.hy !== undefined && Math.abs(p.y - t.y) > t.hy)) continue;       // (hy: the most the Wraith may be above or below it: a find on a ledge)
+        // (look: only while the camera is turned toward it — a thing seen from afar, a window high in a wall)
+        if (t.look) { const c = g.camera, ex = t.x - c.position.x, ey = t.y - c.position.y, ez = t.z - c.position.z, el = Math.hypot(ex, ey, ez) || 1, cp = Math.cos(c.rotation.x);
+          if ((Math.sin(c.rotation.y) * cp * ex - Math.sin(c.rotation.x) * ey + Math.cos(c.rotation.y) * cp * ez) / el < t.look) continue; }
         const dx = t.x - p.x, dz = t.z - p.z, d = dx * dx + dz * dz;
         if (d < t.r * t.r && d < best) { best = d; near = t; }
       }

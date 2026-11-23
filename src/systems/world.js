@@ -6,11 +6,13 @@ export function addWorldSystems(g) {
   loop.add({ name: 'environment', update: () => env.updateEnvironment() });
   loop.add({ name: 'world', update: () => {
     // Stream around a pending teleport target first, else the free camera, else the player.
+    // (A directed scene — systems/scenes.js — loads the place it is about to cut to: g.streamFocus.)
+    const sf = !pendingTp.active ? g.streamFocus : null;
     const focusFree = arm.free && !pendingTp.active;
-    streamer.px = pendingTp.active ? pendingTp.x : focusFree ? camera.position.x : controller.pos.x;
-    streamer.pz = pendingTp.active ? pendingTp.z : focusFree ? camera.position.z : controller.pos.z;
-    streamer.vx = focusFree || pendingTp.active ? 0 : controller.vel.x;
-    streamer.vz = focusFree || pendingTp.active ? 0 : controller.vel.z;
+    streamer.px = sf ? sf.x : pendingTp.active ? pendingTp.x : focusFree ? camera.position.x : controller.pos.x;
+    streamer.pz = sf ? sf.z : pendingTp.active ? pendingTp.z : focusFree ? camera.position.z : controller.pos.z;
+    streamer.vx = sf || focusFree || pendingTp.active ? 0 : controller.vel.x;
+    streamer.vz = sf || focusFree || pendingTp.active ? 0 : controller.vel.z;
     streamer.update();
     if (pendingTp.active) {
       // Complete only on a fine patch computed after the last tile upload, with every nearby tile

@@ -97,12 +97,15 @@ export function addClimbSystem(g) {
     // Whichever climb is gripping keeps the Wraith; a new grip goes to the Bellwether's neck within reach of its base,
     // otherwise to the Warden (they are in different biomes, so the choice is never close).
     const bb = bellwether.base, bdx = px - bb.x, bdz = pz - bb.z;
-    const bell = bellClimb.climbing || (!climb.climbing && bdx * bdx + bdz * bdz < NECK_NEAR * NECK_NEAR);
-    climb.grip = wantGrip && !bell; bellClimb.grip = wantGrip && bell;
-    for (const c of [climb, bellClimb]) { c.mx = mx; c.mz = mz; c.crx = crx; c.crz = crz; c.px = px; c.py = py; c.pz = pz; c.dt = clock.dt; }
+    // (The Lake Beacon, systems/beacon.js: the same neck climb on a stone column, near its foot.)
+    const bc = g.beaconClimb || null, bt = g.beaconTube;
+    const beacon = !!bc && (bc.climbing || (!climb.climbing && !bellClimb.climbing && (px - bt.base.x) ** 2 + (pz - bt.base.z) ** 2 < 14 * 14));
+    const bell = !beacon && (bellClimb.climbing || (!climb.climbing && bdx * bdx + bdz * bdz < NECK_NEAR * NECK_NEAR));
+    climb.grip = wantGrip && !bell && !beacon; bellClimb.grip = wantGrip && bell; if (bc) bc.grip = wantGrip && beacon;
+    for (const c of bc ? [climb, bellClimb, bc] : [climb, bellClimb]) { c.mx = mx; c.mz = mz; c.crx = crx; c.crz = crz; c.px = px; c.py = py; c.pz = pz; c.dt = clock.dt; }
     const prev = cl, was = prev.climbing;
-    climb.update(); bellClimb.update();
-    cl = bellClimb.climbing ? bellClimb : climb.climbing ? climb : prev;
+    climb.update(); bellClimb.update(); if (bc) bc.update();
+    cl = bellClimb.climbing ? bellClimb : bc && bc.climbing ? bc : climb.climbing ? climb : prev;
     g.activeClimb = cl;
     const climb_ = cl;
     // The camera's pivot stands off the climbed surface, so the Wraith is seen against it.

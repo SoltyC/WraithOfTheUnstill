@@ -122,6 +122,7 @@ ${ENV_DECL}
 varying vUv: vec2f;
 varying vAlpha: f32;
 varying vWorldPos: vec3f;
+uniform snowAsh: vec4f;             // x = ash 0..1 (systems/eruption.js): grey flakes, dull, no forward glint
 ${COMMON_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
@@ -139,7 +140,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let vis = shadowVisibilityFast(wp, uniforms.cameraPosition);
   // Lit by the whole sky (flakes are tiny white scatterers; at 0.9 they read as dark dashes
   // against sunlit snow), plus the sun.
-  let col = atmoKeyColor() * phase * vis * 0.45 + (shIrradiance(V) + shIrradiance(vec3f(0.0, 1.0, 0.0))) * uniforms.envMisc.w * 1.1;
+  let ash = uniforms.snowAsh.x;
+  let col = (atmoKeyColor() * mix(phase, 0.3, ash) * vis * 0.45 + (shIrradiance(V) + shIrradiance(vec3f(0.0, 1.0, 0.0))) * uniforms.envMisc.w * 1.1) * mix(1.0, 0.22, ash);
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
   let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
   let a = fragmentInputs.vAlpha * (1.0 - r2) * 0.85;

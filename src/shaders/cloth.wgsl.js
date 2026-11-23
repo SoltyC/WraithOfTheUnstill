@@ -73,12 +73,14 @@ uniform clothParams: vec4f;          // x = cowl light (health), y = time, z = s
 uniform clothHead: vec4f;            // xyz = the cowl light's position, w = breath 0..1
 uniform clothHandL: vec4f;           // xyz = left fingertips, w = glow
 uniform clothHandR: vec4f;           // xyz = right fingertips, w = glow
-uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1), y = Ember tea's warm hands (0..1), z = Rime tonic's frosted wool (0..1)
+uniform clothFrost: vec4f;           // x = frost creeping up from the hems as health falls (0..1), y = Ember tea's warm hands (0..1), z = Rime tonic's frosted wool (0..1), w = ash-cast (0..1)
 uniform clothTint: vec4f;            // rgb = robe dye (multiplies the outer garments), w = undyed trims kept (1)
 uniform clothRobe: vec4f;            // x = embroidered hem band, y = sash re-dyed (game/robes.js), w = sleeves turned back (m of cuff gone: the Drowned at work)
 uniform clothBand: vec4f;            // rgb = the band's thread
 uniform clothSash: vec4f;            // rgb = the sash's dye
 uniform clothFlow: vec4f;            // rgb = the element's light x Flow (hems and cuffs catch it), w = Flow 0..1
+uniform clothShawl: vec4f;           // a costume's shawl (the mantle): rgb = dye, w = on (render/wraith.js opts.costume)
+uniform clothCowl: vec4f;            // a costume's hood cloth: rgb, w = on
 ${SPELL_LIGHT_DECL}
 varying vWorldPos: vec3f;
 varying vNormal: vec3f;
@@ -122,7 +124,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // Torn edges: the robe's hem, the mantle's hem and the sleeves' cuffs are ragged (alpha-tested).
   let edgeM = (1.0 - uv.y) * sc.y;
-  if (g <= 4) {
+  // (A costume's hems are cut and sewn, not torn: render/wraith.js opts.costume.)
+  if (g <= 4 && uniforms.clothCowl.w < 0.5) {
     let depth = select(select(select(0.035, 0.05, g == 1), 0.025, g >= 2), 0.03, g == 4);
     let t = vn1(m.x * 26.0) * 0.65 + vn1(m.x * 95.0 + 3.0) * 0.35;
     if (edgeM < depth * t * t * t * 1.8 - 0.004) { discard; }
@@ -143,6 +146,22 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // The Veiled wear dyed robes (the Wraith's tint is 1).
   if (g <= 4 || g == 10) { albedo *= uniforms.clothTint.rgb; }
   if (g == 10 && uniforms.clothRobe.y > 0.5) { albedo = uniforms.clothSash.rgb; }
+  // A costume's shawl: the mantle in its own dyed wool, a soft woven check, and stripes in the robe's dye and an undyed
+  // cream across its lower edge (a farmer's shawl, docs/people-and-cutscenes.md §1.2).
+  if (g == 1 && uniforms.clothShawl.w > 0.5) {
+    let ms = uv * garmentScale(1);
+    let em = (1.0 - uv.y) * garmentScale(1).y;
+    albedo = uniforms.clothShawl.rgb;
+    let ck = step(0.5, fract(ms.x * 9.0)) + step(0.5, fract(ms.y * 9.0));
+    albedo *= 0.9 + 0.1 * abs(ck - 1.0);
+    let st1 = step(0.03, em) * step(em, 0.05);
+    let st2 = step(0.075, em) * step(em, 0.083) + step(0.1, em) * step(em, 0.108);
+    albedo = mix(albedo, uniforms.clothTint.rgb * vec3f(0.18, 0.185, 0.2), st1);
+    albedo = mix(albedo, vec3f(0.5, 0.46, 0.38), st2);
+  }
+  if (g == 4 && uniforms.clothCowl.w > 0.5) { albedo = uniforms.clothCowl.rgb; }
+  // Dyed wool shines in its own colour: a costume's sheen is the dye's, not the charcoal's grey (that greyed every colour pale).
+  if ((uniforms.clothShawl.w > 0.5 || uniforms.clothCowl.w > 0.5) && (g <= 4 || g == 10)) { sheenTint = albedo * 0.9 + vec3f(0.01); }
 
   // Large-scale wear and fading (tens of cm), and slubs in the yarn (cm).
   let wear = vn2(m * vec2f(3.1, 2.3) + vec2f(f32(g) * 7.3, 0.0));
@@ -211,7 +230,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // A robe's embroidered hem band: a running lozenge between two ruled lines, a hand's breadth up
   // from the hem (a little worn: the thread shows the wool through it).
-  if ((g == 0 || g == 1) && uniforms.clothRobe.x > 0.5) {
+  if ((g == 0 || (g == 1 && uniforms.clothShawl.w < 0.5)) && uniforms.clothRobe.x > 0.5) {
     let v0 = select(0.09, 0.05, g == 1);
     let bv = (edgeM - v0) / 0.14;
     if (bv > 0.0 && bv < 1.0) {
@@ -229,6 +248,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     albedo *= 1.0 - (0.3 + 0.2 * uniforms.wetParams.x) * wet;
     let dust = (1.0 - smoothstep(0.0, 0.09, edgeM)) * smoothstep(0.35, 0.75, vn2(m * vec2f(14.0, 30.0)));
     albedo = mix(albedo, vec3f(0.42, 0.44, 0.47), dust * 0.45 * uniforms.clothParams.z);
+  }
+  // Ash-cast (systems/eruption.js): the figure kept in a grey crust of ash, its colours gone, the folds still there.
+  let ashK = uniforms.clothFrost.w;
+  if (ashK > 0.0) {
+    let grain = vn2(m * vec2f(9.0, 21.0));
+    albedo = mix(albedo, vec3f(0.25, 0.24, 0.23) * (0.75 + 0.5 * grain) + dot(albedo, vec3f(0.3, 0.5, 0.2)) * 0.12, ashK);
   }
 
   // Wounds: frost creeps up the robe from the hem (and in from cuffs and the mantle's edge) as
@@ -352,7 +377,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 // ---- Shell fur: the same particles, extruded along the normal by shell; strands are cells of a
 // jittered grid in garment metres, tapering and ending at a per-strand length.
 export const furVertexWGSL = /* wgsl */ `
-attribute position: vec3f;          // x = particle id + 4096·shell, yz = garment uv
+attribute position: vec3f;          // x = particle id + 262144·shell, yz = garment uv
 uniform viewProjection: mat4x4f;
 uniform furParams: vec4f;           // x = wind x, y = wind z, z = time, w = sleeves turned back (m: no fur on the cuff's last stretch)
 var<storage, read> clothVerts: array<vec4f>;
@@ -366,8 +391,8 @@ varying vOcc: f32;
 @vertex
 fn main(input: VertexInputs) -> FragmentInputs {
   let id = u32(vertexInputs.position.x + 0.5);
-  let i = id & 4095u;
-  let shell = f32(id >> 12u);
+  let i = id & 262143u;
+  let shell = f32(id >> 18u);
   let a = clothVerts[i * 2u];
   let b = clothVerts[i * 2u + 1u];
   let g = floor(a.w + 0.001);

@@ -110,7 +110,8 @@ fn tn_mesoField(x: f32, z: f32, wA: vec4f, wB: vec2f, wind: vec2f, dune: vec2f, 
   if (wB.x > 0.001) {
     let phase = u / 60.0 + 0.6 * tn_fbm(u / 500.0, v / 350.0, 3, S + 21u);
     let p = phase - floor(phase);
-    h += (wB.x * tn_lodFade(60.0, s)) * (tn_duneProfile(p) * 3.2 * (0.6 + 0.4 * tn_fbm(v / 140.0, u / 300.0, 2, S + 22u)) + 0.4 * tn_fbm(x / 30.0, z / 30.0, 3, S + 23u));
+    let pit = smoothstep(150.0, 210.0, length(vec2f(x - 2350.0, z + 2150.0)));   // (none in the crater: terrain/meso.js)
+    h += (wB.x * tn_lodFade(60.0, s) * pit) * (tn_duneProfile(p) * 3.2 * (0.6 + 0.4 * tn_fbm(v / 140.0, u / 300.0, 2, S + 22u)) + 0.4 * tn_fbm(x / 30.0, z / 30.0, 3, S + 23u));
   }
   if (wA.y > 0.001) { h += (wA.y * tn_lodFade(8.0, s)) * 1.1 * tn_fbm(x / 55.0, z / 55.0, 4, S + 31u); }
   if (wA.z > 0.001) { h += (wA.z * tn_lodFade(8.0, s)) * 0.35 * tn_fbm(x / 9.0, z / 9.0, 3, S + 41u); }

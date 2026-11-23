@@ -11,7 +11,7 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { BRDF_WGSL } from './brdf.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 
-export const ARCH_SITES = 640; // frost 58 (incl. 5 NPC props) + the meadow village (~110 buildings, ~100 lanterns) + the manor, shrines and side sites (~400 before the nooks) + the 39 nooks (464) + the erg's ruins (Phase 9 D7)
+export const ARCH_SITES = 768; // (640 until the meadow's kiln flue, 2026-11-22, made 644) frost 58 (incl. 5 NPC props) + the meadow village (~110 buildings, ~100 lanterns) + the manor, shrines and side sites (~400 before the nooks) + the 39 nooks (464) + the erg's ruins (Phase 9 D7)
 
 const ARCH_VERTEX = /* wgsl */ `
 attribute position: vec3f;
@@ -52,6 +52,40 @@ fn main(input: VertexInputs) -> FragmentInputs {
 }
 `;
 export const archVertexWGSL = ARCH_VERTEX;
+
+// A collapsing or collapsed building's pieces (render/debris.js; world/fracture.js, game/collapse.js): each vertex is
+// relative to its fragment's pivot; the fragment's world position and rotation come from debrisXf (two vec4 a fragment:
+// position + spare, quaternion). Same varyings as the standing building, so the fragment shader is the architecture's.
+export const archDebrisVertexWGSL = /* wgsl */ `
+attribute position: vec3f;
+attribute normal: vec3f;
+attribute uv: vec2f;
+attribute info: vec4f;       // site, material, seed, carve
+attribute frag: vec4f;       // x = fragment, y = the vertex's local height as it stood
+uniform viewProjection: mat4x4f;
+var<storage, read> debrisXf: array<vec4f>;
+varying vWorldPos: vec3f;
+varying vNormal: vec3f;
+varying vUv: vec2f;
+varying vInfo: vec4f;
+varying vLocalY: f32;
+
+fn qRot(q: vec4f, v: vec3f) -> vec3f { let t = 2.0 * cross(q.xyz, v); return v + q.w * t + cross(q.xyz, t); }
+
+@vertex
+fn main(input: VertexInputs) -> FragmentInputs {
+  let f = u32(vertexInputs.frag.x + 0.5);
+  let p = debrisXf[f * 2u];
+  let q = debrisXf[f * 2u + 1u];
+  let wp = p.xyz + qRot(q, vertexInputs.position);
+  vertexOutputs.position = uniforms.viewProjection * vec4f(wp, 1.0);
+  vertexOutputs.vWorldPos = wp;
+  vertexOutputs.vNormal = qRot(q, vertexInputs.normal);
+  vertexOutputs.vUv = vertexInputs.uv;
+  vertexOutputs.vInfo = vertexInputs.info;
+  vertexOutputs.vLocalY = vertexInputs.frag.y;
+}
+`;
 
 export const archFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
@@ -177,6 +211,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     else { layer = MAT_PLASTER; }   // glass: no scan of its own, the sample is unused
     texScale = 1.0 / tile;
   }
+  if (mid == 20) { layer = MAT_ROCK_STRATA; texScale = 0.7; }   // basalt (Cinderhold)
   // Derivatives from the continuous uv: the per-block offset jumps at every block's edge.
   let cuv = uv * texScale;
   let tuv = cuv + vec2f(fract(bseed * 7.13), fract(bseed * 3.71)) * 7.0;
@@ -195,13 +230,13 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let n2 = noised(wp.xz * 0.35 + vec2f(seed)).x;
   let topFace = abs(N.y) > 0.7;
 
-  if (mid <= 1) {
+  if (mid <= 1 || mid == 20) {
     // Shaper stone: the scan, each block a little warmer or cooler, lighter or darker; weathered
     // darker toward the ground and in the wet; lichen where it is sheltered and faces north;
     // rime in the deepest pores.
     let tint = vec3f(1.0 + 0.08 * (hs - 0.5), 1.0, 1.0 - 0.1 * (hs - 0.5)) * (0.74 + 0.4 * fract(hs * 5.3));
     // Pale, warm Shaper limestone (the scan's detail, the art direction's colour).
-    albedo = matRetint(ms, layer, vec3f(0.34, 0.335, 0.32), 0.3) * tint;
+    albedo = matRetint(ms, layer, select(vec3f(0.34, 0.335, 0.32), vec3f(0.075, 0.07, 0.068), mid == 20), 0.3) * tint;
     albedo *= pow(max(dot(ms.albedo / matMean(layer), vec3f(0.333)), 0.05), 0.6); // the scan's own light and dark, deepened
     if (info.w > 5.5) { albedo *= 0.5; ao *= 0.55; } // a joint (block chamfers): recessed, shadowed
     N = ms.N; rough = mix(0.7, 1.0, ms.rough); ao = mix(1.0, ms.ao, 0.85);

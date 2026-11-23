@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PEOPLE, newPerson, stepPerson, sayName, shakeOff, ST, DR } from '../src/game/drowned.js';
+import { PEOPLE, NAMEABLE, newPerson, stepPerson, sayName, shakeOff, ST, DR } from '../src/game/drowned.js';
 import { createNoise, noiseStep, noiseAt, hears, NOISE } from '../src/game/noise.js';
 import { buildCity, createEbbholdSolids, EBB_ORIGIN as O } from '../src/world/ebbhold.js';
 
@@ -65,6 +65,16 @@ describe('the Drowned', () => {
     w.x += 30;   // the Wraith walks away quietly
     for (let i = 0; i < 60 * 20 && p.state !== ST.TASK; i++) stepPerson(p, quietNoise(), w, 1 / 60, free);
     expect(p.state).toBe(ST.TASK);
+  });
+  it('six can be named, each by a name kept where they work (M3), the rest only held', () => {
+    const named = PEOPLE.filter((d) => d.sign);
+    expect(named.map((d) => d.id).sort()).toEqual([...NAMEABLE].sort());
+    for (const d of named) {
+      if (d.sign === 'register') { expect(d.task).toBe('scribe'); continue; }
+      const a = d.at || d.path?.[0] || d.c;
+      expect(Math.hypot(d.sign.at[0] - a[0], d.sign.at[1] - a[1]), d.id).toBeLessThan(5);
+      expect(d.sign.text.toUpperCase()).toContain(d.name.toUpperCase());
+    }
   });
   it('are shaken off by a dodge, and stopped for good by their own name only', () => {
     const p = newPerson(PEOPLE.find((d) => d.id === 'teodor'));

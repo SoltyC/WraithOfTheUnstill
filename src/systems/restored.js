@@ -38,7 +38,8 @@ export function addRestoredSystem(g) {
   // What stands: shown once its biome is restored (or its request done), every quarter second.
   const rules = [];
   const rule = (id, f) => { const i = ctx.site(id); if (i >= 0) rules.push({ s: SITES[i], f }); };
-  for (const b of data.banners) rule(b.id, () => !restored(b.stream.startsWith('frost') ? 'frost' : 'meadow'));
+  const streamBiome = Object.fromEntries(data.streams.map((q) => [q.id, q.biome]));
+  for (const b of data.banners) rule(b.id, () => !restored(streamBiome[b.stream]));
   rule('rw-shelf-cairn', () => !restored('frost'));
   data.summit.rings.forEach((r, k) => rule('rw-ring-' + (k + 1), () => !restored('frost')));
   rule('rw-varo-pennant', () => !flags.has('restored:shelf-thanked'));

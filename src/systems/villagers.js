@@ -6,7 +6,7 @@
 //     Wenna, a young woman with a lantern, stands at the road head. Talking to her sets
 //     `meadow:guide-lead`; she then runs ahead along the north street to the square, stopping and
 //     turning back whenever the Wraith falls more than ~22 m behind (game/villagers.js leadStep).
-//  2. Arrival (`meadow:arrived`): the raid. This system ignites the 14 burning plots (village.firePlots,
+//  2. Arrival (`meadow:arrived`): the raid. This system ignites the 10 burning plots (village.firePlots,
 //     the child's house first, one every 0.35 s) through the fire system's interface (below). The
 //     villagers panic: buckets from the well, callers at the burning houses, the rest run to the
 //     square and cower. Marit calls at Ebb's house; Ebb runs inside and cowers.
@@ -37,10 +37,11 @@
 import { pinTime, unpinTime } from '../core/clock.js';
 import { LEAD, CHILD, makePath, pathAt, projectOnPath, newGuide, leadStep, newChild, childStep, stepToward, ringSlots, frontOf, houseSpots, nearestFirst, stairDir } from '../game/villagers.js';
 import { createStreetNav, walkTo } from '../game/streetNav.js';
+import { manorWorld, FACING as MANOR_FACING } from '../world/manor.js';
 
 const QUEST = 'meadow-the-burning-night';
 const NIGHT_HOUR = 22;
-const TINTS = { 'meadow-wenna': null, 'meadow-marit': [2.0, 1.2, 0.8], 'meadow-ebb': null, 'meadow-hild': null, 'meadow-corin': [1.3, 1.5, 1.0], 'meadow-doran': [1.2, 1.2, 1.7] };
+const TINTS = { 'meadow-alder': [1.5, 1.1, 0.75], 'meadow-tamsin': [1.9, 1.0, 1.1], 'meadow-wenna': null, 'meadow-marit': [2.0, 1.2, 0.8], 'meadow-ebb': null, 'meadow-hild': null, 'meadow-corin': [1.3, 1.5, 1.0], 'meadow-doran': [1.2, 1.2, 1.7] };
 
 /** @param {any} g  shared boot context */
 export function addVillagerSystem(g) {
@@ -101,6 +102,7 @@ export function addVillagerSystem(g) {
     });
     N_['meadow-wenna'].brain = wennaBrain; N_['meadow-marit'].brain = maritBrain; N_['meadow-ebb'].brain = ebbBrain;
     N_['meadow-hild'].brain = hildBrain; N_['meadow-corin'].brain = corinBrain; N_['meadow-doran'].brain = doranBrain;
+    for (const id of ['meadow-alder', 'meadow-tamsin']) if (N_[id]) { N_[id].brain = captiveBrain; Object.assign(N_[id].v, CAPTIVE[id]); }
     restart = true;
   }
 
@@ -253,9 +255,40 @@ export function addVillagerSystem(g) {
   const doorSpot = [foot[0] - sdir[0] * 1.8 + srt[0] * 2.2, foot[1] - sdir[1] * 1.8 + srt[1] * 2.2];
   const asideSpot = [foot[0] - sdir[0] * 1.8 + srt[0] * 7.0, foot[1] - sdir[1] * 1.8 + srt[1] * 7.0];
   function doranBrain(n, dt) {
+    // His fate (systems/doran.js) takes him away: cast out north, lost in the manor, or gone south with Wenna — never in sight.
+    const away = flags.has('meadow:doran-told') || flags.has('fate:doran:dead') || (flags.has('fate:doran:moved') && dist(wp.x, wp.z, M[0], M[1]) > 350);
+    if (away) { if (n.hide || dW(n) > 60) { n.hide = true; halt(n); } else { n.noLook = true; walkTo(nav, n, road[0], road[1], 0, 1.4, dt); } return; }
+    n.hide = false;
     const open = flags.has('meadow:stair-open'), s = open ? asideSpot : doorSpot;
     goStand(n, s[0], s[1], 1.6, dt, Math.atan2(sdir[0], sdir[1]) + (open ? 1.4 : 0));
     n.noLook = !open && dW(n) > 14; n.hunch = undefined;
+  }
+
+  // ── Alder and Tamsin, taken up the hill on the fire night ─────────────────────────────────────
+  // Hidden until the Bellwether is released; then slumped against the dry fountain's rim on the stair side (seen on arriving), where its
+  // bell held them. Spoken to, they are found (a dialogue flag); once found, they go home to Hearn while
+  // neither the hill nor their home is in sight (the flag `meadow:<name>-home` is what Hearn's people read).
+  const CAPTIVE = {
+    'meadow-alder': { hill: manorWorld(-1.7, 32.7), home: [corinA[0] + 1.7, corinA[1] + 0.9], found: 'meadow:alder-found', atHome: 'meadow:alder-home' },
+    'meadow-tamsin': { hill: manorWorld(1.5, 33.1), home: [hallFront[0] + 2.2, hallFront[1] - 1.4], found: 'meadow:tamsin-found', atHome: 'meadow:tamsin-home' },
+  };
+  function captiveBrain(n, dt) {
+    const v = n.v;
+    if (!flags.has('meadow:bellwether-released')) { n.hide = true; n.x = v.hill[0]; n.z = v.hill[1]; halt(n); return; }
+    n.hide = false;
+    if (!flags.has(v.atHome)) {
+      if (flags.has(v.found) && dW(n) > 90 && dist(wp.x, wp.z, v.home[0], v.home[1]) > 90) {
+        n.x = v.home[0]; n.z = v.home[1]; halt(n); flags.add(v.atHome); chapter.raise(v.atHome); n.hunch = undefined; return;
+      }
+      n.x = v.hill[0]; n.z = v.hill[1]; halt(n);
+      // Slumped where the bell held them; sitting straighter once someone has spoken to them.
+      hunchTo(n, flags.has(v.found) ? 0.22 : 0.55, dt);
+      n.noLook = dW(n) > 10;
+      if (n.noLook) n.yaw = MANOR_FACING;
+      return;
+    }
+    n.hunch = undefined; n.noLook = false;
+    goStand(n, v.home[0], v.home[1], 1.4, dt);
   }
 
   // ── Ebb ───────────────────────────────────────────────────────────────────────────────────────
@@ -315,6 +348,16 @@ export function addVillagerSystem(g) {
     if (phase === 'after') {
       n.noLook = false; hunchTo(n, n.A.hunch, dt); goStand(n, v.slot[0], v.slot[1], 1.8, dt, Math.atan2(M[0] - v.slot[0], M[1] - v.slot[1]));
       return;
+    }
+    if (phase === 'calm' && flags.has('meadow:stair-open')) {
+      // Ordinary days after the fire (M3b routines): errands and doorsteps by day, indoors at night — the givers keep their doors
+      // (their quests may want them after dark). Coming and going only out of the Wraith's sight (never popping in or out in view).
+      const tod = g.params?.v.timeOfDay ?? 12, night = tod > 21.5 || tod < 5.5;
+      if (night && v.role !== 'giver') {
+        if (n.hide || dW(n) > 45) { n.hide = true; halt(n); return; }
+        n.noLook = true; goStand(n, v.post[0], v.post[1], 1.5, dt, v.yawPost); return;   // heading home
+      }
+      if (n.hide) { if (dW(n) > 45) { n.hide = false; n.x = v.post[0]; n.z = v.post[1]; n.xf.ox = n.x; n.xf.oz = n.z; n.placed = false; } else { halt(n); return; } }
     }
     if (phase !== 'raid' || raidClock < v.delay) {
       n.noLook = false; hunchTo(n, n.A.hunch, dt);

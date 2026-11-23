@@ -1,3 +1,4 @@
+import { LAVA_SEGS } from '../shaders/clipmap.wgsl.js';
 import { createClipmapGrid } from './clipmapGrid.js';
 import { CLIPMAP_SHADOW_N } from '../terrain/clipmapLayout.js';
 // Clipmap terrain renderer (BRIEF §4.2). One static grid patch drawn as CLIPMAP_LEVELS thin
@@ -74,9 +75,14 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   const levels = new Array(16 * 4).fill(0.5);
   const camGrid = new Vector4(0, 0, 0, 0);
   const playerPos = new Vector4(0, 0, 0, 0.6);
+  // The crater's lava lake lighting its pit (systems/volcano.js): level (m), glow (display-referred), radius (m).
+  const lavaGlow = new Vector4(-1000, 0, 80, 0);
+  // The eruption's flows lighting the land round them (systems/eruption.js): LAVA_SEGS segments along their hot stretches,
+  // each (a.xyz, intensity), (b.xyz, radius); intensity 0 = none.
+  const lavaSegs = new Float32Array(LAVA_SEGS * 8);
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
-    uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', 'lavaGlow', 'lavaSegs', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS, 'rockMask'],
     storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -86,6 +92,8 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   mat.setArray4('levels', levels);
   mat.setVector4('camGrid', camGrid);
   mat.setVector4('playerPos', playerPos);
+  mat.setVector4('lavaGlow', lavaGlow);
+  mat.setArray4('lavaSegs', lavaSegs);
   // Spell lights (written in place by the bending systems each frame).
   bindMaterialLibrary(mat, matLib); // scanned rock on the cliffs
   const spellLights = new Float32Array(LIGHT_SLOTS * 8);
@@ -105,7 +113,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   let builtResidency = -1;
 
   return {
-    mesh, centerMesh, shadowMesh, shadowCenter, shadowN, material: mat, playerPos, levelData, params, levels, camGrid, buffers, spellLights, lightGrid,
+    mesh, centerMesh, shadowMesh, shadowCenter, shadowN, material: mat, playerPos, lavaGlow, lavaSegs, levelData, params, levels, camGrid, buffers, spellLights, lightGrid,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
     /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
     stateBound: [],

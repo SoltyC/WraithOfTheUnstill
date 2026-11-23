@@ -26,7 +26,7 @@ export function addWeaponViewSystem(g) {
   const head = new FlailHead();
   // Doubles in an object, not closure variables (a closure variable holding a double boxes on every write).
   const fl = { flare: 0.5 - 0.5, lastT: -1, t: 0.5 - 0.5, dt: 0.5 - 0.5, zx: 0.5, zy: 0.5, zz: 0.5, flame: 0.5 };
-  let lamp = null, pyre = null, findLamp = null; const burnLamps = [];
+  let lamp = null, pyre = null, findLamp = null, stowed = 0; const burnLamps = [];
 
   // Basis and origin of slot k's weapon → V.ax…pz (world), from the pose slot `ps` held in hand `hand` (and the rest hand).
   function orient(ps, hand, def) {
@@ -58,9 +58,11 @@ export function addWeaponViewSystem(g) {
     // Everything in hand hidden, then the weapon carried.
     V.show = false; V.tr = 0; V.tg = 0; V.tb = 0;
     for (let k = 0; k < HELD.length; k++) V.place(HELD[k]);
-    if (def === null || !wraithView.isEnabled()) return;
+    // In the water the weapon goes back into the hand (the way a fresh draw grows out of it), and comes out again on land.
+    stowed += ((controller.swimming ? 1 : 0) - stowed) * Math.min(1, clock.realDt * 5);
+    if (def === null || !wraithView.isEnabled() || stowed > 0.98) return;
     // A fresh draw grows out of the hand.
-    const grow = weapons.swapT > 0 ? 1 - weapons.swapT / weaponFeel.swapTime : 1;
+    const grow = (weapons.swapT > 0 ? 1 - weapons.swapT / weaponFeel.swapTime : 1) * (1 - stowed);
     const sc = grow * grow * (3 - 2 * grow);
     V.show = true; V.tr = 0; V.tg = 0; V.tb = 0;
     if (def.id === 'flail') placeFlail(def, sc);

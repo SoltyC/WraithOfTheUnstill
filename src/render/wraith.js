@@ -76,20 +76,23 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   const wraith = new Wraith(opts.simGround || ground);
   const xf = opts.xform || null;
   const n = wraith.cloth.n;
-  if (n > 4096) throw new Error('Wraith: fur encoding needs particle ids < 4096');
+  // GPU cloth (a Veiled; render/clothGpu.js): the shared output buffer, this figure's particles at slot × n.
+  const gh = opts.clothGpu ? opts.clothGpu.alloc() : null, gpu = gh ? opts.clothGpu : null, base = gh ? gh.slot * n : 0;
+  if (gpu) wraith.gpu = true;
+  if (base + n > 262144) throw new Error('Wraith: fur encoding needs particle ids < 262144');
 
   // ---- Cloth: position = (particle id, u, v); indices from the garment grids.
   const pos = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { pos[i * 3] = i; pos[i * 3 + 1] = wraith.uv[i * 2]; pos[i * 3 + 2] = wraith.uv[i * 2 + 1]; }
+  for (let i = 0; i < n; i++) { pos[i * 3] = base + i; pos[i * 3 + 1] = wraith.uv[i * 2]; pos[i * 3 + 2] = wraith.uv[i * 2 + 1]; }
   const mesh = staticMesh(new Mesh(opts.name || 'wraith', scene));
   const vd = new VertexData(); vd.positions = pos; vd.indices = wraith.indices; vd.applyToMesh(mesh, false);
-  const verts = new StorageBuffer(engine, wraith.packed.byteLength, undefined, 'wraith-cloth');
+  const verts = gpu ? gpu.out : new StorageBuffer(engine, wraith.packed.byteLength, undefined, 'wraith-cloth');
   const clothParams = new Vector4(1, 0, 1, 0.6);
   const head = new Vector4(0, 0, 0, 1), handL = new Vector4(0, 0, 0, 0), handR = new Vector4(0, 0, 0, 0);
   const lit = { samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES], storage: [...ATMO_MATERIAL_BUFFERS, 'shadowData'] };
   const mat = new ShaderMaterial('cloth', scene, { vertex: 'cloth', fragment: 'cloth' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'clothRobe', 'clothBand', 'clothSash', 'clothFlow', 'spellLights', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'clothParams', 'clothHead', 'clothHandL', 'clothHandR', 'clothFrost', 'clothTint', 'clothRobe', 'clothBand', 'clothSash', 'clothFlow', 'clothShawl', 'clothCowl', 'spellLights', ...ENV_UNIFORMS],
     samplers: lit.samplers, storageBuffers: ['clothVerts', ...lit.storage, 'lightGrid'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
@@ -104,12 +107,19 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   // Robe look (game/robes.js): x = embroidered hem band on, y = sash re-dyed; band / sash colours.
   const robeV = new Vector4(0, 0, 0, opts.sleeveCut || 0), bandV = new Vector4(0, 0, 0, 0), sashV = new Vector4(0, 0, 0, 0);
   mat.setVector4('clothTint', tintV); mat.setVector4('clothRobe', robeV); mat.setVector4('clothBand', bandV); mat.setVector4('clothSash', sashV);
+  // A costume (docs/people-and-cutscenes.md §1.2; opts.costume): the mantle worn as a dyed, striped shawl (rgb, w = on) and the hood
+  // in its own cloth (rgb, w = on); the robe's band and sash from the costume too.
+  const cos = opts.costume || null;
+  const shawlV = new Vector4(...(cos?.shawl || [0, 0, 0]), cos?.shawl ? 1 : 0), cowlV = new Vector4(...(cos?.cowl || [0, 0, 0]), cos?.cowl ? 1 : 0);
+  if (cos?.sash) { robeV.y = 1; sashV.set(cos.sash[0], cos.sash[1], cos.sash[2], 0); }
+  if (cos?.band) { robeV.x = 1; bandV.set(cos.band[0], cos.band[1], cos.band[2], 0); }
+  mat.setVector4('clothShawl', shawlV); mat.setVector4('clothCowl', cowlV);
   mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
   mat.setArray4('spellLights', clipmap.spellLights); // fire, lantern and spell light on the robe
   mat.backFaceCulling = false;
   mesh.material = mat;
 
-  // ---- Fur: the fur regions' particles, one copy per shell; x = particle id + 4096·shell.
+  // ---- Fur: the fur regions' particles, one copy per shell; x = particle id + 262144·shell.
   const fi = wraith.furIndices, local = new Map(), ids = [];
   for (const i of fi) if (!local.has(i)) { local.set(i, ids.length); ids.push(i); }
   const U = ids.length;
@@ -117,7 +127,7 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
   for (let s = 0; s < FUR_SHELLS; s++) {
     for (let k = 0; k < U; k++) {
       const i = ids[k], o = (s * U + k) * 3;
-      fpos[o] = i + 4096 * s; fpos[o + 1] = wraith.uv[i * 2]; fpos[o + 2] = wraith.uv[i * 2 + 1];
+      fpos[o] = base + i + 262144 * s; fpos[o + 1] = wraith.uv[i * 2]; fpos[o + 2] = wraith.uv[i * 2 + 1];
     }
     for (let t = 0; t < fi.length; t++) fidx[s * fi.length + t] = s * U + local.get(fi[t]);
   }
@@ -161,7 +171,9 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
 
   let sprayNext = 0, seed = 1;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  const meshes = [mesh, fur, fx];
+  // A costume has no fur at the hood's rim and cuffs (that is the Wraith's and the frost folk's).
+  const meshes = cos && cos.fur === false ? [mesh, fx] : [mesh, fur, fx];
+  if (cos && cos.fur === false) fur.setEnabled(false);
   // Flow: the hand-light's trail, a short ring of where each fingertip was (world space).
   const trail = new Float32Array(2 * FX_TRAIL * 4);   // per point: x, y, z, time made
   let trailNext = 0, trailAt = -1e9;
@@ -182,6 +194,8 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     frost: 0.5 - 0.5,
     /** Ember tea's warm hands and Rime tonic's frosted wool (0..1; systems/economy.js, creatures.js). */
     warm: 0.5 - 0.5, rime: 0.5 - 0.5,
+    /** Ash-cast (0..1; systems/eruption.js): a figure the eruption kept, grey, its colours gone. */
+    ash: 0.5 - 0.5,
     /** Flow (game/flow.js, eased 0..3): the hems and cuffs catch the element's light and the hand-light trails. */
     flowLevel: 0.5 - 0.5,
     /** The element's light for Flow (rgb): frost cold blue, gale pale green. */
@@ -279,15 +293,15 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     /** Run the simulation only, without upload (a far Veiled keeps its pose cheaply). */
     update() {
       wraith.update();
-      if (xf) mapOut(wraith.packed, n, xf);
-      verts.update(wraith.packed);
+      if (gpu) gpu.add(wraith, gh, xf);
+      else { if (xf) mapOut(wraith.packed, n, xf); verts.update(wraith.packed); }
       const b = wraith.body, t = this.time;
       // The cowl light: deep in the hood, a little forward of the head's centre, breathing slowly.
       const breath = 1 - BREATH_DEPTH * (0.5 + 0.5 * Math.sin(t * 2 * Math.PI / BREATH_PERIOD));
       head.x = b.head[0] + b.hf[0] * 0.07 - b.hu[0] * 0.015; head.y = b.head[1] + b.hf[1] * 0.07 - b.hu[1] * 0.015; head.z = b.head[2] + b.hf[2] * 0.07 - b.hu[2] * 0.015;
       head.w = this.cowlLight * breath;
       clothParams.x = 1; clothParams.y = t; clothParams.w = this.handLight;
-      frostCreep.x = this.frost; frostCreep.y = this.warm; frostCreep.z = this.rime;
+      frostCreep.x = this.frost; frostCreep.y = this.warm; frostCreep.z = this.rime; frostCreep.w = this.ash;
       // Fingertips: along the forearm past the wrist.
       for (let s = 0; s < 2; s++) {
         const o = s * 3, h = s === 0 ? handL : handR;

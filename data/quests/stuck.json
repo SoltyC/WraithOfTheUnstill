@@ -1,0 +1,29 @@
+{
+  "_review": "The stuck layer (docs/direction.md §2.2 layer 4, M3b; systems/stuck.js). Keyed by quest/step. When the Wraith has spent `after` seconds within `near` m of a step's goal (or anywhere, without `near`) and the step has not moved on, `by` (a person who would plausibly be there or call out) says the next line: one more piece, never the answer. Each line is said once; the next waits another `after`.",
+  "meadow-cold-forge/clear": { "after": 75, "near": 90, "by": "Wenna", "lines": [
+    "Garrow said the vents stand low, like stumps of stone. Look for turf grown over stone.",
+    "If the turf will not come off, get close to it and pull. It is only sod."
+  ] },
+  "meadow-wind-gap/find": { "after": 50, "near": 120, "by": "Senna", "lines": [
+    "Over here! By the last stone, near the edge!",
+    "Wait behind a stone until it has gone past, then run to the next one!"
+  ] },
+  "meadow-wind-gap/bring": { "after": 45, "near": 140, "by": "Senna", "lines": [
+    "Go on ahead of me. I only move when it has just gone past.",
+    "Get to the next stone up the gap, and I will come."
+  ] },
+  "meadow-lake-beacon/open": { "after": 70, "near": 60, "by": "Wenna", "lines": [
+    "Hold on to it and climb, like a tree. The shutters are on its sides, not only the front.",
+    "Close to a shutter, strike it. Rust gives if you hit it hard enough."
+  ] },
+  "dunes-into-the-erg/sled": { "after": 90, "near": 120, "by": "Sarai", "lines": [
+    "The sled is under the dune just north of the camp. Look for the runner tips sticking out of the sand."
+  ] },
+  "dunes-follow-the-glass/track": { "after": 120, "by": "Sarai", "lines": [
+    "The Walker lies east of the Stride, on the great star dune. Follow the glass the storm left, east.",
+    "When it wakes, climb onto its back. Its pillars steer it."
+  ] },
+  "dunes-follow-the-glass/home": { "after": 120, "near": 260, "by": "Sarai", "lines": [
+    "Steer it west, to the Wellhouse. The tall pillars turn it. The song makes them turn harder."
+  ] }
+}

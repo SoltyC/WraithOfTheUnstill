@@ -29,7 +29,7 @@ export function addVillageFireSystem(g) {
     if (m && m.ridgeY) vf.setRidge(i, m.ridgeY, m.ridgeAlongA, m.ridgeHalf, m.ridgeC);
   }
   const F = g.fire.fires, FX = g.fire.fireX, FL = g.fire.fireL, FT = g.fire.fireT;
-  const SLOTS = F.length / 4;
+  const SLOTS = 48;   // (its own: 8..47; 48.. are the eruption's, systems/eruption.js)
 
   /** The fire's own wind (the meadow is stilled: its air barely moves, so spread and smoke lean on a floor of 0.5). Override: g.villageFireWind = { x, z, strength }. */
   const wind = { x: 1, z: 0, strength: 0.5 };
@@ -217,7 +217,7 @@ export function addVillageFireSystem(g) {
     const order = [];
     for (let i = 0; i < N; i++) order.push(i);
     order.sort((a, b) => Math.hypot(vf.x(a) - MARKET[0], vf.z(a) - MARKET[1]) - Math.hypot(vf.x(b) - MARKET[0], vf.z(b) - MARKET[1]));
-    for (let k = 0; k < 12 && k < N; k++) vf.ignite(order[k], 0);
+    for (let k = 0; k < 10 && k < N; k++) vf.ignite(order[k], 0);
     windAt();
     for (let t = 0; t < 75; t += 0.25) vf.update(0.25, wind); // already well alight when the player arrives
     vf.clearEvents();

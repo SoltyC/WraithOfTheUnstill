@@ -10,7 +10,9 @@ const frost = JSON.parse(fs.readFileSync('data/quests/frost.json', 'utf8'));
 const meadow = JSON.parse(fs.readFileSync('data/quests/meadow.json', 'utf8'));
 const pois = JSON.parse(fs.readFileSync('data/world/pois.json', 'utf8')).pois;
 const village = JSON.parse(fs.readFileSync('data/world/village.json', 'utf8'));
-const data = mergeChapters(frost, meadow);
+// (Merged as the game merges them: the meadow's data goes in front of tables from its side quests — Maud's, the Wind Gap.)
+const side = JSON.parse(fs.readFileSync('data/quests/meadow-side.json', 'utf8'));
+const data = mergeChapters(frost, meadow, side);
 
 function setup() {
   const ch = createChapter({ data, pois, hooks: {} });
@@ -58,8 +60,7 @@ describe('meadow chapter data', () => {
     expect(meadow.village.market).toEqual(village.meta.market.map((v) => Math.round(v * 100) / 100));
     expect(pois.find((p) => p.id === 'stair-foot').pos).toEqual(village.meta.foot);
     const plots = new Map(village.plots.map((p) => [p.id, p]));
-    expect(meadow.village.firePlots.length).toBeGreaterThanOrEqual(12);
-    expect(meadow.village.firePlots.length).toBeLessThanOrEqual(16);
+    expect(meadow.village.firePlots.length).toBe(10);
     for (const id of meadow.village.firePlots) expect(['house', 'house2', 'shop', 'barn', 'workshop']).toContain(plots.get(id).kind);
     expect(meadow.village.firePlots).toContain(meadow.village.childPlot);
     expect(plots.get(meadow.village.childPlot).kind).toBe('house2');
@@ -68,7 +69,9 @@ describe('meadow chapter data', () => {
     expect(Math.hypot(hf[0] - meadow.places['meadow-hall'].pos[0], hf[1] - meadow.places['meadow-hall'].pos[1])).toBeLessThan(2);
     for (const f of meadow.village.folk) expect(plots.has(f.post.plot), f.id).toBe(true);
     expect(meadow.village.folk.length + meadow.npcs.length).toBeGreaterThanOrEqual(10);
-    expect(meadow.village.folk.length + meadow.npcs.length).toBeLessThanOrEqual(17);   // + Garrow, the smith (the economy)
+    // (Only Hearn's own count against the village's figures: not those homed at the Wind Gap or the Wellhouse camp.)
+    const inVillage = meadow.npcs.filter((n) => !/^(camp-|meadow-gap)/.test(n.home?.poi || '')).length;
+    expect(meadow.village.folk.length + inVillage).toBeLessThanOrEqual(19);   // + Garrow, the smith (the economy); + Alder and Tamsin, found after the release (GPU cloth, 2026-11-22)
   });
   it('the guide path runs from the road head to the square', () => {
     const lists = meadow.village.guidePath.map((id) => village.roads.find((r) => r.id === id).pts.slice());
@@ -254,5 +257,49 @@ describe('gating and the night', () => {
     for (let k = 0; k < 50; k++) advanceClock();
     expect(params.v.timeOfDay).not.toBeCloseTo(t, 4);
     params.v.timeScale = ts; params.v.timeOfDay = was;
+  });
+});
+
+describe('the captives come home (Alder and Tamsin, 2026-11-22)', () => {
+  it('after the release they are found in the forecourt, and Hearn says so when they are home', () => {
+    const { ch, tick, finish, flag } = setup();
+    for (const f of ['meadow:guide-lead', 'meadow:arrived', 'meadow:fires-out', 'meadow:ebb-saved', 'meadow:stair-open', 'meadow:bellwether-woke', 'meadow:bellwether-released']) ch.graph.flags.add(f);
+    tick();
+    // Before they are found, Hild sends the Wraith back up; Corin asks once, and his shop opens.
+    ch.talk('meadow-hild'); expect(ch.current?.id ?? ch.currentId ?? '').not.toBe('meadow.hild.home'); finish(); tick();
+    ch.talk('meadow-corin'); finish(); tick();
+    expect(flag('trade:corin')).toBe(true);
+    ch.talk('meadow-alder'); finish(); tick();
+    ch.talk('meadow-tamsin'); finish(); tick();
+    expect(flag('meadow:alder-found')).toBe(true);
+    expect(flag('meadow:tamsin-found')).toBe(true);
+    expect(ch.graph.quests['meadow-the-missing'].state).toBe('done');
+    // Home (the villagers system sets these once they are out of sight): Corin thanks the Wraith once.
+    ch.graph.flags.add('meadow:alder-home'); ch.graph.flags.add('meadow:tamsin-home'); tick();
+    ch.talk('meadow-corin'); finish(); tick();
+    expect(flag('meadow:corin-thanked')).toBe(true);
+  });
+  it('a player who never met Corin still finishes his quest when Alder is home', () => {
+    const { ch, tick, finish, flag } = setup();
+    for (const f of ['meadow:guide-lead', 'meadow:arrived', 'meadow:fires-out', 'meadow:ebb-saved', 'meadow:stair-open', 'meadow:bellwether-woke', 'meadow:bellwether-released']) ch.graph.flags.add(f);
+    tick();
+    ch.talk('meadow-alder'); finish(); tick();
+    ch.graph.flags.add('meadow:alder-home'); tick();
+    ch.talk('meadow-corin'); finish(); tick(6);
+    expect(flag('meadow:corin-thanked')).toBe(true);
+    expect(ch.graph.quests['meadow-the-missing'].state).toBe('done');
+  });
+  it('no two people in the game share a name', () => {
+    const names = new Map();
+    const add = (n, where) => { if (!names.has(n)) names.set(n, new Set()); names.get(n).add(where); };
+    for (const f of fs.readdirSync('data/quests')) {
+      const d = JSON.parse(fs.readFileSync('data/quests/' + f, 'utf8'));
+      for (const n of d.npcs || []) if (n.name) add(n.name, f);
+      for (const n of d.village?.folk || []) if (n.name) add(n.name, f);
+    }
+    const drowned = fs.readFileSync('src/game/drowned.js', 'utf8');
+    for (const m of drowned.matchAll(/name: '([A-Z][a-z]+)'/g)) add(m[1], 'drowned.js');
+    add('Sefa', 'release.js');   // the Ebbhold child of the release cinematic
+    for (const [n, w] of names) expect(w.size, n + ' in ' + [...w].join(', ')).toBe(1);
   });
 });

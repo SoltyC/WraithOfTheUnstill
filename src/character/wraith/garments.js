@@ -254,3 +254,44 @@ export function buildGarments(body) {
   // The wrapped hand's open end at the wrist is hidden in the sleeve; wrap-texture u needs the seam.
   return { cloth, garments, uv, gid, pid, indices: new Uint32Array(tris), furIndices: new Uint32Array(fur) };
 }
+
+/**
+ * A hat over the hood (a costume, render/costume.js): the hood is drawn in close round the head under the hat's crown
+ * (narrower, its point folded down inside the crown) and its shoulder drape shortened to a collar, so a hat does not sit
+ * on a sack. Rewrites the kinematic cowl's rest shape in place (per figure: the cowl is all pins, nothing shared).
+ * @param {Garment[]} garments
+ */
+export function fitHoodUnderHat(garments) {
+  const g = garments.find((q) => q.id === GARMENT.COWL);
+  const SPLIT = 0.68;
+  for (let r = 0; r < g.rows; r++) {
+    const v = r / (g.rows - 1);
+    for (let c = 0; c < g.cols; c++) {
+      const k = r * g.cols + c;
+      if (v <= SPLIT) {
+        g.lx[k] *= 0.86; g.lz[k] = g.lz[k] * 0.9 - 0.004;
+        if (g.ly[k] > 0.09) g.ly[k] = 0.09 + (g.ly[k] - 0.09) * 0.45;
+      } else {
+        const s = (v - SPLIT) / (1 - SPLIT), k0 = (Math.round(SPLIT * (g.rows - 1))) * g.cols + c;
+        // Toward the row where the drape begins: a short collar over the shoulders.
+        const t = 0.3 + 0.1 * s;
+        g.lx[k] = g.lx[k0] + (g.lx[k] - g.lx[k0]) * t; g.ly[k] = g.ly[k0] + (g.ly[k] - g.ly[k0]) * t; g.lz[k] = g.lz[k0] + (g.lz[k] - g.lz[k0]) * t;
+      }
+    }
+  }
+}
+
+/**
+ * A costume's shawl (the mantle) sits higher and wider on the shoulders than the Wraith's capelet, so the sleeves' tops
+ * stay under it (an arm held out — a basket carried — lifted the sleeve's shoulder ring out through it). Its pinned rows
+ * are per figure; the free rows follow them.
+ * @param {Garment[]} garments
+ */
+export function fitShawl(garments) {
+  const g = garments.find((q) => q.id === GARMENT.MANTLE);
+  const grow = [[1, 1, 0], [1.12, 1.08, 0.025], [1.16, 1.1, 0.03]];   // per pinned row: x, z scale, lift (m)
+  for (let r = 0; r < Math.min(g.pinRows, grow.length); r++) {
+    const [sx, sz, up] = grow[r];
+    for (let c = 0; c < g.cols; c++) { const k = r * g.cols + c; g.lx[k] *= sx; g.lz[k] *= sz; g.ly[k] += up; }
+  }
+}

@@ -119,6 +119,7 @@ async function boot() {
   (await import('./systems/director.js')).addDirectorSystem(g); // cutscenes: shot lists on the camera (Phase 10 U6)
   await sysEnv.addEnvironmentSystems(g);
   (await import('./systems/chapter.js')).addChapterSystem(g);
+  await (await import('./systems/releaseLines.js')).addReleaseLines(g); // release lines (M4): read the chapter's restorations; the player reads g.currents next frame
   (await import('./systems/lights.js')).addLightSystem(g);
   await (await import('./systems/architecture.js')).addArchitectureSystem(g);
   (await import('./systems/villageFire.js')).addVillageFireSystem(g); // after architecture (it feeds fire slots 8.. and the sites' char) and the combat system
@@ -131,6 +132,22 @@ async function boot() {
   (await import('./systems/encounters.js')).addEncounterSystem(g);
   (await import('./systems/ergHaunts.js')).addErgHauntSystem(g); // the erg's Shaped on their own ground, and Skitters riding the storms
   (await import('./systems/villagers.js')).addVillagerSystem(g);
+  (await import('./systems/clues.js')).addClueSystem(g);   // things to look at (the stair gate's rag, the hall window)
+  (await import('./systems/doran.js')).addDoranSystem(g);   // Doran's story: Bryn at the window, his fate at the release
+  (await import('./systems/flue.js')).addFlueSystem(g);     // the old kiln flue in the forest (M1: The Cold Forge)
+  (await import('./systems/windGap.js')).addWindGapSystem(g); // the Wind Gap on the Western Edge (M1: the gale's lesson; Senna)
+  (await import('./systems/beacon.js')).addBeaconSystem(g);   // the Lake Beacon (M1: the climb's lesson; Ketil)
+  (await import('./systems/stuck.js')).addStuckSystem(g);     // one more piece for a player stuck at a goal (M3b, data/quests/stuck.json)
+  (await import('./systems/shrineWind.js')).addShrineWindSystem(g); // a rested shrine's wind runs toward the nearest held Warden (M4)
+  (await import('./systems/volcano.js')).addVolcanoSystem(g);   // the volcano's plume and night glow, seen from afar
+  (await import('./systems/emberClock.js')).addEmberClockSystem(g);   // the mountain's stages; the thread given at the summit
+  (await import('./systems/sow.js')).addSowSystem(g);
+  (await import('./systems/cinderhold.js')).addCinderholdSystem(g);
+  (await import('./systems/ashChapel.js')).addAshChapelSystem(g);   // the pilgrims, their Seer and their scripture (world/ashChapel.js)   // the miners and their guild (world/cinderhold.js)       // the Sow: the Ember slice's six farms and the new steam (world/sow.js, data/quests/ember.json)
+  if (!qs.get('nodestr')) (await import('./systems/destruction.js')).addDestructionSystem(g);
+  (await import('./systems/scenes.js')).addSceneSystem(g);   // directed scenes: live cameras on what they film, the world loaded ahead of the cut
+  (await import('./systems/eruption.js')).addEruptionSystem(g);   // the mountain's fifth stage: the flows, the surges, the last rescues   // buildings that come down: pieces, physics, dust (world/fracture.js, game/collapse.js)
+  (await import('./systems/travel.js')).addTravelSystem(g);   // Wenna (and Doran) go south after the release, out of sight (M3b)
   (await import('./systems/drowned.js')).addDrownedSystem(g); // Ebbhold's people (after the npcs: their bodies)
   (await import('./systems/sefa.js')).addSefaSystem(g); // the child who follows the Wraith (the cutscenes' Sefa for now)
   (await import('./systems/morrow.js')).addMorrowSystem(g); // the diver on the jetty (the cutscenes' Morrow for now)
@@ -145,6 +162,7 @@ async function boot() {
   (await import('./systems/puzzleSled.js')).addPuzzleSledSystem(g); // the Wellhouse's buried sled (dunes-design §4.1)
   (await import('./systems/flame.js')).addFlameSystem(g);
   (await import('./systems/sideQuests.js')).addSideQuestSystem(g); // after the flame (the Fen Lamp) and the architecture (its sites)
+  (await import('./systems/story.js')).addStorySystem(g); // the story state (docs/storyline.md §4): days, the order of the releases
   (await import('./systems/remembrance.js')).addRemembranceSystem(g); // before the nooks (their views remember)
   (await import('./systems/nooks.js')).addNookSystem(g); // after the architecture (their sites) and the nav (their places)
   (await import('./systems/bellLedge.js')).addBellLedgeSystem(g); // the Bell Ledge's sleeping hounds (after the architecture: its site)

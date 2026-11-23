@@ -76,7 +76,12 @@ describe('traders and talk', () => {
   it('the sled-trader is at the frost camp and Corin and Garrow keep shop only once the fires are out', () => {
     const osk = data.npcs.find((n) => n.id === 'osk');
     expect(osk.home.poi).toBe('camp-frost');
-    for (const npc of ['meadow-corin', 'meadow-garrow']) expect(JSON.stringify(data.talk[npc][0].when)).toContain('meadow:stair-open');
+    // Every way into their shop waits for the fires (the stair opening), directly or through a later flag.
+    const later = ['meadow:stair-open', 'meadow:bellwether-released', 'meadow:alder-home'];
+    for (const npc of ['meadow-corin', 'meadow-garrow']) for (const e of data.talk[npc]) {
+      const opens = e.trade || JSON.stringify(data.dialogue[e.say] || {}).includes('trade:');
+      if (opens) expect(later.some((f) => JSON.stringify(e.when).includes(f)), JSON.stringify(e)).toBe(true);
+    }
   });
 });
 

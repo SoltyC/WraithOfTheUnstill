@@ -38,10 +38,10 @@ export function createSnowfall(scene, clipmap, atmo) {
   mesh.alwaysSelectAsActiveMesh = true;
   mesh.doNotSyncBoundingInfo = true;
   mesh.freezeWorldMatrix();
-  const snow = new Vector4(0, 0, 0, 0), wind = new Vector4(1, 0, 1, 0);
+  const snow = new Vector4(0, 0, 0, 0), wind = new Vector4(1, 0, 1, 0), ashV = new Vector4(0, 0, 0, 0);
   const mat = new ShaderMaterial('snowfall', scene, { vertex: 'snowfall', fragment: 'snowfall' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'levels', 'snow', 'snowWind', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'snow', 'snowWind', 'snowAsh', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
     storageBuffers: ['levelData', 'biomeA', 'windMap', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -52,6 +52,7 @@ export function createSnowfall(scene, clipmap, atmo) {
   mat.setArray4('levels', clipmap.levels);
   mat.setVector4('snow', snow);
   mat.setVector4('snowWind', wind);
+  mat.setVector4('snowAsh', ashV);
   mat.setStorageBuffer('levelData', clipmap.levelData);
   mat.setStorageBuffer('biomeA', clipmap.buffers.biomeA);
   mat.setStorageBuffer('windMap', clipmap.buffers.wind);
@@ -66,6 +67,8 @@ export function createSnowfall(scene, clipmap, atmo) {
      *  x, z), fall speed (m/s), dt (s). */
     density: 0.5 - 0.5, windSpeed: 0.5, windX: 1.5 - 0.5, windZ: 0.5 - 0.5, fallSpeed: 1.5 - 0.5, dt: 0.5 - 0.5,
     fallT: 0.5 - 0.5, windTX: 0.5 - 0.5, windTZ: 0.5 - 0.5,
+    /** Ash falling instead of snow (0..1) and how much (systems/eruption.js; the environment folds it into density). */
+    ash: 0.5 - 0.5, ashFall: 0.5 - 0.5,
     update() {
       // Travel is integrated as a vector, so turning wind never jumps; wrapped by whole columns.
       this.fallT += this.fallSpeed * this.dt;
@@ -75,6 +78,7 @@ export function createSnowfall(scene, clipmap, atmo) {
       if (this.windTZ > 52 * 100) this.windTZ -= 52 * 100; else if (this.windTZ < -52 * 100) this.windTZ += 52 * 100;
       snow.x = this.fallT; snow.y = this.density; snow.z = this.windTX; snow.w = this.windTZ;
       wind.x = this.windX; wind.y = this.windZ; wind.z = this.fallSpeed; wind.w = this.windSpeed;
+      ashV.x = this.ash;
     },
   };
 }

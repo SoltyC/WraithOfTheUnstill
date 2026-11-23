@@ -9,7 +9,7 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 
-export const FIRES = 48; // 8 for the camp (hearth, braziers, built fires) + 40 for the burning village (systems/villageFire.js)
+export const FIRES = 64; // 8 for the camp (hearth, braziers, built fires) + 40 for the burning village (systems/villageFire.js) + 16 for the eruption's burning buildings (systems/eruption.js)
 export const PER_FIRE = 112; // camp: 48 flames, 36 embers, 28 smoke. Burning building (fireL.z > 0): 60 tongues, 28 embers, 20 smoke, 4 glow cards
 export const FIRE_COUNT = FIRES * PER_FIRE;
 

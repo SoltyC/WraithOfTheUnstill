@@ -22,7 +22,7 @@ export function h2(a, b) {
  * 16 +z, 32 −z. Each emitted face brings its inset face and the chamfer strips and corners round
  * it (a strip shared with another emitted face is emitted once, by the lower bit).
  */
-export function chamferBlock(B, o, ex, ey, ez, a, b, c, k, faces, mat, seed, carve = 0, fbOnly = false) {
+function chamferBlock0(B, o, ex, ey, ez, a, b, c, k, faces, mat, seed, carve = 0, fbOnly = false) {
   const P = (x, y, z) => [o[0] + ex[0] * x + ey[0] * y + ez[0] * z, o[1] + ex[1] * x + ey[1] * y + ez[1] * z, o[2] + ex[2] * x + ey[2] * y + ez[2] * z];
   const H = [a, b, c];
   // Face f: axis i = f >> 1, sign s = f & 1 ? −1 : +1 (bit order +x, −x, +y, −y, +z, −z).
@@ -101,7 +101,7 @@ export function chamferBlock(B, o, ex, ey, ez, a, b, c, k, faces, mat, seed, car
  * opts.course: course height (m). Blocks run along the longer horizontal axis through the full
  * thickness (through-stones), ends and the top course are emitted only where exposed.
  */
-export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, course = 0.55, carve = 0, outer = false, blockLen = 1, cap = false } = {}) {
+function layWall0(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, course = 0.55, carve = 0, outer = false, blockLen = 1, cap = false } = {}) {
   const cy = Math.cos(yaw), sy = Math.sin(yaw);
   const R = [cy, 0, -sy], F = [sy, 0, cy], U = [0, 1, 0];
   // The run axis is the longer one; `ex` along it, `ez` through the thickness.
@@ -193,7 +193,7 @@ export function layWall(B, x, z, y0, y1, hx, hz, yaw, mat, seed, { ruin = 0, cou
  * beds between drums (a dark joint line), slight per-drum radius and twist variation. The top drum
  * is capped. `broken` (0..1): the column snaps off below its full height, the break rough.
  */
-export function columnDrums(B, x, z, y0, y1, r0, r1, n, mat, seed, { broken = 0, carve = 0, solid = true } = {}) {
+function columnDrums0(B, x, z, y0, y1, r0, r1, n, mat, seed, { broken = 0, carve = 0, solid = true } = {}) {
   const H = y1 - y0;
   const top = broken > 0 ? y0 + H * (1 - broken * (0.4 + 0.5 * h2(seed, 9))) : y1;
   let y = y0, d = 0;
@@ -302,3 +302,12 @@ export function snowPillow(B, o, ex, ez, a, c, seed, { round = false, height = 0
   }
   B.grid(pts, nrm, nu, nv, mat, seed);
 }
+
+/** (One piece for the fracture: world/fracture.js groups what it builds together.) */
+export function chamferBlock(B, ...a) { return B.piece ? B.piece(() => chamferBlock0(B, ...a)) : chamferBlock0(B, ...a); }
+
+/** (One piece for the fracture: world/fracture.js groups what it builds together.) */
+export function layWall(B, ...a) { return B.piece ? B.piece(() => layWall0(B, ...a)) : layWall0(B, ...a); }
+
+/** (One piece for the fracture: world/fracture.js groups what it builds together.) */
+export function columnDrums(B, ...a) { return B.piece ? B.piece(() => columnDrums0(B, ...a)) : columnDrums0(B, ...a); }

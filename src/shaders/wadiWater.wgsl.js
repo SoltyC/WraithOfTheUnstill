@@ -15,7 +15,7 @@ attribute wadi: vec4f;       // across −1..1, metres along, half-width (m), en
 uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
-uniform wadiParams: vec4f;   // x = time, y = flow 0..1, z = the flowers' bloom 0..1
+uniform wadiParams: vec4f;   // x = time, y = flow 0..1, z = the flowers' bloom 0..1, w = 1: a running stream (a release line), not the broken evening sheets
 var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
@@ -64,17 +64,22 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let core = (0.2 + 0.35 * flow) * (0.8 + 0.4 * noised(vec2f(a * 0.03, seed * 1.7)).x);
   let gaps = smoothstep(-0.45, 0.0, noised(vec2f(a * 0.011, seed * 7.3)).x + 0.4 * flow);
   let bars = smoothstep(0.25, 0.45, noised(vec2f(x * 0.22, a * 0.045 + seed)).x * 0.5 + 0.5 + 0.2 * flow);
-  let water = (1.0 - smoothstep(core * 0.75, core, ax)) * gaps * mix(1.0, bars, 0.85) * w.w;
+  let stream = uniforms.wadiParams.w > 0.5;
+  // A running stream (The Melt): unbroken, filling most of its bed, its edge wandering.
+  let sEdge = 0.8 + 0.12 * noised(vec2f(a * 0.04, seed * 5.1)).x;
+  let water = select((1.0 - smoothstep(core * 0.75, core, ax)) * gaps * mix(1.0, bars, 0.85), (1.0 - smoothstep(sEdge - 0.12, sEdge, ax)) * min(1.0, flow * 1.2), stream) * w.w;
   // The wet band: the sand darkened either side of the water, a little wider where it is wider.
   let wetR = core + 0.18 + 0.12 * noised(vec2f(a * 0.05, seed * 2.3)).x;
-  let wet = (1.0 - smoothstep(wetR * 0.6, wetR, ax)) * smoothstep(-0.7, -0.2, noised(vec2f(a * 0.011, seed * 7.3)).x + 0.4 * flow) * w.w * min(1.0, flow * 1.5);
+  let wet = select((1.0 - smoothstep(wetR * 0.6, wetR, ax)) * smoothstep(-0.7, -0.2, noised(vec2f(a * 0.011, seed * 7.3)).x + 0.4 * flow), 1.0 - smoothstep(sEdge, sEdge + 0.2, ax), stream) * w.w * min(1.0, flow * 1.5);
   if (water + wet < 0.004) { discard; }
   // Ripples running downstream (a fine and a broad set), as a perturbed normal.
-  let r1 = noised(vec2f(x * 1.6, a * 0.9 - t * 1.4));
-  let r2 = noised(vec2f(x * 0.5 + 3.0, a * 0.25 - t * 0.6));
+  let sp = select(1.0, 3.2, stream);
+  let r1 = noised(vec2f(x * 1.6, a * 0.9 - t * 1.4 * sp));
+  let r2 = noised(vec2f(x * 0.5 + 3.0, a * 0.25 - t * 0.6 * sp));
   // The Wraith wading through it: the lakes' wake and splashes (render/water.js ripples), no wind waves.
   let wk = waterSlope(wp.xz, t, vec2f(0.0), length(fwidth(wp)));
-  let N = normalize(vec3f(r1.y * 0.05 + r2.y * 0.06 - wk.x, 1.0, r1.z * 0.05 + r2.z * 0.06 - wk.y));
+  let rk = select(1.0, 2.6, stream);
+  let N = normalize(vec3f((r1.y * 0.05 + r2.y * 0.06) * rk - wk.x, 1.0, (r1.z * 0.05 + r2.z * 0.06) * rk - wk.y));
   let NV = max(dot(N, V), 0.0);
   let F = 0.02 + 0.98 * pow(1.0 - NV, 5.0);
   let vis = shadowVisibilityFast(wp, cam);
@@ -85,9 +90,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   var col = atmoSky(normalize(vec3f(R.x, max(R.y, 0.02), R.z))) * F;
   col += key * vis * pow(max(dot(N, H), 0.0), 500.0) * 2.5 * step(0.0, L.y);
   col += vec3f(0.85, 0.82, 0.76) * shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w * min(wk.z, 1.0) * 0.6;   // foam in the wake
+  // The stream's own body (glacial meltwater: clear blue-green over its bed) and white water: streaks running fast downstream,
+  // thicker along the banks and where the bed breaks it.
+  let sky0 = shIrradiance(vec3f(0.0, 1.0, 0.0)) * uniforms.envMisc.w;
+  let foamN = noised(vec2f(x * 0.7 + seed, a * 0.3 - t * 4.2)).x * 0.5 + 0.5;
+  let foam = select(0.0, smoothstep(0.66, 0.9, foamN + 0.12 * smoothstep(sEdge - 0.2, sEdge, ax)) * 0.6, stream);
+  col += select(vec3f(0.0), vec3f(0.02, 0.07, 0.085) * sky0 * (1.0 - F) + key * vis * vec3f(0.01, 0.03, 0.035) * max(L.y, 0.0), stream);
+  col = mix(col, vec3f(0.85, 0.88, 0.9) * (sky0 + key * vis * max(L.y, 0.0) / PI), foam);
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(cam - wp) * 0.001);
   let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
-  let aw = water * (F + (1.0 - F) * 0.3);
+  let aw = water * max(F + (1.0 - F) * select(0.3, 0.62, stream), foam);
   let a2 = aw + (1.0 - aw) * wet * 0.2;
   fragmentOutputs.color = vec4f(outc * water, a2);
 }

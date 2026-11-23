@@ -9,6 +9,15 @@ import { manorSites } from '../world/manor.js';
 import { stairSites, stairSegments, loadBakedHeight } from '../world/stair.js';
 import { soundingSites } from '../world/jetty.js';
 import { listenerSites } from '../world/listener.js';
+import { flueSites } from '../world/flue.js';
+import { sowSites } from '../world/sow.js';
+import sowHeights from '../../data/world/sowHeights.json';
+import { cinderSites } from '../world/cinderhold.js';
+import cinderHeights from '../../data/world/cinderHeights.json';
+import { chapelSites } from '../world/ashChapel.js';
+import chapelHeights from '../../data/world/chapelHeights.json';
+import { windGapSites } from '../world/windGap.js';
+import { beaconSites } from '../world/beacon.js';
 import { frostSites, swatches, buildArchitecture, chunkArchitecture, ARENA, NO_SNOW } from '../world/architecture.js';
 import { sideSites } from '../world/sideSites.js';
 import { nookSites } from '../world/nookSites.js';
@@ -38,7 +47,7 @@ export async function addArchitectureSystem(g) {
   // The erg's ruins (world/ruinKits.js), appended after every earlier site (their indices never move):
   // the aqueduct's channel is levelled on the baked ground along its line.
   const ruinH = await loadBakedHeight(import.meta.env.BASE_URL + 'world/', { path: [[1900, 262], [2330, 290]] }, 20).catch(() => null);
-  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks), ...restoredSites(chapter.table, restoredData, restoredData.wind), ...bellLedgeSites(chapter.table), ...ruinSites(chapter.table, ruinH), ...glassSites(chapter.table), ...walkerTrackSites(trackPrints()), ...soundingSites(), ...listenerSites()];
+  const sites = [...frostSites(chapter.table, g.routes), ...villageSites(village), ...stairSites(stairRoute, stairH), ...manorSites(), ...sideSites(chapter.table), ...nookSites(nookData.nooks), ...restoredSites(chapter.table, restoredData, restoredData.wind), ...bellLedgeSites(chapter.table), ...ruinSites(chapter.table, ruinH), ...glassSites(chapter.table), ...walkerTrackSites(trackPrints()), ...soundingSites(), ...listenerSites(), ...flueSites(chapter.table), ...windGapSites(), ...beaconSites(chapter.table), ...sowSites(streamer.overview, sowHeights), ...cinderSites(cinderHeights), ...chapelSites(chapelHeights)];
   // Dev only (?swatches=1): the village material swatch row (world/architecture.js swatches), on the dry ground by the hill.
   // Appended last and only when asked, so the shipped site list (and the frost geometry checksum) is unchanged.
   if (typeof location !== 'undefined' && new URLSearchParams(location.search).get('swatches') === '1') sites.push({ id: 'hub-swatches', at: [95, 975], facing: 0, build: swatches, footprint: 14, seatAt: 'center', windows: true });
@@ -54,9 +63,9 @@ export async function addArchitectureSystem(g) {
   view.freeze();
   const solids = g.solids = createSolids(sites, built, stairSegments(stairRoute));
   // No boulders inside the built places (one stood beside the camp fire).
-  g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]));
+  g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]).concat(g.lineExclusions || []));   // (+ the release lines' beds: systems/releaseLines.js)
   // Nothing grows through the erg's ruins and glass (the oasis palms round the caravanserai, the canyon flora).
-  g.trees?.setExclusions(sites.filter((s) => /^(ruin|glass)-/.test(s.id)).map((s) => [s.at[0], s.at[1], (s.id === 'ruin-caravanserai' ? 24 : s.footprint) + 3]));
+  g.trees?.setExclusions(sites.filter((s) => /^(ruin|glass|flue|gap|beacon|sow|emb|cin|ash)-/.test(s.id)).map((s) => [s.at[0], s.at[1], (s.id === 'ruin-caravanserai' ? 24 : s.footprint) + 3]).concat(g.lineExclusions || []));
   /** Prop sites by NPC id (the NPC system places them at the hand); a second one in the other hand rides along in `also`. */
   g.props = {};
   sites.forEach((s, i) => {

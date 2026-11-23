@@ -186,7 +186,7 @@ export function addLungSystem(g) {
     // The eye opens with the depth (exposure up to 2 stops at the floor), eased.
     if (g.atmosphere) {
       const dep = camUnder ? Math.max(0, (controller.waterLevel || 1.41) - cam.y) : 0;
-      const want = Math.pow(2, 2 * Math.min(1, Math.max(0, (dep - 15) / 75)));
+      const want = Math.pow(2, 2 * Math.min(1, Math.max(0, (dep - 15) / 75))) * (g.ashDark ?? 1);   // (× the eruption's ash: systems/eruption.js)
       const a = g.atmosphere.eyeOpen || 1;
       g.atmosphere.eyeOpen = a + (want - a) * Math.min(1, clock.realDt * 0.8);
     }

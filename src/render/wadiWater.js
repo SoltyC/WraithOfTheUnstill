@@ -134,18 +134,18 @@ export function wadiWaterMask(u, a, hw, fade, seed, flow) {
   return (1 - smooth(core * 0.75, core, ax)) * gaps * (1 + (bars - 1) * 0.85) * fade;
 }
 
-export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis, ripples = null, ground = null, waterSim = null) {
+export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadis, ripples = null, ground = null, waterSim = null, name = 'wadiWater') {
   ShaderStore.ShadersStoreWGSL.wadiVertexShader = wadiVertexWGSL;
   ShaderStore.ShadersStoreWGSL.wadiFragmentShader = wadiFragmentWGSL;
   const { pos, attr, idx } = wadiRibbons(wadis || []);
-  const mesh = new Mesh('wadiWater', scene);
+  const mesh = new Mesh(name, scene);
   const vd = new VertexData();
   vd.positions = new Float32Array(pos.length ? pos : [0, 0, 0, 0, 0, 0, 0, 0, 0]);
   vd.indices = new Uint32Array(idx.length ? idx : [0, 1, 2]); vd.applyToMesh(mesh, false);
   mesh.setVerticesData('wadi', new Float32Array(attr.length ? attr : new Array(12).fill(0)), false, 4);
   mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true; mesh.freezeWorldMatrix();
   const params = new Vector4(0, 0, 0, 0);
-  const mat = new ShaderMaterial('wadiWater', scene, { vertex: 'wadi', fragment: 'wadi' }, {
+  const mat = new ShaderMaterial(name, scene, { vertex: 'wadi', fragment: 'wadi' }, {
     attributes: ['position', 'wadi'],
     uniforms: ['viewProjection', 'levels', 'wadiParams', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES],
@@ -170,7 +170,7 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
   ShaderStore.ShadersStoreWGSL.wadiFlowerVertexShader = wadiFlowerVertexWGSL;
   ShaderStore.ShadersStoreWGSL.wadiFlowerFragmentShader = wadiFlowerFragmentWGSL;
   const fl = wadiFlowers(wadis || []);
-  const fMesh = new Mesh('wadiFlowers', scene);
+  const fMesh = new Mesh(name + '-flowers', scene);
   const fvd = new VertexData();
   fvd.positions = new Float32Array(fl.pos.length ? fl.pos : [0, 0, 0, 0, 0, 0, 0, 0, 0]);
   fvd.indices = new Uint32Array(fl.idx.length ? fl.idx : [0, 1, 2]); fvd.applyToMesh(fMesh, false);
@@ -229,7 +229,10 @@ export function createWadiWater(scene, clipmap, atmo, shadows, bindShadows, wadi
     mesh, material: mat, flowerMesh: fMesh, flowerMaterial: fMat, flowers: fl.pos.length / 12, rows: pos.length / 3 / (ACROSS + 1),
     /** Owner fields: time (s), restored 0..1 (the Dunes), hour (0..24). */
     time: 0.5, restored: 0.5 - 0.5, hour: 12.5 - 0.5,
+    /** A steady stream instead of the evening flow (a release line, systems/releaseLines.js): flow 0..1 when ≥ 0, and the bloom. */
+    flow: -1, bloom: 0,
     update() {
+      if (this.flow >= 0) { params.x = this.time; params.y = this.flow; params.z = this.bloom; params.w = 1; return; }
       // The flow comes down toward evening and is gone by the small hours (a seasonal stream, daily
       // in the game): rising from 16:30, full 18:00–22:00, drying out by 1:00.
       const h = this.hour, rise = Math.min(1, Math.max(0, (h - 16.5) / 1.5)), fall = h >= 12 ? 1 : Math.max(0, 1 - h);

@@ -58,7 +58,15 @@ export class DevOverlay {
   }
 
   /** The Flow section (needs the boot context, so it joins after the constructor). */
-  addFlowTools(g) { if (g.flow) this.root.append(buildFlowTools(g, el)); if (g.weapons) this.root.append(buildWeaponTools(g, el)); }
+  addFlowTools(g) {
+    if (g.flow) this.root.append(buildFlowTools(g, el)); if (g.weapons) this.root.append(buildWeaponTools(g, el));
+    // The story state (docs/storyline.md §4): read-only, a few times a second.
+    if (g.story) {
+      const read = el('pre', { class: 'note' }, '');
+      this.root.append(el('h3', null, 'Story'), read);
+      setInterval(() => { const s = g.story.snapshot(); read.textContent = 'days ' + (g.chapter.graph.vars.days || 0) + '\n' + JSON.stringify(s, null, 1).replace(/[{}"]/g, '').replace(/\n\s*\n/g, '\n'); }, 500);
+    }
+  }
 
   _stat(grid, key, label) {
     const v = el('span', { class: 'v' }, '–');

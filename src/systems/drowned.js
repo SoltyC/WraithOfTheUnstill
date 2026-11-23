@@ -153,33 +153,47 @@ export function addDrownedSystem(g) {
     }
   }
 
+  // Names (M3, docs/direction.md): six people can be named, each by a name read where they work (a sign: the bread, the bed,
+  // the peg, the crew's board, the pail; Aldo's is the register's last line). Known, it is said to them where they stand: no
+  // list to choose from, no wrong name. The other fourteen are only held.
+  const knows = (d) => flags.has('ebb:knows:' + d.id);
+  function learn(d, text) {
+    const first = !knows(d);
+    flags.add('ebb:knows:' + d.id); flags.add('ebb:register-read');
+    hud.notice(first ? d.name : 'Ebbhold', first ? 'A name' : '…', text, 8);
+    if (first) chapter.raise?.('ebb:knows');
+  }
   function speak(p) {
-    const carried = vars['ebb.carry'];
-    if (!carried) {
-      hud.notice('Ebbhold', '…', 'Its mouth moves, too low to hear. The book on the platform in the Tide Hall holds the city’s names.', 6);
-      return;
-    }
-    const r = sayName(p, carried);
-    if (r === 'named') {
-      flags.add('ebb:named:' + p.d.id); vars['ebb.carry'] = null;
+    const d = p.d;
+    if (!d.sign) { hud.notice('Ebbhold', '…', 'Its mouth moves, too low to hear. Whoever this was, nothing here says their name.', 6); return; }
+    if (!knows(d)) { hud.notice('Ebbhold', '…', 'Its mouth moves, too low to hear. People mark what is theirs; something near where this one works might say who they were.', 7); return; }
+    if (sayName(p, d.name) === 'named') {
+      flags.add('ebb:named:' + d.id);
       record(p, 'named');
       chapter.raise?.('ebb:named');
-      hud.notice(p.d.name, '…', 'They put down what they were holding, and are still.', 6);
-    } else if (r === 'wrong') {
-      // Not theirs: a cry the whole room hears.
-      noiseAt(noise, p.x, p.y, p.z, 0.8);
-      hud.notice('Ebbhold', 'Not that name', 'It cries out.', 4);
+      hud.notice(d.name, '…', 'They put down what they were holding, and are still.', 6);
     }
   }
+  const signs = [];
+  for (const p of people) {
+    const sg = p.d.sign;
+    if (!sg || sg === 'register') continue;
+    const t = { kind: 'sign', d: p.d, verb: 'Look', name: 'Something kept', x: sg.at[0] + O.x, y: p.d.y + O.y + 1.0, z: sg.at[1] + O.z, r: 2.2, h: 0.6, hy: 2.0, hidden: true, onUse: () => learn(p.d, sg.text) };
+    g.interactables.push(t); signs.push(t);
+  }
 
-  // The register: the stone book on its plinth, in the platform's middle.
+  // The register: the stone book on its plinth, in the platform's middle. Every name in the city, in a hundred hands; the last
+  // line is still wet: Aldo's own, the keeper, who is writing it.
+  const aldo = people.find((p) => p.d.sign === 'register')?.d;
   const book = { kind: 'register', verb: 'Read', name: 'The register', x: 130 + O.x, y: 1.2 + O.y, z: O.z, r: 3.2, h: 0.6, hy: 2.5, hidden: true,
-    onUse: () => { flags.add('ebb:register-read'); g.openJournal?.('register'); } };
+    onUse: () => { if (aldo) learn(aldo, 'Thousands of names, in a hundred hands, more than anyone could say. The last line is still wet, in the hand of the man bent over it: ALDO, KEEPER OF THIS BOOK.'); g.openJournal?.('register'); } };
   g.interactables.push(book);
 
   loop.add({ name: 'drowned', update: () => {
     const active = city.active;
     book.hidden = !active;
+    // (a name once known, its sign has done its work: hidden, so the person beside it is the one in reach; its words stay in the journal)
+    for (let i = 0; i < signs.length; i++) signs[i].hidden = !active || knows(signs[i].d);
     if (!active) {
       if (made) for (const p of people) p.target.hidden = true;
       controller.dragMul = 1;
@@ -224,8 +238,7 @@ export function addDrownedSystem(g) {
       if (t) {
         t.hidden = p.state === ST.STILL;
         t.x = p.x + O.x; t.y = p.y + O.y; t.z = p.z + O.z;
-        const c = vars['ebb.carry'];
-        t.verb = c ? 'Say “' + c + '”' : 'Listen';
+        t.verb = p.d.sign && knows(p.d) ? 'Say “' + p.d.name + '”' : 'Listen';
       }
     }
     controller.dragMul = holders === 0 ? 1 : holders >= 4 ? 0 : 1 / (1 + 0.9 * holders);

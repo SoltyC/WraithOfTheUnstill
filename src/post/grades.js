@@ -14,6 +14,9 @@ export const GRADES = {
   meadowRestored: { g0: [0.02, 0.3, -0.08], g1: [0.92, 0.97, 1.06], g2: [1.04, 1.01, 0.94] },
   dunesStilled: { g0: [0.48, -0.1, 0.04], g1: [0.97, 0.96, 1.04], g2: [0.99, 0.985, 1.02] },
   dunesRestored: { g0: [0.03, 0.16, -0.06], g1: [0.92, 0.97, 1.08], g2: [1.025, 1.0, 0.955] },
+  // The Ember Waste: never still — the mountain's fire keeps its colour; ash greys it, the light stays warm (its own, not the
+  // frost's cold drained look, which turned lava to salmon).
+  ember: { g0: [0.22, 0.12, -0.04], g1: [0.98, 0.98, 1.01], g2: [1.03, 1.0, 0.95] },
   // The cutscenes (release-cinematic.md, "Grade"): the past warm and sunlit; the held age green-blue and still.
   past: { g0: [-0.12, 0.42, -0.08], g1: [1.04, 0.98, 0.9], g2: [1.1, 1.02, 0.86] },
   held: { g0: [0.6, -0.45, 0.12], g1: [0.9, 1.03, 1.06], g2: [0.93, 1.02, 1.01] },
@@ -32,7 +35,7 @@ export function mixGrades(out, a, b, u) {
  * out (Float32Array(16)). `dunes` is its total weight; `meadow` is normalised within the
  * remaining frost/meadow share. Each biome reads its own restoration state.
  */
-export function blendGrade(out, r, strength, meadow = 0, rMeadow = r, dunes = 0, rDunes = r) {
+export function blendGrade(out, r, strength, meadow = 0, rMeadow = r, dunes = 0, rDunes = r, ember = 0) {
   const a = GRADES.frostStilled, b = GRADES.frostRestored, c = GRADES.meadowStilled, d = GRADES.meadowRestored;
   const ds=GRADES.dunesStilled,dr=GRADES.dunesRestored;
   for (let i = 0; i < 3; i++) {
@@ -47,6 +50,8 @@ export function blendGrade(out, r, strength, meadow = 0, rMeadow = r, dunes = 0,
       out[8+i] += (ds.g2[i]+(dr.g2[i]-ds.g2[i])*rDunes-out[8+i])*dunes;
     }
   }
+  // The Ember over the rest by its share (exactly the old arithmetic at 0).
+  if (ember > 0) { const e = GRADES.ember; for (let i = 0; i < 3; i++) { out[i] += (e.g0[i] - out[i]) * ember; out[4 + i] += (e.g1[i] - out[4 + i]) * ember; out[8 + i] += (e.g2[i] - out[8 + i]) * ember; } }
   out[3] = strength;
   // Optional LUT shoulder belongs to the camera biome; always clear it outside dunes.
   out[12] = dunes;

@@ -35,7 +35,8 @@ describe('restored-world data is sound', () => {
     for (const s of D.streams) {
       expect(s.pts.length, s.id).toBeGreaterThanOrEqual(2);
       expect(s.width).toBeGreaterThan(20); expect(s.rise).toBeGreaterThan(3); expect(s.rise).toBeLessThan(9); expect(s.top).toBeGreaterThan(60);
-      for (const [x, z] of s.pts) expect(world.meadow(x, z) > 0.5, `${s.id} ${x},${z}`).toBe(s.biome === 'meadow');
+      // (The dunes' heat runs up the Dry Stair onto the meadow's rim: a release line is the dunes' wherever it stands.)
+      if (s.biome !== 'dunes') for (const [x, z] of s.pts) expect(world.meadow(x, z) > 0.5, `${s.id} ${x},${z}`).toBe(s.biome === 'meadow');
     }
     const ids = new Set(D.streams.map((s) => s.id));
     for (const b of D.banners) { expect(ids.has(b.stream), b.id).toBe(true); expect(Math.abs(world.h(...b.pos) - b.h), b.id).toBeLessThan(0.3); }
@@ -110,6 +111,21 @@ describe('the courses need the streams', () => {
     const start = [128, 1060, world.h(128, 1060) + 3, 1.57], st = D.streams.filter((s) => s.biome === 'meadow');
     const ok = flyCourse(checks, st, { restore: 1, start, max: 900 }), no = flyCourse(checks, st, { restore: 0, start, max: 900 });
     expect(ok.reached).toBe(checks.length); expect(no.reached).toBe(0);
+  });
+  it('the soaring pilot climbs from the Wellhouse back west to the lip of the Dry Stair in the restored dunes (M4), and cannot with them stilled', () => {
+    const E = D.westRoad, checks = E.checks.map((c) => ({ ...c, y: world.h(...c.pos) + c.agl + 12 }));
+    const start = [E.start[0], E.start[1], world.h(E.start[0], E.start[1]) + E.start[2], E.start[3]];
+    // (The simulator restores the frost and the meadow: the dunes' heat is flown under the meadow's key.)
+    const st = D.streams.filter((s) => s.biome === 'dunes').map((s) => ({ ...s, biome: 'meadow' }));
+    const ok = flyCourse(checks, st, { restore: 1, start, max: 900 }), no = flyCourse(checks, st, { restore: 0, start, max: 900 });
+    expect(ok.reached).toBe(checks.length); expect(ok.t).toBeLessThan(120); expect(no.reached).toBeLessThan(checks.length);
+    const w = windAt(...D.banners.find((b) => b.id === 'rw-west-banner-1').pos); expect(w[0] * D.wind.dunes[0] + w[1] * D.wind.dunes[1]).toBeGreaterThan(0.9);
+  });
+  it('the soaring pilot flies east from the manor to the lip of the Dry Stair in the restored meadow (M4), and cannot with it stilled', () => {
+    const E = D.eastRoad, checks = E.checks.map((c) => ({ ...c, y: world.h(...c.pos) + c.agl + 12 }));
+    const start = [E.start[0], E.start[1], world.h(E.start[0], E.start[1]) + E.start[2], E.start[3]], st = D.streams.filter((s) => s.biome === 'meadow');
+    const ok = flyCourse(checks, st, { restore: 1, start, max: 900 }), no = flyCourse(checks, st, { restore: 0, start, max: 900 });
+    expect(ok.reached).toBe(checks.length); expect(ok.t).toBeLessThan(90); expect(no.reached).toBeLessThan(checks.length);
   });
 });
 

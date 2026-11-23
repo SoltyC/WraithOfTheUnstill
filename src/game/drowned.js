@@ -1,7 +1,7 @@
 // The Drowned of Ebbhold (Phase 10 U5; storylines.md §7–8, release-cinematic.md "Before: making them people"): the city's people,
 // held in the second the water came, still doing what they were doing. They don't see. A noise turns every head in reach; they come
-// to where it was, hands out, and hold the robe — until it is still. Saying a person's name, learned from the register on the
-// platform, stops them for good (the player believes it is mercy). Twenty of them, each with a loop that reads from a few metres.
+// to where it was, hands out, and hold the robe — until it is still. Saying a person's name, read where they work (six of them;
+// the register's last line is Aldo's), stops them for good (the player believes it is mercy). Twenty of them, each with a loop that reads from a few metres.
 //
 // Pure: the people's data and one step of a person's life. The system (systems/drowned.js) gives each a body (the Veiled robe
 // figure), moves them through the city's floors and walls (`move`), and owns the noise, the holds and the naming.
@@ -9,6 +9,10 @@
 
 import { hears } from './noise.js';
 import { HALL } from '../world/ebbhold.js';
+
+/** The six whose names the Wraith can learn (M3, docs/direction.md: six, not twenty): each name is read where that person
+ *  works (`sign`: a place and what is there; Aldo's is the register's last line). The others stay unnamed: held, never named. */
+export const NAMEABLE = ['hanne', 'teodor', 'ise', 'liese', 'aldo', 'orla'];
 
 const W = HALL.walk, G1 = HALL.g1, G2 = HALL.g2;
 // Muted, sea-washed dyes (multipliers on the charcoal wool).
@@ -27,29 +31,29 @@ function round(c, r, a) {
  * where the hands go on the thing worked (local, y above the tier's floor): { at, spread } one point under both, or { l, r } each. line: the register's entry — what it says is how the player tells who is who.
  */
 export const PEOPLE = [
-  { id: 'hanne', name: 'Hanne', arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', hands: { at: [38.7, 1.1, 55.62], spread: 0.1 }, at: [38.85, 55.02], yaw: 0,
+  { id: 'hanne', name: 'Hanne', sign: { at: [38.1, 54.5], text: 'The loaves at the younger baker’s end of the board each carry the same small mark, pressed in with a thumb: HANNE.' }, arch: 'pilgrim', dye: 'ochre', y: W, task: 'knead', clip: 'knead1', hands: { at: [38.7, 1.1, 55.62], spread: 0.1 }, at: [38.85, 55.02], yaw: 0,
     line: 'Hanne, baker, of the walk gallery’s north side. Fed the door crews through the last night. Her hands were never out of the dough.' },
   { id: 'ysolde', name: 'Ysolde', arch: 'elder', dye: 'bone', y: W, task: 'knead', clip: 'knead1', clipT: 3.1, hands: { at: [39.3, 1.09, 56.36], spread: 0.09 }, at: [39.2, 56.98], yaw: 3.1416,
     line: 'Ysolde, Hanne’s mother, who taught her. Worked the far side of Hanne’s table, facing her, and would not sit.' },
-  { id: 'teodor', name: 'Teodor', arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', clip: 'rock', carry: true, rest: 0, at: [119, -54.4], yaw: 3.1416,
+  { id: 'teodor', name: 'Teodor', sign: { at: [117.8, -55.4], text: 'A child’s bed against the wall, too short for anyone but a girl. Burnt into its headboard: SEFA. Under it, smaller: TEODOR MADE THIS.' }, arch: 'staff', dye: 'slate', y: W - 1, task: 'rock', clip: 'rock', carry: true, rest: 0, at: [119, -54.4], yaw: 3.1416,
     line: 'Teodor, rope-maker, a father this week. He would not put his daughter down in the low nursery; he rocked her in his arms by the cradle.' },
-  { id: 'ise', name: 'Ise', arch: 'elder', dye: 'kelp', y: W, task: 'sweep', path: [[24, 42.6], [46, 42.6]], yaw: 1.5708,
+  { id: 'ise', name: 'Ise', sign: { at: [23.2, 43.9], text: 'A peg by the stair, worn pale where one broom has hung on it for years. Cut into the peg: ISE.' }, arch: 'elder', dye: 'kelp', y: W, task: 'sweep', path: [[24, 42.6], [46, 42.6]], yaw: 1.5708,
     line: 'Old Ise, who swept the long stair from the walk gallery every morning, and sang while she did it, so the children could find her.' },
-  { id: 'liese', name: 'Liese', arch: 'staff', dye: 'rust', y: G1, task: 'haul', clip: 'wheel', clipT: 0.0, ...round([161, 56], 2.4, 0),
+  { id: 'liese', name: 'Liese', sign: { at: [158.9, 57.6], text: 'The crew’s board by the wheel. Five names, chalked and rubbed out and chalked again, until only the first is clear: LIESE, first at the bars. The tallest of the crew.' }, arch: 'staff', dye: 'rust', y: G1, task: 'haul', clip: 'wheel', clipT: 0.0, ...round([161, 56], 2.4, 0),
     line: 'Liese, who ran the north door-wheel, high on the first gallery. Her crew hauled at its bars to her count. Tall, and loud with it.' },
   { id: 'brannoc', name: 'Brannoc', arch: 'monk', dye: 'ink', y: G1, task: 'haul', clip: 'wheel', clipT: 1.1, ...round([161, 56], 2.4, 1.2566),
     line: 'Brannoc, of Liese’s door crew. The broadest back on the wheel; he dyed his robe as dark as the deep.' },
   { id: 'oda', name: 'Oda', arch: 'pilgrim', dye: 'rust', y: G1, task: 'haul', clip: 'wheel', clipT: 2.3, ...round([161, 56], 2.4, 2.5133),
     line: 'Oda, of Liese’s door crew, who wore her robe the colour of rust, like her captain’s, to annoy her.' },
-  { id: 'pell', name: 'Pell', arch: 'elder', dye: 'bone', y: G1, task: 'haul', clip: 'wheel', clipT: 3.4, ...round([161, 56], 2.4, 3.7699),
-    line: 'Pell, of Liese’s door crew, the oldest who still walked a wheel. Stooped, in bleached wool.' },
-  { id: 'wyn', name: 'Wyn', arch: 'lantern', dye: 'slate', y: G1, task: 'haul', clip: 'wheel', clipT: 4.5, ...round([161, 56], 2.4, 5.0265),
-    line: 'Wyn, of Liese’s door crew, who carried a lamp even at the wheel, because she was afraid of the dark.' },
+  { id: 'pell', name: 'Abel', arch: 'elder', dye: 'bone', y: G1, task: 'haul', clip: 'wheel', clipT: 3.4, ...round([161, 56], 2.4, 3.7699),
+    line: 'Abel, of Liese’s door crew, the oldest who still walked a wheel. Stooped, in bleached wool.' },
+  { id: 'wyn', name: 'Lark', arch: 'lantern', dye: 'slate', y: G1, task: 'haul', clip: 'wheel', clipT: 4.5, ...round([161, 56], 2.4, 5.0265),
+    line: 'Lark, of Liese’s door crew, who carried a lamp even at the wheel, because she was afraid of the dark.' },
   { id: 'corran', name: 'Corran', arch: 'pilgrim', dye: 'kelp', y: G1, task: 'sweep', path: [[123, -53], [135, -53]], yaw: 1.5708,
     line: 'Corran, sweeper, of the sweepers’ hall on the first gallery’s south side. Kept the floor so clean you could see the lamps in it.' },
   { id: 'maudry', name: 'Maudry', arch: 'elder', dye: 'ink', y: G2, task: 'shelve', path: [[103, 58.6], [117, 58.6]], yaw: 1.5708,
     line: 'Maudry, keeper of the archive on the high gallery. Walked her shelves end to end, and stopped at each to look up at them.' },
-  { id: 'aldo', name: 'Aldo', arch: 'monk', dye: 'bone', y: W, task: 'scribe', at: [130, 3.2], yaw: 3.1416,
+  { id: 'aldo', name: 'Aldo', sign: 'register', arch: 'monk', dye: 'bone', y: W, task: 'scribe', at: [130, 3.2], yaw: 3.1416,
     line: 'Aldo, who kept this book. He stands at it still, at the register’s south side, bent to write the last name in.' },
   { id: 'fenna', name: 'Fenna', arch: 'lantern', dye: 'ochre', y: G1, task: 'tend', path: [[10, 41.5], [40, 41.5], [70, 41.5]], yaw: 1.5708,
     line: 'Fenna, lamp-keeper of the first gallery’s north side. Went from flame to flame with her own lamp and stopped at each.' },
@@ -57,13 +61,13 @@ export const PEOPLE = [
     line: 'Hesk, lamp-keeper of the high gallery’s south side. Tall; stopped at every flame as if it might have gone out.' },
   { id: 'rhun', name: 'Rhun', arch: 'pilgrim', dye: 'bone', y: W, task: 'tend', path: [[160, 41.5], [190, 41.5], [220, 41.5]], yaw: 1.5708,
     line: 'Rhun, the young lamp-keeper of the walk gallery’s north side, past the platform. Pale robe, and always late.' },
-  { id: 'tamsin', name: 'Tamsin', arch: 'staff', dye: 'kelp', y: G1, task: 'pace', path: [[62, -26], [62, 26]], yaw: 0,
-    line: 'Tamsin, of the watch, who walked the west bridge end to end and back, the whole night, every night.' },
+  { id: 'tamsin', name: 'Edda', arch: 'staff', dye: 'kelp', y: G1, task: 'pace', path: [[62, -26], [62, 26]], yaw: 0,
+    line: 'Edda, of the watch, who walked the west bridge end to end and back, the whole night, every night.' },
   { id: 'bede', name: 'Bede', arch: 'monk', dye: 'rust', y: W, task: 'pace', path: [[110, -30], [110, 30]], yaw: 0,
     line: 'Bede, of the watch, who walked the register’s platform from gallery to gallery along its west edge. Red-robed, for the watch.' },
   { id: 'sorrel', name: 'Sorrel', arch: 'pilgrim', dye: 'slate', y: W, task: 'carry', path: [[160, -38], [232, -38]], yaw: 1.5708,
     line: 'Sorrel, water-carrier, who carried from the low landing to the south walk gallery, bowed under the yoke.' },
-  { id: 'orla', name: 'Orla', arch: 'elder', dye: 'kelp', y: W, task: 'mend', at: [44, -3.6], yaw: 3.1416,
+  { id: 'orla', name: 'Orla', sign: { at: [45.3, -2.6], text: 'A pail and a brush on the causeway. ORLA is scratched into the pail’s rim, the way people mark what keeps being borrowed.' }, arch: 'elder', dye: 'kelp', y: W, task: 'mend', at: [44, -3.6], yaw: 3.1416,
     line: 'Orla, who scrubbed the causeway’s stones on her knees, near the third statue on the south side, to the end.' },
   { id: 'gil', name: 'Gil', arch: 'monk', dye: 'ochre', y: -30, task: 'kneel', at: [-70.5, 10.5], yaw: 0.4,
     line: 'Gil, who kept the shrine in the undercroft, below the intake stair. Knelt to it, and did not get up.' },
