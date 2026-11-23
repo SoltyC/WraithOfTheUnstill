@@ -37,7 +37,14 @@ describe('The Sow (world/sow.js, systems/sow.js, data/quests/ember.json)', () =>
   });
   it('builds every farm on the hill, the signs inside each farm', () => {
     const sites = sowSites(ov, JSON.parse(fs.readFileSync('data/world/sowHeights.json', 'utf8')));
-    expect(sites.length).toBe(SOW_FARMS.length * 5 + 4);
+    const headland = sites.filter((site) => site.id.startsWith('emb-camp'));
+    expect(headland.map((site) => site.id)).toEqual([
+      'emb-camp', ...SOW_FARMS.map(({ id }) => 'emb-camp-' + id),
+      'emb-camp-cinderhold', 'emb-camp-chapel', 'emb-camp-lookout', 'emb-camp-empty',
+    ]);
+    expect(headland.every((site) => site.hidden && site.seatAt === 'center')).toBe(true);
+    expect(headland.find((site) => site.id === 'emb-camp-lookout').at).toEqual([750, -2731]);
+    expect(sites.length - headland.length).toBe(SOW_FARMS.length * 5 + 3);
     const b = buildArchitecture(sites);
     expect(b.positions.every(Number.isFinite)).toBe(true);
     expect(b.indices.length).toBeGreaterThan(20000);
