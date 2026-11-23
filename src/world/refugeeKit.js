@@ -386,6 +386,31 @@ export function washLine(B, x, z, yaw, seed, opt = {}) {
   mark(B, 'washLine', x, z, yaw, seed, opt);
 }
 
+/** One hazel withy alternating around the upright stakes of a hurdle. */
+function withy(B, at, [u, f], [v, g], base, bays, y, parity, seed) {
+  const dx = v - u, dz = g - f, length = Math.hypot(dx, dz);
+  const nx = dz / length, nz = -dx / length;
+  const sides = 4, steps = bays * 2, radius = 0.029;
+  const points = [], normals = [];
+  const grain = 0.028 * (h2(seed, 1) - 0.5);
+  const origin = at(0, 0, 0);
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const px = u + dx * t, pz = f + dz * t;
+    const weave = parity * 0.078 * Math.cos(Math.PI * i / 2);
+    const ground = base[i];
+    for (let j = 0; j <= sides; j++) {
+      const angle = j * TAU / sides;
+      const side = Math.cos(angle), up = Math.sin(angle);
+      const across = weave + radius * side;
+      points.push(at(px + nx * across, ground + y + grain * t + radius * up, pz + nz * across));
+      const n = at(nx * side, up, nz * side);
+      normals.push([n[0] - origin[0], n[1], n[2] - origin[2]]);
+    }
+  }
+  B.grid(points, normals, sides, steps, MAT.PLANK, seed);
+}
+
 /** An animal enclosure of low wattle hurdles with a gap beside the entrance. */
 export function pen(B, x, z, yaw, seed, opt = {}) {
   const points = [[-1.6, 1.45], [-1.7, -1.3], [1.53, -1.38], [1.65, 1.4], [0.55, 1.43]];
@@ -393,23 +418,25 @@ export function pen(B, x, z, yaw, seed, opt = {}) {
   for (let k = 0; k < points.length - 1; k++) {
     const [u, f] = points[k];
     const [v, g] = points[k + 1];
-    B.piece(() => {
-      for (let j = 0; j < 3; j++) {
-        const t = j / 2;
-        const px = u + (v - u) * t;
-        const pz = f + (g - f) * t;
-        rod(B, at, [px, -0.17, pz], [px + 0.06, 0.82 + 0.17 * h2(seed, k * 3 + j), pz],
-          0.045, MAT.WOOD, seed + k * 4 + j);
-      }
-      for (let j = 0; j < 3; j++) {
-        const y = 0.23 + j * 0.22;
-        const shift = (j % 2 ? 1 : -1) * 0.08;
-        rod(B, at, [u, y, f], [(u + v) / 2 + shift, y + 0.035, (f + g) / 2 - shift],
-          0.027, MAT.WOOD, seed + 20 + k + j);
-        rod(B, at, [(u + v) / 2 + shift, y + 0.035, (f + g) / 2 - shift], [v, y - 0.035, g],
-          0.027, MAT.WOOD, seed + 36 + k + j);
-      }
-    });
+    const bays = Math.ceil(Math.hypot(v - u, g - f) / 1.1);
+    const base = [];
+    for (let i = 0; i <= bays * 2; i++) {
+      const t = i / (bays * 2);
+      const px = u + (v - u) * t, pz = f + (g - f) * t;
+      const [wx, , wz] = at(px, 0, pz);
+      const ground = opt.grade?.(wx, wz) ?? 0;
+      base.push(ground);
+      // Drive a stake at the ends and every other sample. Corners share a stake.
+      if (i % 2 !== 0 || (i === 0 && k > 0)) continue;
+      const postSeed = seed + 20 * k + i;
+      rod(B, at, [px, ground - 0.3, pz],
+        [px + 0.027 * (h2(postSeed, 1) - 0.5), ground + 1.02 + 0.12 * h2(postSeed, 2), pz],
+        i === 0 || i === bays * 2 ? 0.058 : 0.047, MAT.PLANK, postSeed);
+    }
+    for (let j = 0; j < 6; j++) {
+      withy(B, at, points[k], points[k + 1], base, bays, 0.23 + j * 0.145, j % 2 ? 1 : -1,
+        seed + 80 + k * 6 + j);
+    }
   }
   mark(B, 'pen', x, z, yaw, seed, opt);
 }
@@ -538,9 +565,15 @@ function campSite(id, x, z, r, items, origin, heightAt, glow) {
         const from = B.pos.length;
         const firstLight = B.lights.length;
         const firstBlocker = B.blockers.length;
-        kit[item.what](B, item.x - x, item.z - z, item.yaw, item.seed, item.opt);
+        const itemSeat = heightAt?.(origin[0] + item.x, origin[1] + item.z) ?? 0;
+        const opt = item.what === 'pen' && heightAt ? {
+          ...item.opt,
+          // The stakes straddle several metres of sloping ground.
+          grade: (u, f) => heightAt(at[0] + u, at[1] + f) - itemSeat,
+        } : item.opt;
+        kit[item.what](B, item.x - x, item.z - z, item.yaw, item.seed, opt);
         if (!heightAt) continue;
-        const lift = heightAt(origin[0] + item.x, origin[1] + item.z) - seat;
+        const lift = itemSeat - seat;
         for (let i = from + 1; i < B.pos.length; i += 3) B.pos[i] += lift;
         for (let i = firstLight; i < B.lights.length; i++) B.lights[i].y += lift;
         for (let i = firstBlocker; i < B.blockers.length; i++) {

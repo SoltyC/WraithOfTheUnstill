@@ -1,5 +1,18 @@
 // Per-frame systems: the lighting environment, then world streaming and pending teleports.
 
+/** A teleport waits for standing floors, including the potential floor under a landing. */
+function floorsReady(g, x, z) {
+  const sites = g.solids?.sites;
+  if (!sites) return true;
+  for (let i = 0; i < sites.length; i++) {
+    const site = sites[i];
+    if (!Number.isNaN(site.seat) || g.archSites[i].hidden || g.archSites[i].hinged) continue;
+    const dx = x - site.x, dz = z - site.z;
+    if (dx * dx + dz * dz < site.rad * site.rad) return false;
+  }
+  return true;
+}
+
 /** @param {any} g  shared boot context */
 export function addWorldSystems(g) {
   const { loop, env, arm, pendingTp, streamer, camera, controller, ground, post, atmosphere } = g;
@@ -20,7 +33,7 @@ export function addWorldSystems(g) {
       ground.qx = pendingTp.x; ground.qz = pendingTp.z;
       if (ground.coversFine() && ground.f.version === streamer.residencyVersion && streamer.arrived.length === 0
           && streamer.pendingNear(pendingTp.x, pendingTp.z) === 0
-          && (!g.solids || g.solids.seatedNear(pendingTp.x, pendingTp.z))) { // built floors known
+          && floorsReady(g, pendingTp.x, pendingTp.z)) { // built floors known
         controller.teleport(pendingTp.x, pendingTp.z);
         controller.hold = false;
         pendingTp.active = false;

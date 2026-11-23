@@ -211,7 +211,7 @@ export function addDirectorSystem(g) {
       if (lastI >= 0) moveWraith(shots[lastI], 1);
       enterShot(i, 0);
     }, () => {
-      moveWraith(shots[shots.length - 1], 1);
+      if (shots.length) moveWraith(shots[shots.length - 1], 1);
       markCutsceneSeen(g.chapter?.graph.flags, id);
       d.stop();
     });
@@ -249,7 +249,10 @@ export function addDirectorSystem(g) {
     },
     /** Hold the timeline at time s (s): a film drives it frame by frame. hold false: jump there and play on. */
     seek(s, hold = true) {
-      if (manual !== hold) showSkip(skipOffered && !hold);
+      if (manual !== hold) {
+        skipArmed = !input?.down[Action.SkipCutscene];
+        showSkip(skipOffered && !hold);
+      }
       manual = hold;
       t = s;
     },

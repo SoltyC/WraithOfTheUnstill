@@ -98,6 +98,15 @@ describe('optional objectives, variables and goals', () => {
 });
 
 describe('a load', () => {
+  it('refills the variables object that world systems hold', () => {
+    const g = new QuestGraph([], {});
+    const held = g.vars;
+    held['ruin:old'] = { seed: 1 };
+    g.restore({ vars: { 'ruin:sow-gwil-farm': { seed: 2 } } });
+    expect(g.vars).toBe(held);
+    expect(held).toEqual({ 'ruin:sow-gwil-farm': { seed: 2 } });
+  });
+
   it('refills the same flag set: systems hold on to it', () => {
     const g = new QuestGraph([], {}), held = g.flags;
     g.flags.add('old'); g.restore({ quests: {}, flags: ['new'], vars: {} });
