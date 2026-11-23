@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { QuestGraph } from '../src/game/quests/questGraph.js';
+import { checkEntries, ENTRIES } from '../src/game/remembrance.js';
 import { Builder } from '../src/world/architecture.js';
+import ember from '../data/quests/ember.json';
 import * as camp from '../src/world/refugeeKit.js';
 
 const builders = [
@@ -117,5 +120,65 @@ describe('headland clearings', () => {
 
   it.each([12, 30])('keeps eight plots of %i people under the triangle budget', (size) => {
     expect(triangleCount(8, size)).toBeLessThanOrEqual(40_000);
+  });
+});
+
+describe('words at the headland', () => {
+  const graph = new QuestGraph([], {});
+  // The words the survivor actually gets under the chapter's first-match rule.
+  const lineFor = (npc, flags) => {
+    graph.flags = new Set(flags);
+    return ember.talk[npc].find((talk) => graph.test(talk.when, {}))?.say;
+  };
+
+  it('gives all elders and kin five valid camp lines ahead of farm dialogue', () => {
+    const npcs = ember.npcs.filter((npc) => npc.home?.poi.startsWith('sow-'));
+    expect(npcs).toHaveLength(12);
+    for (const npc of npcs) {
+      const prefix = 'ember.' + npc.id.slice(6) + '.camp.';
+      const family = npc.home.poi.split('-')[1];
+      const after = ember.talk[npc.id].slice(0, 5);
+      expect(after.map((talk) => talk.say)).toEqual(
+        ['lied', 'lost', 'shown', 'rumour', 'home'].map((kind) => prefix + kind),
+      );
+      for (const { say, when } of after) {
+        expect(when.flag).toContain('ember:after');
+        expect(ember.dialogue[say]?.speaker).toBe(npc.id);
+        expect(ember.dialogue[say].lines.every((line) => !line.includes('!'))).toBe(true);
+      }
+      const departure = 'ember:' + family + '-go';
+      expect(lineFor(npc.id, ['ember:after', departure])).toBe(prefix + 'home');
+      expect(lineFor(npc.id, [departure])?.startsWith(prefix)).not.toBe(true);
+      expect(lineFor(npc.id, ['ember:after', departure, 'ember:' + family + '-stays'])
+        ?.startsWith(prefix)).not.toBe(true);
+      expect(lineFor(npc.id, ['ember:after', 'ember:' + family + '-lied'])).toBe(prefix + 'lied');
+    }
+  });
+
+  it('chooses the lie, loss, shown sign, and exposed guild tithe in story order', () => {
+    const base = ['ember:after', 'ember:bethan-go', 'ember:tithe-exposed'];
+    const shown = [...base, 'ember:sign-bethan', 'ember:bethan-showing'];
+    const loss = [...shown, 'ember:huw-stays'];
+    expect(lineFor('ember-bethan', base)).toBe('ember.bethan.camp.rumour');
+    expect(lineFor('ember-bethan', [...base, 'ember:sign-bethan'])).toBe('ember.bethan.camp.rumour');
+    expect(lineFor('ember-bethan', shown)).toBe('ember.bethan.camp.shown');
+    expect(lineFor('ember-bethan', loss)).toBe('ember.bethan.camp.lost');
+    expect(lineFor('ember-bethan', [...loss, 'ember:bethan-lied'])).toBe('ember.bethan.camp.lied');
+    expect(lineFor('ember-huw', ['ember:after', 'ember:huw-go', 'ember:lie-found']))
+      .toBe('ember.huw.camp.rumour');
+  });
+
+  it('records both possible fates for each Ember community', () => {
+    expect(checkEntries()).toEqual([]);
+    const entries = ENTRIES.filter((entry) => entry.id.startsWith('ember-'));
+    expect(entries).toHaveLength(16);
+    for (const [id, kind] of families) {
+      const fled = kind === 'farm' ? 'ember:' + id + '-go' : 'ember:fled-' + id;
+      const stayed = kind === 'farm' ? 'ember:' + id + '-stays' : 'ember:lost-' + id;
+      expect(entries.filter((entry) => [fled, stayed].includes(entry.has))).toEqual([
+        expect.objectContaining({ id: 'ember-' + id + '-out', group: 'people', has: fled }),
+        expect.objectContaining({ id: 'ember-' + id + '-stayed', group: 'people', has: stayed }),
+      ]);
+    }
   });
 });
