@@ -14,7 +14,7 @@ const smoother = (u) => u * u * u * (u * (u * 6 - 15) + 10);
 const lerp = (a, b, u) => a + (b - a) * u;
 
 /** The camera of beat `b` at u (0..1 of the beat) → out [px, py, pz, ax, ay, az, fov, focus]. */
-export function evalBeat(b, u, time, resolve, ground, out) {
+export function evalBeat(b, u, time, resolve, ground, out, blocked) {
   const e = smoother(Math.min(1, Math.max(0, u))), uu = lerp(u, e, b.ease ?? 0.8);
   const S = resolve(b.subject), T = b.target ? resolve(b.target) : null;
   const look = [S[0], S[1] + (b.lookUp ?? 1.2), S[2]];
@@ -49,6 +49,20 @@ export function evalBeat(b, u, time, resolve, ground, out) {
   // Hand-held.
   const dr = b.drift ?? 0.08;
   if (dr > 0) { cam[0] += dr * (Math.sin(time * 0.71 + 1.3) * 0.6 + Math.sin(time * 1.37) * 0.4); cam[1] += dr * 0.6 * Math.sin(time * 0.53 + 2.1); cam[2] += dr * (Math.sin(time * 0.83 + 0.2) * 0.6 + Math.sin(time * 1.13 + 2.9) * 0.4); }
+  // Clear of walls: if a building stands between the camera and what it films, swing round the subject until it is clear —
+  // chosen once for the beat (at its first frame), so the camera never jumps mid-shot.
+  if (blocked) {
+    if (b._swing === undefined) {
+      b._swing = 0;
+      if (blocked(cam, look)) {
+        for (const sw of [0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.6, -1.6, 2.2, -2.2, Math.PI]) {
+          const c = swingAbout(cam, look, sw);
+          if (!blocked(c, look)) { b._swing = sw; break; }
+        }
+      }
+    }
+    if (b._swing) cam = swingAbout(cam, look, b._swing);
+  }
   // Clear of the ground, and over any hill between the camera and what it films.
   if (ground) {
     const clear = b.clear ?? 1.2;
@@ -68,6 +82,12 @@ export function evalBeat(b, u, time, resolve, ground, out) {
   out[6] = lerp(b.fov ?? 0.75, b.fov2 ?? b.fov ?? 0.75, uu);
   out[7] = Math.hypot(look[0] - cam[0], look[1] - cam[1], look[2] - cam[2]);
   return out;
+}
+
+/** The camera turned by a about the look-at point (round the vertical). */
+function swingAbout(cam, look, a) {
+  const dx = cam[0] - look[0], dz = cam[2] - look[2], c = Math.cos(a), s = Math.sin(a);
+  return [look[0] + dx * c + dz * s, cam[1], look[2] - dx * s + dz * c];
 }
 
 /** The variant of a scene for the state: the first whose `when(ctx)` holds (none: null). */

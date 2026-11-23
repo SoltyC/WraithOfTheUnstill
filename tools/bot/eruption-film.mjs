@@ -22,6 +22,17 @@ const SCENES = {
   // The mountain breaks: from the plain to the south-west at dusk, a time-lapse of the first minutes.
   wide: { tp: [1330, -2470], hour: 18.6, seconds: 26, setup: `g.chapter.graph.flags.add('ember:warned');g.chapter.graph.vars['ember:day']=4;`, rate: 5,
     cam: `const u=t/26,x=1300+70*u,z=-2470+40*u,y=gy(x,z)+190-30*u;cam.at(x,y,z,2330,780+40*u,-2170,0.58);` },
+  // The village that stayed (game/emberScenes.js): the Wraith far off on the south flank; the lava comes for Gwil's farm
+  // and the scene cuts to them on its own (the director drives the camera: no cam script).
+  stayed: { tp: [1330, -2470], hour: 15, seconds: 48, at: 287, rate: 1, prepare: ['sow-gwil-farm'], cam: '' },
+  // After: the Sow under the ash, the flows cooled black, the trees grey, the mountain still smoking (the day after).
+  after: { tp: [1000, -1640], hour: 10.5, seconds: 24,
+    setup: `const F=g.chapter.graph.flags;F.add('ember:warned');F.add('ember:erupted');g.chapter.graph.vars['ember:day']=5;`,
+    cam: `const u=ease(t/24),x=1040-120*u,z=-1620-60*u,y=gy(x,z)+22+8*u;cam.at(x,y,z,2350,900,-2150,0.8);` },
+  // The survivors' camp on the headland: every group got out (the Sow's six, Cinderhold, the chapel); in along the road at dusk.
+  camp: { tp: [690, -2650], hour: 16.6, seconds: 26,
+    setup: `const F=g.chapter.graph.flags;for(const id of ['aled','bethan','huw','ffion','gwil','mari'])F.add('ember:'+id+'-go');F.add('ember:fled-cinderhold');F.add('ember:fled-chapel');F.add('ember:after');F.add('ember:erupted');g.chapter.graph.vars['ember:day']=5;`,
+    cam: `const u=ease(t/26),x=662+28*u,z=-2662+6*u,y=gy(x,z)+14-10*u;cam.at(x,y,z,770,gy(770,-2632)+3+6*(1-u),-2632,0.8);` },
   // The blast and the bombs: from the south-west flank, the summit going up and the rock coming down round the camera.
   bombs: { tp: [2060, -2590], hour: 17.8, seconds: 28, setup: `g.chapter.graph.flags.add('ember:warned');g.chapter.graph.vars['ember:day']=4;`, rate: 1,
     cam: `const u=ease(t/28),x=2050+25*u,z=-2600+20*u,y=gy(x,z)+55+25*u;cam.at(x,y,z,2330,800+120*u,-2180,0.85);` },
@@ -40,6 +51,8 @@ const want = (process.argv[2] || Object.keys(SCENES).join(',')).split(',');
 fs.mkdirSync('screenshots/ember-film', { recursive: true });
 for (const name of want) {
   const S = SCENES[name];
+  // (A fresh frames folder: a shorter take than the last would otherwise keep the old take's tail.)
+  fs.rmSync(`screenshots/ember-film/frames/${name}`, { recursive: true, force: true });
   execSync(`tools/bot/play.sh ${S.spot || 'e1-chapel'} "^&gfx=high"`, { stdio: 'inherit' });
   await sleep(6000);
   if (S.spot) await bot('spot', { id: S.spot });

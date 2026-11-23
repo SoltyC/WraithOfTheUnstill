@@ -212,6 +212,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     texScale = 1.0 / tile;
   }
   if (mid == 20) { layer = MAT_ROCK_STRATA; texScale = 0.7; }   // basalt (Cinderhold)
+  if (mid == 21) { layer = MAT_WOOL; texScale = 1.6; }           // household cloth (the refugees' tarps, blankets, bundles)
   // Derivatives from the continuous uv: the per-block offset jumps at every block's edge.
   let cuv = uv * texScale;
   let tuv = cuv + vec2f(fract(bseed * 7.13), fract(bseed * 3.71)) * 7.0;
@@ -270,11 +271,21 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     // On the erg's ruins (z = 2) the drift is sand.
     albedo = select(vec3f(0.86, 0.88, 0.92), vec3f(0.64, 0.47, 0.29) * (0.92 + 0.16 * n1), glowS.z > 1.5); rough = 0.9;
     N = normalize(N + vec3f(n1 * 0.08, 0.0, n2 * 0.08));
-  } else if (mid == 2) {
+  } else if (mid == 2 || mid == 21) {
     // Felt and canvas: undyed wool, patched; light comes through it from the fire at night.
     let patched = step(0.62, ar_hash(floor(uv / vec2f(0.8, 0.6)) + seed));
     let felt = dot(ms.albedo, vec3f(0.3, 0.59, 0.11));
     albedo = mix(vec3f(0.42, 0.36, 0.28), vec3f(0.33, 0.26, 0.2), patched) * (0.75 + 0.6 * felt) * (0.9 + 0.2 * n1);
+    if (mid == 21) {
+      // Household cloth (21): what a family threw over a cart — madder red, woad blue, weld yellow, walnut brown, undyed —
+      // faded by sun and rain, patched in another of them, stained darker toward the ground.
+      let pick = fract(hs * 7.31);
+      let dye = select(select(select(select(vec3f(0.4, 0.35, 0.27), vec3f(0.24, 0.16, 0.1), pick < 0.82), vec3f(0.5, 0.4, 0.15), pick < 0.62),
+        vec3f(0.17, 0.22, 0.3), pick < 0.44), vec3f(0.42, 0.14, 0.1), pick < 0.24);
+      let other = vec3f(0.42, 0.36, 0.28) * vec3f(0.9 + 0.3 * fract(hs * 3.1), 0.85, 0.75 + 0.3 * fract(hs * 5.7));
+      let faded = mix(dye, vec3f(0.42, 0.38, 0.32), 0.25 + 0.3 * smoothstep(-0.5, 0.8, n1));
+      albedo = mix(faded, other, patched * 0.8) * (0.7 + 0.5 * felt) * (1.0 - 0.3 * smoothstep(0.6, 0.0, fragmentInputs.vLocalY));
+    }
     N = ms.N; ao = mix(1.0, ms.ao, 0.6);
     trans = 1.0;
   } else if (mid == 3) {

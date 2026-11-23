@@ -13,6 +13,7 @@ import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { BRDF_WGSL } from './brdf.wgsl.js';
 import { MATERIALS_DECL, MATERIALS_WGSL } from './materials.wgsl.js';
 import { WIND_DECL, WIND_WGSL } from './wind.wgsl.js';
+import { ASH_WGSL } from './ash.wgsl.js';
 
 /** Near detail within LOD_NEAR m, trees end at LOD_OUT; a change dissolves over FADE s (render/trees.js).
  *  Fade kinds (world2.y): 1 plain, 2 detail in, 3 detail out, 4 edge in, 5 edge out. */
@@ -153,6 +154,7 @@ varying vHue: f32;
 varying vFade: f32;
 ${leafPass ? '' : MATERIALS_DECL}
 ${COMMON_WGSL}
+${ASH_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
@@ -209,6 +211,8 @@ ${leafPass ? `
   if (sp > 4.5) { albedo *= 1.5; }
   // Stilled erg (treeMat.z the Dunes' restoration): the oasis palms and the thorn hang grey and dry.
   if (sp > 4.5) { albedo = mix(albedo, lum * vec3f(1.0, 0.92, 0.78) * 0.9, 0.8 * (1.0 - uniforms.treeMat.z)); }
+  // The eruption's ash (treeMat.w; shaders/ash.wgsl.js): grey on the leaves, most on those facing up.
+  albedo = mix(albedo, vec3f(0.13, 0.125, 0.12), ashCover(wp.xz, uniforms.treeMat.w) * 0.7 * (0.45 + 0.55 * max(N.y, 0.0)));
   // Inner crown is darker (light has crossed the leaves above): height in tree and facing — but
   // never black (light comes through and between the leaves).
   // Crown depth (world/trees/generator.js crownDepth: packed round the atlas cell, 0 hull … 1 core):

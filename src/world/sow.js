@@ -50,6 +50,9 @@ const BYRE = { L: 2.8, D: 2.3, H: 2.1, T: 0.45 };
 /** The farms with a tower-house: where it stands in the farm's frame (u, f) and its storeys. */
 const TOWERS = { gwil: [-HOUSE.L - 1.2, -HOUSE.D - 3.2, 4], ffion: [-HOUSE.L - 1.2, -HOUSE.D - 3.2, 3], huw: [-HOUSE.L - 1.2, -HOUSE.D - 3.2, 3], bethan: [HOUSE.L + 2 * BYRE.L + 1.5, -HOUSE.D - 3.2, 3] };
 
+/** The house door's world point, f metres out from the wall's face (negative: in through it) — where doorBuild hangs it. */
+export function sowDoor(farm, f = 0) { const du = farm.id === 'gwil' || farm.id === 'huw' ? -1.6 : 1.6; return sowPoint(farm, du, HOUSE.D + f); }
+
 /** World point of a farm-frame point (u, f). */
 export function sowPoint(farm, u, f) { const p = rot(farm.facing)(u, 0, f); return [farm.at[0] + p[0], farm.at[1] + p[2]]; }
 
@@ -151,8 +154,19 @@ function farmBuild(farm, rel) {
     const at = (u, f, y = 0) => P(u, y, f);
     let s = 7000 + id.charCodeAt(0) * 13;
     // The house and the byre beside it, on their terrace.
-    lifted(b, terraceY(rel), () => {
-      vaulted(b, P, 0, 0, HOUSE, id === 'gwil' || id === 'huw' ? -1.6 : 1.6, s);
+    const ty = terraceY(rel), du = id === 'gwil' || id === 'huw' ? -1.6 : 1.6;
+    // Steps up to the door: the terrace is cut into the slope, so on the downhill side its footing stands above the yard
+    // (on Gwil's, most of a metre). Risers of about 19 cm, treads of 32, from the yard to the threshold.
+    {
+      const sill = ty + 0.12, face = HOUSE.D + 0.25, foot = rel(du, face + 1.5), h = sill - foot;
+      const n = h > 0.12 ? Math.ceil(h / 0.19) : 0;
+      for (let k = 1; k < n; k++) {
+        const top = sill - k * h / n, f1 = face + k * 0.32, p = P(du, 0, (face + f1) / 2);
+        b.box(p[0], p[2], foot - 0.45, top, 0.62 + 0.03 * k, (f1 - face) / 2, facing, MAT.FLAG, s + 60 + k, { plain: true, ...NS });
+      }
+    }
+    lifted(b, ty, () => {
+      vaulted(b, P, 0, 0, HOUSE, du, s);
       vaulted(b, P, HOUSE.L + BYRE.L + 1.1, -0.6, BYRE, 0, s + 40, { open: true });
     });
     // The tower-house behind (the bigger farms: grain and goods kept high and dry), three or four storeys over the yard.

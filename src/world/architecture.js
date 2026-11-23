@@ -20,7 +20,9 @@ export const MAT = { STONE: 0, GLYPH: 1, CANVAS: 2, WOOD: 3, ICE: 4, EMBER: 5, M
   // The erg's battle glass (Phase 9 D7, world/glassKit.js): fused sand, clear and glossy.
   BATTLE_GLASS: 19,
   // Cinderhold's dark lava stone (world/cinderhold.js): laid like Shaper stone, on the rock scan, near black.
-  BASALT: 20 };
+  BASALT: 20,
+  // Household cloth (world/refugeeKit.js): dyed, faded, patched — the wool scan, each piece its own colour.
+  CLOTH: 21 };
 const FOUND = 3; // m of foundation below the seat
 
 function rng(seed) { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }

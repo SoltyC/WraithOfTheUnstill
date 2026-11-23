@@ -37,6 +37,9 @@ export function createLightning() {
     age: -1.5 + 0.5, gx: 0.5, gz: 0.5, topY: 1500.5, dist: 1000.5, bearing: 0.5, seed: 0, version: 0,
     /** A held strike (captures): the age stays fixed. */
     hold: false,
+    /** An eruption's column (systems/eruption.js), or null: { x, z, r, y0, y1, rate } — bolts inside it as often as `rate`
+     *  per second, from high in the column down through it (botY: where the bolt ends; NaN: on the ground). */
+    column: null, colNext: 0, botY: NaN,
     /** Pulses of this strike: start (s) and amplitude, n of them. */
     pulses: 1, p1: 0.5, p2: 0.5, a1: 0.5, a2: 0.5,
     /** Outputs: the key light's flash (short), the clouds' glow (longer) and the bolt's brightness,
@@ -56,6 +59,7 @@ export function createLightning() {
       this.pulses = h < 0.35 ? 1 : h < 0.75 ? 2 : 3;
       this.p1 = 0.07 + 0.07 * hash(seed + 13); this.p2 = this.p1 + 0.08 + 0.1 * hash(seed + 17);
       this.a1 = 0.55 + 0.35 * hash(seed + 19); this.a2 = 0.4 + 0.3 * hash(seed + 23);
+      this.botY = NaN;
       this.age = 0; this.hold = !!hold; this.version++; this.count++;
       if (tN < MAX_THUNDER) { tAt[tN] = this.time + thunderDelay(d); tDist[tN] = d; tBear[tN] = b; tN++; }
       this.shape();
@@ -75,6 +79,8 @@ export function createLightning() {
       const k = 1 / (1 + (this.dist / 1100) * (this.dist / 1100));
       const life = Math.max(0, 1 - a / BOLT_LIFE);
       this.flash = f * k; this.glow = g * (0.25 + 0.75 / (1 + this.dist / 3500)); this.bolt = bl * life;
+      // (Inside an ash column: the ash swallows most of it — the column flickers, the land and sky only a little.)
+      if (this.botY === this.botY) { this.flash *= 0.015; this.glow *= 0.02; }
       // Toward the bolt's middle (up-biased: the light comes from the cloud as much as the ground).
       const dx = this.gx - this.camX, dz = this.gz - this.camZ, dy = this.topY * 0.55 - this.camY;
       const l = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
@@ -83,7 +89,22 @@ export function createLightning() {
     update() {
       if (!this.enabled) { this.age = -1; this.shape(); return; }
       this.time += this.dt;
-      if (this.storm > 0.3) {
+      // The column's own lightning: dense, short, inside the ash (charged by the grains rubbing), never far from it.
+      const C = this.column;
+      if (C && this.age < 0 && this.time >= this.colNext) {
+        const n = this.count + 1;
+        // On the column's near face (inside it, the ash hides the bolt — only its glow would show), across its width.
+        const tx = this.camX - C.x, tz = this.camZ - C.z, tl = Math.hypot(tx, tz) || 1, side = (hash(n * 7 + 1) - 0.5) * 1.6;
+        const x = C.x + (tx / tl) * C.r * 0.85 + (-tz / tl) * C.r * side, z = C.z + (tz / tl) * C.r * 0.85 + (tx / tl) * C.r * side;
+        const dx = x - this.camX, dz = z - this.camZ;
+        this.strike(Math.atan2(dx, dz), Math.max(60, Math.hypot(dx, dz)), n * 31);
+        this.topY = C.y0 + (C.y1 - C.y0) * (0.12 + 0.4 * hash(n * 7 + 3));
+        // Down the column to its foot (the crater's rim) one time in three; otherwise a few hundred metres within it.
+        this.botY = hash(n * 7 + 4) < 0.4 ? C.y0 : Math.max(C.y0, this.topY - 200 - 450 * hash(n * 7 + 5));
+        this.shape();
+        this.colNext = this.time + (0.25 + 1.6 * hash(n * 7 + 6)) / Math.max(C.rate, 0.05);
+      }
+      if (this.storm > 0.3 && !C) {
         if (this.age < 0 && this.time >= this.nextAt) {
           const n = this.count + 1;
           const u = hash(n * 5 + 1);

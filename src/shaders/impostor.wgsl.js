@@ -10,6 +10,7 @@ import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 import { SHADOW_RECEIVE_WGSL } from './shadows.wgsl.js';
 import { BRDF_WGSL } from './brdf.wgsl.js';
+import { ASH_WGSL } from './ash.wgsl.js';
 
 /** Shared by the bake and the draw: the hemi-octahedral map and each baked view's frame. */
 export const IMP_COMMON_WGSL = /* wgsl */ `
@@ -99,6 +100,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
 export const impostorFragmentWGSL = /* wgsl */ `
 ${ENV_DECL}
 uniform impParams: vec4f;
+uniform impAsh: vec4f;               // x = the eruption's ash on the land 0..1 (shaders/ash.wgsl.js)
 var impAlb: texture_2d_array<f32>;
 var impAlbSampler: sampler;
 var impNrm: texture_2d_array<f32>;
@@ -110,6 +112,7 @@ varying vW: vec4f;
 varying vInfo: vec4f;
 varying vR: f32;
 ${COMMON_WGSL}
+${ASH_WGSL}
 ${ATMO_MATERIAL_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${BRDF_WGSL()}
@@ -145,6 +148,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   albedo *= (0.85 + 0.35 * hue) / 1.025 * mix(vec3f(0.97, 1.0, 0.95), vec3f(1.03, 1.0, 0.97), hue);
   { let k = fract(hue * 7.31); albedo *= mix(vec3f(0.78, 0.9, 0.95), vec3f(1.12, 1.06, 0.82), k) * mix(0.82, 1.12, fract(hue * 3.17)); }   // treeTone (shaders/trees.wgsl.js)
   albedo *= mix(1.0, 0.76, uniforms.wetParams.x);
+  // The eruption's ash on the crowns (as the near trees: shaders/trees.wgsl.js).
+  let ashI = ashCover(fragmentInputs.vWorldPos.xz, uniforms.impAsh.x);
+  albedo = mix(albedo, vec3f(0.13, 0.125, 0.12), ashI * 0.7 * (0.45 + 0.55 * max(N.y, 0.0)));
   let wp = fragmentInputs.vWorldPos;
   let camPos = uniforms.cameraPosition;
   let V = normalize(camPos - wp);

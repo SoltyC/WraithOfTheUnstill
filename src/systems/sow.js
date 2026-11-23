@@ -118,8 +118,11 @@ export function addSowSystem(g) {
     // Out of the gate, up the coast road to the headland camp (world/sow.js CAMP), to the family's place round the fire.
     // Out of the Wraith's sight they walk on quicker (no one is watching), so a family is there when the Wraith arrives.
     // (lag: the elder's second, a step behind and to the side, then beside them at the fire.)
+    // (Their own clearing's fire — world/refugeeKit.js: its first two places, the elder's and the kin's — or the middle's.)
+    const plot = f.site.camp >= 0 ? g.archSites[f.site.camp] : null, ps = plot?.slots?.[lag ? 1 : 0];
     const k0 = fams.indexOf(f), a = k0 / fams.length * Math.PI * 2 + 0.3, r = 6.5;
-    const slot = [CAMP.at[0] + Math.cos(a) * r + (lag ? Math.sin(a) * 1.3 : 0), CAMP.at[1] + Math.sin(a) * r - (lag ? Math.cos(a) * 1.3 : 0)];
+    const slot = ps ? [plot.at[0] + ps.x, plot.at[1] + ps.z]
+      : [CAMP.at[0] + Math.cos(a) * r + (lag ? Math.sin(a) * 1.3 : 0), CAMP.at[1] + Math.sin(a) * r - (lag ? Math.cos(a) * 1.3 : 0)];
     const pts = [f.gate, ...ROAD, slot];
     n.leg ??= 0;
     const k = Math.min(n.leg, pts.length - 1), last = k === pts.length - 1;
@@ -130,7 +133,7 @@ export function addSowSystem(g) {
     n.hide = false;
     if (last && d < 0.4) {
       // At the camp: by the fire, facing it, looking up when the Wraith comes.
-      n.yaw = Math.atan2(CAMP.at[0] - n.x, CAMP.at[1] - n.z); n.noLook = false; n.hunch = 0.35; n.gone = true;
+      n.yaw = ps ? ps.yaw : Math.atan2(CAMP.at[0] - n.x, CAMP.at[1] - n.z); n.noLook = false; n.hunch = 0.35; n.gone = true;
     } else { n.noLook = true; n.hunch = 0.2; }
     return Math.hypot(f.farm.at[0] - n.x, f.farm.at[1] - n.z) > 60;
   }
@@ -195,6 +198,18 @@ export function addSowSystem(g) {
   const coldSite = siteIdx('emb-camp-empty');
   const lookoutSite = siteIdx('emb-camp-lookout');
   const otherCamps = ['cinderhold', 'chapel'].map((id) => ({ id, site: siteIdx('emb-camp-' + id) }));
+  // The camp wears the grass away where people sleep, cook and walk (render/clearance.js): only the clearings in use.
+  const campIdx = g.archSites.map((st, i) => (st.trample ? i : -1)).filter((i) => i >= 0);
+  let campShown = '';
+  g.clearance?.addSource({
+    near(cx, cz, R, cb) {
+      for (const i of campIdx) {
+        const st = g.archSites[i];
+        if (st.hidden || Math.hypot(st.at[0] - cx, st.at[1] - cz) > R + 40) continue;
+        for (const [x, z, r] of st.trample) cb(x, z, r, r, 0);
+      }
+    },
+  });
   let acc = 0;
   loop.add({ name: 'sow', update: () => {
     setBrains();
@@ -221,7 +236,8 @@ export function addSowSystem(g) {
         if (f.site.bundles >= 0) sites[f.site.bundles].hidden = !(has(`ember:${f.id}-believes`) || has(`ember:${f.id}-lied`)) || f.hidden;
         if (f.site.load >= 0) sites[f.site.load].hidden = !has(`ember:${f.id}-load`) || f.hidden;
         if (f.site.cart >= 0) sites[f.site.cart].hidden = gone && f.hidden;
-        const fled = gone && !has('ember:' + f.id + '-stays');
+        // (Its clearing: whenever any of the household went — Aled holding the fold does not take Nia's place at the camp.)
+        const fled = going(f);
         if (f.site.camp >= 0) sites[f.site.camp].hidden = !fled;
         occupied ||= fled;
       }
@@ -233,6 +249,9 @@ export function addSowSystem(g) {
       if (campSite >= 0) sites[campSite].hidden = !occupied;
       if (lookoutSite >= 0) sites[lookoutSite].hidden = !occupied;
       if (coldSite >= 0) sites[coldSite].hidden = occupied || !has('ember:after');
+      // (Re-stamp the worn ground when the clearings in use change.)
+      const shown = campIdx.map((i) => (sites[i].hidden ? 0 : 1)).join('');
+      if (shown !== campShown) { campShown = shown; g.clearance?.invalidate(); }
       const all = fams.every(decided);
       const n = fams.filter(decided).length;
       chapter.graph.vars['ember:sow-decided'] = n;

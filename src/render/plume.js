@@ -1,5 +1,5 @@
 // The volcano's plume (shaders/plume.wgsl.js): one static mesh of PLUME_COUNT puff quads, its motion all in the vertex
-// shader. Owner fields: the crater (x, y, z), time, wind (x, z), height, strength; glow (night 0..1) and darkness; scale (a steam
+// shader. Owner fields: flash (0..1) at (fx, fy, fz) — lightning inside the column, lighting the ash round it; the crater (x, y, z), time, wind (x, z), height, strength; glow (night 0..1) and darkness; scale (a steam
 // vent: a few hundredths) and steam (0..1, white).
 
 import { ShaderStore } from '@babylonjs/core/Engines/shaderStore.js';
@@ -30,24 +30,24 @@ export function createPlume(scene, atmo, opt = {}) {
   const mesh = new Mesh(opt.name || 'plume', scene);
   const vd = new VertexData(); vd.positions = pos; vd.indices = idx; vd.applyToMesh(mesh, false);
   mesh.alwaysSelectAsActiveMesh = true; mesh.doNotSyncBoundingInfo = true; mesh.freezeWorldMatrix();
-  const A = new Vector4(0, 0, 0, 0), B = new Vector4(1, 0, 650, 1), C = new Vector4(0, 0, 0, 0);
+  const A = new Vector4(0, 0, 0, 0), B = new Vector4(1, 0, 650, 1), C = new Vector4(0, 0, 0, 0), D = new Vector4(0, 0, 0, 0);
   const mat = new ShaderMaterial('plume', scene, { vertex: 'plume', fragment: 'plume' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'plumeA', 'plumeB', 'plumeC', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'plumeA', 'plumeB', 'plumeC', 'plumeD', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES], storageBuffers: [...ATMO_MATERIAL_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL, needAlphaBlending: true,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
-  mat.setVector4('plumeA', A); mat.setVector4('plumeB', B); mat.setVector4('plumeC', C);
+  mat.setVector4('plumeA', A); mat.setVector4('plumeB', B); mat.setVector4('plumeC', C); mat.setVector4('plumeD', D);
   mat.alphaMode = Constants.ALPHA_PREMULTIPLIED_PORTERDUFF;
   mat.disableDepthWrite = true; mat.backFaceCulling = false;
   mesh.material = mat;
   return {
     mesh, material: mat,
-    x: 0, y: 0, z: 0, time: 0, windX: 1, windZ: 0, height: 650, strength: 1, glow: 0, dark: 0, scale: 1, steam: 0,
+    x: 0, y: 0, z: 0, time: 0, flash: 0, fx: 0, fy: 0, fz: 0, windX: 1, windZ: 0, height: 650, strength: 1, glow: 0, dark: 0, scale: 1, steam: 0,
     update() {
-      A.set(this.x, this.y, this.z, this.time); B.set(this.windX, this.windZ, this.height, this.strength); C.set(this.glow, this.dark, this.scale, this.steam);
-      mat.setVector4('plumeA', A); mat.setVector4('plumeB', B); mat.setVector4('plumeC', C);
+      A.set(this.x, this.y, this.z, this.time); B.set(this.windX, this.windZ, this.height, this.strength); C.set(this.glow, this.dark, this.scale, this.steam); D.set(this.flash, this.fx, this.fy, this.fz);
+      mat.setVector4('plumeA', A); mat.setVector4('plumeB', B); mat.setVector4('plumeC', C); mat.setVector4('plumeD', D);
     },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
   };

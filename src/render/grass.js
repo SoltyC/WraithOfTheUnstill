@@ -30,7 +30,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
   // Push: the Wraith parts the grass where it passes; the blades spring back over ~2.5 s. A trail
   // of PUSH_N points (x, y, z, strength): [0] follows the Wraith, the rest are where it was.
   const PUSH_N = 8, push = new Array(PUSH_N * 4).fill(0);
-  /** The erg (grassErg): x = the Dunes' restoration. */
+  /** The erg (grassErg): x = the Dunes' restoration; y = the eruption's ash on the land (owner field `ash`). */
   const erg = new Vector4(1, 0, 0, 0);
   let trailHead = 1, lastX = 0, lastZ = 0;
   const rings = [], mats = [];
@@ -82,7 +82,7 @@ export function createGrass(scene, clipmap, atmo, wind) {
     px: 0.5, py: 0.5, pz: 0.5, pushK: 1.5 - 0.5, dt: 0.5 - 0.5,
     update() {
       for (const r of rings) { r.rp.x = this.time; r.rp.y = this.wind; r.rp.z = this.density; }
-      erg.x = this.dunesRestored;
+      erg.x = this.dunesRestored; erg.y = this.ash || 0;
       // Trail: drop a point every 0.45 m travelled; the old ones fade.
       for (let i = 1; i < PUSH_N; i++) push[i * 4 + 3] = Math.max(0, push[i * 4 + 3] - this.dt * 0.4);
       const lx = this.px - lastX, lz = this.pz - lastZ;

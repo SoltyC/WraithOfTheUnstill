@@ -1,106 +1,172 @@
 {
-  "note": "Every clip in this folder. tests/motionGate.test.js fails on a clip that is not listed, has changed since it was judged, or does not pass tools/motion/clipGate.mjs. A clip with cues is played by the game and needs eye, a film of it on the robe that was watched and accepted.",
-  "clips": {
-    "knead1": {
-      "prompt": "A person stands at a table kneading bread dough, pushing down with both hands and folding it, leaning their weight forward and back.",
-      "seed": 1,
-      "steps": 100,
-      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
-      "repairs": [
-        "fit"
-      ],
-      "gate": {},
-      "cues": [
-        "drowned:hanne",
-        "drowned:ysolde"
-      ],
-      "eye": {
-        "by": "user",
-        "date": "2026-11-02",
-        "film": "screenshots/kimodo/gate-knead1.mp4",
-        "verdict": "The films look good"
-      },
-      "sha256": "ed5e09d0c37c79f77c7665190be6f12def12b5b4683a807334a7113475733878"
-    },
-    "rock": {
-      "prompt": "A person rocks a baby in their arms.",
-      "seed": 3,
-      "steps": 100,
-      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
-      "repairs": [
-        "fit"
-      ],
-      "gate": {},
-      "cues": [
-        "drowned:teodor"
-      ],
-      "eye": {
-        "by": "user",
-        "date": "2026-11-02",
-        "film": "screenshots/kimodo/gate-rock.mp4",
-        "verdict": "The films look good"
-      },
-      "sha256": "70ca860bb49c078e360f5def896971da0adde3868c74c556e4907bad49d798c1"
-    },
-    "walk": {
-      "prompt": "A person walks nervously, looking around.",
-      "seed": 3,
-      "steps": 100,
-      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
-      "repairs": [
-        "fit",
-        "feet"
-      ],
-      "gate": {
-        "travels": true
-      },
-      "cues": [],
-      "eye": {
-        "by": "user",
-        "date": "2026-11-02",
-        "film": "screenshots/kimodo/gate-walk.mp4",
-        "verdict": "The films look good"
-      },
-      "sha256": "14d0abb73266da0f69763af514f21f2d81e6f067cf739163586d1422ebfbb6c0"
-    },
-    "wheel": {
-      "prompt": "A person hauls on a heavy wheel with both arms, pulling hard hand over hand, leaning back with their whole body weight.",
-      "seed": 2,
-      "steps": 100,
-      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
-      "repairs": [
-        "fit"
-      ],
-      "gate": {},
-      "cues": [
-        "drowned:liese",
-        "drowned:brannoc",
-        "drowned:oda",
-        "drowned:pell",
-        "drowned:wyn"
-      ],
-      "eye": {
-        "by": "user",
-        "date": "2026-11-02",
-        "film": "screenshots/kimodo/gate-wheel.mp4",
-        "verdict": "The films look good"
-      },
-      "sha256": "8863669e60902a15923482c2b46c1a9e092e21c4ef22a9ef58706441656f14a8"
-    },
-    "scribe": {
-      "prompt": "A person stands at a tall desk, writing slowly with one hand.",
-      "seed": 2,
-      "steps": 100,
-      "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
-      "repairs": [
-        "fit",
-        "loop=0.7"
-      ],
-      "gate": {
-        "loop": true
-      },
-      "cues": [],
-      "sha256": "1fd1b56cf825c0a524f57f152fd36b98608cbab6bca7b3dd1e6e630742296725"
-    }
+ "note": "Every clip in this folder. tests/motionGate.test.js fails on a clip that is not listed, has changed since it was judged, or does not pass tools/motion/clipGate.mjs. A clip with cues is played by the game and needs eye, a film of it on the robe that was watched and accepted.",
+ "clips": {
+  "knead1": {
+   "prompt": "A person stands at a table kneading bread dough, pushing down with both hands and folding it, leaning their weight forward and back.",
+   "seed": 1,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {},
+   "cues": [
+    "drowned:hanne",
+    "drowned:ysolde"
+   ],
+   "eye": {
+    "by": "user",
+    "date": "2026-11-02",
+    "film": "screenshots/kimodo/gate-knead1.mp4",
+    "verdict": "The films look good"
+   },
+   "sha256": "ed5e09d0c37c79f77c7665190be6f12def12b5b4683a807334a7113475733878"
+  },
+  "rock": {
+   "prompt": "A person rocks a baby in their arms.",
+   "seed": 3,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {},
+   "cues": [
+    "drowned:teodor"
+   ],
+   "eye": {
+    "by": "user",
+    "date": "2026-11-02",
+    "film": "screenshots/kimodo/gate-rock.mp4",
+    "verdict": "The films look good"
+   },
+   "sha256": "70ca860bb49c078e360f5def896971da0adde3868c74c556e4907bad49d798c1"
+  },
+  "walk": {
+   "prompt": "A person walks nervously, looking around.",
+   "seed": 3,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+   "repairs": [
+    "fit",
+    "feet"
+   ],
+   "gate": {
+    "travels": true
+   },
+   "cues": [],
+   "eye": {
+    "by": "user",
+    "date": "2026-11-02",
+    "film": "screenshots/kimodo/gate-walk.mp4",
+    "verdict": "The films look good"
+   },
+   "sha256": "14d0abb73266da0f69763af514f21f2d81e6f067cf739163586d1422ebfbb6c0"
+  },
+  "wheel": {
+   "prompt": "A person hauls on a heavy wheel with both arms, pulling hard hand over hand, leaning back with their whole body weight.",
+   "seed": 2,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {},
+   "cues": [
+    "drowned:liese",
+    "drowned:brannoc",
+    "drowned:oda",
+    "drowned:pell",
+    "drowned:wyn"
+   ],
+   "eye": {
+    "by": "user",
+    "date": "2026-11-02",
+    "film": "screenshots/kimodo/gate-wheel.mp4",
+    "verdict": "The films look good"
+   },
+   "sha256": "8863669e60902a15923482c2b46c1a9e092e21c4ef22a9ef58706441656f14a8"
+  },
+  "scribe": {
+   "prompt": "A person stands at a tall desk, writing slowly with one hand.",
+   "seed": 2,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp 75ed52d, Q4_K text encoder",
+   "repairs": [
+    "fit",
+    "loop=0.7"
+   ],
+   "gate": {
+    "loop": true
+   },
+   "cues": [],
+   "sha256": "1fd1b56cf825c0a524f57f152fd36b98608cbab6bca7b3dd1e6e630742296725"
+  },
+  "emb-stare-a": {
+   "prompt": "A person stands watching a disaster far away, frightened, one hand rising to their mouth, shifting their weight from foot to foot.",
+   "seed": 2,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp (Promptimate v0.3.1 Vulkan engine, RX 9070), Q8_0 text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {
+    "travels": true
+   },
+   "cues": [
+    "ember:stayed"
+   ],
+   "sha256": "5ba882f440f378158e2213760105fb1a0cf4f4980f35875fd6546ec768f988a4",
+   "eye": {
+    "by": "claude (stage three; user to confirm)",
+    "date": "2026-11-24",
+    "film": "screenshots/ember-film/stayed.mp4",
+    "verdict": "Watched in the stayed scene from the shot angles (8.6-14.6 s, crop): stands facing the lava, weight shifting; no pops, no foot slide, robe settled."
+   }
+  },
+  "emb-stare-b": {
+   "prompt": "A person stands watching a disaster far away, frightened, one hand rising to their mouth, shifting their weight from foot to foot.",
+   "seed": 3,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp (Promptimate v0.3.1 Vulkan engine, RX 9070), Q8_0 text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {
+    "travels": true
+   },
+   "cues": [
+    "ember:stayed"
+   ],
+   "sha256": "2eada9281e77eb19d3ae1ac0d40d59849c391f14e9f2a723f1102a0b18ab67c3",
+   "eye": {
+    "by": "claude (stage three; user to confirm)",
+    "date": "2026-11-24",
+    "film": "screenshots/ember-film/stayed.mp4",
+    "verdict": "Watched in the stayed scene (second person, staring while the first walks to the door): natural, out of step with the other take."
+   }
+  },
+  "emb-beckon": {
+   "prompt": "A person standing in a doorway waves urgently with one arm for someone to come inside, looking back over their shoulder.",
+   "seed": 2,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp (Promptimate v0.3.1 Vulkan engine, RX 9070), Q8_0 text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {
+    "travels": true
+   },
+   "cues": [
+    "ember:stayed"
+   ],
+   "sha256": "0b51057d4715f88d12e19a5919497f81844a6b5aefefe676e94c3aa6b913aa1d",
+   "eye": {
+    "by": "claude (stage three; user to confirm)",
+    "date": "2026-11-24",
+    "film": "screenshots/ember-film/stayed.mp4",
+    "verdict": "Watched in the stayed scene (14.6-19.6 s, crop): at the door, arm out to the side waving the other in; reads at 16 m, subtle; no artefacts."
+   }
   }
+ }
 }

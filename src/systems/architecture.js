@@ -207,7 +207,7 @@ export async function addArchitectureSystem(g) {
       const s = sites[i], o = i * 4;
       if (s.prop) continue; // moved by the NPC system
       // A hidden site (the manor's turf caps once the Bellwether's vents are stripped) is not drawn: w = 0 collapses it.
-      if (s.hidden) { view.sites[o + 3] = 0; continue; }
+      if (s.hidden || s.hinged) { view.sites[o + 3] = 0; continue; }   // (hinged: a door its pieces swing — systems/destruction.js)
       if ((frame + i) % 20 !== 0 && view.sites[o + 3] > 0.5) continue;
       const dx = s.at[0] - p.x, dz = s.at[1] - p.z;
       if (view.sites[o + 3] > 0.5 && dx * dx + dz * dz < 200 * 200) continue;
@@ -258,7 +258,7 @@ export async function addArchitectureSystem(g) {
         F[fi * 4] = cs[o] + l.x;
         F[fi * 4 + 1] = cs[o + 1] + l.y - 0.35;
         F[fi * 4 + 2] = cs[o + 2] + l.z;
-        F[fi * 4 + 3] = nearHeadland ? (sites[l.site] === headland ? 0.75 : 0.48) : 0.38;
+        F[fi * 4 + 3] = nearHeadland ? (sites[l.site] === headland ? 1.0 : 0.7) : 0.38;   // (the camp's cookfires: full, smoking — seen from the road)
         fi++;
       }
       for (; fi < 8; fi++) F[fi * 4 + 3] = 0;

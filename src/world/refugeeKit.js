@@ -7,6 +7,8 @@ import { h2 } from './masonry.js';
 const TAU = Math.PI * 2;
 const EDGE_PATH = 2.5;
 const PLOT_RADIUS = 10;
+/** How far round each thing the grass is worn away (m). */
+const TRAMPLE = { cookfire: 3.2, tarpShelter: 3.0, leanTo: 2.6, loadedCart: 2.6, handcart: 1.8, barrow: 1.4, bundles: 1.6, bedrolls: 2.0, washLine: 1.4, pen: 2.4, lookout: 2.2 };
 const SMALL_BOX = { ...NS, solid: false, plain: true };
 const LOOSE = { solid: false, smooth: true };
 
@@ -63,7 +65,7 @@ function mark(B, what, x, z, yaw, seed, opt) {
 function blanket(B, at, yaw, u, y, f, seed, rolled) {
   if (rolled) {
     const [x, , z] = at(u, y, f);
-    B.piece(() => B.drum(x, z, y, y + 0.76, 0.14, 0.13, 7, MAT.CANVAS, seed,
+    B.piece(() => B.drum(x, z, y, y + 0.76, 0.14, 0.13, 7, MAT.CLOTH, seed,
       { ...LOOSE, lie: Math.PI / 2, yaw: yaw + Math.PI / 2 }));
     return;
   }
@@ -71,18 +73,19 @@ function blanket(B, at, yaw, u, y, f, seed, rolled) {
   const lump = 0.035 + h2(seed, 4) * 0.13;
   cloth(B, (a, b) => at(u + (2 * a - 1) * halfWidth,
     y + 0.035 + Math.sin(Math.PI * a) * Math.sin(Math.PI * b) * lump,
-    f + (b - 0.5) * 1.85 + 0.035 * Math.sin(a * 9 + seed)), 4, 5, MAT.CANVAS, seed);
+    f + (b - 0.5) * 1.85 + 0.035 * Math.sin(a * 9 + seed)), 4, 6, MAT.CLOTH, seed);
 }
 
 /** A cart cover pegged into a shelter, with a heavy sag and one unpegged corner. */
 export function tarpShelter(B, x, z, yaw, seed, opt = {}) {
   const at = frame(x, z, yaw);
-  const wide = 1.32 + h2(seed, 1) * 0.25;
-  const deep = 1.05 + h2(seed, 2) * 0.25;
-  const high = 1.65 + h2(seed, 3) * 0.48;
+  // (Big enough to read from the road: a whole cart cover, 3.5–4.6 m across, a family's height under the ridge.)
+  const wide = 1.75 + h2(seed, 1) * 0.55;
+  const deep = 1.6 + h2(seed, 2) * 0.5;
+  const high = 1.95 + h2(seed, 3) * 0.5;
   const slope = h2(seed, 4) < 0.44;
   const ridge = slope ? 0.55 : 0;
-  const sag = 0.13 + h2(seed, 5) * 0.14;
+  const sag = 0.32 + h2(seed, 5) * 0.26;
   for (const side of [-1, 1]) {
     const u = side * (wide - 0.1);
     rod(B, at, [u + 0.08, -0.17, ridge], [u, high + side * 0.06, ridge], 0.05, MAT.WOOD, seed + side);
@@ -91,15 +94,16 @@ export function tarpShelter(B, x, z, yaw, seed, opt = {}) {
 
   for (const side of slope ? [-1] : [-1, 1]) {
     const hem = side < 0 ? -deep : deep * 0.55;
-    const edgeY = side < 0 ? 0.12 : 0.83;
+    const edgeY = side < 0 ? 0.04 : 0.83;
     cloth(B, (a, b) => {
       const u = (2 * a - 1) * (wide + 0.11 * b);
-      const f = ridge * (1 - b) + hem * b + 0.085 * b * b * Math.sin(a * 12 + seed);
+      // Folds running down from the ridge (the cloth hangs in loose pleats between the pegs), deeper toward the hem.
+      const f = ridge * (1 - b) + hem * b + 0.085 * b * b * Math.sin(a * 12 + seed) + 0.12 * b * Math.sin(a * 23 + seed * 1.7);
       const loose = Math.pow(a, 7) * Math.pow(b, 3) * (side < 0 ? 0.22 : 0.34);
       const y = (high + (a - 0.5) * 0.14) * (1 - b) + edgeY * b + loose
         - Math.sin(Math.PI * a) * Math.sin(Math.PI * b) * sag;
       return at(u, y, f);
-    }, 4, 3, MAT.CANVAS, seed + side * 3);
+    }, 9, 6, MAT.CLOTH, seed + side * 3);
     const peg = [-wide - 0.18, 0.07, hem + side * 0.28];
     rod(B, at, [-wide, edgeY, hem], peg, 0.013, MAT.WOOD, seed + 8 + side);
     rod(B, at, [peg[0] + 0.04, -0.13, peg[2]], peg, 0.028, MAT.WOOD, seed + 10 + side);
@@ -110,9 +114,9 @@ export function tarpShelter(B, x, z, yaw, seed, opt = {}) {
 /** A branch lean-to with a cloth laid over it and a blanket tucked underneath. */
 export function leanTo(B, x, z, yaw, seed, opt = {}) {
   const at = frame(x, z, yaw);
-  const wide = 1.05 + h2(seed, 1) * 0.35;
-  const high = 1.35 + h2(seed, 2) * 0.37;
-  const deep = 1.15 + h2(seed, 3) * 0.26;
+  const wide = 1.35 + h2(seed, 1) * 0.45;
+  const high = 1.6 + h2(seed, 2) * 0.4;
+  const deep = 1.4 + h2(seed, 3) * 0.35;
   for (const side of [-1, 1]) {
     rod(B, at, [side * wide, -0.12, 0.5], [side * wide * 0.9, high, 0.3], 0.055, MAT.WOOD, seed + side);
   }
@@ -124,7 +128,7 @@ export function leanTo(B, x, z, yaw, seed, opt = {}) {
   }
   cloth(B, (a, b) => at((2 * a - 1) * (wide + 0.08), high * (1 - b) + 0.09 * b
     - 0.11 * Math.sin(a * Math.PI) * Math.sin(b * Math.PI),
-    0.36 * (1 - b) - deep * b + 0.09 * b * Math.sin(a * 11 + seed)), 4, 3, MAT.CANVAS, seed + 11);
+    0.36 * (1 - b) - deep * b + 0.09 * b * Math.sin(a * 11 + seed)), 7, 5, MAT.CLOTH, seed + 11);
   blanket(B, at, yaw, 0, 0, -0.35, seed + 12, false);
   mark(B, 'leanTo', x, z, yaw, seed, opt);
 }
@@ -377,7 +381,7 @@ export function washLine(B, x, z, yaw, seed, opt = {}) {
       const p = u + a * width;
       return at(p, h - 0.15 * (1 - Math.abs(p) / w) - len * b,
         p * 0.07 / w + b * (0.12 + 0.12 * Math.sin(a * 8 + seed + i)));
-    }, 4, 3, MAT.CANVAS, seed + 12 + i);
+    }, 4, 3, MAT.CLOTH, seed + 12 + i);
   }
   mark(B, 'washLine', x, z, yaw, seed, opt);
 }
@@ -447,7 +451,9 @@ function plotItems(group, plot, seed, sea) {
   // Put each piece in the family's frame, keeping its seed tied to this clearing.
   const place = (what, u, f, yaw, opt) => {
     const [x, , z] = at(u, 0, f);
-    items.push({ what, x, z, yaw, seed: seed + 107 * items.length, opt });
+    // (Seeds kept small: the shader reads them as 32-bit floats, and a hash in the billions loses the digits that vary — every
+    // tarp came out the same dye.)
+    items.push({ what, x, z, yaw, seed: (seed + 107 * items.length) % 99991, opt });
   };
   place('cookfire', 0, 2.5, plot.yaw);
   place(group.kind === 'farm' ? 'loadedCart' : 'handcart', 4.7, 2.2, plot.yaw + 0.42);
@@ -460,8 +466,9 @@ function plotItems(group, plot, seed, sea) {
   const count = Math.ceil(group.size / 4);
   for (let i = 0; i < count; i++) {
     const row = Math.floor(i / 4);
-    const across = [0, -3.85, 3.85, 0.12, -3.85, 3.85, -6.35, 6.35][i];
-    const depth = [-1.32, -2.1, -2.1, -5.6, -5.6, -5.6, -4.65, -4.65][i];
+    // (Spaced for the full-size cart covers, 3.5–4.6 m across: side by side, eaves nearly touching, as a crowded camp is.)
+    const across = [0, -4.9, 4.9, 0.12, -4.9, 4.9, -6.9, 6.9][i];
+    const depth = [-1.32, -2.0, -2.0, -6.1, -6.1, -6.1, -3.4, -3.4][i];
     const what = i === 1 || (row && h2(seed, 41 + i) < 0.44) ? 'leanTo' : 'tarpShelter';
     place(what, across, depth, lee);
   }
@@ -521,6 +528,9 @@ function campSite(id, x, z, r, items, origin, heightAt, glow) {
   ));
   return {
     id, at, facing: 0, footprint: r, seatAt: 'center', hidden: true, glow, slots,
+    /** Worn ground (world x, z, radius m): where people sleep, cook and walk the grass is trodden to earth (systems/sow.js
+     *  stamps it into the clearance map, render/clearance.js, while the clearing is in use). */
+    trample: items.map((item) => [origin[0] + item.x, origin[1] + item.z, TRAMPLE[item.what] ?? 1.5]),
     /** The belongings belonging to this clearing, in metres from its centre. */
     build(B) {
       const seat = heightAt?.(...at) ?? 0;

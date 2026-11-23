@@ -118,8 +118,10 @@ describe('headland clearings', () => {
     expect(plots[7].items.map((item) => item.what)).toEqual(expect.arrayContaining(['handcart', 'bedrolls']));
   });
 
-  it.each([12, 30])('keeps eight plots of %i people under the triangle budget', (size) => {
-    expect(triangleCount(8, size)).toBeLessThanOrEqual(40_000);
+  // (The cloth is draped on a finer grid since the art pass — a flat tarp read as a signboard. The extreme, every group at
+  // 30 people, is allowed a little more: static, merged into the architecture's chunks, no draw of its own.)
+  it.each([[12, 40_000], [30, 50_000]])('keeps eight plots of %i people under the triangle budget', (size, cap) => {
+    expect(triangleCount(8, size)).toBeLessThanOrEqual(cap);
   });
 });
 

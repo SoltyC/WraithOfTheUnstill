@@ -14,7 +14,7 @@ const SPOTS = (process.argv[2] || [
   'u2-jetty', 'u2-ledge', 'ebbhold:hall', 'p1-volcano-dusk', 'p1-coast-noon',
 ].join(',')).split(',');
 /** tp: spots — [x, z, look x, look z, pitch]. */
-const TP = { 'chapel': [2160, -2335, 2215, -2320, 0.05], 'cinderhold': [1880, -2040, 1990, -2010, 0.05], 'sow-bethan': [958, -1700, 860, -1950, 0.05], 'volcano-rim': [2200, -2120, 2350, -2150, 0.2], 'sow-valley': [1000, -1640, 860, -1950, 0.15] };
+const TP = { 'chapel': [2160, -2335, 2215, -2320, 0.05], 'cinderhold': [1880, -2040, 1990, -2010, 0.05], 'sow-bethan': [958, -1700, 860, -1950, 0.05], 'volcano-rim': [2200, -2120, 2350, -2150, 0.2], 'sow-valley': [1000, -1640, 860, -1950, 0.15], 'camp': [690, -2650, 760, -2632, 0.05] };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const gpu = `const frame=()=>new Promise(r=>requestAnimationFrame(r));const t=w.gpuTimer;if(!t.supported)return null;for(let i=0;i<30;i++)await frame();
   const old=t.sampleEvery;t.sampleEvery=1;const s=t.count;t.setActive(true);for(let i=0;i<240;i++)await frame();t.setActive(false);
@@ -33,6 +33,8 @@ for (const id of SPOTS) {
   // fire:<spot>: a spot with the mountain at its last stage (systems/emberClock.js), the plume at its biggest.
   else if (id.startsWith('fire:')) { await js(`g.chapter.graph.flags.add('ember:warned'); g.chapter.graph.vars['ember:day']=3; return 1`); await bot('spot', { id: id.slice(5) }); }
   // erupt:<tp>@<s>: the eruption (systems/eruption.js) at a place, s seconds in (its heaviest: the collapses, the dust).
+  // camp: the survivors' camp with every group arrived (world/refugeeKit.js, systems/campLife.js), looking across it.
+  else if (id === 'camp') { const t = TP.camp; await js(`const F=g.chapter.graph.flags;for(const id of ['aled','bethan','huw','ffion','gwil','mari'])F.add('ember:'+id+'-go');F.add('ember:fled-cinderhold');F.add('ember:fled-chapel');F.add('ember:after');g.requestTeleport(${t[0]},${t[1]});return 1`); await sleep(9000); await bot('face', { x: t[2], z: t[3], pitch: t[4] }); }
   else if (id.startsWith('erupt:')) { const [place, at] = id.slice(6).split('@'), t = TP[place]; await js(`g.requestTeleport(${t[0]},${t[1]}); return 1`); await sleep(9000); await bot('face', { x: t[2], z: t[3], pitch: t[4] ?? 0 }); await js(`g.chapter.graph.flags.add('ember:warned'); g.chapter.graph.vars['ember:erupt-t']=${+at || 30}; g.chapter.graph.vars['ember:day']=4; return 1`); }
   else if (id.startsWith('tp:')) { const t = TP[id.slice(3)]; await js(`g.requestTeleport(${t[0]},${t[1]}); return 1`); await sleep(9000); await bot('face', { x: t[2], z: t[3], pitch: t[4] ?? 0 }); }
   else await bot('spot', { id });

@@ -5,6 +5,7 @@ The user approved Kimodo on 2026-11-02 ("looks great"), on condition that it is 
 ## The pipeline
 
 1. **Generate** several seeds. Short prompts; 5 s takes about 100 s on the CPU (`C:\wraith-tools\kimodo-run.ps1`, `kimodo-seeds.ps1`).
+   **On the RX 9070 (since 2026-11-24):** Promptimate's prebuilt kimodo.cpp Vulkan engine, `C:\wraith-tools\promptimate\engine\kmd-generate.exe MOTION.gguf TEXT.gguf PROMPT.txt FRAMES STEPS SEED OUT_DIR` with `models\models\kimodo-soma-rp-v1.1-f32.gguf` and `models\Llama-3-Kimodo-Q8_0.gguf` (checksums verified). 5 s (150 frames, 30 steps) in about 10 s including model load. Same output files (`root_positions.f32`, `local_rotations_xyzw.f32`), so step 2 is unchanged; run the converter with `C:\wraith-tools\promptimate\.venv\Scripts\python.exe` (WSL's Python has no numpy).
 2. **Convert:** `tools/motion/kimodo_clip.py`.
 3. **Repair:** `tools/motion/clipRepair.mjs <in> <out> fit [feet] [loop=0.7]`. `fit` is required. Use `feet` only if the clip fails on foot creep, and `loop` only for a clip that loops. A repair is judged like everything else: it has been caught adding jitter and shortening arms.
 4. **Stage one, the numbers:** `node tools/motion/clipGate.mjs <clip> [loop] [seated] [travels]`.

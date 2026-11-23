@@ -110,6 +110,65 @@ fn lavaRelief(p: vec2f, v: vec2f, heat: f32, t: f32, s: f32) -> f32 {
   return h;
 }
 
+/** Cells (Worley): (distance to the nearest centre, to the second, the nearest cell's own random 0..1). */
+fn lvVoro(p: vec2f) -> vec3f {
+  let i = floor(p); let f = p - i;
+  var d1 = 9.0; var d2 = 9.0; var id = 0.0;
+  for (var y = -1; y <= 1; y++) {
+    for (var x = -1; x <= 1; x++) {
+      let g = vec2f(f32(x), f32(y));
+      let o = lvHash2(i + g);
+      let d = length(g + o - f);
+      if (d < d1) { d2 = d1; d1 = d; id = lvH(i + g + vec2f(3.7, 9.1)); } else if (d < d2) { d2 = d; }
+    }
+  }
+  return vec3f(d1, d2, id);
+}
+/** A flow's surface (shaders/lava.wgsl.js lavaFlow*): crust broken into plates, a stride to a few metres across, riding the
+ *  flow; the cracks between them glow, wider and brighter the hotter it is, with finer cracks across the plates while hot.
+ *  (The lake keeps the tears of lvPhase; on a flow they read as long satin streaks.) Same outputs as lavaField. */
+fn lvPlatesPhase(q: vec2f, s: f32, heat: f32, t: f32) -> LavaS {
+  var o: LavaS;
+  let w1 = vec2f(lvFbm(q / (s * 6.0) + vec2f(3.1, 1.7), 2), lvFbm(q / (s * 6.0) + vec2f(8.3, 2.8), 2));
+  let qq = q + w1 * s * 2.2 + vec2f(lvN(q / (s * 0.9)), lvN(q / (s * 0.9) + 7.0)) * s * 0.25;
+  let tv = lvFbm(qq / (s * 3.5), 3);
+  let temp = clamp(heat * 0.9 + 0.3 * tv, 0.0, 1.0);
+  let c0 = lvVoro(qq / (s * 1.25));
+  let c1 = lvVoro(qq / (s * 0.42) + vec2f(5.3, 2.1));
+  let e0 = c0.y - c0.x; let e1 = c1.y - c1.x;
+  // (Crack widths vary along their length; the fine cracks only in patches: never an even net.)
+  let wd = (0.025 + 0.2 * temp * temp) * (0.45 + 1.1 * (lvN(qq / (s * 0.8)) * 0.5 + 0.5));
+  let k0 = 1.0 - smoothstep(wd * 0.35, wd, e0);
+  let k1 = (1.0 - smoothstep(wd * 0.2, wd * 0.55, e1)) * smoothstep(0.35, 0.75, temp) * 0.7 * smoothstep(0.35, 0.7, lvN(qq / (s * 1.7) + 3.0) * 0.5 + 0.5);
+  let pool = smoothstep(0.9, 1.02, temp + 0.1 * lvN(qq / s));
+  o.melt = clamp(max(max(k0, k1), pool), 0.0, 1.0);
+  o.temp = clamp(temp * (0.75 + 0.25 * o.melt) + 0.15 * pool, 0.0, 1.0);
+  o.crust = 1.0 - o.melt;
+  o.rim = (1.0 - smoothstep(wd, wd * 2.0, e0)) * o.crust * 0.6;
+  // Plates: raised to their middles, each tilted its own way, rough with rubble; the cracks sunk between.
+  let plate = smoothstep(0.0, 0.35, e0) * (0.6 + 0.8 * c0.z);
+  let rub = lvFbm(qq / (s * 0.3), 2) * 0.5 + 0.5;
+  o.h = (plate * 0.55 + rub * 0.25) * o.crust * s * 0.2 - o.melt * s * 0.08;
+  return o;
+}
+fn lavaPlates(p: vec2f, v: vec2f, heat: f32, t: f32, s: f32) -> LavaS {
+  let sp = length(v);
+  let per = clamp(s * 2.5 / max(sp, 0.05), 6.0, 40.0);
+  var acc: LavaS; acc.melt = 0.0; acc.temp = 0.0; acc.crust = 0.0; acc.rim = 0.0; acc.h = 0.0;
+  var wsum = 0.0;
+  for (var k = 0; k < 2; k++) {
+    let fk = f32(k);
+    let ph = fract(t / per + fk * 0.5);
+    let w = 1.0 - abs(ph * 2.0 - 1.0);
+    let q = p - v * (ph - 0.5) * per + vec2f(fk * 37.1, fk * 11.3);
+    let o = lvPlatesPhase(q, s, heat, t);
+    acc.melt += o.melt * w; acc.temp += o.temp * w; acc.crust += o.crust * w; acc.rim += o.rim * w; acc.h += o.h * w;
+    wsum += w;
+  }
+  acc.melt /= wsum; acc.temp /= wsum; acc.crust /= wsum; acc.rim /= wsum; acc.h /= wsum;
+  return acc;
+}
+
 /** The lake's bursts (k of four): a dome of melt swells under the crust (the first tenth of its cycle), bursts, and a ring
  *  of fresh melt spreads and skins over. → (dome height m, the fresh melt 0..1, the cycle's phase, the burst's centre). */
 fn lvBurst(p: vec2f, t: f32, k: i32, up0: vec2f, up1: vec2f) -> vec4f {
@@ -147,16 +206,22 @@ fn lavaShade(wp: vec3f, N: vec3f, s: LavaS, heat: f32, glass: f32, fragXY: vec2f
   let ex = uniforms.fogParams.z * atmoExposure();
   // The crust: fresh black glass, duller as it ages; a little variation over the plates.
   let albedo = mix(vec3f(0.028, 0.026, 0.026), vec3f(0.018, 0.018, 0.021), glass) * (0.8 + 0.4 * (lvN(wp.xz * 0.7) * 0.5 + 0.5));
-  var col = albedo * (key * max(dot(N, L), 0.0) * vis / PI + shIrradiance(N) * uniforms.envMisc.w);
+  // Clinker: the crust is broken rubble at the scale of a hand to a stride (seen close, a smooth crust read as satin).
+  let cn = vec2f(lvN(wp.xz * 2.7) - lvN(wp.xz * 2.7 + vec2f(0.37, 0.0)), lvN(wp.xz * 2.7) - lvN(wp.xz * 2.7 + vec2f(0.0, 0.37)));
+  let cn2 = vec2f(lvN(wp.xz * 9.1 + 3.0) - lvN(wp.xz * 9.1 + vec2f(3.37, 0.0)), lvN(wp.xz * 9.1 + 3.0) - lvN(wp.xz * 9.1 + vec2f(3.0, 0.37)));
+  let Nc = normalize(N + vec3f(cn.x * 2.2 + cn2.x * 1.1, 0.0, cn.y * 2.2 + cn2.y * 1.1) * s.crust * (1.0 - glass));
+  var col = albedo * (key * max(dot(Nc, L), 0.0) * vis / PI + shIrradiance(Nc) * uniforms.envMisc.w);
   let H = normalize(L + V);
   let nv = max(dot(N, V), 0.0);
-  let F = 0.04 + mix(0.45, 0.96, glass) * pow(1.0 - nv, 5.0);
-  let sharp = mix(40.0, 220.0, glass);
-  col += (key * vis * pow(max(dot(N, H), 0.0), sharp) * mix(0.35, 2.0, glass) + mix(shIrradiance(reflect(-V, N)) * uniforms.envMisc.w * 0.35, atmoSky(normalize(reflect(-V, N) + vec3f(0.0, 0.05, 0.0))), glass)) * F * s.crust;
-  // The crust lit by its own tears (the glow under and round it), and the rim of thin skin glowing through.
-  col += albedo * vec3f(1.0, 0.3, 0.05) * (0.2 + 1.4 * s.melt + 0.8 * s.rim) * heat * 0.55 / max(ex, 1e-6);
+  let F = 0.04 + mix(0.12, 0.96, glass) * pow(1.0 - nv, 5.0);
+  let sharp = mix(18.0, 220.0, glass);
+  let Ns = normalize(mix(Nc, N, glass));
+  col += (key * vis * pow(max(dot(Ns, H), 0.0), sharp) * mix(0.2, 2.0, glass) + mix(shIrradiance(reflect(-V, Ns)) * uniforms.envMisc.w * 0.2, atmoSky(normalize(reflect(-V, Ns) + vec3f(0.0, 0.05, 0.0))), glass)) * F * s.crust;
+  // The crust lit by its own tears (the glow under and round it: near them, not all over), and the thin skin glowing through.
+  col += albedo * vec3f(1.0, 0.3, 0.05) * (0.03 + 1.4 * s.melt + 0.8 * s.rim) * heat * 0.55 / max(ex, 1e-6);
   let e = lavaMelt(s.temp) * s.melt + vec3f(0.22, 0.03, 0.0) * s.rim * heat * (0.4 + 0.6 * s.temp);
-  col += e / max(ex, 1e-6);
+  // (Cold — a flow after the eruption, heat 0 — gives no light at all: the field's melt alone left it glowing rust-red.)
+  col += e * smoothstep(0.0, 0.05, heat) / max(ex, 1e-6);
   col = atmoApply(col, fragXY * uniforms.screenInfo.zw, length(camPos - wp) * 0.001);
   return displayTransform(col, ex);
 }
@@ -340,9 +405,16 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   heat *= 1.0 - glass;
   // The flow's motion: fastest in the middle of the channel (it shears against its levées), slowing with age.
   let v = fragmentInputs.vDir * mix(1.1, 0.15, smoothstep(0.0, 120.0, age)) * (1.0 - glass) * (1.0 - 0.7 * u * u);
-  let s = lavaField(wp.xz, v, heat, t, 2.6);
-  let e = clamp(length(uniforms.cameraPosition - wp) * 0.004, 0.06, 0.5);
-  var N = lavaNormal(wp.xz, v, heat, t, 2.6, s.h, e);
+  var s = lavaPlates(wp.xz, v, heat, t, 2.6);
+  // (On the flow's steep edges the plates, laid from above, stretch into streaks: there the crust closes over, a dull rim.)
+  let gN = normalize(cross(dpdx(wp), dpdy(wp)));
+  let steep = smoothstep(0.75, 0.45, abs(gN.y));
+  s.melt *= 1.0 - steep * 0.85; s.rim = mix(s.rim, 0.25, steep); s.crust = 1.0 - s.melt;
+  // (The plates' own relief for the normal: their raised middles and sunk cracks catch the light.)
+  let e = clamp(length(uniforms.cameraPosition - wp) * 0.004, 0.08, 0.5);
+  let hx = lavaPlates(wp.xz + vec2f(e, 0.0), v, heat, t, 2.6).h;
+  let hz = lavaPlates(wp.xz + vec2f(0.0, e), v, heat, t, 2.6).h;
+  var N = normalize(vec3f(s.h - hx, e, s.h - hz));
   // The channel's own shape across (its levées tilt the surface outward at the edges).
   N = normalize(N + vec3f(-u * fragmentInputs.vDir.y, 0.0, u * fragmentInputs.vDir.x) * 0.35 * smoothstep(0.4, 1.0, abs(u)));
   fragmentOutputs.color = vec4f(lavaShade(wp, N, s, heat, glass, fragmentInputs.position.xy), 0.0);

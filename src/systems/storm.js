@@ -77,7 +77,9 @@ export function addStormSystems(g) {
     if (lightning.version !== boltVersion) {
       boltVersion = lightning.version;
       const gx = lightning.gx, gz = lightning.gz, sd = lightning.seed;
-      bolt.build(boltVersion, sd, gx + (((sd * 37) % 11) - 5) * 40, lightning.topY, gz + (((sd * 53) % 11) - 5) * 40, gx, farGround(gx, gz), gz);
+      // (A column bolt — the eruption's — ends in the air inside the ash, or at the column's foot.)
+      const by = lightning.botY === lightning.botY ? lightning.botY : farGround(gx, gz);
+      bolt.build(boltVersion, sd, gx + (((sd * 37) % 11) - 5) * 40, lightning.topY, gz + (((sd * 53) % 11) - 5) * 40, gx, by, gz);
     }
     bolt.brightness = lightning.bolt;
     const fw = Math.pow(weather.fog, 2.2);

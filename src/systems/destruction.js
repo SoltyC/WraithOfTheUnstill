@@ -94,7 +94,9 @@ export function addDestructionSystem(g) {
     r.debris.frags.forEach((f, k) => { xf[k * 8] = r.origin[0] + f.pivot[0]; xf[k * 8 + 1] = oy + f.pivot[1]; xf[k * 8 + 2] = r.origin[2] + f.pivot[2]; xf[k * 8 + 4] = 0; xf[k * 8 + 5] = 0; xf[k * 8 + 6] = 0; xf[k * 8 + 7] = 1; });
     r.view.upload();
     // Out of sight long enough, or a ruin on loading: straight to rest.
-    const far = Math.hypot(controller.pos.x - s.at[0], controller.pos.z - s.at[1]) > 450;
+    // (Seen: near the Wraith, the camera, or a scene's place — a cutscene filming it from a kilometre off the Wraith.)
+    const cam = g.camera?.position, sf = g.streamFocus, dAt = (x, z) => Math.hypot(x - s.at[0], z - s.at[1]);
+    const far = Math.min(dAt(controller.pos.x, controller.pos.z), cam ? dAt(cam.x, cam.z) : Infinity, sf ? dAt(sf.x, sf.z) : Infinity) > 450;
     const finish = r.opt.done || far;
     const frags = r.debris.frags.map((f) => ({ pivot: f.pivot, half: f.half, vol: f.vol, group: f.group, top: f.top, fixed: f.fixed, mat: f.mat, rot: f.rot }));
     worker.postMessage({ cmd: 'start', id, frags, grid, finish, opt: { origin: r.origin, force: r.opt.force, strength: r.opt.strength ?? 1, seed: r.opt.seed, cause: r.opt.cause, releaseOf: r.opt.release ? releaseOf : undefined } });
@@ -183,5 +185,57 @@ export function addDestructionSystem(g) {
     dust.time = clock.simTime; dust.update();
   } });
 
-  g.destruction = { collapse, prepare, ruins, dust };
+  // ---- Hinges: a door (any small site) swung about its edge, its prepared pieces posed each frame ----
+  // hinge(id, angle, inward): angle() → radians open (0 shut); inward [x, z]: the side it opens to. The standing door is
+  // hidden while hinged (site.hinged); a collapse of it takes over (its pieces fall from wherever they are made).
+  const hinges = new Map();
+  function hinge(id, angle, inward) {
+    if (hinges.has(id) || ruins.has(id)) return true;
+    const i = sites.findIndex((s) => s.id === id);
+    if (i < 0) return false;
+    const p = prepared.get(id);
+    if (!p) { prepare(id); return false; }
+    if (p === 'making') return false;
+    const s = sites[i], oy = s.seatY ?? view.sites[i * 4 + 1];
+    if (!(oy > -1e8)) return false;
+    // The plank's long horizontal axis (its vertices' spread), the hinge at one end of it, mid-thickness.
+    const P = p.debris.positions, F = p.debris.frag, fr = p.debris.frags;
+    let mx = 0, mz = 0, n = 0;
+    for (let v = 0; v < P.length / 3; v++) { const f = fr[F[v * 4]]; mx += f.pivot[0] + P[v * 3]; mz += f.pivot[2] + P[v * 3 + 2]; n++; }
+    mx /= n; mz /= n;
+    let cxx = 0, cxz = 0, czz = 0;
+    for (let v = 0; v < P.length / 3; v++) { const f = fr[F[v * 4]], x = f.pivot[0] + P[v * 3] - mx, z = f.pivot[2] + P[v * 3 + 2] - mz; cxx += x * x; cxz += x * z; czz += z * z; }
+    const th = 0.5 * Math.atan2(2 * cxz, cxx - czz), ux = Math.cos(th), uz = Math.sin(th);
+    let lo = Infinity;
+    for (let v = 0; v < P.length / 3; v++) { const f = fr[F[v * 4]]; lo = Math.min(lo, (f.pivot[0] + P[v * 3] - mx) * ux + (f.pivot[2] + P[v * 3 + 2] - mz) * uz); }
+    const hx = mx + ux * lo, hz = mz + uz * lo;
+    // Which way round opens inward: the free end, turned a little, toward `inward`.
+    const a0 = 0.3, fx = -lo * ux, fz = -lo * uz, rx = fx * Math.cos(a0) + fz * Math.sin(a0), rz = -fx * Math.sin(a0) + fz * Math.cos(a0);
+    const sign = ((rx - fx) * inward[0] + (rz - fz) * inward[1]) >= 0 ? 1 : -1;
+    s.hinged = true; view.sites[i * 4 + 3] = 0;
+    p.dv.mesh.setEnabled(true);
+    let bottom = Infinity; for (const f of p.debris.frags) bottom = Math.min(bottom, f.pivot[1] - f.half[1]);
+    hinges.set(id, { i, p, oy, hx, hz, sign, angle, last: NaN, threshold: oy + bottom });
+    g.engine?.snapshotRenderingReset?.();
+    return true;
+  }
+  loop.add({ name: 'hinges', update: () => {
+    for (const [id, h] of hinges) {
+      if (ruins.has(id)) { hinges.delete(id); sites[h.i].hinged = false; continue; }
+      const a = h.angle() * h.sign;
+      if (a === h.last) continue;
+      h.last = a;
+      const c = Math.cos(a), sn = Math.sin(a), qs = Math.sin(a / 2), qc = Math.cos(a / 2), s = sites[h.i], xf = h.p.dv.xf;
+      h.p.debris.frags.forEach((f, k) => {
+        const x = f.pivot[0] - h.hx, z = f.pivot[2] - h.hz;
+        xf[k * 8] = s.at[0] + h.hx + x * c + z * sn; xf[k * 8 + 1] = h.oy + f.pivot[1]; xf[k * 8 + 2] = s.at[1] + h.hz - x * sn + z * c;
+        xf[k * 8 + 4] = 0; xf[k * 8 + 5] = qs; xf[k * 8 + 6] = 0; xf[k * 8 + 7] = qc;
+      });
+      h.p.dv.upload();
+    }
+  } });
+
+  /** A hinged door's threshold height (world y), or NaN. */
+  const threshold = (id) => hinges.get(id)?.threshold ?? NaN;
+  g.destruction = { collapse, prepare, ruins, dust, hinge, threshold };
 }

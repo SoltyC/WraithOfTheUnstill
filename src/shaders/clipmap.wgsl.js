@@ -1,4 +1,5 @@
 import { DUNE_CREST_CODEC_WGSL, DUNE_CREST_NORMAL_WGSL } from './duneCrest.wgsl.js';
+import { ASH_WGSL } from './ash.wgsl.js';
 // Clipmap terrain (BRIEF §4.2). One static N×N grid drawn as LEVELS thin instances (level index in
 // the instance matrix translation x). Each level is a full square around its snapped origin; the
 // vertex shader sinks the part the next finer level covers below it, so no trim strips are needed.
@@ -379,7 +380,7 @@ ${ENV_DECL}
 uniform levels: array<vec4f,16>;
 uniform playerPos: vec4f;
 uniform lavaSegs: array<vec4f, ${LAVA_SEGS * 2}>;   // the flows' hot stretches: (a, intensity), (b, radius) — systems/eruption.js
-uniform lavaGlow: vec4f;            // the crater's lake: x = level (m), y = glow, z = radius (m) (systems/volcano.js)
+uniform lavaGlow: vec4f;            // the crater's lake: x = level (m), y = glow, z = radius (m); w = the eruption's ash on the land 0..1 (systems/volcano.js)
 uniform spellLights: array<vec4f,${LIGHT_SLOTS * 2}>;   // LIGHT_SLOTS × (pos.xyz, radius), (colour.rgb, intensity)
 ${GRID_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -397,6 +398,7 @@ varying vCrestSpacing: f32;
 ${COMMON_WGSL}
 ${GRID_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
+${ASH_WGSL}
 ${SHADOW_RECEIVE_WGSL}
 ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
@@ -501,6 +503,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let basalt = mix(vec3f(0.07, 0.065, 0.062), vec3f(0.035, 0.032, 0.031), flow * (1.0 - smoothstep(200.0, 1100.0, vcd)));
   albedo = mix(albedo, basalt, cone);
   albedo = mix(albedo, mix(vec3f(0.30, 0.29, 0.28), vec3f(0.06, 0.055, 0.05), cone), smoothstep(0.35, 0.6, slope));
+  // The eruption's ash over the base too (the far land, and whatever no near layer draws).
+  albedo = mix(albedo, ashColor(wp.xz), ashCover(wp.xz, uniforms.lavaGlow.w) * smoothstep(0.25, 0.6, N.y) * 0.9);
   // Clay-view sea: below sea level reads as dark water until the Phase 12 ocean exists.
   let sea = smoothstep(0.5, -1.5, wp.y);
   albedo = mix(albedo, vec3f(0.035, 0.065, 0.085), sea);
@@ -587,6 +591,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     if (wE > -0.75) { ms = meadowWaterEdge(ms, wp, wE, Ngm, fp); }
     // The melt band: wet, darker ground and grass bleached to straw.
     ms.albedo = mix(ms.albedo, ms.albedo * vec3f(1.05, 0.92, 0.66) * 0.8, border.y);
+    // The eruption's ash (shaders/ash.wgsl.js): grey over the turf where it lies flat enough to hold, smoothing it.
+    let ashK = ashCover(wp.xz, uniforms.lavaGlow.w) * smoothstep(0.25, 0.6, Ngm.y);
+    if (ashK > 0.0) {
+      ms.albedo = mix(ms.albedo, ashColor(wp.xz) * (0.75 + 0.5 * fract(sin(dot(floor(wp.xz * 5.0), vec2f(12.9898, 78.233))) * 43758.5453)), ashK * 0.93);
+      ms.N = normalize(mix(ms.N, Ngm, ashK * 0.7)); ms.rough = mix(ms.rough, 0.95, ashK); ms.wetK *= 1.0 - ashK;
+    }
     // Low and Medium draw no far-tree shadows (the impostors cast only into the third cascade, which
     // those presets keep for the land): past the geometry trees' reach the canopy map stands in for
     // the crowns' shadow, so a forest floor seen from afar sits in shade instead of glaring between
@@ -639,7 +649,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
                               vN.z - stateGrad.y * vN.y));
     let sst = stateSurface(wp.x, wp.z);
     let crestN = duneCrestNormal(Ngs, fragmentInputs.vCrest, crestGradient, fragmentInputs.vCrestSpacing, dist, fp);
-    let ss = sandSurface(wp, crestN, normalize(fragmentInputs.vNormalC), fp, sst, L);
+    var ss = sandSurface(wp, crestN, normalize(fragmentInputs.vNormalC), fp, sst, L);
+    // The eruption's ash over the ember area's pale ash dunes (drawn by the sand) too.
+    let ashS = ashCover(wp.xz, uniforms.lavaGlow.w) * smoothstep(0.25, 0.6, crestN.y);
+    if (ashS > 0.0) { ss.albedo = mix(ss.albedo, ashColor(wp.xz), ashS * 0.9); ss.glint *= 1.0 - ashS; }
     var sandSkyFill = skyUp;
     // The painterly blue shadow boost follows the remaining direct beam in a dust storm.
     // SH retains its diffuse fill, so a vanished sun does not leave a luminous blue shadow.
@@ -714,13 +727,19 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // The ember ground off the cone (the cone's own surface goes over it).
   if (wEmb > 0.001 && wVolc < 0.999) {
     let Nge = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y, vN.z - stateGrad.y * vN.y));
-    let es = emberSurface(wp, Nge, normalize(fragmentInputs.vNormalC), fp);
+    var es = emberSurface(wp, Nge, normalize(fragmentInputs.vNormalC), fp);
+    // The eruption's ash over the ember ground too (the Sow lies half in it): pale grey where it can lie.
+    let ashE = ashCover(wp.xz, uniforms.lavaGlow.w) * smoothstep(0.25, 0.6, Nge.y);
+    if (ashE > 0.0) { es.albedo = mix(es.albedo, ashColor(wp.xz), ashE * 0.9); es.N = normalize(mix(es.N, Nge, ashE * 0.7)); }
     let exe = uniforms.fogParams.z * atmoExposure();
     col = mix(col, volcanoLight(es, V, L, key, vis * cs, uniforms.envMisc.w) + pointLit(wp, es.N, es.albedo, exe) + lavaSegLit(wp, es.N, es.albedo, exe), wEmb * (1.0 - wVolc));
   }
   if (wVolc > 0.001) {
     let Ngv = normalize(vec3f(vN.x - stateGrad.x * vN.y, vN.y, vN.z - stateGrad.y * vN.y));
-    let vs = volcanoSurface(wp, Ngv, normalize(fragmentInputs.vNormalC), fp);
+    var vs = volcanoSurface(wp, Ngv, normalize(fragmentInputs.vNormalC), fp);
+    // Ash over the cone's rock where it can lie (not in the pit, where the heat keeps it bare): dulls the glassy sheen.
+    let ashV = ashCover(wp.xz, uniforms.lavaGlow.w) * smoothstep(0.3, 0.65, Ngv.y) * smoothstep(240.0, 420.0, length(wp.xz - vec2f(2350.0, -2150.0)));
+    if (ashV > 0.0) { vs.albedo = mix(vs.albedo, ashColor(wp.xz), ashV * 0.85); vs.N = normalize(mix(vs.N, Ngv, ashV * 0.6)); vs.rough = mix(vs.rough, 0.95, ashV); }
     var vcol = volcanoLight(vs, V, L, key, vis * cs, uniforms.envMisc.w);
     let exv = uniforms.fogParams.z * atmoExposure();
     vcol += vec3f(1.0, 0.22, 0.03) * vs.glow * 1.0 / max(exv, 1e-6) + pointLit(wp, vs.N, vs.albedo, exv) + lavaSegLit(wp, vs.N, vs.albedo, exv);

@@ -26,6 +26,7 @@ import { STATE_SAMPLE_WGSL, STATE_COMPACTION_WGSL } from './terrainState.wgsl.js
 import { boot } from '../core/graphics.js';
 import { MEADOW_TINT_WGSL } from './meadow.wgsl.js';
 import { SOW_WGSL } from './volcano.wgsl.js';
+import { ASH_WGSL } from './ash.wgsl.js';
 /** Rings of clumps round the camera: [cell (m), clumps across, blades per clump, segments] — the graphics preset's (core/graphics.js; high: [[0.22, 110, 6, 4], [0.66, 110, 4, 2], [2.0, 110, 3, 1]]). */
 export const GRASS_RINGS = boot.grass;
 export const vertsPerBlade = (seg) => (seg + 1) * 2;
@@ -119,7 +120,7 @@ uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
 uniform grassRing: vec4f;            // x = cell (m), y = grid cells per side, z = inner skip half (m), w = segments
 uniform grassParams: vec4f;          // x = time (s), y = wind strength (0 stilled … 1), z = density ×, w = ring index
-uniform grassErg: vec4f;             // x = the Dunes' restoration (0 stilled: the oasis's reeds stand dead)
+uniform grassErg: vec4f;             // x = the Dunes' restoration (0 stilled: the oasis's reeds stand dead); y = the eruption's ash 0..1
 uniform grassPush: array<vec4f,8>;  // the Wraith and its trail: x, y, z, strength (render/grass.js)
 ${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
@@ -128,6 +129,7 @@ var<storage, read> surfaceMat: array<u32>;
 var canopyTex: texture_2d<f32>;
 var canopyTexSampler: sampler;
 ${CLEAR_VERTEX_WGSL}
+${ASH_WGSL}
 ${VILLAGE_VERTEX_WGSL}${WATER_LEVEL_DECL}varying vT: f32;                     // 0 root … 1 tip
 varying vSide: f32;                  // −1 … 1 across
 varying vWorldPos: vec3f;
@@ -137,6 +139,7 @@ varying vDry: f32;
 varying vStraw: f32;     // the erg's margin: the meadow's grass dried to straw (Phase 9 D8)
 varying vFar: f32;                   // 0 near … 1 far: the blade settles to the turf's colour and brightness
 varying vFrost: f32;                 // rime from the frost verbs (terrain state, frozen)
+varying vAsh: f32;                   // the eruption's ash on the blade (shaders/ash.wgsl.js)
 
 ${STATE_SAMPLE_WGSL}
 ${STATE_COMPACTION_WGSL}
@@ -213,12 +216,13 @@ fn main(input: VertexInputs) -> FragmentInputs {
   // Blade dimensions: tall, thin near; wider and denser-looking clumps further out.
   let ring = uniforms.grassParams.w;
   var hgt = (1.0 - 0.35 * straw * (1.0 - reed)) * (1.0 - 0.4 * sowG) * (0.18 + 0.32 * h4 + 0.35 * h4 * h4 * h4 * h4 + reed * (0.9 + 0.8 * h4) * (0.55 + 0.45 * uniforms.grassErg.x)) * (0.55 + 0.7 * patchN) * (1.0 - 0.8 * flat) * (1.0 - 0.35 * canopy) * (1.0 - 0.45 * bsn.y) * (1.0 - 0.55 * vil.z) * (1.0 - 0.6 * clr);
+  hgt *= 1.0 - 0.45 * ashCover(root, uniforms.grassErg.y);   // (bowed under the eruption's ash)
   // Blades right at the lens thin away (a blade a hand from the camera fills the screen).
   let nearCam = smoothstep(0.7, 1.9, length(vec3f(root.x, gGround(root.x, root.y), root.y) - cam));
   let wid = (0.012 + 0.012 * h2) * (1.0 + ring * 1.4) * (1.0 - edge) * nearCam;
   if (keep < 0.5 || wid <= 1e-4) {
     vertexOutputs.position = vec4f(0.0, 0.0, -2.0, 1.0);
-    vertexOutputs.vT = 0.0; vertexOutputs.vSide = 0.0; vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vSeed = 0.0; vertexOutputs.vDry = 0.0; vertexOutputs.vFar = 0.0; vertexOutputs.vFrost = 0.0; vertexOutputs.vStraw = 0.0;
+    vertexOutputs.vT = 0.0; vertexOutputs.vSide = 0.0; vertexOutputs.vWorldPos = vec3f(0.0); vertexOutputs.vNormal = vec3f(0.0, 1.0, 0.0); vertexOutputs.vSeed = 0.0; vertexOutputs.vDry = 0.0; vertexOutputs.vFar = 0.0; vertexOutputs.vFrost = 0.0; vertexOutputs.vStraw = 0.0; vertexOutputs.vAsh = 0.0;
     return vertexOutputs;
   }
   let row = f32(vtx / 2u); let side = select(-1.0, 1.0, (vtx & 1u) == 1u);
@@ -275,6 +279,9 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vFar = far;
   vertexOutputs.vFrost = st.z;
   vertexOutputs.vStraw = straw * (1.0 - reed);
+  // The eruption's ash: blades greyed and bowed down by it.
+  let ashB = ashCover(root, uniforms.grassErg.y);
+  vertexOutputs.vAsh = ashB;
   vertexOutputs.vDry = max(max(max(smoothstep(0.75, 1.0, vn(root * 0.031 + 5.0) + 0.25 * h1), bsn.y), step(0.001, tussock) * (1.0 - smoothstep(0.45, 0.8, mw))), reed * (1.0 - uniforms.grassErg.x));
 }
 `;
@@ -291,6 +298,7 @@ varying vDry: f32;
 varying vStraw: f32;     // the erg's margin: the meadow's grass dried to straw (Phase 9 D8)
 varying vFar: f32;                   // 0 near … 1 far: the blade settles to the turf's colour and brightness
 varying vFrost: f32;                 // rime from the frost verbs (terrain state, frozen)
+varying vAsh: f32;                   // the eruption's ash on the blade (shaders/ash.wgsl.js)
 ${COMMON_WGSL}
 ${SPELL_LIGHT_WGSL}
 ${ATMO_MATERIAL_WGSL}
@@ -317,6 +325,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let green = mix(vec3f(0.085, 0.18, 0.028), vec3f(0.14, 0.25, 0.042), sd) * meadowTint(wp.xz);
   let dry = mix(vec3f(0.2, 0.19, 0.09), vec3f(0.25, 0.23, 0.12), sd);
   var albedo = mix(green, dry, fragmentInputs.vDry * (0.25 + 0.45 * t));
+  // Ash on the blade: grey, most on the upper side and the tip where it settled.
+  albedo = mix(albedo, vec3f(0.09, 0.087, 0.084), fragmentInputs.vAsh * (0.55 + 0.4 * t));
   // The margin's straw: pale gold, bleached toward the tip.
   let strawC = mix(vec3f(0.3, 0.25, 0.13), vec3f(0.4, 0.34, 0.19), sd) * (0.75 + 0.35 * t);
   albedo = mix(albedo, strawC, fragmentInputs.vStraw * (0.55 + 0.45 * t));

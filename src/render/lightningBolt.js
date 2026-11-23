@@ -49,6 +49,9 @@ export function createLightningBolt(scene) {
   const glowMesh = mesh.clone('lightningGlow');
   glowMesh.material = make('boltGlow', glowV, false);
   glowMesh.alwaysSelectAsActiveMesh = true; glowMesh.doNotSyncBoundingInfo = true;
+  // (Drawn after the other see-through things: light added on top. An eruption's bolts run down the face of its ash column,
+  // whose puffs — hundreds of metres across, sorted by distance — would otherwise be drawn over them.)
+  mesh.alphaIndex = 50; glowMesh.alphaIndex = 50;
   let built = -1;
   return {
     mesh, glowMesh,

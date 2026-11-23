@@ -147,7 +147,7 @@ export function createImpostors(scene, atmo, o) {
   const params = new Vector4(0, 1, 1e6, 1e6);
   const mat = new ShaderMaterial('treeImpostors', scene, { vertex: 'impostor', fragment: 'impostor' }, {
     attributes: ['position'],
-    uniforms: ['viewProjection', 'impParams', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'impParams', 'impAsh', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, 'impAlb', 'impNrm'],
     storageBuffers: ['impLayers', ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -158,6 +158,8 @@ export function createImpostors(scene, atmo, o) {
   mat.setTexture('impNrm', wrapArray(engine, scene, nrm, S, L, false, 'imp-nrm'));
   mat.setStorageBuffer('impLayers', layers);
   mat.setVector4('impParams', params);
+  const ash = new Vector4(0, 0, 0, 0);
+  mat.setVector4('impAsh', ash);
   mat.backFaceCulling = false;
   mesh.material = mat;
   mesh.thinInstanceCount = 1;
@@ -177,6 +179,8 @@ export function createImpostors(scene, atmo, o) {
   mat.depthFunction = Constants.EQUAL; mat.disableDepthWrite = true;
   return {
     mesh, zMesh, material: mat, buf, max: o.max, bakeMs, params, layerInfo,
+    /** The eruption's ash on the far crowns (x, 0..1: systems/volcano.js through the trees). */
+    ash,
     /** n instances written to buf (16 floats each: world0..world3, see the vertex shader). */
     commit(n) {
       const cap = Math.min(o.max, Math.max(2048, Math.ceil(n / 2048) * 2048));

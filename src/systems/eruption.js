@@ -20,10 +20,12 @@
 import flowData from '../../data/world/lavaFlows.json';
 import { createLavaFlows } from '../render/lava.js';
 import { createBombs, BOMB_MAX } from '../render/bombs.js';
-import { SOW_FARMS, CAMP } from '../world/sow.js';
+import { SOW_FARMS, CAMP, sowPoint, sowDoor } from '../world/sow.js';
 import { CINDER } from '../world/cinderhold.js';
 import { CHAPEL } from '../world/ashChapel.js';
 import { PIT } from '../world/crater.js';
+import { villageStayed, STAYED_LEAD } from '../game/emberScenes.js';
+import { Performance } from '../character/performance.js';
 
 export const ERUPTION_S = 480;
 const HOLD_S = 40;
@@ -88,9 +90,23 @@ export function addEruptionSystem(g) {
     };
   }
   /** Lost: under the lava (gone), or kept by the ash where it found them. */
-  function lose(n, how) {
+  function lose(n, how, dir, now = false) {
     n.dead = true; flags.add('ember:dead:' + n.id); vars['ember:dead'] = (vars['ember:dead'] || 0) + 1;
-    if (how === 'lava') { flags.add('ember:dead-lava:' + n.id); n.brain = (q) => { q.hide = true; }; if (n.target) { n.target.hidden = true; n.target = null; } return; }
+    if (how === 'lava') {
+      flags.add('ember:dead-lava:' + n.id);
+      if (n.target) { n.target.hidden = true; n.target = null; }
+      if (n.inside) { n.brain = (q) => { q.hide = true; }; return; }   // (they went in: the house is where they are)
+      // They turn and run from it, a few steps, before the glow takes them (on loading: simply gone).
+      let t = now ? 99 : 0;
+      const ax = dir ? dir[0] : 0, az = dir ? dir[1] : 1;
+      n.brain = (q, dt) => {
+        t += dt;
+        if (t > 3.6) { q.hide = true; q.vx = q.vz = 0; return; }
+        const sp = 3.4 * Math.min(1, t * 2);
+        q.vx = ax * sp; q.vz = az * sp; q.x += q.vx * dt; q.z += q.vz * dt; q.yaw = Math.atan2(ax, az); q.noLook = true; q.hunch = 0.25; q.hide = false;
+      };
+      return;
+    }
     let t = 0;
     n.brain = (q, dt) => { q.vx = q.vz = 0; q.noLook = true; t += dt; q.view.ash = Math.min(1, t * 1.5); if (t > 0.8) q.frozen = true; };
     if (n.target) { n.target.hidden = true; n.target = null; }
@@ -248,11 +264,163 @@ export function addEruptionSystem(g) {
     });
   }
 
+  /** The aftermath (the survivors' camp, systems/sow.js; the lines and the journal, data/quests/ember.json, data/remembrance.json):
+   *  each community's outcome, once, from its own people — by where they lived, alive or not, gone to the camp or not.
+   *  A Sow household that got anyone out has `ember:<id>-go` (its clearing at the camp; its lie, `-lied`, kept); one that
+   *  lost someone at home and got no one out, `ember:<id>-stays`. Cinderhold and the chapel: `ember:fled-<id>` when any of
+   *  them reached the camp, `ember:lost-<id>` when any died (both, when it went both ways). Then `ember:after`. */
+  function resolveAftermath() {
+    if (has('ember:after')) return;
+    for (const pl of PLACES) {
+      const ppl = npcsOf().filter((n) => Math.hypot(n.home[0] - pl.at[0], n.home[1] - pl.at[1]) < pl.r);
+      const out = ppl.some((n) => !n.dead && (n.fleeing || n.gone || Math.hypot(n.x - CAMP.at[0], n.z - CAMP.at[1]) < 120));
+      const died = ppl.some((n) => n.dead);
+      if (pl.id === 'cinderhold' || pl.id === 'chapel') {
+        if (out) flags.add('ember:fled-' + pl.id);
+        if (died) flags.add('ember:lost-' + pl.id);
+      } else if (out || has(`ember:${pl.id}-lied`)) flags.add(`ember:${pl.id}-go`);
+      else if (died) flags.add(`ember:${pl.id}-stays`);
+    }
+    flags.add('ember:after');
+  }
+
+  /** When the lava is due at a place in s (eruption seconds; Infinity if no flow comes there). */
+  function lavaEta(pl) {
+    let eta = Infinity;
+    flows.forEach((f, i) => {
+      let best = Infinity, bk = -1;
+      f.pts.forEach((p, k) => { const d = Math.hypot(p[0] - pl.at[0], p[1] - pl.at[1]); if (d < best) { best = d; bk = k; } });
+      if (bk >= 0 && best < f.pts[bk][3] + pl.r * 0.5 && alongs[i][bk] > E.fronts[i]) eta = Math.min(eta, f.pts[bk][4] - T);
+    });
+    return eta;
+  }
+  /** The village that stayed (game/emberScenes.js): when the lava is a little way off a place whose people are still at
+   *  home, and the Wraith is not there to see it, the scene cuts to them — once per place (flag `ember:scene:<id>`). */
+  /** Where a place's people gather: a farm's door (world/sow.js), else its middle. */
+  function farmDoor(pl) { const t = chapter.table?.[`sow-${pl.id}-yard`]?.pos || chapter.table?.[`sow-${pl.id}-door`]?.pos; return t ? [t[0], t.length > 2 ? t[2] : t[1]] : pl.at; }
+  function stayedScene(pl) {
+    // (One per eruption: the first village that stayed. A second, straight after, the same shape, would feel like a template.)
+    if (!g.scenes || capture || has('ember:scene:' + pl.id) || has('ember:scene-played')) return;
+    const ppl = peopleAt(pl).filter((n) => !n.fleeing);
+    if (!ppl.length || Math.hypot(controller.pos.x - pl.at[0], controller.pos.z - pl.at[1]) < 220) return;
+    const eta = lavaEta(pl) / Math.max(E.rate, 1e-3);
+    if (!(eta < STAYED_LEAD && eta > STAYED_LEAD - 8)) return;
+    flags.add('ember:scene:' + pl.id); flags.add('ember:scene-played');
+    watched.add(pl.id);
+    // They see it: each turns to the mountain in their own time; then they go to each other in the yard; then, as it comes,
+    // one after the other, in through the door — it swings open, they step through, the last pulls it shut behind them.
+    const door = farmDoor(pl), dp = chapter.table?.[`sow-${pl.id}-door`]?.pos, inDoor = dp ? [dp[0], dp.length > 2 ? dp[2] : dp[1]] : door;
+    const farm0 = SOW_FARMS.find((f) => f.id === pl.id), fwd0 = farm0 ? sowPoint(farm0, 0, 10) : null;
+    let ox = 0, oz = 1;
+    if (fwd0) { ox = fwd0[0] - farm0.at[0]; oz = fwd0[1] - farm0.at[1]; const l = Math.hypot(ox, oz) || 1; ox /= l; oz /= l; }
+    // (The doorway itself, from the house's geometry: just outside it, and in through it into the dark.)
+    const inDoor0 = farm0 ? sowDoor(farm0, 0) : inDoor;
+    const outside = farm0 ? sowDoor(farm0, 1.9) : [inDoor[0] + ox * 1.1, inDoor[1] + oz * 1.1], within = farm0 ? sowDoor(farm0, -0.9) : [inDoor[0] - ox * 0.9, inDoor[1] - oz * 0.9];
+    const hsh = (a) => { const x = Math.sin(a * 91.7 + pl.id.length * 13.1) * 43758.5453; return x - Math.floor(x); };
+    // The door: open once the first of them is at it, shut a moment after the last is through.
+    const D = { openAt: Infinity, shutAt: Infinity, t: 0 };
+    const doorAngle = () => {
+      const u = D.t;
+      const open = Math.min(1, Math.max(0, (u - D.openAt) / 0.8)), shut = Math.min(1, Math.max(0, (u - D.shutAt) / 0.8));
+      const e = (x) => x * x * (3 - 2 * x);
+      return 1.75 * e(open) * (1 - e(shut));
+    };
+    const doorId = `sow-${pl.id}-door`;
+    g.destruction?.prepare(doorId);
+    let hinged = false, inCount = 0;
+    // Their movement: walking is the body's own; the moments that carry it are clips made with Kimodo and passed through the
+    // motion gate (docs/phase-10/motion-gate.md; data/motion/manifest.json): each stares at the mountain in their own take,
+    // and whoever reaches the door first beckons the other in.
+    const plan = ppl.map((n, k) => ({
+      react: 0.4 + 1.2 * hsh(k + 1) + 0.5 * k,            // seconds before they turn to it
+      turn: 1.4 + 1.8 * hsh(k + 2),                       // how fast they turn
+      pace: 1.8 + 0.8 * hsh(k + 3),                       // their walk
+      stare: k % 2 ? 'emb-stare-b' : 'emb-stare-a',
+      stareAt: 11.6 + 0.5 * k + 0.3 * hsh(k + 4),        // their take, in its own shot (game/emberScenes.js)
+      goIn: 15.9 + 0.8 * k + 0.3 * hsh(k + 5),            // one after the other
+      leg: 0,
+    }));
+    const wrap = (a) => ((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    /** A clip on a person, where they stand, facing yaw (the figure's simulation space: systems/npcs.js xf). */
+    const perform = (q, name, yaw) => {
+      const b = sceneClips[name]; if (!b) return null;
+      const c = new Performance(b); c.restart(0); place(q, c, yaw); q.view.wraith.performance = c; q._perf = c; return c;
+    };
+    const place = (q, c, yaw) => { const xf = q.xf; c.x = xf.ox + (q.x - xf.ox) / xf.s; c.y = xf.oy + ((q.y || 0) - xf.oy) / xf.s; c.z = xf.oz + (q.z - xf.oz) / xf.s; c.yaw = yaw; c.scale = 1; };
+    const stopClip = (q) => { if (q._perf) { q._perf.leave(); q._perf = null; } };
+    let atDoor = 0;
+    ppl.forEach((n, k) => {
+      let t = 0;
+      const P = plan[k];
+      n.brain = (q, dt) => {
+        t += dt; if (k === 0) D.t = t;
+        if (!hinged && t > 6 && g.destruction?.hinge) hinged = g.destruction.hinge(doorId, doorAngle, [-ox, -oz]);
+        const face = (yaw, rate) => { q.yaw += wrap(yaw - q.yaw) * Math.min(1, dt * rate); };
+        const toMountain = Math.atan2(PIT.x - q.x, PIT.z - q.z);
+        if (q._perf) place(q, q._perf, q._perf.yaw);
+        if (t < P.react) { q.vx = q.vz = 0; q.noLook = false; q.hunch = 0.3; return; }
+        // They turn to it, and stare (their take, once), until it is time to go in.
+        if (t < P.goIn) {
+          q.vx = q.vz = 0; q.noLook = true; q.hunch = 0.1;
+          if (!P.stared && t > P.stareAt && Math.abs(wrap(toMountain - q.yaw)) < 0.25) { P.stared = true; perform(q, P.stare, toMountain); }
+          if (!q._perf) face(toMountain, P.turn);
+          return;
+        }
+        if (P.leg === 0 && !P.walking) { P.walking = true; stopClip(q); }
+        // To the door; the first there beckons the others in; it opens when they are all at it; through it, and in.
+        // (The others wait beside the doorway, a stride to the side, not in the one in front's place.)
+        const goal = P.leg === 0 ? [outside[0] + (k ? (k % 2 ? 1 : -1) * oz * 1.0 + ox * 0.3 : 0), outside[1] + (k ? -(k % 2 ? 1 : -1) * ox * 1.0 + oz * 0.3 : 0)] : within;
+        const dx = goal[0] - q.x, dz = goal[1] - q.z, d = Math.hypot(dx, dz);
+        if (P.leg === 0 && d < 0.4) {
+          if (!P.arrived) { P.arrived = true; atDoor++; if (atDoor === 1 && ppl.length > 1) { const o = ppl[1 - Math.min(k, 1)]; perform(q, 'emb-beckon', Math.atan2(o.x - q.x, o.z - q.z)); } }
+          if (atDoor === ppl.length && D.openAt === Infinity) D.openAt = t;
+          q.vx = q.vz = 0;
+          if (!q._perf) face(Math.atan2(-ox, -oz), 4);
+          // Through it in their order, once it is open (the beckoner last but one: they wait for the other).
+          if (doorAngle() > 1.2 && (k === 0 || plan[k - 1].leg === 1)) { stopClip(q); P.leg = 1; }
+          return;
+        }
+        // Up the step onto the threshold (the house stands on its footing course, above the yard): eased over the last stretch.
+        // (The stair is solid — world/sow.js — so the built floors carry them up it, feet and all: no lift of our own, which
+        // only bent the body over the steps.)
+        if (P.leg === 1) {
+          const th = g.destruction?.threshold?.(doorId), dd = Math.hypot(inDoor0[0] - q.x, inDoor0[1] - q.z);
+          // (Up the stair: world/sow.js builds it, a tread of 32 cm a riser of about 19, from the yard to the sill.)
+          const y0 = q.y0 ?? th, rise = th - y0, run = 0.25 + Math.ceil(Math.max(0, rise) / 0.19) * 0.32;
+          if (th === th) q.lift = rise > 0 ? y0 + rise * Math.min(1, Math.max(0, 1 - (dd - 0.1) / run)) : th;
+        } else { q.y0 = q.y; q.lift = NaN; }
+        if (P.leg === 1 && d < 0.35) {
+          q.hide = true; q.inside = true; q.vx = q.vz = 0;   // in, behind the walls
+          if (!P.counted) { P.counted = true; inCount++; if (inCount === ppl.length) D.shutAt = t + 0.25; }
+          return;
+        }
+        const sp = Math.min(P.pace, d * 2.2);
+        q.vx = dx / d * sp; q.vz = dz / d * sp; q.x += q.vx * dt; q.z += q.vz * dt; face(Math.atan2(dx, dz), 8); q.noLook = true; q.hunch = 0.25 + 0.1 * hsh(k + 9);
+      };
+    });
+    const farm = SOW_FARMS.find((f) => f.id === pl.id), yardAt = farm ? sowPoint(farm, 0, 10) : null;
+    const front = yardAt ? [yardAt[0] - farm.at[0], yardAt[1] - farm.at[1]] : undefined;
+    // (The front, live: the scene's camera watches it come — world x, y, z.)
+    const fi = flows.findIndex((f, i) => nearFlow(i, pl));
+    const subjects = fi >= 0 ? { front: (out) => { const p = pointAt(flows[fi], alongs[fi], E.fronts[fi]); out[0] = p[0]; out[1] = p[2]; out[2] = p[1]; return out; } } : {};
+    // (While the scene opens on the Wraith — out of shot — they are put in the front yard, a few strides from the door, so no
+    // walk to it crosses the house.)
+    if (farm0) ppl.forEach((n, k) => { const sp = sowDoor(farm0, 2.4 + 1.3 * k); const side = (k % 2 ? 1 : -1) * (0.6 + 0.5 * k); n.x = sp[0] + oz * side; n.z = sp[1] - ox * side; n.yaw = Math.atan2(PIT.x - n.x, PIT.z - n.z) + 2.6; });
+    const doorAt = farm0 ? sowDoor(farm0, 1.2) : outside;
+    subjects.door = (out) => { out[0] = doorAt[0]; out[1] = g.scenes.groundAt(doorAt[0], doorAt[1]); out[2] = doorAt[1]; return out; };
+    g.scenes.play(villageStayed({ name: pl.name, at: pl.at, site: pl.sites[0], people: ppl.map((n) => n.id), front }), { stale: 4, subjects });
+  }
+
   // The places' fates.
   const fate = E.fate = new Map(PLACES.map((p) => [p.id, null]));
+  /** The scene's clips (data/motion: Kimodo, gated), fetched once. */
+  const sceneClips = {};
+  for (const name of ['emb-stare-a', 'emb-stare-b', 'emb-beckon']) fetch(import.meta.env.BASE_URL + 'motion/' + name + '.bin').then((r) => r.arrayBuffer()).then((b) => { sceneClips[name] = b; }).catch(() => {});
+  /** Places a scene is watching (their collapse timed into its shots). */
+  const watched = new Set();
   function doom(pl, how, dir) {
     fate.set(pl.id, how);
-    for (const n of peopleAt(pl)) lose(n, how);
+    for (const n of peopleAt(pl)) lose(n, how, dir);
     const lost = npcsOf().filter((n) => n.dead && Math.hypot(n.x - pl.at[0], n.z - pl.at[1]) < pl.r + 40).length;
     if (lost) flags.add('ember:lost:' + pl.id);
     // Its buildings: down, from the side it came, charred; the lava's places as the front reaches each piece.
@@ -260,7 +428,7 @@ export function addEruptionSystem(g) {
     // (No char yet: the heat builds on them as it comes — burn() below — and the fire takes them.)
     for (const id of pl.sites) {
       g.destruction?.collapse(id, { force: dir, cause: how, strength: how === 'surge' ? 1.6 : 1, seed: id.length * 31 + 7,
-        release: fi >= 0 ? (x, z, y) => releaseByFlow(fi, x, z, y) : undefined });
+        release: fi >= 0 ? (x, z, y) => releaseByFlow(fi, x, z, y, watched.has(pl.id)) : undefined });
       const si = g.archSites.findIndex((s) => s.id === id);
       if (si >= 0 && !burning.has(id)) burning.set(id, { si, heat: 0, how, t: 0, fires: [] });
     }
@@ -288,7 +456,7 @@ export function addEruptionSystem(g) {
         fr.sort((a, c) => (c[0].top + (c[0].mat === 3 || c[0].mat === 9 || c[0].mat === 13 ? 3 : 0)) - (a[0].top + (a[0].mat === 3 || a[0].mat === 9 || a[0].mat === 13 ? 3 : 0)));
         const pick = [];
         for (const [f, k] of fr) { if (pick.length >= 4) break; if (pick.every(([g2]) => Math.hypot(g2.pivot[0] - f.pivot[0], g2.pivot[2] - f.pivot[2]) > 3)) pick.push([f, k]); }
-        b.fires = pick.map(([, k], n) => ({ k, start: b.t + n * 3, size: 2.4 + 1.6 * ((k * 7) % 5) / 5 }));
+        b.fires = pick.map(([, k], n) => ({ k, start: b.t + n * 3, size: 1.1 + 0.8 * ((k * 7) % 5) / 5 }));
       }
       for (const fire of b.fires) {
         if (slot >= FIRE0 + FIREN) break;
@@ -305,12 +473,14 @@ export function addEruptionSystem(g) {
   }
   const dist2 = (b) => { const s = g.archSites[b.si]; return (s.at[0] - controller.pos.x) ** 2 + (s.at[1] - controller.pos.z) ** 2; };
   /** Seconds from now until flow i's front is nearest (x, z) (its pieces let go as it gets there). */
-  function releaseByFlow(i, x, z, y = 0) {
+  function releaseByFlow(i, x, z, y = 0, fast = false) {
     const f = flows[i]; let best = Infinity, bk = 0;
     f.pts.forEach((p, k) => { const d = Math.hypot(p[0] - x, p[1] - z); if (d < best) { best = d; bk = k; } });
     // When the front gets there (and its edge spreads out to the piece), then the time the melt takes to eat through
     // its footing — seconds to half a minute, piece by piece (a hash of where it is: never two walls alike).
     const h = Math.sin(x * 12.9898 + z * 78.233 + y * 37.719) * 43758.5453, rnd = h - Math.floor(h);
+    // (A place a scene is watching: the same order, sooner — the fall lands inside the scene's shot of it, not after.)
+    if (fast) return Math.max(0, (alongs[i][bk] - E.fronts[i]) / 3) * 0.5 + Math.max(0, best - f.pts[bk][3]) * 0.12 + 5.5 + 6 * rnd;
     return Math.max(0, (alongs[i][bk] - E.fronts[i]) / 3) + Math.max(0, best - f.pts[bk][3]) * 0.35 + 6 + 18 * rnd;
   }
   function nearFlow(i, pl) { return flows[i].pts.some((p) => Math.hypot(p[0] - pl.at[0], p[1] - pl.at[1]) < p[3] + pl.r * 0.5); }
@@ -379,6 +549,16 @@ export function addEruptionSystem(g) {
     // brings the column's lightning; the weather fog alone would be a white-out, not the dark.)
     if (weather && k > 0) { weather.cover = Math.max(weather.cover, k); weather.fog = Math.max(weather.fog, 0.22 * k); weather.storm = Math.max(weather.storm, 0.9 * k); }
     if (snowfall) snowfall.ashFall = E.done ? 0.15 * near : 0.9 * k;
+    // Lightning in the column (world/lightning.js `column`): bolts every second or so at the blast, thinning as it tires; the
+    // column leans downwind, so its middle is a few hundred metres off the crater.
+    if (g.lightning) {
+      const P = g.plume, base = P && P.y === P.y ? P.y : 900;
+      g.lightning.column = E.on && !E.done && P ? { x: PIT.x + P.windX * 260, z: PIT.z + P.windZ * 260, r: 260, y0: base + 40, y1: base + 2600,
+        rate: 1.4 * Math.max(0.2, 1 - T / 600) } : null;
+      // The column lit from inside where the bolt is (its middle).
+      const L = g.lightning;
+      if (P) { const on = L.column && L.botY === L.botY; P.flash = on ? L.bolt * L.bolt : 0; P.fx = L.gx; P.fy = on ? (L.topY + L.botY) / 2 : 0; P.fz = L.gz; }
+    }
     // The eye closes under the ash (systems/lung.js applies it): the land dark, the lava and the fires still bright in it.
     g.ashDark = 1 - 0.72 * k;
     if (g.ruinDust) g.ruinDust.glow = k;
@@ -418,6 +598,7 @@ export function addEruptionSystem(g) {
     // The places it reaches.
     for (const pl of PLACES) {
       if (fate.get(pl.id)) continue;
+      stayedScene(pl);
       const lavaHit = flows.findIndex((f, i) => lavaAt(i, pl));
       if (lavaHit >= 0) { const q = pointAt(flows[lavaHit], alongs[lavaHit], E.fronts[lavaHit]), dx = pl.at[0] - q[0], dz = pl.at[1] - q[1], l = Math.hypot(dx, dz) || 1; doom(pl, 'lava', [dx / l, dz / l]); continue; }
       for (const s of SURGES) {
@@ -431,7 +612,9 @@ export function addEruptionSystem(g) {
     PLACES.forEach((pl, k) => { const it = runs[k]; it.hidden = !!fate.get(pl.id) || !peopleAt(pl).some((n) => !n.fleeing); if (!(it.y > 0) && g.ground) { g.ground.qx = it.x; g.ground.qz = it.z; if (g.ground.covers()) { g.ground.sample(); it.y = g.ground.h + 0.5; } } });
     // The end: the mountain spent.
     if (T >= ERUPTION_S && !has('ember:erupted')) {
-      flags.add('ember:erupted'); flags.delete('ember:erupting'); E.on = false; E.done = true; chapter.raise?.('ember:erupted');
+      flags.add('ember:erupted'); flags.delete('ember:erupting'); E.on = false; E.done = true;
+      resolveAftermath();
+      chapter.raise?.('ember:erupted');
       for (const it of runs) it.hidden = true;
       const lostAt = PLACES.filter((p) => has('ember:lost:' + p.id)).map((p) => p.name);
       say('The mountain', 'It is over', lostAt.length ? `The ash comes down like snow over ${lostAt.join(', ')}.` : 'The ash comes down like snow. Everyone you could reach is at the camp.', 10);
@@ -442,7 +625,9 @@ export function addEruptionSystem(g) {
   loop.add({ name: 'eruptionRestore', update: () => {
     if (restored || !g.npcs) return;
     restored = true;
-    for (const n of g.npcs) if (has('ember:dead:' + n.id)) { lose(n, has('ember:dead-lava:' + n.id) ? 'lava' : 'surge'); vars['ember:dead']--; }
+    for (const n of g.npcs) if (has('ember:dead:' + n.id)) { lose(n, has('ember:dead-lava:' + n.id) ? 'lava' : 'surge', null, true); vars['ember:dead']--; }
+    // (A save from before the aftermath existed: its outcomes worked out from the dead as saved.)
+    if (has('ember:erupted')) resolveAftermath();
   } });
   void params;
 }

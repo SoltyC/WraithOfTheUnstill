@@ -27,6 +27,8 @@ export function addSceneSystem(g) {
     return (H(i, j) * (1 - fu) + H(i + 1, j) * fu) * (1 - fv) + (H(i, j + 1) * (1 - fu) + H(i + 1, j + 1) * fu) * fv;
   };
   const npc = (id) => (g.npcs || []).find((n) => n.id === id);
+  /** A building between the camera and its subject (world/solids.js line of sight). */
+  const blocked = (c, l) => { const S = g.solids; if (!S?.segBlocked) return false; S.ax = c[0]; S.ay = c[1]; S.az = c[2]; S.bx = l[0]; S.by = l[1]; S.bz = l[2]; return S.segBlocked(); };
   function resolver(extra) {
     const tmp = [0, 0, 0];
     return (s) => {
@@ -36,8 +38,10 @@ export function addSceneSystem(g) {
       if (s.npcs) {
         let x = 0, z = 0, k = 0;
         for (const id of s.npcs) { const n = npc(id); if (n && !n.hide) { x += n.x; z += n.z; k++; } }
-        if (!k) return s.fallback ? resolver(extra)(s.fallback) : [controller.pos.x, controller.pos.y, controller.pos.z];
-        return [x / k, groundAt(x / k, z / k), z / k];
+        // (Gone from sight — in at the door, or taken — the shot holds where they were last, not jumping to the fallback.)
+        if (!k) return s._last ? s._last.slice() : s.fallback ? resolver(extra)(s.fallback) : [controller.pos.x, controller.pos.y, controller.pos.z];
+        s._last = [x / k, groundAt(x / k, z / k), z / k];
+        return s._last.slice();
       }
       if (s.site) {
         const q = g.archSites.find((q) => q.id === s.site), a = q ? q.at : [controller.pos.x, controller.pos.z];
@@ -58,9 +62,11 @@ export function addSceneSystem(g) {
     const spots = sceneSpots(variant, resolve);
     if (spots.length) { let x = 0, z = 0; for (const p of spots) { x += p[0]; z += p[2]; } g.streamFocus = { x: x / spots.length, z: z / spots.length }; }
     for (const id of variant.prepare || []) g.destruction?.prepare(id);
+    for (const b of variant.beats) { b._swing = undefined; if (b.subject) b.subject._last = undefined; if (b.target) b.target._last = undefined; }   // (each play chooses its swings afresh)
     const shots = variant.beats.map((b) => ({
-      dur: b.dur, dof: b.dof ?? 1.2, blur: b.blur ?? 0.35, subs: b.subs, wraith: b.wraith,
-      eval: (u, time, out) => evalBeat(b, u, time, resolve, groundAt, out),
+      dur: b.dur, dof: b.dof ?? 0,   // (off unless a beat asks: a wide shot with a metre of focus blurs the whole frame)
+      blur: b.blur ?? 0.35, subs: b.subs, wraith: b.wraith,
+      eval: (u, time, out) => evalBeat(b, u, time, resolve, groundAt, out, blocked),
       onCut: b.onCut,
     }));
     g.director.play(shots, { blendIn: opt.blendIn ?? 0.8, blendOut: opt.blendOut ?? 1.2, onEnd: () => { playing = null; g.streamFocus = null; opt.onEnd?.(); } });

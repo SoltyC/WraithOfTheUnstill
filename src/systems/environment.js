@@ -257,9 +257,12 @@ export async function addEnvironmentSystems(g) {
     const mBlend = bwM / Math.max(bwF + bwM, 1e-3);
     // Compare independent inputs; a weighted scalar key can cancel two simultaneous changes.
     if (g.regradeWanted) { g.regradeWanted = false; lastGradeR = NaN; }   // asked for afresh (systems/director.js: a cutscene over)
-    if (Number.isNaN(lastGradeR) || Math.abs(r-lastGradeR)>.002 || Math.abs(mBlend-lastGradeM)>.002 || Math.abs(rMeadow-lastGradeMR)>.002 || Math.abs(dW-lastGradeD)>.002 || Math.abs(rDunes-lastGradeDR)>.002 || gs!==lastGradeS || Math.abs(eW-lastGradeE)>.005) {
-      lastGradeR=r;lastGradeM=mBlend;lastGradeMR=rMeadow;lastGradeD=dW;lastGradeDR=rDunes;lastGradeS=gs;lastGradeE=eW;
-      blendGrade(post.post.grade, r, gs, mBlend, rMeadow,dW,rDunes,eW);
+    // (During the eruption and after it, the ember grade's warm shadow lift eases off: black rock, ash and crust read black,
+    // not brown, in a dark scene. Before it, the area keeps its grade.)
+    const eG = eW * (g.eruption && (g.eruption.on || g.eruption.done) ? 0.35 : 1);
+    if (Number.isNaN(lastGradeR) || Math.abs(r-lastGradeR)>.002 || Math.abs(mBlend-lastGradeM)>.002 || Math.abs(rMeadow-lastGradeMR)>.002 || Math.abs(dW-lastGradeD)>.002 || Math.abs(rDunes-lastGradeDR)>.002 || gs!==lastGradeS || Math.abs(eG-lastGradeE)>.005) {
+      lastGradeR=r;lastGradeM=mBlend;lastGradeMR=rMeadow;lastGradeD=dW;lastGradeDR=rDunes;lastGradeS=gs;lastGradeE=eG;
+      blendGrade(post.post.grade, r, gs, mBlend, rMeadow,dW,rDunes,eG);
       post.post.gradeDirty = true;
     }
   } });

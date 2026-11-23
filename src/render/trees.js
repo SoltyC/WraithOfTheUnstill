@@ -99,6 +99,8 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
   scene.setRenderingOrder(0, (a, b) => (zRank(a) - zRank(b)) || RenderingGroup.PainterSortCompare(a, b));
   // The erg's species share one material vector each, its z the Dunes' restoration (owner: dunesRestored):
   // stilled, their leaves hang grey and dry.
+  /** Every tree material's treeMat (w: the eruption's ash on the crowns, set in update()). */
+  const allTreeMats = [];
   const desertMat = SPECIES_IDS.map((sid, si) => (si >= 5 ? new Vector4(MAT[SPECIES[sid].bark], si, 1, 0) : null));
   SPECIES_IDS.forEach((sid, si) => {
     const barkLayer = MAT[SPECIES[sid].bark];
@@ -128,6 +130,7 @@ export function createTrees(scene, clipmap, atmo, matLib, streamer, wind) {
         if (leaf) { mat.setTexture('leafAtlas', atlas); mat.setTexture('leafSurface', atlases.surface); } else bindMaterialLibrary(mat, matLib);
         mat.setArray4('levels', clipmap.levels); mat.setStorageBuffer('levelData', clipmap.levelData);
         const treeMat = si >= 5 ? desertMat[si] : new Vector4(barkLayer, si, 0, 0);
+        if (!allTreeMats.includes(treeMat)) allTreeMats.push(treeMat);
         mat.setVector4('treeParams', params); mat.setUniformBuffer('windBlock', wind.buffer); mat.setVector4('treeLod', lodV[lod]); mat.setVector4('treeMat', treeMat);
         mesh.metadata = { treeMat, lod, leaf };
         mat.setArray4('spellLights', clipmap.spellLights); mat.setStorageBuffer('lightGrid', clipmap.lightGrid);
@@ -439,6 +442,9 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
     update() {
       params.x = this.time; params.y = this.wind; params.z = this.windX; params.w = this.windZ;
       for (let k = 5; k < desertMat.length; k++) desertMat[k].z = this.dunesRestored;
+      // The eruption's ash on the crowns (systems/volcano.js sets `ash`), near and far.
+      for (const v of allTreeMats) v.w = this.ash || 0;
+      if (imp?.ash) imp.ash.x = this.ash || 0;
       const now = (performance.now() - t0) * 0.001;
       for (const l of lodV) l.w = now;
       if (lateReset && performance.now() > lateReset) { lateReset = 0; engine.snapshotRenderingReset(); }

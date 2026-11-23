@@ -322,6 +322,7 @@ export function addNpcSystems(g) {
       if (!show) { if (n.costume) hideCostume(n); continue; }
       gd.sample(); n.y = gd.h;
       if (g.solids && !n.gnd) { const so = g.solids; so.qx = n.x; so.qz = n.z; so.qh = n.y; so.floorAnyQ(); n.y = so.h; }
+      if (n.lift === n.lift && n.lift > n.y) n.y = n.lift;   // (a step its brain knows of: a raised threshold — systems/eruption.js)
       if (!n.placed) { xf.oy = n.y; n.placed = true; }
       // Idle life: shift weight now and then (a small corrective step), turn toward the Wraith.
       if (!n.path && !n.vx && !n.vz && !n.noLook) {

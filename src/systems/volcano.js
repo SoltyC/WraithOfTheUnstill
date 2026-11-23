@@ -31,6 +31,8 @@ export function addVolcanoSystem(g) {
   extras.freeze(); extras.setEnabled(false);
   lake.x = PIT.x; lake.z = PIT.z; lake.y = LAKE_LEVEL[0];
   let floor = NaN, light = null, level = LAKE_LEVEL[0], thrown = 0;
+  /** The mountain after its eruption: smoking, not erupting (plume height m, strength, darkness, glow). */
+  const SPENT = { plume: 1300, strength: 0.8, dark: 0.55, glow: 0.2 };
   const V = g.volcano = { level: LAKE_LEVEL[0], stage: 0, forceStage: -1 };
   function lava(dt) {
     const st = V.forceStage >= 0 ? V.forceStage : (g.ember ? g.ember.stage : 0);
@@ -46,9 +48,13 @@ export function addVolcanoSystem(g) {
       lake.y = level; lake.time = clock.simTime; lake.heat = LAKE_HEAT[st]; lake.bursts = LAKE_BURSTS[st]; lake.radius = PIT.lake + 6; lake.swell = 0.25 + 0.15 * st;
       lake.update();
     }
+    // The eruption's ash on the land (shaders/ash.wgsl.js): falling through it, lying after (the terrain's lavaGlow.w, the grass).
+    const ashLand = () => { const E = g.eruption; return !E ? 0 : E.done ? 1 : E.on ? Math.min(1, E.T / 420) : 0; };
+    if (g.grass) g.grass.ash = ashLand();
+    if (g.trees) g.trees.ash = ashLand();
     // Its light up the pit's walls (the terrain's lavaGlow), brighter at night and as it heats.
     const cl = g.content?.clipmap || g.clipmap;
-    if (cl?.lavaGlow) { const night = g.worldLights ? g.worldLights.night : 0; cl.lavaGlow.set(level, on ? (0.25 + 0.75 * night) * (0.5 + LAKE_HEAT[st]) * 0.9 : 0, lakeRadius(0) + (level - PIT.floor) / PIT.rise, 0); }
+    if (cl?.lavaGlow) { const night = g.worldLights ? g.worldLights.night : 0; cl.lavaGlow.set(level, on ? (0.25 + 0.75 * night) * (0.5 + LAKE_HEAT[st]) * 0.9 : 0, lakeRadius(0) + (level - PIT.floor) / PIT.rise, ashLand()); }
     // In the lava: the heat throws the Wraith back onto the ledge, burned.
     thrown = Math.max(0, thrown - dt);
     const p = controller.pos, dx = p.x - PIT.x, dz = p.z - PIT.z, r = Math.hypot(dx, dz);
@@ -78,8 +84,9 @@ export function addVolcanoSystem(g) {
     if (g.wind) { g.wind.sx = CRATER.x; g.wind.sz = CRATER.z; g.wind.sample(); plume.windX = g.wind.outX; plume.windZ = g.wind.outZ; }
     const night = g.worldLights ? g.worldLights.night : 0;
     // By the mountain's stage (systems/emberClock.js); asleep, a modest plume still marks it from afar.
-    const S = g.ember?.def;
-    plume.glow = Math.max(S ? S.glow : 0.25, 0.25 + 0.75 * night);
+    // (After the eruption the mountain is spent: a lower, greyer plume of steam and ash, its fire banked — not the column.)
+    const S = g.eruption?.done ? SPENT : g.ember?.def;
+    plume.glow = Math.max(S ? S.glow : 0.25, 0.25 + 0.75 * night) * (g.eruption?.done ? 0.5 : 1);
     plume.height = S ? S.plume : 500; plume.strength = S ? S.strength : 0.45; plume.dark = S ? S.dark : 0.05;
     plume.update();
     // The lake's light: up the pit's walls and out over the rim.

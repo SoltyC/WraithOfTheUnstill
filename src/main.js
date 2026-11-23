@@ -142,6 +142,7 @@ async function boot() {
   (await import('./systems/volcano.js')).addVolcanoSystem(g);   // the volcano's plume and night glow, seen from afar
   (await import('./systems/emberClock.js')).addEmberClockSystem(g);   // the mountain's stages; the thread given at the summit
   (await import('./systems/sow.js')).addSowSystem(g);
+  (await import('./systems/campLife.js')).addCampLifeSystem(g);   // the survivors' camp alive: everyone else who got out, in the kit's places
   (await import('./systems/cinderhold.js')).addCinderholdSystem(g);
   (await import('./systems/ashChapel.js')).addAshChapelSystem(g);   // the pilgrims, their Seer and their scripture (world/ashChapel.js)   // the miners and their guild (world/cinderhold.js)       // the Sow: the Ember slice's six farms and the new steam (world/sow.js, data/quests/ember.json)
   if (!qs.get('nodestr')) (await import('./systems/destruction.js')).addDestructionSystem(g);
