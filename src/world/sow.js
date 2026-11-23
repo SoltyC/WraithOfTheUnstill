@@ -337,6 +337,10 @@ export function sowSites(ov, SOW_HEIGHTS = {}) {
   const [middle, ...plots] = campSites(CAMP_GROUPS, campOptions);
   // Clear the headland around the camp, including the gaps between the occupied plots.
   middle.footprint = 56;
+  // Keep a sightline from the road through the trees on the approach to the clearing.
+  middle.treeClearings = [
+    [724, -2571, 12], [729, -2551, 12], [731, -2536, 12], [733, -2525, 9],
+  ];
   out.push(middle, ...plots, { ...emptyCamp, id: 'emb-camp-empty' });
   FISSURES.forEach(([x, z], k) => out.push({ id: 'emb-fissure-' + k, at: [x, z], facing: 0.4 + k * 0.3, build: fissureBuild(k), footprint: 4, seatAt: 'center' }));
   return out;

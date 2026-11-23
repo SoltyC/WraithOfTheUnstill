@@ -65,7 +65,10 @@ export async function addArchitectureSystem(g) {
   // No boulders inside the built places (one stood beside the camp fire).
   g.rocks.setExclusions(sites.filter((s) => !s.prop).map((s) => [s.at[0], s.at[1], (s.box ? s.box * 1.45 : s.footprint) + 4]).concat(g.lineExclusions || []));   // (+ the release lines' beds: systems/releaseLines.js)
   // Nothing grows through the erg's ruins and glass (the oasis palms round the caravanserai, the canyon flora).
-  g.trees?.setExclusions(sites.filter((s) => /^(ruin|glass|flue|gap|beacon|sow|emb|cin|ash)-/.test(s.id)).map((s) => [s.at[0], s.at[1], (s.id === 'ruin-caravanserai' ? 24 : s.footprint) + 3]).concat(g.lineExclusions || []));
+  const treeExclusions = sites
+    .filter((s) => /^(ruin|glass|flue|gap|beacon|sow|emb|cin|ash)-/.test(s.id))
+    .flatMap((s) => [[...s.at, (s.id === 'ruin-caravanserai' ? 24 : s.footprint) + 3], ...(s.treeClearings || [])]);
+  g.trees?.setExclusions(treeExclusions.concat(g.lineExclusions || []));
   /** Prop sites by NPC id (the NPC system places them at the hand); a second one in the other hand rides along in `also`. */
   g.props = {};
   sites.forEach((s, i) => {
@@ -105,6 +108,8 @@ export async function addArchitectureSystem(g) {
   // lanterns the Veiled carry — placed once their site is seated.
   const WL = g.worldLights;
   const builtLights = built.lights.map((l) => ({ l, r: WL.add({ x: NaN, y: NaN, z: NaN, radius: l.radius, color: l.color, intensity: l.intensity, kind: l.kind, level: 0 }) }));
+  const headland = sites.find((s) => s.id === 'emb-camp');
+  const headlandFires = builtLights.filter(({ l }) => l.kind === 'fire' && sites[l.site].id.startsWith('emb-camp'));
   const hearth = WL.add({ x: NaN, y: NaN, z: NaN, radius: 16, color: [1, 0.5, 0.2], intensity: 1, kind: 'fire', level: 0 });
   const brazierLights = brazierIdx.map(() => WL.add({ x: NaN, y: NaN, z: NaN, radius: 10, color: [1, 0.52, 0.22], intensity: 1.6, kind: 'fire', level: 0 }));
   const lanternLights = [];
@@ -235,22 +240,35 @@ export async function addArchitectureSystem(g) {
     { const F = g.fire.fires, cs = view.sites, co = camp * 4;
       F[0] = cs[co]; F[1] = cs[co + 1] + 0.08; F[2] = cs[co + 2]; F[3] = cs[co + 3] > 0.5 ? 1.25 : 0;
       let fi = 1;
-      for (const bi of brazierIdx) {
+      // On the headland, the distant braziers lend their flame slots to the refugee cookfires.
+      const cam = camera.position;
+      const nearHeadland = headland && Math.hypot(cam.x - headland.at[0], cam.z - headland.at[1]) < 170;
+      if (!nearHeadland) {
+        for (const bi of brazierIdx) {
+          if (fi >= 8) break;
+          const lit = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[bi * 4 + 3] > 0.5;
+          F[fi * 4] = cs[bi * 4]; F[fi * 4 + 1] = cs[bi * 4 + 1] + (sites[bi].fire ?? 1.26); F[fi * 4 + 2] = cs[bi * 4 + 2]; F[fi * 4 + 3] = lit ? 0.5 : 0; fi++;
+        }
+      }
+      // Fires built into the places (the hall's vigil brazier and the refugee camp): flames on their coals.
+      for (const { l } of nearHeadland ? headlandFires : builtLights) {
         if (fi >= 8) break;
-        const lit = chapter.graph.flags.has('lit:' + sites[bi].id) && cs[bi * 4 + 3] > 0.5;
-        F[fi * 4] = cs[bi * 4]; F[fi * 4 + 1] = cs[bi * 4 + 1] + (sites[bi].fire ?? 1.26); F[fi * 4 + 2] = cs[bi * 4 + 2]; F[fi * 4 + 3] = lit ? 0.5 : 0; fi++;
+        const o = l.site * 4;
+        if (l.kind !== 'fire' || cs[o + 3] <= 0.5) continue;
+        F[fi * 4] = cs[o] + l.x;
+        F[fi * 4 + 1] = cs[o + 1] + l.y - 0.35;
+        F[fi * 4 + 2] = cs[o + 2] + l.z;
+        F[fi * 4 + 3] = nearHeadland ? (sites[l.site] === headland ? 0.75 : 0.48) : 0.38;
+        fi++;
       }
-      // Fires built into the places (the hall's vigil brazier): flames on their coals.
-      for (const b of builtLights) {
-        if (b.l.kind !== 'fire' || fi >= 8) continue;
-        F[fi * 4] = b.r.x; F[fi * 4 + 1] = b.r.y - 0.35; F[fi * 4 + 2] = b.r.z; F[fi * 4 + 3] = b.r.x === b.r.x ? 0.38 : 0; fi++;
-      }
+      for (; fi < 8; fi++) F[fi * 4 + 3] = 0;
       const ft = g.fire.fireT; ft.x = clock.simTime; ft.y = streamer.windX || 1; ft.z = streamer.windZ || 0; ft.w = 0.15 + 0.85 * restoration.value;
     }
     // World lights follow their seated sites.
     { const cs = view.sites, wn = WL.night;
       for (const b of builtLights) {
-        const o = b.l.site * 4; if (cs[o + 3] <= 0.5) continue;
+        const o = b.l.site * 4;
+        if (cs[o + 3] <= 0.5) { b.r.level = 0; continue; }
         b.r.x = cs[o] + b.l.x; b.r.y = cs[o + 1] + b.l.y; b.r.z = cs[o + 2] + b.l.z;
         // The moon under the roof only by night; candles and the brazier always (Aud keeps them).
         b.r.level = b.l.kind === 'bounce' ? wn : b.l.kind === 'lamp' ? 0.35 + 0.65 * wn : 1;

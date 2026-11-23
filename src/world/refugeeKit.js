@@ -324,7 +324,7 @@ export function cookfire(B, x, z, yaw, seed, opt = {}) {
     rod(B, at, [Math.sin(a) * 0.48 * scale, 0.09, Math.cos(a) * 0.48 * scale],
       [-Math.sin(a) * 0.19, 0.19, -Math.cos(a) * 0.23], 0.07, MAT.BASALT, seed + 40 + i);
   }
-  B.blockers.push({ site: B.site, kind: 'circle', x, z, r: 0.91 * scale, y0: -0.18, y1: 0.38 });
+  if (opt.large) B.blockers.push({ site: B.site, kind: 'circle', x, z, r: 0.91 * scale, y0: -0.18, y1: 0.38 });
   if (opt.cold) return;
 
   const top = 1.6 + h2(seed, 44) * 0.31;
