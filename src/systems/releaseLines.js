@@ -127,10 +127,10 @@ export async function addReleaseLines(g) {
     },
   };
   const sightWas = {}, sightWait = {};
+  /** Show the Wraith the restored landscape. */
   function sight(biome) {
     if (!g.director || !SIGHTS[biome]) return false;
-    chapter.graph.flags.add('seen:sight:' + biome);
-    g.director.play(SIGHTS[biome](), { blendIn: 1.5, blendOut: 1.5 });
+    g.director.play(SIGHTS[biome](), { id: 'sight:' + biome, blendIn: 1.5, blendOut: 1.5 });
     return true;
   }
   g.releaseLines.sight = sight;
