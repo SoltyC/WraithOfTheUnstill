@@ -19,8 +19,9 @@ export const Action = Object.freeze({
   /** Shift held: the quiet walk (slow, soft steps: the Drowned and the Listener hear less; game/noise.js). The same key as the
    *  free camera's fast flight (dev) and Shift + wheel zoom, so it shares that action's slot. */
   Quiet: 22,
+  SkipCutscene: 28,
 });
-const COUNT = 28;
+const COUNT = 29;
 
 /** Default keyboard/mouse bindings: KeyboardEvent.code or 'Mouse0'/'Mouse2' → action. */
 export const defaultBindings = {
@@ -33,7 +34,7 @@ export const defaultBindings = {
   // Free camera (dev): PageUp / PageDown fly up and down (Q and R belong to the game now).
   PageDown: Action.FreeCamDown, PageUp: Action.FreeCamUp, ShiftLeft: Action.FreeCamFast,
   KeyQ: Action.Bend, KeyX: Action.WeaponSwap, KeyR: Action.Consume, KeyC: Action.ConsumeNext,
-  KeyT: Action.Track,
+  KeyT: Action.Track, KeyK: Action.SkipCutscene,
 };
 
 export const input = {

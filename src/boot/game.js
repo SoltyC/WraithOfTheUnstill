@@ -142,6 +142,13 @@ async function createSaves(g) {
       restoration.value = worldState.restoration.frost === 'restored' ? 1 : 0; restoration.snap = true;
       weather.snap = true;
       if (g.quests) g.quests.restore(s.quests);
+      // The save can be loaded after destruction's first update. Rebuild the stored ruins as
+      // their ground streams in, without replaying the collapse in front of the Wraith.
+      if (g.destruction && g.quests) {
+        for (const [id, ruin] of Object.entries(g.quests.graph.vars)) {
+          if (id.startsWith('ruin:')) g.destruction.collapse(id.slice(5), { ...ruin, done: 1 });
+        }
+      }
       if (g.progress) g.progress.apply(s);
       for (const f of g.puzzleRestores || []) f();
       g.navSync?.();

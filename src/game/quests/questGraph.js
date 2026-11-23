@@ -64,7 +64,10 @@ export class QuestGraph {
     // The same Set, refilled: every system holds it (a new one left them reading the old flags after a load).
     this.flags.clear();
     for (const f of data?.flags || []) this.flags.add(f);
-    this.vars = { ...(data?.vars || {}) };
+    // Ruins and other world systems also keep the variables object across a load.
+    const vars = { ...data?.vars };
+    for (const key of Object.keys(this.vars)) delete this.vars[key];
+    Object.assign(this.vars, vars);
     for (const id in data?.quests || {}) {
       if (!this.quests[id]) continue;
       const q = data.quests[id], def = this.byId.get(id), known = new Set((def.optional || []).map((o) => o.id));

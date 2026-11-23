@@ -17,6 +17,7 @@
 // for anything else.
 
 import { shotAt, evalShot, totalLength } from '../game/director.js';
+import { canSkipCutscene, markCutsceneSeen, finishCutscene, SKIP_HOLD_SECONDS } from '../game/cutsceneSkip.js';
 import { hallAlive, bakehouseBehind } from '../game/crowds.js';
 import { CUTSCENES, build } from '../game/cutscenes.js';
 import { GRADES, mixGrades } from '../post/grades.js';
@@ -29,9 +30,10 @@ const BLEND_MAX = 25;
 
 /** @param {any} g  shared boot context */
 export function addDirectorSystem(g) {
-  const { loop, camera, controller, clock, post, bars } = g;
+  const { loop, camera, controller, clock, post, bars, input, Action } = g;
   const cam = new Float64Array(8), at = { i: 0, u: 0, cut: false };
   let shots = null, t = 0, len = 0, manual = false, lastI = -1, onEnd = null, barsShown = -1, barsK = 0;
+  let id = null, skipOffered = false, skipHeld = 0, skipArmed = false;
   // Blends: the difference (camera xyz, look-at xyz, fov) carried at the start or the end, and how long it takes to die away.
   const off = new Float64Array(7), cur = new Float64Array(7), last = new Float64Array(7);   // last: the director's last camera
   let blendIn = 0, blendOut = 0, outT = -1, outWant = false;
@@ -51,6 +53,40 @@ export function addDirectorSystem(g) {
     subEl.style.cssText = 'position:absolute;left:10%;right:10%;bottom:15%;text-align:center;color:#f1ece0;font:400 22px/1.4 Georgia,serif;text-shadow:0 1px 3px #000';
     ov.append(slugEl, subEl); document.body.append(ov);
   }
+  const skipPrompt = ov ? document.createElement('div') : null;
+  const skipFill = skipPrompt ? document.createElement('div') : null;
+  if (skipPrompt) {
+    skipPrompt.hidden = true;
+    skipPrompt.style.cssText = 'position:fixed;right:24px;bottom:13%;z-index:41;pointer-events:none;'
+      + 'padding:9px 12px 11px;overflow:hidden;background:#111317e8;color:#f1ece0;'
+      + 'border:1px solid #a69c814d;border-radius:3px;font:15px Georgia,serif';
+    skipPrompt.dataset.cutsceneSkip = '';
+    skipPrompt.textContent = 'Hold K to skip';
+    skipFill.style.cssText = 'position:absolute;inset:auto 0 0;height:2px;background:#e2cc9a;'
+      + 'transform:scaleX(0);transform-origin:left';
+    skipPrompt.append(skipFill);
+    document.body.append(skipPrompt);
+  }
+
+  /** Show or clear the Wraith's cutscene skip hint and hold bar. */
+  function showSkip(on) {
+    skipHeld = 0;
+    if (!skipPrompt) return;
+    skipPrompt.hidden = !on;
+    skipFill.style.transform = 'scaleX(0)';
+  }
+
+  /** Count a continuous, deliberate hold after the skip hint appeared. */
+  function updateSkip() {
+    if (!skipOffered || manual) return false;
+    const down = input?.gameHasFocus && input.down[Action.SkipCutscene];
+    if (!down) skipArmed = true;
+    const held = down && skipArmed ? skipHeld + clock.realDt : 0;
+    if (held !== skipHeld && skipFill) skipFill.style.transform = 'scaleX(' + Math.min(1, held / SKIP_HOLD_SECONDS) + ')';
+    skipHeld = held;
+    return held >= SKIP_HOLD_SECONDS;
+  }
+
   const shownText = { slug: '', dim: 0, sub: '' };
   /** This frame's slug and subtitle → shownText (and the DOM when it changes). */
   function overlayFor(sh, u, ts) {
@@ -137,11 +173,59 @@ export function addDirectorSystem(g) {
     camera.rotation.set(-Math.atan2(dy, Math.hypot(dx, dz)), Math.atan2(dx, dz), 0);
     camera.fov = c[6];
   }
+  /** Place the Wraith along a shot's path, including its exact endpoint. */
+  function moveWraith(sh, u) {
+    if (sh.wraith && sh.wraith.path) {
+      const P = sh.wraith.path, n = P.length - 1, q = u * n;
+      const k = Math.floor(q), f = q - k, A = P[k], B = P[Math.min(n, k + 1)];
+      controller.pos.x = A[0] + (B[0] - A[0]) * f; controller.pos.y = A[1] + (B[1] - A[1]) * f; controller.pos.z = A[2] + (B[2] - A[2]) * f;
+      let dy = B[3] - A[3]; dy -= Math.round(dy / (2 * Math.PI)) * 2 * Math.PI; controller.yaw = A[3] + dy * f;
+    }
+  }
+
+  /** Apply the changes a shot makes on its first frame. */
+  function enterShot(i, u) {
+    const sh = shots[i];
+    // A cut resets the temporal history; the opening of a blended start is not a cut.
+    if (!(lastI < 0 && blendIn > 0)) { post.post.resetHistory = true; if (g.atmosphere) g.atmosphere.snapExposure = true; }
+    lastI = i;
+    // A shot's crowd (render/crowd.js): placed on its cut; a shot without one shows none.
+    if (g.crowd) { if (sh.crowd) { g.crowd.set(sh.crowd); g.crowd.show(true); } else g.crowd.show(false); }
+    // Time held still, or running again.
+    if (sh.freeze) { if (frozenAt < 0) frozenAt = clock.simTime; setFrozen(true); } else { frozenAt = -1; setFrozen(false); }
+    // The Wraith in the shot or not.
+    const want = sh.wraith !== false;
+    if (want !== wraithShown && g.game) { g.game.setPlayerVisible(want); wraithShown = want; }
+    sh.onCut?.(g);
+    // Out of the city (the release ends on the Sounding: the city's own exit puts the Wraith on the rim), and the hour.
+    if ((sh.leave && g.ebbhold && g.ebbhold.active) || (sh.enter && g.ebbhold && !g.ebbhold.active)) { g.regradeWanted = true; resnap = 2; }
+    if (sh.leave && g.ebbhold && g.ebbhold.active) g.ebbhold.exit();
+    if (sh.enter && g.ebbhold && !g.ebbhold.active) { g.ebbhold.enter(sh.enter); controller.hold = true; }
+    if (sh.hour !== undefined && g.params) { g.params.v.timeOfDay = sh.hour; g.params.version++; clock.pinHour = sh.hour; hourHeld = true; }
+    sefaFor(sh, u, true);
+  }
+
+  /** End the timeline, resolving skipped cuts in order and restoring the usual player view. */
+  function finish() {
+    finishCutscene(shots.length, lastI, (i) => {
+      if (lastI >= 0) moveWraith(shots[lastI], 1);
+      enterShot(i, 0);
+    }, () => {
+      if (shots.length) moveWraith(shots[shots.length - 1], 1);
+      markCutsceneSeen(g.chapter?.graph.flags, id);
+      d.stop();
+    });
+  }
+
   const d = g.director = {
     active: false,
-    /** Play a shot list. opt: { onEnd, letterbox (default true), blendIn (s from the player's camera; 0: a cut), blendOut (s back). } */
+    /** Play a shot list. opt: { id, onEnd, letterbox (default true), blendIn (s from the player's camera; 0: a cut), blendOut (s back). } */
     play(list, opt = {}) {
       shots = list; t = 0; len = totalLength(list); lastI = -1; manual = false; onEnd = opt.onEnd || null;
+      id = opt.id ?? null;
+      skipOffered = canSkipCutscene(g.chapter?.graph.flags, id);
+      skipArmed = !input?.down[Action.SkipCutscene];
+      showSkip(skipOffered);
       d.letterbox = opt.letterbox !== false; d.active = true; controller.hold = true;
       blendIn = opt.blendIn || 0; blendOut = opt.blendOut || 0; outT = -1;
       gradeSaved.set(post.post.grade); frozenAt = -1; pinSaved = clock.pinHour; hourHeld = false;
@@ -156,17 +240,27 @@ export function addDirectorSystem(g) {
     },
     /** Play a cutscene by name (data/cutscenes, or 'release': the Listener's, built from the player's record). */
     playCutscene(name, opt = {}) {
-      if (name === 'release') { const b = releaseShots({ record: g.chapter?.graph.vars['ebb.record'] || [] }); d.play(b.shots, { ...b.opt, ...opt }); return true; }
+      if (name === 'release') { const b = releaseShots({ record: g.chapter?.graph.vars['ebb.record'] || [] }); d.play(b.shots, { ...b.opt, ...opt, id: name }); return true; }
       const cs = CUTSCENES[name];
       if (!cs) { console.warn('no cutscene', name); return false; }
       const b = build(cs);
-      d.play(b.shots, { ...b.opt, ...opt });
+      d.play(b.shots, { ...b.opt, ...opt, id: name });
       return true;
     },
     /** Hold the timeline at time s (s): a film drives it frame by frame. hold false: jump there and play on. */
-    seek(s, hold = true) { manual = hold; t = s; },
+    seek(s, hold = true) {
+      if (manual !== hold) {
+        skipArmed = !input?.down[Action.SkipCutscene];
+        showSkip(skipOffered && !hold);
+      }
+      manual = hold;
+      t = s;
+    },
+    /** Restore the player's controls and backdrop, also when a caller cancels a scene. */
     stop() {
       if (!d.active) return;
+      skipOffered = false;
+      showSkip(false);
       d.active = false; shots = null; controller.hold = false; post.taa.dofOn = false; post.taa.blur = 0;
       if (g.crowd) g.crowd.show(false);
       if (g.drowned) for (const p of g.drowned.people) if (p.npc) p.npc.warm = false;   // (no longer kept for a shot)
@@ -231,29 +325,11 @@ export function addDirectorSystem(g) {
       return;
     }
     if (!manual) t += clock.dt;
-    if (t >= len && !manual) { d.stop(); return; }
+    if (!manual && (updateSkip() || t >= len)) { finish(); return; }
     shotAt(shots, t, 0, at);
     const sh = shots[at.i];
     warmAhead();
-    if (at.i !== lastI) {
-      // A cut resets the temporal history; the opening of a blended start is not a cut.
-      if (!(lastI < 0 && blendIn > 0)) { post.post.resetHistory = true; if (g.atmosphere) g.atmosphere.snapExposure = true; }
-      lastI = at.i;
-      // A shot's crowd (render/crowd.js): placed on its cut; a shot without one shows none.
-      if (g.crowd) { if (sh.crowd) { g.crowd.set(sh.crowd); g.crowd.show(true); } else g.crowd.show(false); }
-      // Time held still, or running again.
-      if (sh.freeze) { if (frozenAt < 0) frozenAt = clock.simTime; setFrozen(true); } else { frozenAt = -1; setFrozen(false); }
-      // The Wraith in the shot or not.
-      const want = sh.wraith !== false;
-      if (want !== wraithShown && g.game) { g.game.setPlayerVisible(want); wraithShown = want; }
-      sh.onCut?.(g);
-      // Out of the city (the release ends on the Sounding: the city's own exit puts the Wraith on the rim), and the hour.
-      if ((sh.leave && g.ebbhold && g.ebbhold.active) || (sh.enter && g.ebbhold && !g.ebbhold.active)) { g.regradeWanted = true; resnap = 2; }
-      if (sh.leave && g.ebbhold && g.ebbhold.active) g.ebbhold.exit();
-      if (sh.enter && g.ebbhold && !g.ebbhold.active) { g.ebbhold.enter(sh.enter); controller.hold = true; }
-      if (sh.hour !== undefined && g.params) { g.params.v.timeOfDay = sh.hour; g.params.version++; clock.pinHour = sh.hour; hourHeld = true; }
-      sefaFor(sh, at.u, true);
-    }
+    if (at.i !== lastI) enterShot(at.i, at.u);
     sefaFor(sh, at.u, false);
     if (g.morrow) { if (sh.morrow) g.morrow.show(true, sh.morrow.f, sh.morrow.yaw ?? null, lerp2(sh.morrow.cut ?? 0, at.u)); else if (g.morrow.st.on) g.morrow.show(false); }
     if (g.drift) {
@@ -265,12 +341,7 @@ export function addDirectorSystem(g) {
     if (resnap > 0 && --resnap === 0) gradeSaved.set(post.post.grade);
     lookFor(sh, at.u);
     overlayFor(sh, at.u, at.u * sh.dur);
-    // The Wraith moved along a path through the shot (a replay of its own record).
-    if (sh.wraith && sh.wraith.path) {
-      const P = sh.wraith.path, n = P.length - 1, q = Math.min(n - 1e-6, at.u * n), k = Math.floor(q), f = q - k, A = P[k], B = P[Math.min(n, k + 1)];
-      controller.pos.x = A[0] + (B[0] - A[0]) * f; controller.pos.y = A[1] + (B[1] - A[1]) * f; controller.pos.z = A[2] + (B[2] - A[2]) * f;
-      let dy = B[3] - A[3]; dy -= Math.round(dy / (2 * Math.PI)) * 2 * Math.PI; controller.yaw = A[3] + dy * f;
-    }
+    moveWraith(sh, at.u);
     evalShot(sh, at.u, t, cam);
     // The camera turned to follow one of the Drowned (a pan: where it stands stays the shot's).
     if (sh.look && g.drowned) {
