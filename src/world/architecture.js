@@ -983,7 +983,7 @@ export function buildArchitecture(sites) {
   const ranges = [];
   sites.forEach((s, i) => {
     const v0 = b.pos.length / 3, i0 = b.idx.length;
-    b.site = i; b.noSnow = NO_SNOW.test(s.id); s.build(b, s.facing, rng(0x5a17 + i * 977));
+    b.site = i; b.noSnow = NO_SNOW.test(s.id); b.sandDrift = /^(ruin|glass)-/.test(s.id); s.build(b, s.facing, rng(0x5a17 + i * 977));
     ranges.push({ v0, v1: b.pos.length / 3, i0, i1: b.idx.length });
   });
   return {

@@ -24,7 +24,7 @@
 
 import { createWalker, WK, WEV, MODE, PILLARS, MIRRORS, ROOF_Y, WELL_LOCAL, BRAKE_LOCAL, walkerTuning, SIDE, HIP_Z, DECK_X, DECK_Z } from '../game/walker/walker.js';
 import { createDeck } from '../game/walker/deck.js';
-import { WALKER_SEAT, CAMP_WELL, CAMP_GATE_YAW, CIRCUIT, circuitTarget, trackPrints, nextPrint } from '../game/walker/route.js';
+import { WALKER_SEAT, CAMP_WELL, CAMP_GATE_YAW, GATE_CISTERN, GATE_CISTERN_YAW, CIRCUIT, circuitTarget, trackPrints, nextPrint } from '../game/walker/route.js';
 import { hasSpawnRoom } from '../game/shaped/spawnRoom.js';
 import { worldState } from '../game/worldState.js';
 import { BRUSH } from '../shaders/terrainState.wgsl.js';
@@ -153,11 +153,35 @@ export function addLongWalkerSystem(g) {
   const local3 = () => W.toWorldQ();
 
   // ── The well, the anchor ─────────────────────────────────────────────────────────────────────
-  let wellSet = false;
-  function setWell() {
-    ground.qx = CAMP_WELL[0]; ground.qz = CAMP_WELL[1];
-    if (ground.covers && !ground.covers()) return;
-    ground.sample(); W.setWell(CAMP_WELL[0], ground.h - 0.4, CAMP_WELL[1], CAMP_GATE_YAW); wellSet = true;
+  // Two homes it can be brought to (docs/phase-9/dunes-choice.md): the Wellhouse's dry well, or the Sun Gate's cistern on
+  // the canyon's rim. It goes to whichever it is nearer when it turns home; where it lies down is the dunes' choice.
+  let wellSet = false, homeIs = 'well';
+  const HOMES = { well: [CAMP_WELL, CAMP_GATE_YAW], gate: [GATE_CISTERN, GATE_CISTERN_YAW] };
+  /** The baked ground (coarse, always known): a far home's height before the fine ground has streamed in round it. */
+  const ovH = (x, z) => {
+    ground.qx = x; ground.qz = z;
+    if (!ground.covers || ground.covers()) { ground.sample(); return ground.h; }
+    const O = streamer?.overview; if (!O) return NaN;
+    const u = (x + 4096) / 8 - 0.5, v = (4096 - z) / 8 - 0.5, i = Math.max(0, Math.min(1022, Math.floor(u))), j = Math.max(0, Math.min(1022, Math.floor(v))), fu = u - i, fv = v - j;
+    const H = (a, b) => O[b * 1024 + a] / 32 - 128;
+    return (H(i, j) * (1 - fu) + H(i + 1, j) * fu) * (1 - fv) + (H(i, j + 1) * (1 - fu) + H(i + 1, j + 1) * fu) * fv;
+  };
+  function setHome(which) {
+    const [p, yaw] = HOMES[which], h = ovH(p[0], p[1]);
+    if (!Number.isFinite(h)) return false;
+    W.setWell(p[0], h - 0.4, p[1], yaw); homeIs = which; wellSet = true; W._homeSide = 0;
+    // (The Gate's cistern is on a canyon's rim: it must be going home — not steered, which probes for drops and balks at
+    // the wall — well before the rim is ahead of it.)
+    walkerTuning.homeR = which === 'gate' ? 210 : 110;
+    return true;
+  }
+  function setWell() { if (flags.has('dunes:home-none')) { wellSet = true; W._wellSet = false; walkerTuning.homeR = 0; return; } setHome(flags.has('dunes:home-gate') ? 'gate' : 'well'); }
+  /** Walking, before it has turned home: the nearer home is the one it will turn to. */
+  function pickHome() {
+    if (released || flags.has('dunes:home-none') || W.mode === MODE.HOME || W.state === WK.HOME || W.state === WK.RELEASE || !W.isAwake()) return;
+    const dW = Math.hypot(W.x - CAMP_WELL[0], W.z - CAMP_WELL[1]), dG = Math.hypot(W.x - GATE_CISTERN[0], W.z - GATE_CISTERN[1]);
+    const want = dG < dW ? 'gate' : 'well';
+    if (want !== homeIs) setHome(want);
   }
   /** The ground is kept known round it by anchor patch 1 (re-centred when it has walked 40 m): AN[0..1] the
    *  centre, AN[2..3] the point wanted (fields, not arguments: it runs every frame). */
@@ -176,7 +200,7 @@ export function addLongWalkerSystem(g) {
   function restSpot() {
     // Where it lies at rest: where it knelt (saved), else its kneeling place by the gate.
     if (saved) return { x: saved.x, z: saved.z, yaw: saved.yaw };
-    W.setWell(CAMP_WELL[0], W.wellY, CAMP_WELL[1], CAMP_GATE_YAW); W.homePose(1, pose);
+    { const [hp, hy] = HOMES[flags.has('dunes:home-gate') ? 'gate' : 'well']; W.setWell(hp[0], W.wellY, hp[1], hy); } W.homePose(1, pose);
     return { x: pose[0], z: pose[1], yaw: pose[2] };
   }
   function tryPlace() {
@@ -234,6 +258,26 @@ export function addLongWalkerSystem(g) {
   const targets = g.interactables;
   const brake = { kind: 'walker', id: 'walker-brake', verb: 'Touch', name: 'Brake stone', x: 0, y: 0, z: 0, r: 3.6, h: 2.6, hidden: true, onUse: () => wake() };
   const mirrors = [0, 1].map((k) => ({ kind: 'walker', id: 'walker-mirror-' + k, verb: 'Turn', name: 'Mirror-stone', x: 0, y: 0, z: 0, r: 2.3, h: 2.4, hy: 1.6, hidden: true, onUse: () => turnMirror(k) }));
+  // Neither (docs/phase-9/dunes-choice.md): on its back, by the court's well, let it go — it walks its circuit for ever,
+  // lying down nowhere. Once to hear what that means, again (within a few seconds) to do it.
+  let freeAsk = -1e9;
+  const letGo = { kind: 'walker', id: 'walker-let-go', verb: 'Let it walk on', name: 'Its court', x: 0, y: 0, z: 0, r: 2.6, h: 1.2, hy: 1.6, hidden: true,
+    onUse: () => {
+      if (clock.simTime - freeAsk > 8) {
+        freeAsk = clock.simTime;
+        hud.notice('The Long Walker', 'Let it walk on?', 'It would never lie down: not at the well, not at the Gate. The erg would move again everywhere, and both camps would have to leave in a season. Do it again to let it go.', 9);
+        return;
+      }
+      freeAsk = -1e9; letItWalk();
+    } };
+  g.interactables.push(letGo);
+  function letItWalk() {
+    flags.add('dunes:home-none'); chapter.raise('walker:home-none');
+    g.elements?.unlock('stone');
+    W._wellSet = false; walkerTuning.homeR = 0; if (W.mode === MODE.HOME) W.mode = MODE.CIRCUIT;
+    hud.notice('The Long Walker', 'It walks on', 'You let it go. It turns back to its old circuit, and will keep it as long as the erg stands. Stone is yours, and the sand.', 10);
+    g.game?.saves?.requestAutosave?.();
+  }
   const wait = { kind: 'walker', id: 'walker-wait', verb: 'Wait for dusk', name: 'Its well', x: 0, y: 0, z: 0, r: 2.8, h: 1.2, hy: 1.6, hidden: true, onUse: () => waitDusk() };
   if (targets) targets.push(brake, ...mirrors, wait);
 
@@ -280,11 +324,15 @@ export function addLongWalkerSystem(g) {
     released = true;
     W.release();
     flags.add(FLAG.RELEASED); chapter.raise('walker:released');
+    // The dunes' choice (docs/phase-9/dunes-choice.md): where it lay down.
+    flags.add(homeIs === 'gate' ? 'dunes:home-gate' : 'dunes:home-well'); chapter.raise(homeIs === 'gate' ? 'walker:home-gate' : 'walker:home-well');
     worldState.restoration.dunes = 'restored';
     g.elements?.unlock('stone');
     g.calm?.note(controller.pos.x, controller.pos.z);
     musicOver = 'release'; musicUntil = clock.simTime + 50; music.rearm?.('release');
-    hud.notice('The Long Walker', 'It lies down', 'It has come home. The wind returns to the erg; the dunes stream and walk again. Stone is yours, and the sand.', 10);
+    hud.notice('The Long Walker', 'It lies down', homeIs === 'gate'
+      ? 'It has lain down by the Sun Gate, its head in the old cistern. Water is rising in it. Far east, the Wellhouse well stays dry. Stone is yours, and the sand.'
+      : 'It has come home. The wind returns to the erg; the dunes stream and walk again. Stone is yours, and the sand.', 10);
     if (capture || !g.releaseCam) return;
     // The camera: a slow letterboxed orbit over the camp as it lays its head on the well and lies down
     // (Space or Interact skips). The Wraith watches from inside the court, by the well.
@@ -377,7 +425,15 @@ export function addLongWalkerSystem(g) {
   }
 
   const BASE_KNEEL = walkerTuning.kneelTime, BASE_SPEED = walkerTuning.speed;
+  /** Which home it will lie down at, and the release (bots and the dev overlay). */
+  g.walkerHome = { get home() { return homeIs; }, release: () => { if (!released) startRelease(); } };
+  const cisternWater = () => g.archSites?.findIndex((x) => x.id === 'ruin-gate-cistern-water') ?? -1;
+  let cwi = -2;
   loop.add({ name: 'longWalker', update: () => {
+    pickHome();
+    // The Sun Gate's cistern: full once it lay down there.
+    if (cwi === -2) cwi = cisternWater();
+    if (cwi >= 0) { const s0 = g.archSites[cwi], want = !(flags.has('dunes:home-gate') && flags.has(FLAG.RELEASED)); if (s0.hidden !== want) { s0.hidden = want; g.engine?.snapshotRenderingReset?.(); } }
     walkerTuning.kneelTime = BASE_KNEEL * (flags.has('dunes:instrument-clock') ? S.clockKneel : 1);
     walkerTuning.speed = BASE_SPEED * (flags.has('dunes:instrument-sun') ? S.sunPace : 1);
     // Buried, its flat court sits on sloping sand: the sand is heaped round it once, so nothing hovers (the state only
@@ -605,7 +661,7 @@ export function addLongWalkerSystem(g) {
 
     // Home: kneeling by the well; the mirror-stones; the light into the shaft; the release.
     const home = W.state === WK.HOME;
-    if (ev & WEV.HOME) tell('home', 'The Long Walker', 'It kneels by the dry well', 'It will not lie down while the shaft is dark. Turn the two mirror-stones on its roof so the low sun goes from one to the other and down into the well.', 12);
+    if (ev & WEV.HOME) tell('home', 'The Long Walker', homeIs === 'gate' ? 'It kneels by the Sun Gate\'s cistern' : 'It kneels by the dry well', 'It will not lie down while the shaft is dark. Turn the two mirror-stones on its roof so the low sun goes from one to the other and down into the ' + (homeIs === 'gate' ? 'cistern.' : 'well.'), 12);
     for (let k = 0; k < 2; k++) {
       const m = mirrors[k]; m.hidden = !home || !riding;
       io[0] = MIRRORS[k][0]; io[1] = ROOF_Y; io[2] = MIRRORS[k][1]; local3(); m.x = io[3]; m.y = io[4]; m.z = io[5];
@@ -613,6 +669,8 @@ export function addLongWalkerSystem(g) {
     const sdn = sun();
     wait.hidden = !home || !riding || (sdn !== null && sdn.y > S.sunLow[0] && sdn.y < S.sunLow[1]);
     io[0] = WELL_LOCAL[0]; io[1] = 0; io[2] = WELL_LOCAL[1]; local3(); wait.x = io[3]; wait.y = io[4]; wait.z = io[5];
+    letGo.x = io[3]; letGo.y = io[4]; letGo.z = io[5];
+    letGo.hidden = !riding || home || released || W.state === WK.RELEASE || !W.isAwake() || flags.has('dunes:home-none');
     let lit0 = false, lit1 = false;
     if (home && !released && sdn !== null) {
       const sd = sdn, low = sd.y > S.sunLow[0] && sd.y < S.sunLow[1];
@@ -649,12 +707,15 @@ export function addLongWalkerSystem(g) {
       }
     }
 
-    // Dying near it: back by the last place it knelt (a checkpoint), not the far shrine.
+    // Dying in the fight: all of it resets (user, 2026-11-25: a boss fight's progress goes with a death) — it goes back to
+    // its seat in the megadune, buried, to be woken and brought home again from the start; the Wraith re-forms at its shrine.
     const dying = combat && combat.dying > 0;
-    if (dying && !wasDying && W.isAwake() && dist < 600 && Number.isFinite(checkX)) {
-      shrineX = combat.shrineX; shrineZ = combat.shrineZ; combat.shrineX = checkX; combat.shrineZ = checkZ;
+    if (dying && !wasDying && W.isAwake() && W.state !== WK.HOME && W.state !== WK.RELEASE && dist < 600 && !flags.has('dunes:home-none')) {
+      flags.delete(FLAG.WOKE); flags.delete(FLAG.BOARDED); saved = null;
+      for (let i = 0; i < aboard.length; i++) if (aboard[i] >= 0) { g.shaped?.damage?.(aboard[i], 1e9, false, 0, 0); aboard[i] = -1; }
+      checkX = checkZ = NaN; deck.riding = false;
+      placed = false; g.walkerPlaced = false;
     }
-    if (!dying && wasDying && Number.isFinite(shrineX)) { combat.shrineX = shrineX; combat.shrineZ = shrineZ; shrineX = NaN; }
     wasDying = dying;
 
     // Music.

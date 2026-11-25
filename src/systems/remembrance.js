@@ -10,8 +10,8 @@ import { createRemembrance } from '../game/remembrance.js';
 
 /** Event names of a cast, by the surface under the Wraith (built once: a cast allocates nothing). */
 const CAST = {
-  snow: { sweep: 'cast:snow:frost', crystal: 'cast:snow:frost', ribbon: 'cast:snow:frost', gust: 'cast:snow:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex', shard: 'cast:snow:stone', ridge: 'cast:snow:stone', bloom: 'cast:any:bloom' },
-  grass: { sweep: 'cast:grass:frost', crystal: 'cast:grass:frost', ribbon: 'cast:grass:frost', gust: 'cast:grass:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex', shard: 'cast:grass:stone', ridge: 'cast:grass:stone', bloom: 'cast:any:bloom' },
+  snow: { sweep: 'cast:snow:frost', crystal: 'cast:snow:frost', ribbon: 'cast:snow:frost', gust: 'cast:snow:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex', shard: 'cast:snow:stone', ridge: 'cast:snow:stone', bloom: 'cast:any:bloom', flare: 'cast:snow:ember', stream: 'cast:snow:ember', fuse: 'cast:any:fuse' },
+  grass: { sweep: 'cast:grass:frost', crystal: 'cast:grass:frost', ribbon: 'cast:grass:frost', gust: 'cast:grass:gale', updraft: 'cast:any:updraft', vortex: 'cast:any:vortex', shard: 'cast:grass:stone', ridge: 'cast:grass:stone', bloom: 'cast:any:bloom', flare: 'cast:grass:ember', stream: 'cast:grass:ember', fuse: 'cast:any:fuse' },
 };
 
 /** @param {any} g  shared boot context */

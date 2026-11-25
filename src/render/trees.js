@@ -420,6 +420,34 @@ const CROWN_R = [3.2, 6.5, 4.2, 1.6, 0, 0, 0, 0, 0], CROWN_A = [0.85, 0.95, 0.6,
   }
 
   const api = {
+    /** Is the sightline from (ax, az) to (bx, bz) clear of crowns and shrubs (a cutscene's camera: game/scenes.js swings round
+     *  one that is not)? The last `skipB` m before b are not counted — what is filmed may stand under a tree. Dense inner
+     *  crown only (the outer leaves a camera sees through). */
+    sightClear(ax, az, bx, bz, skipB = 1.5) {
+      const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz);
+      if (L < skipB + 0.5) return true;
+      const ex = ax + dx * (1 - skipB / L), ez = az + dz * (1 - skipB / L), sx = ex - ax, sz = ez - az, s2 = sx * sx + sz * sz;
+      const gx0 = Math.floor((Math.min(ax, ex) - 8) / CELL), gx1 = Math.floor((Math.max(ax, ex) + 8) / CELL);
+      const gz0 = Math.floor((Math.min(az, ez) - 8) / CELL), gz1 = Math.floor((Math.max(az, ez) + 8) / CELL);
+      for (let gz = gz0; gz <= gz1; gz++) for (let gx = gx0; gx <= gx1; gx++) {
+        if (!treeAt(gx, gz)) continue;
+        const r = CROWN_R[T.si] * T.sc * (T.si === 3 ? 0.9 : 0.55);
+        if (r <= 0) continue;
+        const t = Math.max(0, Math.min(1, ((T.x - ax) * sx + (T.z - az) * sz) / s2)), px = ax + sx * t - T.x, pz = az + sz * t - T.z;
+        if (px * px + pz * pz < r * r) return false;
+      }
+      return true;
+    },
+    /** Is any crown or shrub within `r` m of (x, z)? (A cutscene's staging: somewhere open to stand and film.) */
+    crownNear(x, z, r) {
+      const g0x = Math.floor((x - r - 8) / CELL), g1x = Math.floor((x + r + 8) / CELL), g0z = Math.floor((z - r - 8) / CELL), g1z = Math.floor((z + r + 8) / CELL);
+      for (let gz = g0z; gz <= g1z; gz++) for (let gx = g0x; gx <= g1x; gx++) {
+        if (!treeAt(gx, gz)) continue;
+        const cr = CROWN_R[T.si] * T.sc;
+        if (cr > 0 && Math.hypot(T.x - x, T.z - z) < cr + r) return true;
+      }
+      return false;
+    },
     impostors: imp,
     /** Drawn meshes (bark and leaves, near -0 and far -1). */
     meshes: sets.flatMap((s) => s.meshes).filter((m) => !shadowOnly.includes(m)),

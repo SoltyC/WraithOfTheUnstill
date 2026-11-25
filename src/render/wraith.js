@@ -194,8 +194,11 @@ export function createWraithView(scene, atmo, ground, clipmap, opts = {}) {
     frost: 0.5 - 0.5,
     /** Ember tea's warm hands and Rime tonic's frosted wool (0..1; systems/economy.js, creatures.js). */
     warm: 0.5 - 0.5, rime: 0.5 - 0.5,
-    /** Ash-cast (0..1; systems/eruption.js): a figure the eruption kept, grey, its colours gone. */
+    /** Ash-cast (0..1; systems/eruption.js): a figure the eruption kept, grey, its colours gone; 1..2: the cast cracking and
+     *  falling apart (shaders/cloth.wgsl.js). */
     ash: 0.5 - 0.5,
+    /** Set the ash at once, on the material too: a frozen figure (not updated) still crumbles. */
+    setAsh(v) { this.ash = v; frostCreep.w = v; },
     /** Flow (game/flow.js, eased 0..3): the hems and cuffs catch the element's light and the hand-light trails. */
     flowLevel: 0.5 - 0.5,
     /** The element's light for Flow (rgb): frost cold blue, gale pale green. */

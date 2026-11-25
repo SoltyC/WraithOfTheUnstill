@@ -15,6 +15,7 @@ export const combatTuning = {
   focusIdle: 6, focusMove: 14, focusSurf: 28,   // per second: movement and flow restore focus
   costSweep: 14, costRibbon: 16, costCrystal: 30, costDodge: 8,   // focus
   costGust: 10, costVortex: 14, costUpdraft: 24,                  // focus (the Vortex per second)
+  costFlare: 10, costStream: 16, costFuse: 26,                    // Ember (the Stream per second)
   costShard: 9, costRidge: 12, costRidgeMetre: 0.5, costBloom: 26, // focus (the Ridge per second, plus per metre of wall)
   costSurge: 10, costDraw: 12, costUndertow: 26, surgeDamage: 7, surgeShove: 9, drawCrumble: 30,   // Tide: focus (the Draw per second), and its blows
   sweepDamage: 16, ribbonDps: 26, shatterMul: 3, freezeTime: 3,
@@ -97,6 +98,7 @@ export function createCombat(ctx) {
       if (frost.ribbonStrength > 0.3) this.focus = Math.max(0, this.focus - T.costRibbon * cheap * dt);
       if (gale && gale.vortexHeld && gale.vortexStrength > 0.3) this.focus = Math.max(0, this.focus - T.costVortex * cheap * dt);
       if (stone && stone.ridgeHeld) this.focus = Math.max(0, this.focus - (T.costRidge * dt + T.costRidgeMetre * stone.ridgeAdvance) * cheap);
+      const eb = self.emberBend; if (eb && eb.streamHeld && eb.streamStrength > 0.3) this.focus = Math.max(0, this.focus - T.costStream * cheap * dt);
       if (tide && tide.drawHeld && tide.drawMass < 1) this.focus = Math.max(0, this.focus - T.costDraw * cheap * dt);   // the Draw costs while it gathers   // the Ridge: per second, plus per metre dragged
       this.wound += ((1 - this.health / this.maxHealth) - this.wound) * (1 - Math.exp(-dt * 3));
       ribbonTick -= dt; bodyTick -= dt;

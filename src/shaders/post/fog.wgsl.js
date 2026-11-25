@@ -209,7 +209,9 @@ fn main(@builtin(global_invocation_id) gid: vec3u) {
           let amb = skyUp * mix(0.55, 1.15, hFrac) * 3.14159 * 0.35 * (1.0 - 0.4 * gloom);
           // Lightning (pad[0].z = glow): the cloud lights from within, brightest toward the bolt.
           let flashLum = vec3f(0.8, 0.9, 1.0) * P.pad[0].z * 0.75 * (0.07 + 0.93 * pow(max(cosT, 0.0), 12.0)) * mix(0.6, 1.0, hFrac);
-          let lum = sunC * beer * phase * 0.32 * (1.0 - 0.3 * gloom) + amb + flashLum;
+          // (Under the eruption's ash — pad[0].x — the deck is in the canopy's shadow: no sun on it, its sky light dimmed too.)
+          let veil = P.pad[0].x;
+          let lum = (sunC * beer * phase * 0.32 * (1.0 - 0.3 * gloom) * (1.0 - 0.95 * veil) + amb * (1.0 - 0.7 * veil)) + flashLum;
           let ext = dens;
           let tr = exp(-ext * dt);
           S += T * lum * (1.0 - tr);

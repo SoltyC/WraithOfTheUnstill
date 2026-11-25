@@ -41,6 +41,22 @@ describe('quest graph', () => {
     expect(h.journal().map((j) => j.lines.length)).toEqual([2, 1]);
   });
 
+  it('a quest the world closed: no goal, no more steps, finished in the journal with the lines it reached, kept by a save', () => {
+    const g = new QuestGraph(DEFS, POIS);
+    g.tick(facts()); g.tick(facts({ events: new Set(['woke']) }));
+    g.quests.wake.state = 'closed';
+    expect(g.goals().some((x) => x.quest === 'wake')).toBe(false);
+    expect(g.tick(facts({ x: 105, z: 195 })).some((o) => o.stepDone === 'wake')).toBe(false);
+    const j = g.journal().find((q) => q.id === 'wake');
+    expect(j.done).toBe(true); expect(j.lines).toEqual(['I rose.', 'I reached the shrine.']);
+    const h = new QuestGraph(DEFS, POIS); h.restore(JSON.parse(JSON.stringify(g.serialize())));
+    expect(h.quests.wake.state).toBe('closed');
+    // One never begun, gone: not in the journal, and it never starts.
+    h.quests.side.state = 'gone';
+    expect(h.tick(facts({ night: true })).length).toBe(0);
+    expect(h.journal().some((q) => q.id === 'side')).toBe(false);
+  });
+
   it('rejects malformed data with a path', () => {
     expect(() => validateQuests([{ id: 'a', kind: 'main', steps: [{ id: 's', journal: 'x', when: { nere: {} } }] }])).toThrow(/unknown condition key "nere"/);
     expect(() => validateQuests([{ id: 'a', kind: 'main', steps: [{ id: 's', journal: 'x', when: { quest: 'b' } }] }])).toThrow(/unknown quest "b"/);

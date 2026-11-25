@@ -1,37 +1,15 @@
 {
- "date": "2026-11-23T11:31:30.331Z",
+ "date": "2026-11-25T03:14:50.694Z",
  "note": "RX 9070, headless Windows Chrome (window 2560x1440), High preset, dynamic resolution off; presented = rAF intervals",
  "target": "11.1 ms (90 fps)",
  "spots": {
-  "erupt:volcano-rim@12": {
-   "p50": 7.4,
-   "p95": 8.8,
-   "max": 13.1,
-   "fps": 133.47,
-   "gpu": 5.98,
-   "gpu95": 6.19,
-   "scale": 0.8,
-   "err": 0,
-   "ok": true
-  },
-  "erupt:chapel@40": {
-   "p50": 7.4,
-   "p95": 8.8,
-   "max": 11.9,
-   "fps": 132.52,
-   "gpu": 6.07,
-   "gpu95": 6.4,
-   "scale": 0.8,
-   "err": 0,
-   "ok": true
-  },
-  "camp": {
-   "p50": 8.9,
-   "p95": 10.6,
-   "max": 13.7,
-   "fps": 113.45,
-   "gpu": 8.64,
-   "gpu95": 8.78,
+  "tp:camp": {
+   "p50": 9.6,
+   "p95": 11,
+   "max": 14.7,
+   "fps": 105.58,
+   "gpu": 9.28,
+   "gpu95": 9.49,
    "scale": 0.8,
    "err": 0,
    "ok": true

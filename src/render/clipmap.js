@@ -77,12 +77,14 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   const playerPos = new Vector4(0, 0, 0, 0.6);
   // The crater's lava lake lighting its pit (systems/volcano.js): level (m), glow (display-referred), radius (m).
   const lavaGlow = new Vector4(-1000, 0, 80, 0);
+  // The Ember Waste restored (systems/volcano.js): x 0..1, y time (s).
+  const emberWaste = new Vector4(0, 0, 0, 0);
   // The eruption's flows lighting the land round them (systems/eruption.js): LAVA_SEGS segments along their hot stretches,
   // each (a.xyz, intensity), (b.xyz, radius); intensity 0 = none.
   const lavaSegs = new Float32Array(LAVA_SEGS * 8);
   const mat = new ShaderMaterial('clipmap', scene, { vertex: 'clipmap', fragment: 'clipmap' }, {
     attributes: ['position'], // world0..3 are added by Babylon for thin instances
-    uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', 'lavaGlow', 'lavaSegs', ...ENV_UNIFORMS],
+    uniforms: ['viewProjection', 'levels', 'camGrid', 'playerPos', 'spellLights', 'lavaGlow', 'emberWaste', 'lavaSegs', ...ENV_UNIFORMS],
     samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...MAT_SAMPLERS, 'rockMask'],
     storageBuffers: ['levelData', 'biomeA', 'biomeB', 'windMap', 'hydro', ...ATMO_MATERIAL_BUFFERS, 'shadowData', 'lightGrid', ...STATE_SAMPLE_BUFFERS, ...STATE_COMPACTION_BUFFERS],
     shaderLanguage: ShaderLanguage.WGSL,
@@ -93,6 +95,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   mat.setVector4('camGrid', camGrid);
   mat.setVector4('playerPos', playerPos);
   mat.setVector4('lavaGlow', lavaGlow);
+  mat.setVector4('emberWaste', emberWaste);
   mat.setArray4('lavaSegs', lavaSegs);
   // Spell lights (written in place by the bending systems each frame).
   bindMaterialLibrary(mat, matLib); // scanned rock on the cliffs
@@ -113,7 +116,7 @@ export function createClipmap(scene, buffers, atmo, matLib) {
   let builtResidency = -1;
 
   return {
-    mesh, centerMesh, shadowMesh, shadowCenter, shadowN, material: mat, playerPos, lavaGlow, lavaSegs, levelData, params, levels, camGrid, buffers, spellLights, lightGrid,
+    mesh, centerMesh, shadowMesh, shadowCenter, shadowN, material: mat, playerPos, lavaGlow, emberWaste, lavaSegs, levelData, params, levels, camGrid, buffers, spellLights, lightGrid,
     /** Binds the terrain state (fine window, atlas plane 0, page table, params) for the fragment read. */
     /** Other materials using the clipmap vertex shader (shadow casters) that need the state too. */
     stateBound: [],

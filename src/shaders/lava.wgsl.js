@@ -397,7 +397,10 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let t = uniforms.flowT.x;
   // Heat: the crust moves from the start (the melt shows in its tears); the nose bursting; the edges cooling first.
   let age = max(0.0, uniforms.flowT.y - fragmentInputs.vArr);
-  let cool = 1.0 - uniforms.flowT.z;
+  // The cooling runs down the flow from the vent: what came out first goes black first, a wave down to the front (the
+  // afterwards, or the Ember Warden plugging the vent: render/lava.js cooling).
+  let cw = uniforms.flowT.z * (uniforms.flowT.y + 60.0) - fragmentInputs.vArr;
+  let cool = 1.0 - clamp(cw / 60.0, 0.0, 1.0);
   var heat = clamp(0.7 - age / 320.0, 0.1, 0.7) * cool;
   heat = max(heat, (1.0 - smoothstep(0.0, 9.0, behind)) * 0.86 * cool);
   heat *= 1.0 - 0.55 * smoothstep(0.5, 1.0, abs(u));

@@ -771,6 +771,15 @@
     "ember-cole": [
       {
         "when": {
+          "flag": [
+            "ember:after",
+            "ember:stopped"
+          ]
+        },
+        "say": "ember.cole.stopped"
+      },
+      {
+        "when": {
           "flag": "ember:debtors-up"
         },
         "say": "ember.cole.father"
@@ -846,11 +855,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:aled-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.aled.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:aled-go"
           ],
           "notFlag": "ember:aled-stays"
         },
         "say": "ember.aled.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-spared"
+          ]
+        },
+        "say": "ember.aled.spared"
       },
       {
         "when": {
@@ -956,11 +985,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:aled-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:aled-stays"
+        },
+        "say": "ember.nia.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:aled-go"
           ],
           "notFlag": "ember:aled-stays"
         },
         "say": "ember.nia.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:aled-spared"
+          ]
+        },
+        "say": "ember.nia.spared"
       },
       {
         "when": {
@@ -1021,11 +1070,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:bethan-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.bethan.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:bethan-go"
           ],
           "notFlag": "ember:bethan-stays"
         },
         "say": "ember.bethan.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-spared"
+          ]
+        },
+        "say": "ember.bethan.spared"
       },
       {
         "when": {
@@ -1125,11 +1194,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:bethan-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:bethan-stays"
+        },
+        "say": "ember.tomos.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:bethan-go"
           ],
           "notFlag": "ember:bethan-stays"
         },
         "say": "ember.tomos.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:bethan-spared"
+          ]
+        },
+        "say": "ember.tomos.spared"
       },
       {
         "when": {
@@ -1190,11 +1279,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:huw-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.huw.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:huw-go"
           ],
           "notFlag": "ember:huw-stays"
         },
         "say": "ember.huw.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-spared"
+          ]
+        },
+        "say": "ember.huw.spared"
       },
       {
         "when": {
@@ -1294,11 +1403,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:huw-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:huw-stays"
+        },
+        "say": "ember.elin.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:huw-go"
           ],
           "notFlag": "ember:huw-stays"
         },
         "say": "ember.elin.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:huw-spared"
+          ]
+        },
+        "say": "ember.elin.spared"
       },
       {
         "when": {
@@ -1359,11 +1488,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:ffion-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.ffion.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:ffion-go"
           ],
           "notFlag": "ember:ffion-stays"
         },
         "say": "ember.ffion.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-spared"
+          ]
+        },
+        "say": "ember.ffion.spared"
       },
       {
         "when": {
@@ -1463,11 +1612,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:ffion-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:ffion-stays"
+        },
+        "say": "ember.dai.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:ffion-go"
           ],
           "notFlag": "ember:ffion-stays"
         },
         "say": "ember.dai.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:ffion-spared"
+          ]
+        },
+        "say": "ember.dai.spared"
       },
       {
         "when": {
@@ -1528,11 +1697,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:gwil-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.gwil.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:gwil-go"
           ],
           "notFlag": "ember:gwil-stays"
         },
         "say": "ember.gwil.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-spared"
+          ]
+        },
+        "say": "ember.gwil.spared"
       },
       {
         "when": {
@@ -1632,11 +1821,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:gwil-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:gwil-stays"
+        },
+        "say": "ember.sian.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:gwil-go"
           ],
           "notFlag": "ember:gwil-stays"
         },
         "say": "ember.sian.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:gwil-spared"
+          ]
+        },
+        "say": "ember.sian.spared"
       },
       {
         "when": {
@@ -1697,11 +1906,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:mari-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.mari.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:mari-go"
           ],
           "notFlag": "ember:mari-stays"
         },
         "say": "ember.mari.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-spared"
+          ]
+        },
+        "say": "ember.mari.spared"
       },
       {
         "when": {
@@ -1801,11 +2030,31 @@
         "when": {
           "flag": [
             "ember:after",
+            "ember:mari-go",
+            "ember:stopped"
+          ],
+          "notFlag": "ember:mari-stays"
+        },
+        "say": "ember.rhys.camp.stopped"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
             "ember:mari-go"
           ],
           "notFlag": "ember:mari-stays"
         },
         "say": "ember.rhys.camp.home"
+      },
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:mari-spared"
+          ]
+        },
+        "say": "ember.rhys.spared"
       },
       {
         "when": {
@@ -1818,6 +2067,15 @@
       }
     ],
     "ember-orrin": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:spared-cinderhold"
+          ]
+        },
+        "say": "ember.orrin.spared"
+      },
       {
         "when": {
           "flag": "ember:tithe-exposed"
@@ -1933,6 +2191,15 @@
       }
     ],
     "ember-annick": [
+      {
+        "when": {
+          "flag": [
+            "ember:after",
+            "ember:spared-chapel"
+          ]
+        },
+        "say": "ember.annick.spared"
+      },
       {
         "when": {
           "flag": "ember:seer-forced"
@@ -3733,6 +4000,168 @@
       "speaker": "ember-rhys",
       "lines": [
         "I saved a coil of wire from the top terrace. It'll keep the rope off the wet ground."
+      ]
+    },
+    "ember.aled.spared": {
+      "speaker": "ember-aled",
+      "lines": [
+        "The lava stopped a field above the fold. I went up and put my hand on it. Warm, like a ewe's back."
+      ]
+    },
+    "ember.nia.spared": {
+      "speaker": "ember-nia",
+      "lines": [
+        "Dad says the mountain held its breath. I think something held it for us."
+      ]
+    },
+    "ember.aled.camp.stopped": {
+      "speaker": "ember-aled",
+      "lines": [
+        "The mountain's gone quiet. When the ash settles we'll walk the ewes back up. The fold may still be there."
+      ]
+    },
+    "ember.nia.camp.stopped": {
+      "speaker": "ember-nia",
+      "lines": [
+        "Dad says we can go home soon. I want to see if the gate bar is still where I left it."
+      ]
+    },
+    "ember.bethan.spared": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "The cistern's cracked worse, but it's ours, and it's standing. I'll have it plastered before the rains."
+      ]
+    },
+    "ember.tomos.spared": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "Mam swept the ash off the step four times today. It keeps coming down. She keeps sweeping."
+      ]
+    },
+    "ember.bethan.camp.stopped": {
+      "speaker": "ember-bethan",
+      "lines": [
+        "We'll go back when the road cools. I want to know if the crock I left was the one that cracked."
+      ]
+    },
+    "ember.tomos.camp.stopped": {
+      "speaker": "ember-tomos",
+      "lines": [
+        "Mam's already packing. We only just unpacked."
+      ]
+    },
+    "ember.huw.spared": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Floor's under a finger of ash. Under the ash it's still the floor. We'll thresh on it this year."
+      ]
+    },
+    "ember.elin.spared": {
+      "speaker": "ember-elin",
+      "lines": [
+        "We sat in the dark all night with the door shut. In the morning the mountain was quiet and the birds came back first."
+      ]
+    },
+    "ember.huw.camp.stopped": {
+      "speaker": "ember-huw",
+      "lines": [
+        "Quiet up there now. I'll go and look at the floor before I tell Elin anything."
+      ]
+    },
+    "ember.elin.camp.stopped": {
+      "speaker": "ember-elin",
+      "lines": [
+        "He says he's only going to look. He's taking the flail."
+      ]
+    },
+    "ember.ffion.spared": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "The hens laid this morning. Through all of that, they laid."
+      ]
+    },
+    "ember.dai.spared": {
+      "speaker": "ember-dai",
+      "lines": [
+        "The dog won't go up the lane past the black edge. I don't blame him. I don't go either."
+      ]
+    },
+    "ember.ffion.camp.stopped": {
+      "speaker": "ember-ffion",
+      "lines": [
+        "The hens can go back first. They never wanted to come."
+      ]
+    },
+    "ember.dai.camp.stopped": {
+      "speaker": "ember-dai",
+      "lines": [
+        "The mountain stopped. Mam says something stopped it. She won't say what."
+      ]
+    },
+    "ember.gwil.spared": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "The water's running clean again. Hot for a day, then clean. The well knew before we did."
+      ]
+    },
+    "ember.sian.spared": {
+      "speaker": "ember-sian",
+      "lines": [
+        "Da won't say he was frightened. He drew water all night so he'd have something to do with his hands."
+      ]
+    },
+    "ember.gwil.camp.stopped": {
+      "speaker": "ember-gwil",
+      "lines": [
+        "If the well's clean we go back. If it's not, we dig another. Either way we go back."
+      ]
+    },
+    "ember.sian.camp.stopped": {
+      "speaker": "ember-sian",
+      "lines": [
+        "Da's been looking up the valley all morning. He doesn't say anything. He just looks."
+      ]
+    },
+    "ember.mari.spared": {
+      "speaker": "ember-mari",
+      "lines": [
+        "The top terrace is under it. The bottom three stand. My grandmother set those vines; they'll set again."
+      ]
+    },
+    "ember.rhys.spared": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "Mam's taking cuttings from the burnt rows anyway. She says roots remember."
+      ]
+    },
+    "ember.mari.camp.stopped": {
+      "speaker": "ember-mari",
+      "lines": [
+        "The cuttings can go back in the ground they came from. That's better than a row under a tarp."
+      ]
+    },
+    "ember.rhys.camp.stopped": {
+      "speaker": "ember-rhys",
+      "lines": [
+        "It's quiet. You can hear the sea now, without the mountain over it."
+      ]
+    },
+    "ember.orrin.spared": {
+      "speaker": "ember-orrin",
+      "lines": [
+        "The guild kept the town, and the mountain let it be kept. Don't ask me which of us to thank. I've stopped asking."
+      ]
+    },
+    "ember.annick.spared": {
+      "speaker": "ember-annick",
+      "lines": [
+        "The bell stopped ringing on its own. We stood at the door all night and nothing came. I don't know what you did up there. I know you did something."
+      ]
+    },
+    "ember.cole.stopped": {
+      "speaker": "ember-cole",
+      "lines": [
+        "I went up the road this morning. The lava's black right across it, and cold enough to stand on. It just stops. Like something told it to."
       ]
     }
   },

@@ -30,11 +30,11 @@
       "name": "Iven",
       "archetype": "lantern",
       "home": {
-        "poi": "wellhouse",
-        "dx": -10.700000000000045,
-        "dz": -1.7000000000000455
+        "poi": "gate-camp",
+        "dx": -2.5,
+        "dz": 2.0
       },
-      "about": "Reads old battles in fused glass, the way others read weather."
+      "about": "Reads old battles in fused glass, the way others read weather. Lives with the glass-readers under the Sun Gate."
     },
     {
       "id": "nadra",
@@ -57,6 +57,39 @@
         "dz": 7.2999999999999545
       },
       "about": "Nadra's child. Wants to see everything from higher up."
+    },
+    {
+      "id": "orsa",
+      "name": "Orsa",
+      "archetype": "elder",
+      "home": {
+        "poi": "gate-camp",
+        "dx": 1.5,
+        "dz": -2.0
+      },
+      "about": "The oldest of the glass-readers. Her mother's maps put a cistern under the Sun Gate."
+    },
+    {
+      "id": "kesh",
+      "name": "Kesh",
+      "archetype": "pilgrim",
+      "home": {
+        "poi": "gate-camp",
+        "dx": 4.0,
+        "dz": 2.5
+      },
+      "about": "The youngest reader. Likes the glass best in the morning."
+    },
+    {
+      "id": "adda",
+      "name": "Adda",
+      "archetype": "staff",
+      "home": {
+        "poi": "gate-camp",
+        "dx": -4.5,
+        "dz": -3.0
+      },
+      "about": "Mends the camp's boots and carries its water, two days each way from the Wellhouse."
     }
   ],
   "places": {
@@ -73,6 +106,13 @@
         794.8
       ],
       "name": "The Buried Sled"
+    },
+    "gate-camp": {
+      "pos": [
+        1496,
+        992
+      ],
+      "name": "The Gate Camp"
     }
   },
   "names": {
@@ -590,6 +630,12 @@
     "sarai": [
       {
         "when": {
+          "flag": "dunes:both-warned"
+        },
+        "say": "sarai.season"
+      },
+      {
+        "when": {
           "flag": "dunes:door-open"
         },
         "say": "sarai.door"
@@ -666,6 +712,12 @@
     "iven": [
       {
         "when": {
+          "flag": "dunes:both-warned"
+        },
+        "say": "iven.season"
+      },
+      {
+        "when": {
           "flag": "dunes:glass-done"
         },
         "say": "iven.done"
@@ -731,6 +783,45 @@
       {
         "say": "pell.first"
       }
+    ],
+    "kesh": [
+      {
+        "when": {
+          "flag": "dunes:home-gate"
+        },
+        "say": "kesh.water"
+      },
+      {
+        "say": "kesh.first"
+      }
+    ],
+    "adda": [
+      {
+        "when": {
+          "flag": "dunes:home-gate"
+        },
+        "say": "adda.water"
+      },
+      {
+        "say": "adda.first"
+      }
+    ],
+    "orsa": [
+      {
+        "when": {
+          "flag": "dunes:home-gate"
+        },
+        "say": "orsa.water"
+      },
+      {
+        "when": {
+          "flag": "dunes:walker-woke"
+        },
+        "say": "orsa.woke"
+      },
+      {
+        "say": "orsa.first"
+      }
     ]
   },
   "dialogue": {
@@ -769,7 +860,7 @@
     "iven.first": {
       "speaker": "iven",
       "lines": [
-        "Iven. I read glass.",
+        "Iven. I read glass. We all do, down here under the Gate.",
         "Every print out on the erg was made in one step. You can tell which way the weight went by the splash."
       ]
     },
@@ -906,6 +997,71 @@
       "lines": [
         "The wadi runs in the side canyon at dusk now, for a minute or so. Four cisterns stand there, dry.",
         "Hold it with a Ridge, a dam of ice and a channel. Wet the channel first or the dry sand will slump."
+      ]
+    },
+    "kesh.first": {
+      "speaker": "kesh",
+      "lines": [
+        "You came down the wall? Nobody comes down the wall.",
+        "Iven says the glass remembers where everything was thrown from. I just like how it looks in the morning."
+      ]
+    },
+    "adda.first": {
+      "speaker": "adda",
+      "lines": [
+        "Two days to the Wellhouse and back, for a skin of the oasis.",
+        "If there was water down here we'd never leave this canyon. There isn't."
+      ]
+    },
+    "orsa.first": {
+      "speaker": "orsa",
+      "lines": [
+        "Orsa. I was reading glass in this canyon before Iven could walk.",
+        "When I was a girl the Gate stood under the sand. Then the big one stopped walking, and the sand stopped with it. We came down here after it.",
+        "There's a cistern under the Gate. Dry. My mother's maps put it here. Nadra's too, I'd bet."
+      ]
+    },
+    "orsa.woke": {
+      "speaker": "orsa",
+      "lines": [
+        "It's walking again. Every print out there rings in the glass.",
+        "Wherever it lies down, the sand will move again. Somewhere it will cover something.",
+        "Bring it to the Wellhouse and this canyon fills inside a season. Bring it here and they lose the well. I won't tell you which."
+      ]
+    },
+    "sarai.season": {
+      "speaker": "sarai",
+      "lines": [
+        "It walks again, and nowhere is home to it. The dunes will be at our wall before the cold.",
+        "We have a season. That is more than the Gate would have had, or us, if you had chosen. Thank you for not choosing."
+      ]
+    },
+    "iven.season": {
+      "speaker": "iven",
+      "lines": [
+        "The glass is ringing all over the erg. Every print it ever made is waking.",
+        "We'll pack when the sand reaches the Gate's foot. Not before. Orsa wants to read the last of it."
+      ]
+    },
+    "orsa.water": {
+      "speaker": "orsa",
+      "lines": [
+        "Water. In my mother's cistern. I let the bucket down and it came up heavy.",
+        "Somewhere east a well is dry tonight because of this. I know. I'll drink anyway."
+      ]
+    },
+    "kesh.water": {
+      "speaker": "kesh",
+      "lines": [
+        "It put its head right in! The whole canyon shook.",
+        "Adda says we don't have to climb out for water any more. She laughed. I've never heard her laugh."
+      ]
+    },
+    "adda.water": {
+      "speaker": "adda",
+      "lines": [
+        "No more two days to the Wellhouse. No more anything to the Wellhouse.",
+        "They're packing their sledges over there. I watched from the rim. I didn't wave."
       ]
     }
   },

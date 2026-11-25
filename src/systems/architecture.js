@@ -109,6 +109,8 @@ export async function addArchitectureSystem(g) {
   const WL = g.worldLights;
   const builtLights = built.lights.map((l) => ({ l, r: WL.add({ x: NaN, y: NaN, z: NaN, radius: l.radius, color: l.color, intensity: l.intensity, kind: l.kind, level: 0 }) }));
   const headland = sites.find((s) => s.id === 'emb-camp');
+  // (The eruption puts out the lamps the lava or the cloud reaches: `out` on the built light — systems/eruption.js.)
+  g.archLights = builtLights;
   const headlandFires = builtLights.filter(({ l }) => l.kind === 'fire' && sites[l.site].id.startsWith('emb-camp'));
   const hearth = WL.add({ x: NaN, y: NaN, z: NaN, radius: 16, color: [1, 0.5, 0.2], intensity: 1, kind: 'fire', level: 0 });
   const brazierLights = brazierIdx.map(() => WL.add({ x: NaN, y: NaN, z: NaN, radius: 10, color: [1, 0.52, 0.22], intensity: 1.6, kind: 'fire', level: 0 }));
@@ -268,7 +270,7 @@ export async function addArchitectureSystem(g) {
     { const cs = view.sites, wn = WL.night;
       for (const b of builtLights) {
         const o = b.l.site * 4;
-        if (cs[o + 3] <= 0.5) { b.r.level = 0; continue; }
+        if (cs[o + 3] <= 0.5 || b.l.out) { b.r.level = 0; continue; }
         b.r.x = cs[o] + b.l.x; b.r.y = cs[o + 1] + b.l.y; b.r.z = cs[o + 2] + b.l.z;
         // The moon under the roof only by night; candles and the brazier always (Aud keeps them).
         b.r.level = b.l.kind === 'bounce' ? wn : b.l.kind === 'lamp' ? 0.35 + 0.65 * wn : 1;

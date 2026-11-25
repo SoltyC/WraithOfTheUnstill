@@ -51,7 +51,7 @@ export function evalBeat(b, u, time, resolve, ground, out, blocked) {
   if (dr > 0) { cam[0] += dr * (Math.sin(time * 0.71 + 1.3) * 0.6 + Math.sin(time * 1.37) * 0.4); cam[1] += dr * 0.6 * Math.sin(time * 0.53 + 2.1); cam[2] += dr * (Math.sin(time * 0.83 + 0.2) * 0.6 + Math.sin(time * 1.13 + 2.9) * 0.4); }
   // Clear of walls: if a building stands between the camera and what it films, swing round the subject until it is clear —
   // chosen once for the beat (at its first frame), so the camera never jumps mid-shot.
-  if (blocked) {
+  if (blocked && !b.noSwing) {   // (noSwing: a framed wide shot that must keep its bearing)
     if (b._swing === undefined) {
       b._swing = 0;
       if (blocked(cam, look)) {
@@ -68,7 +68,8 @@ export function evalBeat(b, u, time, resolve, ground, out, blocked) {
     const clear = b.clear ?? 1.2;
     let g0 = ground(cam[0], cam[2]);
     if (cam[1] < g0 + clear) cam[1] = g0 + clear;
-    for (let it = 0; it < 6; it++) {
+    // (noLift: a shot aimed at something far off — the mountain — would be lifted over every hill between: only the ground.)
+    for (let it = 0; it < (b.noLift ? 0 : 6); it++) {
       let worst = 0;
       for (let k = 1; k < 8; k++) {
         const f = k / 8, x = lerp(cam[0], look[0], f), z = lerp(cam[2], look[2], f), y = lerp(cam[1], look[1], f), gy = ground(x, z) + 0.6;

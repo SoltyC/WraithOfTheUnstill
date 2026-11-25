@@ -1,0 +1,74 @@
+{
+ "set": "ember-warden",
+ "atlas": 4096,
+ "pieces": [
+  {
+   "name": "ewtorso_0_lod0",
+   "size_m": 52.0,
+   "tris_high": 71120,
+   "tris": [
+    18000,
+    5400,
+    1440
+   ],
+   "texel_px_per_m": 37.0
+  },
+  {
+   "name": "ewhead_0_lod0",
+   "size_m": 22.0,
+   "tris_high": 60104,
+   "tris": [
+    10000,
+    3000,
+    800
+   ],
+   "texel_px_per_m": 37.0
+  },
+  {
+   "name": "ewupper_0_lod0",
+   "size_m": 46.0,
+   "tris_high": 37070,
+   "tris": [
+    10000,
+    3000,
+    800
+   ],
+   "texel_px_per_m": 37.0
+  },
+  {
+   "name": "ewfore_0_lod0",
+   "size_m": 42.0,
+   "tris_high": 31960,
+   "tris": [
+    10000,
+    3000,
+    800
+   ],
+   "texel_px_per_m": 37.0
+  },
+  {
+   "name": "ewhandl_0_lod0",
+   "size_m": 28.0,
+   "tris_high": 45266,
+   "tris": [
+    14000,
+    4200,
+    1120
+   ],
+   "texel_px_per_m": 37.0
+  },
+  {
+   "name": "ewhandr_0_lod0",
+   "size_m": 28.0,
+   "tris_high": 45266,
+   "tris": [
+    14000,
+    4200,
+    1120
+   ],
+   "texel_px_per_m": 37.0
+  }
+ ],
+ "atlas_fill": 0.658,
+ "texel_px_per_m_min": 37.0
+}

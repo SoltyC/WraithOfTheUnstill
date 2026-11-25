@@ -219,11 +219,11 @@ export function addDirectorSystem(g) {
 
   const d = g.director = {
     active: false,
-    /** Play a shot list. opt: { id, onEnd, letterbox (default true), blendIn (s from the player's camera; 0: a cut), blendOut (s back). } */
+    /** Play a shot list. opt: { id, onEnd, skippable (from the first viewing), letterbox (default true), blendIn (s from the player's camera; 0: a cut), blendOut (s back). } */
     play(list, opt = {}) {
       shots = list; t = 0; len = totalLength(list); lastI = -1; manual = false; onEnd = opt.onEnd || null;
       id = opt.id ?? null;
-      skipOffered = canSkipCutscene(g.chapter?.graph.flags, id);
+      skipOffered = !!opt.skippable || canSkipCutscene(g.chapter?.graph.flags, id);   // (skippable: from the first viewing)
       skipArmed = !input?.down[Action.SkipCutscene];
       showSkip(skipOffered);
       d.letterbox = opt.letterbox !== false; d.active = true; controller.hold = true;

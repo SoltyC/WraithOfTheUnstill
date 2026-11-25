@@ -75,7 +75,7 @@ function vaulted(b, P, cu, cf, dims, door, seed, { open = false } = {}) {
   const box = (u, f, y0, y1, hu, hf, mat, s, o) => { const p = at(u, 0, f); b.box(p[0], p[2], y0, y1, hu, hf, yaw, mat, s, o); };
   const wall = (u, f, y0, y1, hu, hf, s) => { const p = at(u, 0, f); layWall(b, p[0], p[2], y0, y1, hu, hf, yaw, MAT.STONE, s, { course: 0.32, blockLen: 0.7 }); };
   // A footing course the house stands on (the hill is cut and built up under it).
-  box(0, 0, -2.6, 0.12, L + 0.25, D + 0.25, MAT.STONE, seed, { course: 0.4 });
+  box(0, 0, -2.6, 0.12, L + 0.25, D + 0.25, MAT.STONE, seed, { course: 0.4, platform: true });   // (its top the floor inside the door)
   // Side walls (along the length) and the back.
   wall(0, -D + T / 2, 0.12, H, L, T / 2, seed + 1);
   // The front: the door (1.1 m) in from one end, a window.
@@ -99,12 +99,19 @@ function vaulted(b, P, cu, cf, dims, door, seed, { open = false } = {}) {
   wall(L - T / 2, 0, 0.12, H, T / 2, D - T, seed + 12);
   // The vault: a segmental barrel over the length, lime-washed, a hand's breadth over the walls.
   const th0 = 1.05, Rv = (D + 0.12) / Math.sin(th0), rise = Rv - Rv * Math.cos(th0);
-  cloth(b, (u, v) => { const th = -th0 + 2 * th0 * v; return at(-L - 0.12 + u * (2 * L + 0.24), H + Rv * Math.cos(th) - Rv * Math.cos(th0), Rv * Math.sin(th)); }, 2, 12, MAT.PLASTER, seed + 13);
+  cloth(b, (u, v) => { const th = -th0 + 2 * th0 * v; return at(-L - 0.12 + u * (2 * L + 0.24), H + Rv * Math.cos(th) - Rv * Math.cos(th0), Rv * Math.sin(th)); }, 10, 12, MAT.PLASTER, seed + 13);   // (10 along its length: it breaks into slabs, not 4 m slivers)
   // Its ends: the lunettes, in stone (both faces).
   for (const su of [-1, 1]) {
     const pts = []; for (let k = 0; k <= 12; k++) { const th = -th0 + 2 * th0 * k / 12; pts.push(at(su * (L - 0.02), H + Rv * Math.cos(th) - Rv * Math.cos(th0) - 0.02, Rv * Math.sin(th) * 0.97)); }
     const c = at(su * (L - 0.02), H - 0.02, 0);
-    for (let k = 0; k < 12; k++) { b.tri(c, pts[k], pts[k + 1], MAT.STONE, seed + 14); b.tri(c, pts[k + 1], pts[k], MAT.STONE, seed + 14); }
+    // (In three rings, not one fan: a fan's long needles break into needle shards, flickering as they turn.)
+    const L3 = (p, r) => [c[0] + (p[0] - c[0]) * r, c[1] + (p[1] - c[1]) * r, c[2] + (p[2] - c[2]) * r];
+    for (let k = 0; k < 12; k++) for (let r = 0; r < 3; r++) {
+      const a0 = L3(pts[k], r / 3), a1 = L3(pts[k + 1], r / 3), b0 = L3(pts[k], (r + 1) / 3), b1 = L3(pts[k + 1], (r + 1) / 3);
+      if (r === 0) { b.tri(c, b0, b1, MAT.STONE, seed + 14); b.tri(c, b1, b0, MAT.STONE, seed + 14); continue; }
+      b.tri(a0, b0, b1, MAT.STONE, seed + 14); b.tri(a0, b1, a1, MAT.STONE, seed + 14);
+      b.tri(a0, b1, b0, MAT.STONE, seed + 14); b.tri(a0, a1, b1, MAT.STONE, seed + 14);
+    }
   }
   // A camera blocker over it (the roof is not solid for the body).
   const pc = at(0, 0, 0);
@@ -162,7 +169,7 @@ function farmBuild(farm, rel) {
       const n = h > 0.12 ? Math.ceil(h / 0.19) : 0;
       for (let k = 1; k < n; k++) {
         const top = sill - k * h / n, f1 = face + k * 0.32, p = P(du, 0, (face + f1) / 2);
-        b.box(p[0], p[2], foot - 0.45, top, 0.62 + 0.03 * k, (f1 - face) / 2, facing, MAT.FLAG, s + 60 + k, { plain: true, ...NS });
+        b.box(p[0], p[2], foot - 0.45, top, 0.62 + 0.03 * k, (f1 - face) / 2, facing, MAT.FLAG, s + 60 + k, { plain: true, solid: false, platform: true, ...NS });   // (walked: a floor)
       }
     }
     lifted(b, ty, () => {

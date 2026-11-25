@@ -14,6 +14,12 @@ import { createDust, DUST_OF } from '../render/dust.js';
 
 const rng = (seed) => { let s = seed >>> 0 || 1; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; };
 
+/** The inputs needed to replay a saved collapse on the same ground (cause and per-group release times included). */
+function ruinRecord(opt, done = false) {
+  const { force, seed, strength, char = 0, cause, releaseOf } = opt;
+  return { force, seed, strength, char, cause, releaseOf, ...(done ? { done: 1 } : {}) };
+}
+
 /** @param {any} g  shared boot context */
 export function addDestructionSystem(g) {
   const { scene, atmosphere, loop, clock, controller, chapter } = g;
@@ -35,7 +41,7 @@ export function addDestructionSystem(g) {
     const m = e.data, r = ruins.get(m.id);
     if (!r) return;
     r.view.upload(m.xf);
-    if (m.done) { r.state = 'rest'; vars['ruin:' + m.id] = { force: r.opt.force, seed: r.opt.seed, strength: r.opt.strength, char: r.opt.char ?? 0, done: 1 }; }
+    if (m.done) { r.state = 'rest'; vars['ruin:' + m.id] = ruinRecord(r.opt, true); }
     for (const ev of m.events) {
       const sz = Math.min(6, ev.size);
       if (ev.kind === 'release') { if (sz > 0.7) dust.burst(ev.x, ev.y + 0.3, ev.z, 2 + Math.round(sz * 2), 1 + sz * 0.7, 1 + sz * 0.6, r.col, 16, 0.15); }
@@ -51,7 +57,8 @@ export function addDestructionSystem(g) {
     if (m.done) {
       // What hangs over a ruin after: a slow pall, drifting off.
       const [x, y, z] = r.origin;
-      for (let k = 0; k < 5; k++) dust.burst(x, y + 1 + k * 0.6, z, 2, 3 + r.ext * 0.06, 0.5, r.col, 40, 0.5);
+      // (Not in the cloud: what took it is the pall, and a ruin's own lies flat on the ground under it, lit by the lava.)
+      if (r.opt.cause !== 'surge') for (let k = 0; k < 5; k++) dust.burst(x, y + 1 + k * 0.6, z, 2, 3 + r.ext * 0.06, 0.5, r.col, 40, 0.5);
     }
   };
 
@@ -83,11 +90,13 @@ export function addDestructionSystem(g) {
     if (!grid) return false;
     r.origin = [s.at[0], oy, s.at[1]];
     // When each group lets go: the cause's own timing (the lava's arrival), or a wave from the force's side.
-    const releaseOf = {};
-    if (r.opt.release) {
+    if (r.opt.release && !r.opt.releaseOf) {
+      const releaseOf = {};
       const acc = new Map();
       r.debris.frags.forEach((f) => { if (f.fixed) return; const a = acc.get(f.group) || [0, 0, 0, 0]; a[0] += f.pivot[0]; a[1] += f.pivot[1]; a[2] += f.pivot[2]; a[3]++; acc.set(f.group, a); });
       for (const [gid, a] of acc) releaseOf[gid] = Math.max(0, r.opt.release(s.at[0] + a[0] / a[3], s.at[1] + a[2] / a[3], oy + a[1] / a[3]) - r.elapsed);
+      r.opt.releaseOf = releaseOf;
+      if (!r.opt.done) vars['ruin:' + id] = ruinRecord(r.opt);
     }
     // The pieces at rest where they stood, until the worker moves them.
     const xf = r.view.xf;
@@ -97,9 +106,10 @@ export function addDestructionSystem(g) {
     // (Seen: near the Wraith, the camera, or a scene's place — a cutscene filming it from a kilometre off the Wraith.)
     const cam = g.camera?.position, sf = g.streamFocus, dAt = (x, z) => Math.hypot(x - s.at[0], z - s.at[1]);
     const far = Math.min(dAt(controller.pos.x, controller.pos.z), cam ? dAt(cam.x, cam.z) : Infinity, sf ? dAt(sf.x, sf.z) : Infinity) > 450;
-    const finish = r.opt.done || far;
+    // (A collapse a scene is going to show — opt.watched — is played out live wherever the camera is when it starts.)
+    const finish = r.opt.done || (far && !r.opt.watched);
     const frags = r.debris.frags.map((f) => ({ pivot: f.pivot, half: f.half, vol: f.vol, group: f.group, top: f.top, fixed: f.fixed, mat: f.mat, rot: f.rot }));
-    worker.postMessage({ cmd: 'start', id, frags, grid, finish, opt: { origin: r.origin, force: r.opt.force, strength: r.opt.strength ?? 1, seed: r.opt.seed, cause: r.opt.cause, releaseOf: r.opt.release ? releaseOf : undefined } });
+    worker.postMessage({ cmd: 'start', id, frags, grid, finish, opt: { origin: r.origin, force: r.opt.force, strength: r.opt.strength ?? 1, seed: r.opt.seed, cause: r.opt.cause, releaseOf: r.opt.releaseOf } });
     r.state = finish ? 'finishing' : 'running';
     // The standing building goes; the pieces take its place.
     s.hidden = true; view.sites[r.i * 4 + 3] = 0;
@@ -127,9 +137,23 @@ export function addDestructionSystem(g) {
     breakSite(id, i, (debris) => {
       if (!debris) { prepared.delete(id); return; }
       const dv = createDebrisView(scene, atmosphere, debris, view, ctx, 'ruin-' + id);
-      dv.mesh.setEnabled(false);
       prepared.set(id, { debris, dv });
+      warm(dv);
       if (pendingAsk.has(id)) { const opt = pendingAsk.get(id); pendingAsk.delete(id); ruins.delete(id); made(id, i, debris, opt, dv); }
+    });
+  }
+  /** Its pipelines made now, not at its first draw (the colour pass and the shadow pass: half a second of the GPU process's
+   *  time on the frame the building goes): drawn a few frames with every piece parked far under the world, then put away. */
+  function warm(dv) {
+    const xf = dv.xf;
+    for (let k = 0; k < xf.length; k += 8) { xf[k] = 0; xf[k + 1] = -1e4; xf[k + 2] = 0; xf[k + 4] = 0; xf[k + 5] = 0; xf[k + 6] = 0; xf[k + 7] = 1; }
+    dv.upload(); dv.mesh.setEnabled(true); g.engine?.snapshotRenderingReset?.();
+    let n = 0;
+    const o = scene.onAfterRenderObservable.add(() => {
+      if (++n < 4) return;
+      scene.onAfterRenderObservable.remove(o);
+      // (Unless its collapse began meanwhile: then it is the ruin's, and stays.)
+      if (![...ruins.values()].some((r) => r.view === dv)) { dv.mesh.setEnabled(false); g.engine?.snapshotRenderingReset?.(); }
     });
   }
   const pendingAsk = new Map();
@@ -158,14 +182,17 @@ export function addDestructionSystem(g) {
     });
   }
   function made(id, i, debris, opt, dv) {
-    // The colour of its dust: the stuff most of it is.
+    // The colour of its dust: the stuff most of it is (in the cloud: its ash — what it raises is what buried it).
     const count = new Map(); for (const f of debris.frags) if (!f.fixed) count.set(f.mat, (count.get(f.mat) || 0) + f.vol);
     const main = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
     const ext = Math.max(...debris.frags.map((f) => Math.hypot(f.pivot[0], f.pivot[2]) + Math.max(...f.half)), 8) + 25;
-    const r = { i, debris, view: dv, mainMat: main, state: 'pending', opt: { force: [1, 0], seed: 1 + i, ...opt }, col: DUST_OF[main] || DUST_OF[0], ext, elapsed: 0, origin: null };
+    const r = { i, debris, view: dv, mainMat: main, state: 'pending', opt: { force: [1, 0], seed: 1 + i, ...opt }, col: opt.cause === 'surge' ? DUST_OF[5] : DUST_OF[main] || DUST_OF[0], ext, elapsed: 0, origin: null };
     if (opt.char !== undefined) view.char[i] = Math.max(view.char[i], opt.char);
+    // (A ruin of the eruption's, loaded: burnt by the lava, or burnt and buried by the cloud — as systems/eruption.js burn()
+    // left it; the char lives on the site, not in the record.)
+    if (opt.done && !opt.char) { if (opt.cause === 'surge') view.char[i] = Math.max(view.char[i], 1.95); else if (opt.cause === 'lava') view.char[i] = Math.max(view.char[i], 0.95); }
     ruins.set(id, r);
-    if (!opt.done) vars['ruin:' + id] = { force: r.opt.force, seed: r.opt.seed, strength: r.opt.strength, char: opt.char ?? 0 };
+    if (!opt.done) vars['ruin:' + id] = ruinRecord(r.opt);
     r.elapsed = clock.simTime - r.opt.t0;
     start(id, r);
     return r;

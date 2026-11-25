@@ -9,6 +9,10 @@
 export const WALKER_SEAT = [2436, 1124];
 /** The camp's dry well: the middle of the caravanserai's court (world/ruinKits.js: P(0, 1) from 1810, 775). */
 export const CAMP_WELL = [1810.6, 775.8];
+/** The Sun Gate's old cistern, on the canyon's east rim above the glass-readers' camp (docs/phase-9/dunes-choice.md): the
+ *  second place it can be brought home to. Its axis points east, onto the open plateau where its body lies. */
+export const GATE_CISTERN = [1622, 1000];
+export const GATE_CISTERN_YAW = Math.PI / 2;
 /** The caravanserai's gate faces the oasis pool (world/ruinKits.js): the way its head goes in to the well. */
 export const CAMP_GATE_YAW = Math.atan2(1846 - 1810, 736 - 775);
 /** The circuit, walked in this order and closed (W0 is the seat). It keeps clear of the obelisks, the

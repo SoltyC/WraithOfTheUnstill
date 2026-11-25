@@ -50,7 +50,7 @@ def reset_scene():
     sc.render.engine = 'CYCLES'
     try:
         prefs = bpy.context.preferences.addons['cycles'].preferences
-        for kind in ('OPTIX', 'CUDA'):
+        for kind in ('OPTIX', 'CUDA', 'HIP'):
             try:
                 prefs.compute_device_type = kind; prefs.get_devices()
                 if any(d.type == kind for d in prefs.devices):

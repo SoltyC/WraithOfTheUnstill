@@ -17,6 +17,8 @@ import { shapedVertexWGSL, shapedFragmentWGSL, shapedPieceVertexWGSL, shapedPiec
 import { MAT_SAMPLERS, bindMaterialLibrary } from '../materials/library.js';
 import { wardenVertexWGSL, wardenFragmentWGSL } from '../shaders/warden.wgsl.js';
 import { bellwetherVertexWGSL, bellwetherFragmentWGSL } from '../shaders/bellwether.wgsl.js';
+import { emberWardenVertexWGSL, emberWardenFragmentWGSL } from '../shaders/emberWarden.wgsl.js';
+import { emberWardenPieceFragmentWGSL } from '../shaders/emberWardenPiece.wgsl.js';
 import { bindEnvironment } from './environment.js';
 import { bindAtmosphere } from './atmosphereBindings.js';
 import { fastFrozenIsReady } from './babylonTweaks.js';
@@ -36,10 +38,14 @@ export function createShapedView(scene, atmo, chunks, opts = {}) {
   ShaderStore.ShadersStoreWGSL.wardenFragmentShader = wardenFragmentWGSL;
   ShaderStore.ShadersStoreWGSL.bellwetherVertexShader = bellwetherVertexWGSL;
   ShaderStore.ShadersStoreWGSL.bellwetherFragmentShader = bellwetherFragmentWGSL;
+  ShaderStore.ShadersStoreWGSL.emberWardenVertexShader = emberWardenVertexWGSL;
+  ShaderStore.ShadersStoreWGSL.emberWardenFragmentShader = emberWardenFragmentWGSL;
+  ShaderStore.ShadersStoreWGSL.emberWardenPieceVertexShader = shapedPieceVertexWGSL;
+  ShaderStore.ShadersStoreWGSL.emberWardenPieceFragmentShader = emberWardenPieceFragmentWGSL;
   // Sculpted pieces (render/shapedPieces.js): chunks whose kind has a family take an authored mesh
   // (uv.y = 1, its atlas place in uv2, its normal); the rest keep the icosphere clod.
   const pieces = opts.pieces || null;
-  const shader = pieces ? 'shapedPiece' : (opts.shader || 'shaped');
+  const shader = pieces ? (opts.pieceShader || 'shapedPiece') : (opts.shader || 'shaped');
   const engine = scene.getEngine();
   const count = chunks.length / 16;
   const ico = CreateIcoSphereVertexData({ radius: 1, subdivisions: opts.subdivisions ?? 1, flat: false });
@@ -78,14 +84,14 @@ export function createShapedView(scene, atmo, chunks, opts = {}) {
   const mat = new ShaderMaterial(name, scene, { vertex: shader, fragment: shader }, {
     attributes,
     uniforms: ['viewProjection', ...ENV_UNIFORMS],
-    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(pieces ? ['pieceAtlas', ...MAT_SAMPLERS] : [])],
+    samplers: [...ATMO_MATERIAL_TEXTURES, ...SHADOW_TEXTURES, ...(pieces ? ['pieceAtlas', ...(pieces.set.mask ? ['pieceMask'] : []), ...MAT_SAMPLERS] : [])],
     storageBuffers: [...sbufs, ...ATMO_MATERIAL_BUFFERS, 'shadowData'],
     shaderLanguage: ShaderLanguage.WGSL,
   });
   bindEnvironment(mat); bindAtmosphere(mat, atmo);
   mat.setStorageBuffer('chunkData', buf);
   if (nbrBuf) mat.setStorageBuffer('chunkNbr', nbrBuf);
-  if (pieces) { mat.setTexture('pieceAtlas', pieces.set.atlas); bindMaterialLibrary(mat, pieces.matLib); }
+  if (pieces) { mat.setTexture('pieceAtlas', pieces.set.atlas); if (pieces.set.mask) mat.setTexture('pieceMask', pieces.set.mask); bindMaterialLibrary(mat, pieces.matLib); }
   mesh.material = mat;
   // Depth prepass (opts.prepass; drawn first: render/trees.js orders 'shapedZ' meshes with the
   // leaves'): the colour pass then shades each visible pixel once, however many of the body's

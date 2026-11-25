@@ -140,7 +140,8 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   col += vec3f(1.0, 0.32, 0.06) * glow * 0.22 * (0.5 + 0.5 * fold) / max(ex, 1e-6);
   // Lightning inside the column: the ash round the bolt lit blue-white through itself (a few hundred metres of it).
   let fd = length(fragmentInputs.vWorldPos - uniforms.plumeD.yzw);
-  col += vec3f(0.75, 0.82, 1.0) * uniforms.plumeD.x * exp(-fd / 170.0) * (0.4 + 0.6 * fold) * 2.6 / max(ex, 1e-6);
+  // (A glimmer where the bolt is, deep in the ash — not the whole column lighting up: from afar that read as the screen flashing.)
+  col += vec3f(0.75, 0.82, 1.0) * uniforms.plumeD.x * exp(-fd / 110.0) * (0.4 + 0.6 * fold) * 0.85 / max(ex, 1e-6);
   // (The ember area's grade warms the shadows: a thick ash column, near black, would come out brown. Cooled ahead of it.)
   col *= mix(vec3f(1.0), vec3f(0.78, 0.9, 1.16), uniforms.plumeC.y * (1.0 - uniforms.plumeC.w));
   let camPos = uniforms.cameraPosition;

@@ -88,14 +88,16 @@ export function createCostumeView(scene, atmo, clipmap, shadows, bindShadows) {
       return { k, i };
     },
     /** Place slot h: basis columns a (x), b (y), c (z) (scaled), position p, shown, seed. */
-    place(h, ax, ay, az, bx, by, bz, cx, cy, cz, px, py, pz, show, seed) {
+    place(h, ax, ay, az, bx, by, bz, cx, cy, cz, px, py, pz, show, seed, ash = 0) {
       const o = h.i * 16, x = h.k.xf;
       x[o] = ax; x[o + 1] = bx; x[o + 2] = cx; x[o + 3] = px;
       x[o + 4] = ay; x[o + 5] = by; x[o + 6] = cy; x[o + 7] = py;
       x[o + 8] = az; x[o + 9] = bz; x[o + 10] = cz; x[o + 11] = pz;
-      x[o + 12] = show ? 1 : 0; x[o + 13] = seed; x[o + 14] = 0; x[o + 15] = 0;
+      x[o + 12] = show ? 1 : 0; x[o + 13] = seed; x[o + 14] = ash; x[o + 15] = 0;
       h.k.dirty = true;
     },
+    /** A part's ash (a frozen figure's hat crumbling with it: systems/eruption.js). */
+    ash(h, v) { const o = h.i * 16 + 14; if (h.k.xf[o] !== v) { h.k.xf[o] = v; h.k.dirty = true; } },
     hide(h) { if (h.k.xf[h.i * 16 + 12] !== 0) { h.k.xf[h.i * 16 + 12] = 0; h.k.dirty = true; } },
     /** Upload what changed (once a frame, after the figures). */
     update() { for (const n in kinds) { const k = kinds[n]; if (k.dirty) { k.buf.update(k.xf); k.dirty = false; } } },

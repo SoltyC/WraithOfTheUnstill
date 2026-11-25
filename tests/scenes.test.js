@@ -57,3 +57,12 @@ describe('scene variants', () => {
     expect(sceneLength(scene.variants[0])).toBe(7);
   });
 });
+
+import { countLines } from '../src/game/emberScenes.js';
+describe('the camp count (game/emberScenes.js countLines)', () => {
+  it('names each place that came or lost, and ends by the loss', () => {
+    const l = countLines([{ name: "Aled's", res: 2, here: 2, lost: 0 }, { name: "Gwil's", res: 2, here: 0, lost: 2 }, { name: 'Cinderhold', res: 7, here: 5, lost: 2 }, { name: "Huw's", res: 2, here: 0, lost: 0 }]);
+    expect(l).toEqual(["Aled's: all of them.", "Gwil's: no one.", 'Cinderhold: five. Two did not come.', 'Say their names. Every one.']);
+    expect(countLines([{ name: 'A', res: 1, here: 1, lost: 0 }]).at(-1)).toBe('That is everyone. Everyone came.');
+  });
+});

@@ -17,6 +17,8 @@ export const PIECE_FAMILY = {
   [CHUNK.SANDSTONE]: 'sandstone',
   [CHUNK.SAND]: 'sand',
   [CHUNK.THORN]: 'thorn',
+  // The Ember Warden's segments (game/emberWarden/titan.js EW_KIND).
+  22: 'ewtorso', 23: 'ewhead', 24: 'ewupper', 25: 'ewfore', 26: 'ewhandl', 27: 'ewhandr',
 };
 
 const hash = (s) => { let x = Math.imul((s * 1000) | 0, 0x27d4eb2d); x = Math.imul(x ^ (x >>> 15), 0x2c1b3c6d); return (x ^ (x >>> 13)) >>> 0; };
@@ -50,8 +52,19 @@ export async function loadPieces(scene, set, opt = {}) {
   });
   atlas.wrapU = atlas.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
   atlas.anisotropicFilteringLevel = 8;
+  // The mask atlas (tools/models/assetkit.py: convexity, cavity, the sculptor's features), when asked for.
+  let mask = null;
+  if (opt.mask) {
+    mask = await new Promise((res, rej) => {
+      const t = new Texture(base + set + '-mask' + (opt.atlas ?? '') + '.webp', scene, {
+        noMipmap: false, invertY: false, samplingMode: Constants.TEXTURE_TRILINEAR_SAMPLINGMODE,
+        onLoad: () => res(t), onError: (m, e) => rej(e || new Error(m)),
+      });
+    });
+    mask.wrapU = mask.wrapV = Constants.TEXTURE_CLAMP_ADDRESSMODE;
+  }
   return {
-    atlas,
+    atlas, mask,
     /** The piece for a chunk of `kind` with `seed`, at `lod` (0 near, 1 far/Low, 2 shadow), or null. */
     pick(kind, seed, lod) {
       const f = fam[PIECE_FAMILY[Math.floor(kind + 0.02)]];

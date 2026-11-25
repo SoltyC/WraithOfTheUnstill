@@ -71,7 +71,11 @@ function townBuild(baked) {
       for (let k = 0; k < 6; k++) b.box(x - 0.24, z + 0.65, y + 0.7 + k * 0.24, y + 0.72 + k * 0.24, 0.01, 0.18, 0, MAT.IRON, s + 123 + k, { solid: false, plain: true, ...NS });
     }
     // The engine tower beside the shaft, and the guild's bell tower at the hall's west end: Cinderhold's tall buildings.
-    { const [x, z] = P.engine, y = Math.min(rel(x - 3, z - 3), rel(x + 3, z - 3), rel(x - 3, z + 3), rel(x + 3, z + 3)); windingTower(b, x, z, y, 0.1, { seed: 17 }); }
+    { const [x, z] = P.engine, y = Math.min(rel(x - 3, z - 3), rel(x + 3, z - 3), rel(x - 3, z + 3), rel(x + 3, z + 3)); windingTower(b, x, z, y, 0.1, { seed: 17 });
+      // Its floor (the base's top, y + 0.5) to walk on, and a step up to the east door from the yard.
+      b.box(x, z, y + 0.42, y + 0.5, 2.0, 2.0, 0.1, MAT.BASALT, s + 150, { solid: false, platform: true, plain: true, ...NS });
+      const nx = Math.sin(0.1 + Math.PI / 2), nz = Math.cos(0.1 + Math.PI / 2), sx = x + nx * 4.0, sz = z + nz * 4.0, foot = rel(sx + nx * 0.6, sz + nz * 0.6);
+      if (y + 0.5 - foot > 0.12) b.box(sx, sz, Math.min(foot, y) - 0.4, (y + 0.5 + foot) / 2, 0.45, 0.95, 0.1, MAT.BASALT, s + 151, { solid: false, platform: true, plain: true, ...NS }); }
     { const [x, z] = P.belfry, y = Math.min(rel(x - 3, z - 3), rel(x + 3, z - 3), rel(x - 3, z + 3), rel(x + 3, z + 3)); towerHouse(b, x, z, y, 0, { hw: 2.6, hd: 2.6, storeys: 4, storey: 3.2, seed: 23, mat: MAT.BASALT }); }
     // The deep shaft: a basalt collar, the dark going down, a four-legged iron headframe, the wheel, the chain.
     { const [x, z] = P.shaft, y = rel(x, z);
@@ -108,7 +112,10 @@ function townBuild(baked) {
     // The guild hall: long basalt walls, a slate roof, iron-banded doors facing south over the yard, lamps either side.
     { const [x, z] = P.hall, y = Math.max(rel(x - 9, z - 6), rel(x + 9, z - 6), rel(x - 9, z + 6), rel(x + 9, z + 6)) + 0.1;
       const L = 9, D = 6, H = 5.2;
-      b.box(x, z, y - 3, y + 0.35, L + 0.6, D + 0.6, 0, MAT.BASALT, s + 220, { course: 0.45 });
+      b.box(x, z, y - 3, y + 0.35, L + 0.6, D + 0.6, 0, MAT.BASALT, s + 220, { course: 0.45, platform: true });   // (its top the hall's floor)
+      // Steps up to the doors from the yard (the hall is set level on the slope, its front above the yard): risers of ~19 cm.
+      { const sill = y + 0.35, face = z - D - 0.6, foot = rel(x, face - 2), h = sill - foot, n = h > 0.12 ? Math.ceil(h / 0.19) : 0;
+        for (let k = 1; k < n; k++) b.box(x, face - k * 0.16, foot - 0.4, sill - k * h / n, 1.4, k * 0.16, 0, MAT.BASALT, s + 240 + k, { solid: false, platform: true, plain: true, ...NS }); }
       b.box(x, z + D - 0.35, y + 0.35, y + H, L, 0.35, 0, MAT.BASALT, s + 221, { course: 0.55 });
       b.box(x - L + 0.35, z, y + 0.35, y + H, 0.35, D - 0.7, 0, MAT.BASALT, s + 222, { course: 0.55 });
       b.box(x + L - 0.35, z, y + 0.35, y + H, 0.35, D - 0.7, 0, MAT.BASALT, s + 223, { course: 0.55 });
@@ -116,8 +123,13 @@ function townBuild(baked) {
       b.box(x - (L + 1.1) / 2 - 0.1, z - D + 0.35, y + 0.35, y + H, (L - 1.1) / 2, 0.35, 0, MAT.BASALT, s + 224, { course: 0.55 });
       b.box(x + (L + 1.1) / 2 + 0.1, z - D + 0.35, y + 0.35, y + H, (L - 1.1) / 2, 0.35, 0, MAT.BASALT, s + 225, { course: 0.55 });
       b.box(x, z - D + 0.35, y + 3.0, y + H, 1.25, 0.35, 0, MAT.BASALT, s + 226, { course: 0.5 });
-      b.box(x, z - D + 0.5, y + 0.35, y + 3.0, 1.15, 0.08, 0, MAT.PLANK, s + 227, { solid: true, ...NS });
-      for (const hb of [0.9, 2.1]) b.box(x, z - D + 0.42, y + hb, y + hb + 0.12, 1.2, 0.04, 0, MAT.IRON, s + 228, { solid: false, plain: true, ...NS });
+      // The doors stand open (the guild is in): two iron-banded leaves swung in against the jambs, the dark of the hall between.
+      for (const sd of [-1, 1]) {
+        const hx = x + sd * 1.15, cx = hx - sd * 0.08, cz = z - D + 0.7 + 0.55;
+        b.box(cx, cz, y + 0.35, y + 3.0, 0.04, 0.57, 0, MAT.PLANK, s + 227 + sd, { solid: false, ...NS });
+        for (const hb of [0.9, 2.1]) b.box(cx - sd * 0.03, cz, y + hb, y + hb + 0.12, 0.02, 0.6, 0, MAT.IRON, s + 228, { solid: false, plain: true, ...NS });
+      }
+      b.box(x, z - D + 2.6, y + 0.35, y + 3.0, 1.2, 0.2, 0, MAT.EMBER, s + 229, { solid: false, plain: true, ...NS });   // the dark within
       // Gables and the roof: two slate slopes on the long walls, the gable ends stepped basalt.
       const pitch = 0.55, rh = D * Math.tan(pitch);
       for (const sd of [-1, 1]) b.box(x, z + sd * D / 2, y + H + rh / 2 - 0.05, y + H + rh / 2 + 0.2, L + 0.5, D / Math.cos(pitch) / 2 + 0.3, 0, MAT.SLATE, s + 230 + sd, { solid: false, tilt: sd * pitch, ...NS });

@@ -9,7 +9,7 @@
 import { ENV_DECL, COMMON_WGSL } from './common.wgsl.js';
 import { ATMO_MATERIAL_WGSL } from './atmoMaterial.wgsl.js';
 
-export const FIRES = 64; // 8 for the camp (hearth, braziers, built fires) + 40 for the burning village (systems/villageFire.js) + 16 for the eruption's burning buildings (systems/eruption.js)
+export const FIRES = 72; // 8 for the camp (hearth, braziers, built fires) + 40 for the burning village (systems/villageFire.js) + 16 for the eruption's burning buildings (systems/eruption.js) + 8 for the Ember verbs (systems/emberBending.js)
 export const PER_FIRE = 112; // camp: 48 flames, 36 embers, 28 smoke. Burning building (fireL.z > 0): 60 tongues, 28 embers, 20 smoke, 4 glow cards
 export const FIRE_COUNT = FIRES * PER_FIRE;
 
@@ -165,8 +165,11 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vLife = life;
   vertexOutputs.vSoot = X.w;
   // Big fires stack many overlapping tongues (added light): each one dimmer, so the mass stays orange, not white.
-  vertexOutputs.vGain = select(1.0 / (1.0 + max(S - 1.0, 0.0) * 1.8), 0.8 / (1.0 + max(S - 1.0, 0.0) * 0.35), vil);
-  vertexOutputs.vVil = select(0.0, 1.0, vil);
+  // (fireL.w < 0: a verb's flame — Ember's, systems/emberBending.js — thrown in daylight: the house fire's palette, never
+  // a white core, and far less light; at the camp fire's, in the sun, it burned white.)
+  let verbFlame = uniforms.fireL[f].w < -0.5;
+  vertexOutputs.vGain = select(select(1.0 / (1.0 + max(S - 1.0, 0.0) * 1.8), 0.8 / (1.0 + max(S - 1.0, 0.0) * 0.35), vil), 0.05, verbFlame);
+  vertexOutputs.vVil = select(0.0, 1.0, vil || verbFlame);
   vertexOutputs.vWorldPos = p;
 }
 `;

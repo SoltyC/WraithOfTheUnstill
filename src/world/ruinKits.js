@@ -17,7 +17,11 @@
 import { MAT } from './architecture.js';
 import { blob } from './blobStone.js';
 import { feltTent } from './camp.js';
+import { cookfire, bedrolls, bundles } from './refugeeKit.js';
 import { LAYOUT as SUN_LAYOUT, SUN_SITE } from '../game/puzzles/sunGate.js';
+/** The glass-readers' camp, under the Sun Gate (docs/phase-9/dunes-choice.md). */
+export const GATE_CAMP = [1496, 992];
+import { GATE_CISTERN } from '../game/walker/route.js';
 import { LAYOUT as HOUR, HOUR_SITE } from '../game/puzzles/hourglass.js';
 import { LAYOUT as SING, SING_SITE } from '../game/puzzles/singing.js';
 import { MIRAGE, FALLS, FLOOD } from '../game/puzzles/sides.js';
@@ -174,6 +178,36 @@ function colossusHead(b, facing) {
  * against the walls and half fills the gateway: a drift you walk up and over (platforms stepped
  * with its slope — the CPU solid from the drift's height).
  */
+/** The Sun Gate's cistern on the rim (docs/phase-9/dunes-choice.md): a ring of dressed stones round a dark shaft, a fallen
+ *  lintel across one side. Dry while the erg is still. */
+function gateCistern(b, facing) {
+  const P = rot(facing);
+  for (let k = 0; k < 14; k++) { const a = (k / 14) * Math.PI * 2, [x, z] = P(Math.cos(a) * 2.6, Math.sin(a) * 2.6); b.box(x, z, -0.4, 0.6, 0.38, 0.62, facing + a, MAT.STONE, 1200 + k, {}); }
+  { const [x, z] = P(0, 0); b.blockers.push({ site: b.site, kind: 'circle', x, z, r: 3.0, y0: -0.4, y1: 0.6 }); }
+  { const [x, z] = P(3.4, 0.8); b.box(x, z, -0.2, 0.35, 2.4, 0.4, facing + 0.4, MAT.STONE, 1220, {}); }
+}
+/** Its water, risen to the brim once it fills (shown by systems/longWalker.js). */
+function gateCisternWater(b, facing) {
+  const [x, z] = rot(facing)(0, 0);
+  b.box(x, z, 0.3, 0.36, 2.3, 2.3, facing, MAT.GLASS, 1230, {});
+}
+/** The glass-readers' camp (docs/phase-9/dunes-choice.md): Iven's people, on the canyon floor under the Sun Gate — three
+ *  felt tents round a fire, bedrolls, bundles, and the glass they read set out on a stone in rows. They are here because
+ *  the erg stopped: the Gate stands clear of the sand only while the Walker is still. */
+function gateCamp(b, facing) {
+  const P = rot(facing);
+  [[-7, 4, 2.6, 2.6, 0.6], [6.5, 5.5, 2.4, 2.5, -2.4], [0.5, -7, 2.8, 2.8, 3.0]].forEach(([lx, lz, r, h, door], k) => {
+    const [x, z] = P(lx, lz);
+    feltTent(b, x, z, r, h, door + facing, 1120 + k * 7, { ribs: 8 });
+  });
+  { const [x, z] = P(0, 0.5); cookfire(b, x, z, facing, 1150, { cold: false }); }
+  { const [x, z] = P(-3.2, -1.5); bedrolls(b, x, z, facing + 0.4, 1160); }
+  { const [x, z] = P(3.6, -2.4); bundles(b, x, z, facing - 0.7, 1170); }
+  // The reading stone: a flat slab with the glass laid out on it in rows, blue-green and smoky.
+  { const [x, z] = P(4.5, 1.6); b.box(x, z, -0.1, 0.55, 1.9, 1.0, facing + 0.3, MAT.STONE, 1180, { platform: true }); }
+  for (let k = 0; k < 9; k++) { const [x, z] = P(3.9 + (k % 3) * 0.55, 1.2 + Math.floor(k / 3) * 0.4); b.box(x, z, 0.52, 0.6, 0.16, 0.11, facing + k * 0.7, MAT.BATTLE_GLASS, 1190 + k, {}); }   // (y0, then the top: a flake 8 cm thick) }
+}
+
 function caravanserai(b, facing) {
   const P = rot(facing), S = 16, T = 0.65, H = 7.2;
   // The walls, in runs (local: x across, z toward the front); the front run split by the gate.
@@ -330,6 +364,10 @@ export function ruinSites(table, height) {
   sites.push({ id: 'ruin-sing-ring', at: [SING_SITE[0] + SING.ring[0], SING_SITE[1] + SING.ring[1]], facing: 0, build: resonanceRing, footprint: 8, seatAt: 'center' });
   SING.lips.forEach((l, k) => sites.push({ id: 'ruin-sing-lip' + k, at: [SING_SITE[0] + l[0], SING_SITE[1] + l[1]], facing: k * 1.1, build: lipStone, footprint: 1.2, seatAt: 'center' }));
   sites.push({ id: 'ruin-colossus-head', at: [2318, 1030], facing: 3.6, build: colossusHead, footprint: 6, seatAt: 'center', sink: 0.5 });
+  // The glass-readers' camp on the canyon floor north of the Sun Gate's puzzle (docs/phase-9/dunes-choice.md).
+  sites.push({ id: 'ruin-gate-cistern', at: GATE_CISTERN, facing: 0, build: gateCistern, footprint: 4, seatAt: 'center' });
+  sites.push({ id: 'ruin-gate-cistern-water', at: GATE_CISTERN, facing: 0, build: gateCisternWater, footprint: 3, seatAt: 'center' });
+  sites.push({ id: 'ruin-gate-camp', at: GATE_CAMP, facing: 2.9, build: gateCamp, footprint: 12, seatAt: 'center', sink: 0.2 });
   // The caravanserai at the oasis (the Wellhouse camp, D11), on the flat playa west of the pool (the
   // camp's seat at 1800, 700 is up a dune's flank), its gate toward the water.
   sites.push({ id: 'ruin-caravanserai', at: [1810, 775], facing: Math.atan2(1846 - 1810, 736 - 775), build: caravanserai, footprint: 20, seatAt: 'center', sink: 0.6 });

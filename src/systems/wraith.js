@@ -17,7 +17,7 @@ export function addWraithSystem(g) {
     w.glide = controller.glide.blend; w.glideBank = controller.glide.bank;
     w.swimming = controller.swimming;
     knockCtl.feedOverride(w);
-    w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0, g.gale && (g.gale.gesture > 0 || g.gale.vortexStrength > 0.05) ? 1 : 0);
+    w.cast = Math.max(frost.gesture > 0 ? 1 : 0, frost.ribbonStrength > 0.05 ? 1 : 0, g.gale && (g.gale.gesture > 0 || g.gale.vortexStrength > 0.05) ? 1 : 0, g.emberBend && (g.emberBend.gesture > 0 || g.emberBend.streamStrength > 0.05) ? 1 : 0);
     wraithView.time = clock.simTime;
     if (!wraithView.isEnabled()) return;
     // Photo spots with a walk: once the world is in, walk the Wraith into place, then hold it.

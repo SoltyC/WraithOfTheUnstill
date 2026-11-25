@@ -28,7 +28,13 @@ export function addSceneSystem(g) {
   };
   const npc = (id) => (g.npcs || []).find((n) => n.id === id);
   /** A building between the camera and its subject (world/solids.js line of sight). */
-  const blocked = (c, l) => { const S = g.solids; if (!S?.segBlocked) return false; S.ax = c[0]; S.ay = c[1]; S.az = c[2]; S.bx = l[0]; S.by = l[1]; S.bz = l[2]; return S.segBlocked(); };
+  // Walls (solids) and, out in the country, the trees' crowns and the shrubs (render/trees.js sightClear) between the camera
+  // and what it films: either swings the camera round (game/scenes.js).
+  const blocked = (c, l) => {
+    const S = g.solids;
+    if (S?.segBlocked) { S.ax = c[0]; S.ay = c[1]; S.az = c[2]; S.bx = l[0]; S.by = l[1]; S.bz = l[2]; if (S.segBlocked()) return true; }
+    return !!(g.trees?.sightClear && !g.trees.sightClear(c[0], c[2], l[0], l[2]));
+  };
   function resolver(extra) {
     const tmp = [0, 0, 0];
     return (s) => {
@@ -62,18 +68,27 @@ export function addSceneSystem(g) {
     const spots = sceneSpots(variant, resolve);
     if (spots.length) { let x = 0, z = 0; for (const p of spots) { x += p[0]; z += p[2]; } g.streamFocus = { x: x / spots.length, z: z / spots.length }; }
     for (const id of variant.prepare || []) g.destruction?.prepare(id);
+    // Its people kept shown and simulated the whole scene, wherever the camera is (systems/npcs.js warm): placed for it out of
+    // sight, they would otherwise appear only as the camera cut to them — a robe settling, a body turning, on camera.
+    const warm = new Set();
+    for (const b of variant.beats) for (const s of [b.subject, b.target]) for (const id of s?.npcs || (s?.npc ? [s.npc] : [])) warm.add(id);
+    for (const id of variant.people || []) warm.add(id);
+    const warmed = (g.npcs || []).filter((n) => warm.has(n.id));
+    for (const n of warmed) n.warm = true;
     for (const b of variant.beats) { b._swing = undefined; if (b.subject) b.subject._last = undefined; if (b.target) b.target._last = undefined; }   // (each play chooses its swings afresh)
     const shots = variant.beats.map((b) => ({
-      dur: b.dur, dof: b.dof ?? 0,   // (off unless a beat asks: a wide shot with a metre of focus blurs the whole frame)
+      dur: b.dur, dof: b.dof ?? 0, maxBlur: b.maxBlur,   // (off unless a beat asks: a wide shot with a metre of focus blurs the whole frame)
       blur: b.blur ?? 0.35, subs: b.subs, wraith: b.wraith,
       eval: (u, time, out) => evalBeat(b, u, time, resolve, groundAt, out, blocked),
       onCut: b.onCut,
     }));
-    g.director.play(shots, { blendIn: opt.blendIn ?? 0.8, blendOut: opt.blendOut ?? 1.2, onEnd: () => { playing = null; g.streamFocus = null; opt.onEnd?.(); } });
+    g.director.play(shots, { id: variant.id, skippable: opt.skippable, blendIn: opt.blendIn ?? 0.8, blendOut: opt.blendOut ?? 1.2, onEnd: () => { playing = null; g.streamFocus = null; for (const n of warmed) n.warm = false; opt.onEnd?.(); } });
   }
   const S = g.scenes = {
     groundAt,
     get busy() { return !!playing || g.director?.active; },
+    /** The variant playing (its id), or null. */
+    get current() { return playing ? playing.variant : null; },
     /** Play a scene variant now, or when the one playing ends (dropped if not begun within `stale` s). */
     play(variant, opt = {}) { if (!variant) return; const item = { variant, opt, at: clock.simTime }; if (S.busy) queue.push(item); else start(item); },
     resolver,

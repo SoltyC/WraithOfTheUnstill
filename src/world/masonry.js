@@ -234,6 +234,9 @@ function columnDrums0(B, x, z, y0, y1, r0, r1, n, mat, seed, { broken = 0, carve
  * on a hard line. Smooth normals (no facets). Material SNOW (7).
  */
 export function snowDrift(B, x, z, y0, hx, hz, yaw, seed, { height = 0.45, reach = 1.4, sides = 15 } = {}) {
+  // A site below the snowline (the meadow's, Ember's): no drifts at its walls' feet — but on the erg's ruins the same banks
+  // are its sand (render: the site's glow z = 2).
+  if (B.noSnow && !B.sandDrift) return;
   const cy = Math.cos(yaw), sy = Math.sin(yaw);
   const R = [cy, 0, -sy], F = [sy, 0, cy];
   const faces = [[R, hx, F, hz, 1], [[-R[0], 0, -R[2]], hx, [-F[0], 0, -F[2]], hz, 2], [F, hz, [-R[0], 0, -R[2]], hx, 4], [[-F[0], 0, -F[2]], hz, R, hx, 8]];

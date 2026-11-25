@@ -110,6 +110,7 @@ async function boot() {
   loop.add(playerMod.createPlayerSystem({ controller: g.controller, arm: g.arm, ...g.content, material: g.streamer, wind: g.wind, streams: g.streams, world: g }));
   (await import('./systems/flow.js')).addFlowSystem(g); // after the player (it reads this frame's motion), before the verbs (they read what Flow gives)
   sysBending.addBendingSystem(g);
+  (await import('./systems/emberBending.js')).addEmberBendingSystem(g);   // Ember's flames, light and burning (after the verbs: they read this frame's)
   (await import('./systems/weapons.js')).addWeaponSystem(g); // before the Wraith (the attack pose) and the creatures (the blows it lands)
   (await import('./systems/economy.js')).addEconomySystem(g); // right after: it reads their `able`, takes the hands for a drink
   sysWraith.addWraithSystem(g);
@@ -141,6 +142,7 @@ async function boot() {
   (await import('./systems/shrineWind.js')).addShrineWindSystem(g); // a rested shrine's wind runs toward the nearest held Warden (M4)
   (await import('./systems/volcano.js')).addVolcanoSystem(g);   // the volcano's plume and night glow, seen from afar
   (await import('./systems/emberClock.js')).addEmberClockSystem(g);   // the mountain's stages; the thread given at the summit
+  await (await import('./systems/emberWarden.js')).addEmberWardenSystem(g);   // the Ember Warden in the crater: its hold, its fight (docs/phase-11/ember-warden.md)
   (await import('./systems/sow.js')).addSowSystem(g);
   (await import('./systems/campLife.js')).addCampLifeSystem(g);   // the survivors' camp alive: everyone else who got out, in the kit's places
   (await import('./systems/cinderhold.js')).addCinderholdSystem(g);
@@ -158,6 +160,7 @@ async function boot() {
   (await import('./systems/wardenFight.js')).addWardenFightSystem(g);
   (await import('./systems/bellwetherFight.js')).addBellwetherFightSystem(g);
   (await import('./systems/longWalker.js')).addLongWalkerSystem(g); // the dune Warden (after the chapter's interactables and the nav's goals)
+  (await import('./systems/dunesChoice.js')).addDunesChoiceSystem(g);   // the dunes' choice, after: who stays in the erg (docs/phase-9/dunes-choice.md)
   (await import('./systems/timeSweep.js')).addTimeSweep(g); // resting at a shrine: the light sweeps across the land
   (await import('./systems/puzzles.js')).addPuzzleSystem(g); // the dunes' instruments: their moving parts and machines
   (await import('./systems/puzzleSled.js')).addPuzzleSledSystem(g); // the Wellhouse's buried sled (dunes-design §4.1)

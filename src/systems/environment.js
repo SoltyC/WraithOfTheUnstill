@@ -308,7 +308,8 @@ export async function addEnvironmentSystems(g) {
     wa.speed = Math.sqrt(controller.vel.x * controller.vel.x + controller.vel.z * controller.vel.z);
     wa.swimming = controller.swimming; wa.skimming = controller.skimming; wa.strokePhase = g.wraithView.wraith.swimPhase;
     // The oasis's well is choked while the erg is stilled: its pool fills once the Dunes are restored.
-    if (wa.setOasis(ws.restoration.dunes === 'restored')) engine.snapshotRenderingReset();
+    // (Brought home to the Sun Gate instead, the Wellhouse's well stays dry: docs/phase-9/dunes-choice.md.)
+    if (wa.setOasis(ws.restoration.dunes === 'restored' && !g.chapter?.graph.flags.has('dunes:home-gate'))) engine.snapshotRenderingReset();
     // The planar reflection's plane and camera, before the water uploads its level.
     const uf = g.underwaterFx;
     if (uf) {
@@ -363,7 +364,7 @@ export async function addEnvironmentSystems(g) {
     const gc = g.groundCover;
     if (gc) { gc.time = clock.simTime; gc.wind = gr.wind; gc.update(); }
     const mo = g.motes;
-    if (mo) { mo.time = clock.simTime; mo.wind = gr.wind; mo.density = 1; mo.update(); }
+    if (mo) { mo.time = clock.simTime; mo.wind = gr.wind; mo.density = 1; mo.ember += ((g.ws?.restoration?.ember === 'restored' || (g.eruption?.stopT && g.eruption.open > 0.5) ? 1 : 0) - mo.ember) * Math.min(1, clock.dt * 0.2); mo.update(); }
   } });
   let hazeBase = 0;
   const HAZE = 0.0032; // 1/m at the ground under a full canopy (~1 km visibility; local, 200 m)

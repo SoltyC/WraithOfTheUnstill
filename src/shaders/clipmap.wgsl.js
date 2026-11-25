@@ -381,6 +381,7 @@ uniform levels: array<vec4f,16>;
 uniform playerPos: vec4f;
 uniform lavaSegs: array<vec4f, ${LAVA_SEGS * 2}>;   // the flows' hot stretches: (a, intensity), (b, radius) — systems/eruption.js
 uniform lavaGlow: vec4f;            // the crater's lake: x = level (m), y = glow, z = radius (m); w = the eruption's ash on the land 0..1 (systems/volcano.js)
+uniform emberWaste: vec4f;          // the Ember Waste restored: x = 0..1, y = time (s) — its crust's seams breathing (systems/volcano.js)
 uniform spellLights: array<vec4f,${LIGHT_SLOTS * 2}>;   // LIGHT_SLOTS × (pos.xyz, radius), (colour.rgb, intensity)
 ${GRID_LIGHT_DECL}
 varying vWorldPos: vec3f;
@@ -742,7 +743,11 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     if (ashV > 0.0) { vs.albedo = mix(vs.albedo, ashColor(wp.xz), ashV * 0.85); vs.N = normalize(mix(vs.N, Ngv, ashV * 0.6)); vs.rough = mix(vs.rough, 0.95, ashV); }
     var vcol = volcanoLight(vs, V, L, key, vis * cs, uniforms.envMisc.w);
     let exv = uniforms.fogParams.z * atmoExposure();
-    vcol += vec3f(1.0, 0.22, 0.03) * vs.glow * 1.0 / max(exv, 1e-6) + pointLit(wp, vs.N, vs.albedo, exv) + lavaSegLit(wp, vs.N, vs.albedo, exv);
+    // Restored: the seams glow in slow waves running out from the crater, ring by ring (the Warden's heat in the mountain).
+    let ew = uniforms.emberWaste;
+    let ringD = length(wp.xz - vec2f(2350.0, -2150.0));
+    let breath = ew.x * (0.25 + 0.75 * pow(0.5 + 0.5 * sin(ew.y * 0.45 - ringD * 0.018), 3.0));
+    vcol += vec3f(1.0, 0.22, 0.03) * vs.glow * breath * 0.12 / max(exv, 1e-6) + pointLit(wp, vs.N, vs.albedo, exv) + lavaSegLit(wp, vs.N, vs.albedo, exv);
     // The lake's light up the pit's walls (world/crater.js): from the nearest of its surface, falling off with distance.
     let lg = uniforms.lavaGlow;
     if (lg.y > 0.0) {

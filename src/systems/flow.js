@@ -5,8 +5,8 @@
 import { surfTuning } from '../character/surf.js';
 import { FLOW_IN } from '../game/flow.js';
 
-const HAND = { frost: [0.25, 0.45, 0.6], gale: [0.25, 0.45, 0.6], stone: [0.95, 0.6, 0.22] };
-const COLOURS = { frost: [0.28, 0.5, 0.8], gale: [0.45, 0.78, 0.55], stone: [0.82, 0.55, 0.22] };
+const HAND = { frost: [0.25, 0.45, 0.6], gale: [0.25, 0.45, 0.6], stone: [0.95, 0.6, 0.22], ember: [1.0, 0.42, 0.12] };
+const COLOURS = { frost: [0.28, 0.5, 0.8], gale: [0.45, 0.78, 0.55], stone: [0.82, 0.55, 0.22], ember: [0.95, 0.35, 0.1] };
 
 /** @param {any} g  shared boot context */
 export function addFlowSystem(g) {

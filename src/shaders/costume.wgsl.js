@@ -242,6 +242,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let skyRaw = shIrradiance(N);
   let sky = (skyRaw * uniforms.envMisc.w * canopySky(canopy) + canopyFill(canopy, N)) * ao;
   let diff = clamp((nl + 0.15) / 1.15, 0.0, 1.0);
+  // Ash-cast (systems/eruption.js; the figure's robe the same: shaders/cloth.wgsl.js): its colours gone under grey ash.
+  let ashW = fragmentInputs.vInst.z;
+  let ashK = min(ashW, 1.0);
+  // (Crumbling with the figure, ash 1..2: the hat comes away in pieces.)
+  if (ashW > 1.0) { let pr = fract(sin(dot(floor(fragmentInputs.vLocal * 22.0), vec3f(12.9898, 78.233, 37.719))) * 43758.5453); if (pr < (ashW - 1.0) * 1.4) { discard; } }
+  if (ashK > 0.0) { albedo = mix(albedo, vec3f(0.33, 0.31, 0.29) * (0.65 + 0.7 * vn(dot(fragmentInputs.vLocal, vec3f(40.0, 31.0, 23.0)))) + dot(albedo, vec3f(0.3, 0.5, 0.2)) * 0.04, ashK); }
   var col = albedo * (key * diff * vis / PI + sky);
   // Specular: a soft lobe, and a highlight along the fibres (straw, cane and willow shine along their length).
   let H = normalize(L + V);

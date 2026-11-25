@@ -90,6 +90,8 @@ export function createFog(post, scene, atmo, shadows) {
     fog.offX -= 0.6 * sp * fog.dt; fog.offZ -= 0.8 * sp * fog.dt;
     if (fog.offX < -1e5) fog.offX += 14000 * 7; if (fog.offZ < -1e5) fog.offZ += 14000 * 7;
     // Rain and storm: a lower, darker deck (gloom), and the cloud's lightning glow.
+    // The eruption's ash over the deck (systems/eruption.js fog.ash): the sun no longer reaches it — dark, not a white band.
+    P[104] = fog.ash || 0;
     P[106] = fog.glow; P[107] = Math.min(1, 0.45 * w.rain + 0.55 * w.storm);
     P[60] = w.snow; P[61] = w.cover; P[62] = fog.offX; P[63] = fog.offZ;
     const k = fog.keyDir;

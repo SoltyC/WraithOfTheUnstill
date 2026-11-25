@@ -199,8 +199,10 @@ export class QuestGraph {
     const out = [];
     for (const d of this.defs) {
       const q = this.quests[d.id];
-      if (q.state === 'locked') continue;
-      out.push({ id: d.id, kind: d.kind, title: d.title, summary: d.summary, done: q.state === 'done',
+      if (q.state === 'locked' || q.state === 'gone') continue;   // ('gone': the world moved on before it began)
+      // (A quest the world closed before it was finished — 'closed': the Ember quests after the eruption — is over too: it
+      // reads as finished, with the lines it reached.)
+      out.push({ id: d.id, kind: d.kind, title: d.title, summary: d.summary, done: q.state === 'done' || q.state === 'closed',
         lines: d.steps.slice(0, q.state === 'done' ? d.steps.length : q.step + 1).map((s) => s.journal),
         optional: (d.optional || []).map((o) => ({ id: o.id, line: o.journal, done: q.opt.includes(o.id) })) });
     }

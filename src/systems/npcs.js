@@ -254,7 +254,7 @@ export function addNpcSystems(g) {
       const fx = f[0] * ct + u[0] * st, fy = f[1] * ct + u[1] * st, fz = f[2] * ct + u[2] * st;
       const h = b.head, ly = 0.072, lz = -0.006;
       cv.place(c.hat, r[0] * s, r[1] * s, r[2] * s, ux * s, uy * s, uz * s, fx * s, fy * s, fz * s,
-        W(h[0] + u[0] * ly + f[0] * lz, 0), W(h[1] + u[1] * ly + f[1] * lz, 1), W(h[2] + u[2] * ly + f[2] * lz, 2), true, c.seed);
+        W(h[0] + u[0] * ly + f[0] * lz, 0), W(h[1] + u[1] * ly + f[1] * lz, 1), W(h[2] + u[2] * ly + f[2] * lz, 2), true, c.seed, w.ash || 0);
     }
     if (c.basket) {
       const hx = W(b.ha[0], 0), hy = W(b.ha[1], 1), hz = W(b.ha[2], 2), sw = c.sw;
@@ -273,7 +273,7 @@ export function addNpcSystems(g) {
       let ux = -sw[0], uy = 1, uz = -sw[1]; { const l = Math.hypot(ux, uy, uz); ux /= l; uy /= l; uz /= l; }
       let fx = b.f[0], fy = 0, fz = b.f[2]; { const d = fx * ux + fy * uy + fz * uz; fx -= ux * d; fy -= uy * d; fz -= uz * d; const l = Math.hypot(fx, fy, fz) || 1; fx /= l; fy /= l; fz /= l; }
       const rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx;
-      cv.place(c.basket, rx * s, ry * s, rz * s, ux * s, uy * s, uz * s, fx * s, fy * s, fz * s, hx, hy, hz, true, c.seed);
+      cv.place(c.basket, rx * s, ry * s, rz * s, ux * s, uy * s, uz * s, fx * s, fy * s, fz * s, hx, hy, hz, true, c.seed, w.ash || 0);
     }
   }
 

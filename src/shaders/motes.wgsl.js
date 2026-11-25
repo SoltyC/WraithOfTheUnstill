@@ -19,7 +19,7 @@ attribute position: vec3f;          // x = mote id, yz = quad corner (−1..1)
 uniform viewProjection: mat4x4f;
 uniform cameraPosition: vec3f;
 uniform levels: array<vec4f,16>;
-uniform motes: vec4f;               // x = time (s), y = density 0..1, z = wind strength
+uniform motes: vec4f;               // x = time (s), y = density 0..1, z = wind strength, w = the Ember Waste restored 0..1 (its embers)
 ${WIND_DECL}var<storage, read> levelData: array<vec4f>;
 var<storage, read> biomeA: array<u32>;
 var<storage, read> windMap: array<u32>;
@@ -57,12 +57,23 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let forest = smoothstep(0.2, 0.6, canopy);
   let top = mix(2.5, 9.0, forest);
   let y = gGround(p.x, p.y) + 0.2 + top * h4 * h4 + wander.y;
-  let wp0 = vec3f(p.x, y, p.y);
+  var wp0 = vec3f(p.x, y, p.y);
+  // The restored Ember Waste (BRIEF §6.5, docs/phase-11/ember-release.md): embers lifting off the ground and carried on the
+  // wind across it — one mote in two, rising through ten metres and going out; near the mountain only.
+  let ember = uniforms.motes.w * (1.0 - smoothstep(1600.0, 2600.0, length(p - vec2f(2350.0, -2150.0)))) * step(0.5, h6);
+  var life = 0.0;
+  if (ember > 0.001) {
+    life = fract(h4 + tm * (0.05 + 0.06 * h5));
+    let lift = 10.0 * life;
+    let blow = w0 * lift * (0.6 + 0.8 * h3) * (0.5 + uniforms.motes.z);
+    wp0 = vec3f(p.x + blow.x, gGround(p.x, p.y) + 0.2 + lift + wander.y * 0.4, p.y + blow.y);
+  }
   let dist = length(wp0 - cam);
   var alpha = uniforms.motes.y * meadow * mix(0.25, 1.0, forest)
             * (1.0 - smoothstep(RT * 0.6, RT * 0.95, length(wrapped))) * smoothstep(0.4, 1.2, dist);
-  // Small: 3–7 mm, kept ≥ ~1.5 px with the energy held (enlarged ones dimmed).
-  let s0 = 0.003 + 0.004 * h5;
+  if (ember > 0.001) { alpha = ember * smoothstep(0.0, 0.1, life) * (1.0 - smoothstep(0.55, 1.0, life)) * (1.0 - smoothstep(RT * 0.6, RT * 0.95, length(wrapped))) * smoothstep(0.4, 1.2, dist); }
+  // Small: 3–7 mm (an ember 1–2 cm), kept ≥ ~1.5 px with the energy held (enlarged ones dimmed).
+  let s0 = select(0.003 + 0.004 * h5, 0.01 + 0.01 * h5, ember > 0.001);
   let size = max(s0, dist * 0.0011);
   alpha *= (s0 / size) * (s0 / size) * 0.6 + 0.4 * (s0 / size);
   let toCam = normalize(cam - wp0);
@@ -74,7 +85,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   vertexOutputs.vUv = corner;
   vertexOutputs.vAlpha = alpha;
   vertexOutputs.vWorldPos = wp0;
-  vertexOutputs.vTint = h3;
+  vertexOutputs.vTint = select(h3, 2.0 + life, ember > 0.001);   // (≥ 2: an ember, its age)
 }
 `;
 
@@ -100,9 +111,15 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   let c = dot(-V, L);
   let phase = 0.15 + 2.5 * pow(max(c, 0.0), 6.0) + 6.0 * pow(max(c, 0.0), 40.0);
   let tint = mix(vec3f(1.0, 0.95, 0.8), vec3f(1.0, 0.98, 0.7), fragmentInputs.vTint); // dust and pollen
-  let col = atmoKeyColor() * tint * phase * vis * 0.45;
+  var col = atmoKeyColor() * tint * phase * vis * 0.45;
+  let ex = uniforms.fogParams.z * atmoExposure();
+  // An ember: its own light, yellow-orange new and dull red going out (lit day or night, unlike the dust).
+  if (fragmentInputs.vTint >= 2.0) {
+    let age = fragmentInputs.vTint - 2.0;
+    col = mix(vec3f(1.0, 0.55, 0.15), vec3f(0.8, 0.12, 0.02), age) * (0.9 + 0.1 * sin(age * 90.0)) * 1.4 / max(ex, 1e-6);
+  }
   let lit = atmoApply(col, fragmentInputs.position.xy * uniforms.screenInfo.zw, length(uniforms.cameraPosition - wp) * 0.001);
-  let outc = displayTransform(lit, uniforms.fogParams.z * atmoExposure());
+  let outc = displayTransform(lit, ex);
   let a = fragmentInputs.vAlpha * (1.0 - r2) * (1.0 - r2);
   fragmentOutputs.color = vec4f(outc * a, 0.0);
 }

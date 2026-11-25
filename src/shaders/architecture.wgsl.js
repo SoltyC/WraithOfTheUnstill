@@ -405,7 +405,9 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
 
   // Char (a burnt village building): blackened plaster and timber, scorched roofs; soot streaks climb from the base and
   // run up under the eaves; gloss goes (roughness up), lit windows die. 0 = untouched: skipped, so unburnt sites are bit-identical.
-  let charK = archSites[${ARCH_SITES * 2}u + (site >> 2u)][site & 3u];
+  // (Above 1: buried in the cloud's ash as well — systems/eruption.js — the whole of it the dark ash of the ground around.)
+  let charRaw = archSites[${ARCH_SITES * 2}u + (site >> 2u)][site & 3u];
+  let charK = min(charRaw, 1.0);
   if (charK > 0.001 && mid != 5) {
     let streak = 0.6 + 0.4 * smoothstep(-0.3, 0.7, n1 * 0.5 + 0.5 + 0.35 * sin(uv.x * 7.0 + seed));
     let up = 1.0 - 0.45 * smoothstep(0.0, 6.0, fragmentInputs.vLocalY);
@@ -414,6 +416,12 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     rough = mix(rough, 0.95, ck);
     ssr = ssr * (1.0 - ck);
     emit = emit * (1.0 - charK);
+    if (charRaw > 1.0) {
+      let ashK = clamp(charRaw - 1.0, 0.0, 1.0);
+      albedo = mix(albedo, vec3f(0.062, 0.058, 0.054) * (0.75 + 0.5 * n2), ashK * 0.97);
+      rough = mix(rough, 1.0, ashK);
+      ssr = ssr * (1.0 - ashK);
+    }
   }
 
   // Snow on what faces up (not on embers or ice), heavier when it is snowing; drifts at the base.

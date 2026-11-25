@@ -167,6 +167,50 @@
     "film": "screenshots/ember-film/stayed.mp4",
     "verdict": "Watched in the stayed scene (14.6-19.6 s, crop): at the door, arm out to the side waving the other in; reads at 16 m, subtle; no artefacts."
    }
+  },
+  "emb-comfort": {
+   "prompt": "A person standing beside someone turns toward them, reaches out and rests a hand on their shoulder, then draws them close and holds them, both swaying slightly.",
+   "seed": 3,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp (Promptimate v0.3.1 Vulkan engine, RX 9070), Q8_0 text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {
+    "travels": true
+   },
+   "cues": [
+    "ember:watched"
+   ],
+   "sha256": "9c1355226df08460f85e6669cfb04a5442fbe32aadfd0b2f133543c54bdbc4d9",
+   "eye": {
+    "by": "claude (stage three; user to confirm)",
+    "date": "2026-11-24",
+    "film": "screenshots/ember-film/watched.mp4",
+    "verdict": "Watched in the watched scene: turns and reaches to the other, holds them; reads in close and in silhouette; no artefacts."
+   }
+  },
+  "emb-grief": {
+   "prompt": "A person stands watching their home burn far away, their shoulders slump, and they slowly cover their face with both hands.",
+   "seed": 3,
+   "steps": 100,
+   "model": "SOMA-RP v1.1, kimodo.cpp (Promptimate v0.3.1 Vulkan engine, RX 9070), Q8_0 text encoder",
+   "repairs": [
+    "fit"
+   ],
+   "gate": {
+    "travels": true
+   },
+   "cues": [
+    "ember:watched"
+   ],
+   "sha256": "3349eb39640c81c2c4fbea619b82d26aa3386e9f9944153c38d78da01b1ed703",
+   "eye": {
+    "by": "claude (stage three; user to confirm)",
+    "date": "2026-11-24",
+    "film": "screenshots/ember-film/watched.mp4",
+    "verdict": "Watched in the watched scene (22-27 s, and in silhouette at the end): hands rise to the face and stay; no pops, robe settled."
+   }
   }
  }
 }

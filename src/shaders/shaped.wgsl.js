@@ -67,7 +67,7 @@ fn main(input: VertexInputs) -> FragmentInputs {
   let local = v * vec3f(a.w, b.w, c.w) * 0.5;
   let f = b.xyz; let u = c.xyz; let r = cross(u, f);
   // A small per-chunk twist so clusters do not line up.
-  let tw = (hs(vec3f(seed, 1.0, 2.0)) - 0.5) * 0.8;
+  let tw = select((hs(vec3f(seed, 1.0, 2.0)) - 0.5) * 0.8, 0.0, kind > 21.5 && kind < 27.6);   // (none on the Ember Warden's segments: they hang on their bones)
   let ct = cos(tw); let st = sin(tw);
   let lx = local.x * ct - local.z * st; let lz = local.x * st + local.z * ct;
   let wp = a.xyz + r * lx + u * local.y + f * lz;
@@ -330,12 +330,14 @@ ${MATERIALS_DECL}
 `;
 const PIECE_FRAGMENT_FN = /* wgsl */ `
 fn pieceLayerOf(k: i32) -> i32 {
+  if (k >= 22 && k <= 27) { return MAT_LAVA_CRUST; }   // the Ember Warden's segments
   if (k == 17) { return MAT_CLIFF_STRATA; }
   if (k == 12 || k == 14) { return MAT_SANDSTONE_SMOOTH; }
   if (k == 13) { return MAT_STONE_PALE; }
   return MAT_SAND_FINE;
 }
 fn pieceScaleOf(k: i32) -> f32 {
+  if (k >= 22 && k <= 27) { return 0.11; }
   if (k == 17) { return 0.22; }
   if (k == 11) { return 0.5; }
   return 0.45;

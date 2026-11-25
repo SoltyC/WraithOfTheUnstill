@@ -12,7 +12,7 @@ import { Builder, MAT } from './architecture.js';
 /** The largest a piece may be before it is split (m): walls into blocks, shells into clusters. */
 export const FRACTURE = { block: 1.25, course: 0.75, shell: 1.3, panel: 1.6, clump: 1.4 };
 /** How thick a broken shell of each material is (m; world/architecture.js MAT): cloth stays cloth, metal and glass thin. */
-const THICK = { 2: 0, 4: 0.15, 6: 0.03, 7: 0.1, 8: 0.2, 9: 0.28, 10: 0.05, 11: 0.06, 12: 0.06, 13: 0.06, 18: 0.015, 19: 0.04 };
+const THICK = { 2: 0, 4: 0.15, 6: 0.03, 7: 0.1, 8: 0.4, 9: 0.28, 10: 0.05, 11: 0.06, 12: 0.06, 13: 0.06, 18: 0.015, 19: 0.04 };
 
 const fract = (v) => v - Math.floor(v);
 const hh = (a, b) => fract(Math.sin(a * 127.1 + b * 311.7) * 43758.5453);
@@ -237,7 +237,8 @@ export function buildDebris(site, index, rng) {
     // between (every edge of the piece that only one of its triangles has).
     const mat = b.info[I[f.tris[0] * 3] * 4 + 1], minE = 2 * Math.min(...half);
     // (A pole or a tube, closed round, is thickened only a little into its own hollow; a flat sheet the whole way.)
-    const T = minE > 0.08 ? Math.min(THICK[mat] ?? 0.2, minE * 0.3) : THICK[mat] ?? 0.2;
+    // (A broad panel of a drum or a dome is not a pole: its curve gives its box some depth, but it is a wall — full thickness.)
+    const T = minE > 0.08 && Math.max(...half) < 0.6 ? Math.min(THICK[mat] ?? 0.2, minE * 0.3) : THICK[mat] ?? 0.2;
     if (T > 0) {
       const key = (v) => W[v];
       const edges = new Map();

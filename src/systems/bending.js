@@ -53,6 +53,14 @@ export function addBendingSystem(g) {
     }
     pushGaleFx(time);
   }
+  /** Ember (game/bending/ember.js): its inputs; its flames, light, burning and steam are systems/emberBending.js's. */
+  function stepEmber(dt) {
+    const eb = g.emberBend; if (!eb) return;
+    eb.x = controller.pos.x; eb.y = controller.pos.y; eb.z = controller.pos.z;
+    eb.aimX = Math.sin(arm.yaw); eb.aimZ = Math.cos(arm.yaw);
+    eb.tx = aim.x; eb.ty = aim.y; eb.tz = aim.z; eb.dt = dt;
+    eb.update();
+  }
   /** Stone after the Gale (it takes the light slots left free): its terrain mass is already in the ground query. */
   const sfxAt = (x, y, z, gain, id) => { sfx.x = x; sfx.y = y; sfx.z = z; sfx.gain = gain; sfx.play(id); };
   let ridgeSnd = 0;
@@ -205,13 +213,17 @@ export function addBendingSystem(g) {
       if (input.pressed[Action.Element1 + k] && elements.select(ELEMENTS[k]) && g.hud && !capture) g.hud.notice('Element', ELEMENT_NAMES[ELEMENTS[k]], '', 2);
     }
     const isGale = elements.active === 'gale', isStone = elements.active === 'stone', isTide = elements.active === 'tide' && !!tide;
+    const eb = g.emberBend, isEmber = elements.active === 'ember' && !!eb;
     if (able) {
       if (input.down[Action.Bend]) primaryHeld += dt;
       const plungeGust = isGale && g.weapons && g.weapons.plunge.falling && !g.weapons.plunge.downUsed;       // a Gust cast in a Bell-mace plunge fires down under the Wraith (the Downdraft)
       if (isTide && input.released[Action.Bend] && primaryHeld < HOLD && combat.spend(combatTuning.costSurge * flow.costMul)) {
         tide.power = flow.power; tide.castSurge = true; g.remembrance?.cast('surge');
         castFlash.v = 1; arm.kick += 0.012; sfx.x = controller.pos.x; sfx.y = controller.pos.y + 1; sfx.z = controller.pos.z; sfx.gain = 0.9; sfx.play(SFX.WHOOSH);
-      } else if (!isTide && input.released[Action.Bend] && primaryHeld < HOLD && combat.spend((isStone ? combatTuning.costShard : isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
+      } else if (isEmber && input.released[Action.Bend] && primaryHeld < HOLD && combat.spend(combatTuning.costFlare * flow.costMul)) {
+        eb.power = flow.power; eb.castFlare = true; g.remembrance?.cast('flare');
+        castFlash.v = 1; arm.kick += 0.012;
+      } else if (!isTide && !isEmber && input.released[Action.Bend] && primaryHeld < HOLD && combat.spend((isStone ? combatTuning.costShard : isGale ? combatTuning.costGust : combatTuning.costSweep) * flow.costMul)) {
         if (plungeGust && g.weapons.plunge.downdraft(g.weapons.def)) { g.remembrance?.cast('gust'); castFlash.v = 1; arm.kick += 0.012; }
         else {
           // Flow 2+: wider and longer; Flow 3: the flowing variant (a frozen lane / a Gust that carries).
@@ -225,21 +237,24 @@ export function addBendingSystem(g) {
       if (!input.down[Action.Bend]) primaryHeld = 0;
     } else primaryHeld = 0;
     const holding = able && primaryHeld >= HOLD && combat.focus > 1;
-    if (holding && !frost.ribbonHeld && !gale.vortexHeld && !stone.ridgeHeld) g.remembrance?.cast(isTide ? 'draw' : isStone ? 'ridge' : isGale ? 'vortex' : 'ribbon');   // the hold begins
-    frost.ribbonHeld = holding && !isGale && !isStone && !isTide;
+    if (holding && !frost.ribbonHeld && !gale.vortexHeld && !stone.ridgeHeld && !(eb && eb.streamHeld)) g.remembrance?.cast(isEmber ? 'stream' : isTide ? 'draw' : isStone ? 'ridge' : isGale ? 'vortex' : 'ribbon');   // the hold begins
+    frost.ribbonHeld = holding && !isGale && !isStone && !isTide && !isEmber;
+    if (eb) eb.streamHeld = holding && isEmber;
     if (tide) tide.drawHeld = holding && isTide;
     gale.vortexHeld = holding && isGale;
     stone.ridgeHeld = holding && isStone;
     if (isTide && able && input.pressed[Action.Heavy] && combat.spend(combatTuning.costUndertow * flow.costMul)) {
       tide.castUndertow = true; g.remembrance?.cast('undertow'); arm.shake += 0.012; castFlash.v = 1; arm.kick += 0.02;
-    } else if (!isTide && able && input.pressed[Action.Heavy] && combat.spend((isStone ? combatTuning.costBloom : isGale ? combatTuning.costUpdraft : combatTuning.costCrystal) * flow.costMul)) {
+    } else if (isEmber && able && input.pressed[Action.Heavy] && combat.spend(combatTuning.costFuse * flow.costMul)) {
+      eb.power = flow.power; eb.castFuse = true; g.remembrance?.cast('fuse'); arm.shake += 0.01; castFlash.v = 1; arm.kick += 0.02;
+    } else if (!isTide && !isEmber && able && input.pressed[Action.Heavy] && combat.spend((isStone ? combatTuning.costBloom : isGale ? combatTuning.costUpdraft : combatTuning.costCrystal) * flow.costMul)) {
       stone.power = flow.power;
       if (isStone) stone.castBloom = true; else if (isGale) gale.castUpdraft = true; else frost.castCrystal = true;
       g.remembrance?.cast(isStone ? 'bloom' : isGale ? 'updraft' : 'crystal');
       arm.shake += 0.01; castFlash.v = 1; arm.kick += 0.02;
     }
     // The Wraith turns to face what it bends.
-    if ((tide && (tide.castSurge || tide.castUndertow || tide.drawHeld)) || frost.castSweep || frost.castCrystal || frost.ribbonHeld || gale.castGust || gale.castUpdraft || gale.vortexHeld || stone.castShard || stone.castBloom || stone.ridgeHeld) controller.yaw = arm.yaw;
+    if ((eb && (eb.castFlare || eb.castFuse || eb.streamHeld)) || (tide && (tide.castSurge || tide.castUndertow || tide.drawHeld)) || frost.castSweep || frost.castCrystal || frost.ribbonHeld || gale.castGust || gale.castUpdraft || gale.vortexHeld || stone.castShard || stone.castBloom || stone.ridgeHeld) controller.yaw = arm.yaw;
     updateAim();
     stepCarry(dt);
     const b = wraithView.wraith.body;
@@ -251,6 +266,7 @@ export function addBendingSystem(g) {
     frost.update();
     stepGale(dt, clock.simTime);
     stepStone(dt, clock.simTime);
+    stepEmber(dt);
     if (tide) {
       // Tide after Stone (it takes the light slots left free).
       tide.x = controller.pos.x; tide.y = controller.pos.y; tide.z = controller.pos.z;

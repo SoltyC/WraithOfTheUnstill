@@ -133,15 +133,15 @@ describe('words at the headland', () => {
     return ember.talk[npc].find((talk) => graph.test(talk.when, {}))?.say;
   };
 
-  it('gives all elders and kin five valid camp lines ahead of farm dialogue', () => {
+  it('gives all elders and kin six valid camp lines ahead of farm dialogue', () => {
     const npcs = ember.npcs.filter((npc) => npc.home?.poi.startsWith('sow-'));
     expect(npcs).toHaveLength(12);
     for (const npc of npcs) {
       const prefix = 'ember.' + npc.id.slice(6) + '.camp.';
       const family = npc.home.poi.split('-')[1];
-      const after = ember.talk[npc.id].slice(0, 5);
+      const after = ember.talk[npc.id].slice(0, 6);
       expect(after.map((talk) => talk.say)).toEqual(
-        ['lied', 'lost', 'shown', 'rumour', 'home'].map((kind) => prefix + kind),
+        ['lied', 'lost', 'shown', 'rumour', 'stopped', 'home'].map((kind) => prefix + kind),
       );
       for (const { say, when } of after) {
         expect(when.flag).toContain('ember:after');
@@ -170,9 +170,17 @@ describe('words at the headland', () => {
       .toBe('ember.huw.camp.rumour');
   });
 
+  it('answers the Ember Warden stopping the eruption: home again from the camp, or spared at home', () => {
+    expect(lineFor('ember-aled', ['ember:after', 'ember:aled-go', 'ember:stopped'])).toBe('ember.aled.camp.stopped');
+    expect(lineFor('ember-nia', ['ember:after', 'ember:aled-spared', 'ember:stopped'])).toBe('ember.nia.spared');
+    expect(lineFor('ember-aled', ['ember:after', 'ember:aled-go', 'ember:stopped', 'ember:aled-lied'])).toBe('ember.aled.camp.lied');
+    expect(lineFor('ember-orrin', ['ember:after', 'ember:spared-cinderhold'])).toBe('ember.orrin.spared');
+    expect(lineFor('ember-cole', ['ember:after', 'ember:stopped'])).toBe('ember.cole.stopped');
+  });
+
   it('records both possible fates for each Ember community', () => {
     expect(checkEntries()).toEqual([]);
-    const entries = ENTRIES.filter((entry) => entry.id.startsWith('ember-'));
+    const entries = ENTRIES.filter((entry) => entry.id.startsWith('ember-') && !entry.id.endsWith('-spared') && entry.id !== 'ember-warden');
     expect(entries).toHaveLength(16);
     for (const [id, kind] of families) {
       const fled = kind === 'farm' ? 'ember:' + id + '-go' : 'ember:fled-' + id;

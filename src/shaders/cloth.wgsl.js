@@ -30,6 +30,20 @@ fn garmentScale(g: i32) -> vec2f {
 fn h21(p: vec2f) -> f32 { return hash12(p); }
 fn vn1(x: f32) -> f32 { let i = floor(x); let f = x - i; let u = f * f * (3.0 - 2.0 * f); return mix(h21(vec2f(i, 7.1)), h21(vec2f(i + 1.0, 7.1)), u); }
 fn vn2(p: vec2f) -> f32 { return noised(p).x * 0.5 + 0.5; }
+// An ash-cast's chunks (Voronoi cells): x = distance to the cell's edge, y = the cell's own random (when it falls).
+fn ashH2(p: vec2f) -> vec2f { return fract(sin(vec2f(dot(p, vec2f(127.1, 311.7)), dot(p, vec2f(269.5, 183.3)))) * 43758.5453); }
+fn ashCell(x: vec2f) -> vec2f {
+  let n = floor(x); let f = x - n;
+  var md = 8.0; var mr = vec2f(0.0); var mg = vec2f(0.0);
+  for (var j = -1; j <= 1; j++) { for (var i = -1; i <= 1; i++) {
+    let gg = vec2f(f32(i), f32(j)); let r = gg + ashH2(n + gg) - f; let d = dot(r, r);
+    if (d < md) { md = d; mr = r; mg = gg; } } }
+  var me = 8.0;
+  for (var j = -2; j <= 2; j++) { for (var i = -2; i <= 2; i++) {
+    let gg = mg + vec2f(f32(i), f32(j)); let r = gg + ashH2(n + gg) - f;
+    if (dot(mr - r, mr - r) > 0.00001) { me = min(me, dot(0.5 * (mr + r), normalize(r - mr))); } } }
+  return vec2f(me, ashH2(n + mg + vec2f(17.0, 3.0)).x);
+}
 /** A garment's folds at m (metres on it; cs its own offset): 0 on the crowns, down to -1 along a crease. */
 fn foldH(m: vec2f, cs: vec2f) -> f32 {
   let x = m.x * 12.0 + 1.8 * vn2(m * vec2f(1.6, 0.8) + cs) + 0.4 * vn2(m * vec2f(5.0, 2.0) + cs.yx);
@@ -250,10 +264,37 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
     albedo = mix(albedo, vec3f(0.42, 0.44, 0.47), dust * 0.45 * uniforms.clothParams.z);
   }
   // Ash-cast (systems/eruption.js): the figure kept in a grey crust of ash, its colours gone, the folds still there.
-  let ashK = uniforms.clothFrost.w;
+  let ashW = uniforms.clothFrost.w;
+  let ashK = min(ashW, 1.0);
+  var ashGlow = vec3f(0.0);
+  // The cast falling apart (ash 1..2): it comes away in flakes and chunks, from the top down — each chunk a cell of the cloth
+  // with its own moment; the ash gone where it fell (the hollow cast behind).
+  let crumble = clamp(ashW - 1.0, 0.0, 1.0);
+  var crumbleEdge = 1.0;
+  if (crumble > 0.0) {
+    // Irregular chunks a hand or so across (the coordinates warped a little: no straight lines), each falling whole in its turn.
+    let cp = m * vec2f(7.0, 15.0) + vec2f(vn2(m * vec2f(11.0, 23.0)), vn2(m * vec2f(13.0, 19.0) + 7.0)) * 0.6;
+    let cell = ashCell(cp);
+    let thr = crumble * 1.55 - uv.y * 0.6;
+    if (cell.y < thr) { discard; }
+    // First the cracks open along the chunks' edges (darker and wider as it goes); a chunk about to fall darkens at its rim.
+    let crackW = 0.03 + 0.07 * crumble;
+    crumbleEdge = smoothstep(crackW * 0.5, crackW, cell.x) * (0.55 + 0.45 * smoothstep(0.0, 0.1, cell.y - thr));
+  }
   if (ashK > 0.0) {
-    let grain = vn2(m * vec2f(9.0, 21.0));
-    albedo = mix(albedo, vec3f(0.25, 0.24, 0.23) * (0.75 + 0.5 * grain) + dot(albedo, vec3f(0.3, 0.5, 0.2)) * 0.12, ashK);
+    // (Darker than any undyed cloth — the pale pilgrims' dress too — so a cast reads as one: a crust, cracked, finer in the folds.)
+    // (Fine: a powdery grain in three octaves, and a net of thin cracks — not blotches.)
+    let grain = vn2(m * vec2f(60.0, 140.0)) * 0.5 + vn2(m * vec2f(150.0, 330.0)) * 0.3 + vn2(m * vec2f(25.0, 55.0)) * 0.2;
+    let crack = 1.0 - smoothstep(0.0, 0.035, abs(vn2(m * vec2f(70.0, 120.0)) - 0.5)) * 0.6 - smoothstep(0.0, 0.035, abs(vn2(m * vec2f(160.0, 260.0)) - 0.5)) * 0.4;
+    let crackL = clamp(crack, 0.0, 1.0);   // (1 on a crack line, 0 between)
+    // It climbs: from the hem up the robe, the mantle and the hood (uv.y 1 at the hem, as the frost's creep), a ragged front
+    // of ash running up the cloth — the close-ups watch it pass — until the whole figure is cast.
+    let ashFront = 1.08 - ashK * 1.3 + 0.12 * (vn2(m * vec2f(5.0, 3.0)) - 0.5);
+    let ashAmt = smoothstep(ashFront, ashFront + 0.1, uv.y) * smoothstep(0.0, 0.08, ashK);
+    albedo = mix(albedo, vec3f(0.33, 0.31, 0.29) * (0.65 + 0.7 * grain) * (1.0 - 0.6 * crackL) + dot(albedo, vec3f(0.3, 0.5, 0.2)) * 0.04, ashAmt);   // (a mid grey crust: it reads on the pale pilgrims and the dark miners alike)
+    albedo *= mix(1.0, 0.12 + 0.88 * crumbleEdge, step(0.001, crumble));
+    // (Its front still hot for a moment: a dull ember line in the cracks as it climbs.)
+    ashGlow = vec3f(1.0, 0.35, 0.08) * crackL * smoothstep(ashFront - 0.02, ashFront + 0.04, uv.y) * (1.0 - smoothstep(ashFront + 0.04, ashFront + 0.16, uv.y)) * (1.0 - ashK) * 0.08;
   }
 
   // Wounds: frost creeps up the robe from the hem (and in from cuffs and the mantle's edge) as
@@ -340,7 +381,7 @@ fn main(input: FragmentInputs) -> FragmentOutputs {
   // The cowl light: lights the inside of the hood (and faintly the rim), breathing slowly; the
   // element's light gathers at the wrapped fingertips.
   let cold = vec3f(0.55, 0.78, 1.0);
-  var glow = vec3f(0.0);
+  var glow = ashGlow;
   if (g == 4) {
     // Faint: it should only just pick the inner folds out of the dark, strongest close to it.
     let k = coldLight(wp, uniforms.clothHead, 0.045) * uniforms.clothParams.x;

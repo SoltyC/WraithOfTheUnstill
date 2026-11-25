@@ -99,9 +99,10 @@ fn volcanoSurface(wp: vec3f, Ng: vec3f, Nc: vec3f, fp: f32) -> VolcSurf {
   // The glass: far glossier than the scan's rock — up close; far off the facets average out to a rough grey.
   o.rough = mix(ash.rough * w.x + min(obs.rough, 0.32) * w.y + lav.rough * w.z, 0.9, smoothstep(0.04, 0.6, fp));
   o.ao = ash.ao * w.x + obs.ao * w.y + lav.ao * w.z;
-  // Seams glow only near the crater (the old flows lower down are cold).
-  // (No glow from the scan's emission map: lava is generated — shaders/lava.wgsl.js — and the ground lit by it.)
-  o.glow = 0.0 * glowRaw;
+  // The seams: dark while the mountain is stilled (lava is generated — shaders/lava.wgsl.js — and the ground lit by it);
+  // restored (the Ember Warden in the vent), they breathe — the terrain's emberWaste uniform scales this, near the crater.
+  // (Only the thin seams, on flat crust — a face would stretch them into streaks — and near the crater.)
+  o.glow = smoothstep(0.55, 0.9, glowRaw) * w.z * smoothstep(0.85, 0.95, Ng.y) * (1.0 - smoothstep(140.0, 520.0, d));
   return o;
 }
 

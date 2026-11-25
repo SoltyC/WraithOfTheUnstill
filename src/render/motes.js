@@ -52,9 +52,9 @@ export function createMotes(scene, clipmap, atmo, wind) {
   mesh.material = mat;
   return {
     mesh, material: mat,
-    /** Owner fields: time (s), density (0..1), wind strength. */
-    time: 0.5, density: 1.5 - 0.5, wind: 0.5 - 0.5,
-    update() { params.x = this.time; params.y = this.density; params.z = this.wind; },
+    /** Owner fields: time (s), density (0..1), wind strength, ember (the Ember Waste restored 0..1). */
+    time: 0.5, density: 1.5 - 0.5, wind: 0.5 - 0.5, ember: 0.5 - 0.5,
+    update() { params.x = this.time; params.y = this.density; params.z = this.wind; params.w = this.ember; },
     freeze() { mat.freeze(); fastFrozenIsReady(mat); },
   };
 }
